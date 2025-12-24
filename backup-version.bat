@@ -21,14 +21,16 @@ for /f "tokens=2 delims=:," %%a in ('findstr /C:"\"version\"" "%APP_DIR%\package
 )
 :found_version
 
-:: Date du jour
+:: Date et heure
 for /f "tokens=1-3 delims=/" %%a in ('%SystemRoot%\System32\wbem\wmic.exe OS GET LocalDateTime ^| find "."') do (
     set "DT=%%a"
     set "YEAR=!DT:~0,4!"
     set "MONTH=!DT:~4,2!"
     set "DAY=!DT:~6,2!"
+    set "HOUR=!DT:~8,2!"
+    set "MINUTE=!DT:~10,2!"
 )
-set "DATE_STR=%YEAR%-%MONTH%-%DAY%"
+set "DATE_STR=%YEAR%-%MONTH%-%DAY%_%HOUR%h%MINUTE%"
 
 :: Nom du dossier de backup
 set "BACKUP_NAME=v%VERSION%-%DATE_STR%"
