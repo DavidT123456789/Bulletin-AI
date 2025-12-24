@@ -10,7 +10,7 @@ cd /d "%~dp0"
 
 :: Configuration
 set "APP_DIR=%~dp0app"
-set "SAVE_DIR=%~dp0..\..\..\Save"
+set "SAVE_DIR=%~dp0..\Save"
 
 :: Lire la version depuis package.json (simple extraction)
 for /f "tokens=2 delims=:," %%a in ('findstr /C:"\"version\"" "%APP_DIR%\package.json"') do (
@@ -72,9 +72,11 @@ copy /Y "%APP_DIR%\package.json" "%BACKUP_PATH%\app\" >nul
 copy /Y "%APP_DIR%\vite.config.js" "%BACKUP_PATH%\app\" >nul
 copy /Y "%APP_DIR%\.gitignore" "%BACKUP_PATH%\app\" >nul 2>nul
 
-echo [5/5] Copie des docs...
+echo [5/5] Copie des docs et lanceurs...
 copy /Y "%~dp0CHANGELOG.md" "%BACKUP_PATH%\" >nul 2>nul
 copy /Y "%~dp0README.md" "%BACKUP_PATH%\" >nul 2>nul
+copy /Y "%~dp0start.bat" "%BACKUP_PATH%\" >nul 2>nul
+copy /Y "%~dp0launcher.vbs" "%BACKUP_PATH%\" >nul 2>nul
 
 echo.
 echo ========================================
