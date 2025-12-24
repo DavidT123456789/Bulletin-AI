@@ -9,7 +9,8 @@ export default defineConfig({
       registerType: 'prompt', // Changed to 'prompt' to show custom update notification
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,png,svg,ico,woff,woff2}', 'app.html'],
+        navigateFallback: null, // Don't cache navigation requests
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,

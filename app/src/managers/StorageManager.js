@@ -61,9 +61,9 @@ export const StorageManager = {
                     // Data Settings
                     if (settings.refinementEdits !== undefined) runtimeState.data.refinementEdits = settings.refinementEdits;
 
-                    // Fallback thème si non défini
+                    // Fallback thème si non défini - always default to light
                     if (!userSettings.ui.theme) {
-                        userSettings.ui.theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                        userSettings.ui.theme = 'light';
                     }
                 }
 
@@ -81,7 +81,7 @@ export const StorageManager = {
 
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
-                userSettings.ui.theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                userSettings.ui.theme = 'light'; // Always default to light for new users
             }
 
             const dbResults = await DBService.getAll('generatedResults');
