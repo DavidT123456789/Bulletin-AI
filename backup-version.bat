@@ -75,8 +75,26 @@ copy /Y "%APP_DIR%\.gitignore" "%BACKUP_PATH%\app\" >nul 2>nul
 echo [5/5] Copie des docs et lanceurs...
 copy /Y "%~dp0CHANGELOG.md" "%BACKUP_PATH%\" >nul 2>nul
 copy /Y "%~dp0README.md" "%BACKUP_PATH%\" >nul 2>nul
-copy /Y "%~dp0start.bat" "%BACKUP_PATH%\" >nul 2>nul
 copy /Y "%~dp0launcher.vbs" "%BACKUP_PATH%\" >nul 2>nul
+
+:: Create custom start.bat for saves (points to shared_modules 2 levels up)
+(
+echo @echo off
+echo cd /d "%%~dp0"
+echo set "SHARED_MODULES=%%~dp0..\..\shared_modules"
+echo for /f "tokens=5" %%%%a in ^('netstat -aon ^^^| find ":4000" ^^^| find "LISTENING"'^) do taskkill /f /pid %%%%a ^>nul 2^>^&1
+echo cd app
+echo if not exist "%%SHARED_MODULES%%" mkdir "%%SHARED_MODULES%%"
+echo if not exist "node_modules\vite" ^(
+echo     if exist "node_modules" rmdir "node_modules" 2^>nul
+echo     mklink /J "node_modules" "%%SHARED_MODULES%%\node_modules"
+echo ^)
+echo if not exist "node_modules\vite" ^(
+echo     echo Installation des dependances...
+echo     npm install
+echo ^)
+echo npm run dev
+) > "%BACKUP_PATH%\start.bat"
 
 echo.
 echo ========================================
