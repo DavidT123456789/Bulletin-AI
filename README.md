@@ -121,4 +121,4 @@ MIT — Voir [LICENSE](./LICENSE)
 
 ---
 
-Développé avec ❤️ pour les enseignants par **David Trafial**
+Développé pour les enseignants par **David Trafial**
