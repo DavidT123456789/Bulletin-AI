@@ -1,0 +1,778 @@
+/* ====================================================================
+   NEBULA LAYOUT SYSTEM (FULL SCREEN - No Sidebar)
+   ==================================================================== */
+.app-layout {
+    display: grid;
+    /* Sidebar removed - full width main content */
+    grid-template-columns: 1fr;
+    grid-template-areas: "main";
+    gap: 0;
+    height: 100vh;
+    padding: 0;
+    background-color: var(--bg-color);
+    overflow: hidden;
+    position: relative;
+    transition: all var(--transition-base);
+}
+
+/* Sidebar styles removed - Hub Modal handles imports now */
+
+/* --- Main Content Area --- */
+.main-content-wrapper {
+    grid-area: main;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    /* Scroll fluide moderne */
+    scroll-behavior: smooth;
+    border-radius: 0;
+    /* Plein écran */
+}
+
+.main-content {
+    flex-grow: 1;
+    /* Ajustement des marges internes pour éviter l'effet "collé" */
+    padding: var(--space-6) var(--space-8) var(--space-12);
+    /* MAX-WIDTH RETIRÉ : Pleine largeur disponible */
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    /* Bento Grid Interne pour le contenu */
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.output-section {
+    margin: 0;
+    padding: 0;
+}
+
+.section-title {
+    font-size: var(--font-2xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.sub-section-title {
+    font-size: var(--font-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ====================================================================
+   en-tête (header) - Effet transparence moderne
+   ==================================================================== */
+.header {
+    flex-shrink: 0;
+    height: 64px;
+    /* Transparence prononcée - visible quand les cartes défilent dessous */
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-8);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+}
+
+/* Header Logo */
+.header-logo {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-logo img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* Header en mode sombre */
+[data-theme="dark"] .header {
+    background: rgba(17, 24, 39, 0.72);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+    /* pour centrer le sélecteur de période */
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#sidebarToggle {
+    margin-left: -8px;
+    /* ajuster la position */
+}
+
+#sidebarToggle i {
+    transition: transform var(--transition-base);
+}
+
+.app-layout.sidebar-collapsed #sidebarToggle i {
+    transform: rotate(180deg);
+}
+
+/* puce de contexte de la classe */
+.header-context-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    padding: 8px 16px;
+    font-size: var(--font-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+    /* bordure transparente par défaut */
+}
+
+.header-context-chip:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    /* couche transparente de la couleur primaire */
+    color: var(--primary-color);
+}
+
+.header-context-chip .icon {
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.header-context-chip:hover .icon {
+    color: var(--primary-color);
+}
+
+/* Chip spécifique pour le modèle IA */
+.ai-model-chip {
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.15));
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-model-chip .icon {
+    color: var(--primary-color);
+}
+
+.ai-model-chip:hover {
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.25));
+    border-color: var(--primary-color);
+}
+
+/* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
+.ai-model-chip.generating {
+    animation: none;
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.6) 0%,
+            rgba(var(--primary-color-rgb), 0.6) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.6) 32%,
+            rgba(var(--primary-color-rgb), 0.6) 50%,
+            rgba(var(--primary-color-rgb), 0.6) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.6) 82%,
+            rgba(var(--primary-color-rgb), 0.6) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 8s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
+        0 2px 12px rgba(var(--primary-color-rgb), 0.15);
+}
+
+/* Le pseudo-élément ::before n'est plus nécessaire pour l'effet fluide */
+.ai-model-chip.generating::before {
+    display: none;
+}
+
+/* Le pseudo-élément ::after n'est plus nécessaire pour l'effet fluide */
+.ai-model-chip.generating::after {
+    display: none;
+}
+
+/* État: Fallback activé - Flash orange avec glow */
+/* État: Fallback activé - Flash orange avec glow et shake */
+.ai-model-chip.fallback-active {
+    animation: switch-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.25));
+    border-color: #f59e0b;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+.ai-model-chip.fallback-active .icon {
+    color: #f59e0b;
+    transform: scale(1.1);
+    /* L'icône grossit un peu */
+    transition: transform var(--transition-base);
+}
+
+.ai-model-chip.fallback-active #headerAiModelName {
+    color: #d97706;
+    font-weight: 600;
+}
+
+@keyframes switch-shake {
+    0% {
+        transform: scale(1);
+    }
+
+    15% {
+        transform: scale(1.05) rotate(-2deg);
+    }
+
+    30% {
+        transform: scale(1.05) rotate(2deg);
+    }
+
+    45% {
+        transform: scale(1.05) rotate(-2deg);
+    }
+
+    60% {
+        transform: scale(1.05) rotate(1deg);
+    }
+
+    75% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Animation de changement de modèle (texte) */
+.ai-model-chip .model-name-transition {
+    display: inline-block;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    /* Transition "sharp" et rapide */
+}
+
+/* 1. L'ancien texte monte et disparaît */
+.ai-model-chip .exit-up {
+    opacity: 0;
+    transform: translateY(-15px);
+}
+
+/* 2. Le nouveau texte se prépare en bas */
+.ai-model-chip .enter-from-down {
+    opacity: 0;
+    transform: translateY(15px);
+}
+
+/* 3. Inverse: L'ancien texte descend et disparaît (pour le retour) */
+.ai-model-chip .exit-down {
+    opacity: 0;
+    transform: translateY(15px);
+}
+
+/* 4. Inverse: Le nouveau texte se prépare en haut (pour le retour) */
+.ai-model-chip .enter-from-up {
+    opacity: 0;
+    transform: translateY(-15px);
+}
+
+/* Badge indicateur de fallback */
+.ai-model-chip .fallback-indicator {
+    display: none;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border-radius: var(--radius-pill);
+    margin-left: 6px;
+    font-weight: 600;
+    animation: badge-appear 0.3s ease-out;
+}
+
+.ai-model-chip.fallback-active .fallback-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+@keyframes badge-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Texte du modèle avec fallback indicator */
+.ai-model-chip .model-text-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Badge coût de session */
+.session-cost-badge {
+    background: var(--success-color);
+    color: white;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    margin-left: 4px;
+}
+
+.session-cost-badge.has-cost {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* Badge d'erreur dans le header */
+.header-error-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    animation: pulse-error 2s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.header-error-badge:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    animation: none;
+}
+
+.header-error-badge:active {
+    transform: scale(0.98);
+}
+
+.header-error-badge i {
+    font-size: 12px;
+}
+
+@keyframes pulse-error {
+
+    0%,
+    100% {
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 2px 16px rgba(239, 68, 68, 0.5);
+    }
+}
+
+/* ====================================================================
+   Pilule segmentée pour actions système (Aide, Thème, Paramètres)
+   ==================================================================== */
+.header-actions-pill {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    gap: 2px;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.header-actions-pill:hover {
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background-color: var(--surface-color);
+}
+
+.pill-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-pill);
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.pill-segment:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.pill-segment:active {
+    transform: scale(0.92);
+    background-color: rgba(var(--primary-color-rgb), 0.15);
+}
+
+.pill-segment i {
+    font-size: var(--font-base);
+    transition: transform var(--transition-fast);
+}
+
+.pill-segment:hover i {
+    transform: scale(1.1);
+}
+
+/* Séparateurs subtils entre les segments */
+.pill-segment:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background-color: var(--border-color);
+    opacity: 0.6;
+    transition: opacity var(--transition-fast);
+}
+
+.header-actions-pill:hover .pill-segment:not(:last-child)::after {
+    opacity: 0;
+}
+
+/* État actif pour le toggle dark mode */
+.pill-segment.active {
+    background-color: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
+}
+
+/* ====================================================================
+   sidebar internals
+   ==================================================================== */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    /* Pour le pseudo-élément */
+
+    /* Le padding-top s'anime, le reste est fixe. */
+    padding: calc(24px * (1 - var(--header-progress, 0))) 24px 0;
+    /* La marge en bas est maintenant fixe pour garder un espace standard */
+    margin-bottom: 18px;
+    overflow: visible;
+    /* Permettre au gradient de déborder */
+
+    box-shadow: 0 2px 4px rgba(0, 0, 0, calc(0.05 * var(--header-progress, 0)));
+    background: none;
+    flex-shrink: 0;
+    transition: none;
+}
+
+
+.sidebar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* espacement logo-titre */
+}
+
+/* #appLogo {
+    height: calc(40px * (1 - var(--header-progress, 0)));
+    min-height: 0;
+    width: auto;
+    border-radius: var(--radius-pill);
+    opacity: calc(1 - var(--header-progress, 0));
+    transform: scale(calc(1 - 0.2 * var(--header-progress, 0)));
+    transition: none;
+    filter: brightness(0);
+}
+
+[data-theme="dark"] #appLogo {
+    filter: none;
+    opacity: 1;
+} */
+
+.sidebar .section-title {
+    font-size: var(--font-xl);
+    /* taille de titre de la maquette */
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.input-panels-wrapper {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: var(--space-5) var(--space-6) var(--space-6);
+    /* padding-top ajouté pour espacer de la bordure */
+    background: none;
+    border-top: 1px solid var(--border-color);
+    /* Bordure en haut comme en bas */
+}
+
+.sidebar-footer {
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-color);
+    background: var(--surface-color);
+    flex-shrink: 0;
+}
+
+/* Boutons du footer de saisie */
+.sidebar-footer .btn-secondary#resetFormBtn,
+.sidebar-footer .btn-secondary#clearImportBtn {
+    /* Bouton "Vider" plus discret */
+    font-size: 12px;
+    padding: 8px 12px;
+    opacity: 0.8;
+}
+
+.sidebar-footer .btn-secondary#resetFormBtn:hover,
+.sidebar-footer .btn-secondary#clearImportBtn:hover {
+    opacity: 1;
+}
+
+/* Groupement des boutons de génération */
+.generation-buttons-group {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.single-student-actions,
+.mass-import-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ====================================================================
+   Responsive Breakpoints
+   ==================================================================== */
+
+/* Tablette Large (max-width: 1200px) - Sidebar en overlay */
+@media (max-width: 1200px) {
+    .app-layout {
+        display: block;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: var(--sidebar-width);
+        max-width: 90%;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-out, visibility 0.3s;
+        z-index: var(--z-modal);
+        box-shadow: var(--shadow-lg);
+        visibility: hidden;
+    }
+
+    .app-layout:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    /* Overlay derrière la sidebar */
+    .app-layout:not(.sidebar-collapsed)::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-modal-backdrop);
+        pointer-events: auto;
+    }
+
+    .app-layout.sidebar-collapsed::before {
+        display: none;
+    }
+}
+
+/* Tablette (max-width: 1024px) */
+@media (max-width: 1024px) {
+    .main-content {
+        padding: var(--space-6) var(--space-6);
+    }
+
+    .header {
+        padding: 0 var(--space-6);
+    }
+}
+
+/* Tablette Small / Phablet (max-width: 768px) */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 85%;
+    }
+
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    /* Sur mobile, la sidebar est cachée par défaut */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--sidebar-width);
+        max-width: 400px;
+        height: 100vh;
+        z-index: var(--z-modal);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-out, visibility 0.3s;
+        visibility: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* Quand sidebar-collapsed est ABSENT (sidebar ouverte) */
+    .app-layout:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    /* Overlay derrière la sidebar - seulement visible quand sidebar ouverte */
+    .app-layout:not(.sidebar-collapsed)::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-modal-backdrop);
+        pointer-events: auto;
+        /* Allow clicking to close */
+    }
+
+    /* Quand sidebar est fermée (collapsed), pas d'overlay */
+    .app-layout.sidebar-collapsed::before {
+        display: none;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .header {
+        padding: 0 16px;
+        height: 56px;
+    }
+
+    .header-context-chip {
+        padding: 6px 12px;
+        font-size: var(--font-sm);
+    }
+
+    .section-title {
+        font-size: var(--font-xl);
+    }
+
+    .sub-section-title {
+        font-size: 1.1rem;
+    }
+
+    .input-panels-wrapper {
+        padding: 16px 16px 0;
+    }
+
+    .sidebar-footer {
+        padding: 16px;
+    }
+
+    /* Montrer le bouton toggle dans le header sur mobile */
+    #sidebarToggle {
+        display: flex !important;
+    }
+}
+
+/* Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px;
+    }
+
+    .header {
+        padding: 0 12px;
+        height: 52px;
+    }
+
+    .header-context-chip {
+        display: none;
+    }
+
+    .header-actions {
+        gap: 4px;
+    }
+
+    /* Pilule plus compacte sur mobile */
+    .header-actions-pill {
+        padding: 3px;
+    }
+
+    .pill-segment {
+        width: 32px;
+        height: 28px;
+    }
+
+    .pill-segment i {
+        font-size: var(--font-sm);
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .sub-section-title {
+        font-size: 1rem;
+    }
+
+    .input-panels-wrapper {
+        padding: 12px 12px 0;
+    }
+
+    .sidebar-footer {
+        padding: 12px;
+    }
+
+    .sidebar-header {
+        padding: calc(16px * (1 - var(--header-progress, 0))) 16px 0;
+        margin-bottom: 16px;
+    }
+
+    #appLogo {
+        height: calc(32px * (1 - var(--header-progress, 0)));
+    }
+
+    .sidebar .section-title {
+        font-size: 1.1rem;
+    }
+}

@@ -1,0 +1,356 @@
+/* ====================================================================
+   MODULE: Skeleton Loading
+   Squelettes de chargement animés pour un feedback visuel fluide
+   ==================================================================== */
+
+/* Animation shimmer pour l'effet de chargement */
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes skeleton-pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Base skeleton element */
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--bg-secondary) 0%,
+            var(--surface-color) 50%,
+            var(--bg-secondary) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+/* Centered loading state (Preview Lab, etc.) */
+.loading-state-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Skeleton text lines */
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: var(--radius-xs);
+}
+
+.skeleton-text.short {
+    width: 40%;
+}
+
+.skeleton-text.medium {
+    width: 70%;
+}
+
+.skeleton-text.long {
+    width: 90%;
+}
+
+/* Skeleton circle (avatar, icon) */
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+/* ====================================================================
+   SKELETON CARD - Carte élève en chargement
+   ==================================================================== */
+.skeleton-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.skeleton-card-header .skeleton-avatar {
+    width: 40px;
+    height: 40px;
+}
+
+.skeleton-card-header .skeleton-info {
+    flex: 1;
+}
+
+.skeleton-card-header .skeleton-name {
+    height: 18px;
+    width: 60%;
+    margin-bottom: 6px;
+}
+
+.skeleton-card-header .skeleton-badge {
+    height: 12px;
+    width: 30%;
+}
+
+.skeleton-card-body {
+    margin-bottom: 16px;
+}
+
+.skeleton-card-body .skeleton-text {
+    margin-bottom: 10px;
+}
+
+.skeleton-card-body .skeleton-text:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-card-footer {
+    display: flex;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.skeleton-card-footer .skeleton-button {
+    height: 32px;
+    width: 80px;
+    border-radius: var(--radius-sm);
+}
+
+/* ====================================================================
+   SKELETON STATS - Statistiques en chargement
+   ==================================================================== */
+.skeleton-stat-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.skeleton-stat-card .skeleton-title {
+    height: 12px;
+    width: 50%;
+    margin-bottom: 12px;
+}
+
+.skeleton-stat-card .skeleton-value {
+    height: 36px;
+    width: 40%;
+    margin-bottom: 8px;
+}
+
+.skeleton-stat-card .skeleton-bar {
+    height: 20px;
+    width: 100%;
+    border-radius: var(--radius-pill);
+}
+
+/* ====================================================================
+   SKELETON CONTAINER - Grid de skeletons
+   ==================================================================== */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+/* Animation d'entrée staggerée */
+.skeleton-card:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.skeleton-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.skeleton-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.skeleton-card:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.skeleton-card:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+.skeleton-card:nth-child(6) {
+    animation-delay: 0.5s;
+}
+
+/* ====================================================================
+   PROGRESSIVE SKELETON - Carte avec données réelles + skeleton texte
+   ==================================================================== */
+
+/* État de génération en cours sur vraie carte */
+.appreciation-result.is-generating {
+    position: relative;
+}
+
+.appreciation-result.is-generating [data-template="appreciation"] {
+    min-height: 80px;
+}
+
+/* Skeleton pour le texte d'appréciation uniquement */
+.appreciation-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    position: relative;
+    min-height: 80px;
+}
+
+.appreciation-skeleton .skeleton-line {
+    height: 14px;
+    border-radius: var(--radius-xs);
+    background: linear-gradient(90deg,
+            var(--bg-secondary) 0%,
+            rgba(var(--primary-color-rgb), 0.1) 50%,
+            var(--bg-secondary) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(1) {
+    width: 95%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(2) {
+    width: 88%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(3) {
+    width: 92%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(4) {
+    width: 75%;
+}
+
+/* Badge "Génération en cours" sur la carte - centré au milieu */
+.generating-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    transition: all var(--transition-base) ease;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+}
+
+/* État: En file d'attente */
+.generating-badge.pending {
+    background: linear-gradient(135deg, rgba(148, 163, 184, 0.12), rgba(100, 116, 139, 0.15));
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: var(--text-secondary);
+}
+
+.generating-badge.pending i {
+    opacity: 0.7;
+}
+
+/* État: Génération active */
+.generating-badge.active {
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.2));
+    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+    animation: badge-pulse 1.2s ease-in-out infinite;
+}
+
+.generating-badge.active i {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 8px 2px rgba(var(--primary-color-rgb), 0.15);
+    }
+}
+
+/* ====================================================================
+   TYPEWRITER EFFECT - Apparition progressive du texte
+   ==================================================================== */
+
+.typewriter-text {
+    display: block;
+    animation: typewriter-fadein 0.2s ease-out;
+    line-height: 1.6;
+}
+
+@keyframes typewriter-fadein {
+    from {
+        opacity: 0.5;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Curseur clignotant pendant la frappe (optionnel, ajouté via JS) */
+.typewriter-cursor::after {
+    content: '▋';
+    display: inline-block;
+    margin-left: 2px;
+    color: var(--primary-color);
+    animation: blink-cursor 0.6s step-end infinite;
+    font-weight: 400;
+}
+
+@keyframes blink-cursor {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* ====================================================================
+   Responsive
+   ==================================================================== */
+@media (max-width: 768px) {
+    .skeleton-grid {
+        grid-template-columns: 1fr;
+    }
+}

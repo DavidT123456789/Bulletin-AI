@@ -1,0 +1,29 @@
+{
+    "name": "Bulletin AI",
+    "short_name": "Bulletin AI",
+    "description": "Assistant intelligent pour la rédaction d'appréciations scolaires",
+    "start_url": "./app.html",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#6c5ce7",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "./assets/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "./assets/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "education",
+        "productivity"
+    ],
+    "lang": "fr"
+}

@@ -1,0 +1,431 @@
+/* ====================================================================
+   Custom Dropdown - Design Nebula Premium
+   Remplace les <select> natifs par des composants stylisables
+   ==================================================================== */
+
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+}
+
+/* === Trigger (bouton qui affiche la valeur sélectionnée) === */
+.custom-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12.5px 14.5px;
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    width: 100%;
+    text-align: left;
+}
+
+.custom-dropdown-trigger:hover:not(.disabled) {
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+.custom-dropdown.open .custom-dropdown-trigger {
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.custom-dropdown-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-dropdown-arrow {
+    color: var(--text-secondary);
+    font-size: 12px;
+    transition: transform var(--transition-fast);
+}
+
+.custom-dropdown.open .custom-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* === Liste déroulante (options) === */
+.custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    z-index: var(--z-dropdown);
+    max-height: 320px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: all var(--transition-fast);
+    padding: 6px;
+}
+
+/* En dark mode, ombre plus forte pour détacher le menu */
+[data-theme="dark"] .custom-dropdown-menu {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.custom-dropdown.open .custom-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* === Optgroup (groupe d'options) === */
+.custom-dropdown-group {
+    padding: 4px 0;
+}
+
+.custom-dropdown-group:not(:first-child) {
+    border-top: 1px solid var(--border-color);
+    margin-top: 4px;
+    padding-top: 8px;
+}
+
+.custom-dropdown-group-label {
+    padding: 8px 12px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* === Icônes des providers dans les labels de groupe === */
+.provider-icon {
+    font-size: 12px;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+}
+
+/* Google - Couleurs officielles multi-chromiques */
+.provider-google {
+    color: #4285F4;
+    /* Bleu Google */
+}
+
+/* OpenRouter gratuit - Accent primaire pour le "gratuit" */
+.provider-openrouter {
+    color: var(--success-color);
+}
+
+/* OpenRouter payant */
+.provider-openrouter-paid {
+    color: #f59e0b;
+    /* Orange/ambre */
+}
+
+/* OpenAI */
+.provider-openai {
+    color: #10a37f;
+    /* Vert OpenAI */
+}
+
+/* Ollama (local) */
+.provider-ollama {
+    color: var(--primary-color);
+}
+
+/* === Badges de suffix (GRATUIT, PAYANT, LOCAL) === */
+.provider-suffix {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    margin-left: auto;
+    letter-spacing: 0.3px;
+}
+
+.provider-suffix-gratuit {
+    background: rgba(var(--success-color-rgb), 0.15);
+    color: var(--success-color);
+}
+
+.provider-suffix-payant {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.provider-suffix-local {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+}
+
+/* Mode sombre - ajustements subtils */
+[data-theme="dark"] .provider-google {
+    color: #8ab4f8;
+    /* Bleu Google plus clair en dark mode */
+}
+
+[data-theme="dark"] .provider-openai {
+    color: #50d9a7;
+    /* Vert OpenAI plus clair */
+}
+
+
+/* === Options individuelles === */
+/* === Options individuelles === */
+.custom-dropdown-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+    margin-bottom: 2px;
+    /* Séparation pour effet "pilule" */
+    background: transparent;
+}
+
+.custom-dropdown-option:last-child {
+    margin-bottom: 0;
+}
+
+/* Hover harmonisé et coloré (Teinte primaire légère) */
+.custom-dropdown-option:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    /* Texte coloré au survol aussi pour plus de peps */
+}
+
+/* Sélection subtile et cohérente */
+.custom-dropdown-option.selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Focus clavier subtil - sans outline voyant */
+.custom-dropdown-option.focused {
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    /* Même que hover */
+    outline: none;
+}
+
+.custom-dropdown-option-check {
+    width: 16px;
+    color: var(--primary-color);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.custom-dropdown-option.selected .custom-dropdown-option-check {
+    opacity: 1;
+}
+
+/* === Scrollbar personnalisée === */
+.custom-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-xs);
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* === État disabled === */
+.custom-dropdown-trigger.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Options désactivées (modèles sans clé API) */
+.custom-dropdown-option.disabled {
+    opacity: 0.5;
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+    font-style: italic;
+    /* Note: pas de pointer-events: none pour permettre le survol et afficher le tooltip */
+}
+
+.custom-dropdown-option.disabled:hover {
+    background: none;
+    color: var(--text-tertiary);
+}
+
+/* Masquer le check sur les options désactivées */
+.custom-dropdown-option.disabled .custom-dropdown-option-check {
+    display: none;
+}
+
+/* === Placeholder === */
+.custom-dropdown-value.placeholder {
+    color: var(--text-secondary);
+}
+
+/* ====================================================================
+   Styles spécifiques pour le dropdown de tri (#sortSelect)
+   Harmonisé avec le style du menu contextuel (actions-dropdown)
+   ==================================================================== */
+
+/* Dropdown de tri : trigger plus compact */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-trigger {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 8px;
+    min-width: 120px;
+    height: 40px;
+    border-radius: var(--radius-md);
+}
+
+/* Dropdown de tri : menu harmonisé avec actions-dropdown */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-menu {
+    min-width: 140px;
+    padding: 4px;
+    /* Harmonisation avec actions-dropdown */
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+/* Dropdown de tri : options sans coche, plus compactes */
+/* Dropdown de tri : options sans coche, plus compactes */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option {
+    padding: 6px 12px;
+    /* Harmonisation global */
+    font-size: 13px;
+    gap: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast);
+}
+
+/* Hover harmonisé avec le global (Primary tint) */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+}
+
+/* Cacher la coche dans le dropdown de tri */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option-check {
+    display: none;
+}
+
+/* Sélection subtile, cohérente avec le design global */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Hover sur option sélectionnée */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected:hover {
+    background: rgba(var(--primary-color-rgb), 0.18);
+}
+
+/* Supprimer l'outline bleu voyant sur l'option focused */
+.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.focused {
+    outline: none;
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+}
+
+/* ====================================================================
+   Styles spécifiques pour le dropdown de chargement d'élève (#loadStudentSelect)
+   ==================================================================== */
+
+/* Dropdown élève sidebar : style par défaut suffit */
+.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-menu {
+    max-height: 280px;
+}
+
+/* Option "nouvel élève" en italique */
+.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-option[data-value=""] {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-option[data-value=""]:hover {
+    color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    /* Harmonisation */
+}
+
+/* ====================================================================
+   Styles spécifiques pour le dropdown de prévisualisation (#previewStudentSelect)
+   ==================================================================== */
+
+.custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-menu {
+    max-height: 320px;
+}
+
+/* Labels de groupe plus visibles */
+.custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
+    color: var(--primary-color);
+}
+
+/* ====================================================================
+   Styles spécifiques pour le dropdown de matière (#settingsSubjectSelect)
+   Enlever les overrides inutiles maintenant que le global est stylé
+   ==================================================================== */
+
+/* Cacher la coche dans le dropdown de matière */
+.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option-check {
+    display: none;
+}
+
+/* Options plus compactes (légèrement plus petit que le global si désiré, ou identique) */
+.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option {
+    padding: 6px 12px;
+    /* Identique au global pour cohérence */
+    font-size: 13px;
+    gap: 0;
+}
+
+/* Sélection (déjà géré par le global, mais on garde pour s'assurer que c'est bon) */
+.custom-dropdown[data-for="settingsSubjectSelect"] .custom-dropdown-option.selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    font-weight: 600;
+}

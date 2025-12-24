@@ -1,0 +1,2547 @@
+/**
+ * @fileoverview Focus Panel Manager - Gestion du panneau de détail élève
+ * Part of Liste + Focus UX Revolution
+ * @module managers/FocusPanelManager
+ */
+
+import { appState, userSettings } from '../state/State.js';
+import { DOM } from '../utils/DOM.js';
+import { Utils } from '../utils/Utils.js';
+import { UI } from './UIManager.js';
+import { StorageManager } from './StorageManager.js';
+import { AIService } from '../services/AIService.js';
+import { PromptService } from '../services/PromptService.js';
+import { ClassUIManager } from './ClassUIManager.js';
+import { ClassManager } from './ClassManager.js';
+
+/** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
+let AppreciationsManager = null;
+
+/**
+ * Module de gestion du Focus Panel (vue détaillée élève)
+ * @namespace FocusPanelManager
+ */
+export const FocusPanelManager = {
+    /** ID de l'élève actuellement affiché */
+    currentStudentId: null,
+
+    /** Index dans la liste filtrée */
+    currentIndex: -1,
+
+    /**
+     * Initialise le module avec les références nécessaires
+     * @param {Object} appreciationsManager - Référence à AppreciationsManager
+     */
+    init(appreciationsManager) {
+        AppreciationsManager = appreciationsManager;
+        this._setupEventListeners();
+    },
+
+    /**
+     * Configure les event listeners du Focus Panel
+     * @private
+     */
+    _setupEventListeners() {
+        if (this._listenersAttached) return;
+        this._listenersAttached = true;
+
+        // DOM elements
+        const panel = document.getElementById('focusPanel');
+        const backdrop = document.getElementById('focusPanelBackdrop');
+        const backBtn = document.getElementById('focusBackBtn');
+        const prevBtn = document.getElementById('focusPrevBtn');
+        const nextBtn = document.getElementById('focusNextBtn');
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        const copyBtn = document.getElementById('focusCopyBtn');
+
+        // Close panel
+        if (backdrop) backdrop.addEventListener('click', () => this.close());
+        if (backBtn) backBtn.addEventListener('click', () => this.close());
+
+        // Navigation
+        if (prevBtn) prevBtn.addEventListener('click', () => this.navigatePrev());
+        if (nextBtn) nextBtn.addEventListener('click', () => this.navigateNext());
+
+        // Generate
+        if (generateBtn) generateBtn.addEventListener('click', () => this.generate());
+
+        // Copy
+        if (copyBtn) copyBtn.addEventListener('click', () => this.copy());
+
+        // NEW: Header Edit Mode
+        const studentName = document.getElementById('focusStudentName');
+        const headerSaveBtn = document.getElementById('headerSaveBtn');
+
+        if (studentName) {
+            studentName.addEventListener('click', () => this._toggleHeaderEditMode(true));
+        }
+
+        if (headerSaveBtn) {
+            headerSaveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._toggleHeaderEditMode(false); // Validates and closes
+            });
+        }
+
+        const headerCancelBtn = document.getElementById('headerCancelBtn');
+        if (headerCancelBtn) {
+            headerCancelBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._toggleHeaderEditMode(false, true); // Cancel without saving
+            });
+        }
+
+        // NEW: Toggle Details (History Only)
+        const btnToggleDetails = document.getElementById('btnToggleDetails');
+        if (btnToggleDetails) {
+            btnToggleDetails.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._toggleRetractableDetails();
+            });
+        }
+
+        // Analyze button/page (Existing logic)
+        const analyzeBtn = document.getElementById('focusAnalyzeBtn');
+        if (analyzeBtn) analyzeBtn.addEventListener('click', () => this._showAnalysisPage());
+        const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
+        if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => this._hideAnalysisPage());
+        const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
+        if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => this._generateAnalysis());
+
+
+
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!this.isOpen()) return;
+            const activeEl = document.activeElement;
+            const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+
+            if (e.key === 'Escape') {
+                this.close();
+            } else if (e.key === 'ArrowLeft' && !isEditing) {
+                e.preventDefault();
+                this.navigatePrev();
+            } else if (e.key === 'ArrowRight' && !isEditing) {
+                e.preventDefault();
+                this.navigateNext();
+            }
+        });
+
+        // Refinement & Appreciation (Existing logic)
+        const refinementOptions = document.getElementById('focusRefinementOptions');
+        if (refinementOptions) {
+            refinementOptions.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-refine-type]');
+                if (btn) this._refineAppreciation(btn.dataset.refineType);
+            });
+        }
+
+        const appreciationText = document.getElementById('focusAppreciationText');
+        if (appreciationText) {
+            appreciationText.addEventListener('input', () => this._updateWordCount());
+            appreciationText.addEventListener('blur', () => {
+                const content = appreciationText.textContent?.trim();
+                if (content && !content.includes('Aucune appréciation')) this._pushToHistory(content);
+            });
+            appreciationText.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); this._undo(); }
+                    else if (e.key === 'z' && e.shiftKey || e.key === 'y') { e.preventDefault(); this._redo(); }
+                }
+            });
+        }
+
+        const historyIndicator = document.getElementById('focusHistoryIndicator');
+        if (historyIndicator) {
+            historyIndicator.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._showHistoryPopover();
+            });
+        }
+
+        // Note: FAB button (addStudentFab) is now handled by ImportWizardManager via the Hub
+
+        // Join Listener for Toggle
+        const studentNameEl = document.getElementById('focusStudentName');
+        if (studentNameEl) {
+            studentNameEl.addEventListener('click', () => this._toggleRetractableDetails());
+        }
+
+        // Context textarea
+        const contextInput = document.getElementById('focusContextInput');
+        if (contextInput) contextInput.addEventListener('input', () => this._autoResizeTextarea(contextInput));
+    },
+
+    /**
+     * Auto-resize textarea based on content
+     * @param {HTMLTextAreaElement} textarea - The textarea element
+     * @private
+     */
+    _autoResizeTextarea(textarea) {
+        if (!textarea) return;
+        // Reset to 1 row to allow full shrink
+        textarea.rows = 1;
+        // Reset height to auto to get correct scrollHeight
+        textarea.style.height = 'auto';
+        // Set to scrollHeight but respect max-height from CSS
+        const maxHeight = 200;
+        textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+    },
+    /** Creation mode flag */
+    isCreationMode: false,
+
+    /**
+     * Vérifie si le panel est ouvert
+     * @returns {boolean}
+     */
+    isOpen() {
+        const panel = document.getElementById('focusPanel');
+        return panel?.classList.contains('open') ?? false;
+    },
+
+    /**
+     * Ouvre le Focus Panel pour un élève
+     * @param {string} studentId - ID de l'élève
+     */
+    open(studentId) {
+        // IMPORTANT: Use generatedResults as source of truth (filteredResults contains shallow copies)
+        const result = appState.generatedResults.find(r => r.id === studentId);
+        if (!result) return;
+
+        this.currentStudentId = studentId;
+        this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
+
+        // Clear history for new student
+        this._clearHistory();
+
+        this._renderContent(result);
+        this._updateNavigation();
+
+        // Show panel
+        const panel = document.getElementById('focusPanel');
+        const backdrop = document.getElementById('focusPanelBackdrop');
+
+        if (panel) panel.classList.add('open');
+        if (backdrop) backdrop.classList.add('visible');
+
+        // Focus the panel for accessibility
+        panel?.focus();
+
+        // Auto-collapse details for existing student
+        this._toggleRetractableDetails(false);
+    },
+
+    /**
+     * Ouvre le Focus Panel en mode création (nouvel élève)
+     */
+    openNew() {
+        // GUARD: Require at least one class before creating students
+        const classes = ClassManager.getAllClasses();
+        if (classes.length === 0) {
+            UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
+            // Open class dropdown to guide user
+            ClassUIManager.openDropdown();
+            return;
+        }
+
+        this.isCreationMode = true;
+        this.currentStudentId = null;
+        this.currentIndex = -1;
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Create a dummy result for the new student
+        const dummyResult = {
+            id: null,
+            nom: 'NOUVEAU',
+            prenom: 'Élève',
+            studentData: {
+                statuses: [],
+                periods: {},
+                negativeInstructions: ''
+            },
+            appreciation: '',
+            isPending: false,
+            wasGenerated: false
+        };
+
+        // Initialize empty period data for current period
+        dummyResult.studentData.periods[currentPeriod] = {};
+
+        // Render the content using the standard method
+        this._renderContent(dummyResult);
+
+        // Show panel
+        const panel = document.getElementById('focusPanel');
+        const backdrop = document.getElementById('focusPanelBackdrop');
+        if (panel) panel.classList.add('open');
+        if (backdrop) backdrop.classList.add('visible');
+
+        // Enable Header Edit Mode (Identity + Statuses)
+        this._toggleHeaderEditMode(true);
+
+        // Clear history for fresh start
+        this._clearHistory();
+    },
+
+    /**
+     * Ferme le Focus Panel
+     */
+    close() {
+        const panel = document.getElementById('focusPanel');
+        const backdrop = document.getElementById('focusPanelBackdrop');
+
+        // Save context and identity changes before closing
+        this._saveContext();
+
+        if (panel) panel.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('visible');
+
+        // Close sidebar if open
+        this._toggleRetractableDetails(false); // Close modal if open
+
+        this.currentStudentId = null;
+        this.currentIndex = -1;
+        this.isCreationMode = false;
+    },
+
+    /**
+     * Toggles the retractable details section (History Only)
+     * @param {boolean} [forceState] - If true, force open. If false, force close.
+     */
+    _toggleRetractableDetails(forceState) {
+        const sidebar = document.getElementById('focusRetractableDetails');
+        if (!sidebar) return;
+
+        if (typeof forceState === 'boolean') {
+            if (forceState) sidebar.classList.add('open');
+            else sidebar.classList.remove('open');
+        } else {
+            sidebar.classList.toggle('open');
+        }
+    },
+
+    /**
+     * Render the compact history timeline in the retractable menu
+     */
+    /**
+     * Render the compact history timeline in the retractable menu
+     * Unified method for Read Mode (viewing) and Creation Mode (editing)
+     * @param {Object|null} studentData - Student data object (null in creation mode)
+     * @param {boolean} [isEditable=false] - Whether to render inputs for editing
+     */
+    _renderStudentDetailsTimeline(studentData, isEditable = false) {
+        const container = document.getElementById('studentDetailsTimeline');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const periods = Utils.getPeriods();
+        const currentPeriod = appState.currentPeriod;
+
+        // In creation/edit mode, we might want to filter out the current period
+        // or ensure we only show previous ones if that's the desired UX.
+        // But for consistency, let's show what we have.
+        // For Creation Mode: We usually only want to input PREVIOUS periods history.
+
+        periods.forEach(periodKey => {
+            // Skip current period in creation mode (it has its own input in main view)
+            if (isEditable && periodKey === currentPeriod) return;
+
+            let grade = '-';
+            let appreciation = '';
+
+            // Data Retrieval
+            if (isEditable) {
+                // Creation Mode: Get from temporary storage
+                if (!this._newStudentHistory) this._newStudentHistory = {};
+                const savedData = this._newStudentHistory[periodKey] || {};
+                grade = savedData.grade !== undefined ? savedData.grade : '';
+                appreciation = savedData.appreciation || '';
+            } else {
+                // Read Mode: Get from student object
+                const periodData = studentData?.studentData?.periods?.[periodKey] || {};
+                grade = periodData.grade !== undefined ? periodData.grade : '-';
+                appreciation = periodData.appreciation || '';
+            }
+
+            const shortPeriod = Utils.getPeriodLabel(periodKey, false);
+
+            const item = document.createElement('div');
+            item.className = 'timeline-compact-item';
+            if (isEditable) {
+                item.classList.add('editing');
+                // Remove the forced column layout to match read-only view's row layout
+                // However, we need to ensure the content area takes full width
+                // item.style.flexDirection = 'column'; // REMOVED
+                // item.style.alignItems = 'stretch';   // REMOVED
+            }
+
+            if (isEditable) {
+                // --- EDITABLE TEMPLATE ---
+                // Mirror the Read-Only Structure: Badge | Content
+                item.innerHTML = `
+                    <div class="timeline-compact-badge">${shortPeriod}</div>
+                    <div class="timeline-compact-content" style="width:100%;">
+                        <div class="timeline-compact-header" style="justify-content: space-between; margin-bottom: 8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-weight: 600; color: var(--text-primary);">Moyenne :</span>
+                                <input type="text" class="history-grade-input-creation" data-period="${periodKey}" 
+                                    value="${grade}" 
+                                    placeholder="--" style="width:50px; text-align:center; padding:4px; border:1px solid var(--border-color); border-radius:4px; background: var(--bg-primary);">
+                            </div>
+                        </div>
+                        <textarea class="history-appreciation-input-creation" data-period="${periodKey}"
+                            placeholder="Saisissez l'appréciation pour le trimestre ${shortPeriod}..." 
+                            style="width:100%; min-height:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:0.9rem; resize:vertical; background: var(--bg-primary); line-height: 1.5;">${appreciation}</textarea>
+                    </div>
+                `;
+            } else {
+                // --- READ-ONLY TEMPLATE ---
+                item.innerHTML = `
+                    <div class="timeline-compact-badge">${shortPeriod}</div>
+                    <div class="timeline-compact-content">
+                        <div class="timeline-compact-header">
+                            <span>Moyenne : ${grade}</span>
+                        </div>
+                        ${appreciation ? `<div class="timeline-compact-appreciation">"${appreciation}"</div>` : ''}
+                    </div>
+                `;
+            }
+            container.appendChild(item);
+        });
+
+        if (isEditable) {
+            // Add listeners to save data temporarily
+            container.querySelectorAll('.history-grade-input-creation').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const period = e.target.dataset.period;
+                    const val = e.target.value.replace(',', '.');
+                    if (!this._newStudentHistory[period]) this._newStudentHistory[period] = {};
+                    this._newStudentHistory[period].grade = val;
+                });
+            });
+
+            container.querySelectorAll('.history-appreciation-input-creation').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const period = e.target.dataset.period;
+                    if (!this._newStudentHistory[period]) this._newStudentHistory[period] = {};
+                    this._newStudentHistory[period].appreciation = e.target.value;
+                });
+            });
+        }
+    },
+
+    /**
+     * Toggles the Header Edit Mode (Identity + Statuses)
+     * @param {boolean} show - True to edit, False to save and view
+     * @param {boolean} [cancel=false] - If true, exit without saving
+     */
+    _toggleHeaderEditMode(show, cancel = false) {
+        const header = document.querySelector('.focus-header');
+        const readMode = document.querySelector('.focus-header-read');
+        const editMode = document.querySelector('.focus-header-edit');
+
+        if (!readMode || !editMode || !header) return;
+
+        if (show) {
+            // Enter Edit Mode
+            header.classList.add('editing');
+            readMode.classList.add('hidden');
+            editMode.classList.add('visible');
+
+            // Populate Inputs
+            const result = this.currentStudentId ? appState.filteredResults.find(r => r.id === this.currentStudentId) : null;
+            if (result) {
+                const nomInput = document.getElementById('headerNomInput');
+                const prenomInput = document.getElementById('headerPrenomInput');
+                if (nomInput) nomInput.value = result.nom;
+                if (prenomInput) prenomInput.value = result.prenom;
+
+                // Populate Statuses
+                const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
+                const currentStatuses = result.studentData.statuses || [];
+                checkboxes.forEach(cb => {
+                    cb.checked = currentStatuses.includes(cb.value);
+                });
+
+                // Focus Name
+                if (nomInput) setTimeout(() => nomInput.focus(), 100);
+            } else if (this.isCreationMode) {
+                // Clear Inputs for New Student
+                const nomInput = document.getElementById('headerNomInput');
+                const prenomInput = document.getElementById('headerPrenomInput');
+                if (nomInput) nomInput.value = '';
+                if (prenomInput) prenomInput.value = '';
+
+                // Uncheck all statuses
+                const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = false);
+
+                // Focus Name
+                if (nomInput) setTimeout(() => nomInput.focus(), 100);
+            }
+        } else {
+            // Exit Edit Mode
+            if (!cancel) {
+                this._saveHeaderChanges();
+            }
+
+            header.classList.remove('editing');
+            readMode.classList.remove('hidden');
+            editMode.classList.remove('visible');
+        }
+    },
+
+    /**
+     * Saves changes made in the Header Edit Mode
+     */
+    /**
+     * Saves changes made in the Header Edit Mode
+     */
+    _saveHeaderChanges() {
+        const nomInput = document.getElementById('headerNomInput');
+        const prenomInput = document.getElementById('headerPrenomInput');
+
+        // Validation basic
+        if ((!nomInput?.value?.trim() && !prenomInput?.value?.trim()) && this.isCreationMode) {
+            UI.showNotification('Veuillez entrer au moins un nom ou un prénom', 'warning');
+            return;
+        }
+
+        let result;
+
+        if (this.isCreationMode || !this.currentStudentId) {
+            // === CREATION MODE ===
+
+            // Generate new ID
+            const newId = 'student-' + Date.now(); // Simple ID generation
+
+            // Create new student structure
+            result = {
+                id: newId,
+                nom: nomInput.value.trim().toUpperCase() || 'NOUVEAU',
+                prenom: prenomInput.value.trim() || 'Élève',
+                // CRITICAL: Associate student with current class for multi-class support
+                classId: userSettings.academic.currentClassId || null,
+                studentData: {
+                    statuses: [],
+                    periods: {},
+                    negativeInstructions: ''
+                },
+                appreciation: '',
+                isPending: false,
+                wasGenerated: false
+            };
+
+            // Merge history if available
+            if (this._historyEdits) {
+                Object.entries(this._historyEdits).forEach(([period, data]) => {
+                    // Ensure structure exists
+                    if (!result.studentData.periods[period]) {
+                        result.studentData.periods[period] = {};
+                    }
+
+                    // Helper to parse grade
+                    const parseGrade = (val) => {
+                        if (!val && val !== 0 && val !== '0') return undefined; // allow undefined if empty
+                        const num = parseFloat(val.toString().replace(',', '.'));
+                        return isNaN(num) ? undefined : num;
+                    };
+
+                    const grade = parseGrade(data.grade);
+                    if (grade !== undefined) {
+                        result.studentData.periods[period].grade = grade;
+                    }
+                    // Only update appreciation if input was interacted with (or if we want to overwrite empty with empty? )
+                    // If data.appreciation is set, use it.
+                    if (data.appreciation !== undefined) {
+                        result.studentData.periods[period].appreciation = data.appreciation;
+                    }
+                });
+            }
+
+            // Ensure current period exists in structure
+            const currentPeriod = appState.currentPeriod;
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+
+            // Add to app state
+            appState.generatedResults.push(result);
+            appState.filteredResults.push(result); // Add to filtered list too
+
+            // Update tracking
+            this.currentStudentId = newId;
+            this.currentIndex = appState.filteredResults.length - 1;
+
+            // Cleanup creation specific items
+            this._historyEdits = null;
+            this.isCreationMode = false;
+
+            UI.showNotification('Élève créé avec succès', 'success');
+
+            // CRITICAL: Update header student count after creation
+            ClassUIManager.updateStudentCount();
+
+        } else {
+            // === EDIT MODE (Existing) ===
+            // CRITICAL FIX: Use generatedResults as source of truth
+            result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+            if (!result) return;
+
+            // 1. Save Identity
+            if (nomInput) result.nom = nomInput.value.trim() || result.nom;
+            if (prenomInput) result.prenom = prenomInput.value.trim() || result.prenom;
+
+            // 1b. Save History Edits (if any)
+            if (this._historyEdits) {
+                Object.entries(this._historyEdits).forEach(([period, data]) => {
+                    if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
+
+                    const parseGrade = (val) => {
+                        if (!val && val !== 0 && val !== '0') return undefined;
+                        const num = parseFloat(val.toString().replace(',', '.'));
+                        return isNaN(num) ? undefined : num;
+                    };
+
+                    if (data.grade !== undefined) {
+                        const grade = parseGrade(data.grade);
+                        if (grade !== undefined) result.studentData.periods[period].grade = grade;
+                    }
+                    if (data.appreciation !== undefined) {
+                        result.studentData.periods[period].appreciation = data.appreciation;
+                    }
+                });
+                // Cleanup
+                this._historyEdits = null;
+            }
+        }
+
+        // 2. Save Statuses (Common for both)
+        const editMode = document.querySelector('.focus-header-edit');
+        if (editMode) {
+            const checkedBoxes = editMode.querySelectorAll('input[type="checkbox"]:checked');
+            result.studentData.statuses = Array.from(checkedBoxes).map(cb => cb.value);
+        }
+
+        // 3. Persist
+        StorageManager.saveAppState();
+
+        // 4. Update View
+        this._updateHeaderName();
+        this._renderStatusBadges(result.studentData.statuses);
+
+        // Render history grades again to show the newly added history
+        this._renderStudentDetailsTimeline(result.studentData);
+        this._updateNavigation();
+
+        // 5. Sync with Main List
+        this._updateListRow(result);
+
+        if (!this.isCreationMode) {
+            UI.showNotification('Modifications enregistrées', 'success');
+        }
+    },
+
+    /**
+     * Navigue vers l'élève précédent avec animation
+     */
+    navigatePrev() {
+        if (this.currentIndex <= 0) return;
+        this._navigateWithAnimation('prev');
+    },
+
+    /**
+     * Navigue vers l'élève suivant avec animation
+     */
+    navigateNext() {
+        if (this.currentIndex >= appState.filteredResults.length - 1) return;
+        this._navigateWithAnimation('next');
+    },
+
+    /**
+     * Navigation avec animation de transition
+     * @param {'prev'|'next'} direction - Direction de navigation
+     * @private
+     */
+    _navigateWithAnimation(direction) {
+        const isAnalysisVisible = this._isAnalysisPageVisible();
+        const content = isAnalysisVisible
+            ? document.querySelector('.focus-analysis-content-area')
+            : document.querySelector('.focus-main-page .focus-content');
+
+        if (!content) {
+            // Fallback sans animation
+            this._saveContext();
+            const targetIndex = direction === 'prev' ? this.currentIndex - 1 : this.currentIndex + 1;
+            const targetResult = appState.filteredResults[targetIndex];
+            if (targetResult) this.open(targetResult.id);
+            return;
+        }
+
+        // Classes d'animation basées sur la direction
+        const outClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
+        const inClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
+
+        // Animation de sortie
+        content.classList.add(outClass);
+
+        // Après l'animation de sortie, charger le nouveau contenu
+        setTimeout(() => {
+            content.classList.remove(outClass);
+
+            this._saveContext();
+            const targetIndex = direction === 'prev' ? this.currentIndex - 1 : this.currentIndex + 1;
+            const filteredResult = appState.filteredResults[targetIndex];
+
+            if (filteredResult) {
+                // IMPORTANT: Use generatedResults as source of truth
+                const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
+
+                this.currentStudentId = targetResult.id;
+                this.currentIndex = targetIndex;
+
+                // Clear history for new student
+                this._clearHistory();
+
+                this._renderContent(targetResult);
+                this._updateNavigation();
+
+                // If analysis page is visible, reset and repopulate for new student
+                if (isAnalysisVisible) {
+                    this._resetAnalysisSection();
+                    if (targetResult.strengthsWeaknesses || targetResult.nextSteps) {
+                        this._populateExistingAnalysis(targetResult);
+                    }
+                }
+
+                // Animation d'entrée
+                content.classList.add(inClass);
+                setTimeout(() => content.classList.remove(inClass), 320);
+            }
+        }, 280);
+    },
+
+    /**
+     * Génère l'appréciation pour l'élève courant
+     */
+    async generate() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        // Save current context before generating
+        this._saveContext();
+
+        // Get grade from focus panel
+        const gradeInput = document.querySelector('.timeline-period.current .timeline-grade-input');
+        const grade = gradeInput?.value.trim().replace(',', '.');
+
+        if (grade) {
+            const currentPeriod = appState.currentPeriod;
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+            result.studentData.periods[currentPeriod].grade = parseFloat(grade);
+        }
+
+        // Update generate button to loading
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        if (generateBtn) {
+            UI.showInlineSpinner(generateBtn);
+        }
+
+        // Clear history for fresh start
+        this._clearHistory();
+
+        // Show pending badge and skeleton loading in appreciation area
+        this._setAppreciationBadge('pending');
+        this._showAppreciationSkeleton();
+
+        const appreciationEl = document.getElementById('focusAppreciationText');
+
+        try {
+            // Use existing appreciation generation logic
+            const studentData = {
+                nom: result.nom,
+                prenom: result.prenom,
+                statuses: result.studentData.statuses || [],
+                negativeInstructions: result.studentData.periods?.[appState.currentPeriod]?.context || '',
+                periods: result.studentData.periods,
+                currentPeriod: appState.currentPeriod
+            };
+
+            const newResult = await AppreciationsManager.generateAppreciation(studentData);
+
+            // Update existing result
+            Object.assign(result, {
+                appreciation: newResult.appreciation,
+                evolutions: newResult.evolutions,
+                errorMessage: newResult.errorMessage,
+                timestamp: newResult.timestamp,
+                isPending: false,
+                wasGenerated: true // Mark as generated by AI
+            });
+
+            result.studentData.periods[appState.currentPeriod].appreciation = newResult.appreciation;
+
+            // Check if the result contains an error (quota exceeded, etc.)
+            if (newResult.errorMessage) {
+                // Show error state
+                if (appreciationEl) {
+                    appreciationEl.innerHTML = `<span class="error-text">${newResult.errorMessage}</span>`;
+                }
+                // Show error badge
+                this._setAppreciationBadge('error');
+                UI.showNotification(`Erreur : ${newResult.errorMessage}`, 'error');
+            } else if (appreciationEl && newResult.appreciation) {
+                // Clear skeleton and show text with typewriter effect
+                appreciationEl.classList.remove('focus-appreciation-empty');
+                await UI.typewriterReveal(appreciationEl, newResult.appreciation, { speed: 'fast' });
+
+                // Initialize history with generated appreciation
+                this._pushToHistory(newResult.appreciation);
+
+                // Show done badge
+                this._setAppreciationBadge('done');
+
+                // Update word count
+                this._updateWordCount();
+
+                // Enable copy button
+                const copyBtn = document.getElementById('focusCopyBtn');
+                if (copyBtn) copyBtn.disabled = false;
+
+                // Also update the list view
+                this._updateListRow(result);
+
+                UI.showNotification('Appréciation générée !', 'success');
+            }
+
+        } catch (error) {
+            console.error('Erreur génération:', error);
+            UI.showNotification(`Erreur : ${error.message}`, 'error');
+
+            // Show error state
+            if (appreciationEl) {
+                appreciationEl.innerHTML = `<span class="error-text">${error.message}</span>`;
+            }
+
+            // Show error badge
+            this._setAppreciationBadge('error');
+        } finally {
+            if (generateBtn) {
+                UI.hideInlineSpinner(generateBtn);
+            }
+        }
+    },
+
+    /**
+     * Show skeleton loading in appreciation area
+     * @private
+     */
+    _showAppreciationSkeleton() {
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        if (!appreciationEl) return;
+
+        appreciationEl.innerHTML = `<div class="appreciation-skeleton">
+            <div class="appreciation-skeleton-line"></div>
+            <div class="appreciation-skeleton-line"></div>
+            <div class="appreciation-skeleton-line"></div>
+        </div>`;
+    },
+
+    /**
+     * Copie l'appréciation dans le presse-papier
+     */
+    async copy() {
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result?.appreciation) return;
+
+        try {
+            await navigator.clipboard.writeText(result.appreciation);
+            UI.showNotification('Appréciation copiée !', 'success');
+        } catch (error) {
+            UI.showNotification('Erreur de copie', 'error');
+        }
+    },
+
+    /**
+     * Handle inline refinement of appreciation
+     * @param {string} type - polish, concise, detailed, etc.
+     * @param {HTMLElement} button - The button clicked
+     */
+    async _handleRefinement(type, button) {
+        const appText = document.getElementById('focusAppreciationText');
+        if (!appText) return;
+
+        const currentText = appText.innerText.trim();
+        if (!currentText || currentText.includes('cliquez sur "Générer"')) {
+            UI.showNotification('Générez d\'abord une appréciation', 'warning');
+            return;
+        }
+
+        // Show loading state
+        UI.showInlineSpinner(button);
+        const originalTextLength = currentText.length;
+        appText.style.opacity = '0.5';
+
+        try {
+            // Retrieve context if needed (from textfield or result)
+            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+            const context = result?.studentData?.periods?.[appState.currentPeriod]?.context || '';
+
+            const prompt = PromptService.getRefinementPrompt(type, currentText, context);
+            const resp = await AIService.callAIWithFallback(prompt);
+
+            let newText = resp.text.trim();
+            if (newText.startsWith('"') && newText.endsWith('"')) {
+                newText = newText.slice(1, -1);
+            }
+
+            // Apply new text with typewriter effect
+            appText.style.opacity = '1';
+            await UI.typewriterReveal(appText, newText, { speed: 'fast' });
+
+            // Save & History
+            this._pushToHistory(newText);
+            this._saveContext(); // Persist changes
+            this._updateWordCount();
+
+            UI.showNotification('Appréciation améliorée !', 'success');
+
+        } catch (error) {
+            console.error('Refinement error:', error);
+            UI.showNotification('Erreur lors du raffinement', 'error');
+            appText.style.opacity = '1';
+        } finally {
+            UI.hideInlineSpinner(button);
+        }
+    },
+
+    /**
+     * Rend le contenu du Focus Panel - "Ultima" Redesign
+     * Popule les éléments HTML existants au lieu de les remplacer
+     * @param {Object} result - Données de l'élève
+     * @private
+     */
+    _renderContent(result) {
+        const currentPeriod = appState.currentPeriod;
+
+        // Exit creation mode when viewing existing student
+        this.isCreationMode = false;
+
+        // === 1. HEADER: Student Name ===
+        const nameEl = document.getElementById('focusStudentName');
+        if (nameEl) {
+            nameEl.innerHTML = `${result.prenom} ${result.nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+        }
+
+        // === 2. HEADER: Status Badges ===
+        this._renderStatusBadges(result.studentData.statuses || []);
+
+        // === 3. CONTEXT CARD: Period Badge ===
+        const periodBadge = document.getElementById('focusContextPeriod');
+        if (periodBadge) {
+            periodBadge.textContent = Utils.getPeriodLabel(currentPeriod, false);
+        }
+
+        // === 4. CONTEXT CARD: Previous Grades ===
+        const prevGradesEl = document.getElementById('focusPreviousGrades');
+        if (prevGradesEl) {
+            prevGradesEl.innerHTML = '';
+            const periods = Utils.getPeriods();
+            const currentIdx = periods.indexOf(currentPeriod);
+
+            periods.forEach((period, idx) => {
+                if (idx >= currentIdx) return; // Only past periods
+                const periodData = result.studentData.periods?.[period] || {};
+                const grade = periodData.grade;
+                if (grade !== undefined && grade !== null) {
+                    const chip = document.createElement('span');
+                    chip.className = 'previous-grade-chip';
+                    chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)}:</span> <span class="prev-grade-value">${parseFloat(grade).toFixed(1).replace('.', ',')}</span>`;
+                    prevGradesEl.appendChild(chip);
+                }
+            });
+        }
+
+        // === 5. CONTEXT CARD: Current Grade Input ===
+        const gradeInput = document.getElementById('focusCurrentGradeInput');
+        if (gradeInput) {
+            const currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
+            gradeInput.value = (currentGrade !== undefined && currentGrade !== null)
+                ? parseFloat(currentGrade).toFixed(1).replace('.', ',')
+                : '';
+
+            // Add input listener for grade changes
+            gradeInput.oninput = () => {
+                const val = gradeInput.value.replace(',', '.');
+                const grade = parseFloat(val);
+                if (!isNaN(grade) && this.currentStudentId) {
+                    const r = appState.generatedResults.find(r => r.id === this.currentStudentId);
+                    if (r) {
+                        if (!r.studentData.periods[currentPeriod]) {
+                            r.studentData.periods[currentPeriod] = {};
+                        }
+                        r.studentData.periods[currentPeriod].grade = grade;
+                    }
+                }
+            };
+        }
+
+        // === 6. CONTEXT CARD: Context Textarea ===
+        const contextInput = document.getElementById('focusContextInput');
+        if (contextInput) {
+            const context = result.studentData.periods?.[currentPeriod]?.context || result.studentData.negativeInstructions || '';
+            contextInput.value = context;
+            this._autoResizeTextarea(contextInput);
+        }
+
+        // === 7. APPRECIATION CARD: Text Content ===
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        if (appreciationEl) {
+            if (result.appreciation) {
+                // Decode HTML entities and strip tags for clean display
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = result.appreciation;
+                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+                appreciationEl.textContent = cleanText;
+                appreciationEl.classList.remove('focus-appreciation-empty');
+                appreciationEl.classList.add('filled');
+            } else {
+                appreciationEl.innerHTML = '<span class="focus-appreciation-empty">Aucune appréciation générée. Cliquez sur "Générer" ci-dessous.</span>';
+                appreciationEl.classList.remove('filled');
+            }
+            this._updateWordCount();
+        }
+
+        // === 8. FOOTER: Generate Button Period ===
+        const genPeriodSpan = document.getElementById('focusGeneratePeriod');
+        if (genPeriodSpan) {
+            genPeriodSpan.textContent = Utils.getPeriodLabel(currentPeriod, false);
+        }
+
+        // === 9. Copy Button State ===
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (copyBtn) {
+            copyBtn.disabled = !result.appreciation;
+        }
+
+        // === 10. Render History Timeline in Retractable Panel ===
+        this._renderStudentDetailsTimeline(result.studentData);
+    },
+
+    /**
+     * Rend les badges de statut
+     * @param {Array} statuses - Liste des statuts
+     * @private
+     */
+    _renderStatusBadges(statuses) {
+        const container = document.getElementById('focusStatusBadges');
+        if (!container) return;
+
+        container.innerHTML = statuses.map(s => {
+            const badgeInfo = Utils.getStatusBadgeInfo(s);
+            // Use tag-badge style instead of status-pill for consistency
+            return `<span class="${badgeInfo.className}">${badgeInfo.label}</span>`;
+        }).join('');
+    },
+
+    /**
+     * Met à jour les boutons de navigation
+     * @private
+     */
+    _updateNavigation() {
+        const prevBtn = document.getElementById('focusPrevBtn');
+        const nextBtn = document.getElementById('focusNextBtn');
+        const positionEl = document.getElementById('focusPosition');
+
+        if (prevBtn) prevBtn.disabled = this.currentIndex <= 0;
+        if (nextBtn) nextBtn.disabled = this.currentIndex >= appState.filteredResults.length - 1;
+        if (positionEl) positionEl.textContent = `${this.currentIndex + 1}/${appState.filteredResults.length}`;
+    },
+
+    /**
+     * Sauvegarde le contexte avant de quitter
+     * @private
+     */
+    _saveContext() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        const contextInput = document.getElementById('focusContextInput');
+        if (contextInput) {
+            const currentPeriod = appState.currentPeriod;
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+            result.studentData.periods[currentPeriod].context = contextInput.value.trim();
+        }
+
+        // Save grade
+        const gradeInput = document.querySelector('.timeline-period.current .timeline-grade-input');
+        if (gradeInput) {
+            const gradeStr = gradeInput.value.trim().replace(',', '.');
+            const currentPeriod = appState.currentPeriod;
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+            result.studentData.periods[currentPeriod].grade = gradeStr === '' ? null : parseFloat(gradeStr);
+        }
+
+        // Save appreciation text (Critical fix for manual edits)
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        if (appreciationEl && !appreciationEl.classList.contains('focus-appreciation-empty')) {
+            const content = appreciationEl.innerHTML;
+            if (content && content.trim() !== '') {
+                result.appreciation = content;
+                // Sync with period data
+                const currentPeriod = appState.currentPeriod;
+                if (!result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod] = {};
+                }
+                result.studentData.periods[currentPeriod].appreciation = content;
+                result.isPending = false;
+            }
+        }
+
+        // Persist to storage
+        StorageManager.saveAppState();
+    },
+
+    /**
+     * Met à jour une ligne dans la vue liste
+     * @param {Object} result - Données de l'élève
+     * @private
+     */
+    _updateListRow(result) {
+        // Will be implemented when ListView is created
+        // For now, trigger a full re-render
+        if (AppreciationsManager?.renderResults) {
+            AppreciationsManager.renderResults();
+        }
+    },
+
+    /**
+     * Update word count display
+     * @private
+     */
+    _updateWordCount() {
+        const appreciationText = document.getElementById('focusAppreciationText');
+        const wordCountEl = document.getElementById('focusWordCount');
+
+        if (appreciationText && wordCountEl) {
+            const text = appreciationText.textContent || '';
+
+            // Don't count placeholder text
+            if (text.includes('Aucune appréciation') || appreciationText.classList.contains('focus-appreciation-empty')) {
+                wordCountEl.textContent = '0 mots';
+                if (wordCountEl._tippy) {
+                    wordCountEl._tippy.destroy(); // Remove tooltip if empty
+                }
+                wordCountEl.removeAttribute('data-tooltip');
+                return;
+            }
+
+            const words = Utils.countWords(text);
+            const charCount = Utils.countCharacters(text);
+
+            wordCountEl.textContent = `${words} mot${words !== 1 ? 's' : ''}`;
+            UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
+        }
+    },
+
+    /**
+     * History system for appreciation undo/redo
+     * @private
+     */
+    _appreciationHistory: {
+        versions: [],
+        currentIndex: -1,
+        maxVersions: 10
+    },
+
+    /**
+     * Push current appreciation to history before making changes
+     * @param {string} content - The content to save
+     * @private
+     */
+    _pushToHistory(content) {
+        if (!content || content.includes('Aucune appréciation')) return;
+
+        const history = this._appreciationHistory;
+
+        // If we're not at the end, truncate future versions
+        if (history.currentIndex < history.versions.length - 1) {
+            history.versions = history.versions.slice(0, history.currentIndex + 1);
+        }
+
+        // Don't add if same as last version
+        const lastVersion = history.versions[history.versions.length - 1];
+        if (lastVersion === content) return;
+
+        // Add new version
+        history.versions.push(content);
+
+        // Limit to max versions
+        if (history.versions.length > history.maxVersions) {
+            history.versions.shift();
+        }
+
+        history.currentIndex = history.versions.length - 1;
+        this._updateHistoryIndicator();
+    },
+
+    /**
+     * Check if undo is available
+     * @returns {boolean}
+     * @private
+     */
+    _canUndo() {
+        return this._appreciationHistory.currentIndex > 0;
+    },
+
+    /**
+     * Check if redo is available
+     * @returns {boolean}
+     * @private
+     */
+    _canRedo() {
+        const history = this._appreciationHistory;
+        return history.currentIndex < history.versions.length - 1;
+    },
+
+    /**
+     * Undo to previous version with iOS-style animation
+     * @private
+     */
+    _undo() {
+        if (!this._canUndo()) return;
+
+        this._appreciationHistory.currentIndex--;
+        const content = this._appreciationHistory.versions[this._appreciationHistory.currentIndex];
+        this._animateVersionChange(content, 'backward');
+    },
+
+    /**
+     * Redo to next version with iOS-style animation
+     * @private
+     */
+    _redo() {
+        if (!this._canRedo()) return;
+
+        this._appreciationHistory.currentIndex++;
+        const content = this._appreciationHistory.versions[this._appreciationHistory.currentIndex];
+        this._animateVersionChange(content, 'forward');
+    },
+
+    /**
+     * Sync appreciation content to the result object
+     * @param {string} content - The appreciation content
+     * @private
+     */
+    _syncAppreciationToResult(content) {
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (result) {
+            result.appreciation = content;
+            if (result.studentData?.periods?.[appState.currentPeriod]) {
+                result.studentData.periods[appState.currentPeriod].appreciation = content;
+            }
+        }
+    },
+
+    /**
+     * Clear history when switching students
+     * @private
+     */
+    _clearHistory() {
+        this._appreciationHistory = {
+            versions: [],
+            currentIndex: -1,
+            maxVersions: 10
+        };
+        this._updateHistoryIndicator();
+    },
+
+    /**
+     * Update the history indicator UI
+     * @private
+     */
+    _updateHistoryIndicator() {
+        const indicator = document.getElementById('focusHistoryIndicator');
+        if (!indicator) return;
+
+        const history = this._appreciationHistory;
+        const modifCount = history.versions.length - 1; // Exclude initial version
+
+        if (modifCount > 0) {
+            indicator.style.display = 'inline-flex';
+            const countEl = indicator.querySelector('.history-count');
+            if (countEl) {
+                countEl.textContent = modifCount;
+            }
+            indicator.setAttribute('data-tooltip', `${modifCount} modification${modifCount > 1 ? 's' : ''} • Ctrl+Z pour annuler`);
+        } else {
+            indicator.style.display = 'none';
+        }
+    },
+
+    /**
+     * Show history popover with all versions
+     * @private
+     */
+    _showHistoryPopover() {
+        const history = this._appreciationHistory;
+        if (history.versions.length <= 1) return;
+
+        // Remove existing popover
+        const existingPopover = document.getElementById('historyPopover');
+        if (existingPopover) existingPopover.remove();
+
+        // Create popover
+        const popover = document.createElement('div');
+        popover.id = 'historyPopover';
+        popover.className = 'history-popover';
+
+        let html = '<div class="history-popover-title">Historique des modifications</div>';
+        html += '<div class="history-popover-list">';
+
+        // Show versions in reverse order (newest first)
+        for (let i = history.versions.length - 1; i >= 0; i--) {
+            const version = history.versions[i];
+            const preview = version.substring(0, 80) + (version.length > 80 ? '...' : '');
+            const isCurrent = i === history.currentIndex;
+            const label = i === 0 ? 'Original' : `Modif. ${i}`;
+
+            html += `
+                <div class="history-version-item ${isCurrent ? 'current' : ''}" data-index="${i}">
+                    <span class="history-version-label">${label}</span>
+                    <span class="history-version-preview">${preview}</span>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        popover.innerHTML = html;
+
+        // Position near the indicator
+        const indicator = document.getElementById('focusHistoryIndicator');
+        if (indicator) {
+            const rect = indicator.getBoundingClientRect();
+            popover.style.position = 'fixed';
+            popover.style.top = `${rect.bottom + 8}px`;
+            popover.style.right = `${window.innerWidth - rect.right}px`;
+        }
+
+        document.body.appendChild(popover);
+
+        // Add click handlers
+        popover.querySelectorAll('.history-version-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index, 10);
+                this._restoreVersion(index);
+                popover.remove();
+            });
+        });
+
+        // Close on outside click
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!popover.contains(e.target)) {
+                    popover.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 100);
+    },
+
+    /**
+     * Restore a specific version from history with iOS-style animation
+     * @param {number} index - Version index
+     * @private
+     */
+    _restoreVersion(index) {
+        const history = this._appreciationHistory;
+        if (index < 0 || index >= history.versions.length) return;
+
+        const direction = index < history.currentIndex ? 'backward' : 'forward';
+        history.currentIndex = index;
+        const content = history.versions[index];
+        this._animateVersionChange(content, direction);
+    },
+
+    /**
+     * Animate version change with smooth iOS 2025 premium transition
+     * Uses blur + scale + fade for a polished, fluid experience
+     * @param {string} content - The new content to display
+     * @param {'forward'|'backward'} direction - Animation direction
+     * @private
+     */
+    _animateVersionChange(content, direction = 'forward') {
+        const appreciationText = document.getElementById('focusAppreciationText');
+        if (!appreciationText) return;
+
+        // Prevent multiple simultaneous animations
+        if (appreciationText.classList.contains('history-animating')) return;
+        appreciationText.classList.add('history-animating');
+
+        // Apply exit animation
+        const exitClass = direction === 'backward' ? 'history-exit-forward' : 'history-exit-backward';
+        const enterClass = direction === 'backward' ? 'history-enter-backward' : 'history-enter-forward';
+
+        appreciationText.classList.add(exitClass);
+
+        // After exit animation, update content and animate back in
+        setTimeout(() => {
+            appreciationText.classList.remove(exitClass);
+            appreciationText.textContent = content;
+            appreciationText.classList.add(enterClass);
+
+            // Update UI state
+            this._updateWordCount();
+            this._updateHistoryIndicator();
+            this._syncAppreciationToResult(content);
+
+            // Clean up
+            setTimeout(() => {
+                appreciationText.classList.remove(enterClass, 'history-animating');
+            }, 280);
+        }, 180);
+    },
+
+    /**
+     * Set appreciation badge state
+     * @param {'pending'|'done'|'error'|'none'} state - Badge state
+     * @private
+     */
+    _setAppreciationBadge(state) {
+        const badge = document.getElementById('focusAppreciationBadge');
+        if (!badge) return;
+
+        // Reset classes
+        badge.className = 'appreciation-status-badge';
+
+        if (state === 'none') {
+            // Hide badge
+            return;
+        }
+
+        badge.classList.add('visible', state);
+
+        // Set icon based on state
+        switch (state) {
+            case 'pending':
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                break;
+            case 'done':
+                badge.innerHTML = '<i class="fas fa-check"></i>';
+                break;
+            case 'error':
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+        }
+    },
+
+    /**
+     * Apply a refinement style to the appreciation
+     * @param {string} refineType - Type of refinement (concise, detailed, encouraging, variations, polish)
+     * @private
+     */
+    async _refineAppreciation(refineType) {
+        const appreciationText = document.getElementById('focusAppreciationText');
+        if (!appreciationText) return;
+
+        const currentText = appreciationText.textContent?.trim();
+        if (!currentText || currentText.includes('Aucune appréciation')) {
+            UI.showNotification('Générez d\'abord une appréciation', 'info');
+            return;
+        }
+
+        // Save current state to history before refinement
+        this._pushToHistory(currentText);
+
+        // Find the refine button and show loading
+        const btn = document.querySelector(`[data-refine-type="${refineType}"]`);
+        if (btn) {
+            btn.disabled = true;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            // Show pending badge during refinement
+            this._setAppreciationBadge('pending');
+
+            try {
+                // Use VariationsManager to apply refinement
+                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+                if (!result) return;
+
+                // Import VariationsManager dynamically
+                const { VariationsManager } = await import('./VariationsManager.js');
+                const refined = await VariationsManager.applyRefinement(currentText, refineType);
+
+                if (refined) {
+                    // Effet typewriter pour afficher le nouveau texte
+                    await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
+                    this._updateWordCount();
+
+                    // Push refined version to history
+                    this._pushToHistory(refined);
+
+                    // Save to result
+                    result.appreciation = refined;
+                    result.wasGenerated = true; // Mark as AI-generated
+                    const currentPeriod = appState.currentPeriod;
+                    if (result.studentData.periods[currentPeriod]) {
+                        result.studentData.periods[currentPeriod].appreciation = refined;
+                    }
+
+                    // Show done badge after successful refinement
+                    this._setAppreciationBadge('done');
+
+                    UI.showNotification('Appréciation raffinée !', 'success');
+                }
+            } catch (error) {
+                console.error('Refinement error:', error);
+                UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
+                // Show error badge on failure
+                this._setAppreciationBadge('error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+    },
+
+    /**
+     * Save appreciation edits to result
+     * @private
+     */
+    _saveAppreciationEdits() {
+        if (!this.currentStudentId) return;
+
+        const appreciationText = document.getElementById('focusAppreciationText');
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+
+        if (appreciationText && result) {
+            const text = appreciationText.textContent?.trim();
+            if (text && !text.includes('Aucune appréciation')) {
+                result.appreciation = text;
+                const currentPeriod = appState.currentPeriod;
+                if (result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod].appreciation = text;
+                }
+            }
+        }
+    },
+
+    /**
+     * Toggle identity editing section accordion
+     * @private
+     */
+    _toggleIdentitySection() {
+        const content = document.getElementById('focusIdentityContent');
+        if (!content) return;
+
+        const isExpanded = content.classList.contains('expanded');
+
+        if (isExpanded) {
+            this._closeIdentitySection();
+        } else {
+            this._openIdentitySection();
+        }
+    },
+
+    /**
+     * Open identity editing section
+     * @private
+     */
+    _openIdentitySection() {
+        const content = document.getElementById('focusIdentityContent');
+        const toggle = document.getElementById('focusIdentityToggle');
+        const nameEl = document.getElementById('focusStudentName');
+
+        // Store original values for potential revert
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (result) {
+            this._originalIdentity = {
+                nom: result.nom,
+                prenom: result.prenom,
+                statuses: [...(result.studentData.statuses || [])]
+            };
+        }
+
+        if (content) {
+            content.classList.add('expanded');
+        }
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+        if (nameEl) {
+            nameEl.classList.add('editing');
+        }
+    },
+
+    /**
+     * Close identity editing section
+     * @private
+     */
+    _closeIdentitySection() {
+        const content = document.getElementById('focusIdentityContent');
+        const toggle = document.getElementById('focusIdentityToggle');
+        const nameEl = document.getElementById('focusStudentName');
+
+        if (content) {
+            content.classList.remove('expanded');
+        }
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+        if (nameEl) {
+            nameEl.classList.remove('editing');
+        }
+    },
+
+    /**
+     * Revert identity changes to original values (for cancel)
+     * @private
+     */
+    _revertIdentityChanges() {
+        if (!this._originalIdentity) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        // Restore original values
+        result.nom = this._originalIdentity.nom;
+        result.prenom = this._originalIdentity.prenom;
+        result.studentData.statuses = [...this._originalIdentity.statuses];
+
+        // Restore periods (grades)
+        if (this._originalIdentity.periods) {
+            result.studentData.periods = JSON.parse(JSON.stringify(this._originalIdentity.periods));
+        }
+
+        // Update form fields to show original values
+        const nomInput = document.getElementById('focusNomInput');
+        const prenomInput = document.getElementById('focusPrenomInput');
+        if (nomInput) nomInput.value = this._originalIdentity.nom || '';
+        if (prenomInput) prenomInput.value = this._originalIdentity.prenom || '';
+
+        // Update checkboxes
+        document.querySelectorAll('#focusStatusPills input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = this._originalIdentity.statuses.includes(checkbox.value);
+        });
+
+        // Update header display
+        const nameEl = document.getElementById('focusStudentName');
+        if (nameEl) {
+            nameEl.innerHTML = `${this._originalIdentity.prenom} ${this._originalIdentity.nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+        }
+
+        // Update badges
+        this._renderStatusBadges(this._originalIdentity.statuses);
+
+        this._originalIdentity = null;
+    },
+
+    /**
+     * Update header name display from identity inputs (real-time)
+     * @private
+     */
+    _updateHeaderName() {
+        const nomInput = document.getElementById('focusNomInput');
+        const prenomInput = document.getElementById('focusPrenomInput');
+        const nameEl = document.getElementById('focusStudentName');
+
+        if (!nameEl || !nomInput || !prenomInput) return;
+
+        const nom = nomInput.value.trim().toUpperCase() || '...';
+        const prenom = prenomInput.value.trim() || '...';
+        // Preserve the edit icon
+        nameEl.innerHTML = `${prenom} ${nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+    },
+
+    /**
+     * Save identity changes (name and statuses) to result
+     * @private
+     */
+    _saveIdentityChanges() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        // Save name changes
+        const nomInput = document.getElementById('focusNomInput');
+        const prenomInput = document.getElementById('focusPrenomInput');
+
+        if (nomInput?.value?.trim()) {
+            result.nom = nomInput.value.trim().toUpperCase();
+        }
+        if (prenomInput?.value?.trim()) {
+            result.prenom = prenomInput.value.trim();
+        }
+
+        // Save status changes
+        const statusCheckboxes = document.querySelectorAll('#focusStatusPills input[type="checkbox"]:checked');
+        const statuses = Array.from(statusCheckboxes).map(cb => cb.value);
+        result.studentData.statuses = statuses;
+
+        // 1. Save Current Period Grade (from single input in Context header)
+        const currentPeriod = appState.currentPeriod;
+        const currentGradeInput = document.getElementById('focusCurrentGradeInput');
+        if (currentGradeInput) {
+            const gradeStr = currentGradeInput.value.trim().replace(',', '.');
+            const grade = gradeStr === '' ? null : parseFloat(gradeStr);
+
+            if (!result.studentData.periods[currentPeriod]) {
+                result.studentData.periods[currentPeriod] = {};
+            }
+            result.studentData.periods[currentPeriod].grade = grade;
+        }
+
+        // 2. Save Past Grades (from inputs in History header)
+        const historyInputs = document.querySelectorAll('.history-grade-input');
+        historyInputs.forEach(input => {
+            const period = input.dataset.period;
+            if (period) {
+                const gradeStr = input.value.trim().replace(',', '.');
+                const grade = gradeStr === '' ? null : parseFloat(gradeStr);
+
+                if (!result.studentData.periods[period]) {
+                    result.studentData.periods[period] = {};
+                }
+                result.studentData.periods[period].grade = grade;
+            }
+        });
+
+        // Update badges in header
+        this._renderStatusBadges(statuses);
+
+        // Update the grades timeline (to refresh arrows/averages if needed) and re-enable read mode display
+        // Update the history grades and current grade input
+        this._renderHistoryGrades(result.studentData.periods || {}, false);
+
+        // Update the list row to reflect changes
+        this._updateListRow(result);
+    },
+
+    // ===============================
+    // STUDENT CARD (Mode lecture/édition)
+    // ===============================
+
+    /**
+     * Toggle edit mode for student card
+     * @private
+     */
+    _toggleEditMode() {
+        const readMode = document.getElementById('focusReadMode');
+        const editMode = document.getElementById('focusEditMode');
+
+        if (!readMode || !editMode) {
+            console.warn('Student card elements not found');
+            return;
+        }
+
+        // Check if edit mode is currently visible (not hidden)
+        const isInEditMode = !editMode.classList.contains('hidden');
+        this._setEditMode(!isInEditMode);
+    },
+
+    /**
+     * Set edit mode state
+     * @param {boolean} isEdit - Whether to show edit mode
+     * @private
+     */
+    _setEditMode(isEdit) {
+        const readMode = document.getElementById('focusReadMode');
+        const editMode = document.getElementById('focusEditMode');
+        const nameEl = document.getElementById('focusStudentName');
+        const cardTitle = document.getElementById('focusHistoryTitle');
+        const editBtn = document.getElementById('focusEditHistoryBtn');
+
+        if (!readMode || !editMode) return;
+
+        // Get current result data
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+
+        if (isEdit) {
+            // Update card title
+            if (cardTitle) cardTitle.textContent = 'Informations';
+            if (editBtn) editBtn.classList.add('active');
+
+            // Store original values for potential revert
+            if (result) {
+                const currentPeriod = appState.currentPeriod;
+                this._originalIdentity = {
+                    nom: result.nom,
+                    prenom: result.prenom,
+                    statuses: [...(result.studentData.statuses || [])],
+                    // Deep copy periods for revert
+                    periods: JSON.parse(JSON.stringify(result.studentData.periods || {}))
+                };
+            }
+
+            // Animate the transition
+            readMode.classList.add('hiding');
+            setTimeout(() => {
+                readMode.classList.add('hidden');
+                readMode.classList.remove('hiding');
+                editMode.classList.remove('hidden');
+                editMode.classList.add('showing');
+                setTimeout(() => editMode.classList.remove('showing'), 300);
+            }, 150);
+
+            if (nameEl) nameEl.classList.add('editing');
+
+            // Re-render history grades in EDIT mode
+            if (result) {
+                this._renderHistoryGrades(result.studentData.periods || {}, true);
+            }
+
+            // Focus on first input after animation
+            setTimeout(() => {
+                document.getElementById('focusNomInput')?.focus();
+            }, 300);
+        } else {
+            // Update card title
+            if (cardTitle) cardTitle.textContent = 'Historique';
+            if (editBtn) editBtn.classList.remove('active');
+
+            // Animate the transition
+            editMode.classList.add('hiding');
+            setTimeout(() => {
+                editMode.classList.add('hidden');
+                editMode.classList.remove('hiding');
+                readMode.classList.remove('hidden');
+                readMode.classList.add('showing');
+                setTimeout(() => readMode.classList.remove('showing'), 300);
+            }, 150);
+
+            if (nameEl) nameEl.classList.remove('editing');
+
+            // Re-render history grades in READ mode
+            if (result) {
+                this._renderHistoryGrades(result.studentData.periods || {}, false);
+                this._updateReadModeDisplay(result);
+            }
+        }
+    },
+
+    /**
+     * Render student card with current data
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _renderStudentCard(result) {
+        const currentPeriod = appState.currentPeriod;
+
+        // === Populate Edit Mode Fields (Identity) ===
+        const nomInput = document.getElementById('focusNomInput');
+        const prenomInput = document.getElementById('focusPrenomInput');
+
+        if (nomInput) nomInput.value = result.nom || '';
+        if (prenomInput) prenomInput.value = result.prenom || '';
+
+        // Populate status checkboxes
+        const statuses = result.studentData.statuses || [];
+        document.querySelectorAll('#focusStatusPills input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = statuses.some(s => s.includes(checkbox.value) || checkbox.value.includes(s.split(' ')[0]));
+        });
+
+        // === Render History Grades (Past) & Current Grade Input ===
+        this._renderHistoryGrades(result.studentData.periods || {}, false); // False because we are not in history edit mode initially
+
+        // === Update Read Mode Display ===
+        this._updateReadModeDisplay(result);
+    },
+
+
+
+    /**
+     * Update read mode display with student data
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _updateReadModeDisplay(result) {
+        const currentPeriod = appState.currentPeriod;
+        const periods = Utils.getPeriods();
+        const currentIndex = periods.indexOf(currentPeriod);
+
+        // Update name display
+        const readName = document.getElementById('focusReadName');
+        if (readName) {
+            readName.textContent = `${result.prenom} ${result.nom}`;
+        }
+
+        // Update badges
+        const readBadges = document.getElementById('focusReadBadges');
+        if (readBadges) {
+            const statuses = result.studentData.statuses || [];
+            readBadges.innerHTML = statuses.map(s => `<span class="status-pill">${s}</span>`).join('');
+        }
+
+        // Update grade display
+        const readGradePeriod = document.getElementById('focusReadGradePeriod');
+        const readGradeValue = document.getElementById('focusReadGradeValue');
+
+        if (readGradePeriod) {
+            readGradePeriod.textContent = Utils.getPeriodLabel(currentPeriod, false);
+        }
+        if (readGradeValue) {
+            const grade = result.studentData.periods?.[currentPeriod]?.grade;
+            readGradeValue.textContent = typeof grade === 'number' ? grade.toFixed(1).replace('.', ',') : '--';
+        }
+
+        // Check if previous period exists  
+        if (currentIndex > 0) {
+            const prevPeriod = periods[currentIndex - 1];
+            const prevData = result.studentData.periods?.[prevPeriod];
+
+            // Update previous appreciation if available
+            const prevAppSection = document.getElementById('focusPrevAppreciationSection');
+            const prevPeriodLabel = document.getElementById('focusPrevPeriodLabel');
+            const prevAppreciationText = document.getElementById('focusPrevAppreciationText');
+
+            const prevAppreciation = prevData?.appreciation;
+            if (prevAppreciation && !prevAppreciation.includes('Aucune appréciation')) {
+                if (prevAppSection) prevAppSection.style.display = 'block';
+                if (prevPeriodLabel) prevPeriodLabel.textContent = Utils.getPeriodLabel(prevPeriod, false);
+                if (prevAppreciationText) {
+                    // Show first 200 characters with ellipsis
+                    const truncated = prevAppreciation.length > 200
+                        ? prevAppreciation.substring(0, 200) + '...'
+                        : prevAppreciation;
+                    prevAppreciationText.textContent = truncated;
+                }
+            } else {
+                if (prevAppSection) prevAppSection.style.display = 'none';
+            }
+
+            // Update previous context if available
+            const prevCtxSection = document.getElementById('focusPrevContextSection');
+            const prevCtxPeriodLabel = document.getElementById('focusPrevContextPeriodLabel');
+            const prevContextText = document.getElementById('focusPrevContextText');
+
+            const prevContext = prevData?.context;
+            if (prevContext && prevContext.trim()) {
+                if (prevCtxSection) prevCtxSection.style.display = 'block';
+                if (prevCtxPeriodLabel) prevCtxPeriodLabel.textContent = Utils.getPeriodLabel(prevPeriod, false);
+                if (prevContextText) {
+                    // Show first 150 characters with ellipsis
+                    const truncated = prevContext.length > 150
+                        ? prevContext.substring(0, 150) + '...'
+                        : prevContext;
+                    prevContextText.textContent = truncated;
+                }
+            } else {
+                if (prevCtxSection) prevCtxSection.style.display = 'none';
+            }
+        } else {
+            // No previous period - hide both sections
+            const prevAppSection = document.getElementById('focusPrevAppreciationSection');
+            const prevCtxSection = document.getElementById('focusPrevContextSection');
+            if (prevAppSection) prevAppSection.style.display = 'none';
+            if (prevCtxSection) prevCtxSection.style.display = 'none';
+        }
+    },
+
+    /**
+     * Save student card changes (name, statuses, and grade)
+     * @private
+     */
+    _saveStudentCardChanges() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Save name changes
+        const nomInput = document.getElementById('focusNomInput');
+        const prenomInput = document.getElementById('focusPrenomInput');
+
+        if (nomInput?.value?.trim()) {
+            result.nom = nomInput.value.trim().toUpperCase();
+        }
+        if (prenomInput?.value?.trim()) {
+            result.prenom = prenomInput.value.trim();
+        }
+
+        // Save status changes
+        const statusCheckboxes = document.querySelectorAll('#focusStatusPills input[type="checkbox"]:checked');
+        const statuses = Array.from(statusCheckboxes).map(cb => cb.value);
+        result.studentData.statuses = statuses;
+
+
+
+        // Update header display
+        const nameEl = document.getElementById('focusStudentName');
+        if (nameEl) {
+            nameEl.innerHTML = `${result.prenom} ${result.nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+        }
+
+        // Update badges in header
+        this._renderStatusBadges(statuses);
+
+        // Update read mode display
+        this._updateReadModeDisplay(result);
+
+        // Update the grades timeline
+        this._renderGradesTimeline(result.studentData.periods || {});
+
+        // Update the list row to reflect changes
+        this._updateListRow(result);
+
+        // Persist to storage
+        StorageManager.saveAppState();
+    },
+
+    /**
+     * Get form data from Focus Panel (for creation mode)
+     * @returns {Object} Student data
+     */
+    getFormData() {
+        const currentPeriod = appState.currentPeriod;
+
+        // Get name from identity section inputs (used for both creation and edit)
+        const nom = document.getElementById('focusNomInput')?.value.trim().toUpperCase() || '';
+        const prenom = document.getElementById('focusPrenomInput')?.value.trim() || '';
+
+        // Get statuses
+        const statusCheckboxes = document.querySelectorAll('#focusStatusPills input[type="checkbox"]:checked');
+        const statuses = Array.from(statusCheckboxes).map(cb => cb.value);
+
+        // Get context
+        const contextInput = document.getElementById('focusContextInput');
+        const contextValue = contextInput?.value.trim() || '';
+
+        // Get grade from edit mode input for current period
+        const editGradeInput = document.getElementById('focusEditGradeInput');
+        const editGradeValue = editGradeInput?.value?.trim().replace(',', '.') || '';
+
+        // Build periods data
+        const periods = {};
+        Utils.getPeriods().forEach(p => {
+            if (p === currentPeriod) {
+                // Use the edit mode grade input for current period
+                periods[p] = {
+                    grade: editGradeValue === '' ? null : parseFloat(editGradeValue),
+                    appreciation: '',
+                    context: contextValue
+                };
+            } else {
+                // Use timeline input for other periods (if available)
+                const gradeInput = document.getElementById(`focusGrade_${p}`);
+                const gradeValue = gradeInput?.value?.trim().replace(',', '.') || '';
+
+                periods[p] = {
+                    grade: gradeValue === '' ? null : parseFloat(gradeValue),
+                    appreciation: '',
+                    context: undefined
+                };
+            }
+        });
+
+        return {
+            nom,
+            prenom,
+            statuses,
+            negativeInstructions: contextValue,
+            periods,
+            currentPeriod
+        };
+    },
+
+    // ===============================
+    // AI ANALYSIS PAGE (Sliding)
+    // ===============================
+
+    /**
+     * Show the analysis page (slide from right)
+     * @private
+     */
+    _showAnalysisPage() {
+        const container = document.getElementById('focusPagesContainer');
+
+        if (!container) return;
+
+        // ALWAYS reset analysis first to clear previous student's data
+        this._resetAnalysisSection();
+
+        // Slide to analysis page
+        container.classList.add('show-analysis');
+
+        // If analysis data already exists for CURRENT student, populate it
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (result && (result.strengthsWeaknesses || result.nextSteps)) {
+            this._populateExistingAnalysis(result);
+        }
+    },
+
+    /**
+     * Hide the analysis page (slide back to main)
+     * @private
+     */
+    _hideAnalysisPage() {
+        const container = document.getElementById('focusPagesContainer');
+        if (container) {
+            container.classList.remove('show-analysis');
+        }
+    },
+
+    /**
+     * Check if analysis page is visible
+     * @returns {boolean}
+     * @private
+     */
+    _isAnalysisPageVisible() {
+        const container = document.getElementById('focusPagesContainer');
+        return container?.classList.contains('show-analysis') ?? false;
+    },
+
+    /**
+     * Reset analysis section content to placeholder state
+     * @private
+     */
+    _resetAnalysisSection() {
+        const forcesContent = document.getElementById('analysisForcesContent');
+        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
+        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+
+        const placeholderForces = `<div class="analysis-placeholder">
+            <i class="fas fa-lightbulb"></i>
+            <span>Cliquez sur "Générer l'analyse" pour découvrir les points forts</span>
+        </div>`;
+        const placeholderWeaknesses = `<div class="analysis-placeholder">
+            <i class="fas fa-lightbulb"></i>
+            <span>Cliquez sur "Générer l'analyse" pour identifier les faiblesses</span>
+        </div>`;
+        const placeholderSuggestions = `<div class="analysis-placeholder">
+            <i class="fas fa-lightbulb"></i>
+            <span>Cliquez sur "Générer l'analyse" pour des conseils personnalisés</span>
+        </div>`;
+
+        if (forcesContent) forcesContent.innerHTML = placeholderForces;
+        if (weaknessesContent) weaknessesContent.innerHTML = placeholderWeaknesses;
+        if (suggestionsContent) suggestionsContent.innerHTML = placeholderSuggestions;
+
+        // Remove has-content class and badges
+        document.querySelectorAll('.analysis-card').forEach(card => {
+            card.classList.remove('has-content', 'has-error');
+            // Remove existing badges
+            const existingBadge = card.querySelector('.analysis-status-badge');
+            if (existingBadge) existingBadge.remove();
+        });
+    },
+
+    /**
+     * Show skeleton loading state in analysis cards
+     * @private
+     */
+    _showAnalysisSkeleton() {
+        const skeleton = `<div class="analysis-skeleton">
+            <div class="analysis-skeleton-line"></div>
+            <div class="analysis-skeleton-line"></div>
+            <div class="analysis-skeleton-line"></div>
+        </div>`;
+
+        const forcesContent = document.getElementById('analysisForcesContent');
+        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
+        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+
+        if (forcesContent) forcesContent.innerHTML = skeleton;
+        if (weaknessesContent) weaknessesContent.innerHTML = skeleton;
+        if (suggestionsContent) suggestionsContent.innerHTML = skeleton;
+
+        // Add loading badges to all cards
+        document.querySelectorAll('.analysis-card').forEach(card => {
+            this._setCardBadge(card, 'loading');
+        });
+    },
+
+    /**
+     * Set badge state on an analysis card
+     * @param {HTMLElement} card - The analysis card element
+     * @param {'loading'|'done'|'error'} state - Badge state
+     * @private
+     */
+    _setCardBadge(card, state) {
+        if (!card) return;
+
+        const header = card.querySelector('.analysis-card-header');
+        if (!header) return;
+
+        // Remove existing badge
+        let badge = header.querySelector('.analysis-status-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'analysis-status-badge';
+            header.appendChild(badge);
+        }
+
+        // Update badge content and class
+        badge.className = 'analysis-status-badge';
+        switch (state) {
+            case 'loading':
+                badge.classList.add('loading');
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                break;
+            case 'done':
+                badge.classList.add('done');
+                badge.innerHTML = '<i class="fas fa-check"></i>';
+                break;
+            case 'error':
+                badge.classList.add('error');
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+        }
+    },
+
+    /**
+     * Generate AI analysis for current student
+     * @private
+     */
+    async _generateAnalysis() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        // Check API key
+        if (!UI.checkAPIKeyPresence()) {
+            UI.showNotification('Clé API requise pour l\'analyse IA', 'warning');
+            return;
+        }
+
+        // Expand section if not already
+        const section = document.getElementById('focusAnalysisSection');
+        if (section && !section.classList.contains('expanded')) {
+            this._toggleAnalysisSection();
+        }
+
+        // Show skeleton loading state
+        this._showAnalysisSkeleton();
+
+        // Update generate button to loading
+        const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
+        if (generateBtn) {
+            UI.showInlineSpinner(generateBtn);
+        }
+
+        try {
+            // Force regeneration: reset existing data
+            result.strengthsWeaknesses = null;
+            result.nextSteps = null;
+
+            // Fetch analyses using existing AppreciationsManager methods
+            await this._fetchAnalysesForStudent(result);
+
+            // Save to persist new analysis data
+            StorageManager.saveAppState();
+
+            UI.showNotification('Analyse générée !', 'success');
+        } catch (error) {
+            console.error('Erreur analyse:', error);
+            UI.showNotification(`Erreur : ${error.message}`, 'error');
+
+            // Show error state
+            this._showAnalysisError(error.message);
+        } finally {
+            if (generateBtn) {
+                UI.hideInlineSpinner(generateBtn);
+            }
+        }
+    },
+
+    /**
+     * Fetch and display analyses for the student
+     * @param {Object} result - Student result object
+     * @private
+     */
+    async _fetchAnalysesForStudent(result) {
+        const id = result.id;
+        // IMPORTANT: Always use the source object from generatedResults, not the filtered copy
+        const sourceResult = appState.generatedResults.find(r => r.id === id) || result;
+
+        const forcesContent = document.getElementById('analysisForcesContent');
+        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
+        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+
+        const forcesCard = forcesContent?.closest('.analysis-card');
+        const weaknessesCard = weaknessesContent?.closest('.analysis-card');
+        const suggestionsCard = suggestionsContent?.closest('.analysis-card');
+
+        // Generate strengths/weaknesses (used for both Forces and Faiblesses cards)
+        const generateStrengthsWeaknesses = async () => {
+            if (sourceResult.strengthsWeaknesses === null || sourceResult.strengthsWeaknesses === undefined) {
+                try {
+                    await AppreciationsManager.generateStrengthsWeaknesses(id, true);
+                    const updated = appState.generatedResults.find(r => r.id === id);
+
+                    if (updated?.strengthsWeaknesses) {
+                        // Parse and display Forces
+                        if (forcesContent) {
+                            forcesContent.innerHTML = this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'forces');
+                            forcesCard?.classList.add('has-content');
+                            this._setCardBadge(forcesCard, 'done');
+                        }
+                        // Parse and display Faiblesses
+                        if (weaknessesContent) {
+                            weaknessesContent.innerHTML = this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'weaknesses');
+                            weaknessesCard?.classList.add('has-content');
+                            this._setCardBadge(weaknessesCard, 'done');
+                        }
+                    } else {
+                        if (forcesContent) {
+                            forcesContent.innerHTML = '<em>Aucune donnée générée.</em>';
+                            this._setCardBadge(forcesCard, 'done');
+                        }
+                        if (weaknessesContent) {
+                            weaknessesContent.innerHTML = '<em>Aucune donnée générée.</em>';
+                            this._setCardBadge(weaknessesCard, 'done');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Échec de l\'analyse strengthsWeaknesses:', e);
+                    const errorHtml = `<span style="color:var(--error-color);">Erreur : ${e.message.substring(0, 80)}...</span>`;
+                    if (forcesContent) {
+                        forcesContent.innerHTML = errorHtml;
+                        forcesCard?.classList.add('has-error');
+                        this._setCardBadge(forcesCard, 'error');
+                    }
+                    if (weaknessesContent) {
+                        weaknessesContent.innerHTML = errorHtml;
+                        weaknessesCard?.classList.add('has-error');
+                        this._setCardBadge(weaknessesCard, 'error');
+                    }
+                }
+            } else {
+                // Data already exists
+                if (forcesContent) {
+                    forcesContent.innerHTML = this._parseStrengthsWeaknessesForCards(sourceResult.strengthsWeaknesses, 'forces');
+                    forcesCard?.classList.add('has-content');
+                    this._setCardBadge(forcesCard, 'done');
+                }
+                if (weaknessesContent) {
+                    weaknessesContent.innerHTML = this._parseStrengthsWeaknessesForCards(sourceResult.strengthsWeaknesses, 'weaknesses');
+                    weaknessesCard?.classList.add('has-content');
+                    this._setCardBadge(weaknessesCard, 'done');
+                }
+            }
+        };
+
+        // Generate next steps (Pistes d'amélioration)
+        const generateNextSteps = async () => {
+            if (sourceResult.nextSteps === null || sourceResult.nextSteps === undefined) {
+                try {
+                    await AppreciationsManager.generateNextSteps(id, true);
+                    const updated = appState.generatedResults.find(r => r.id === id);
+
+                    if (updated?.nextSteps?.length) {
+                        suggestionsContent.innerHTML = `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                        suggestionsCard?.classList.add('has-content');
+                        this._setCardBadge(suggestionsCard, 'done');
+                    } else {
+                        suggestionsContent.innerHTML = '<em>Aucune piste générée.</em>';
+                        this._setCardBadge(suggestionsCard, 'done');
+                    }
+                } catch (e) {
+                    console.error('Échec de l\'analyse nextSteps:', e);
+                    suggestionsContent.innerHTML = `<span style="color:var(--error-color);">Erreur : ${e.message.substring(0, 80)}...</span>`;
+                    suggestionsCard?.classList.add('has-error');
+                    this._setCardBadge(suggestionsCard, 'error');
+                }
+            } else {
+                // Data already exists
+                suggestionsContent.innerHTML = `<ul>${sourceResult.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                suggestionsCard?.classList.add('has-content');
+                this._setCardBadge(suggestionsCard, 'done');
+            }
+        };
+
+        // Run both analyses in parallel (Forces+Faiblesses together, Pistes separately)
+        await Promise.all([
+            generateStrengthsWeaknesses(),
+            generateNextSteps()
+        ]);
+    },
+
+    /**
+     * Parse strengths/weaknesses data for display in cards
+     * @param {Object|string} data - Parsed strengths/weaknesses object or raw string
+     * @param {string} type - 'forces' or 'weaknesses'
+     * @returns {string} HTML content
+     * @private
+     */
+    _parseStrengthsWeaknessesForCards(data, type) {
+        if (!data) return '<em>Aucune donnée.</em>';
+
+        let items = [];
+
+        if (typeof data === 'string') {
+            // Raw string handling with section separation
+            const raw = data;
+
+            // Try to split into two sections using common headers from prompts, handling Markdown
+            const splitRegex = /(?:^|\n)(?:[-*•]\s*)?(?:#+\s*)?(?:\*\*)?(?:Faiblesses|Axes d'amélioration|Points à améliorer|Fragilités|Axes de progrès|Points faibles|Axes d'effort)(?:\*\*)?[:\s]*(?:\n|$)/i;
+            const parts = raw.split(splitRegex);
+
+            let relevantText = '';
+
+            if (parts.length > 1) {
+                // Found a split between strengths (part 0) and weaknesses (part 1)
+                if (type === 'forces') {
+                    relevantText = parts[0];
+                } else {
+                    relevantText = parts.slice(1).join('\n');
+                }
+            } else {
+                // No clear split found
+                if (type === 'forces') {
+                    relevantText = raw; // Default to strengths
+                } else {
+                    relevantText = ''; // No explicit weaknesses found
+                }
+            }
+
+            if (!relevantText && type === 'weaknesses') {
+                // Fallback or empty
+            }
+
+            // Cleanup headers from the relevant chunk specific to the type
+            const headersToRemove = type === 'forces'
+                ? ['Points Forts', 'Forces', 'Points forts', 'Atouts', 'Ce qui va bien']
+                : ['Faiblesses', 'Axes d\'amélioration', 'Points à améliorer', 'Fragilités'];
+
+            let cleanText = relevantText || '';
+            headersToRemove.forEach(header => {
+                // Remove header and potential markdown wrappers
+                // Matches: **Forces**, ## Forces, - Forces:
+                const regex = new RegExp(`(?:^|\\n)(?:[-*•]\\s*)?(?:#+\\s*)?(?:\\*\\*)?${header}(?:\\*\\*)?[:\\s]*`, 'gim');
+                cleanText = cleanText.replace(regex, '');
+            });
+
+            // Parse bullets
+            const lines = cleanText.split(/\n/);
+            items = lines
+                .map(line => line.trim())
+                .filter(line => {
+                    return line.length > 5 && (line.match(/^[-*•]/) || line.match(/^\d+\./) || line.length > 20);
+                })
+                .map(line => {
+                    return line.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '');
+                });
+
+            // If just a block of text, keep it as one item
+            if (items.length === 0 && cleanText.trim().length > 10) {
+                items = [cleanText.trim()];
+            }
+
+        } else if (typeof data === 'object') {
+            items = type === 'forces' ? (data.strengths || data.forces || []) : (data.weaknesses || data.faiblesses || []);
+        }
+
+        if (!items || items.length === 0) {
+            return `<em>Aucun${type === 'forces' ? 'e force identifiée' : ' axe identifié'}.</em>`;
+        }
+
+        return `<ul>${items.map(item => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(item))}</li>`).join('')}</ul>`;
+    },
+
+    /**
+     * Show error state in analysis cards
+     * @param {string} message - Error message
+     * @private
+     */
+    _showAnalysisError(message) {
+        const errorHtml = `<span style="color:var(--error-color); font-size: 12px;">
+            <i class="fas fa-exclamation-circle"></i> ${message.substring(0, 60)}...
+        </span>`;
+
+        const forcesContent = document.getElementById('analysisForcesContent');
+        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
+        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+
+        if (forcesContent) forcesContent.innerHTML = errorHtml;
+        if (weaknessesContent) weaknessesContent.innerHTML = errorHtml;
+        if (suggestionsContent) suggestionsContent.innerHTML = errorHtml;
+
+        document.querySelectorAll('.analysis-card').forEach(card => {
+            card.classList.add('has-error');
+        });
+    },
+
+    /**
+     * Pre-populate analysis section with existing data
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _populateExistingAnalysis(result) {
+        const forcesContent = document.getElementById('analysisForcesContent');
+        const weaknessesContent = document.getElementById('analysisWeaknessesContent');
+        const suggestionsContent = document.getElementById('analysisSuggestionsContent');
+
+        const forcesCard = forcesContent?.closest('.analysis-card');
+        const weaknessesCard = weaknessesContent?.closest('.analysis-card');
+        const suggestionsCard = suggestionsContent?.closest('.analysis-card');
+
+        // Populate strengths/weaknesses if available
+        if (result.strengthsWeaknesses) {
+            if (forcesContent) {
+                forcesContent.innerHTML = this._parseStrengthsWeaknessesForCards(result.strengthsWeaknesses, 'forces');
+                forcesCard?.classList.add('has-content');
+                this._setCardBadge(forcesCard, 'done');
+            }
+            if (weaknessesContent) {
+                weaknessesContent.innerHTML = this._parseStrengthsWeaknessesForCards(result.strengthsWeaknesses, 'weaknesses');
+                weaknessesCard?.classList.add('has-content');
+                this._setCardBadge(weaknessesCard, 'done');
+            }
+        }
+
+        // Populate next steps if available
+        if (result.nextSteps && result.nextSteps.length > 0) {
+            if (suggestionsContent) {
+                suggestionsContent.innerHTML = `<ul>${result.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                suggestionsCard?.classList.add('has-content');
+                this._setCardBadge(suggestionsCard, 'done');
+            }
+        }
+    },
+
+
+
+    /**
+     * Ouvre le volet latéral "Paramètres Élève"
+     * @private
+     */
+    _openSettingsPanel() {
+        const panel = document.getElementById('focusSettingsPanel');
+        // const overlay = document.getElementById('focusSettingsOverlay'); // Overlay removed for Context Push
+        if (panel) panel.classList.add('active');
+
+        // Push Layout: Add class to body to shrink main content
+        document.body.classList.add('sidebar-open');
+    },
+
+    /**
+     * Ferme le volet latéral "Paramètres Élève"
+     * @private
+     */
+    _closeSettingsPanel() {
+        const panel = document.getElementById('focusSettingsPanel');
+        // const overlay = document.getElementById('focusSettingsOverlay');
+        if (panel) panel.classList.remove('active');
+
+        // Release Push Layout
+        document.body.classList.remove('sidebar-open');
+    }
+};

@@ -1,0 +1,1305 @@
+/**
+ * @fileoverview Gestionnaire d'interface utilisateur (UI) principal de l'application Bulletin AI.
+ * 
+ * Ce module centralise toutes les fonctions liées à la manipulation de l'interface :
+ * - Notifications et confirmations
+ * - Gestion des thèmes (clair/sombre)
+ * - Ouverture/fermeture des modales
+ * - Mise à jour des statistiques et des champs de formulaire
+ * - Gestion des périodes (trimestres/semestres)
+ * - Tooltips et feedback visuel
+ * 
+ * @module managers/UIManager
+ */
+
+import { appState } from '../state/State.js';
+import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
+import { DOM } from '../utils/DOM.js';
+import { Utils } from '../utils/Utils.js';
+import { StorageManager } from './StorageManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
+import { ModalUI } from './ModalUIManager.js';
+import { FormUI } from './FormUIManager.js';
+import { ResultCardsUI } from './ResultCardsUIManager.js';
+import { ImportUI } from './ImportUIManager.js';
+import { StatsUI } from './StatsUIManager.js';
+import { DropdownManager } from './DropdownManager.js';
+
+/**
+ * @typedef {Object} ConfirmOptions
+ * @property {string} [confirmText='Confirmer'] - Texte du bouton de confirmation
+ * @property {string} [cancelText='Annuler'] - Texte du bouton d'annulation
+ * @property {Object} [extraButton] - Bouton supplémentaire optionnel
+ * @property {string} [extraButton.text] - Texte du bouton supplémentaire
+ * @property {string} [extraButton.class] - Classe CSS du bouton
+ * @property {Function} [extraButton.action] - Callback du bouton
+ */
+
+/**
+ * @typedef {'success'|'error'|'warning'|'info'} NotificationType
+ */
+
+/** @type {import('./AppManager_v2.js').App|null} */
+let App;
+
+/**
+ * Module de gestion de l'interface utilisateur.
+ * @namespace UI
+ */
+export const UI = {
+    /**
+     * Initialise le module UI avec une référence à l'application.
+     * @param {Object} appInstance - Instance de l'application principale
+     */
+    init(appInstance) {
+        App = appInstance;
+        // Initialize sub-managers
+        FormUI.init(appInstance);
+        ResultCardsUI.init(this);
+        ImportUI.init(this, appInstance);
+        // Initialize stats view toggle
+        StatsUI.initViewToggle();
+        // Initialize tooltips at startup
+        this.initTooltips();
+        // Initialize smooth accordion animations
+        this.initAccordions();
+        // Initialize animated gliders
+        this.initGliders();
+    },
+
+    // Modal state is now managed by ModalUI
+    get activeModal() { return ModalUI.activeModal; },
+    set activeModal(val) { ModalUI.activeModal = val; },
+    get lastFocusedElement() { return ModalUI.lastFocusedElement; },
+    set lastFocusedElement(val) { ModalUI.lastFocusedElement = val; },
+    get stackedModal() { return ModalUI.stackedModal; },
+    set stackedModal(val) { ModalUI.stackedModal = val; },
+    get _isIgnoringTooltips() { return ModalUI._isIgnoringTooltips; },
+    set _isIgnoringTooltips(val) { ModalUI._isIgnoringTooltips = val; },
+
+    // ====================================================================
+    //  NOTIFICATIONS
+    //  Toast notifications et confirmations modales
+    // ====================================================================
+
+    /**
+     * Affiche une notification toast temporaire.
+     * @param {string} message - Le message à afficher
+     * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
+     */
+    /**
+     * Affiche une notification toast temporaire.
+     * @param {string} message - Le message à afficher
+     * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
+     */
+    showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container') || (() => {
+            const c = document.createElement('div');
+            c.id = 'notification-container';
+            document.body.appendChild(c);
+            return c;
+        })();
+
+        // Prevent duplicate notifications (debounce)
+        const timestamp = Date.now();
+        if (this._lastNotification &&
+            this._lastNotification.message === message &&
+            this._lastNotification.type === type &&
+            (timestamp - this._lastNotification.timestamp < 1000)) {
+            return;
+        }
+        this._lastNotification = { message, type, timestamp };
+
+        const notif = document.createElement('div');
+        notif.className = `notification ${type}`;
+
+        // Use FontAwesome icons matching badge style
+        const iconMap = {
+            success: '<i class="fas fa-check"></i>',
+            error: '<i class="fas fa-times"></i>',
+            warning: '<i class="fas fa-exclamation"></i>',
+            info: '<i class="fas fa-info"></i>'
+        };
+        notif.innerHTML = `${iconMap[type] || iconMap.info} <span>${message}</span>`;
+
+        container.appendChild(notif);
+        // RAF for animation to ensure class addition happens after DOM insertion
+        requestAnimationFrame(() => {
+            notif.classList.add('show');
+        });
+
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => {
+                if (notif.parentNode === container) container.removeChild(notif);
+                if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
+            }, 300);
+        }, 3000);
+    },
+    /**
+     * Affiche une notification cliquable avec action.
+     * @param {string} message - Le message à afficher
+     * @param {NotificationType} [type='success'] - Type de notification
+     * @param {Function} [onClick] - Callback exécuté au clic sur la notification
+     * @param {number} [duration=5000] - Durée d'affichage en ms (plus long pour permettre le clic)
+     */
+    showActionableNotification(message, type = 'success', onClick = null, duration = 5000) {
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            document.body.appendChild(container);
+        }
+        const notif = document.createElement('div');
+        notif.className = `notification ${type} actionable`;
+
+        // Use FontAwesome icons matching badge style
+        const iconMap = {
+            success: '<i class="fas fa-check"></i>',
+            error: '<i class="fas fa-times"></i>',
+            warning: '<i class="fas fa-exclamation"></i>',
+            info: '<i class="fas fa-info"></i>'
+        };
+        notif.innerHTML = `${iconMap[type] || iconMap.info} <span>${message}</span>`;
+        notif.style.cursor = 'pointer';
+        container.appendChild(notif);
+
+        if (onClick) {
+            notif.addEventListener('click', () => {
+                onClick();
+                notif.classList.remove('show');
+                setTimeout(() => {
+                    if (notif.parentNode === container) container.removeChild(notif);
+                    if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
+                }, 300);
+            });
+        }
+
+        setTimeout(() => notif.classList.add('show'), 10);
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => {
+                if (notif.parentNode === container) container.removeChild(notif);
+                if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
+            }, 300);
+        }, duration);
+    },
+    /**
+     * Affiche une modale de confirmation personnalisée.
+     * @param {string} message - Le message de confirmation
+     * @param {Function} [onConfirm] - Callback appelé si l'utilisateur confirme
+     * @param {Function} [onCancel] - Callback appelé si l'utilisateur annule
+     * @param {ConfirmOptions} [options={}] - Options de personnalisation
+     */
+    showCustomConfirm(message, onConfirm, onCancel, options = {}) {
+        const { confirmText = 'Confirmer', cancelText = 'Annuler', extraButton = null } = options;
+        const modalId = 'customConfirmModal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal';
+
+        let buttonsHTML = `<button class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button><button class="btn btn-danger" id="confirmOkBtn">${confirmText}</button>`;
+        if (extraButton) {
+            buttonsHTML = `<button class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
+        }
+
+        if (options.compact) {
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-compact">
+                <div class="modal-compact-body">
+                    <div class="modal-icon-wrapper">
+                         <i class="fas fa-question-circle" style="color: var(--warning-color); font-size: 24px;"></i>
+                    </div>
+                    <div class="modal-text-wrapper">
+                        <p>${message}</p>
+                    </div>
+                </div>
+                <div class="modal-compact-actions">
+                    ${buttonsHTML}
+                </div>
+            </div>`;
+        } else {
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm">
+                <div class="modal-header">
+                    <h2 class="modal-title"><i class="fas fa-question-circle" style="color: var(--warning-color);"></i> Confirmation</h2>
+                    <button class="close-button" aria-label="Fermer">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>${message}</p>
+                </div>
+                <div class="modal-footer">
+                    ${buttonsHTML}
+                </div>
+            </div>`;
+        }
+        document.body.appendChild(modal);
+
+        this.openModal(modal);
+
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+        const extraBtn = document.getElementById('confirmExtraBtn');
+        const closeBtn = modal.querySelector('.close-button');
+
+        const confirmHandler = () => { try { if (onConfirm) onConfirm(); } finally { this.closeModal(modal); } };
+        const cancelHandler = () => { try { if (onCancel) onCancel(); } finally { this.closeModal(modal); } };
+        const extraHandler = () => { try { if (extraButton && extraButton.action) extraButton.action(); } finally { this.closeModal(modal); } };
+
+        okBtn.addEventListener('click', confirmHandler, { once: true });
+        cancelBtn.addEventListener('click', cancelHandler, { once: true });
+        if (closeBtn) closeBtn.addEventListener('click', cancelHandler, { once: true });
+        if (extraBtn) extraBtn.addEventListener('click', extraHandler, { once: true });
+    },
+
+    // ====================================================================
+    //  THÈME ET DARK MODE
+    // ====================================================================
+
+    applyTheme() {
+        document.documentElement.dataset.theme = appState.theme === 'light' ? '' : 'dark';
+        this.updateDarkModeButtonIcon();
+    },
+    toggleDarkMode() {
+        appState.theme = (appState.theme === 'dark') ? 'light' : 'dark';
+        UI.applyTheme();
+        StorageManager.saveAppState();
+    },
+    updateDarkModeButtonIcon() {
+        if (DOM.darkModeToggle) {
+            const isDark = appState.theme === 'dark';
+            DOM.darkModeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            DOM.darkModeToggle.setAttribute('data-tooltip', isDark ? 'Mode clair' : 'Mode sombre');
+        }
+    },
+
+    // ====================================================================
+    //  SYSTÈME DE PÉRIODES
+    //  Gestion des trimestres/semestres et formulaire dynamique
+    // ====================================================================
+
+    setPeriod(period) {
+        appState.currentPeriod = period;
+        document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => r.checked = r.value === period);
+        if (DOM.sidebarPeriodContext) {
+            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
+        }
+        this.updatePeriodSystemUI();
+
+        // Update glider
+        if (DOM.mainPeriodSelector) this.updateGlider(DOM.mainPeriodSelector);
+
+        AppreciationsManager.renderResults();
+
+        StorageManager.saveAppState();
+    },
+    getPeriods() {
+        return Utils.getPeriods();
+    },
+    getPeriodLabel(period, short = false) {
+        return Utils.getPeriodLabel(period, short);
+    },
+    /**
+     * Met à jour le texte des labels de période (court pour inactif, complet pour sélectionné)
+     */
+    updatePeriodLabels() {
+        if (!DOM.mainPeriodSelector) return;
+        DOM.mainPeriodSelector.querySelectorAll('label').forEach(label => {
+            const input = document.getElementById(label.getAttribute('for'));
+            if (input && label.dataset.short && label.dataset.full) {
+                label.textContent = input.checked ? label.dataset.full : label.dataset.short;
+            }
+        });
+    },
+    updatePeriodSystemUI() {
+        const periods = Utils.getPeriods();
+
+        // Early return if mainPeriodSelector doesn't exist
+        if (!DOM.mainPeriodSelector) return;
+
+        // Vérifier si le sélecteur est déjà peuplé pour éviter de détruire le DOM (et le glider)
+        const existingInputs = DOM.mainPeriodSelector.querySelectorAll('input[name="periodModeRadio"]');
+
+        if (existingInputs.length > 0 && existingInputs.length === periods.length) {
+            // Mise à jour douce : on change juste l'état checked
+            existingInputs.forEach(input => {
+                input.checked = (input.value === appState.currentPeriod);
+            });
+            // Mettre à jour l'affichage des labels
+            this.updatePeriodLabels();
+        } else {
+            // Premier rendu ou changement de structure : on construit le HTML
+            // Note: getPeriodLabel(p, false) = court (T1), getPeriodLabel(p, true) = long (Trimestre 1)
+            DOM.mainPeriodSelector.innerHTML = periods.map(p => `
+                <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${appState.currentPeriod === p ? 'checked' : ''}>
+                <label for="period${p}" class="tooltip" data-tooltip="Sélectionnez la période de travail." data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
+                    ${appState.currentPeriod === p ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
+                </label>
+            `).join('');
+
+            DOM.mainPeriodSelector.querySelectorAll('input').forEach(r => r.addEventListener('change', e => this.setPeriod(e.target.value)));
+
+            // On initialise le glider car c'est un nouveau DOM
+            this.initGliders();
+        }
+
+        if (DOM.sidebarPeriodContext) {
+            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(appState.currentPeriod, true);
+        }
+
+        // Option G: Update current period labels in sidebar card
+        if (DOM.currentPeriodLabel) {
+            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, true);
+        }
+        if (DOM.contextPeriodLabel) {
+            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(appState.currentPeriod, false)})`;
+        }
+
+        const currentPeriodIndex = periods.indexOf(appState.currentPeriod);
+        let formHtml = '';
+
+        for (let i = 0; i <= currentPeriodIndex; i++) {
+            const p = periods[i];
+            const isCurrent = (i === currentPeriodIndex);
+
+            if (isCurrent) {
+                const movementOptions = [`Nouveau ${p}`, `Départ ${p}`];
+                const statusOptions = ["PPRE", "PAP", "ULIS", "Délégué"];
+
+                const createPills = (options) => options.map(opt => `
+                    <input type="checkbox" id="statut-${opt.replace(' ', '-')}" name="statuses" value="${opt}">
+                    <label for="statut-${opt.replace(' ', '-')}">${opt.split(' ')[0]}</label>
+                `).join('');
+
+                formHtml += `<div class="period-input-group">
+                    <h3><i class="fas fa-calendar-check"></i> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
+                    <div class="form-row period-main-row">
+                        <div class="form-group current-grade-group">
+                            <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
+                            <input type="text" id="moy${p}" placeholder="14.5">
+                            <div class="error-message" id="moy${p}Error"></div>
+                        </div>
+                         <div class="form-group">
+                            <label>Statuts (optionnel)&nbsp;:</label>
+                            <div class="status-pills-container">
+                                ${createPills(movementOptions)}
+                                ${createPills(statusOptions)}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                formHtml += `<div class="period-input-group previous-period-group">
+                    <h4>
+                        <i class="fas fa-history"></i> ${Utils.getPeriodLabel(p, true)} 
+                        <span class="detail-chip-small">(Période précédente)</span>
+                    </h4>
+                    <div class="form-row">
+                        <div class="form-group previous-grade-group">
+                            <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
+                            <input type="text" id="moy${p}" placeholder="14.5"><div class="error-message" id="moy${p}Error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="app${p}">Appréciation ${p}&nbsp;:</label>
+                            <textarea id="app${p}" class="period-app-textarea" rows="1"></textarea>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        // Only render if element exists (sidebar form may have been removed - Lista + Focus UX)
+        if (DOM.singleStudentPeriodInputs) {
+            DOM.singleStudentPeriodInputs.innerHTML = formHtml;
+            DOM.singleStudentPeriodInputs.querySelectorAll('input[type="text"]').forEach(input => input.addEventListener('input', () => Utils.validateGrade(input)));
+        }
+    },
+
+    // ====================================================================
+    //  MODES D'ENTRÉE ET ÉTATS DES BOUTONS
+    //  Bascule entre saisie individuelle et import de masse
+    // ====================================================================
+
+    setInputMode(mode, force = false) {
+        if (!force && appState.currentInputMode === mode) return;
+        appState.currentInputMode = mode;
+        const isMass = mode === CONSTS.INPUT_MODE.MASS;
+
+        if (DOM.massImportSection) DOM.massImportSection.style.display = isMass ? 'block' : 'none';
+        if (DOM.singleStudentFormDiv) DOM.singleStudentFormDiv.style.display = isMass ? 'none' : 'block';
+
+        if (DOM.massImportActions) DOM.massImportActions.style.display = isMass ? 'flex' : 'none';
+        if (DOM.singleStudentActions) DOM.singleStudentActions.style.display = isMass ? 'none' : 'flex';
+
+        if (DOM.massImportTab) { DOM.massImportTab.classList.toggle('active', isMass); DOM.massImportTab.setAttribute('aria-selected', String(isMass)); }
+        if (DOM.singleStudentTab) { DOM.singleStudentTab.classList.toggle('active', !isMass); DOM.singleStudentTab.setAttribute('aria-selected', String(!isMass)); }
+
+        // Update glider animation (le conteneur est le parent des tabs)
+        const tabsContainer = document.querySelector('.input-mode-tabs');
+        if (tabsContainer) this.updateGlider(tabsContainer);
+
+        if (!isMass) {
+            AppreciationsManager.resetForm();
+            // Focus on available element (sidebar elements may not exist)
+            const focusTarget = DOM.loadStudentSelect || DOM.nomInput;
+            if (focusTarget) setTimeout(() => focusTarget.focus(), 100);
+        } else {
+            if (DOM.massData) setTimeout(() => DOM.massData.focus(), 100);
+        }
+        StorageManager.saveAppState();
+    },
+    updateGenerateButtonState() {
+        const isAIAvailable = this.checkAPIKeyPresence(true);
+        const buttons = [DOM.importGenerateBtn, DOM.generateAppreciationBtn, DOM.generateAndNextBtn];
+
+        // Déterminer le message approprié selon le provider
+        const model = appState.currentAIModel;
+        const isOllama = model.startsWith('ollama');
+        const warningTooltip = isOllama
+            ? "Activez Ollama dans les paramètres pour générer."
+            : "Veuillez configurer une clé API dans les paramètres pour générer.";
+
+        buttons.forEach(btn => {
+            if (btn) {
+                btn.disabled = !isAIAvailable;
+                if (!isAIAvailable) {
+                    if (!btn.hasAttribute('data-original-tooltip')) {
+                        btn.setAttribute('data-original-tooltip', btn.getAttribute('data-tooltip') || '');
+                    }
+                    btn.setAttribute('data-tooltip', warningTooltip);
+                } else {
+                    if (btn.hasAttribute('data-original-tooltip')) {
+                        btn.setAttribute('data-tooltip', btn.getAttribute('data-original-tooltip'));
+                        btn.removeAttribute('data-original-tooltip');
+                    }
+                }
+                btn.classList.toggle('ai-disabled', !isAIAvailable);
+            }
+        });
+
+        const warningHtml = isOllama
+            ? `⚠️ Ollama non activé. <a href="#" class="link-to-settings" data-target-tab="advanced" data-target-element="ollamaToggle">Activez-le dans les paramètres</a> pour générer.`
+            : `⚠️ Clé API manquante. <a href="#" class="link-to-settings" data-target-tab="advanced" data-target-element="googleApiKey">Configurez-la dans les paramètres</a> pour activer la génération.`;
+
+        if (!isAIAvailable) {
+            if (DOM.massImportApiKeyWarning) {
+                DOM.massImportApiKeyWarning.innerHTML = warningHtml;
+                DOM.massImportApiKeyWarning.style.display = 'flex';
+            }
+        } else {
+            if (DOM.massImportApiKeyWarning) {
+                DOM.massImportApiKeyWarning.style.display = 'none';
+            }
+        }
+    },
+    switchToCreationModeUI() {
+        if (DOM.generateAppreciationBtn) DOM.generateAppreciationBtn.style.display = 'none';
+        if (DOM.generateAndNextBtn) {
+            DOM.generateAndNextBtn.style.display = 'inline-flex';
+            DOM.generateAndNextBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAndNextBtn.className = 'btn btn-ai';
+            DOM.generateAndNextBtn.setAttribute('data-tooltip', 'Génère l\'appréciation et prépare le formulaire pour l\'élève suivant. Raccourci : Ctrl+Enter');
+        }
+        if (DOM.cancelEditBtn) DOM.cancelEditBtn.style.display = 'none';
+        if (DOM.resetFormBtn) DOM.resetFormBtn.style.display = 'inline-flex';
+    },
+    switchToEditModeUI() {
+        if (DOM.generateAppreciationBtn) {
+            DOM.generateAppreciationBtn.style.display = 'inline-flex';
+            DOM.generateAppreciationBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAppreciationBtn.className = 'btn btn-ai';
+            DOM.generateAppreciationBtn.setAttribute('data-tooltip', 'Regénère l\'appréciation avec les données modifiées. Raccourci : Ctrl+Enter');
+        }
+        if (DOM.generateAndNextBtn) DOM.generateAndNextBtn.style.display = 'none';
+        if (DOM.cancelEditBtn) DOM.cancelEditBtn.style.display = 'inline-flex';
+        if (DOM.resetFormBtn) DOM.resetFormBtn.style.display = 'none';
+    },
+    updateHeaderPremiumLook() {
+        const header = document.querySelector('.header');
+        if (header) {
+            const isPremium = this.checkAPIKeyPresence(true);
+            header.classList.toggle('ai-active', isPremium);
+        }
+    },
+    updateAIButtonsState() {
+        const isAIAvailable = this.checkAPIKeyPresence(true);
+        if (DOM.analyzeClassBtn) { DOM.analyzeClassBtn.disabled = !isAIAvailable; DOM.analyzeClassBtn.classList.toggle('ai-disabled', !isAIAvailable); DOM.analyzeClassBtn.setAttribute('data-tooltip', isAIAvailable ? "Obtenez une analyse IA de la classe. Identifie les tendances, forces et faiblesses à partir des élèves actuellement affichés à l'écran." : "Clé API requise."); }
+        document.querySelectorAll('.appreciation-result').forEach(card => {
+            [{ el: card.querySelector('[data-action="details"]'), title: "Analyser" }, { el: card.querySelector('[data-action="variations"], [data-action="undo-variation"]'), title: "Variation / Annuler" }].forEach(btn => {
+                if (btn.el) {
+                    btn.el.disabled = !isAIAvailable;
+                    btn.el.classList.toggle('ai-disabled', !isAIAvailable);
+                    if (isAIAvailable) {
+                        // Pour "Analyser" (le nom de l'élève), l'étiquette visuelle au survol suffit, pas besoin de tooltip
+                        if (btn.title === "Analyser") {
+                            btn.el.removeAttribute('data-tooltip');
+                        } else {
+                            btn.el.setAttribute('data-tooltip', btn.title);
+                        }
+                    } else {
+                        btn.el.setAttribute('data-tooltip', "Clé API requise.");
+                    }
+                }
+            });
+        });
+    },
+
+    // ====================================================================
+    //  LOADING, SPINNERS ET OVERLAYS
+    // ====================================================================
+
+    showLoadingOverlay(msg = 'Génération...') { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'flex'; if (DOM.loadingText) DOM.loadingText.textContent = msg; },
+    hideLoadingOverlay() { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'none'; },
+    showInlineSpinner(el) { el.dataset.originalContent = el.innerHTML; el.innerHTML = `<div class="loading-spinner" style="margin:auto;"></div>`; el.disabled = true; },
+    hideInlineSpinner(el) { if (el.dataset.originalContent) el.innerHTML = el.dataset.originalContent; el.disabled = false; },
+
+    // ====================================================================
+    //  DÉLÉGATIONS AUX SOUS-MANAGERS
+    //  Façade vers ModalUI, FormUI, StatsUI, ImportUI, ResultCardsUI
+    // ====================================================================
+
+    // Modal functions delegated to ModalUIManager
+    openModal(modalOrId) { ModalUI.openModal(modalOrId); },
+    closeModal(modalOrId) { ModalUI.closeModal(modalOrId); },
+    closeAllModals() { ModalUI.closeAllModals(); },
+
+    // Settings form functions delegated to FormUIManager
+    updateSettingsPromptFields() {
+        FormUI.updateSettingsFields();
+        if (App && App.populatePreviewStudentSelect) App.populatePreviewStudentSelect();
+    },
+    updateSettingsFields() { FormUI.updateSettingsFields(); },
+    updateModelDescription() { FormUI.updateModelDescription(); },
+
+    // Stats functions delegated to StatsUIManager
+    animateValue(element, start, end, duration) {
+        return StatsUI.animateValue(element, start, end, duration);
+    },
+    animateNumberWithText(element, start, end, duration, templateFn) {
+        return StatsUI.animateNumberWithText(element, start, end, duration, templateFn);
+    },
+    async updateStats() {
+        return StatsUI.updateStats(this, AppreciationsManager.getRelevantEvolution);
+    },
+    updateStatsTooltips() {
+        StatsUI.updateStatsTooltips();
+    },
+    showOutputProgressArea() { StatsUI.showOutputProgressArea(); },
+    hideOutputProgressArea() { StatsUI.hideOutputProgressArea(); },
+    updateOutputProgress(cur, total, studentName) { StatsUI.updateOutputProgress(cur, total, studentName); },
+    resetProgressBar() { StatsUI.resetProgressBar(); },
+    showSettingsTab(tabName) { FormUI.showSettingsTab(tabName); },
+    toggleAIKeyFields() { FormUI.toggleAIKeyFields(); },
+
+    // ====================================================================
+    //  VALIDATION API ET ÉTAT DE L'APPLICATION
+    // ====================================================================
+
+    checkAPIKeyPresence(silent = false) {
+        if (appState.isDemoMode) return true;
+
+        const model = appState.currentAIModel;
+        let key = '', name = '', provider = '';
+
+        if (model.startsWith('ollama')) {
+            // Ollama est local, pas de clé API nécessaire
+            provider = 'ollama';
+            key = appState.ollamaEnabled ? 'local' : '';
+            name = 'Ollama';
+        } else if (model.startsWith('openai')) {
+            provider = 'openai';
+            key = appState.openaiApiKey;
+            name = 'OpenAI';
+        } else if (model.startsWith('gemini')) {
+            provider = 'google';
+            key = appState.googleApiKey;
+            name = 'Google';
+        } else {
+            provider = 'openrouter';
+            key = appState.openrouterApiKey;
+            name = 'OpenRouter';
+        }
+
+        const errEl = provider !== 'ollama' ? document.getElementById(`${provider}ApiKeyError`) : null;
+
+        if (name && !key) {
+            if (!silent) {
+                if (provider === 'ollama') {
+                    this.showNotification(`Ollama n'est pas activé. Activez-le dans les paramètres.`, 'warning');
+                } else {
+                    this.showNotification(`Clé API ${name} manquante.`, 'warning');
+                }
+                if (errEl && DOM.settingsModal.style.display === 'flex' && DOM.advancedTabContent.style.display === 'block') {
+                    errEl.textContent = `⚠️ Clé ${name} requise.`;
+                    errEl.style.display = 'block';
+                }
+            }
+            return false;
+        }
+        if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+        return true;
+    },
+    // renderVocabList supprimé - fonctionnalité vocabulaire dépréciée
+    renderSettingsLists() { FormUI.renderSettingsLists(); },
+    updateHelpImportFormat(period) {
+        const struct = document.getElementById('helpFormatStructure'), ex = document.getElementById('helpFormatExample');
+        if (!struct || !ex) return;
+
+        // Fallback si la période n'est pas définie
+        const periods = Utils.getPeriods();
+        const effectivePeriod = period || appState.currentPeriod || periods[periods.length - 1];
+        const periodIndex = periods.indexOf(effectivePeriod);
+        const prev = periodIndex > 0 ? periods.slice(0, periodIndex) : [];
+
+        let sParts = ["NOM Prénom", "Statut"], eParts = ["DUPONT Chloé", ""];
+        prev.forEach((p, i) => { sParts.push(`Moy ${p}`, `App ${p}`); eParts.push(`${14.5 + i}`, `Bonne période.`); });
+        sParts.push(`Moy ${effectivePeriod}`, 'Instructions'); eParts.push(`${15.0 + prev.length}`, 'Sérieux.');
+        struct.textContent = sParts.join(' | '); ex.textContent = eParts.join(' | ');
+
+        const sel = document.getElementById('helpFormatSelector');
+        if (sel) {
+            sel.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            sel.querySelector(`button[data-format="${effectivePeriod}"]`)?.classList.add('active');
+        }
+    },
+    updateWordCount(id, text) {
+        const el = document.getElementById(id);
+        if (el) {
+            const wordCount = Utils.countWords(text);
+            const charCount = Utils.countCharacters(text);
+            el.textContent = `${wordCount} mot${wordCount > 1 ? 's' : ''} • ${charCount} car.`;
+        }
+    },
+
+    // ====================================================================
+    //  GESTION DES BOUTONS DE CONTRÔLE
+    //  Régénération, copie, erreurs, filtres
+    // ====================================================================
+
+    /**
+     * Initialise les animations "Glider" pour les sélecteurs.
+     */
+    initGliders() {
+        // Transition CSS explicite pour la fluidité
+        const GLIDER_TRANSITION = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+
+        // Exclude welcome modal selectors - they use standard CSS :checked/:active styles
+        // This avoids the "popping" effect when navigating between steps
+        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .generation-mode-selector:not(#welcomeModal .generation-mode-selector)');
+        containers.forEach(container => {
+            // Création du Glider s'il n'existe pas
+            let glider = container.querySelector('.selector-glider');
+            const isNewGlider = !glider;
+
+            if (isNewGlider) {
+                glider = document.createElement('div');
+                glider.className = 'selector-glider';
+                container.prepend(glider);
+                container.classList.add('has-glider');
+            }
+
+            // Toujours s'assurer que la transition est correctement définie
+            glider.style.transition = GLIDER_TRANSITION;
+
+            // Mise à jour initiale immédiate (sans animation) - SEULEMENT pour les nouveaux gliders
+            // pour éviter d'interférer avec les animations en cours
+            if (isNewGlider) {
+                requestAnimationFrame(() => this.updateGlider(container, true));
+            }
+
+            // Écouteurs pour les Radios (changement automatique)
+            // Use a data attribute to avoid adding listeners multiple times
+            if (container.classList.contains('generation-mode-selector') && !container.dataset.gliderListenersAttached) {
+                container.querySelectorAll('input[type="radio"]').forEach(input => {
+                    input.addEventListener('change', () => this.updateGlider(container));
+                });
+                container.dataset.gliderListenersAttached = 'true';
+            }
+        });
+
+        // Gestion du redimensionnement fenêtre
+        if (!this._resizeListenerAdded) {
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                // Debounce simple et update sans transition pour éviter les écarts pendant le resize
+                clearTimeout(resizeTimer);
+                document.querySelectorAll('.has-glider').forEach(c => {
+                    // Désactiver transition pendant resize
+                    this.updateGlider(c, true);
+                });
+                resizeTimer = setTimeout(() => {
+                    document.querySelectorAll('.has-glider').forEach(c => this.updateGlider(c));
+                }, 100);
+            });
+            this._resizeListenerAdded = true;
+        }
+    },
+
+    /**
+     * Met à jour la position du Glider pour un conteneur donné.
+     * @param {HTMLElement} container - Le conteneur du sélecteur
+     * @param {boolean} immediate - Si true, désactive la transition pour un déplacement instantané
+     */
+    updateGlider(container, immediate = false) {
+        if (!container) return;
+        const glider = container.querySelector('.selector-glider');
+        if (!glider) return;
+
+        // Transition CSS explicite pour la fluidité
+        const GLIDER_TRANSITION = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+
+        let activeEl;
+        // Détection de l'élément actif selon le type
+        if (container.classList.contains('generation-mode-selector')) {
+            const checked = container.querySelector('input:checked');
+            if (checked) {
+                // Le label est souvent adjacent ou lié par 'for'
+                activeEl = container.querySelector(`label[for="${checked.id}"]`);
+                if (!activeEl) {
+                    // Fallback si input est dans label ou adjacent
+                    activeEl = checked.nextElementSibling;
+                }
+            }
+        } else if (container.classList.contains('provider-pills')) {
+            // For provider pills, look for .active button
+            activeEl = container.querySelector('.provider-pill.active');
+        } else {
+            // Pour les onglets boutons
+            activeEl = container.querySelector('.active');
+        }
+
+        if (activeEl) {
+            // Only update if the element has dimensions (is visible)
+            const width = activeEl.offsetWidth;
+            const left = activeEl.offsetLeft;
+
+            if (width > 0) {
+                if (immediate) {
+                    glider.style.transition = 'none';
+                    glider.style.width = `${width}px`;
+                    glider.style.left = `${left}px`;
+                    // Force reflow pour appliquer le changement sans transition
+                    glider.offsetHeight;
+                    // Restaure la transition explicitement
+                    requestAnimationFrame(() => {
+                        glider.style.transition = GLIDER_TRANSITION;
+                    });
+                } else {
+                    glider.style.transition = GLIDER_TRANSITION;
+                    glider.style.width = `${width}px`;
+                    glider.style.left = `${left}px`;
+                }
+            }
+            // If width is 0 (element hidden), don't update - wait for next call when visible
+        } else {
+            glider.style.width = '0';
+        }
+    },
+
+    updateControlButtons() {
+        const visible = appState.filteredResults;
+        DOM.regenerateAllBtn.disabled = visible.length === 0;
+
+        // CORRECTIF: Filtrer les erreurs par la classe courante uniquement
+        const currentClassId = appState.currentClassId;
+        const classErrors = appState.generatedResults.filter(r =>
+            r.errorMessage && (!currentClassId || r.classId === currentClassId)
+        );
+        const hasAnyErrors = classErrors.length > 0;
+        const errorCount = classErrors.length;
+
+        // ... (reste de la fonction inchangé)
+
+        const regenErrorsBtnShortcut = document.getElementById('regenerateErrorsBtn-shortcut');
+        if (regenErrorsBtnShortcut) regenErrorsBtnShortcut.style.display = hasAnyErrors ? 'inline-flex' : 'none';
+
+        if (DOM.actionsDropdown) DOM.actionsDropdown.classList.toggle('has-errors', hasAnyErrors);
+
+        const massImportErrorContainer = DOM.massImportErrorActions;
+        if (massImportErrorContainer) {
+            let relaunchBtn = massImportErrorContainer.querySelector('#relaunchFailedBtn');
+            if (hasAnyErrors) {
+                if (!relaunchBtn) {
+                    relaunchBtn = document.createElement('button');
+                    relaunchBtn.id = 'relaunchFailedBtn';
+                    relaunchBtn.className = 'btn btn-warning btn-small';
+                    relaunchBtn.onclick = () => AppreciationsManager.regenerateVisible(true);
+                    massImportErrorContainer.appendChild(relaunchBtn);
+                }
+                relaunchBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Relancer les ${errorCount} erreur${errorCount > 1 ? 's' : ''}`;
+            } else if (relaunchBtn) {
+                relaunchBtn.remove();
+            }
+        }
+
+        if (DOM.retryErrorsFloatingBtn) {
+            DOM.retryErrorsFloatingBtn.style.display = 'none';
+        }
+
+        if (DOM.headerRetryErrorsBtn) {
+            if (hasAnyErrors) {
+                DOM.headerRetryErrorsBtn.style.display = 'inline-flex';
+                if (DOM.headerRetryErrorsCount) {
+                    DOM.headerRetryErrorsCount.textContent = errorCount;
+                }
+                DOM.headerRetryErrorsBtn.setAttribute('data-tooltip',
+                    `${errorCount} appréciation${errorCount > 1 ? 's' : ''} en erreur. Cliquer pour régénérer.`);
+            } else {
+                DOM.headerRetryErrorsBtn.style.display = 'none';
+            }
+        }
+    },
+    updateCopyAllButton() {
+        const total = appState.generatedResults.length, filtered = appState.filteredResults.length;
+        if (DOM.copyAllBtn) {
+            DOM.copyAllBtn.innerHTML = `<i class="fas fa-copy"></i> Copier les visibles`;
+            DOM.copyAllBtn.disabled = filtered === 0;
+        }
+    },
+    _getMappingOptions() { return ImportUI._getMappingOptions(); },
+    _guessInitialMapping(selects, firstLineData, availableOptions) { return ImportUI._guessInitialMapping(selects, firstLineData, availableOptions); },
+    updateMassImportPreview() { ImportUI.updateMassImportPreview(); },
+    toggleSidebar() {
+        const isCollapsed = DOM.appLayout.classList.toggle('sidebar-collapsed');
+        document.body.classList.toggle('side-panel-open', !isCollapsed && window.innerWidth <= 1200);
+
+        const tooltipText = isCollapsed ? "Afficher le volet" : "Masquer le volet";
+        if (DOM.sidebarToggle) {
+            DOM.sidebarToggle.setAttribute('data-tooltip', tooltipText);
+        }
+
+        // Update gliders after sidebar animation completes
+        if (!isCollapsed) {
+            // Sidebar is opening - wait for CSS transition to complete
+            setTimeout(() => {
+                const tabsContainer = document.querySelector('.input-mode-tabs');
+                if (tabsContainer && UI.updateGlider) {
+                    UI.updateGlider(tabsContainer, true);
+                }
+            }, 350); // Match sidebar transition duration
+        }
+    },
+    getGradeClass(grade) { return ResultCardsUI.getGradeClass(grade); },
+    populateLoadStudentSelect() {
+        if (!DOM.loadStudentSelect) return;
+
+        // CORRECTIF: Utiliser filteredResults pour afficher seulement la classe courante
+        const students = [...appState.filteredResults].sort((a, b) =>
+            `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)
+        );
+
+        const currentSelection = DOM.loadStudentSelect.value;
+        DOM.loadStudentSelect.innerHTML = `<option value="">-- Nouvel élève --</option>`;
+
+        students.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = `${s.nom} ${s.prenom}`;
+            DOM.loadStudentSelect.appendChild(option);
+        });
+
+        // Garder la sélection si l'élève est dans la classe courante
+        if (students.some(s => s.id === currentSelection)) {
+            DOM.loadStudentSelect.value = currentSelection;
+        }
+
+        // Refresh custom dropdown if enhanced
+        DropdownManager.refresh('loadStudentSelect');
+    },
+    updateActiveFilterInfo() {
+        if (!DOM.activeFilterInfo) return;
+        if (appState.activeStatFilter) {
+            const filterLabels = {
+                'minGrade': 'Moyenne la plus basse',
+                'maxGrade': 'Moyenne la plus haute',
+                'gradeRange_0-4': 'Notes 0-4',
+                'gradeRange_4-8': 'Notes 4-8',
+                'gradeRange_8-12': 'Notes 8-12',
+                'gradeRange_12-16': 'Notes 12-16',
+                'gradeRange_16-20': 'Notes 16-20'
+            };
+
+            const card = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
+            const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
+
+            DOM.activeFilterInfo.innerHTML = `<p><i class="fas fa-filter"></i> Filtre actif : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn">Retirer le filtre</button>`;
+            DOM.activeFilterInfo.classList.add('show');
+        } else {
+            DOM.activeFilterInfo.classList.remove('show');
+        }
+    },
+    openImportPreviewModal(mappingState) { ImportUI.openImportPreviewModal(mappingState); },
+    resetCopyButtonState(buttonEl) {
+        if (buttonEl) {
+            const isCopied = buttonEl.closest('.appreciation-result')?.querySelector('.copy-btn.was-copied');
+            if (!isCopied) {
+                buttonEl.classList.remove('copied');
+                buttonEl.innerHTML = '<i class="fas fa-copy"></i>';
+            }
+        }
+    },
+    setMassImportProcessingState(isProcessing) { ImportUI.setMassImportProcessingState(isProcessing); },
+
+    // ====================================================================
+    //  ANIMATIONS DE TEXTE (LEGACY)
+    //  Effet de frappe caractère par caractère
+    // ====================================================================
+
+    async animateTextTyping(element, newHtml) {
+        return new Promise(resolve => {
+            if (!element) return resolve();
+
+            const len = newHtml.replace(/<[^>]*>?/gm, '').length;
+            const baseSpeed = 20;
+            const maxSpeed = 2;
+            const speed = Math.max(maxSpeed, baseSpeed - len * 0.1);
+
+            let i = 0;
+            element.innerHTML = '';
+            let intervalId = setInterval(() => {
+                if (i < newHtml.length) {
+                    const char = newHtml[i];
+                    if (char === '<') {
+                        const tagEnd = newHtml.indexOf('>', i);
+                        if (tagEnd !== -1) {
+                            element.innerHTML += newHtml.substring(i, tagEnd + 1);
+                            i = tagEnd;
+                        }
+                    } else {
+                        element.innerHTML += char;
+                    }
+                    i++;
+                } else {
+                    clearInterval(intervalId);
+                    element.innerHTML = newHtml;
+                    resolve();
+                }
+            }, speed);
+        });
+    },
+
+    // ====================================================================
+    //  SKELETON & TYPEWRITER UTILITIES
+    //  Fonctions centralisées pour les effets de génération progressive
+    // ====================================================================
+
+    /**
+     * Affiche un skeleton dans la zone d'appréciation d'une carte
+     * @param {HTMLElement} card - La carte élève
+     * @param {string} [badgeText='Génération...'] - Texte du badge
+     * @param {boolean} [isPending=false] - Si true, affiche le style "en attente"
+     */
+    showSkeletonInCard(card, badgeText = 'Génération...', isPending = false) {
+        if (!card) return;
+        const appreciationEl = card.querySelector('[data-template="appreciation"]');
+        if (appreciationEl) {
+            const badgeClass = isPending ? 'pending' : 'active';
+            const iconClass = isPending ? 'fa-clock' : 'fa-spinner';
+            appreciationEl.innerHTML = `
+                <div class="appreciation-skeleton">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <span class="generating-badge ${badgeClass}">
+                        <i class="fas ${iconClass}"></i> ${badgeText}
+                    </span>
+                </div>
+            `;
+        }
+    },
+
+    /**
+     * Met à jour le badge d'une carte pour indiquer la génération active
+     * @param {HTMLElement} card - La carte élève
+     */
+    activateCardBadge(card) {
+        if (!card) return;
+        const badge = card.querySelector('.generating-badge');
+        if (badge) {
+            badge.innerHTML = '<i class="fas fa-spinner"></i> Génération...';
+            badge.classList.remove('pending');
+            badge.classList.add('active');
+        }
+    },
+
+    /**
+     * Fait disparaître le skeleton en fondu
+     * @param {HTMLElement} container - Le conteneur avec le skeleton
+     */
+    async fadeOutSkeleton(container) {
+        if (!container) return;
+        const skeleton = container.querySelector('.appreciation-skeleton');
+        const badge = container.querySelector('.generating-badge');
+
+        if (skeleton) {
+            skeleton.style.transition = 'opacity 0.15s ease-out';
+            skeleton.style.opacity = '0';
+        }
+        if (badge) {
+            badge.style.transition = 'opacity 0.15s ease-out';
+            badge.style.opacity = '0';
+        }
+
+        await new Promise(r => setTimeout(r, 150));
+
+        if (skeleton) skeleton.remove();
+        if (badge) badge.remove();
+    },
+
+    /**
+     * Révèle le texte avec un effet typewriter fluide
+     * @param {HTMLElement} container - Le conteneur de l'appréciation
+     * @param {string} text - Le texte à afficher
+     * @param {Object} [options] - Options de configuration
+     * @param {number} [options.speed='normal'] - 'slow', 'normal', 'fast'
+     */
+    async typewriterReveal(container, text, options = {}) {
+        if (!container) return;
+
+        // Fade out du skeleton d'abord
+        await this.fadeOutSkeleton(container);
+        container.innerHTML = '';
+
+        // Créer un span pour le texte avec le curseur clignotant
+        const textSpan = document.createElement('span');
+        textSpan.className = 'typewriter-cursor';
+        container.appendChild(textSpan);
+
+        // Configuration de la vitesse
+        const speedConfig = {
+            slow: { baseSpeed: 20, chunkSize: 3 },
+            normal: { baseSpeed: 12, chunkSize: 4 },
+            fast: { baseSpeed: 8, chunkSize: 5 }
+        };
+        const config = speedConfig[options.speed] || speedConfig.normal;
+
+        // Vitesse adaptative basée sur la longueur du texte
+        const adaptiveSpeed = Math.max(3, Math.min(config.baseSpeed, 1500 / text.length));
+
+        // Afficher le texte caractère par caractère avec curseur
+        for (let i = 0; i < text.length; i += config.chunkSize) {
+            textSpan.textContent = text.substring(0, Math.min(i + config.chunkSize, text.length));
+            await new Promise(r => setTimeout(r, adaptiveSpeed));
+        }
+
+        // Retirer le curseur et afficher le texte final
+        textSpan.classList.remove('typewriter-cursor');
+        textSpan.textContent = text;
+    },
+
+    // ====================================================================
+    //  TOOLTIPS ET ACCORDÉONS
+    //  Initialisation Tippy.js et animations d'accordéon
+    // ====================================================================
+
+    _tippyInstances: [],
+    initTooltips() {
+        if (this._tippyInstances) {
+            this._tippyInstances.forEach(instance => instance.destroy());
+        }
+        if (window.tippy) {
+            this._tippyInstances = window.tippy('[data-tooltip]', {
+                content(reference) {
+                    return reference.getAttribute('data-tooltip');
+                },
+                appendTo: () => document.body,
+                theme: 'custom-theme',
+                animation: 'fade',
+                duration: 200,
+                allowHTML: true,
+                interactive: false,
+                hideOnClick: true,
+
+                onShow(instance) {
+                    if (UI._isIgnoringTooltips) {
+                        return false;
+                    }
+
+                    if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) {
+                        return false;
+                    }
+                    return true;
+                }
+            });
+        }
+    },
+
+    /**
+     * Ajoute ou met à jour un tooltip sur un élément
+     * @param {HTMLElement} element - L'élément cible
+     * @param {string} content - Le texte du tooltip
+     */
+    updateTooltip(element, content) {
+        if (!element) return;
+
+        element.setAttribute('data-tooltip', content);
+
+        if (element._tippy) {
+            element._tippy.setContent(content);
+        } else if (window.tippy) {
+            // Créer une nouvelle instance si elle n'existe pas
+            const instances = window.tippy([element], {
+                content: content,
+                appendTo: () => document.body,
+                theme: 'custom-theme',
+                animation: 'fade',
+                duration: 200,
+                allowHTML: true,
+                interactive: false,
+                hideOnClick: true,
+                trigger: 'mouseenter',
+                onShow(instance) {
+                    if (UI._isIgnoringTooltips) return false;
+                    if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
+                    return true;
+                }
+            });
+
+            if (instances && instances.length > 0) {
+                // Ajouter à la liste globale pour nettoyage futur
+                if (this._tippyInstances) {
+                    this._tippyInstances.push(instances[0]);
+                }
+            }
+        }
+    },
+
+    /**
+     * Initialise les accordéons avec une animation fluide.
+     * Intercepte le toggle pour permettre à l'animation CSS de se jouer à la fermeture.
+     */
+    initAccordions() {
+        document.querySelectorAll('.details-accordion').forEach(details => {
+            // Éviter d'ajouter plusieurs fois le listener
+            if (details.dataset.accordionInit) return;
+            details.dataset.accordionInit = 'true';
+
+            const summary = details.querySelector('summary');
+            if (!summary) return;
+
+            summary.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                // Éviter les clics multiples pendant l'animation
+                if (details.dataset.animating === 'true') return;
+
+                const content = details.querySelector('.details-content');
+                if (!content) {
+                    details.open = !details.open;
+                    return;
+                }
+
+                if (details.open) {
+                    // Fermeture avec animation
+                    details.dataset.animating = 'true';
+
+                    // Forcer le navigateur à calculer l'état actuel
+                    content.style.gridTemplateRows = '1fr';
+                    content.style.opacity = '1';
+
+                    // Déclencher le reflow
+                    content.offsetHeight;
+
+                    // Appliquer l'animation de fermeture
+                    content.style.gridTemplateRows = '0fr';
+                    content.style.opacity = '0';
+
+                    // Écouter la fin de la transition
+                    const onTransitionEnd = (e) => {
+                        if (e.propertyName === 'grid-template-rows' || e.propertyName === 'opacity') {
+                            content.removeEventListener('transitionend', onTransitionEnd);
+                            details.open = false;
+                            content.style.gridTemplateRows = '';
+                            content.style.opacity = '';
+                            details.dataset.animating = 'false';
+                        }
+                    };
+                    content.addEventListener('transitionend', onTransitionEnd);
+
+                    // Fallback si transitionend ne se déclenche pas
+                    setTimeout(() => {
+                        if (details.dataset.animating === 'true') {
+                            details.open = false;
+                            content.style.gridTemplateRows = '';
+                            content.style.opacity = '';
+                            details.dataset.animating = 'false';
+                        }
+                    }, 400);
+                } else {
+                    // Ouverture normale (CSS gère l'animation)
+                    details.open = true;
+                }
+            });
+        });
+    },
+
+    // ====================================================================
+    //  CONTEXTE HEADER
+    //  Affichage du nombre d'élèves et statuts dans le header
+    // ====================================================================
+
+    updateHeaderContext() {
+        if (!DOM.headerClassContext || !DOM.headerStudentCount) return;
+
+        const activePeriod = appState.currentPeriod;
+        const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
+
+        const activeStudents = appState.generatedResults.filter(result => {
+            const statuses = result.studentData.statuses || [];
+            const departStatus = statuses.find(s => s.startsWith('Départ'));
+            if (!departStatus) return true;
+
+            const departPeriodKey = departStatus.split(' ')[1];
+            const departPeriodIndex = Utils.getPeriods().indexOf(departPeriodKey);
+
+            return departPeriodIndex >= activePeriodIndex;
+        });
+        const totalCount = activeStudents.length;
+
+        let newCount = 0;
+        let departedCount = 0;
+        activeStudents.forEach(result => {
+            const statuses = result.studentData.statuses || [];
+            if (statuses.some(s => s === `Nouveau ${activePeriod}`)) {
+                newCount++;
+            }
+            if (statuses.some(s => s === `Départ ${activePeriod}`)) {
+                departedCount++;
+            }
+        });
+
+        if (appState.activeStatFilter && appState.filteredResults.length !== totalCount) {
+            DOM.headerStudentCount.textContent = `${appState.filteredResults.length}/${totalCount}`;
+        } else {
+            DOM.headerStudentCount.textContent = totalCount;
+        }
+
+        let tooltipLines = [`${totalCount} ${totalCount > 1 ? 'élèves' : 'élève'} au total.`];
+        if (newCount > 0) {
+            tooltipLines.push(`<span style="color: var(--success-color); font-weight: 600;">Nouveaux : ${newCount}</span>`);
+        }
+        if (departedCount > 0) {
+            tooltipLines.push(`<span style="color: var(--error-color); font-weight: 600;">Départs : ${departedCount}</span>`);
+        }
+
+        let tooltipText = tooltipLines[0];
+        if (tooltipLines.length > 1) {
+            tooltipText += '<br>' + tooltipLines.slice(1).join(' | ');
+        }
+
+        DOM.headerClassContext.setAttribute('data-tooltip', tooltipText);
+
+        this.initTooltips();
+    },
+
+    // Result card functions delegated to ResultCardsUIManager
+    getGenerationModeInfo(result) { return ResultCardsUI.getGenerationModeInfo(result); },
+    _getGradesHTML(result) { return ResultCardsUI._getGradesHTML(result); },
+    populateResultCard(result) { return ResultCardsUI.populateResultCard(result); },
+    async updateResultCard(id, options) { await ResultCardsUI.updateResultCard(id, options); },
+    async _updateCardContent(card, result, options) { await ResultCardsUI._updateCardContent(card, result, options); },
+};
