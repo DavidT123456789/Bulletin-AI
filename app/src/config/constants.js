@@ -3,7 +3,7 @@
  * @module config/constants
  */
 
-export const APP_VERSION = "1.00.00";
+export const APP_VERSION = "0.1.0 Beta";
 
 export const CONSTS = {
     INPUT_MODE: { MASS: 'mass', SINGLE: 'single' }

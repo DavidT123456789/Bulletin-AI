@@ -2,7 +2,7 @@
 
 > **Assistant intelligent pour la rédaction d'appréciations scolaires**
 
-[![Version](https://img.shields.io/badge/version-4.3.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.0_Beta-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 ## 🎯 Description
