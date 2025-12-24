@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  // GitHub Pages: /Assistant-Bulletin/ | Local dev: ./
-  base: process.env.GITHUB_ACTIONS ? '/Assistant-Bulletin/' : './',
+  // GitHub Pages: /Bulletin-AI/ | Local dev: ./
+  base: process.env.GITHUB_ACTIONS ? '/Bulletin-AI/' : './',
   plugins: [
     VitePWA({
       registerType: 'prompt', // Changed to 'prompt' to show custom update notification
