@@ -110,6 +110,9 @@ export function initDOM() {
     DOM.generateAndNextBtn = document.getElementById('generateAndNextBtn');
     DOM.resetFormBtn = document.getElementById('resetFormBtn');
     DOM.cancelEditBtn = document.getElementById('cancelEditBtn');
+    DOM.statsHeader = document.getElementById('statsHeader');
+    DOM.statsContainer = document.getElementById('statsContainer');
+    DOM.outputHeader = document.getElementById('outputHeader');
     DOM.resultsDiv = document.getElementById('outputList');
     DOM.searchInput = document.getElementById('searchInput');
     DOM.avgWordsChip = document.getElementById('avgWordsChip');

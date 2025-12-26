@@ -255,8 +255,10 @@ export const AppreciationsManager = {
      */
     _deanonymizeText(text, prenom) {
         if (!text || !prenom) return text;
-        // Remplacer toutes les occurrences de [PRÉNOM] par le prénom réel
-        return text.replace(/\[PRÉNOM\]/g, prenom);
+        // Remplacer toutes les occurrences de [PRÉNOM] avec diverses variantes Unicode
+        // Les modèles IA peuvent générer: [Prénom], [PRÉNOM], [prénom], [Prėnom], [Prênom], etc.
+        // Cette regex couvre les variantes courantes des accents sur le 'e'
+        return text.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
     },
 
     _validateSingleStudentForm() {

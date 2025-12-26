@@ -283,6 +283,9 @@ export const UI = {
     // ====================================================================
 
     setPeriod(period) {
+        // Skip if already on this period
+        if (appState.currentPeriod === period) return;
+
         // [FIX] Save context for the OLD period BEFORE changing appState.currentPeriod
         // This ensures that any edits made to context/grade/appreciation in Focus Panel
         // are saved to the correct period before we switch
@@ -290,24 +293,42 @@ export const UI = {
             FocusPanelManager.saveCurrentContext();
         }
 
-        appState.currentPeriod = period;
-        document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => r.checked = r.value === period);
-        if (DOM.sidebarPeriodContext) {
-            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
-        }
-        this.updatePeriodSystemUI();
+        // Trigger period-specific animation (horizontal slide - temporal navigation feel)
+        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header');
+        containersToAnimate.forEach(el => {
+            el.classList.remove('period-refresh-animation');
+            void el.offsetWidth; // Force reflow
+            el.classList.add('period-refresh-animation');
+        });
 
-        // Update glider
-        if (DOM.mainPeriodSelector) this.updateGlider(DOM.mainPeriodSelector);
+        // Delay data swap to sync with slide peak (50% of 350ms ≈ 175ms)
+        setTimeout(() => {
+            appState.currentPeriod = period;
+            document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => r.checked = r.value === period);
+            if (DOM.sidebarPeriodContext) {
+                DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
+            }
+            this.updatePeriodSystemUI();
 
-        AppreciationsManager.renderResults();
+            // Update glider
+            if (DOM.mainPeriodSelector) this.updateGlider(DOM.mainPeriodSelector);
 
-        // [FIX] Refresh Focus Panel if open to show the new period's appreciation and context
-        if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
-            FocusPanelManager.open(FocusPanelManager.currentStudentId);
-        }
+            AppreciationsManager.renderResults();
 
-        StorageManager.saveAppState();
+            // [FIX] Refresh Focus Panel if open to show the new period's appreciation and context
+            if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
+                FocusPanelManager.open(FocusPanelManager.currentStudentId);
+            }
+
+            StorageManager.saveAppState();
+
+            // Cleanup animation after it finishes
+            setTimeout(() => {
+                containersToAnimate.forEach(el => {
+                    el.classList.remove('period-refresh-animation');
+                });
+            }, 200); // Remaining animation time
+        }, 175);
     },
     getPeriods() {
         return Utils.getPeriods();

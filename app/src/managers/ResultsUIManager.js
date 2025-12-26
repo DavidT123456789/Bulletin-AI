@@ -133,14 +133,29 @@ export const ResultsUIManager = {
             }
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'block';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
+
+            // Masquer les statistiques et le header de liste quand il n'y a pas de données
+            if (DOM.statsHeader) DOM.statsHeader.style.display = 'none';
+            if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
+            if (DOM.outputHeader) DOM.outputHeader.style.display = 'none';
         }
         else if (filteredAndSorted.length === 0) {
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'block';
+
+            // Réafficher les statistiques si masquées précédemment
+            if (DOM.statsHeader) DOM.statsHeader.style.display = '';
+            if (DOM.statsContainer) DOM.statsContainer.style.display = '';
+            if (DOM.outputHeader) DOM.outputHeader.style.display = '';
         }
         else {
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
+
+            // Réafficher les statistiques si masquées précédemment
+            if (DOM.statsHeader) DOM.statsHeader.style.display = '';
+            if (DOM.statsContainer) DOM.statsContainer.style.display = '';
+            if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
             // Liste + Focus UX: Utiliser ListViewManager au lieu des cartes individuelles
             ListViewManager.render(filteredAndSorted, DOM.resultsDiv);

@@ -297,8 +297,8 @@ export const Utils = {
         // Correction typographique française : ajouter un espace avant les deux-points si absent
         // Gère : Mot:, **Mot**:, (mot):, "mot":
         let result = text
-            .replace(/([a-zA-ZÀ-ÿ\*\)\]\"\'\»]):([A-ZÀ-Ÿ])/g, '$1 : $2')   // Mot:Maj, (mot):Maj, etc.
-            .replace(/([a-zA-ZÀ-ÿ\*\)\]\"\'\»]):\s+/g, '$1 : ');            // Mot: suivi d'espace
+            .replace(/([a-zA-Z0-9À-ÿ\*\)\]\"\'\»]):([A-ZÀ-Ÿ0-9])/g, '$1 : $2')   // Mot:Maj, (mot):Maj, Mot:Chiffre etc.
+            .replace(/([a-zA-Z0-9À-ÿ\*\)\]\"\'\»]):\s+/g, '$1 : ');            // Mot: suivi d'espace
         // Markdown → HTML
         return result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/###\s*(.*)/g, '<h4>$1</h4>');
     },

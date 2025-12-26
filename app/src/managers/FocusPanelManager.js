@@ -13,6 +13,7 @@ import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
+import { ResultCardsUI } from './ResultCardsUIManager.js';
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -27,6 +28,13 @@ export const FocusPanelManager = {
 
     /** Index dans la liste filtrée */
     currentIndex: -1,
+
+    /** Map of active generation controllers by student ID */
+    _activeGenerations: new Map(),
+
+    // Removed legacy single-tracking properties: 
+    // _generationAbortController
+    // _generatingForStudentId
 
     /**
      * Initialise le module avec les références nécessaires
@@ -192,15 +200,31 @@ export const FocusPanelManager = {
      * @param {string} studentId - ID de l'élève
      */
     open(studentId) {
-        // IMPORTANT: Use generatedResults as source of truth (filteredResults contains shallow copies)
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
+
+        // CRITICAL FIX: Save context of PREVIOUS student BEFORE changing currentStudentId
+        // This prevents race conditions where user switches during generation
+        if (this.currentStudentId && this.currentStudentId !== studentId) {
+            this._saveContext();
+        }
 
         this.currentStudentId = studentId;
         this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
 
         // Clear history for new student
         this._clearHistory();
+
+        // Reset generate button state (only if target student is NOT being generated)
+        // If target is being generated, _renderContent will restore the loading state
+        if (!this._activeGenerations.has(studentId)) {
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            if (generateBtn) {
+                UI.hideInlineSpinner(generateBtn);
+            }
+            // Reset appreciation badge state
+            this._setAppreciationBadge('none');
+        }
 
         this._renderContent(result);
         this._updateNavigation();
@@ -215,8 +239,6 @@ export const FocusPanelManager = {
         // Focus the panel for accessibility
         panel?.focus();
 
-        // Auto-collapse details for existing student
-        this._toggleRetractableDetails(false);
     },
 
     /**
@@ -282,29 +304,18 @@ export const FocusPanelManager = {
         // Save context and identity changes before closing
         this._saveContext();
 
+        // Cancel any in-progress generation
+        if (this.currentStudentId) this._cancelGenerationForStudent(this.currentStudentId);
+
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
-
-        // Close sidebar if open
-        this._toggleRetractableDetails(false); // Close modal if open
 
         this.currentStudentId = null;
         this.currentIndex = -1;
         this.isCreationMode = false;
     },
 
-    /**
-     * Toggles the retractable details section (no longer used, kept for compatibility)
-     * @param {boolean} [forceState] - If true, force open. If false, force close.
-     */
-    _toggleRetractableDetails(forceState) {
-        // No-op: retractable details section has been removed
-        // The main header period selector is now the single source of truth
-    },
 
-    /**
-     * Render the compact history timeline in the retractable menu
-     */
     /**
      * Render the compact history timeline in the retractable menu
      * Unified method for Read Mode (viewing) and Creation Mode (editing)
@@ -685,6 +696,15 @@ export const FocusPanelManager = {
                 // Clear history for new student
                 this._clearHistory();
 
+                // Reset generate button state (in case previous student had generation in progress)
+                const generateBtn = document.getElementById('focusGenerateBtn');
+                if (generateBtn) {
+                    UI.hideInlineSpinner(generateBtn);
+                }
+
+                // Reset appreciation badge state
+                this._setAppreciationBadge('none');
+
                 this._renderContent(targetResult);
                 this._updateNavigation();
 
@@ -704,13 +724,42 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Cancel any pending generation for a specific student (restart behavior)
+     * @param {string} studentId - ID of student to cancel
+     * @private
+     */
+    _cancelGenerationForStudent(studentId) {
+        if (this._activeGenerations.has(studentId)) {
+            const controller = this._activeGenerations.get(studentId);
+            controller.abort();
+            this._activeGenerations.delete(studentId);
+        }
+    },
+
+    /**
      * Génère l'appréciation pour l'élève courant
+     * IMPORTANT: Captures studentId at start and verifies it hasn't changed before applying results
      */
     async generate() {
         if (!this.currentStudentId) return;
 
-        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        // CRITICAL: Capture the student ID AND period at the START of generation
+        // This allows us to detect if user navigated away during async operation
+        // and ensures we save to the correct period even if user changes it
+        const generatingForStudentId = this.currentStudentId;
+        const generatingForPeriod = appState.currentPeriod;
+
+        const result = appState.generatedResults.find(r => r.id === generatingForStudentId);
         if (!result) return;
+
+        // Cancel only if there is ALREADY a generation running for THIS student
+        // (Restart behavior)
+        this._cancelGenerationForStudent(generatingForStudentId);
+
+        // Create new AbortController for this specific generation
+        const abortController = new AbortController();
+        this._activeGenerations.set(generatingForStudentId, abortController);
+        const signal = abortController.signal;
 
         // Save current context before generating
         this._saveContext();
@@ -720,11 +769,10 @@ export const FocusPanelManager = {
         const grade = gradeInput?.value.trim().replace(',', '.');
 
         if (grade) {
-            const currentPeriod = appState.currentPeriod;
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
+            if (!result.studentData.periods[generatingForPeriod]) {
+                result.studentData.periods[generatingForPeriod] = {};
             }
-            result.studentData.periods[currentPeriod].grade = parseFloat(grade);
+            result.studentData.periods[generatingForPeriod].grade = parseFloat(grade);
         }
 
         // Update generate button to loading
@@ -748,71 +796,129 @@ export const FocusPanelManager = {
                 nom: result.nom,
                 prenom: result.prenom,
                 statuses: result.studentData.statuses || [],
-                negativeInstructions: result.studentData.periods?.[appState.currentPeriod]?.context || '',
+                negativeInstructions: result.studentData.periods?.[generatingForPeriod]?.context || '',
                 periods: result.studentData.periods,
-                currentPeriod: appState.currentPeriod
+                currentPeriod: generatingForPeriod
             };
 
-            const newResult = await AppreciationsManager.generateAppreciation(studentData);
+            const newResult = await AppreciationsManager.generateAppreciation(studentData, false, null, null);
 
-            // Update existing result
+            // Check if signal was aborted
+            if (signal.aborted) {
+                return;
+            }
+
+            // Generation complete - remove from active map
+            this._activeGenerations.delete(generatingForStudentId);
+
+            // ALWAYS save the result to the correct student (even if user navigated away)
+            // This ensures the appreciation is there when they come back
+
+            // Update existing result - include tokenUsage for AI indicator
             Object.assign(result, {
                 appreciation: newResult.appreciation,
                 evolutions: newResult.evolutions,
                 errorMessage: newResult.errorMessage,
                 timestamp: newResult.timestamp,
                 isPending: false,
-                wasGenerated: true // Mark as generated by AI
+                wasGenerated: true, // Mark as generated by AI
+                tokenUsage: newResult.tokenUsage // Include token usage and generation time
             });
 
-            result.studentData.periods[appState.currentPeriod].appreciation = newResult.appreciation;
+            // Also update the AI model used in studentData
+            if (newResult.studentData?.currentAIModel) {
+                result.studentData.currentAIModel = newResult.studentData.currentAIModel;
+            }
+
+            // CRITICAL FIX: Use captured period, not current one (user may have switched)
+            if (!result.studentData.periods[generatingForPeriod]) {
+                result.studentData.periods[generatingForPeriod] = {};
+            }
+            result.studentData.periods[generatingForPeriod].appreciation = newResult.appreciation;
 
             // Check if the result contains an error (quota exceeded, etc.)
             if (newResult.errorMessage) {
-                // Show error state
-                if (appreciationEl) {
-                    appreciationEl.innerHTML = `<span class="error-text">${newResult.errorMessage}</span>`;
+                // Only update UI if still on the same student
+                if (this.currentStudentId === generatingForStudentId) {
+                    const appreciationEl = document.getElementById('focusAppreciationText');
+                    // Show error state
+                    if (appreciationEl) {
+                        appreciationEl.innerHTML = `<span class="error-text">${newResult.errorMessage}</span>`;
+                    }
+                    // Show error badge
+                    this._setAppreciationBadge('error');
+                    UI.showNotification(`Erreur : ${newResult.errorMessage}`, 'error');
                 }
-                // Show error badge
-                this._setAppreciationBadge('error');
-                UI.showNotification(`Erreur : ${newResult.errorMessage}`, 'error');
-            } else if (appreciationEl && newResult.appreciation) {
-                // Clear skeleton and show text with typewriter effect
-                appreciationEl.classList.remove('focus-appreciation-empty');
-                await UI.typewriterReveal(appreciationEl, newResult.appreciation, { speed: 'fast' });
+            } else if (newResult.appreciation) {
+                // Check if user is still viewing the same student for UI updates
+                const stillOnSameStudent = this.currentStudentId === generatingForStudentId;
 
-                // Initialize history with generated appreciation
-                this._pushToHistory(newResult.appreciation);
+                if (stillOnSameStudent) {
+                    const appreciationEl = document.getElementById('focusAppreciationText');
+                    if (appreciationEl) {
+                        // Clear skeleton and show text with typewriter effect
+                        appreciationEl.classList.remove('empty');
+                        await UI.typewriterReveal(appreciationEl, newResult.appreciation, { speed: 'fast' });
+                    }
 
-                // Show done badge
-                this._setAppreciationBadge('done');
+                    // Initialize history with generated appreciation
+                    this._pushToHistory(newResult.appreciation);
 
-                // Update word count
-                this._updateWordCount();
+                    // Show done badge
+                    this._setAppreciationBadge('done');
 
-                // Enable copy button
-                const copyBtn = document.getElementById('focusCopyBtn');
-                if (copyBtn) copyBtn.disabled = false;
+                    // Update word count and button states
+                    this._updateWordCount();
 
-                // Also update the list view
+                    // Update AI indicator with new metadata
+                    this._updateAiIndicator(result);
+
+                    UI.showNotification('Appréciation générée !', 'success');
+                } else {
+                    // User navigated away - just show a subtle notification
+                    UI.showNotification(`Appréciation générée pour ${result.prenom}`, 'success');
+                }
+
+                // ALWAYS update the list view (regardless of current student)
                 this._updateListRow(result);
 
-                UI.showNotification('Appréciation générée !', 'success');
+                // ALWAYS persist to storage
+                StorageManager.saveAppState();
             }
 
         } catch (error) {
-            console.error('Erreur génération:', error);
-            UI.showNotification(`Erreur : ${error.message}`, 'error');
-
-            // Show error state
-            if (appreciationEl) {
-                appreciationEl.innerHTML = `<span class="error-text">${error.message}</span>`;
+            // If aborted, silently ignore
+            if (signal.aborted || error.name === 'AbortError') {
+                return;
             }
 
-            // Show error badge
-            this._setAppreciationBadge('error');
+            console.error('Erreur génération:', error);
+
+            // Only show error if still on the same student
+            if (this.currentStudentId === generatingForStudentId) {
+                UI.showNotification(`Erreur : ${error.message}`, 'error');
+
+                // Show error state
+                if (appreciationEl) {
+                    appreciationEl.innerHTML = `<span class="error-text">${error.message}</span>`;
+                }
+
+                // Show error badge
+                this._setAppreciationBadge('error');
+            }
         } finally {
-            if (generateBtn) {
+            // Ensure we clean up the map in case of errors/exit
+            if (this._activeGenerations.has(generatingForStudentId)) {
+                // Determine if it was OUR controller or a newer one (race condition check)
+                const currentController = this._activeGenerations.get(generatingForStudentId);
+                // Only delete if it matches our signal (avoid deleting a restart)
+                if (currentController && currentController.signal === signal) {
+                    this._activeGenerations.delete(generatingForStudentId);
+                }
+            }
+
+            // Only hide spinner if still on the same student
+            if (this.currentStudentId === generatingForStudentId && generateBtn) {
                 UI.hideInlineSpinner(generateBtn);
             }
         }
@@ -871,7 +977,7 @@ export const FocusPanelManager = {
         if (!appText) return;
 
         const currentText = appText.innerText.trim();
-        if (!currentText || currentText.includes('cliquez sur "Générer"')) {
+        if (!currentText || appText.classList.contains('empty')) {
             UI.showNotification('Générez d\'abord une appréciation', 'warning');
             return;
         }
@@ -955,7 +1061,7 @@ export const FocusPanelManager = {
                 if (grade !== undefined && grade !== null) {
                     const chip = document.createElement('span');
                     chip.className = 'previous-grade-chip';
-                    chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)}:</span> <span class="prev-grade-value">${parseFloat(grade).toFixed(1).replace('.', ',')}</span>`;
+                    chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)} :</span> <span class="prev-grade-value">${parseFloat(grade).toFixed(1).replace('.', ',')}</span>`;
                     prevGradesEl.appendChild(chip);
                 }
             });
@@ -1002,24 +1108,41 @@ export const FocusPanelManager = {
         let hasAppreciation = false;
 
         if (appreciationEl) {
-            // Get appreciation for the CURRENT period specifically
-            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+            // Check if this student has a generation in progress
+            const isGenerating = this._activeGenerations.has(result.id);
 
-            if (periodAppreciation && periodAppreciation.trim()) {
-                // Decode HTML entities and strip tags for clean display
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = periodAppreciation;
-                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
-                appreciationEl.textContent = cleanText;
-                appreciationEl.classList.remove('focus-appreciation-empty');
-                appreciationEl.classList.add('filled');
-                hasAppreciation = true;
+            if (isGenerating) {
+                // Restore loading state for this student
+                this._showAppreciationSkeleton();
+                this._setAppreciationBadge('pending');
+
+                // Also restore Generate button loading state
+                const generateBtn = document.getElementById('focusGenerateBtn');
+                if (generateBtn) {
+                    UI.showInlineSpinner(generateBtn);
+                }
+
+                hasAppreciation = false; // Consider as no appreciation yet
             } else {
-                // Apply empty state class directly on the element for proper styling
-                appreciationEl.textContent = 'Aucune appréciation générée. Cliquez sur "Générer" ci-dessous.';
-                appreciationEl.classList.add('focus-appreciation-empty');
-                appreciationEl.classList.remove('filled');
-                hasAppreciation = false;
+                // Normal rendering: Get appreciation for the CURRENT period specifically
+                const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+
+                if (periodAppreciation && periodAppreciation.trim()) {
+                    // Decode HTML entities and strip tags for clean display
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = periodAppreciation;
+                    const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+                    appreciationEl.textContent = cleanText;
+                    appreciationEl.classList.remove('empty');
+                    appreciationEl.classList.add('filled');
+                    hasAppreciation = true;
+                } else {
+                    // Apply empty state class directly on the element for proper styling
+                    appreciationEl.textContent = ''; // Clear content to show ::before placeholder
+                    appreciationEl.classList.add('empty');
+                    appreciationEl.classList.remove('filled');
+                    hasAppreciation = false;
+                }
             }
             this._updateWordCount();
         }
@@ -1046,7 +1169,11 @@ export const FocusPanelManager = {
                 btn.classList.toggle('disabled', !hasAppreciation);
             });
         }
+
+        // === 11. AI Indicator (✨) ===
+        this._updateAiIndicator(result);
     },
+
 
     /**
      * Rend les badges de statut
@@ -1119,10 +1246,18 @@ export const FocusPanelManager = {
         }
 
         // Save appreciation text (Critical fix for manual edits)
+        // IMPORTANT: Do NOT save if generation is in progress (skeleton would be saved as appreciation)
+        const isGeneratingForThisStudent = this._activeGenerations.has(this.currentStudentId);
         const appreciationEl = document.getElementById('focusAppreciationText');
-        if (appreciationEl && !appreciationEl.classList.contains('focus-appreciation-empty')) {
+
+        if (appreciationEl && !appreciationEl.classList.contains('empty') && !isGeneratingForThisStudent) {
             const content = appreciationEl.innerHTML;
-            if (content && content.trim() !== '') {
+            // Additional check: Don't save skeleton HTML
+            const isSkeleton = content.includes('appreciation-skeleton');
+            // Check if text content is truly empty (handling <br> remnants)
+            const textContent = appreciationEl.textContent.trim();
+
+            if (content && textContent !== '' && !isSkeleton) {
                 result.appreciation = content;
                 // Sync with period data
                 const currentPeriod = appState.currentPeriod;
@@ -1131,6 +1266,13 @@ export const FocusPanelManager = {
                 }
                 result.studentData.periods[currentPeriod].appreciation = content;
                 result.isPending = false;
+            } else if (textContent === '') {
+                // Explicitly save empty string if user cleared it
+                result.appreciation = '';
+                const currentPeriod = appState.currentPeriod;
+                if (result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod].appreciation = '';
+                }
             }
         }
 
@@ -1159,24 +1301,80 @@ export const FocusPanelManager = {
         const appreciationText = document.getElementById('focusAppreciationText');
         const wordCountEl = document.getElementById('focusWordCount');
 
-        if (appreciationText && wordCountEl) {
+        if (appreciationText) {
             const text = appreciationText.textContent || '';
+            // Check if empty or placeholder
+            const isEmpty = !text.trim();
 
-            // Don't count placeholder text
-            if (text.includes('Aucune appréciation') || appreciationText.classList.contains('focus-appreciation-empty')) {
-                wordCountEl.textContent = '0 mots';
-                if (wordCountEl._tippy) {
-                    wordCountEl._tippy.destroy(); // Remove tooltip if empty
-                }
-                wordCountEl.removeAttribute('data-tooltip');
-                return;
+            // Toggle placeholder class
+            if (isEmpty) {
+                appreciationText.classList.add('empty');
+            } else {
+                appreciationText.classList.remove('empty');
             }
 
-            const words = Utils.countWords(text);
-            const charCount = Utils.countCharacters(text);
+            // Update state of buttons based on content presence
+            const refinementOptions = document.getElementById('focusRefinementOptions');
+            if (refinementOptions) {
+                const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
+                refineButtons.forEach(btn => {
+                    btn.disabled = isEmpty;
+                    btn.classList.toggle('disabled', isEmpty);
+                });
+            }
 
-            wordCountEl.textContent = `${words} mot${words !== 1 ? 's' : ''}`;
-            UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
+            const copyBtn = document.getElementById('focusCopyBtn');
+            if (copyBtn) {
+                copyBtn.disabled = isEmpty;
+            }
+
+            if (wordCountEl) {
+                if (isEmpty) {
+                    wordCountEl.textContent = '0 mots';
+                    if (wordCountEl._tippy) {
+                        wordCountEl._tippy.destroy(); // Remove tooltip if empty
+                    }
+                    wordCountEl.removeAttribute('data-tooltip');
+                } else {
+                    const words = Utils.countWords(text);
+                    const charCount = Utils.countCharacters(text);
+
+                    wordCountEl.textContent = `${words} mot${words !== 1 ? 's' : ''}`;
+                    UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
+                }
+            }
+        }
+    },
+
+    /**
+     * Update AI indicator display
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _updateAiIndicator(result) {
+        const aiIndicator = document.getElementById('focusAiIndicator');
+        if (!aiIndicator) return;
+
+        const hasAppreciation = result.appreciation && result.appreciation.trim().length > 0;
+
+        // Only show indicator if explicitly generated by AI:
+        // - wasGenerated === true (set after AI generation), OR
+        // - tokenUsage has actual data (generationTimeMs or tokens), OR
+        // - currentAIModel is set AND tokenUsage exists
+        const wasExplicitlyGenerated = result.wasGenerated === true;
+        const hasTokenData = result.tokenUsage?.generationTimeMs > 0 ||
+            result.tokenUsage?.appreciation?.total_tokens > 0;
+        const hasAiModelWithUsage = result.studentData?.currentAIModel && result.tokenUsage?.appreciation;
+
+        const showIndicator = hasAppreciation && (wasExplicitlyGenerated || hasTokenData || hasAiModelWithUsage);
+
+        if (showIndicator) {
+            const { tooltip } = ResultCardsUI.getGenerationModeInfo(result);
+            aiIndicator.style.display = 'inline-flex';
+            aiIndicator.setAttribute('data-tooltip', tooltip);
+            UI.initTooltips();
+        } else {
+            aiIndicator.style.display = 'none';
         }
     },
 
@@ -1196,7 +1394,7 @@ export const FocusPanelManager = {
      * @private
      */
     _pushToHistory(content) {
-        if (!content || content.includes('Aucune appréciation')) return;
+        if (!content || document.getElementById('focusAppreciationText')?.classList.contains('empty')) return;
 
         const history = this._appreciationHistory;
 

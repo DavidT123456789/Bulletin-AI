@@ -290,38 +290,57 @@ export const StorageManager = {
      */
     resetAllSettings() {
         UI.showCustomConfirm("Réinitialiser les paramètres (matières, clés API, thème) ?\n\nVos classes et élèves seront conservés.", async () => {
-            const userSubjects = {};
-            for (const subjectName in appState.subjects) {
-                if (!DEFAULT_PROMPT_TEMPLATES.hasOwnProperty(subjectName)) {
-                    userSubjects[subjectName] = appState.subjects[subjectName];
+
+            // Verrouiller l'interface pour éviter les conflits
+            const saveBtn = document.getElementById('saveSettingsBtn');
+            const cancelBtn = document.getElementById('cancelSettingsBtn');
+            const closeBtn = document.getElementById('closeSettingsModalBtn');
+            if (saveBtn) saveBtn.disabled = true;
+            if (cancelBtn) cancelBtn.disabled = true;
+            if (closeBtn) closeBtn.disabled = true;
+
+            try {
+                const userSubjects = {};
+                for (const subjectName in appState.subjects) {
+                    if (!DEFAULT_PROMPT_TEMPLATES.hasOwnProperty(subjectName)) {
+                        userSubjects[subjectName] = appState.subjects[subjectName];
+                    }
                 }
+
+                Object.assign(appState, {
+                    useSubjectPersonalization: true,
+                    periodSystem: 'trimestres',
+                    subjects: JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES)),
+                    evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
+                    massImportFormats: { trimestres: {}, semestres: {} },
+                    currentSubject: 'Français',
+                    currentSettingsSubject: 'Français',
+                    currentAIModel: 'gemini-2.0-flash',
+                });
+
+                appState.openaiApiKey = '';
+                appState.googleApiKey = '';
+                appState.openrouterApiKey = '';
+
+                Object.assign(appState.subjects, userSubjects);
+
+                await this.saveAppState();
+
+                UI.updatePeriodSystemUI();
+                UI.updateSettingsPromptFields();
+                UI.updateSettingsFields();
+                App.renderSubjectManagementList();
+                UI.renderSettingsLists();
+                UI.showNotification('Paramètres réinitialisés (données conservées).', 'success');
+            } catch (e) {
+                UI.showNotification('Erreur lors de la réinitialisation.', 'error');
+                console.error(e);
+            } finally {
+                // Déverrouiller l'interface
+                if (saveBtn) saveBtn.disabled = false;
+                if (cancelBtn) cancelBtn.disabled = false;
+                if (closeBtn) closeBtn.disabled = false;
             }
-
-            Object.assign(appState, {
-                useSubjectPersonalization: true,
-                periodSystem: 'trimestres',
-                subjects: JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES)),
-                evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
-                massImportFormats: { trimestres: {}, semestres: {} },
-                currentSubject: 'Français',
-                currentSettingsSubject: 'Français',
-                currentAIModel: 'gemini-2.0-flash',
-            });
-
-            appState.openaiApiKey = '';
-            appState.googleApiKey = '';
-            appState.openrouterApiKey = '';
-
-            Object.assign(appState.subjects, userSubjects);
-
-            await this.saveAppState();
-
-            UI.updatePeriodSystemUI();
-            UI.updateSettingsPromptFields();
-            UI.updateSettingsFields();
-            App.renderSubjectManagementList();
-            UI.renderSettingsLists();
-            UI.showNotification('Paramètres réinitialisés (données conservées).', 'success');
         });
     },
 
@@ -331,6 +350,17 @@ export const StorageManager = {
      */
     async factoryReset() {
         UI.showCustomConfirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?\n\nCette action est IRRÉVERSIBLE.\nClasses, élèves, appréciations, paramètres - tout sera effacé.", async () => {
+            // Verrouiller définitivement l'interface (rechargement à venir)
+            const saveBtn = document.getElementById('saveSettingsBtn');
+            const cancelBtn = document.getElementById('cancelSettingsBtn');
+            const closeBtn = document.getElementById('closeSettingsModalBtn');
+            const modalFunctions = document.querySelectorAll('.settings-modal button, .settings-modal input, .settings-modal select');
+
+            if (saveBtn) saveBtn.disabled = true;
+            if (cancelBtn) cancelBtn.disabled = true;
+            if (closeBtn) closeBtn.disabled = true;
+            modalFunctions.forEach(el => el.disabled = true);
+
             try {
                 // Clear IndexedDB
                 await DBService.clear('generatedResults');
@@ -371,6 +401,12 @@ export const StorageManager = {
             } catch (error) {
                 console.error('Factory reset error:', error);
                 UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');
+
+                // Déverrouiller en cas d'erreur
+                if (saveBtn) saveBtn.disabled = false;
+                if (cancelBtn) cancelBtn.disabled = false;
+                if (closeBtn) closeBtn.disabled = false;
+                modalFunctions.forEach(el => el.disabled = false);
             }
         });
     },

@@ -60,6 +60,20 @@
     box-shadow: none;
     color: var(--primary-color);
     font-weight: 700;
+    position: relative;
+    /* For pseudo-element */
+}
+
+.modal-tab-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 60%;
+    width: 3px;
+    background: var(--primary-color);
+    border-radius: 0 4px 4px 0;
 }
 
 /* Specific icon colors in tabs */
@@ -295,4 +309,225 @@
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+
+/* === About Section Redesign (Premium) === */
+/* === About Section Redesign (Premium) === */
+.about-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Push items to edges */
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 0px;
+    border-bottom: none;
+}
+
+.about-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.about-logo {
+    width: 80px;
+    height: auto;
+    filter: drop-shadow(0 4px 6px rgba(var(--primary-color-rgb), 0.2));
+}
+
+.about-title-group h3 {
+    font-size: 1.4rem;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.02em;
+    margin: 0 0 2px 0;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about-version {
+    display: inline-block;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.about-tagline {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    max-width: 600px;
+}
+
+/* Feedback button styling in header */
+.about-header .btn {
+    margin-top: 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+.about-header .btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.about-actions {
+    display: none;
+}
+
+.support-card-premium {
+    /* Warm, welcoming gradient */
+    background: linear-gradient(135deg, #FFFCF7 0%, #FFF4F6 100%);
+    border: 1px solid rgba(255, 94, 91, 0.15);
+    padding: 16px 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Dark mode adjustment for support card - Premium glassmorphism */
+[data-theme="dark"] .support-card-premium {
+    background: linear-gradient(135deg,
+            rgba(99, 102, 241, 0.12) 0%,
+            rgba(168, 85, 247, 0.12) 50%,
+            rgba(236, 72, 153, 0.08) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .support-card-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(168, 85, 247, 0.3) 50%,
+            transparent 100%);
+}
+
+.support-card-premium h4 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+.support-card-premium p {
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Bouton Ko-fi */
+.btn-kofi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    /* État Pastel (Défaut) */
+    background: #FFFFFF;
+    color: #EA580C;
+    border: 1px solid #FED7AA;
+
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet de brillance (Shine) */
+.btn-kofi::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    transition: left 0.6s ease;
+    z-index: 1;
+}
+
+.btn-kofi:hover::before {
+    left: 100%;
+}
+
+.btn-kofi:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #FF9A6C 0%, #FF6B8B 100%) !important;
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 6px 20px rgba(255, 107, 139, 0.3);
+}
+
+.btn-kofi:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
+}
+
+/* === Dark Mode Specifics for Ko-fi Button === */
+[data-theme="dark"] .btn-kofi {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .btn-kofi:hover {
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%) !important;
+    color: white;
+    border-color: transparent;
+    box-shadow:
+        0 8px 24px rgba(139, 92, 246, 0.35),
+        0 4px 12px rgba(236, 72, 153, 0.25);
+    transform: translateY(-2px);
+}
+
+[data-theme="dark"] .btn-kofi::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
+
+.about-footer {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    text-align: center;
+    margin-top: auto;
+    padding-top: 6px;
 }

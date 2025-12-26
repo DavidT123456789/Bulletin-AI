@@ -137,29 +137,40 @@
 .header-context-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background-color: var(--bg-secondary);
+    gap: 10px;
+    background-color: var(--surface-color);
     border-radius: var(--radius-pill);
     padding: 8px 16px;
-    font-size: var(--font-base);
-    font-weight: 500;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     border: 1px solid transparent;
-    /* bordure transparente par défaut */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
 }
 
 .header-context-chip:hover {
     border-color: var(--primary-color);
-    background-color: rgba(var(--primary-color-rgb), 0.1);
-    /* couche transparente de la couleur primaire */
+    background-color: var(--surface-color);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15), 0 0 0 2px rgba(var(--primary-color-rgb), 0.05);
+    transform: translateY(-1px);
     color: var(--primary-color);
+}
+
+.header-context-chip:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 .header-context-chip .icon {
     color: var(--text-secondary);
     transition: color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .header-context-chip:hover .icon {
@@ -775,4 +786,104 @@
     .sidebar .section-title {
         font-size: 1.1rem;
     }
+}
+
+/* ====================================================================
+   ANIMATION: Class Switch (Premium Focus Switch)
+   Blur + Pulse effect to mask data transition while keeping cards visible
+   ==================================================================== */
+@keyframes premium-context-switch {
+    0% {
+        transform: scale(1);
+        filter: blur(0);
+        opacity: 1;
+    }
+
+    30% {
+        transform: scale(0.98);
+        filter: blur(4px);
+        opacity: 0.85;
+    }
+
+    50% {
+        transform: scale(0.98);
+        filter: blur(8px);
+        opacity: 0.85;
+    }
+
+    70% {
+        transform: scale(0.98);
+        filter: blur(4px);
+        opacity: 0.85;
+    }
+
+    100% {
+        transform: scale(1);
+        filter: blur(0);
+        opacity: 1;
+    }
+}
+
+.card-refresh-animation {
+    animation: premium-context-switch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    will-change: transform, filter, opacity;
+    backface-visibility: hidden;
+}
+
+/* ====================================================================
+   ANIMATION: Period Switch (Temporal Navigation)
+   Horizontal slide + light blur - feels like flipping through time
+   ==================================================================== */
+@keyframes period-slide-switch {
+    0% {
+        transform: translateX(0) scale(1);
+        filter: blur(0);
+        opacity: 1;
+    }
+
+    40% {
+        transform: translateX(-12px) scale(0.99);
+        filter: blur(3px);
+        opacity: 0.9;
+    }
+
+    60% {
+        transform: translateX(12px) scale(0.99);
+        filter: blur(3px);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translateX(0) scale(1);
+        filter: blur(0);
+        opacity: 1;
+    }
+}
+
+.period-refresh-animation {
+    animation: period-slide-switch 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    will-change: transform, filter, opacity;
+    backface-visibility: hidden;
+}
+
+/* ====================================================================
+   ANIMATION: Filter/Sort Switch (Quick Fade)
+   Very fast, subtle fade - for instant feedback without empty flash
+   ==================================================================== */
+@keyframes quick-filter-fade {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.filter-refresh-animation {
+    animation: quick-filter-fade 0.2s ease-out forwards;
 }

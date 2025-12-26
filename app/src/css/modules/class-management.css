@@ -46,21 +46,25 @@
 
 .class-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 12px);
+    /* Plus d'espace */
     left: 0;
-    min-width: 260px;
-    max-width: 320px;
+    min-width: 280px;
+    /* Plus large */
+    max-width: 340px;
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-xl);
+    /* Coins plus arrondis */
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.1);
+    /* Ombre plus douce et large */
     z-index: var(--z-dropdown);
     overflow: hidden;
     /* Animation */
     opacity: 0;
-    transform: translateY(-8px) scale(0.95);
+    transform: translateY(-8px) scale(0.98);
     transform-origin: top left;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     pointer-events: none;
 }
 
@@ -113,11 +117,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background var(--transition-fast);
-    margin-bottom: 4px;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
 }
 
 .class-dropdown-item:last-child {
@@ -125,12 +130,13 @@
 }
 
 .class-dropdown-item:hover {
-    background: var(--bg-secondary);
+    background: rgba(var(--primary-color-rgb), 0.04);
 }
 
 .class-dropdown-item.active {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-left: 3px solid var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    box-shadow: inset 4px 0 0 var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.1);
 }
 
 .class-dropdown-item .class-info {
@@ -435,18 +441,19 @@
     width: 100%;
     padding: 16px 20px;
     font-size: 1rem;
-    border: 2px solid var(--border-color);
+    border: 2px solid transparent;
     border-radius: var(--radius-lg);
-    background: var(--surface-color);
+    background: var(--bg-color);
     transition: all 0.2s ease;
     text-align: center;
 }
 
 .premium-input:focus {
     outline: none;
+    background: var(--bg-color);
     /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
             rgba(var(--primary-color-rgb), 0.5) 18%,
@@ -589,6 +596,32 @@
 /* Inline create form styling */
 .inline-create-form {
     overflow: hidden;
+}
+
+.inline-class-input {
+    flex: 1;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.inline-class-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Hover state - subtle border preview (harmonized with context/appreciation textareas) */
+.inline-class-input:hover:not(:focus) {
+    background: var(--bg-color);
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
 }
 
 .inline-class-input:focus {

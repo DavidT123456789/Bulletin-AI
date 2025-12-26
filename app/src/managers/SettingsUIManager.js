@@ -379,7 +379,11 @@ export const SettingsUIManager = {
             let isAvailable = false;
             let requiredProvider = '';
 
-            if (model.startsWith('gemini')) {
+            if (model.endsWith('-free')) {
+                // Modèles gratuits OpenRouter (ex: gemini-2.0-flash-exp-free, llama-3.3-70b-free)
+                isAvailable = !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
+                requiredProvider = 'OpenRouter';
+            } else if (model.startsWith('gemini')) {
                 isAvailable = !!appState.googleApiKey && appState.googleApiKey.length > 5;
                 requiredProvider = 'Google Gemini';
             } else if (model.startsWith('openai')) {
@@ -555,7 +559,8 @@ export const SettingsUIManager = {
             'openai-gpt-3.5-turbo': 'GPT-3.5',
             'mistral-small': 'Mistral Small',
             'mistral-large': 'Mistral Large',
-            'openrouter': 'DeepSeek',
+            'deepseek-r1-free': 'DeepSeek R1',
+            'openrouter': 'DeepSeek V3',
         };
 
         const model = appState.currentAIModel;
@@ -564,8 +569,16 @@ export const SettingsUIManager = {
         // Mettre à jour le coût de session si visible
         if (DOM.headerSessionCost) {
             const cost = appState.sessionCost || 0;
-            // Ne pas afficher si le coût est négligeable (évite 0.000$)
-            if (cost >= 0.001) {
+
+            // Vérifier si le modèle actuel est gratuit
+            const isFreeModel = model.endsWith('-free') ||
+                model.startsWith('gemini') ||
+                model.startsWith('ollama');
+
+            // Ne pas afficher le coût si :
+            // - Le coût est négligeable (< 0.001$)
+            // - Le modèle actuel est gratuit (même si un coût antérieur existe)
+            if (cost >= 0.001 && !isFreeModel) {
                 DOM.headerSessionCost.textContent = `${cost.toFixed(3)}$`;
                 DOM.headerSessionCost.style.display = 'inline-block';
                 DOM.headerSessionCost.classList.add('has-cost');
@@ -646,7 +659,10 @@ export const SettingsUIManager = {
      * @private
      */
     _isModelAvailable(model) {
-        if (model.startsWith('gemini')) {
+        // Les modèles gratuits OpenRouter (suffixe -free) utilisent la clé OpenRouter
+        if (model.endsWith('-free')) {
+            return !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
+        } else if (model.startsWith('gemini')) {
             return !!appState.googleApiKey && appState.googleApiKey.length > 5;
         } else if (model.startsWith('openai')) {
             return !!appState.openaiApiKey && appState.openaiApiKey.length > 5;

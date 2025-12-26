@@ -38,25 +38,32 @@ export const ResultCardsUI = {
      */
     getGenerationModeInfo(result) {
         const sd = result.studentData || {};
-        let tip = "Généré par IA";
         const modelKey = sd.currentAIModel || appState.currentAIModel;
         // Utiliser le nom court s'il existe, sinon la clé brute
         const modelName = MODEL_SHORT_NAMES[modelKey] || modelKey;
 
-        if (result.tokenUsage?.appreciation) {
-            const tokens = result.tokenUsage.appreciation.total_tokens;
-            const timeMs = result.tokenUsage.generationTimeMs;
+        // Construire le tooltip selon les données disponibles
+        const parts = [modelName];
 
-            // Formater le temps (en secondes si > 1000ms)
-            let timeStr = '';
-            if (timeMs) {
-                timeStr = timeMs >= 1000
-                    ? ` • ${(timeMs / 1000).toFixed(1)}s`
-                    : ` • ${timeMs}ms`;
-            }
-
-            tip = `${modelName} • ${tokens} tokens${timeStr}`;
+        // Ajouter les tokens seulement s'ils sont disponibles et > 0
+        const tokens = result.tokenUsage?.appreciation?.total_tokens;
+        if (tokens && tokens > 0) {
+            parts.push(`${tokens} tokens`);
         }
+
+        // Ajouter le temps seulement s'il est disponible et > 0
+        // Note: generationTimeMs est toujours mesuré côté client, indépendamment des tokens API
+        const timeMs = result.tokenUsage?.generationTimeMs;
+        if (timeMs && timeMs > 0) {
+            const timeStr = timeMs >= 1000
+                ? `${(timeMs / 1000).toFixed(1)}s`
+                : `${timeMs}ms`;
+            parts.push(timeStr);
+        }
+
+        // Fallback si aucune métadonnée disponible
+        const tip = parts.length > 1 ? parts.join(' • ') : `${modelName} • Généré par IA`;
+
         return { icon: '✨', tooltip: tip };
     },
 

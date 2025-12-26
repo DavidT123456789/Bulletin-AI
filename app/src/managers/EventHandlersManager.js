@@ -144,6 +144,14 @@ export const EventHandlersManager = {
      * @param {Event} e - L'événement input
      */
     handleSearchInput(e) {
+        // Quick fade animation on outputList only (stats don't change)
+        const outputList = document.getElementById('outputList');
+        if (outputList) {
+            outputList.classList.remove('filter-refresh-animation');
+            void outputList.offsetWidth;
+            outputList.classList.add('filter-refresh-animation');
+            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
+        }
         // La valeur est lue directement depuis DOM.searchInput.value dans renderResults
         AppreciationsManager.renderResults();
     },
@@ -153,6 +161,14 @@ export const EventHandlersManager = {
      * @param {Event} e - L'événement change
      */
     handleSortSelectChange(e) {
+        // Quick fade animation on outputList only
+        const outputList = document.getElementById('outputList');
+        if (outputList) {
+            outputList.classList.remove('filter-refresh-animation');
+            void outputList.offsetWidth;
+            outputList.classList.add('filter-refresh-animation');
+            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
+        }
         // La valeur est lue directement depuis DOM.sortSelect.value dans renderResults
         AppreciationsManager.renderResults();
     },
@@ -203,11 +219,23 @@ export const EventHandlersManager = {
      * @param {HTMLElement|null} element - L'élément cliqué ou null pour reset
      */
     handleStatFilterClick(element) {
+        // Quick fade animation on outputList
+        const outputList = document.getElementById('outputList');
+        const triggerAnimation = () => {
+            if (outputList) {
+                outputList.classList.remove('filter-refresh-animation');
+                void outputList.offsetWidth;
+                outputList.classList.add('filter-refresh-animation');
+                setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
+            }
+        };
+
         if (!element) {
             appState.activeStatFilter = null;
             UI.showNotification("Filtre retiré.", "info");
             document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
             UI.updateActiveFilterInfo();
+            triggerAnimation();
             setTimeout(() => {
                 AppreciationsManager.renderResults();
             }, 10);
@@ -230,7 +258,8 @@ export const EventHandlersManager = {
         }
         UI.updateActiveFilterInfo();
 
-        // Laisser le temps au browser de mettre à jour le DOM (classes active-filter) avant de relancer le rendu lourd
+        // Trigger animation and render
+        triggerAnimation();
         setTimeout(() => {
             AppreciationsManager.renderResults();
         }, 10);

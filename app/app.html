@@ -125,7 +125,7 @@
 
             <main class="main-content" id="main-content">
                 <div class="output-section">
-                    <div class="stats-header">
+                    <div class="stats-header" id="statsHeader">
                         <h2 class="section-title">Bilan de la classe</h2>
                         <button class="btn btn-ai tooltip" id="analyzeClassBtn" data-tooltip="Analyse IA de la classe.">
                             <i class="fas fa-chart-pie"></i> Analyser
@@ -251,7 +251,7 @@
 
                     <div id="massImportErrorActions" class="import-error-actions"></div>
 
-                    <div class="output-header">
+                    <div class="output-header" id="outputHeader">
                         <h3 class="sub-section-title">
                             Appréciations individuelles
                         </h3>
@@ -430,6 +430,9 @@
                             <div class="focus-appreciation-label">Appréciation</div>
                             <div class="focus-appreciation-meta">
                                 <span id="focusWordCount" class="word-count">0 mots</span>
+                                <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;">
+                                    ✨
+                                </span>
                                 <span id="focusHistoryIndicator" class="history-indicator tooltip"
                                     data-tooltip="Historique des modifications" style="display: none;">
                                     <i class="fas fa-history"></i>
@@ -438,31 +441,25 @@
                                 <span id="focusAppreciationBadge" class="appreciation-status-badge"></span>
                             </div>
                         </div>
-                        <div id="focusAppreciationText" class="focus-appreciation-text" contenteditable="true">
-                            <span class="focus-appreciation-empty">Aucune appréciation générée. Cliquez sur "Générer"
-                                ci-dessous.</span>
+                        <div id="focusAppreciationText" class="focus-appreciation-text" contenteditable="true"
+                            data-placeholder="Aucune appréciation générée. Cliquez sur 'Générer' ci-dessous.">
                         </div>
 
                         <!-- Refinement style buttons - Integrated from modal -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
-                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="concise"
-                                data-tooltip="Plus concise">
+                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="concise">
                                 <i class="fas fa-compress-alt"></i> Concise
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="detailed"
-                                data-tooltip="Plus détaillée">
+                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="detailed">
                                 <i class="fas fa-expand-alt"></i> Détaillée
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="encouraging"
-                                data-tooltip="Plus encourageante">
+                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="encouraging">
                                 <i class="fas fa-heart"></i> Encourageante
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="variations"
-                                data-tooltip="Proposer une variation">
+                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="variations">
                                 <i class="fas fa-sync-alt"></i> Variation
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="polish"
-                                data-tooltip="Peaufiner le texte">
+                            <button class="btn btn-ai-outline btn-tiny" data-refine-type="polish">
                                 <i class="fas fa-wand-magic-sparkles"></i> Peaufiner
                             </button>
                         </div>
@@ -1002,9 +999,11 @@
                                                 <option value="gemini-2.5-pro">Gemini 2.5 Pro (Qualité Max)</option>
                                             </optgroup>
                                             <optgroup label="💚 OpenRouter — GRATUIT">
-                                                <option value="amazon-nova-lite-free">Amazon Nova 2 Lite (1M ctx)
+                                                <option value="amazon-nova-lite-free">Amazon Nova 2 Lite (Gros volumes)
                                                 </option>
                                                 <option value="deepseek-nex-free">DeepSeek V3.1 Nex (Puissant)
+                                                </option>
+                                                <option value="deepseek-r1-free">DeepSeek R1 (Raisonnement)
                                                 </option>
                                                 <option value="llama-3.3-70b-free">Llama 3.3 70B (Stable)</option>
                                                 <option value="mistral-small-free">Mistral Small 3.1 (Français)
@@ -1013,7 +1012,8 @@
                                                 </option>
                                             </optgroup>
                                             <optgroup label="💰 OpenRouter — PAYANT">
-                                                <option value="openrouter">DeepSeek (Économique)</option>
+                                                <option value="minimax-m21">MiniMax M2.1 (⚡ Ultra-rapide)</option>
+                                                <option value="openrouter">DeepSeek V3 (Économique)</option>
                                                 <option value="mistral-small">Mistral Small (Rapide)</option>
                                                 <option value="mistral-large">Mistral Large (Puissant)</option>
                                             </optgroup>
@@ -1726,40 +1726,33 @@
 
                         <!-- Tab 5: À propos -->
                         <div id="help-about" class="help-tab-content">
-                            <div style="text-align: center; padding: 40px 20px;">
-                                <img src="assets/logo.png" alt="Bulletin AI"
-                                    style="width: 96px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 4px 10px rgba(var(--primary-color-rgb), 0.3));">
-                                <div
-                                    style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
-                                    <h3
-                                        style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">
-                                        Bulletin AI</h3>
-                                    <div
-                                        style="display: inline-block; background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color); padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.8em; transform: translateY(-2px);">
-                                        v0.1.0 Beta</div>
+                            <div class="about-header">
+                                <div class="about-header-main">
+                                    <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
+                                    <div class="about-title-group">
+                                        <h3>Bulletin AI</h3>
+                                        <div class="about-version">v0.1.0 Beta</div>
+                                    </div>
                                 </div>
-                                <p
-                                    style="max-width: 400px; margin: 0 auto; color: var(--text-secondary); line-height: 1.6;">
-                                    L'assistant intelligent conçu pour simplifier la rédaction de vos appréciations
-                                    scolaires.
-                                </p>
+                                <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
+                                    target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                    <i class="fas fa-comment-dots"></i> Donner mon avis
+                                </a>
+                            </div>
 
-                                <!-- Feedback Button -->
-                                <div style="margin: 25px auto;">
-                                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
-                                        target="_blank" rel="noopener noreferrer" class="btn btn-secondary"
-                                        style="display: inline-flex; align-items: center; gap: 8px;">
-                                        <i class="fas fa-comment-dots"></i> Donner mon avis
-                                    </a>
-                                </div>
+                            <div class="about-content">
+                                <p class="about-tagline">L'assistant intelligent conçu pour simplifier la rédaction de
+                                    vos appréciations scolaires.</p>
 
                                 <!-- Donation Section (Refined) -->
-                                <div class="support-card">
-                                    <h4 class="support-card-title">
-                                        <i class="fas fa-heart"></i> Soutenir le projet
+                                <div class="support-card-premium">
+                                    <h4>
+                                        <i class="fas fa-heart" style="color: #FF5E5B;"></i> Soutenir le projet
                                     </h4>
-                                    <p class="support-card-text">
-                                        Cette application est gratuite. Si elle vous est utile, offrez-moi un café !
+                                    <p>
+                                        Cette application est gratuite. Si elle vous est utile, vous pouvez encourager
+                                        son
+                                        développement en m'offrant un café !
                                     </p>
                                     <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-kofi">
@@ -1767,7 +1760,7 @@
                                     </a>
                                 </div>
 
-                                <div style="margin-top: 40px; font-size: 0.85em; color: var(--text-tertiary);">
+                                <div class="about-footer">
                                     <p>Développé pour les enseignants par David Trafial</p>
                                     <p>© 2025 Bulletin AI - Tous droits réservés</p>
                                     <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.7;">Sous licence Creative
@@ -1779,12 +1772,12 @@
                 </div>
             </div>
 
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" id="closeHelpModalFooterBtn" tabindex="0">Fermer</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeHelpModalFooterBtn" tabindex="0">Fermer</button>
+            </div>
         </div>
     </div>
-    </div>
+
 
     <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="welcomeModalTitle">
         <div class="modal-content">

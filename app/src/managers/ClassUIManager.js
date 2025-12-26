@@ -136,16 +136,7 @@ export const ClassUIManager = {
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <input type="text" class="inline-class-input" 
                            placeholder="Nom de la classe..." 
-                           maxlength="50"
-                           style="
-                               flex: 1;
-                               padding: 10px 14px;
-                               border: 2px solid var(--primary-color);
-                               border-radius: var(--radius-md);
-                               background: var(--bg-color);
-                               font-size: 0.95em;
-                               outline: none;
-                           ">
+                           maxlength="50">
                     <button class="btn btn-primary btn-small inline-create-btn" style="padding: 10px 14px;" disabled>
                         <i class="fas fa-check"></i>
                     </button>
@@ -295,12 +286,33 @@ export const ClassUIManager = {
      * Gère le changement de classe
      */
     async handleClassSwitch(classId) {
+        // Trigger generic page refresh animation
+        // Target dynamic containers ONLY to keep the title "Bilan de la classe" visible (avoiding black screen)
+        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header');
+
+        containersToAnimate.forEach(el => {
+            el.classList.remove('card-refresh-animation');
+            void el.offsetWidth; // Force reflow
+            el.classList.add('card-refresh-animation');
+        });
+
+        // Sync with the PEAK BLUR of the animation (50% of 400ms = 200ms)
+        // Data swap happens while content is blurred but fully visible (opacity 0.85)
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         await ClassManager.switchClass(classId);
         this.updateHeaderDisplay();
         this.closeDropdown();
         // Refresh the results list with the new class data
         AppreciationsManager.renderResults();
         UI?.updateStats?.();
+
+        // Cleanup after animation finishes (400ms + buffer)
+        setTimeout(() => {
+            containersToAnimate.forEach(el => {
+                el.classList.remove('card-refresh-animation');
+            });
+        }, 450);
     },
 
     /**
@@ -350,14 +362,22 @@ export const ClassUIManager = {
      * Met à jour les compteurs d'élèves dans le dropdown
      * @private
      */
-    async _updateClassStudentCounts(classes) {
+    /**
+     * Met à jour les compteurs d'élèves dans le dropdown
+     * @private
+     */
+    _updateClassStudentCounts(classes) {
+        const allResults = appState.generatedResults || [];
+
         for (const cls of classes) {
-            const students = await ClassManager.getClassStudents(cls.id);
             const countBadge = DOM.classDropdownList?.querySelector(
                 `.class-student-count[data-class-id="${cls.id}"]`
             );
             if (countBadge) {
-                countBadge.textContent = students?.length || 0;
+                const classStudentCount = allResults.filter(
+                    r => r.classId === cls.id
+                ).length;
+                countBadge.textContent = classStudentCount;
             }
         }
     },

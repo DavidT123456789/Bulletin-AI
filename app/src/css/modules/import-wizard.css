@@ -2357,9 +2357,9 @@
 .import-wizard-modal .import-mapping-table th:nth-child(2),
 .import-wizard-modal .import-mapping-table td:nth-child(2) {
     text-align: center;
-    width: 80px;
-    min-width: 70px;
-    max-width: 100px;
+    width: 110px;
+    min-width: 100px;
+    max-width: 140px;
 }
 
 /* 3+ Columns: Dynamic based on content type */
@@ -2437,7 +2437,7 @@
     align-items: center;
     gap: 12px;
     margin-top: auto;
-    padding-top: 16px;
+    padding: 16px 0;
 }
 
 .wizard-step1-footer .btn-primary {

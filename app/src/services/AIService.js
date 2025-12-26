@@ -78,6 +78,8 @@ export const AIService = {
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free',
                         'amazon-nova-lite-free': 'amazon/nova-lite-v1:1.0',
                         'deepseek-nex-free': 'nex-agi/deepseek-v3.1-nex-n1:free',
+                        'deepseek-r1-free': 'deepseek/deepseek-r1:free',
+                        'minimax-m21': 'minimax/minimax-m2.1',
                         'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
                         'mistral-large': 'mistralai/mistral-large-2411'
                     };
@@ -223,10 +225,14 @@ export const AIService = {
             if (isValidation) return { text: 'Validation réussie', usage: null };
 
             // Extraction du texte selon le format de réponse (Google vs OpenAI vs Ollama)
-            const text = res.response || // Ollama
+            let text = res.response || // Ollama
                 res.candidates?.[0]?.content?.parts?.[0]?.text || // Google
                 res.choices?.[0]?.message?.content || // OpenAI
                 "";
+
+            // Nettoyage des balises de raisonnement (spécifique aux modèles "Thinking" comme DeepSeek R1)
+            // On supprime tout ce qui est entre <think> et </think> (y compris les balises)
+            text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
             // Vérifier que le texte n'est pas vide (sinon traiter comme une erreur)
             if (!text || text.trim().length === 0) {

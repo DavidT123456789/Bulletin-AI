@@ -25,6 +25,8 @@ export const COSTS_PER_MILLION_TOKENS = {
     'llama-3.3-70b-free': { input: 0, output: 0 }, // Llama 70B GRATUIT !
     'amazon-nova-lite-free': { input: 0, output: 0 }, // Amazon Nova 2 Lite GRATUIT !
     'deepseek-nex-free': { input: 0, output: 0 }, // DeepSeek V3.1 Nex N1 GRATUIT !
+    'deepseek-r1-free': { input: 0, output: 0 }, // DeepSeek R1 GRATUIT !
+    'minimax-m21': { input: 0.50, output: 1.50 }, // MiniMax M2.1 - léger et concis
     'mistral-small': { input: 0.10, output: 0.30 },
     'mistral-large': { input: 2.00, output: 6.00 },
     // Ollama (local) - gratuit
@@ -46,15 +48,17 @@ export const MODEL_DESCRIPTIONS = {
     'gemini-2.5-pro': "<strong>Nouveau.</strong> Version avancée de Pro. (Vérifiez votre accès).",
     'gemini-2.0-flash-lite': "Modèle très rapide et extrêmement économique, parfait pour les tâches à grand volume.",
 
-    'openrouter': "Utilise votre clé OpenRouter pour accéder à de nombreux modèles. Par défaut, l'application utilise une option performante et très économique (DeepSeek).",
+    'openrouter': "Utilise votre clé OpenRouter pour accéder à de nombreux modèles. Par défaut, l'application utilise une option performante et très économique (DeepSeek V3).",
     'devstral-free': "<strong>🆓 GRATUIT !</strong> Mistral Devstral 123B via OpenRouter. Puissant et sans frais.",
     'qwen3-235b-free': "<strong>🆓 GRATUIT !</strong> Qwen3 235B (22B actifs). Très puissant, excellent en français.",
     'qwen3-4b-free': "<strong>🆓 GRATUIT !</strong> Qwen3 4B. Rapide et léger, bon rapport qualité/vitesse.",
     'gemini-2.0-flash-exp-free': "<strong>🆓 GRATUIT !</strong> Google Gemini 2.0 Flash Experimental. Rapide et puissant.",
     'mistral-small-free': "<strong>🆓 GRATUIT !</strong> Mistral Small 3.1 24B. Excellent modèle polyvalent.",
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT !</strong> Meta Llama 3.3 70B. Très puissant, bon en français.",
-    'amazon-nova-lite-free': "<strong>🆓 GRATUIT !</strong> Amazon Nova 2 Lite. Rapide, 1M context, polyvalent.",
+    'amazon-nova-lite-free': "<strong>Ultra Rapide (2s).</strong> Amazon Nova 2 Lite. Idéal pour les gros volumes, qualité standard.",
     'deepseek-nex-free': "<strong>🆓 GRATUIT !</strong> DeepSeek V3.1 Nex N1. Très capable, bon en texte.",
+    'deepseek-r1-free': "<strong>🆓 GRATUIT !</strong> DeepSeek R1 (Raisonnement). Très intelligent mais plus lent.",
+    'minimax-m21': "<strong>Qualité supérieure (~7s).</strong> MiniMax M2.1. Réponses concises et efficaces.",
     'mistral-small': "<strong>Économique.</strong> Modèle Mistral léger et rapide via OpenRouter. Excellent pour les appréciations.",
     'mistral-large': "Modèle Mistral puissant via OpenRouter. Idéal pour des textes nuancés.",
     // Ollama (local)
@@ -72,7 +76,7 @@ export const FALLBACK_CONFIG = {
     // Ordre de fallback par provider (du plus prioritaire au moins prioritaire)
     google: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-001', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'],
     openai: ['openai-gpt-4o-mini', 'openai-gpt-3.5-turbo', 'openai-gpt-4o'],
-    openrouter: ['amazon-nova-lite-free', 'deepseek-nex-free', 'gemini-2.0-flash-exp-free', 'llama-3.3-70b-free', 'mistral-small-free', 'qwen3-235b-free', 'qwen3-4b-free', 'devstral-free', 'mistral-small', 'openrouter', 'mistral-large'],
+    openrouter: ['amazon-nova-lite-free', 'deepseek-nex-free', 'deepseek-r1-free', 'gemini-2.0-flash-exp-free', 'llama-3.3-70b-free', 'mistral-small-free', 'qwen3-235b-free', 'qwen3-4b-free', 'devstral-free', 'minimax-m21', 'mistral-small', 'openrouter', 'mistral-large'],
     // Ollama (local) - Qwen3 recommandé car excellent en français
     ollama: ['ollama-qwen3:8b', 'ollama-deepseek-r1:8b', 'ollama-qwen3:4b', 'ollama-gemma3:4b'],
 
@@ -104,7 +108,9 @@ export const MODEL_SHORT_NAMES = {
     'llama-3.3-70b-free': 'Llama 3.3 70B',
     'amazon-nova-lite-free': 'Amazon Nova',
     'deepseek-nex-free': 'DeepSeek V3.1',
-    'openrouter': 'DeepSeek',
+    'deepseek-r1-free': 'DeepSeek R1',
+    'minimax-m21': 'MiniMax M2.1',
+    'openrouter': 'DeepSeek V3',
     // Ollama (local)
     'ollama-qwen3:8b': '🏠 Qwen 3 (8B)',
     'ollama-qwen3:4b': '🏠 Qwen 3 (4B)',
@@ -151,6 +157,8 @@ export const RATE_LIMITS = {
     'llama-3.3-70b-free': { rpm: 15, delayMs: 4000 }, // Gratuit Meta, modèle lourd
     'amazon-nova-lite-free': { rpm: 20, delayMs: 3000 }, // Gratuit Amazon
     'deepseek-nex-free': { rpm: 20, delayMs: 3000 }, // Gratuit DeepSeek Nex
+    'deepseek-r1-free': { rpm: 10, delayMs: 6000 }, // Gratuit R1 (lourd)
+    'minimax-m21': { rpm: 60, delayMs: 1000 }, // MiniMax M2.1 - modèle léger, rapide
     'openrouter': { rpm: 100, delayMs: 600 },
 
     // Ollama (local) - pas de rate limit
