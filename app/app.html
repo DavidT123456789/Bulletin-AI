@@ -382,10 +382,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Bouton détails/historique - séparé de la navigation -->
-            <button id="btnToggleDetails" class="focus-details-toggle tooltip" data-tooltip="Détails & Historique">
-                <i class="fas fa-folder-open"></i>
-            </button>
+            <!-- Bouton historique supprimé - le header principal sert de sélecteur de période -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                     <i class="fas fa-chevron-left"></i>
@@ -401,30 +398,7 @@
             <!-- PAGE 1: Main Content (édition) -->
             <div class="focus-page focus-main-page" id="focusMainPage">
                 <div class="focus-content">
-                    <!-- 1. RETRACTABLE DETAILS (History Only) -->
-                    <div id="focusRetractableDetails" class="focus-retractable-details">
-                        <div class="details-inner-content">
-                            <!-- History Timeline -->
-                            <div class="details-block history-block">
-                                <div class="details-title-row"
-                                    style="display:flex; justify-content:space-between; align-items:center;">
-                                    <h4 class="details-title" style="margin:0;">Historique</h4>
-                                    <button id="focusEditHistoryBtn" class="icon-btn-text" title="Modifier l'historique"
-                                        style="padding:4px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div id="studentDetailsTimeline" class="details-timeline-compact">
-                                    <!-- Populated by JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Section historique supprimée - le contexte précédent est visible en chips inline -->
 
                     <!-- 2. HISTORY GRADES & CONTEXT -->
                     <div class="focus-context-group">
@@ -638,7 +612,7 @@
                         <!-- Textarea -->
                         <div class="import-input-container">
                             <textarea id="wizardDataTextarea" class="import-textarea" rows="6"
-                                placeholder="NOM Prénom&#9;Moy. T1&#9;Appréciation T1...&#10;MARTIN Lucas&#9;12,5&#9;Bon travail..."></textarea>
+                                placeholder="NOM Prénom      Moy. T1    Appréciation T1...&#10;MARTIN Lucas    12,5       Bon travail..."></textarea>
                         </div>
                     </div>
 
@@ -706,11 +680,7 @@
                 <!-- Step 3: Confirm -->
                 <div class="wizard-step-content" id="modalStep3">
                     <div class="wizard-step3-header">
-                        <div class="wizard-step3-header-left">
-                            <h4 class="wizard-step-title">Aperçu et confirmation</h4>
-                            <p class="wizard-step-subtitle">Vérifiez les changements avant de finaliser l'importation.
-                            </p>
-                        </div>
+                        <h4 class="wizard-step-title">Vérifiez avant d'importer</h4>
                         <span class="period-badge-pill" id="wizardPeriodBadge">Trimestre 1</span>
                     </div>
 
@@ -1312,24 +1282,100 @@
                     <div class="settings-card">
                         <h3 class="settings-card-title"><i class="fas fa-database"></i> Système & Données</h3>
                         <div class="settings-card-content">
-                            <!-- Section Sauvegarde -->
+                            <!-- Section Sauvegarde Complète -->
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <h4 class="setting-subtitle"><i class="fas fa-save"></i> Sauvegarde</h4>
-                                    <p class="setting-description">Exportez votre configuration (clés, styles) pour la
-                                        réutiliser ailleurs.</p>
+                                    <h4 class="setting-subtitle"><i class="fas fa-cloud-arrow-down"></i> Sauvegarde
+                                        complète</h4>
+                                    <p class="setting-description">Exportez toutes vos données (élèves, appréciations,
+                                        classes) pour les restaurer sur un autre appareil ou en cas de problème.</p>
                                 </div>
                                 <div class="setting-actions-group">
-                                    <button class="btn btn-secondary btn-small" id="importSettingsBtn">
-                                        <i class="fas fa-file-import"></i> Importer
+                                    <button class="btn btn-primary btn-small" id="exportFullBackupBtn">
+                                        <i class="fas fa-download"></i> Exporter
                                     </button>
+                                    <button class="btn btn-secondary btn-small" id="importFullBackupBtn">
+                                        <i class="fas fa-upload"></i> Restaurer
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" id="importBackupInput" accept=".json" style="display: none;">
+
+                            <div class="settings-divider-light"></div>
+
+                            <!-- Section Paramètres seuls -->
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <h4 class="setting-subtitle"><i class="fas fa-sliders-h"></i> Paramètres uniquement
+                                    </h4>
+                                    <p class="setting-description">Exportez seulement la configuration (styles,
+                                        matières) sans les données d'élèves.</p>
+                                </div>
+                                <div class="setting-actions-group">
                                     <button class="btn btn-secondary btn-small" id="exportSettingsBtn">
                                         <i class="fas fa-file-export"></i> Exporter
+                                    </button>
+                                    <button class="btn btn-secondary btn-small" id="importSettingsBtn">
+                                        <i class="fas fa-file-import"></i> Importer
                                     </button>
                                 </div>
                             </div>
 
+                            <div class="settings-divider-light"></div>
 
+                            <!-- Section Synchronisation Cloud -->
+                            <div class="setting-row setting-row-column" id="cloudSyncSection">
+                                <div class="setting-info setting-info-full">
+                                    <h4 class="setting-subtitle"><i class="fas fa-cloud"></i> Synchronisation Cloud</h4>
+                                    <p class="setting-description">
+                                        Synchronisez vos données automatiquement entre vos appareils via Google Drive ou
+                                        Dropbox.
+                                    </p>
+                                </div>
+
+                                <!-- Sync Status -->
+                                <div class="sync-status-bar" id="syncStatusBar" style="display: none;">
+                                    <div class="sync-status-indicator">
+                                        <i class="fas fa-circle-notch fa-spin" id="syncStatusIcon"></i>
+                                        <span id="syncStatusText">Synchronisation...</span>
+                                    </div>
+                                    <span class="sync-last-time" id="syncLastTime"></span>
+                                </div>
+
+                                <!-- Provider Selection -->
+                                <div class="sync-providers">
+                                    <div class="sync-provider-card" data-provider="google">
+                                        <div class="provider-icon"><i class="fab fa-google-drive"></i></div>
+                                        <div class="provider-info">
+                                            <span class="provider-name">Google Drive</span>
+                                            <span class="provider-status" id="googleSyncStatus">Non connecté</span>
+                                        </div>
+                                        <button class="btn btn-secondary btn-small" id="connectGoogleBtn">
+                                            Connecter
+                                        </button>
+                                    </div>
+                                    <div class="sync-provider-card" data-provider="dropbox"
+                                        style="opacity: 0.5; pointer-events: none;">
+                                        <div class="provider-icon"><i class="fab fa-dropbox"></i></div>
+                                        <div class="provider-info">
+                                            <span class="provider-name">Dropbox</span>
+                                            <span class="provider-status" id="dropboxSyncStatus">Bientôt
+                                                disponible</span>
+                                        </div>
+                                        <button class="btn btn-secondary btn-small" id="connectDropboxBtn" disabled>
+                                            Connecter
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- RGPD Warning (shown when connecting) -->
+                                <div class="sync-rgpd-warning" id="syncRgpdWarning" style="display: none;">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>En activant la synchronisation, vos données seront stockées sur le service
+                                        choisi. Vous êtes responsable du respect des réglementations applicables
+                                        (RGPD).</span>
+                                </div>
+                            </div>
 
                             <div class="settings-divider"></div>
 
@@ -1341,11 +1387,23 @@
                                         <div class="details-content-inner">
                                             <div class="danger-action-row">
                                                 <div class="danger-info">
-                                                    <strong>Réinitialisation complète</strong>
-                                                    <span>Efface toutes les données (clés, matières, élèves).</span>
+                                                    <strong>Réinitialiser les paramètres</strong>
+                                                    <span>Remet les paramètres par défaut (clés API, matières). Vos
+                                                        classes et élèves sont conservés.</span>
                                                 </div>
-                                                <button class="btn btn-danger btn-small" id="resetAllSettingsBtn">
+                                                <button class="btn btn-secondary btn-small" id="resetAllSettingsBtn">
                                                     Réinitialiser
+                                                </button>
+                                            </div>
+                                            <div class="danger-action-row" style="margin-top: 12px;">
+                                                <div class="danger-info">
+                                                    <strong style="color: var(--error-color);">Supprimer toutes les
+                                                        données</strong>
+                                                    <span>Efface TOUT : classes, élèves, appréciations, paramètres.
+                                                        Irréversible.</span>
+                                                </div>
+                                                <button class="btn btn-danger btn-small" id="factoryResetBtn">
+                                                    Tout supprimer
                                                 </button>
                                             </div>
                                         </div>
@@ -1696,20 +1754,15 @@
                                 </div>
 
                                 <!-- Donation Section (Refined) -->
-                                <div
-                                    style="margin: 30px auto; max-width: 420px; text-align: center; background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0.2)); border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
-                                    <h4
-                                        style="margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; color: var(--text-primary);">
-                                        <i class="fas fa-heart" style="color: var(--error-color);"></i> Soutenir le
-                                        projet
+                                <div class="support-card">
+                                    <h4 class="support-card-title">
+                                        <i class="fas fa-heart"></i> Soutenir le projet
                                     </h4>
-                                    <p
-                                        style="font-size: 0.95em; line-height: 1.6; margin-bottom: 20px; color: var(--text-secondary);">
+                                    <p class="support-card-text">
                                         Cette application est gratuite. Si elle vous est utile, offrez-moi un café !
                                     </p>
                                     <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
-                                        class="btn btn-primary"
-                                        style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ff5e5b 0%, #ff9966 100%); border: none;">
+                                        class="btn btn-kofi">
                                         <i class="fas fa-coffee"></i> Soutenir sur Ko-fi
                                     </a>
                                 </div>
@@ -2053,29 +2106,135 @@
         </div>
     </div>
 
-    <div id="classAnalysisModal" class="modal" role="dialog" aria-modal="true"
-        aria-labelledby="classAnalysisModalTitle">
-        <div class="modal-content modal-large">
+    <!-- CLASS DASHBOARD MODAL - Premium Analytics View -->
+    <div id="classDashboardModal" class="modal class-dashboard-modal" role="dialog" aria-modal="true"
+        aria-labelledby="classDashboardModalTitle">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="classAnalysisModalTitle"><i class="fas fa-chart-line"
-                        aria-hidden="true"></i> Analyse de la Classe</h2>
-                <button class="close-button" id="closeClassAnalysisModalBtn" aria-label="Fermer l'analyse de classe"><i
-                        class="fas fa-xmark"></i></button>
+                <div class="dashboard-header-left">
+                    <h2 class="modal-title" id="classDashboardModalTitle">
+                        <i class="fas fa-chart-pie" aria-hidden="true"></i> Tableau de Bord
+                    </h2>
+                    <span class="dashboard-period-badge" id="dashboardPeriodBadge">
+                        <i class="fas fa-calendar-alt"></i> Trimestre 1
+                    </span>
+                </div>
+                <span class="dashboard-student-count" id="dashboardStudentCount">
+                    <i class="fas fa-users"></i> <strong>0</strong> élèves analysés
+                </span>
+                <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
+                    <i class="fas fa-xmark"></i>
+                </button>
             </div>
+
             <div class="modal-body">
-                <div id="classAnalysisContent" class="analysis-content"></div>
-                <div class="analysis-actions" id="classAnalysisActions">
-                    <button class="btn btn-secondary" data-refine-type="summarize">Résumer</button>
-                    <button class="btn btn-secondary" data-refine-type="positive">Tournure
-                        Positive</button>
-                    <button class="btn btn-secondary" data-refine-type="actionable">Plan
-                        d'Action</button>
-                    <button class="btn btn-primary" id="copyClassAnalysisBtn"><i class="fas fa-copy"
-                            aria-hidden="true"></i> Copier</button>
+                <!-- KPI Cards Row -->
+                <div class="dashboard-grid">
+                    <!-- Average KPI -->
+                    <div class="dashboard-kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Moyenne</span>
+                            <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+                        </div>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpiAverage">--</span>
+                            <span class="kpi-unit">/20</span>
+                        </div>
+                        <span class="kpi-evolution neutral" id="kpiAverageEvolution" style="display: none;">--</span>
+                    </div>
+
+                    <!-- Median KPI -->
+                    <div class="dashboard-kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Médiane</span>
+                            <div class="kpi-icon purple"><i class="fas fa-arrows-alt-h"></i></div>
+                        </div>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpiMedian">--</span>
+                            <span class="kpi-unit">/20</span>
+                        </div>
+                        <span class="kpi-subtitle">50% au-dessus, 50% en-dessous</span>
+                    </div>
+
+                    <!-- Spread KPI -->
+                    <div class="dashboard-kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Écart-type</span>
+                            <div class="kpi-icon info"><i class="fas fa-ruler-horizontal"></i></div>
+                        </div>
+                        <div class="kpi-value-row">
+                            <span class="kpi-value" id="kpiSpread">--</span>
+                            <span class="kpi-unit">pts</span>
+                        </div>
+                        <span class="kpi-subtitle" id="kpiSpreadLabel">--</span>
+                    </div>
+                </div>
+
+                <!-- Distribution Chart -->
+                <div class="dashboard-distribution-section">
+                    <div class="dashboard-section-header">
+                        <h3 class="dashboard-section-title"><i class="fas fa-chart-bar"></i> Répartition des notes</h3>
+                    </div>
+                    <div class="distribution-bars" id="distributionBars">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Highlights: Progressions & At Risk -->
+                <div class="dashboard-highlights">
+                    <div class="highlight-card">
+                        <div class="highlight-card-header">
+                            <div class="highlight-icon success"><i class="fas fa-arrow-trend-up"></i></div>
+                            <span class="highlight-card-title">Top Progressions</span>
+                        </div>
+                        <div class="highlight-list" id="highlightProgressList">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                    <div class="highlight-card">
+                        <div class="highlight-card-header">
+                            <div class="highlight-icon warning"><i class="fas fa-exclamation-circle"></i></div>
+                            <span class="highlight-card-title">À surveiller</span>
+                        </div>
+                        <div class="highlight-list" id="highlightRiskList">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Synthesis Section -->
+                <div class="dashboard-ai-section">
+                    <div class="ai-section-header">
+                        <h3 class="ai-section-title"><i class="fas fa-wand-magic-sparkles"></i> Synthèse IA</h3>
+                        <div class="ai-section-actions">
+                            <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
+                                <i class="fas fa-wand-magic-sparkles"></i> Générer la synthèse
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ai-section-content" id="aiSynthesisContent">
+                        <div class="ai-placeholder">
+                            <div class="ai-placeholder-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                            <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA
+                                contextuelle de votre classe.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="dashboard-footer-right">
+                    <button class="btn btn-secondary" id="copyDashboardSynthesisBtn">
+                        <i class="fas fa-copy"></i> Copier
+                    </button>
+                    <button class="btn btn-secondary" id="closeDashboardFooterBtn">Fermer</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Legacy classAnalysisModal ID kept for backward compatibility -->
+    <div id="classAnalysisModal" style="display: none;"></div>
 
     <!-- Hidden file inputs -->
     <input type="file" id="importSettingsInput" accept=".json" style="display: none;">

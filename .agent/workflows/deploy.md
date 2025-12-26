@@ -1,44 +1,32 @@
 ---
-description: Prépare et lance le déploiement vers GitHub Pages
+description: Guide pour déployer sur GitHub Pages
 ---
-
 # Workflow: Deploy
 
-Ce workflow prépare le déploiement et guide l'utilisateur pour pousser vers GitHub.
+Guide pas-à-pas pour déployer l'application sur GitHub Pages.
 
-## Prérequis
-- Les modifications sont terminées et testées
-- L'application fonctionne correctement sur localhost
+## Pré-requis
+- Toutes les modifications commitées localement
+- Build vérifié avec `/check`
 
 ## Étapes
 
-### 1. Vérifier que l'app fonctionne
-// turbo
-Lancer `npm run build` dans `app/` pour s'assurer que le build passe.
+### 1. Backup préventif
+Lancer `/backup` pour sauvegarder la version actuelle.
 
-### 2. Mettre à jour le CHANGELOG
-Ajouter une entrée dans `CHANGELOG.md` avec les modifications faites.
+### 2. Commit dans GitHub Desktop
+1. Ouvrir GitHub Desktop
+2. Vérifier les fichiers modifiés
+3. Écrire un message de commit descriptif
+4. Cliquer "Commit to main"
 
-### 3. Notifier l'utilisateur
-Demander à l'utilisateur de:
-1. Ouvrir **GitHub Desktop**
-2. Sélectionner le repository "bulletin-ai" (ou équivalent)
-3. Vérifier les changements dans l'onglet "Changes"
-4. Écrire un message de commit (ex: "v0.1.3 - Amélioration UI")
-5. Cliquer sur **Commit to main**
-6. Cliquer sur **Push origin**
+### 3. Push vers GitHub
+Cliquer "Push origin" dans GitHub Desktop.
 
-### 4. Confirmer le déploiement
-Une fois poussé, GitHub Actions se déclenche automatiquement:
-- Build avec Vite
-- Déploiement sur GitHub Pages
-- L'app est live en ~2-3 minutes
+### 4. Vérifier le déploiement
+1. Aller sur GitHub.com > Actions
+2. Attendre que le workflow "Deploy" soit complété (✓ vert)
+3. Vérifier le site : https://davidt123456789.github.io/Bulletin-AI/
 
-## Commandes utiles
-```bash
-# Build local pour test
-cd app && npm run build
-
-# Preview du build
-cd app && npm run preview
-```
+### 5. Confirmation
+Tester la version en ligne pour confirmer que tout fonctionne.

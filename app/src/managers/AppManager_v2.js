@@ -74,7 +74,6 @@ export const App = {
         // Slide-Over Import Panel: Initialize
         const { ImportWizardManager } = await import('./ImportWizardManager.js');
         ImportWizardManager.init();
-        console.log('[AppManager] ImportWizardManager initialized');
     },
 
     // --- Initialisation et Setup ---

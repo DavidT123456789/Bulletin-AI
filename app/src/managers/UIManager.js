@@ -24,6 +24,7 @@ import { ResultCardsUI } from './ResultCardsUIManager.js';
 import { ImportUI } from './ImportUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -282,6 +283,13 @@ export const UI = {
     // ====================================================================
 
     setPeriod(period) {
+        // [FIX] Save context for the OLD period BEFORE changing appState.currentPeriod
+        // This ensures that any edits made to context/grade/appreciation in Focus Panel
+        // are saved to the correct period before we switch
+        if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
+            FocusPanelManager.saveCurrentContext();
+        }
+
         appState.currentPeriod = period;
         document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => r.checked = r.value === period);
         if (DOM.sidebarPeriodContext) {
@@ -293,6 +301,11 @@ export const UI = {
         if (DOM.mainPeriodSelector) this.updateGlider(DOM.mainPeriodSelector);
 
         AppreciationsManager.renderResults();
+
+        // [FIX] Refresh Focus Panel if open to show the new period's appreciation and context
+        if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
+            FocusPanelManager.open(FocusPanelManager.currentStudentId);
+        }
 
         StorageManager.saveAppState();
     },
@@ -526,7 +539,13 @@ export const UI = {
     },
     updateAIButtonsState() {
         const isAIAvailable = this.checkAPIKeyPresence(true);
-        if (DOM.analyzeClassBtn) { DOM.analyzeClassBtn.disabled = !isAIAvailable; DOM.analyzeClassBtn.classList.toggle('ai-disabled', !isAIAvailable); DOM.analyzeClassBtn.setAttribute('data-tooltip', isAIAvailable ? "Obtenez une analyse IA de la classe. Identifie les tendances, forces et faiblesses à partir des élèves actuellement affichés à l'écran." : "Clé API requise."); }
+        // Le bouton Analyser reste toujours actif car il affiche des statistiques calculées localement
+        // Seule la génération de synthèse IA nécessite une clé API (géré dans ClassDashboardManager)
+        if (DOM.analyzeClassBtn) {
+            DOM.analyzeClassBtn.disabled = false;
+            DOM.analyzeClassBtn.classList.remove('ai-disabled');
+            DOM.analyzeClassBtn.setAttribute('data-tooltip', "Ouvrir le tableau de bord de classe avec statistiques détaillées et analyse IA.");
+        }
         document.querySelectorAll('.appreciation-result').forEach(card => {
             [{ el: card.querySelector('[data-action="details"]'), title: "Analyser" }, { el: card.querySelector('[data-action="variations"], [data-action="undo-variation"]'), title: "Variation / Annuler" }].forEach(btn => {
                 if (btn.el) {
@@ -582,7 +601,7 @@ export const UI = {
         return StatsUI.animateNumberWithText(element, start, end, duration, templateFn);
     },
     async updateStats() {
-        return StatsUI.updateStats(this, AppreciationsManager.getRelevantEvolution);
+        return StatsUI.updateStats(this);
     },
     updateStatsTooltips() {
         StatsUI.updateStatsTooltips();
@@ -931,7 +950,8 @@ export const UI = {
             DOM.activeFilterInfo.classList.remove('show');
         }
     },
-    openImportPreviewModal(mappingState) { ImportUI.openImportPreviewModal(mappingState); },
+    // DEPRECATED: Use ImportWizardManager.openWithData() instead
+    openImportPreviewModal() { console.warn('[UI] openImportPreviewModal is deprecated. Use ImportWizardManager.openWithData() instead.'); },
     resetCopyButtonState(buttonEl) {
         if (buttonEl) {
             const isCopied = buttonEl.closest('.appreciation-result')?.querySelector('.copy-btn.was-copied');

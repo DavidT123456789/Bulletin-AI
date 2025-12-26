@@ -4,12 +4,8 @@
  */
 
 import { DOM } from '../../utils/DOM.js';
-import { Utils } from '../../utils/Utils.js';
 import { UI } from '../UIManager.js';
-import { AppreciationsManager } from '../AppreciationsManager.js';
-import { ClassAnalysisManager } from '../ClassAnalysisManager.js';
-// RefinementManager removed - Focus Panel handles all refinement inline
-import { FileImportManager } from '../FileImportManager.js';
+import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 
 let App = null;
@@ -24,16 +20,10 @@ export const OtherModalsListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
-
-        // _setupRefinementModal removed - Focus Panel handles all refinement inline
         this._setupHelpModal(addClickListener);
-        this._setupClassAnalysisModal(addClickListener);
-        this._setupImportPreviewModal(addClickListener);
+        this._setupClassDashboardModal(addClickListener);
+        // Note: Import modal is now handled by ImportWizardManager
     },
-
-
-
-    // _setupRefinementModal removed - Refinement modal deleted, Focus Panel handles all refinement
 
     _setupHelpModal(addClickListener) {
         addClickListener(DOM.closeHelpModalBtn, () => UI.closeModal(DOM.helpModal));
@@ -57,49 +47,48 @@ export const OtherModalsListeners = {
         });
     },
 
-    _setupClassAnalysisModal(addClickListener) {
-        addClickListener(DOM.closeClassAnalysisModalBtn, () => UI.closeModal(DOM.classAnalysisModal));
-        addClickListener(DOM.closeClassAnalysisFooterBtn, () => UI.closeModal(DOM.classAnalysisModal));
-        addClickListener(DOM.copyAnalysisBtn, ClassAnalysisManager.copyClassAnalysis);
-        addClickListener(DOM.copyClassAnalysisBtn, ClassAnalysisManager.copyClassAnalysis);
-        DOM.classAnalysisModal.addEventListener('click', (e) => {
-            const button = e.target.closest('button[data-refine-type]');
-            if (button) ClassAnalysisManager.handleClassAnalysisActions(button);
-        });
-    },
+    /**
+     * Setup listeners for the new Class Dashboard modal
+     */
+    _setupClassDashboardModal(addClickListener) {
+        const modal = document.getElementById('classDashboardModal');
+        if (!modal) return;
 
-    _setupImportPreviewModal(addClickListener) {
-        addClickListener(DOM.closeImportPreviewModalBtn, () => UI.closeModal(DOM.importPreviewModal));
-        addClickListener(DOM.cancelImportPreviewBtn, () => UI.closeModal(DOM.importPreviewModal));
+        // Close buttons
+        const closeBtnHeader = document.getElementById('closeDashboardModalBtn');
+        const closeBtnFooter = document.getElementById('closeDashboardFooterBtn');
 
-        // Import des données (sans génération - nouveau workflow data-first)
-        addClickListener(DOM.importOnlyBtn, async () => {
-            try {
-                await FileImportManager.handleImportOnlyConfirmation();
-            } catch (err) {
-                console.error("Erreur lors de l'import :", err);
-                UI.showNotification("Une erreur est survenue lors de l'import.", 'error');
+        addClickListener(closeBtnHeader, () => ClassDashboardManager.closeDashboard());
+        addClickListener(closeBtnFooter, () => ClassDashboardManager.closeDashboard());
+
+        // Generate AI Synthesis button
+        const generateBtn = document.getElementById('generateSynthesisBtn');
+        addClickListener(generateBtn, () => ClassDashboardManager.generateAISynthesis());
+
+        // Copy button
+        const copyBtn = document.getElementById('copyDashboardSynthesisBtn');
+        addClickListener(copyBtn, () => ClassDashboardManager.copySynthesis());
+
+        // Click handlers for interactive elements
+        modal.addEventListener('click', (e) => {
+            // Click on student highlight to focus on them
+            const highlightItem = e.target.closest('.highlight-item[data-student-id]');
+            if (highlightItem) {
+                const studentId = highlightItem.dataset.studentId;
+                ClassDashboardManager.closeDashboard();
+                // Open focus panel for this student
+                setTimeout(async () => {
+                    const { FocusPanelManager } = await import('../FocusPanelManager.js');
+                    FocusPanelManager.openByStudentId(studentId);
+                }, 300);
             }
         });
 
-        DOM.importPreviewModal?.addEventListener('click', (e) => {
-            if (e.target.id === 'forgetSavedImportFormatBtn') {
-                e.preventDefault();
-                FileImportManager.forgetSavedImportFormat();
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                ClassDashboardManager.closeDashboard();
             }
         });
-
-        DOM.importPreviewModal?.addEventListener('change', e => {
-            const targetId = e.target.id;
-            if (targetId === 'separatorSelect' || targetId === 'strategyMerge' || targetId === 'strategyReplace' || e.target.classList.contains('mapping-select')) {
-                if (targetId === 'separatorSelect') {
-                    const isCustom = e.target.value === 'custom';
-                    DOM.customSeparatorInput.style.display = isCustom ? 'inline-block' : 'none';
-                    if (isCustom) DOM.customSeparatorInput.focus();
-                }
-                FileImportManager.updateImportPreview();
-            }
-        });
-        DOM.customSeparatorInput?.addEventListener('input', Utils.debounce(() => FileImportManager.updateImportPreview(), 200));
     }
 };

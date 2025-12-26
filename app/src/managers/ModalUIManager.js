@@ -170,6 +170,7 @@ export const ModalUI = {
             DOM.helpModal,
             DOM.welcomeModal,
             document.getElementById('customConfirmModal'),
+            document.getElementById('classDashboardModal'),
             DOM.classAnalysisModal,
             DOM.importPreviewModal
         ];

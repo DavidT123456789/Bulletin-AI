@@ -229,6 +229,16 @@ export function initDOM() {
     DOM.noResultsMessage = document.getElementById('noResultsMessage');
     DOM.importSettingsBtn = document.getElementById('importSettingsBtn');
     DOM.exportSettingsBtn = document.getElementById('exportSettingsBtn');
+    DOM.exportFullBackupBtn = document.getElementById('exportFullBackupBtn');
+    DOM.importFullBackupBtn = document.getElementById('importFullBackupBtn');
+    DOM.importBackupInput = document.getElementById('importBackupInput');
+    // Cloud sync elements
+    DOM.connectGoogleBtn = document.getElementById('connectGoogleBtn');
+    DOM.connectDropboxBtn = document.getElementById('connectDropboxBtn');
+    DOM.googleSyncStatus = document.getElementById('googleSyncStatus');
+    DOM.dropboxSyncStatus = document.getElementById('dropboxSyncStatus');
+    DOM.syncStatusBar = document.getElementById('syncStatusBar');
+    DOM.syncRgpdWarning = document.getElementById('syncRgpdWarning');
     DOM.welcomeModal = document.getElementById('welcomeModal');
     DOM.welcomeNextStepInfo = document.getElementById('welcome-next-step-info');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');

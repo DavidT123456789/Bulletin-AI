@@ -17,6 +17,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { ResultsUIManager } from './ResultsUIManager.js';
 
 import { MassImportManager } from './MassImportManager.js';
+import { FileImportManager } from './FileImportManager.js';
 import { ResultCardsUI } from './ResultCardsUIManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 
@@ -536,61 +537,30 @@ export const AppreciationsManager = {
         return ResultsUIManager.clearAllResults();
     },
 
+    /**
+     * Loads sample data for demonstration purposes.
+     * Stores sample data and triggers import wizard when ready.
+     */
     loadSampleData() {
-        UI.setInputMode(CONSTS.INPUT_MODE.MASS);
-        appState.importJustCompleted = false;
+        // Import sample data from shared source
+        import('../data/SampleData.js').then(({ getSampleImportData }) => {
+            const sampleDataText = getSampleImportData();
 
-        const periods = Utils.getPeriods();
-        const currentPeriod = appState.currentPeriod;
+            // Store in sessionStorage for later use
+            sessionStorage.setItem('pendingSampleData', sampleDataText);
 
-        const formatString = DEFAULT_MASS_IMPORT_FORMATS[appState.periodSystem]?.[currentPeriod];
-
-        if (!formatString) {
-            UI.showNotification("Impossible de charger les données d'exemple : format de base manquant.", "error");
-            console.error(`Aucun format d'import par défaut trouvé pour ${appState.periodSystem} - ${currentPeriod}`);
-            return;
-        }
-
-        const studentsBase = [
-            { nom: "MARTIN", prenom: "Lucas", statuses: [], baseGrade: 12.5, evolution: 0.7, apps: ["Bon début.", "Progression notable."], instructions: "Participe bien." },
-            { nom: "DURAND", prenom: "Sophie", statuses: ["PPRE"], baseGrade: 9.1, evolution: 1.4, apps: ["Doit s'investir.", "Des efforts à poursuivre."], instructions: "Élève discrète." },
-            { nom: "LEFEVRE", prenom: "Thomas", statuses: [], baseGrade: 15.0, evolution: -0.5, apps: ["Très bonne participation.", "Léger recul."], instructions: "Maintenir le cap." },
-            { nom: "PETIT", prenom: "Camille", statuses: [], baseGrade: 8.2, evolution: -1.2, apps: ["Difficultés persistantes.", "Nécessite un accompagnement."], instructions: "Besoins spécifiques." },
-            { nom: "ROUSSEAU", prenom: "Emma", statuses: ["Délégué"], baseGrade: 17.1, evolution: 0.9, apps: ["Excellents résultats.", "Très forte progression."], instructions: "Rôle moteur." },
-            { nom: "MOREAU", prenom: "Axel", statuses: [], baseGrade: 10.5, evolution: 0.7, apps: ["Résultats corrects mais bavardages inacceptables.", "Trop de bavardages."], instructions: "Concentration à revoir." },
-            { nom: "THOMAS", prenom: "Léa", statuses: [], baseGrade: 8.5, evolution: 1.3, apps: ["Des difficultés malgré du sérieux.", "Des progrès encourageants."], instructions: "Poursuivre les efforts." },
-            { nom: "BERNARD", prenom: "Hugo", statuses: [], baseGrade: 11.0, evolution: 3.5, apps: ["Ensemble fragile.", "Progression spectaculaire."], instructions: "Bravo !" }
-        ];
-
-        const data = studentsBase.map(s => {
-            const studentMap = {
-                NOM_PRENOM: `${s.nom} ${s.prenom}`,
-                STATUT: s.statuses.join(', '),
-                INSTRUCTIONS: s.instructions
-            };
-
-            periods.forEach((p, pIndex) => {
-                const grade = (s.baseGrade + pIndex * s.evolution).toFixed(1);
-
-                studentMap[`MOY_${p}`] = grade;
-
-                if (periods.indexOf(p) < periods.indexOf(currentPeriod)) {
-                    studentMap[`APP_${p}`] = s.apps[pIndex] || `Appréciation ${p}.`;
-                }
-            });
-
-            return formatString
-                .split(' | ')
-                .map(tag => studentMap[tag.trim().replace(/[{}]/g, '')] || '')
-                .join(' | ');
-        }).join('\n');
-
-        if (DOM.massData) {
-            DOM.massData.value = data;
-            DOM.massData.dispatchEvent(new Event('input'));
-        }
-
-        UI.showNotification('Données d\'exemple chargées.', 'info');
+            // If massData textarea exists (main app view), fill it directly
+            if (DOM.massData) {
+                DOM.massData.value = sampleDataText;
+                DOM.massData.dispatchEvent(new Event('input'));
+                sessionStorage.removeItem('pendingSampleData');
+                // Trigger import wizard
+                setTimeout(() => {
+                    FileImportManager.handleMassImportTrigger();
+                }, 100);
+            }
+            // Otherwise data stays in sessionStorage until welcome modal closes
+        });
     }
 };
 

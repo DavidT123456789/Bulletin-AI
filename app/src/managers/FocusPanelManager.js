@@ -91,14 +91,7 @@ export const FocusPanelManager = {
             });
         }
 
-        // NEW: Toggle Details (History Only)
-        const btnToggleDetails = document.getElementById('btnToggleDetails');
-        if (btnToggleDetails) {
-            btnToggleDetails.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this._toggleRetractableDetails();
-            });
-        }
+        // (Toggle Details button removed - main header period selector is the source of truth)
 
         // Analyze button/page (Existing logic)
         const analyzeBtn = document.getElementById('focusAnalyzeBtn');
@@ -161,12 +154,6 @@ export const FocusPanelManager = {
         }
 
         // Note: FAB button (addStudentFab) is now handled by ImportWizardManager via the Hub
-
-        // Join Listener for Toggle
-        const studentNameEl = document.getElementById('focusStudentName');
-        if (studentNameEl) {
-            studentNameEl.addEventListener('click', () => this._toggleRetractableDetails());
-        }
 
         // Context textarea
         const contextInput = document.getElementById('focusContextInput');
@@ -307,19 +294,12 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Toggles the retractable details section (History Only)
+     * Toggles the retractable details section (no longer used, kept for compatibility)
      * @param {boolean} [forceState] - If true, force open. If false, force close.
      */
     _toggleRetractableDetails(forceState) {
-        const sidebar = document.getElementById('focusRetractableDetails');
-        if (!sidebar) return;
-
-        if (typeof forceState === 'boolean') {
-            if (forceState) sidebar.classList.add('open');
-            else sidebar.classList.remove('open');
-        } else {
-            sidebar.classList.toggle('open');
-        }
+        // No-op: retractable details section has been removed
+        // The main header period selector is now the single source of truth
     },
 
     /**
@@ -858,10 +838,23 @@ export const FocusPanelManager = {
      */
     async copy() {
         const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-        if (!result?.appreciation) return;
+        if (!result) return;
+
+        // Use the main header's period as source of truth
+        const periodAppreciation = result.studentData.periods?.[appState.currentPeriod]?.appreciation;
+
+        if (!periodAppreciation || !periodAppreciation.trim()) {
+            UI.showNotification('Aucune appréciation à copier', 'warning');
+            return;
+        }
 
         try {
-            await navigator.clipboard.writeText(result.appreciation);
+            // Strip HTML tags for clean copy
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = periodAppreciation;
+            const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+
+            await navigator.clipboard.writeText(cleanText);
             UI.showNotification('Appréciation copiée !', 'success');
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
@@ -995,25 +988,38 @@ export const FocusPanelManager = {
         // === 6. CONTEXT CARD: Context Textarea ===
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
-            const context = result.studentData.periods?.[currentPeriod]?.context || result.studentData.negativeInstructions || '';
-            contextInput.value = context;
+            // [FIX] Only show period-specific context, NOT legacy fallback
+            // Each period should have its own independent context
+            const periodContext = result.studentData.periods?.[currentPeriod]?.context || '';
+            contextInput.value = periodContext;
             this._autoResizeTextarea(contextInput);
         }
 
         // === 7. APPRECIATION CARD: Text Content ===
+        // [FIX] Use period-specific appreciation as source of truth (not result.appreciation)
+        // This ensures consistency between list view and focus panel
         const appreciationEl = document.getElementById('focusAppreciationText');
+        let hasAppreciation = false;
+
         if (appreciationEl) {
-            if (result.appreciation) {
+            // Get appreciation for the CURRENT period specifically
+            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+
+            if (periodAppreciation && periodAppreciation.trim()) {
                 // Decode HTML entities and strip tags for clean display
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = result.appreciation;
+                tempDiv.innerHTML = periodAppreciation;
                 const cleanText = tempDiv.textContent || tempDiv.innerText || '';
                 appreciationEl.textContent = cleanText;
                 appreciationEl.classList.remove('focus-appreciation-empty');
                 appreciationEl.classList.add('filled');
+                hasAppreciation = true;
             } else {
-                appreciationEl.innerHTML = '<span class="focus-appreciation-empty">Aucune appréciation générée. Cliquez sur "Générer" ci-dessous.</span>';
+                // Apply empty state class directly on the element for proper styling
+                appreciationEl.textContent = 'Aucune appréciation générée. Cliquez sur "Générer" ci-dessous.';
+                appreciationEl.classList.add('focus-appreciation-empty');
                 appreciationEl.classList.remove('filled');
+                hasAppreciation = false;
             }
             this._updateWordCount();
         }
@@ -1027,11 +1033,19 @@ export const FocusPanelManager = {
         // === 9. Copy Button State ===
         const copyBtn = document.getElementById('focusCopyBtn');
         if (copyBtn) {
-            copyBtn.disabled = !result.appreciation;
+            copyBtn.disabled = !hasAppreciation;
         }
 
-        // === 10. Render History Timeline in Retractable Panel ===
-        this._renderStudentDetailsTimeline(result.studentData);
+        // === 10. Refinement Buttons State ===
+        // Disable refinement buttons when there's no appreciation to refine
+        const refinementOptions = document.getElementById('focusRefinementOptions');
+        if (refinementOptions) {
+            const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
+            refineButtons.forEach(btn => {
+                btn.disabled = !hasAppreciation;
+                btn.classList.toggle('disabled', !hasAppreciation);
+            });
+        }
     },
 
     /**
@@ -1050,6 +1064,8 @@ export const FocusPanelManager = {
         }).join('');
     },
 
+    // Period tabs methods removed - main header period selector is the single source of truth
+
     /**
      * Met à jour les boutons de navigation
      * @private
@@ -1062,6 +1078,14 @@ export const FocusPanelManager = {
         if (prevBtn) prevBtn.disabled = this.currentIndex <= 0;
         if (nextBtn) nextBtn.disabled = this.currentIndex >= appState.filteredResults.length - 1;
         if (positionEl) positionEl.textContent = `${this.currentIndex + 1}/${appState.filteredResults.length}`;
+    },
+
+    /**
+     * Public method to save current context (called by UIManager before period switch)
+     * This ensures context/grade/appreciation edits are saved to the correct period
+     */
+    saveCurrentContext() {
+        this._saveContext();
     },
 
     /**
@@ -2218,6 +2242,15 @@ export const FocusPanelManager = {
         // Check API key
         if (!UI.checkAPIKeyPresence()) {
             UI.showNotification('Clé API requise pour l\'analyse IA', 'warning');
+            return;
+        }
+
+        // [FIX] Check that an appreciation exists for the current period
+        // Analysis should be based on the appreciation, so it must exist first
+        const currentPeriod = appState.currentPeriod;
+        const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+        if (!periodAppreciation || !periodAppreciation.trim()) {
+            UI.showNotification(`Veuillez d'abord générer une appréciation pour ${Utils.getPeriodLabel(currentPeriod, false)}`, 'warning');
             return;
         }
 

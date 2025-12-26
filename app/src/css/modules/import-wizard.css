@@ -511,20 +511,22 @@
     width: 100%;
     flex: 1;
     min-height: 100px;
-    padding: 16px;
+    padding: 16px 18px;
     font-size: 0.85rem;
-    font-family: 'SF Mono', 'Consolas', monospace;
+    font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
     background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-lg);
     resize: none;
-    line-height: 1.5;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
 }
 
-.import-textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
+.import-textarea::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.7;
+    font-style: italic;
 }
 
 /* === HEADER CONTROLS (Step 2) === */
@@ -992,12 +994,56 @@
     transform: none;
 }
 
+/* === STEP 3 - CONFIRMATION LAYOUT === */
+#modalStep3 {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+}
+
+.wizard-step3-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    padding: 0 8px;
+}
+
+.wizard-step3-header .wizard-step-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.period-badge-pill {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 /* === PREVIEW GRID - ULTIMA DESIGN === */
 .import-wizard-modal .import-preview-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
+    display: flex;
+    gap: 24px;
+    margin-bottom: 0;
+    justify-content: center;
+    align-items: stretch;
+    flex: 1 1 0;
+    min-height: 200px;
+    padding: 8px 0;
+    overflow: hidden;
 }
 
 .import-wizard-modal .import-preview-col {
@@ -1008,9 +1054,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 120px;
-    max-height: 200px;
-    /* Limit height but allow content to shrink */
+    flex: 1 1 0;
+    max-width: 420px;
+    min-width: 260px;
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     box-shadow: var(--shadow-sm);
 }
@@ -1097,28 +1143,26 @@
 /* List Styles */
 .import-wizard-modal .import-col-list {
     list-style: none;
-    padding: 8px;
+    padding: 12px;
     margin: 0;
     overflow-y: auto;
     flex: 1;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .import-wizard-modal .import-col-list li {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
+    gap: 10px;
+    padding: 10px 12px;
     background: var(--bg-color);
     border: 1px solid transparent;
     border-radius: var(--radius-md);
-    margin-bottom: 4px;
     transition: background 0.15s ease;
-    opacity: 1 !important;
-    animation: none !important;
-    visibility: visible !important;
-    min-height: 48px;
-    /* Force minimum height to see if it renders */
+    flex-shrink: 0;
 }
 
 
@@ -1168,12 +1212,15 @@
     text-align: center;
     color: var(--text-tertiary);
     font-style: italic;
-    padding: 16px;
+    padding: 24px 16px;
     background: transparent !important;
     border: 1px dashed var(--border-color) !important;
     justify-content: center;
+    align-items: center;
     opacity: 0.6;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    flex: 1;
+    min-height: 100px;
 }
 
 /* === STRATEGY CARDS - CLEAN DESIGN === */
@@ -1912,8 +1959,8 @@
 
 /* === ENHANCED PREVIEW COLUMNS === */
 .import-wizard-modal .import-preview-col {
-    max-height: 220px;
-    min-height: 160px;
+    min-height: 200px;
+    /* max-height removed to allow columns to expand */
 }
 
 .import-wizard-modal .import-col-list {
@@ -1993,6 +2040,7 @@
     display: flex;
     gap: 16px;
     margin-top: 20px;
+    flex-shrink: 0;
 }
 
 .import-strategy-radio {

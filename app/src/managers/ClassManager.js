@@ -339,7 +339,7 @@ export const ClassManager = {
             appState.filteredResults = [];
         }
 
-        console.log(`[ClassManager] Deleted ${allResults.length - resultsToKeep.length} student(s) from class ${classId}`);
+        // Suppression terminée
     },
 
 

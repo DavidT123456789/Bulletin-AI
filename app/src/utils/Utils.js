@@ -144,8 +144,18 @@ export const Utils = {
         const { nom, prenom } = this.parseNomPrenom(mappedData['NOM_PRENOM'] || '');
         if (!nom && !prenom) return null;
         const studentData = { nom, prenom, statuses: mappedData['STATUT'] ? [mappedData['STATUT']] : [], periods: {}, currentPeriod, negativeInstructions: mappedData['INSTRUCTIONS'] || '' };
-        this.getPeriods().forEach(p => { const gradeStr = (mappedData[`MOY_${p}`] || '').replace(',', '.'); studentData.periods[p] = { grade: this.isNumeric(gradeStr) ? parseFloat(gradeStr) : null, appreciation: mappedData[`APP_${p}`] || '' }; });
-        if (studentData.periods[currentPeriod]) studentData.periods[currentPeriod].appreciation = '';
+        this.getPeriods().forEach(p => {
+            const gradeStr = (mappedData[`MOY_${p}`] || '').replace(',', '.');
+            // Get context for this period (CTX_T1, CTX_S1, etc.) or fallback to global INSTRUCTIONS for current period
+            const periodContext = mappedData[`CTX_${p}`] || (p === currentPeriod ? mappedData['INSTRUCTIONS'] : '') || '';
+            studentData.periods[p] = {
+                grade: this.isNumeric(gradeStr) ? parseFloat(gradeStr) : null,
+                appreciation: mappedData[`APP_${p}`] || '',
+                context: periodContext
+            };
+        });
+        // NOTE: We no longer erase the current period appreciation here.
+        // The appreciation is kept as imported; isPending is set based on whether it exists.
         return studentData;
     },
 

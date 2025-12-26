@@ -9,6 +9,7 @@ import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ResultCardsUI } from './ResultCardsUIManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { StatsUI } from './StatsUIManager.js';
 
 /**
  * Module de gestion de la vue Liste (tableau des élèves)
@@ -39,9 +40,7 @@ export const ListViewManager = {
                     <thead>
                         <tr>
                             <th>Nom</th>
-                            ${periods.slice(0, currentPeriodIndex + 1).map(p =>
-            `<th class="grade-header">${Utils.getPeriodLabel(p, false)}</th>`
-        ).join('')}
+                            ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
                             <th class="appreciation-header">
                                 <div class="header-content-wrapper" style="display:flex; align-items:center;  justify-content:center; gap:8px;">
                                     Appréciation
@@ -154,7 +153,26 @@ export const ListViewManager = {
     },
 
     /**
-     * Rend les cellules de notes pour un élève
+     * Génère les headers de notes avec colonnes d'évolution
+     * @param {Array} periods - Périodes à afficher
+     * @returns {string} HTML des headers
+     * @private
+     */
+    _renderGradeHeaders(periods) {
+        let html = '';
+        periods.forEach((p, i) => {
+            // Colonne de note
+            html += `<th class="grade-header">${Utils.getPeriodLabel(p, false)}</th>`;
+            // Colonne d'évolution (sauf après la dernière période)
+            if (i < periods.length - 1) {
+                html += `<th class="evolution-header"></th>`;
+            }
+        });
+        return html;
+    },
+
+    /**
+     * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
      * @param {Object} periods - Données par période
      * @param {Array} allPeriods - Liste de toutes les périodes
      * @param {number} currentIndex - Index de la période courante
@@ -169,33 +187,48 @@ export const ListViewManager = {
             const p = allPeriods[i];
             const data = periods[p] || {};
             const grade = typeof data.grade === 'number' ? data.grade : null;
-
-            let evolutionHtml = '';
             let gradeClass = '';
 
             if (grade !== null) {
                 gradeClass = ResultCardsUI.getGradeClass(grade);
             }
 
-            if (i > 0 && prevGrade !== null && grade !== null) {
-                const diff = grade - prevGrade;
-                if (diff > 0.5) {
-                    evolutionHtml = `<span class="grade-evolution positive">+${diff.toFixed(1)}</span>`;
-                } else if (diff < -0.5) {
-                    evolutionHtml = `<span class="grade-evolution negative">${diff.toFixed(1)}</span>`;
-                }
-            }
-
+            // Cellule de note
             html += `
                 <td class="grade-cell">
                     <div class="grade-content-wrapper">
                     ${grade !== null
-                    ? `${evolutionHtml}<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
+                    ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
                     : `<span class="grade-empty">--</span>`
                 }
                     </div>
                 </td>
             `;
+
+            // Cellule d'évolution (entre cette note et la suivante)
+            if (i < currentIndex) {
+                const nextP = allPeriods[i + 1];
+                const nextData = periods[nextP] || {};
+                const nextGrade = typeof nextData.grade === 'number' ? nextData.grade : null;
+
+                let evolutionHtml = '';
+                if (grade !== null && nextGrade !== null) {
+                    const diff = nextGrade - grade;
+                    const diffText = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+                    const evoType = StatsUI._getEvolutionType(diff);
+
+                    if (['very-positive', 'positive'].includes(evoType)) {
+                        evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts">↗</span>`;
+                    } else if (['very-negative', 'negative'].includes(evoType)) {
+                        evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts">↘</span>`;
+                    } else {
+                        // Stable - flèche horizontale discrète
+                        evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts">→</span>`;
+                    }
+                }
+
+                html += `<td class="evolution-cell">${evolutionHtml}</td>`;
+            }
 
             prevGrade = grade;
         }
@@ -228,11 +261,19 @@ export const ListViewManager = {
         const currentPeriod = appState.currentPeriod;
         let appreciation = '';
 
-        if (result.studentData?.periods?.[currentPeriod]?.appreciation) {
-            appreciation = result.studentData.periods[currentPeriod].appreciation.trim();
-        } else if (result.studentData?.currentPeriod === currentPeriod && result.appreciation) {
-            // Fallback: si l'objet racine correspond à la bonne période
-            appreciation = result.appreciation.trim();
+        // 1. Priorité: appréciation stockée directement dans la période
+        const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
+        if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
+            appreciation = periodApp.trim();
+        }
+        // 2. Fallback: result.appreciation (déjà transformée dans renderResults pour la période courante)
+        else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
+            // Vérifier que cette appréciation correspond bien à la période courante
+            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule période
+            const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
+            if (!storedPeriod || storedPeriod === currentPeriod) {
+                appreciation = result.appreciation.trim();
+            }
         }
 
         // Si c'est une autre période, et qu'on n'a rien trouvé, on n'affiche rien (plutôt que l'appréciation d'un autre trimestre)
@@ -260,24 +301,31 @@ export const ListViewManager = {
             // Supprimer les balises HTML pour l'affichage textuel dans la liste
             const cleanText = decoded.replace(/<[^>]*>/g, '').trim();
 
-            // Tronquer à ~60 caractères pour tenir sur une ligne
-            const maxLen = 60;
-            const isTruncated = cleanText.length > maxLen;
-            const displayText = isTruncated ? cleanText.substring(0, maxLen) + '...' : cleanText;
-            const truncatedClass = isTruncated ? ' truncated' : '';
-            return `<div class="appreciation-preview${truncatedClass}" title="Cliquer pour éditer">${displayText}</div>`;
+            // Let CSS handle truncation dynamically based on available space
+            return `<div class="appreciation-preview" title="${cleanText}">${cleanText}</div>`;
         }
 
         // Si pas de contenu, on détermine le statut à afficher
-        // Si on regarde une période passée sans donnée, c'est "vide" plutôt que "en attente" ?
-        // Pour l'instant on garde la logique de statut si c'est la période courante.
+        // Pour les périodes passées sans donnée, afficher simplement un tiret
+        const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
+        const errorPeriod = result.errorMessage ? storedPeriod : null;
 
-        // Si l'élève a une erreur globale ET qu'on est sur la période courante
-        if (status === 'error' && result.studentData?.currentPeriod === currentPeriod) {
+        // Si l'élève a une erreur qui concerne la période affichée
+        if (status === 'error' && errorPeriod === currentPeriod) {
             return this._getStatusBadge('error');
         }
 
-        // Sinon, badge "En attente" ou vide
+        // Pour les périodes passées sans appréciation, afficher un tiret
+        const periods = Utils.getPeriods();
+        const currentIndex = periods.indexOf(currentPeriod);
+        const periodIndex = periods.indexOf(storedPeriod);
+
+        if (storedPeriod && currentIndex < periodIndex) {
+            // On regarde une période passée où l'élève n'avait pas encore d'appréciation
+            return '<span class="appreciation-preview empty">—</span>';
+        }
+
+        // Sinon, badge "En attente" pour la période actuelle
         return this._getStatusBadge('pending');
     },
 

@@ -64,6 +64,33 @@ export const WelcomeManager = {
 
         // Provider Selection Logic (uses CSS-only styling, no glider animation)
         const providerPills = document.querySelectorAll('.provider-pill');
+
+        // Helper to update input and button state for current provider
+        const updateProviderKeyState = (provider) => {
+            const input = DOM.welcomeApiKeyInput;
+            const validateBtn = DOM.welcomeValidateApiKeyBtn;
+            const existingKey = provider === 'google' ? appState.googleApiKey : appState.openrouterApiKey;
+
+            if (input) {
+                input.value = existingKey || '';
+            }
+
+            if (validateBtn) {
+                if (existingKey) {
+                    validateBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    validateBtn.classList.add('btn-success');
+                    validateBtn.disabled = true;
+                    DOM.welcomeNextBtn.disabled = false;
+                } else {
+                    validateBtn.innerHTML = '<i class="fas fa-key"></i> Valider';
+                    validateBtn.classList.remove('btn-success');
+                    validateBtn.disabled = false;
+                    // Only disable next if no key for any provider and not in demo mode
+                    DOM.welcomeNextBtn.disabled = !appState.isDemoMode;
+                }
+            }
+        };
+
         providerPills.forEach(pill => {
             addClickListener(pill, (e) => {
                 const target = e.currentTarget;
@@ -76,22 +103,28 @@ export const WelcomeManager = {
                 currentProvider = target.dataset.provider;
 
                 // Update Input & Link UI
-                const input = DOM.welcomeApiKeyInput;
                 const link = document.querySelector('.get-key-link-mini');
 
                 if (currentProvider === 'google') {
-                    input.placeholder = "Collez votre clé API Google ici (AIzaSy...)";
+                    if (DOM.welcomeApiKeyInput) {
+                        DOM.welcomeApiKeyInput.placeholder = "Collez votre clé API Google ici (AIzaSy...)";
+                    }
                     if (link) {
                         link.href = "https://aistudio.google.com/app/apikey";
                         link.innerHTML = '<i class="fab fa-google"></i> Obtenir ma clé';
                     }
                 } else {
-                    input.placeholder = "Collez votre clé API OpenRouter ici (sk-or-...)";
+                    if (DOM.welcomeApiKeyInput) {
+                        DOM.welcomeApiKeyInput.placeholder = "Collez votre clé API OpenRouter ici (sk-or-...)";
+                    }
                     if (link) {
                         link.href = "https://openrouter.ai/keys";
                         link.innerHTML = '<i class="fas fa-bolt"></i> Obtenir ma clé';
                     }
                 }
+
+                // Update input value and validation state for this provider
+                updateProviderKeyState(currentProvider);
             });
         });
 
@@ -170,6 +203,19 @@ export const WelcomeManager = {
             StorageManager.saveAppState();
             UI.closeModal(DOM.welcomeModal);
             UI.updateGenerateButtonState();
+
+            // Check if sample data was loaded and needs to be imported
+            const sampleData = sessionStorage.getItem('pendingSampleData');
+            if (sampleData) {
+                sessionStorage.removeItem('pendingSampleData');
+
+                // Wait for UI to be fully ready, then open the proper import wizard with data
+                setTimeout(() => {
+                    import('./ImportWizardManager.js').then(({ ImportWizardManager }) => {
+                        ImportWizardManager.openWithData(sampleData);
+                    });
+                }, 400);
+            }
         };
 
         const validateWelcomeApiKey = async () => {
@@ -187,9 +233,33 @@ export const WelcomeManager = {
             }
         };
 
-        // Pré-remplir le champ API key si une clé existe déjà dans les paramètres
-        if (appState.googleApiKey && DOM.welcomeApiKeyInput) {
-            DOM.welcomeApiKeyInput.value = appState.googleApiKey;
+        // Pré-remplir le champ API key et montrer l'état validé si une clé existe
+        const existingGoogleKey = appState.googleApiKey;
+        const existingOpenRouterKey = appState.openrouterApiKey;
+
+        if (DOM.welcomeApiKeyInput) {
+            if (existingGoogleKey) {
+                DOM.welcomeApiKeyInput.value = existingGoogleKey;
+                // Mark as validated
+                if (DOM.welcomeValidateApiKeyBtn) {
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.classList.add('btn-success');
+                    DOM.welcomeValidateApiKeyBtn.disabled = true;
+                }
+                DOM.welcomeNextBtn.disabled = false;
+            } else if (existingOpenRouterKey) {
+                // Switch to OpenRouter provider
+                const openRouterPill = document.querySelector('.provider-pill[data-provider="openrouter"]');
+                if (openRouterPill) openRouterPill.click();
+                DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
+                // Mark as validated
+                if (DOM.welcomeValidateApiKeyBtn) {
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.classList.add('btn-success');
+                    DOM.welcomeValidateApiKeyBtn.disabled = true;
+                }
+                DOM.welcomeNextBtn.disabled = false;
+            }
         }
 
         // Initialize first step without animation
@@ -243,8 +313,8 @@ export const WelcomeManager = {
             DOM.welcomeNextStepInfo.style.display = 'block';
             DOM.welcomeLoadSampleBtn.disabled = true;
             DOM.welcomeLoadSampleBtn.innerHTML = '<i class="fas fa-check"></i> Données chargées !';
-            setTimeout(() => DOM.importGenerateBtn.click(), 500);
-            setTimeout(() => finishWelcome(false), 1000);
+            // User needs to click Terminer to finish
+            UI.showNotification('Données exemple prêtes ! Cliquez sur "Terminer" pour continuer.', 'success');
         });
 
         // Gestion du bouton Mode Démo

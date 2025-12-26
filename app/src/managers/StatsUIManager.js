@@ -129,10 +129,9 @@ export const StatsUI = {
      * @param {Array} filteredResults - Résultats filtrés
      * @param {string} activePeriod - Période active
      * @param {string|null} previousPeriod - Période précédente
-     * @param {function} getRelevantEvolution - Fonction pour obtenir l'évolution pertinente
      * @returns {Object} Statistiques calculées
      */
-    calculateStats(filteredResults, activePeriod, previousPeriod, getRelevantEvolution) {
+    calculateStats(filteredResults, activePeriod, previousPeriod) {
         const stats = {
             avgGrade: '--', prevAvgGrade: '--', minGrade: '--', maxGrade: '--',
             avgWords: 0, progress: 0, stable: 0, regression: 0,
@@ -163,14 +162,15 @@ export const StatsUI = {
                         totalPrevGrades += prevGrade;
                         prevGradeCount++;
                     }
-                }
 
-                const evo = getRelevantEvolution(res.evolutions, res.studentData.currentPeriod);
-                if (evo) {
-                    const evoType = this._getEvolutionType(evo.valeur);
-                    if (['very-positive', 'positive'].includes(evoType)) stats.progress++;
-                    else if (evoType === 'stable') stats.stable++;
-                    else stats.regression++;
+                    // Calculer l'évolution directement à partir des notes
+                    if (typeof currentGrade === 'number' && typeof prevGrade === 'number') {
+                        const diff = currentGrade - prevGrade;
+                        const evoType = this._getEvolutionType(diff);
+                        if (['very-positive', 'positive'].includes(evoType)) stats.progress++;
+                        else if (evoType === 'stable') stats.stable++;
+                        else stats.regression++;
+                    }
                 }
                 words += Utils.countWords(res.appreciation);
             }
@@ -274,10 +274,9 @@ export const StatsUI = {
     /**
      * Met à jour les statistiques affichées dans l'interface.
      * @param {Object} uiManager - Référence vers UI Manager pour les tooltips
-     * @param {Function} getRelevantEvolution - Fonction pour obtenir l'évolution pertinente
      * @returns {Promise<void>}
      */
-    async updateStats(uiManager, getRelevantEvolution) {
+    async updateStats(uiManager) {
         const filtered = appState.filteredResults;
         const activePeriod = appState.currentPeriod;
         const periods = Utils.getPeriods();
@@ -287,7 +286,7 @@ export const StatsUI = {
         const animationPromises = [];
 
         // Utilise calculateStats existant
-        const stats = this.calculateStats(filtered, activePeriod, previousPeriod, getRelevantEvolution);
+        const stats = this.calculateStats(filtered, activePeriod, previousPeriod);
 
         const avgEvolution = (typeof stats.avgGrade === 'number' && typeof stats.prevAvgGrade === 'number')
             ? (stats.avgGrade - stats.prevAvgGrade)

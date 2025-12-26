@@ -233,6 +233,26 @@ export const ImportWizardManager = {
     },
 
     /**
+     * Open the wizard modal with pre-filled data
+     * @param {string} dataText - The data to pre-fill in the textarea
+     */
+    openWithData(dataText) {
+        const modal = document.getElementById('importWizardModal');
+        if (modal) {
+            this.currentStep = 1;
+            this._updateUI();
+            UI.openModal(modal);
+
+            // Pre-fill the textarea with sample data
+            const textarea = document.getElementById('wizardDataTextarea');
+            if (textarea && dataText) {
+                textarea.value = dataText;
+                this._processData();
+            }
+        }
+    },
+
+    /**
      * Close the wizard modal
      */
     close() {
@@ -361,20 +381,14 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Load sample data
-     * Format complet pour T2/T3 : NOM | STATUT | MOY T1 | APP T1 | MOY T2 | APP T2 | MOY T3 | CONTEXTE
+     * Load sample data from shared source
      */
     _loadSample() {
-        const sample = `MARTIN Lucas\t\t12.5\tÉlève sérieux.\t14\tContinuez ainsi.\t14.5\tParticipation active, élève moteur.
-DURAND Sophie\tPPRE\t15\tTrès bon trimestre.\t15.5\tExcellente attitude.\t16\tMaintien des efforts, très bien.
-BERNARD Thomas\t\t9\tDes difficultés.\t10\tLégers progrès.\t11\tEncourageant, continuez.
-PETIT Emma\t\t12\tConvenable.\t13\tEn hausse.\t13.5\tTravail régulier et soigné.
-ROBERT Antoine\t\t10\tPeut mieux faire.\t9.5\tBaisse d'attention.\t9\tManque d'investissement flagrant.
-MOREAU Julie\t\t17\tExcellent.\t17.5\tParfait.\t17.5\tToujours au top, bravo.
-LEFEVRE Hugo\t\t11\tMoyen.\t11.5\tDu mieux.\t12\tBon potentiel à exploiter.
-SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en progression.`;
-        document.getElementById('wizardDataTextarea').value = sample;
-        this._processData();
+        import('../data/SampleData.js').then(({ getSampleImportData }) => {
+            const sample = getSampleImportData();
+            document.getElementById('wizardDataTextarea').value = sample;
+            this._processData();
+        });
     },
 
     /**
@@ -393,7 +407,11 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
             return;
         }
 
-        const separator = this._getSeparator();
+        // Auto-detect separator and update the select
+        const detectedSep = detectSeparator(text);
+        this._updateSeparatorSelect(detectedSep);
+
+        const separator = detectedSep;
         this.state.separator = separator;
 
         const rawLines = text.split('\n').filter(l => l.trim());
@@ -408,6 +426,24 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
 
         // Step 1 Preview (Magic Pills)
         this._updateStep1Preview();
+    },
+
+    /**
+     * Update separator select to match detected value
+     * @param {string} separator - The detected separator
+     */
+    _updateSeparatorSelect(separator) {
+        const select = document.getElementById('wizardSeparatorSelect');
+        if (!select) return;
+
+        // Map separator to select value
+        if (separator === '\t') {
+            select.value = 'tab';
+        } else if (['|', ';', ','].includes(separator)) {
+            select.value = separator;
+        } else {
+            select.value = 'tab'; // Default fallback
+        }
     },
 
     /**
@@ -474,6 +510,7 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
         if (tag === 'INSTRUCTIONS') return { label: 'Contexte', cssClass: 'type-context' };
         if (tag.startsWith('MOY_')) return { label: 'Note', cssClass: 'type-grade' };
         if (tag.startsWith('APP_')) return { label: 'Appr.', cssClass: 'type-app' };
+        if (tag.startsWith('CTX_')) return { label: 'Ctx.', cssClass: 'type-context' };
 
         return { label: 'Ignoré', cssClass: 'type-ignored' };
     },
@@ -508,9 +545,12 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
             { v: 'IGNORE', t: 'Ignorer' },
             { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
             { v: 'STATUT', t: 'Statut' },
-            ...periods.map(p => ({ v: `MOY_${p}`, t: `Moy. ${p}` })),
-            ...periods.map(p => ({ v: `APP_${p}`, t: `Appr. ${p}` })),
-            { v: 'INSTRUCTIONS', t: 'Contexte' }
+            ...periods.flatMap(p => [
+                { v: `MOY_${p}`, t: `Moy. ${p}` },
+                { v: `APP_${p}`, t: `Appr. ${p}` },
+                { v: `CTX_${p}`, t: `Contexte ${p}` }
+            ]),
+            { v: 'INSTRUCTIONS', t: 'Contexte (global)' }
         ];
         const optionsHTML = options.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
 
@@ -786,15 +826,18 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
             const headerKeywordMap = {
                 'Nom & Prénom': ['nom', 'prenom', 'eleve', 'étudiant'],
                 'Statut': ['statut'],
-                'Contexte': ['instructions', 'contexte', 'remarque', 'observation'],
             };
 
             for (const [friendly, keywords] of Object.entries(headerKeywordMap)) {
                 if (keywords.some(kw => matchKeyword(h, kw))) return friendly;
             }
 
-            // Period specific keywords
-            const periodKeyboards = { 'Moy. ': ['moy', 'note', 'moyenne'], 'Appréciation ': ['app', 'commentaire', 'appreciation'] };
+            // Period specific keywords (Moy. T1, Appr. T1, Contexte T1)
+            const periodKeyboards = {
+                'Moy. ': ['moy', 'note', 'moyenne'],
+                'Appréciation ': ['app', 'commentaire', 'appreciation'],
+                'Contexte ': ['contexte', 'ctx', 'observation', 'remarque', 'instruction']
+            };
             for (const [prefix, keywords] of Object.entries(periodKeyboards)) {
                 if (keywords.some(kw => matchKeyword(h, kw))) {
                     // Try to find period in header (T1, T2, S1...)
@@ -874,9 +917,10 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
     _mapTagToFriendly(tag) {
         if (tag === 'NOM_PRENOM') return 'Nom & Prénom';
         if (tag === 'STATUT') return 'Statut';
-        if (tag === 'INSTRUCTIONS') return 'Contexte';
+        if (tag === 'INSTRUCTIONS') return 'Contexte (global)';
         if (tag.startsWith('MOY_')) return `Moy. ${tag.split('_')[1]}`;
         if (tag.startsWith('APP_')) return `Appréciation ${tag.split('_')[1]}`;
+        if (tag.startsWith('CTX_')) return `Contexte ${tag.split('_')[1]}`;
         return 'Ignorer';
     },
 
@@ -887,9 +931,10 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
     _mapFriendlyToTag(friendly) {
         if (friendly === 'Nom & Prénom') return 'NOM_PRENOM';
         if (friendly === 'Statut') return 'STATUT';
-        if (friendly === 'Contexte') return 'INSTRUCTIONS';
+        if (friendly === 'Contexte (global)' || friendly === 'Contexte') return 'INSTRUCTIONS';
         if (friendly.startsWith('Moy. ')) return `MOY_${friendly.split(' ')[1]}`;
         if (friendly.startsWith('Appréciation ')) return `APP_${friendly.split(' ')[1]}`;
+        if (friendly.startsWith('Contexte ')) return `CTX_${friendly.split(' ')[1]}`;
         return 'IGNORE';
     },
 
@@ -987,6 +1032,20 @@ SIMON Clara\tULIS\t14\tBien.\t14.5\tTrès bien.\t15\tTrès bonne élève, en pro
         this._populateList('wizardNewList', 'wizardNewCount', preview.newStudents, 'new');
         this._populateList('wizardUpdatedList', 'wizardUpdatedCount', preview.updatedStudents, 'updated');
         this._populateList('wizardDepartedList', 'wizardDepartedCount', preview.departedStudents, 'departed');
+
+        // Hide/show strategy section based on whether there are existing students
+        // If no existing students, strategy options (Merge/Replace) are irrelevant
+        const strategySection = document.querySelector('.import-strategy-section');
+        const hasExistingStudentsInClass = preview.updatedStudents.length > 0 || preview.departedStudents.length > 0;
+        if (strategySection) {
+            strategySection.style.display = hasExistingStudentsInClass ? '' : 'none';
+        }
+
+        // Hide "Updated" column header if empty (first import scenario)
+        const updatedCol = document.getElementById('wizardUpdatedList')?.closest('.import-preview-col');
+        if (updatedCol) {
+            updatedCol.style.display = preview.updatedStudents.length > 0 ? '' : 'none';
+        }
 
         // Update import button count
         const importCountEl = document.getElementById('wizardImportCount');

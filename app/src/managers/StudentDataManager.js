@@ -36,23 +36,32 @@ export const StudentDataManager = {
     /**
      * Crée un objet résultat "en attente" - sans appréciation générée
      * Utilisé pour l'import de données sans génération IA immédiate
+     * 
+     * Note: isPending is set to false if an appreciation already exists
+     * for the current period in the imported data.
      */
     createPendingResult(studentData) {
         const newStudentData = JSON.parse(JSON.stringify(studentData));
+        const currentPeriod = appState.currentPeriod;
+
+        // Check if appreciation already exists for current period
+        const existingAppreciation = studentData.periods?.[currentPeriod]?.appreciation;
+        const hasAppreciation = existingAppreciation && existingAppreciation.trim().length > 0;
 
         return {
             id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
             nom: studentData.nom,
             prenom: studentData.prenom,
-            appreciation: null,  // Pas encore d'appréciation
+            // Use existing appreciation if available for current period
+            appreciation: hasAppreciation ? existingAppreciation : null,
             evolutions: [], // Calculées lors de la génération
             // Associer à la classe courante
             classId: userSettings.academic.currentClassId || null,
-            // Flag pour identifier les cartes en attente de génération
-            isPending: true,
+            // Only mark as pending if NO appreciation exists for current period
+            isPending: !hasAppreciation,
             studentData: {
                 ...newStudentData,
-                currentPeriod: appState.currentPeriod,
+                currentPeriod: currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
                 negativeInstructions: studentData.negativeInstructions || '',
                 prompts: { appreciation: null, sw: null, ns: null }
@@ -73,7 +82,13 @@ export const StudentDataManager = {
             studentsToProcess: [], ignoredCount: 0
         };
 
-        const existingStudentsMap = new Map(appState.generatedResults.map(r => [Utils.normalizeName(r.nom, r.prenom), r]));
+        // IMPORTANT: Filter by CURRENT CLASS only to avoid showing "update" for students from other classes
+        const currentClassId = userSettings.academic.currentClassId || null;
+        const currentClassResults = appState.generatedResults.filter(r =>
+            !currentClassId || r.classId === currentClassId
+        );
+
+        const existingStudentsMap = new Map(currentClassResults.map(r => [Utils.normalizeName(r.nom, r.prenom), r]));
         const importedStudentsMap = new Map();
 
         lines.forEach(line => {
@@ -85,17 +100,25 @@ export const StudentDataManager = {
             }
         });
 
-        if (importMode === 'replace') {
+        // If no existing students in current class, ALL imported students are "new"
+        const hasExistingStudents = existingStudentsMap.size > 0;
+
+        if (importMode === 'replace' || !hasExistingStudents) {
+            // Replace mode OR empty class: all are new
             importPreviewData.studentsToProcess = Array.from(importedStudentsMap.values());
-            // Utiliser des objets simplifiés {nom, prenom} pour l'affichage cohérent
             importPreviewData.newStudents = importPreviewData.studentsToProcess.map(s => ({ nom: s.nom, prenom: s.prenom }));
             importPreviewData.updatedStudents = [];
-            existingStudentsMap.forEach((result, key) => {
-                if (!importedStudentsMap.has(key)) {
-                    importPreviewData.departedStudents.push({ nom: result.nom, prenom: result.prenom });
-                }
-            });
+
+            // Only show departures if we're replacing AND there were existing students
+            if (importMode === 'replace' && hasExistingStudents) {
+                existingStudentsMap.forEach((result, key) => {
+                    if (!importedStudentsMap.has(key)) {
+                        importPreviewData.departedStudents.push({ nom: result.nom, prenom: result.prenom });
+                    }
+                });
+            }
         } else {
+            // Merge mode with existing students
             importedStudentsMap.forEach((importedData, key) => {
                 const existingResult = existingStudentsMap.get(key);
                 if (!existingResult) {

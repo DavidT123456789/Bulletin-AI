@@ -456,6 +456,11 @@ export const ClassUIManager = {
                     <button class="close-button close-manage-modal"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                        <button class="btn btn-primary btn-small" id="addClassFromModalBtn">
+                            <i class="fas fa-plus"></i> Nouvelle classe
+                        </button>
+                    </div>
                     ${modalContent}
                 </div>
             </div>
@@ -468,6 +473,101 @@ export const ClassUIManager = {
         modalEl.querySelector('.close-manage-modal')?.addEventListener('click', () => {
             UI?.closeModal(modalEl);
             setTimeout(() => modalEl.remove(), 300);
+        });
+
+        // Add new class button in modal - inline form
+        const addClassBtn = modalEl.querySelector('#addClassFromModalBtn');
+        addClassBtn?.addEventListener('click', () => {
+            // Check if form already exists
+            const existingForm = modalEl.querySelector('.inline-create-class-form');
+            if (existingForm) {
+                existingForm.querySelector('input')?.focus();
+                return;
+            }
+
+            // Create inline form at the top of the list
+            const listContainer = modalEl.querySelector('.class-management-list') ||
+                modalEl.querySelector('.class-management-content');
+
+            const formHtml = `
+                <div class="inline-create-class-form" style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background: rgba(var(--primary-color-rgb), 0.08);
+                    border: 2px solid var(--primary-color);
+                    border-radius: var(--radius-md);
+                    margin-bottom: 12px;
+                    animation: slideDownExpand 0.25s ease-out;
+                ">
+                    <input type="text" class="new-class-input" 
+                           placeholder="Nom de la nouvelle classe..." 
+                           maxlength="50"
+                           style="
+                               flex: 1;
+                               padding: 10px 14px;
+                               border: 1px solid var(--border-color);
+                               border-radius: var(--radius-sm);
+                               background: var(--surface-color);
+                               font-size: 0.95em;
+                               outline: none;
+                           ">
+                    <button class="btn btn-primary btn-small create-class-confirm" style="padding: 10px 14px;" disabled>
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 10px 14px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            listContainer.insertAdjacentHTML('afterbegin', formHtml);
+
+            const form = listContainer.querySelector('.inline-create-class-form');
+            const input = form.querySelector('.new-class-input');
+            const confirmBtn = form.querySelector('.create-class-confirm');
+            const cancelBtn = form.querySelector('.create-class-cancel');
+
+            input.focus();
+
+            const removeForm = () => {
+                form.style.animation = 'slideUpCollapse 0.2s ease-out forwards';
+                setTimeout(() => form.remove(), 180);
+            };
+
+            input.oninput = () => {
+                confirmBtn.disabled = input.value.trim().length === 0;
+            };
+
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    e.preventDefault();
+                    confirmBtn.click();
+                } else if (e.key === 'Escape') {
+                    removeForm();
+                }
+            };
+
+            cancelBtn.onclick = removeForm;
+
+            confirmBtn.onclick = async () => {
+                const className = input.value.trim();
+                if (className) {
+                    confirmBtn.disabled = true;
+                    input.disabled = true;
+                    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    await this._createAndSwitchClass(className);
+
+                    // Refresh modal
+                    UI?.closeModal(modalEl);
+                    setTimeout(() => {
+                        modalEl.remove();
+                        this.showManageClassesModal();
+                    }, 300);
+                }
+            };
         });
 
         // Rename buttons - inline editing

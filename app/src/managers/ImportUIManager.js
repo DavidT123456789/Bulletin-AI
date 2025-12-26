@@ -41,10 +41,11 @@ export const ImportUI = {
             { v: 'IGNORE', t: 'Ignorer' },
             { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
             { v: 'STATUT', t: 'Statut' },
-            { v: 'INSTRUCTIONS', t: 'Instructions' },
+            { v: 'INSTRUCTIONS', t: 'Contexte (global)' },
             ...Utils.getPeriods().flatMap(p => [
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
-                { v: `APP_${p}`, t: `Appr. ${p}` }
+                { v: `APP_${p}`, t: `Appr. ${p}` },
+                { v: `CTX_${p}`, t: `Contexte ${p}` }
             ])
         ];
     },
@@ -77,7 +78,11 @@ export const ImportUI = {
                 'STATUT': ['statut'],
                 'INSTRUCTIONS': ['instructions', 'contexte', 'remarque'],
             };
-            const periodKeywordMap = { 'MOY_': ['moy', 'note', 'moyenne'], 'APP_': ['app', 'appréciation', 'commentaire'] };
+            const periodKeywordMap = {
+                'MOY_': ['moy', 'note', 'moyenne'],
+                'APP_': ['app', 'appréciation', 'commentaire'],
+                'CTX_': ['contexte', 'ctx', 'observation', 'remarque']
+            };
             const guesses = Array(selects.length).fill('IGNORE');
             const assigned = new Set();
 
@@ -312,73 +317,7 @@ export const ImportUI = {
         }
     },
 
-    /**
-     * Ouvre la modale de prévisualisation de l'import.
-     * @param {Object} mappingState - État du mapping (lignes, colonnes, séparateur)
-     */
-    openImportPreviewModal(mappingState) {
-        const { lines, columnCount, separator } = mappingState;
-        const modal = DOM.importPreviewModal;
-        const savedFormatString = appState.massImportFormats[appState.periodSystem]?.[appState.currentPeriod];
-        const mappingDetails = modal.querySelector('details.details-accordion');
-
-        mappingDetails.open = !savedFormatString;
-
-        if (DOM.separatorSelect) {
-            if (separator === '\t') {
-                DOM.separatorSelect.value = 'tab';
-                DOM.customSeparatorInput.style.display = 'none';
-            } else if ([',', ';', '|'].includes(separator)) {
-                DOM.separatorSelect.value = separator;
-                DOM.customSeparatorInput.style.display = 'none';
-            } else {
-                DOM.separatorSelect.value = 'custom';
-                DOM.customSeparatorInput.value = separator;
-                DOM.customSeparatorInput.style.display = 'inline-block';
-            }
-        }
-
-        const options = this._getMappingOptions();
-        const optHTML = options.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
-        const effectiveColumnCount = columnCount > 0 ? columnCount : 1;
-
-        const headersRow = DOM.mappingHeaders.querySelector('tr') || document.createElement('tr');
-        headersRow.innerHTML = Array.from({ length: effectiveColumnCount }, (_, i) =>
-            `<th><select class="mapping-select" data-col-index="${i}">${optHTML}</select></th>`
-        ).join('');
-        if (!DOM.mappingHeaders.hasChildNodes()) DOM.mappingHeaders.appendChild(headersRow);
-
-        const previewBody = DOM.mappingPreviewData;
-        previewBody.innerHTML = '';
-        if (lines.length > 0) {
-            const firstLineIsLikelyHeader = lines.length > 1 && !Utils.isNumeric(lines[0][0]) && lines[0].some(cell => /[a-zA-Z]{3,}/.test(cell));
-            const dataToPreview = firstLineIsLikelyHeader ? lines.slice(1, 4) : lines.slice(0, 3);
-
-            dataToPreview.forEach(parts => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = Array.from({ length: effectiveColumnCount }, (_, i) => `<td>${parts[i] || ''}</td>`).join('');
-                previewBody.appendChild(tr);
-            });
-            this._guessInitialMapping(DOM.mappingHeaders.querySelectorAll('select'), lines[0], options);
-        } else {
-            previewBody.innerHTML = `<tr><td colspan="${effectiveColumnCount}" style="text-align:center;font-style:italic;">Aucune donnée à prévisualiser.</td></tr>`;
-        }
-
-        const infoBox = DOM.importSavedFormatInfo;
-        if (savedFormatString) {
-            infoBox.innerHTML = `<p>ℹ️ Un format mémorisé a été appliqué.</p> <button class="btn-link" id="forgetSavedImportFormatBtn">Oublier ce format</button>`;
-            infoBox.style.display = 'flex';
-        } else {
-            infoBox.style.display = 'none';
-        }
-
-        DOM.strategyMergeRadio.checked = true;
-        DOM.saveMappingCheckbox.checked = false;
-
-        if (App && App.updateImportPreview) App.updateImportPreview();
-        ModalUI.openModal(modal);
-        if (UI && UI.initTooltips) UI.initTooltips();
-    },
+    // Note: openImportPreviewModal has been removed - use ImportWizardManager.openWithData() instead
 
     /**
      * Définit l'état visuel de traitement (chargement) pour l'import.

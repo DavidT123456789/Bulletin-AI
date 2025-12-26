@@ -686,10 +686,81 @@ export const SettingsModalListeners = {
         }
 
         addClickListener(DOM.exportSettingsBtn, StorageManager.exportSettings.bind(StorageManager));
+
+        // Full backup export/import
+        addClickListener(DOM.exportFullBackupBtn, StorageManager.exportToJson.bind(StorageManager));
+        addClickListener(DOM.importFullBackupBtn, () => {
+            DOM.importBackupInput?.click();
+        });
+
+        // Event listener for full backup file input
+        if (DOM.importBackupInput) {
+            DOM.importBackupInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        StorageManager.importBackup(event.target.result, { mergeData: true });
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
+                }
+            });
+        }
+
         addClickListener(DOM.resetAllSettingsBtn, StorageManager.resetAllSettings.bind(StorageManager));
+
+        // Factory reset (deletes everything)
+        const factoryResetBtn = document.getElementById('factoryResetBtn');
+        if (factoryResetBtn) {
+            factoryResetBtn.addEventListener('click', () => {
+                StorageManager.factoryReset();
+            });
+        }
 
         addClickListener(DOM.saveSettingsBtn, SettingsUIManager.saveSettings.bind(SettingsUIManager));
         addClickListener(DOM.cancelSettingsBtn, SettingsUIManager.cancelSettings.bind(SettingsUIManager));
         addClickListener(DOM.closeSettingsModalBtn, SettingsUIManager.cancelSettings.bind(SettingsUIManager));
+
+        // Cloud sync - Google Drive connection
+        if (DOM.connectGoogleBtn) {
+            DOM.connectGoogleBtn.addEventListener('click', async () => {
+                try {
+                    // Show RGPD warning first
+                    if (DOM.syncRgpdWarning) {
+                        DOM.syncRgpdWarning.style.display = 'flex';
+                    }
+
+                    DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+                    DOM.connectGoogleBtn.disabled = true;
+
+                    // Dynamic import of SyncService
+                    const { SyncService } = await import('../../services/SyncService.js');
+                    const connected = await SyncService.connect('google');
+
+                    if (connected) {
+                        DOM.googleSyncStatus.textContent = 'Connecté';
+                        DOM.googleSyncStatus.classList.add('connected');
+                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
+                        DOM.connectGoogleBtn.classList.add('btn-success');
+
+                        // Find parent card and add connected class
+                        const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
+                        if (card) card.classList.add('connected');
+
+                        UI.showNotification('Google Drive connecté ! Vos données seront synchronisées.', 'success');
+                    } else {
+                        DOM.connectGoogleBtn.innerHTML = 'Connecter';
+                        DOM.connectGoogleBtn.disabled = false;
+                        UI.showNotification('Connexion annulée.', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Google sync connection error:', error);
+                    DOM.connectGoogleBtn.innerHTML = 'Connecter';
+                    DOM.connectGoogleBtn.disabled = false;
+                    UI.showNotification('Erreur de connexion : ' + error.message, 'error');
+                }
+            });
+        }
     }
 };

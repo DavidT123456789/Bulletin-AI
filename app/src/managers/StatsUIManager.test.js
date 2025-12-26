@@ -123,8 +123,7 @@ describe('StatsUIManager', () => {
 
     describe('calculateStats', () => {
         it('should return default stats for empty results', () => {
-            const mockGetRelevantEvolution = vi.fn();
-            const result = StatsUI.calculateStats([], 'T1', null, mockGetRelevantEvolution);
+            const result = StatsUI.calculateStats([], 'T1', null);
 
             expect(result.avgGrade).toBe('--');
             expect(result.avgWords).toBe(0);
@@ -136,9 +135,8 @@ describe('StatsUIManager', () => {
                 { errorMessage: null, studentData: { periods: { T1: { grade: 12 } } }, appreciation: 'test', evolutions: [] },
                 { errorMessage: null, studentData: { periods: { T1: { grade: 14 } } }, appreciation: 'test', evolutions: [] }
             ];
-            const mockGetRelevantEvolution = vi.fn(() => null);
 
-            const result = StatsUI.calculateStats(results, 'T1', null, mockGetRelevantEvolution);
+            const result = StatsUI.calculateStats(results, 'T1', null);
 
             expect(result.avgGrade).toBe(13);
         });
@@ -148,23 +146,22 @@ describe('StatsUIManager', () => {
                 { errorMessage: null, studentData: { periods: { T1: { grade: 10 } } }, appreciation: 'test', evolutions: [] },
                 { errorMessage: null, studentData: { periods: { T1: { grade: 16 } } }, appreciation: 'test', evolutions: [] }
             ];
-            const mockGetRelevantEvolution = vi.fn(() => null);
 
-            const result = StatsUI.calculateStats(results, 'T1', null, mockGetRelevantEvolution);
+            const result = StatsUI.calculateStats(results, 'T1', null);
 
             expect(result.minGrade).toBe(10);
             expect(result.maxGrade).toBe(16);
         });
 
-        it('should count evolution types correctly', () => {
+        it('should count evolution types correctly based on grades', () => {
+            // Evolution is now calculated directly from grades between periods
             const results = [
-                { errorMessage: null, studentData: { periods: { T1: { grade: 12 } }, currentPeriod: 'T1' }, appreciation: 'test', evolutions: [{ type: 'positive' }] },
-                { errorMessage: null, studentData: { periods: { T1: { grade: 14 } }, currentPeriod: 'T1' }, appreciation: 'test', evolutions: [{ type: 'stable' }] },
-                { errorMessage: null, studentData: { periods: { T1: { grade: 10 } }, currentPeriod: 'T1' }, appreciation: 'test', evolutions: [{ type: 'negative' }] }
+                { errorMessage: null, studentData: { periods: { T1: { grade: 10 }, T2: { grade: 15 } }, currentPeriod: 'T2' }, appreciation: 'test', evolutions: [] }, // +5 = progress
+                { errorMessage: null, studentData: { periods: { T1: { grade: 12 }, T2: { grade: 12.2 } }, currentPeriod: 'T2' }, appreciation: 'test', evolutions: [] }, // +0.2 = stable
+                { errorMessage: null, studentData: { periods: { T1: { grade: 14 }, T2: { grade: 10 } }, currentPeriod: 'T2' }, appreciation: 'test', evolutions: [] } // -4 = regression
             ];
-            const mockGetRelevantEvolution = vi.fn((evolutions) => evolutions[0]);
 
-            const result = StatsUI.calculateStats(results, 'T1', null, mockGetRelevantEvolution);
+            const result = StatsUI.calculateStats(results, 'T2', 'T1');
 
             expect(result.progress).toBe(1);
             expect(result.stable).toBe(1);
@@ -176,9 +173,8 @@ describe('StatsUIManager', () => {
                 { errorMessage: 'Error', studentData: { periods: { T1: { grade: 12 } } }, appreciation: 'test', evolutions: [] },
                 { errorMessage: null, studentData: { periods: { T1: { grade: 14 } } }, appreciation: 'test', evolutions: [] }
             ];
-            const mockGetRelevantEvolution = vi.fn(() => null);
 
-            const result = StatsUI.calculateStats(results, 'T1', null, mockGetRelevantEvolution);
+            const result = StatsUI.calculateStats(results, 'T1', null);
 
             expect(result.avgGrade).toBe(14);
         });

@@ -284,8 +284,12 @@ export const StorageManager = {
 
     },
 
+    /**
+     * Reset settings only (API keys, subjects, themes).
+     * Preserves user data (classes, students, appreciations).
+     */
     resetAllSettings() {
-        UI.showCustomConfirm("Réinitialiser TOUS les paramètres (matières, clés API, suggestions) ? Les données d'élèves ne seront pas affectées.", async () => {
+        UI.showCustomConfirm("Réinitialiser les paramètres (matières, clés API, thème) ?\n\nVos classes et élèves seront conservés.", async () => {
             const userSubjects = {};
             for (const subjectName in appState.subjects) {
                 if (!DEFAULT_PROMPT_TEMPLATES.hasOwnProperty(subjectName)) {
@@ -317,43 +321,226 @@ export const StorageManager = {
             UI.updateSettingsFields();
             App.renderSubjectManagementList();
             UI.renderSettingsLists();
-            UI.showNotification('Tous les paramètres ont été réinitialisés.', 'success');
+            UI.showNotification('Paramètres réinitialisés (données conservées).', 'success');
+        });
+    },
+
+    /**
+     * Factory reset - Erases EVERYTHING.
+     * Classes, students, appreciations, settings - all gone.
+     */
+    async factoryReset() {
+        UI.showCustomConfirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?\n\nCette action est IRRÉVERSIBLE.\nClasses, élèves, appréciations, paramètres - tout sera effacé.", async () => {
+            try {
+                // Clear IndexedDB
+                await DBService.clear('generatedResults');
+
+                // Clear the main app state (contains classes, settings, etc.)
+                localStorage.removeItem(CONFIG.LS_APP_STATE_KEY);
+
+                // Clear all bulletin/app related keys
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (
+                        key.startsWith('bulletin') ||
+                        key.startsWith('appState') ||
+                        key.startsWith('appreciation') ||
+                        key.includes('Generator')
+                    )) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                // Also remove sync-related keys
+                localStorage.removeItem('bulletin_device_id');
+                localStorage.removeItem('bulletin_sync_provider');
+                localStorage.removeItem('bulletin_sync_auto');
+                localStorage.removeItem('bulletin_last_sync');
+                localStorage.removeItem('bulletin_google_token');
+                localStorage.removeItem('bulletin_dropbox_token');
+
+                UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
+
+                // Reload to fresh state
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+
+            } catch (error) {
+                console.error('Factory reset error:', error);
+                UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');
+            }
         });
     },
 
     exportToJson() {
         const dataToExport = {
-            appVersion: APP_VERSION,
+            // Sync metadata for future cloud sync
+            _meta: {
+                exportType: 'full_backup',
+                appVersion: APP_VERSION,
+                exportedAt: new Date().toISOString(),
+                exportedAtTimestamp: Date.now(),
+                deviceId: this.getDeviceId()
+            },
             settings: {
                 theme: appState.theme,
                 useSubjectPersonalization: appState.useSubjectPersonalization,
-                periodSystem: appState.periodSystem, subjects: appState.subjects, evolutionThresholds: appState.evolutionThresholds,
+                periodSystem: appState.periodSystem,
+                subjects: appState.subjects,
+                evolutionThresholds: appState.evolutionThresholds,
                 massImportFormats: appState.massImportFormats,
                 currentAIModel: appState.currentAIModel,
                 refinementEdits: appState.refinementEdits
             },
-            generatedResults: appState.generatedResults
+            // Classes
+            classes: userSettings.academic.classes || [],
+            currentClassId: userSettings.academic.currentClassId,
+            // Student data with per-item timestamps
+            generatedResults: (appState.generatedResults || []).map(result => ({
+                ...result,
+                _lastModified: result._lastModified || Date.now()
+            }))
         };
-        this._downloadFile(JSON.stringify(dataToExport, null, 2), `bulletin-assistant_export_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
-        UI.showNotification('État de l\'application exporté en JSON.', 'success');
+        const count = dataToExport.generatedResults.length;
+        this._downloadFile(JSON.stringify(dataToExport, null, 2), `bulletin-ai_backup_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+        UI.showNotification(`Sauvegarde exportée (${count} élève${count > 1 ? 's' : ''}).`, 'success');
+    },
+
+    /**
+     * Get or create a unique device ID for sync conflict resolution.
+     * @returns {string} Unique device identifier
+     */
+    getDeviceId() {
+        let deviceId = localStorage.getItem('bulletin_device_id');
+        if (!deviceId) {
+            deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('bulletin_device_id', deviceId);
+        }
+        return deviceId;
     },
 
     exportSettings() {
         const settingsToExport = {
             appVersion: APP_VERSION,
+            _meta: {
+                exportType: 'settings_only',
+                exportedAt: new Date().toISOString()
+            },
             theme: appState.theme,
             useSubjectPersonalization: appState.useSubjectPersonalization,
             periodSystem: appState.periodSystem, subjects: appState.subjects,
             evolutionThresholds: appState.evolutionThresholds,
             massImportFormats: appState.massImportFormats, currentAIModel: appState.currentAIModel
         };
-        this._downloadFile(JSON.stringify(settingsToExport, null, 2), `bulletin-assistant_settings_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+        this._downloadFile(JSON.stringify(settingsToExport, null, 2), `bulletin-ai_settings_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
         UI.showNotification('Paramètres exportés avec succès !', 'success');
+    },
+
+    /**
+     * Import a backup file with merge support.
+     * @param {string} fileContent - JSON content
+     * @param {Object} options - { mergeData: boolean }
+     */
+    async importBackup(fileContent, options = { mergeData: true }) {
+        try {
+            const backup = JSON.parse(fileContent);
+
+            if (!backup._meta && !backup.appVersion && !backup.settings) {
+                throw new Error('Format de fichier invalide.');
+            }
+
+            const stats = { imported: 0, updated: 0, skipped: 0 };
+            const settings = backup.settings || backup;
+
+            // Import settings
+            if (settings.subjects) {
+                Object.assign(appState, {
+                    theme: settings.theme || appState.theme,
+                    useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
+                    periodSystem: settings.periodSystem || appState.periodSystem,
+                    subjects: settings.subjects,
+                    evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
+                    massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
+                    currentAIModel: settings.currentAIModel || appState.currentAIModel,
+                    refinementEdits: settings.refinementEdits || {}
+                });
+            }
+
+            // Import classes if present
+            if (backup.classes && Array.isArray(backup.classes)) {
+                const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
+                backup.classes.forEach(importedClass => {
+                    if (!existingIds.has(importedClass.id)) {
+                        userSettings.academic.classes.push(importedClass);
+                    }
+                });
+            }
+
+            // Import student data
+            const importedResults = backup.generatedResults || [];
+            if (importedResults.length > 0) {
+                const existingResults = appState.generatedResults || [];
+
+                if (options.mergeData) {
+                    const existingMap = new Map(existingResults.map(r => [r.id, r]));
+
+                    importedResults.forEach(imported => {
+                        const existing = existingMap.get(imported.id);
+                        if (!existing) {
+                            existingResults.push({
+                                ...imported,
+                                _lastModified: imported._lastModified || Date.now()
+                            });
+                            stats.imported++;
+                        } else {
+                            const importedTime = imported._lastModified || 0;
+                            const existingTime = existing._lastModified || 0;
+
+                            if (importedTime > existingTime) {
+                                Object.assign(existing, imported);
+                                stats.updated++;
+                            } else {
+                                stats.skipped++;
+                            }
+                        }
+                    });
+
+                    runtimeState.data.generatedResults = existingResults;
+                } else {
+                    runtimeState.data.generatedResults = importedResults;
+                    stats.imported = importedResults.length;
+                }
+            }
+
+            await this.saveAppState();
+            if (App && App.updateUIOnLoad) App.updateUIOnLoad();
+
+            const message = options.mergeData
+                ? `Importé: ${stats.imported} nouveaux, ${stats.updated} mis à jour, ${stats.skipped} ignorés.`
+                : `Restauré: ${stats.imported} élèves.`;
+
+            UI.showNotification(message, 'success');
+            return { success: true, stats };
+
+        } catch (error) {
+            console.error('Erreur import backup:', error);
+            UI.showNotification(`Erreur: ${error.message}`, 'error');
+            return { success: false, message: error.message };
+        }
     },
 
     importSettings(fileContent) {
         try {
             const importedData = JSON.parse(fileContent);
+
+            // Redirect full backups to importBackup
+            if (importedData._meta?.exportType === 'full_backup' || importedData.generatedResults) {
+                return this.importBackup(fileContent, { mergeData: true });
+            }
+
             const settings = importedData.settings || importedData;
             if (settings.subjects) {
                 Object.assign(appState, {

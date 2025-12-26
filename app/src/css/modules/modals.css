@@ -1473,3 +1473,117 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
+
+/* ====================================================================
+   Support Card - Donate Section
+   Design premium adapté aux deux modes (clair/sombre)
+   ==================================================================== */
+
+.support-card {
+    margin: 30px auto;
+    max-width: 420px;
+    text-align: center;
+    padding: 28px;
+    border-radius: var(--radius-lg);
+
+    /* Light mode: glassmorphism subtil */
+    background: linear-gradient(145deg,
+            var(--card-glass-bg),
+            rgba(255, 255, 255, 0.4));
+    border: 1px solid var(--card-glass-border);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    /* Transition fluide pour le changement de thème */
+    transition: all var(--transition-base);
+}
+
+[data-theme="dark"] .support-card {
+    /* Dark mode: fond sombre harmonisé, pas de gris détonnant */
+    background: linear-gradient(145deg,
+            rgba(31, 41, 55, 0.8),
+            rgba(17, 24, 39, 0.9));
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.support-card-title {
+    margin: 0 0 14px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.support-card-title i {
+    color: #ef4444;
+    font-size: 1.1em;
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    15% {
+        transform: scale(1.15);
+    }
+
+    30% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.1);
+    }
+}
+
+.support-card-text {
+    font-size: 0.95em;
+    line-height: 1.7;
+    margin: 0 0 22px 0;
+    color: var(--text-secondary);
+}
+
+/* Bouton Ko-fi - Design distinctif et chaleureux */
+.btn-kofi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #ff5e5b 0%, #ff9966 100%);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 14px rgba(255, 94, 91, 0.35);
+}
+
+.btn-kofi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 94, 91, 0.45);
+    background: linear-gradient(135deg, #ff6e6b 0%, #ffa366 100%);
+}
+
+.btn-kofi:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(255, 94, 91, 0.3);
+}
+
+.btn-kofi i {
+    font-size: 1.05em;
+}

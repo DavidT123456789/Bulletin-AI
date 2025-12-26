@@ -311,13 +311,15 @@ export const MassImportManager = {
         }
 
         // Convertir les résultats pending en format étudiant pour processMassImport
+        // IMPORTANT: Utiliser appState.currentPeriod (période AFFICHÉE) pour la génération
+        const targetPeriod = appState.currentPeriod;
         const studentsToProcess = pendingResults.map(r => ({
             nom: r.nom,
             prenom: r.prenom,
             periods: r.studentData?.periods || {},
             statuses: r.studentData?.statuses || [],
             negativeInstructions: r.studentData?.negativeInstructions || '',
-            currentPeriod: r.studentData?.currentPeriod || appState.currentPeriod,
+            currentPeriod: targetPeriod,  // Toujours utiliser la période affichée
             // Garder référence à l'ID existant pour mise à jour
             existingId: r.id
         }));

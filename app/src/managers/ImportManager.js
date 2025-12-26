@@ -61,10 +61,11 @@ export const ImportManager = {
             { v: 'IGNORE', t: 'Ignorer' },
             { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
             { v: 'STATUT', t: 'Statut' },
-            { v: 'INSTRUCTIONS', t: 'Instructions' },
+            { v: 'INSTRUCTIONS', t: 'Contexte (global)' },
             ...Utils.getPeriods().flatMap(p => [
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
-                { v: `APP_${p}`, t: `Appr. ${p}` }
+                { v: `APP_${p}`, t: `Appr. ${p}` },
+                { v: `CTX_${p}`, t: `Contexte ${p}` }
             ])
         ];
     },

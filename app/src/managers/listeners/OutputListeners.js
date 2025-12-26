@@ -9,7 +9,7 @@ import { Utils } from '../../utils/Utils.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
-import { ClassAnalysisManager } from '../ClassAnalysisManager.js';
+import { ClassDashboardManager } from '../ClassDashboardManager.js';
 
 export const OutputListeners = {
     /**
@@ -71,7 +71,11 @@ export const OutputListeners = {
             await MassImportManager.generateAllPending();
         });
 
-        addClickListener(DOM.analyzeClassBtn, ClassAnalysisManager.analyzeClass);
+        // Bouton Analyse de classe -> Ouvre le nouveau Dashboard
+        const analyzeBtn = document.getElementById('analyzeClassBtn');
+        if (analyzeBtn) {
+            analyzeBtn.addEventListener('click', () => ClassDashboardManager.openDashboard());
+        }
 
         DOM.activeFilterInfo?.addEventListener('click', EventHandlersManager.handleActiveFilterInfoClick.bind(EventHandlersManager));
 

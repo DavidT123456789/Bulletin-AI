@@ -101,16 +101,18 @@ export const PromptService = {
 
         const appreciationPrompt = promptParts.join('\n\n');
 
-        // Réutilisation de relevantPeriods (déjà calculé plus haut) pour les prompts d'analyse
+        // [FIX] Use period-specific appreciation for analysis prompts
+        // The appreciation to analyze should be from the current period, not a legacy global field
+        const currentPeriodAppreciation = periods?.[currentPeriod]?.appreciation || '';
+
+        // Build periods info for analysis - use stored appreciation per period
         let periodsInfoForAnalysis = relevantPeriods.map(p => {
             const d = periods[p] || {};
             const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
-            const appText = (p === currentPeriod && studentData.generatedAppreciation)
-                ? studentData.generatedAppreciation
-                : (d.appreciation || 'N/A');
-            return `Période ${p} -> Moy : ${g}, App : "${appText}"`;
+            return `Période ${p} -> Moy : ${g}, App : "${d.appreciation || 'N/A'}"`;
         }).join('\n');
-        // Prompts d'analyse simplifiés
+
+        // Analysis prompts - use the current period's appreciation as reference
         const swPrompt = `Analyse pour la période '${currentPeriod}'. Liste 2-3 points forts puis 2-3 points faibles.
 Format : "### Points Forts" puis "### Points Faibles". Pas d'intro ni conclusion.
 
@@ -118,7 +120,7 @@ Données de l'élève :
 ${periodsInfoForAnalysis}
 ${evolutionText}
 
-Appréciation de référence : "${studentData.generatedAppreciation || 'N/A'}"`;
+Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
         const nsPrompt = `Suggère 3 pistes d'amélioration concrètes${usePersonalizationInPrompt ? ` en ${activeSubjectName}` : ''}. Liste numérotée, bref et direct. Pas d'intro ni conclusion.
 
@@ -126,7 +128,7 @@ Données de l'élève :
 ${periodsInfoForAnalysis}
 ${evolutionText}
 
-Appréciation de référence : "${studentData.generatedAppreciation || 'N/A'}"`;
+Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
         return { appreciation: appreciationPrompt, sw: swPrompt, ns: nsPrompt };
     },
