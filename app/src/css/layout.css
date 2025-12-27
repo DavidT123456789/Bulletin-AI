@@ -589,44 +589,9 @@
    Responsive Breakpoints
    ==================================================================== */
 
-/* Tablette Large (max-width: 1200px) - Sidebar en overlay */
-@media (max-width: 1200px) {
-    .app-layout {
-        display: block;
-    }
+/* Tablette Large (max-width: 1200px) - Sidebar removed */
 
-    .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: var(--sidebar-width);
-        max-width: 90%;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease-out, visibility 0.3s;
-        z-index: var(--z-modal);
-        box-shadow: var(--shadow-lg);
-        visibility: hidden;
-    }
 
-    .app-layout:not(.sidebar-collapsed) .sidebar {
-        transform: translateX(0);
-        visibility: visible;
-    }
-
-    /* Overlay derrière la sidebar */
-    .app-layout:not(.sidebar-collapsed)::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: var(--z-modal-backdrop);
-        pointer-events: auto;
-    }
-
-    .app-layout.sidebar-collapsed::before {
-        display: none;
-    }
-}
 
 /* Tablette (max-width: 1024px) */
 @media (max-width: 1024px) {
@@ -649,45 +614,7 @@
         grid-template-columns: 1fr;
     }
 
-    /* Sur mobile, la sidebar est cachée par défaut */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: var(--sidebar-width);
-        max-width: 400px;
-        height: 100vh;
-        z-index: var(--z-modal);
-        transform: translateX(-100%);
-        transition: transform 0.3s ease-out, visibility 0.3s;
-        visibility: hidden;
-        box-shadow: var(--shadow-lg);
-    }
 
-    /* Quand sidebar-collapsed est ABSENT (sidebar ouverte) */
-    .app-layout:not(.sidebar-collapsed) .sidebar {
-        transform: translateX(0);
-        visibility: visible;
-    }
-
-    /* Overlay derrière la sidebar - seulement visible quand sidebar ouverte */
-    .app-layout:not(.sidebar-collapsed)::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: var(--z-modal-backdrop);
-        pointer-events: auto;
-        /* Allow clicking to close */
-    }
-
-    /* Quand sidebar est fermée (collapsed), pas d'overlay */
-    .app-layout.sidebar-collapsed::before {
-        display: none;
-    }
 
     .main-content {
         padding: 16px;
@@ -711,18 +638,7 @@
         font-size: 1.1rem;
     }
 
-    .input-panels-wrapper {
-        padding: 16px 16px 0;
-    }
 
-    .sidebar-footer {
-        padding: 16px;
-    }
-
-    /* Montrer le bouton toggle dans le header sur mobile */
-    #sidebarToggle {
-        display: flex !important;
-    }
 }
 
 /* Mobile (max-width: 480px) */

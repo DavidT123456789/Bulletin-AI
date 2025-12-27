@@ -72,7 +72,7 @@ export function initDOM() {
     DOM.headerSessionCost = document.getElementById('headerSessionCost');
     DOM.headerRetryErrorsBtn = document.getElementById('headerRetryErrorsBtn');
     DOM.headerRetryErrorsCount = document.getElementById('headerRetryErrorsCount');
-    DOM.sidebarPeriodContext = document.getElementById('sidebarPeriodContext');
+
     DOM.inputSection = document.getElementById('inputSection');
     DOM.massImportTab = document.getElementById('massImportTab');
     DOM.singleStudentTab = document.getElementById('singleStudentTab');
@@ -296,8 +296,7 @@ export function initDOM() {
 
 
     DOM.previewStatus = document.getElementById('previewStatus');
-    DOM.sidebarToggle = document.getElementById('sidebarToggle');
-    DOM.sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.subjectCustomizationPanel = document.getElementById('subject-customization-panel');
     DOM.massImportApiKeyWarning = document.getElementById('massImportApiKeyWarning');
@@ -334,7 +333,7 @@ export function initDOM() {
     DOM.generateAllPendingBtn = document.getElementById('generateAllPendingBtn');
     DOM.pendingCountBadge = document.getElementById('pendingCountBadge');
     DOM.singleStudentActions = document.getElementById('singleStudentActions');
-    DOM.sidebar = document.getElementById('inputSection');
+
     DOM.inputPanelsWrapper = document.querySelector('.input-panels-wrapper');
     DOM.massImportActions = document.getElementById('massImportActions');
 

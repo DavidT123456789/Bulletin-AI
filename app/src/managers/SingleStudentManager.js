@@ -337,9 +337,7 @@ export const SingleStudentManager = {
             }, 100);
         }
 
-        if (DOM.appLayout.classList.contains('sidebar-collapsed')) {
-            UI.toggleSidebar();
-        }
+
 
         // Null checks for sidebar form elements (may have been removed - Liste + Focus UX)
         if (DOM.nomInput) DOM.nomInput.value = result.nom;

@@ -900,26 +900,7 @@ export const UI = {
     _getMappingOptions() { return ImportUI._getMappingOptions(); },
     _guessInitialMapping(selects, firstLineData, availableOptions) { return ImportUI._guessInitialMapping(selects, firstLineData, availableOptions); },
     updateMassImportPreview() { ImportUI.updateMassImportPreview(); },
-    toggleSidebar() {
-        const isCollapsed = DOM.appLayout.classList.toggle('sidebar-collapsed');
-        document.body.classList.toggle('side-panel-open', !isCollapsed && window.innerWidth <= 1200);
 
-        const tooltipText = isCollapsed ? "Afficher le volet" : "Masquer le volet";
-        if (DOM.sidebarToggle) {
-            DOM.sidebarToggle.setAttribute('data-tooltip', tooltipText);
-        }
-
-        // Update gliders after sidebar animation completes
-        if (!isCollapsed) {
-            // Sidebar is opening - wait for CSS transition to complete
-            setTimeout(() => {
-                const tabsContainer = document.querySelector('.input-mode-tabs');
-                if (tabsContainer && UI.updateGlider) {
-                    UI.updateGlider(tabsContainer, true);
-                }
-            }, 350); // Match sidebar transition duration
-        }
-    },
     getGradeClass(grade) { return Utils.getGradeClass(grade); },
     populateLoadStudentSelect() {
         if (!DOM.loadStudentSelect) return;
