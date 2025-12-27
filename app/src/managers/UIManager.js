@@ -625,10 +625,157 @@ export const UI = {
     updateStatsTooltips() {
         StatsUI.updateStatsTooltips();
     },
-    showOutputProgressArea() { StatsUI.showOutputProgressArea(); },
-    hideOutputProgressArea() { StatsUI.hideOutputProgressArea(); },
-    updateOutputProgress(cur, total, studentName) { StatsUI.updateOutputProgress(cur, total, studentName); },
-    resetProgressBar() { StatsUI.resetProgressBar(); },
+
+    // ====================================================================
+    //  GENERATION STATUS CHIP (Header) - Progress + Errors unified
+    // ====================================================================
+
+    /**
+     * Shows the generation status chip with progress
+     * @param {number} current - Current count
+     * @param {number} total - Total count
+     * @param {string} [studentName] - Current student name
+     */
+    showHeaderProgress(current, total, studentName = '') {
+        const chip = DOM.headerGenerationStatus;
+        if (!chip) return;
+
+        // Show chip with generating state
+        chip.classList.add('visible', 'generating');
+        chip.classList.remove('has-errors', 'success', 'fade-out');
+
+        // Update progress bar
+        const percent = total > 0 ? (current / total) * 100 : 0;
+        if (DOM.headerProgressFill) {
+            DOM.headerProgressFill.style.width = `${percent}%`;
+        }
+
+        // Update text
+        if (DOM.headerProgressText) {
+            const shortName = studentName ? ` ${studentName.split(' ')[0]}` : '';
+            DOM.headerProgressText.innerHTML = `<span>${current}/${total}</span><span class="student-name">${shortName}</span>`;
+        }
+
+        // Hide error badge during generation
+        if (DOM.headerErrorAction) {
+            DOM.headerErrorAction.classList.remove('visible');
+        }
+    },
+
+    /**
+     * Hides the generation status chip (or shows errors if any)
+     * @param {boolean} [hasErrors=false] - Whether there are errors to show
+     * @param {number} [errorCount=0] - Number of errors
+     */
+    hideHeaderProgress(hasErrors = false, errorCount = 0) {
+        const chip = DOM.headerGenerationStatus;
+        if (!chip) return;
+
+        chip.classList.remove('generating');
+
+        if (hasErrors && errorCount > 0) {
+            // Show error state
+            chip.classList.add('visible', 'has-errors');
+            chip.classList.remove('success');
+
+            if (DOM.headerProgressText) {
+                DOM.headerProgressText.textContent = 'Terminé';
+            }
+
+            if (DOM.headerErrorAction) {
+                DOM.headerErrorAction.classList.add('visible');
+                DOM.headerErrorAction.setAttribute('data-tooltip',
+                    `${errorCount} erreur${errorCount > 1 ? 's' : ''} - Cliquer pour régénérer`);
+            }
+
+            if (DOM.headerErrorCount) {
+                DOM.headerErrorCount.textContent = errorCount;
+            }
+        } else {
+            // Success state - show briefly then hide
+            chip.classList.add('success');
+            chip.classList.remove('has-errors');
+
+            if (DOM.headerProgressText) {
+                DOM.headerProgressText.textContent = 'Terminé';
+            }
+
+            // Fade out after success
+            setTimeout(() => {
+                chip.classList.add('fade-out');
+                setTimeout(() => {
+                    chip.classList.remove('visible', 'success', 'fade-out');
+                }, 400);
+            }, 1500);
+        }
+    },
+
+    /**
+     * Updates the error count in the header chip
+     * @param {number} count - Number of errors
+     */
+    updateHeaderErrors(count) {
+        const chip = DOM.headerGenerationStatus;
+        if (!chip) return;
+
+        if (count > 0) {
+            chip.classList.add('visible', 'has-errors');
+            chip.classList.remove('generating', 'success');
+
+            if (DOM.headerProgressText) {
+                DOM.headerProgressText.textContent = '';
+            }
+
+            if (DOM.headerErrorAction) {
+                DOM.headerErrorAction.classList.add('visible');
+                DOM.headerErrorAction.setAttribute('data-tooltip',
+                    `${count} erreur${count > 1 ? 's' : ''} - Cliquer pour régénérer`);
+            }
+
+            if (DOM.headerErrorCount) {
+                DOM.headerErrorCount.textContent = count;
+            }
+
+            // Hide progress bar in error-only state
+            if (DOM.headerProgressFill) {
+                DOM.headerProgressFill.style.width = '0%';
+            }
+        } else {
+            // No errors - hide the chip if not generating
+            if (!chip.classList.contains('generating')) {
+                chip.classList.remove('visible', 'has-errors');
+                if (DOM.headerErrorAction) {
+                    DOM.headerErrorAction.classList.remove('visible');
+                }
+            }
+        }
+    },
+
+    /**
+     * Resets the header generation status chip
+     */
+    resetHeaderProgress() {
+        const chip = DOM.headerGenerationStatus;
+        if (!chip) return;
+
+        chip.classList.remove('visible', 'generating', 'has-errors', 'success', 'fade-out');
+
+        if (DOM.headerProgressFill) {
+            DOM.headerProgressFill.style.width = '0%';
+        }
+        if (DOM.headerProgressText) {
+            DOM.headerProgressText.textContent = '0/0';
+        }
+        if (DOM.headerErrorAction) {
+            DOM.headerErrorAction.classList.remove('visible');
+        }
+    },
+
+    // Legacy delegations - now redirect to header chip
+    showOutputProgressArea() { /* Deprecated - use showHeaderProgress */ },
+    hideOutputProgressArea() { /* Deprecated - use hideHeaderProgress */ },
+    updateOutputProgress(cur, total, studentName) { this.showHeaderProgress(cur, total, studentName); },
+    resetProgressBar() { this.resetHeaderProgress(); },
     showSettingsTab(tabName) { FormUI.showSettingsTab(tabName); },
     toggleAIKeyFields() { FormUI.toggleAIKeyFields(); },
 
@@ -848,51 +995,21 @@ export const UI = {
         const regenerateBtn = document.getElementById('regenerateAllBtn');
         if (regenerateBtn) regenerateBtn.disabled = visible.length === 0;
 
-        // CORRECTIF: Filtrer les erreurs par la classe courante uniquement
+        // Filter errors by current class only
         const currentClassId = appState.currentClassId;
         const classErrors = appState.generatedResults.filter(r =>
             r.errorMessage && (!currentClassId || r.classId === currentClassId)
         );
-        const hasAnyErrors = classErrors.length > 0;
         const errorCount = classErrors.length;
 
-        // ... (reste de la fonction inchangé)
-
+        // Update shortcut button in table actions (if exists)
         const regenErrorsBtnShortcut = document.getElementById('regenerateErrorsBtn-shortcut');
-        if (regenErrorsBtnShortcut) regenErrorsBtnShortcut.style.display = hasAnyErrors ? 'inline-flex' : 'none';
-
-        // Note: actionsDropdown n'existe plus dans le HTML statique (déplacé dans le tableau)
-
-        const massImportErrorContainer = DOM.massImportErrorActions;
-        if (massImportErrorContainer) {
-            let relaunchBtn = massImportErrorContainer.querySelector('#relaunchFailedBtn');
-            if (hasAnyErrors) {
-                if (!relaunchBtn) {
-                    relaunchBtn = document.createElement('button');
-                    relaunchBtn.id = 'relaunchFailedBtn';
-                    relaunchBtn.className = 'btn btn-warning btn-small';
-                    relaunchBtn.onclick = () => AppreciationsManager.regenerateVisible(true);
-                    massImportErrorContainer.appendChild(relaunchBtn);
-                }
-                relaunchBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Relancer les ${errorCount} erreur${errorCount > 1 ? 's' : ''}`;
-            } else if (relaunchBtn) {
-                relaunchBtn.remove();
-            }
+        if (regenErrorsBtnShortcut) {
+            regenErrorsBtnShortcut.style.display = errorCount > 0 ? 'inline-flex' : 'none';
         }
 
-        // Update header error badge (single source of truth for error count)
-        if (DOM.headerRetryErrorsBtn) {
-            if (hasAnyErrors) {
-                DOM.headerRetryErrorsBtn.style.display = 'inline-flex';
-                if (DOM.headerRetryErrorsCount) {
-                    DOM.headerRetryErrorsCount.textContent = errorCount;
-                }
-                DOM.headerRetryErrorsBtn.setAttribute('data-tooltip',
-                    `${errorCount} appréciation${errorCount > 1 ? 's' : ''} en erreur. Cliquer pour régénérer.`);
-            } else {
-                DOM.headerRetryErrorsBtn.style.display = 'none';
-            }
-        }
+        // Update unified header generation status chip with error count
+        this.updateHeaderErrors(errorCount);
     },
     updateCopyAllButton() {
         const total = appState.generatedResults.length, filtered = appState.filteredResults.length;

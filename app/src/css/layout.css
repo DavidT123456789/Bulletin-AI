@@ -362,50 +362,7 @@
     background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
-/* Badge d'erreur dans le header */
-.header-error-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    font-size: var(--font-sm);
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: var(--radius-pill);
-    border: none;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    animation: pulse-error 2s ease-in-out infinite;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-.header-error-badge:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-    animation: none;
-}
-
-.header-error-badge:active {
-    transform: scale(0.98);
-}
-
-.header-error-badge i {
-    font-size: 12px;
-}
-
-@keyframes pulse-error {
-
-    0%,
-    100% {
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 2px 16px rgba(239, 68, 68, 0.5);
-    }
-}
+/* Badge d'erreur dans le header - MOVED to modules/generation-status.css */
 
 /* ====================================================================
    Pilule segmentée pour actions système (Aide, Thème, Paramètres)

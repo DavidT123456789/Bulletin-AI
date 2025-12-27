@@ -312,7 +312,17 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm(`Régénérer les ${toRegen.length} appréciations ${onlyErrors ? 'en erreur' : 'visibles'} ?`, async () => {
+            // Import MassImportManager to use shared abort controller
+            const { MassImportManager } = await import('./MassImportManager.js');
+
+            // Create new abort controller for this regeneration
+            MassImportManager.massImportAbortController = new AbortController();
+            const signal = MassImportManager.massImportAbortController.signal;
+
             let successCount = 0;
+            let errorCount = 0;
+            let wasAborted = false;
+            const total = toRegen.length;
 
             // Afficher "En file" (skeleton pending) sur toutes les lignes concernées immédiatement
             toRegen.forEach(resultToRegen => {
@@ -320,7 +330,19 @@ export const ResultsUIManager = {
             });
 
             // Traitement séquentiel pour un effet visuel progressif
-            for (const resultToRegen of toRegen) {
+            for (let i = 0; i < toRegen.length; i++) {
+                // Check for cancellation
+                if (signal.aborted) {
+                    wasAborted = true;
+                    break;
+                }
+
+                const resultToRegen = toRegen[i];
+                const studentName = `${resultToRegen.prenom || ''} ${resultToRegen.nom || ''}`.trim();
+
+                // Update header progress chip
+                UI.showHeaderProgress(i + 1, total, studentName);
+
                 try {
                     // Passer l'état à "Génération" (skeleton actif) juste pour celui-ci
                     ListViewManager.setRowStatus(resultToRegen.id, 'generating');
@@ -329,7 +351,7 @@ export const ResultsUIManager = {
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
 
-                    const newResult = await Am.generateAppreciation(updatedStudentData);
+                    const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
                         newResult.id = resultToRegen.id;
@@ -346,6 +368,13 @@ export const ResultsUIManager = {
                         await ListViewManager.updateRow(newResult.id, newResult, true);
                     }
                 } catch (e) {
+                    // Check if aborted
+                    if (e.name === 'AbortError' || signal.aborted) {
+                        wasAborted = true;
+                        break;
+                    }
+
+                    errorCount++;
                     const msg = Utils.translateErrorMessage(e.message);
                     const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
@@ -366,7 +395,20 @@ export const ResultsUIManager = {
                 }
             }
 
-            UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
+            // Cleanup abort controller
+            MassImportManager.massImportAbortController = null;
+
+            // Hide progress and show errors if any
+            UI.hideHeaderProgress(errorCount > 0, errorCount);
+
+            if (wasAborted) {
+                UI.showNotification("Régénération annulée.", "warning");
+                // Re-render to restore all rows to their proper state
+                this.renderResults();
+            } else {
+                UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
+            }
+
             StorageManager.saveAppState();
 
             // Pas besoin de re-render complet, les lignes sont mises à jour individuellement

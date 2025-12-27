@@ -32,6 +32,15 @@ export const App = {
         EventListenersManager.init(this);
         StorageManager.init(UI, this);
         await StorageManager.loadAppState();
+
+        // Initialize cloud sync service (reconnects to saved provider)
+        try {
+            const { SyncService } = await import('../services/SyncService.js');
+            await SyncService.init();
+        } catch (e) {
+            console.warn('[App] Cloud sync init failed:', e.message);
+        }
+
         UI.applyTheme();
         UI.updateSettingsPromptFields();
         EventListenersManager.setupEventListeners();

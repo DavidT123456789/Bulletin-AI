@@ -61,7 +61,13 @@ export const SyncService = {
 
         if (savedProvider && PROVIDERS[savedProvider]) {
             try {
-                await this.connect(savedProvider, { silent: true });
+                const connected = await this.connect(savedProvider, { silent: true });
+
+                // If connected, perform initial sync to get cloud data
+                if (connected) {
+                    console.log('[SyncService] Provider restored, performing sync...');
+                    await this.sync();
+                }
             } catch (e) {
                 console.warn('[SyncService] Could not restore provider:', e.message);
             }
@@ -172,9 +178,45 @@ export const SyncService = {
             const { merged, stats } = this._mergeData(localData, remoteData);
 
             // 4. Save merged data locally
-            if (stats.updated > 0 || stats.imported > 0) {
+            if (stats.updated > 0 || stats.imported > 0 || stats.classesImported > 0) {
+                // Restore generated results
                 runtimeState.data.generatedResults = merged.generatedResults;
+
+                // Restore classes if present in remote
+                if (remoteData?.classes?.length > 0) {
+                    const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
+                    remoteData.classes.forEach(remoteClass => {
+                        if (!existingIds.has(remoteClass.id)) {
+                            userSettings.academic.classes.push(remoteClass);
+                            stats.classesImported = (stats.classesImported || 0) + 1;
+                        }
+                    });
+
+                    // Restore currentClassId if not set locally
+                    if (!userSettings.academic.currentClassId && remoteData.currentClassId) {
+                        userSettings.academic.currentClassId = remoteData.currentClassId;
+                    }
+                }
+
+                // Restore settings if present in remote and not set locally
+                if (remoteData?.settings) {
+                    if (!userSettings.ui.theme && remoteData.settings.theme) {
+                        userSettings.ui.theme = remoteData.settings.theme;
+                    }
+                    if (!userSettings.academic.periodSystem && remoteData.settings.periodSystem) {
+                        userSettings.academic.periodSystem = remoteData.settings.periodSystem;
+                    }
+                    if (!userSettings.academic.subjects?.length && remoteData.settings.subjects?.length) {
+                        userSettings.academic.subjects = remoteData.settings.subjects;
+                    }
+                }
+
                 await StorageManager.saveAppState();
+
+                // Refresh UI if classes were imported
+                if (stats.classesImported > 0 && window.App?.updateUIOnLoad) {
+                    window.App.updateUIOnLoad();
+                }
             }
 
             // 5. Push merged data to cloud
@@ -229,9 +271,17 @@ export const SyncService = {
 
         this._setStatus('syncing');
         const remoteData = await this._provider.read();
-        if (remoteData && remoteData.generatedResults) {
+
+        // Import remote data if it exists (even without generatedResults - new device may have classes only)
+        if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
             await StorageManager.importBackup(JSON.stringify(remoteData), { mergeData: false });
+
+            // Refresh UI after download
+            if (window.App?.updateUIOnLoad) {
+                window.App.updateUIOnLoad();
+            }
         }
+
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
         this._setStatus('idle');

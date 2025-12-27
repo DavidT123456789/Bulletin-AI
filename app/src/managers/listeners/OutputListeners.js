@@ -44,12 +44,18 @@ export const OutputListeners = {
         // Note: Le menu d'actions global est maintenant dans le header du tableau
         // et ses listeners sont attachés par ListViewManager._attachGlobalActionsListeners()
 
-        // Conserver les listeners pour les éléments qui peuvent exister en dehors du tableau
-        const staticShortcutActions = {
-            '#headerRetryErrorsBtn': EventHandlersManager.handleRegenerateErrorsClick
-        };
-        for (const [selector, handler] of Object.entries(staticShortcutActions)) {
-            addClickListener(document.querySelector(selector), handler);
+        // Generation Status Chip listeners
+        const headerErrorAction = document.getElementById('headerErrorAction');
+        if (headerErrorAction) {
+            addClickListener(headerErrorAction, EventHandlersManager.handleRegenerateErrorsClick);
+        }
+
+        const headerCancelBtn = document.getElementById('headerCancelBtn');
+        if (headerCancelBtn) {
+            addClickListener(headerCancelBtn, async () => {
+                const { MassImportManager } = await import('../MassImportManager.js');
+                MassImportManager.cancelImport();
+            });
         }
 
         // Bouton "Générer les appréciations" pour les élèves en attente

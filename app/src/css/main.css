@@ -18,6 +18,7 @@
 @import './modules/import-wizard.css';
 @import './modules/import-hub.css';
 @import './modules/notifications.css';
+@import './modules/generation-status.css';
 @import './modules/animations.css';
 @import './modules/refinement.css';
 @import './modules/student-details.css';

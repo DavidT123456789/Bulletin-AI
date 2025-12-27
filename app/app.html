@@ -94,11 +94,23 @@
                         <span id="headerAiModelName">Gemini 2.5 Flash</span>
                         <span id="headerSessionCost" class="session-cost-badge" style="display: none;">0.00$</span>
                     </div>
-                    <button id="headerRetryErrorsBtn" class="header-error-badge tooltip"
-                        data-tooltip="Régénérer les appréciations en erreur" style="display: none;">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span id="headerRetryErrorsCount">0</span>
-                    </button>
+                    <!-- Generation Status Chip: Progress + Errors unified -->
+                    <div id="headerGenerationStatus" class="generation-status-chip" role="status" aria-live="polite"
+                        aria-label="Statut de génération">
+                        <div class="generation-progress-bar">
+                            <div class="generation-progress-fill" id="headerProgressFill" style="width: 0%"></div>
+                        </div>
+                        <span class="generation-text" id="headerProgressText">0/0</span>
+                        <button class="generation-error-badge" id="headerErrorAction"
+                            data-tooltip="Cliquer pour régénérer">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="headerErrorCount">0</span>
+                        </button>
+                        <button class="generation-cancel-btn tooltip" id="headerCancelBtn"
+                            data-tooltip="Annuler la génération" aria-label="Annuler">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
                     <div class="header-actions-pill">
                         <button id="installPwaBtn" class="pill-segment tooltip pwa-install-btn"
                             data-tooltip="Installer l'application" aria-label="Installer l'application"
@@ -236,20 +248,7 @@
                         </div>
                     </div>
 
-                    <div id="mass-import-progress-output-area" style="display: none;">
-                        <button class="progress-cancel-btn tooltip" id="cancelImportOutputBtn"
-                            data-tooltip="Annuler la génération" aria-label="Annuler"><i
-                                class="fas fa-xmark"></i></button>
-                        <h4>Génération en masse en cours...</h4>
-                        <div class="progress-container">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="outputProgressFill"></div>
-                            </div>
-                            <div class="progress-text" id="outputProgressText">0/0 traités</div>
-                        </div>
-                    </div>
-
-                    <div id="massImportErrorActions" class="import-error-actions"></div>
+                    <!-- Progress and error UI moved to header chip (#headerGenerationStatus) -->
 
                     <div class="output-header" id="outputHeader">
                         <h3 class="sub-section-title">

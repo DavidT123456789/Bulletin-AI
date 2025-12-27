@@ -741,14 +741,27 @@ export const SettingsModalListeners = {
                     if (connected) {
                         DOM.googleSyncStatus.textContent = 'Connecté';
                         DOM.googleSyncStatus.classList.add('connected');
-                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
-                        DOM.connectGoogleBtn.classList.add('btn-success');
+                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Synchronisation...';
 
                         // Find parent card and add connected class
                         const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
                         if (card) card.classList.add('connected');
 
-                        UI.showNotification('Google Drive connecté ! Vos données seront synchronisées.', 'success');
+                        // Perform initial sync to download any existing cloud data
+                        try {
+                            const syncResult = await SyncService.sync();
+                            if (syncResult.stats?.classesImported > 0 || syncResult.stats?.imported > 0) {
+                                UI.showNotification(`Google Drive connecté ! ${syncResult.stats.classesImported || 0} classe(s) et ${syncResult.stats.imported || 0} élève(s) importés.`, 'success');
+                            } else {
+                                UI.showNotification('Google Drive connecté ! Vos données seront synchronisées.', 'success');
+                            }
+                        } catch (syncError) {
+                            console.warn('[SyncService] Initial sync failed:', syncError);
+                            UI.showNotification('Google Drive connecté !', 'success');
+                        }
+
+                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
+                        DOM.connectGoogleBtn.classList.add('btn-success');
                     } else {
                         DOM.connectGoogleBtn.innerHTML = 'Connecter';
                         DOM.connectGoogleBtn.disabled = false;

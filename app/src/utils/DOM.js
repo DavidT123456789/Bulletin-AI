@@ -70,8 +70,13 @@ export function initDOM() {
     DOM.headerAiModelChip = document.getElementById('headerAiModelChip');
     DOM.headerAiModelName = document.getElementById('headerAiModelName');
     DOM.headerSessionCost = document.getElementById('headerSessionCost');
-    DOM.headerRetryErrorsBtn = document.getElementById('headerRetryErrorsBtn');
-    DOM.headerRetryErrorsCount = document.getElementById('headerRetryErrorsCount');
+    // Generation Status Chip (unified progress + errors)
+    DOM.headerGenerationStatus = document.getElementById('headerGenerationStatus');
+    DOM.headerProgressFill = document.getElementById('headerProgressFill');
+    DOM.headerProgressText = document.getElementById('headerProgressText');
+    DOM.headerErrorAction = document.getElementById('headerErrorAction');
+    DOM.headerErrorCount = document.getElementById('headerErrorCount');
+    DOM.headerCancelBtn = document.getElementById('headerCancelBtn');
 
     DOM.inputSection = document.getElementById('inputSection');
     DOM.massImportTab = document.getElementById('massImportTab');
@@ -81,10 +86,7 @@ export function initDOM() {
     DOM.actualSingleStudentForm = document.getElementById('actualSingleStudentForm');
     DOM.massData = document.getElementById('massData');
     DOM.massImportPreview = document.getElementById('massImportPreview');
-    DOM.outputProgressArea = document.getElementById('mass-import-progress-output-area');
-    DOM.outputProgressFill = document.getElementById('outputProgressFill');
-    DOM.outputProgressText = document.getElementById('outputProgressText');
-    DOM.cancelImportOutputBtn = document.getElementById('cancelImportOutputBtn');
+    // Old progress area removed - now using headerGenerationStatus chip
     DOM.importGenerateBtn = document.getElementById('importGenerateBtn');
     DOM.clearImportBtn = document.getElementById('clearImportBtn');
     DOM.loadSampleDataLink = document.getElementById('loadSampleDataLink');
@@ -303,7 +305,7 @@ export function initDOM() {
     DOM.brickDropdown = document.getElementById('brickDropdown');
     DOM.brickDropdownRefinement = document.getElementById('brickDropdownRefinement');
     DOM.activeFilterInfo = document.getElementById('activeFilterInfo');
-    DOM.massImportErrorActions = document.getElementById('massImportErrorActions');
+    // massImportErrorActions removed - errors now shown in headerGenerationStatus chip
     DOM.importPreviewModal = document.getElementById('importPreviewModal');
     DOM.importPreviewModalTitle = document.getElementById('importPreviewModalTitle');
     DOM.closeImportPreviewModalBtn = document.getElementById('closeImportPreviewModalBtn');
