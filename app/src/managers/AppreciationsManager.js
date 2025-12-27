@@ -453,6 +453,12 @@ export const AppreciationsManager = {
             newResult.history = originalResult.history || [];
             appState.generatedResults[resultIndex] = newResult;
 
+            // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
+            const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
+            if (filteredIndex > -1) {
+                appState.filteredResults[filteredIndex] = newResult;
+            }
+
             // Mettre à jour la ligne avec animation typewriter
             await ListViewManager.updateRow(id, newResult, true);
 
@@ -473,6 +479,12 @@ export const AppreciationsManager = {
             );
             errorResult.id = id;
             appState.generatedResults[resultIndex] = errorResult;
+
+            // CORRECTIF: Synchroniser filteredResults aussi en cas d'erreur
+            const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
+            if (filteredIndex > -1) {
+                appState.filteredResults[filteredIndex] = errorResult;
+            }
 
             // Afficher l'erreur via updateRow (qui gère l'état d'erreur via _getAppreciationCell)
             ListViewManager.updateRow(id, errorResult, false);

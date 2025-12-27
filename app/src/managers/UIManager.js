@@ -647,6 +647,11 @@ export const UI = {
             provider = 'ollama';
             key = appState.ollamaEnabled ? 'local' : '';
             name = 'Ollama';
+        } else if (model.endsWith('-free')) {
+            // Modèles gratuits OpenRouter (même gemini-*-free !)
+            provider = 'openrouter';
+            key = appState.openrouterApiKey;
+            name = 'OpenRouter';
         } else if (model.startsWith('openai')) {
             provider = 'openai';
             key = appState.openaiApiKey;

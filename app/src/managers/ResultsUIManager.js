@@ -336,6 +336,12 @@ export const ResultsUIManager = {
                         appState.generatedResults[resultIndex] = newResult;
                         successCount++;
 
+                        // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
+                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
+                        if (filteredIndex > -1) {
+                            appState.filteredResults[filteredIndex] = newResult;
+                        }
+
                         // Mettre à jour la ligne avec animation typewriter
                         await ListViewManager.updateRow(newResult.id, newResult, true);
                     }
@@ -346,6 +352,12 @@ export const ResultsUIManager = {
                     if (resultIndex > -1) {
                         errorResult.id = resultToRegen.id;
                         appState.generatedResults[resultIndex] = errorResult;
+
+                        // CORRECTIF: Synchroniser filteredResults aussi en cas d'erreur
+                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
+                        if (filteredIndex > -1) {
+                            appState.filteredResults[filteredIndex] = errorResult;
+                        }
 
                         // Mettre à jour la ligne pour afficher l'erreur
                         // ListViewManager gère l'affichage des erreurs via _getAppreciationCell

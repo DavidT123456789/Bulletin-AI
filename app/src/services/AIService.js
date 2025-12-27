@@ -76,9 +76,11 @@ export const AIService = {
                         'gemini-2.0-flash-exp-free': 'google/gemini-2.0-flash-exp:free',
                         'mistral-small-free': 'mistralai/mistral-small-3.1-24b-instruct:free',
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free',
-                        'amazon-nova-lite-free': 'amazon/nova-lite-v1:1.0',
+                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
+                        'amazon-nova-v2-lite': 'amazon/nova-2-lite-v1',
                         'deepseek-nex-free': 'nex-agi/deepseek-v3.1-nex-n1:free',
                         'deepseek-r1-free': 'deepseek/deepseek-r1:free',
+                        'kimi-k2-free': 'moonshotai/kimi-k2:free',
                         'minimax-m21': 'minimax/minimax-m2.1',
                         'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
                         'mistral-large': 'mistralai/mistral-large-2411'
@@ -634,6 +636,42 @@ export const AIService = {
         } finally {
             // Émettre l'événement de fin de génération (pour arrêter l'animation)
             window.dispatchEvent(new CustomEvent('ai-generation-end'));
+        }
+    },
+
+    /**
+     * Récupère le solde de crédits OpenRouter.
+     * @returns {Promise<number|null>} Solde en dollars ou null en cas d'erreur.
+     */
+    async getOpenRouterCredits() {
+        if (!appState.openrouterApiKey) return null;
+
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/credits', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${appState.openrouterApiKey}`,
+                }
+            });
+
+            if (!response.ok) {
+                console.warn('[OpenRouter] Impossible de récupérer les crédits:', response.status);
+                return null;
+            }
+
+            const data = await response.json();
+            // L'API retourne : { data: { total_usage: number, total_credits: number } }
+            // Le solde restant = total_credits - total_usage
+            if (data && data.data) {
+                const credits = data.data.total_credits || 0;
+                const usage = data.data.total_usage || 0;
+                return Math.max(0, credits - usage);
+            }
+            return null;
+
+        } catch (error) {
+            console.error('[OpenRouter] Erreur récupération crédits:', error);
+            return null;
         }
     }
 };

@@ -23,7 +23,9 @@ export const COSTS_PER_MILLION_TOKENS = {
     'gemini-2.0-flash-exp-free': { input: 0, output: 0 }, // Gemini GRATUIT !
     'mistral-small-free': { input: 0, output: 0 }, // Mistral Small GRATUIT !
     'llama-3.3-70b-free': { input: 0, output: 0 }, // Llama 70B GRATUIT !
-    'amazon-nova-lite-free': { input: 0, output: 0 }, // Amazon Nova 2 Lite GRATUIT !
+    'amazon-nova-v1-lite': { input: 0.06, output: 0.24 }, // Amazon Nova Lite 1.0 (Très peu cher)
+    'amazon-nova-v2-lite': { input: 0.30, output: 2.50 }, // Amazon Nova 2 Lite (Payant - plus performant)
+    'kimi-k2-free': { input: 0, output: 0 }, // Kimi K2 de MoonshotAI (GRATUIT - très puissant)
     'deepseek-nex-free': { input: 0, output: 0 }, // DeepSeek V3.1 Nex N1 GRATUIT !
     'deepseek-r1-free': { input: 0, output: 0 }, // DeepSeek R1 GRATUIT !
     'minimax-m21': { input: 0.50, output: 1.50 }, // MiniMax M2.1 - léger et concis
@@ -55,7 +57,8 @@ export const MODEL_DESCRIPTIONS = {
     'gemini-2.0-flash-exp-free': "<strong>🆓 GRATUIT !</strong> Google Gemini 2.0 Flash Experimental. Rapide et puissant.",
     'mistral-small-free': "<strong>🆓 GRATUIT !</strong> Mistral Small 3.1 24B. Excellent modèle polyvalent.",
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT !</strong> Meta Llama 3.3 70B. Très puissant, bon en français.",
-    'amazon-nova-lite-free': "<strong>Ultra Rapide (2s).</strong> Amazon Nova 2 Lite. Idéal pour les gros volumes, qualité standard.",
+    'amazon-nova-v1-lite': "<strong>V1 (Fiable).</strong> Amazon Nova Lite 1.0. Le modèle que vous utilisiez avec succès.",
+    'amazon-nova-v2-lite': "<strong>V2 (Nouveau).</strong> Amazon Nova 2 Lite. Version plus récente et performante.",
     'deepseek-nex-free': "<strong>🆓 GRATUIT !</strong> DeepSeek V3.1 Nex N1. Très capable, bon en texte.",
     'deepseek-r1-free': "<strong>🆓 GRATUIT !</strong> DeepSeek R1 (Raisonnement). Très intelligent mais plus lent.",
     'minimax-m21': "<strong>Qualité supérieure (~7s).</strong> MiniMax M2.1. Réponses concises et efficaces.",
@@ -76,7 +79,7 @@ export const FALLBACK_CONFIG = {
     // Ordre de fallback par provider (du plus prioritaire au moins prioritaire)
     google: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-001', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'],
     openai: ['openai-gpt-4o-mini', 'openai-gpt-3.5-turbo', 'openai-gpt-4o'],
-    openrouter: ['amazon-nova-lite-free', 'deepseek-nex-free', 'deepseek-r1-free', 'gemini-2.0-flash-exp-free', 'llama-3.3-70b-free', 'mistral-small-free', 'qwen3-235b-free', 'qwen3-4b-free', 'devstral-free', 'minimax-m21', 'mistral-small', 'openrouter', 'mistral-large'],
+    openrouter: ['kimi-k2-free', 'deepseek-nex-free', 'deepseek-r1-free', 'gemini-2.0-flash-exp-free', 'llama-3.3-70b-free', 'mistral-small-free', 'qwen3-235b-free', 'qwen3-4b-free', 'devstral-free', 'amazon-nova-v1-lite', 'amazon-nova-v2-lite', 'minimax-m21', 'mistral-small', 'openrouter', 'mistral-large'],
     // Ollama (local) - Qwen3 recommandé car excellent en français
     ollama: ['ollama-qwen3:8b', 'ollama-deepseek-r1:8b', 'ollama-qwen3:4b', 'ollama-gemma3:4b'],
 
@@ -106,9 +109,11 @@ export const MODEL_SHORT_NAMES = {
     'gemini-2.0-flash-exp-free': 'Gemini 2.0',
     'mistral-small-free': 'Mistral Small',
     'llama-3.3-70b-free': 'Llama 3.3 70B',
-    'amazon-nova-lite-free': 'Amazon Nova',
+    'amazon-nova-v1-lite': 'Nova Lite v1',
+    'amazon-nova-v2-lite': 'Nova 2 Lite',
     'deepseek-nex-free': 'DeepSeek V3.1',
     'deepseek-r1-free': 'DeepSeek R1',
+    'kimi-k2-free': 'Kimi K2',
     'minimax-m21': 'MiniMax M2.1',
     'openrouter': 'DeepSeek V3',
     // Ollama (local)

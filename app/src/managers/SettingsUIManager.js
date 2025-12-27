@@ -215,10 +215,17 @@ export const SettingsUIManager = {
         const model = appState.currentAIModel || '';
 
         // Déterminer le provider du modèle actif
+        // IMPORTANT: Les modèles -free passent par OpenRouter, même gemini-*-free !
         let activeProvider = 'openrouter';
-        if (model.startsWith('gemini')) activeProvider = 'google';
-        else if (model.startsWith('openai')) activeProvider = 'openai';
-        else if (model.startsWith('ollama')) activeProvider = 'ollama';
+        if (model.endsWith('-free')) {
+            activeProvider = 'openrouter'; // Priorité aux modèles gratuits OpenRouter
+        } else if (model.startsWith('gemini')) {
+            activeProvider = 'google';
+        } else if (model.startsWith('openai')) {
+            activeProvider = 'openai';
+        } else if (model.startsWith('ollama')) {
+            activeProvider = 'ollama';
+        }
 
         // Check values from DOM if available (live typing) or fall back to state
         const providers = [

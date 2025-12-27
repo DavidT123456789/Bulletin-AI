@@ -98,8 +98,20 @@ export const ApiValidationManager = {
             } else {
                 // Pour OpenAI et OpenRouter: validation simple
                 let modelOverride = 'openai-gpt-3.5-turbo';
-                if (provider === 'openrouter') modelOverride = 'deepseek/deepseek-chat';
-                await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
+                if (provider === 'openrouter') {
+                    modelOverride = 'deepseek/deepseek-chat';
+                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
+
+                    // Si la validation réussit, on vérifie les crédits
+                    const credits = await AIService.getOpenRouterCredits();
+                    if (credits !== null) {
+                        errorEl.innerHTML = `✓ <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${credits.toFixed(3)}$</strong>`;
+                        errorEl.style.display = 'block';
+                        errorEl.style.color = 'var(--success-color)';
+                    }
+                } else {
+                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
+                }
                 appState.apiKeyStatus[provider] = 'valid';
             }
 
