@@ -202,6 +202,9 @@ export const ClassUIManager = {
             await ClassManager.switchClass(newClass.id);
             this.updateHeaderDisplay();
             this.renderClassList();
+            // CORRECTIF: Rafraîchir la liste des élèves et les stats pour la nouvelle classe
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.();
         } catch (error) {
             UI?.showNotification(`Erreur : ${error.message}`, 'error');
         }

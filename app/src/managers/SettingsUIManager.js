@@ -555,23 +555,23 @@ export const SettingsUIManager = {
     updateHeaderAiModelDisplay() {
         if (!DOM.headerAiModelName) return;
 
-        // Mapping des noms courts pour le header
-        const modelShortNames = {
-            'gemini-2.5-flash': 'Gemini 2.5 Flash',
-            'gemini-2.5-pro': 'Gemini 2.5 Pro',
-            'gemini-2.0-flash': 'Gemini 2.0 Flash',
-            'gemini-2.0-flash-lite': 'Gemini 2.0 Flash Lite',
-            'openai-gpt-4o-mini': 'GPT-4o Mini',
-            'openai-gpt-4o': 'GPT-4o',
-            'openai-gpt-3.5-turbo': 'GPT-3.5',
-            'mistral-small': 'Mistral Small',
-            'mistral-large': 'Mistral Large',
-            'deepseek-r1-free': 'DeepSeek R1',
-            'openrouter': 'DeepSeek V3',
-        };
-
         const model = appState.currentAIModel;
-        DOM.headerAiModelName.textContent = modelShortNames[model] || model;
+
+        // 1. Affiche le nom court depuis la config centralisée
+        DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
+
+        // 2. Met à jour le tooltip avec le nom COMPLET et l'ID technique
+        if (DOM.headerAiModelChip) {
+            // Simplification : on n'affiche que l'ID technique car le nom est déjà sur le bouton
+            // Utilisation de HTML pour le style (supporté par Tippy.js via allowHTML: true)
+            const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour changer</i>`;
+            DOM.headerAiModelChip.setAttribute('data-tooltip', tooltipContent);
+
+            // Re-init tooltip content if needed
+            if (DOM.headerAiModelChip._tippy) {
+                DOM.headerAiModelChip._tippy.setContent(tooltipContent);
+            }
+        }
 
         // Mettre à jour le coût de session si visible
         if (DOM.headerSessionCost) {

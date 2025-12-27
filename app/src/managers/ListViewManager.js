@@ -57,7 +57,7 @@ export const ListViewManager = {
                                 </div>
                             </th>
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="appreciation-header appreciation-toggle-header" title="Cliquer pour voir tout le texte">
+                            <th class="appreciation-header appreciation-toggle-header sortable-header" title="Cliquer pour voir tout le texte">
                                 <div class="header-content-wrapper">
                                     Appréciation
                                     <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
@@ -65,8 +65,36 @@ export const ListViewManager = {
                                 </div>
                             </th>
                             <th class="action-header" style="width: 50px;">
-                                <div class="header-content-wrapper">
-                                    <i class="fas fa-ellipsis-vertical" style="opacity: 0.5;"></i>
+                                <div class="header-content-wrapper global-actions-dropdown">
+                                    <button class="btn-action-menu-header" id="tableActionsBtnToggle" title="Actions">
+                                        <i class="fas fa-ellipsis-vertical"></i>
+                                    </button>
+                                    <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                                        <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les élèves</h5>
+                                        <button class="action-dropdown-item" id="copyAllBtn-shortcut">
+                                            <i class="fas fa-copy"></i> Copier les visibles
+                                        </button>
+                                        <button class="action-dropdown-item" id="regenerateAllBtn">
+                                            <i class="fas fa-sync-alt"></i> Régénérer les visibles
+                                        </button>
+                                        <button class="action-dropdown-item" id="regenerateErrorsBtn-shortcut" style="display:none;">
+                                            <i class="fas fa-exclamation-triangle"></i> Régénérer les erreurs
+                                        </button>
+                                        <h5 class="dropdown-header"><i class="fas fa-download"></i> Exporter</h5>
+                                        <button class="action-dropdown-item" id="exportJsonBtn">
+                                            <i class="fas fa-file-code"></i> Données (JSON)
+                                        </button>
+                                        <button class="action-dropdown-item" id="exportCsvBtn">
+                                            <i class="fas fa-file-csv"></i> Tableau (CSV)
+                                        </button>
+                                        <button class="action-dropdown-item" id="exportPdfBtn">
+                                            <i class="fas fa-file-pdf"></i> Imprimer / PDF
+                                        </button>
+                                        <div class="dropdown-divider danger-divider"></div>
+                                        <button class="action-dropdown-item danger" id="clearAllResultsBtn-shortcut">
+                                            <i class="fas fa-trash-alt"></i> Effacer les visibles
+                                        </button>
+                                    </div>
                                 </div>
                             </th>
                         </tr>
@@ -471,8 +499,8 @@ export const ListViewManager = {
         // Import EventHandlersManager dynamically
         import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
 
-            // Sort headers click
-            listContainer.querySelectorAll('.sortable-header').forEach(header => {
+            // Sort headers click (exclude appreciation toggle which has its own handler)
+            listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
                 header.addEventListener('click', (e) => {
                     e.stopPropagation();
                     EventHandlersManager.handleHeaderSortClick(header);
@@ -483,7 +511,12 @@ export const ListViewManager = {
 
         // Close any open menus when clicking outside
         const closeAllMenus = () => {
+            // Fermer les menus d'actions individuelles
             listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
+                menu.classList.remove('open');
+            });
+            // Fermer le menu global du header
+            listContainer.querySelectorAll('.global-actions-dropdown-menu.open').forEach(menu => {
                 menu.classList.remove('open');
             });
         };
@@ -492,7 +525,7 @@ export const ListViewManager = {
         // Use capture=true to catch clicks even if other elements stop propagation
         this._activeDocClickListener = (e) => {
             // If click is NOT on a menu interaction, close all menus
-            if (!e.target.closest('.action-dropdown')) {
+            if (!e.target.closest('.action-dropdown') && !e.target.closest('.global-actions-dropdown')) {
                 closeAllMenus();
             }
         };
@@ -502,7 +535,23 @@ export const ListViewManager = {
         listContainer.addEventListener('click', (e) => {
             const target = e.target;
 
-            // Toggle dropdown menu
+            // Toggle GLOBAL actions dropdown in header
+            const globalMenuBtn = target.closest('.btn-action-menu-header');
+            if (globalMenuBtn) {
+                e.stopPropagation();
+                const dropdown = globalMenuBtn.closest('.global-actions-dropdown');
+                const menu = dropdown?.querySelector('.global-actions-dropdown-menu');
+
+                const wasOpen = menu?.classList.contains('open');
+                closeAllMenus();
+
+                if (!wasOpen) {
+                    menu?.classList.add('open');
+                }
+                return;
+            }
+
+            // Toggle dropdown menu (per-row actions)
             const menuBtn = target.closest('[data-action="toggle-menu"]');
             if (menuBtn) {
                 e.stopPropagation();
@@ -577,6 +626,48 @@ export const ListViewManager = {
                     const studentId = row.dataset.studentId;
                     if (studentId) FocusPanelManager.open(studentId);
                 }
+            });
+        });
+
+        // === GLOBAL ACTIONS DROPDOWN LISTENERS ===
+        // These are dynamically created in the table header, so we attach them here
+        this._attachGlobalActionsListeners(listContainer, closeAllMenus);
+    },
+
+    /**
+     * Attache les listeners pour les actions globales (export, copie, etc.)
+     * @param {HTMLElement} listContainer - Conteneur de la liste
+     * @param {Function} closeAllMenus - Fonction pour fermer tous les menus
+     * @private
+     */
+    _attachGlobalActionsListeners(listContainer, closeAllMenus) {
+        // Helper pour ajouter un listener qui ferme le menu
+        const addAction = (selector, handler) => {
+            const btn = listContainer.querySelector(selector);
+            if (btn) {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    closeAllMenus();
+                    await handler();
+                });
+            }
+        };
+
+        // Import dynamique des dépendances
+        import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
+            import('./StorageManager.js').then(({ StorageManager }) => {
+                import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
+                    // Actions sur les élèves
+                    addAction('#copyAllBtn-shortcut', AppreciationsManager.copyAllResults);
+                    addAction('#regenerateAllBtn', EventHandlersManager.handleRegenerateAllClick);
+                    addAction('#regenerateErrorsBtn-shortcut', EventHandlersManager.handleRegenerateErrorsClick);
+                    addAction('#clearAllResultsBtn-shortcut', () => AppreciationsManager.clearAllResults());
+
+                    // Export
+                    addAction('#exportJsonBtn', () => StorageManager.exportToJson());
+                    addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
+                    addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
+                });
             });
         });
     },

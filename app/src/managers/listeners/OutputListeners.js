@@ -6,8 +6,7 @@
 import { CONFIG } from '../../config/Config.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
-import { AppreciationsManager } from '../AppreciationsManager.js';
-import { StorageManager } from '../StorageManager.js';
+// AppreciationsManager et StorageManager déplacés vers ListViewManager._attachGlobalActionsListeners()
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 
@@ -42,26 +41,14 @@ export const OutputListeners = {
 
         DOM.sortSelect?.addEventListener('change', EventHandlersManager.handleSortSelectChange);
 
-        addClickListener(DOM.actionsBtnToggle, EventHandlersManager.handleActionsBtnToggle);
+        // Note: Le menu d'actions global est maintenant dans le header du tableau
+        // et ses listeners sont attachés par ListViewManager._attachGlobalActionsListeners()
 
-        const dropdownActions = {
-            '#exportJsonBtn': StorageManager.exportToJson.bind(StorageManager),
-            '#exportCsvBtn': AppreciationsManager.exportToCsv,
-            '#exportPdfBtn': AppreciationsManager.exportToPdf
+        // Conserver les listeners pour les éléments qui peuvent exister en dehors du tableau
+        const staticShortcutActions = {
+            '#headerRetryErrorsBtn': EventHandlersManager.handleRegenerateErrorsClick
         };
-        for (const [selector, handler] of Object.entries(dropdownActions)) {
-            addClickListener(document.querySelector(selector), handler);
-        }
-
-        const shortcutActions = {
-            '#copyAllBtn-shortcut': AppreciationsManager.copyAllResults,
-            '#regenerateAllBtn': EventHandlersManager.handleRegenerateAllClick,
-            '#regenerateErrorsBtn-shortcut': EventHandlersManager.handleRegenerateErrorsClick,
-            '#retryErrorsFloatingBtn': EventHandlersManager.handleRegenerateErrorsClick,
-            '#headerRetryErrorsBtn': EventHandlersManager.handleRegenerateErrorsClick,
-            '#clearAllResultsBtn-shortcut': AppreciationsManager.clearAllResults.bind(AppreciationsManager)
-        };
-        for (const [selector, handler] of Object.entries(shortcutActions)) {
+        for (const [selector, handler] of Object.entries(staticShortcutActions)) {
             addClickListener(document.querySelector(selector), handler);
         }
 

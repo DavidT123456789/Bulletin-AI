@@ -305,8 +305,8 @@ export const EventHandlersManager = {
     async handleRegenerateAllClick() {
         if (appState.generatedResults.length === 0) return;
 
-        // On ferme le menu d'actions
-        DOM.actionsDropdown.classList.remove('show');
+        // Note: Le menu d'actions est maintenant fermé par le ListViewManager
+        // DOM.actionsDropdown n'existe plus dans le HTML statique
 
         // On délègue à AppreciationsManager.regenerateVisible qui gère déjà la confirmation
         await AppreciationsManager.regenerateVisible(false);
@@ -324,8 +324,7 @@ export const EventHandlersManager = {
             return;
         }
 
-        // On ferme le menu d'actions
-        DOM.actionsDropdown?.classList.remove('show');
+        // Note: Le menu d'actions est maintenant fermé par le ListViewManager
 
         // Régénérer uniquement les erreurs
         await AppreciationsManager.regenerateVisible(true);

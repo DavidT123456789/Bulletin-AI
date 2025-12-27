@@ -92,12 +92,11 @@ export const FALLBACK_CONFIG = {
  * Noms courts des modèles pour l'affichage dans l'interface
  */
 export const MODEL_SHORT_NAMES = {
-    'gemini-2.5-flash': '2.5 Flash',
-    'gemini-3-flash-preview': '3 Flash ⚡',
-
-    'gemini-2.0-flash-lite': '2.0 Flash Lite',
-    'gemini-1.5-flash': '1.5 Flash',
-    'gemini-2.5-pro': '2.5 Pro',
+    'gemini-2.5-flash': 'Gemini 2.5 Flash',
+    'gemini-3-flash-preview': 'Gemini 3 Flash',
+    'gemini-2.0-flash-lite': 'Gemini 2.0 Lite',
+    'gemini-1.5-flash': 'Gemini 1.5 Flash',
+    'gemini-2.5-pro': 'Gemini 2.5 Pro',
     'openai-gpt-4o-mini': 'GPT-4o Mini',
     'openai-gpt-4o': 'GPT-4o',
     'openai-gpt-3.5-turbo': 'GPT-3.5',
@@ -106,12 +105,12 @@ export const MODEL_SHORT_NAMES = {
     'devstral-free': 'Devstral',
     'qwen3-235b-free': 'Qwen3 235B',
     'qwen3-4b-free': 'Qwen3 4B',
-    'gemini-2.0-flash-exp-free': 'Gemini 2.0',
+    'gemini-2.0-flash-exp-free': 'Gemini 2.0 Exp',
     'mistral-small-free': 'Mistral Small',
-    'llama-3.3-70b-free': 'Llama 3.3 70B',
+    'llama-3.3-70b-free': 'Llama 3.3',
     'amazon-nova-v1-lite': 'Nova Lite v1',
     'amazon-nova-v2-lite': 'Nova 2 Lite',
-    'deepseek-nex-free': 'DeepSeek V3.1',
+    'deepseek-nex-free': 'DeepSeek V3.1 Nex',
     'deepseek-r1-free': 'DeepSeek R1',
     'kimi-k2-free': 'Kimi K2',
     'minimax-m21': 'MiniMax M2.1',

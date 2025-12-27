@@ -259,11 +259,7 @@
                         <!-- Liste + Focus: Add student button -->
 
 
-                        <button class="btn btn-warning btn-small tooltip" id="retryErrorsFloatingBtn"
-                            data-tooltip="Relancer la génération pour les appréciations en erreur"
-                            style="display: none;">
-                            <i class="fas fa-exclamation-triangle"></i> <span id="retryErrorsCount">0</span> erreur(s)
-                        </button>
+
                         <div class="output-toolbar">
                             <!-- Import Button - Opens Slide-Over Panel -->
 
@@ -283,33 +279,7 @@
                                 </button>
                             </div>
                             <!-- Sort select removed - now sortable headers -->
-                            <div class="actions-dropdown">
-                                <button class="btn-icon tooltip" id="actionsBtnToggle"
-                                    data-tooltip="Exporter et Actions"><i class="fas fa-ellipsis-v"></i></button>
-                                <div class="actions-dropdown-content">
-                                    <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les élèves</h5>
-                                    <button class="btn-dropdown-item" id="copyAllBtn-shortcut"><i
-                                            class="fas fa-copy"></i>
-                                        Copier les visibles</button>
-                                    <button class="btn-dropdown-item" id="regenerateAllBtn"><i
-                                            class="fas fa-sync-alt"></i>
-                                        Régénérer les visibles</button>
-                                    <button class="btn-dropdown-item" id="regenerateErrorsBtn-shortcut"
-                                        style="display:none;"><i class="fas fa-exclamation-triangle"></i> Régénérer les
-                                        erreurs</button>
-                                    <h5 class="dropdown-header"><i class="fas fa-download"></i> Exporter</h5>
-                                    <button class="btn-dropdown-item" id="exportJsonBtn"><i
-                                            class="fas fa-file-code"></i>
-                                        Données (JSON)</button>
-                                    <button class="btn-dropdown-item" id="exportCsvBtn"><i class="fas fa-file-csv"></i>
-                                        Tableau (CSV)</button>
-                                    <button class="btn-dropdown-item" id="exportPdfBtn"><i class="fas fa-file-pdf"></i>
-                                        Imprimer / PDF</button>
-                                    <div class="dropdown-divider danger-divider"></div>
-                                    <button class="btn-dropdown-item danger" id="clearAllResultsBtn-shortcut"><i
-                                            class="fas fa-trash-alt"></i> Effacer les visibles</button>
-                                </div>
-                            </div>
+                            <!-- Actions dropdown déplacé dans le header du tableau pour cohérence UX -->
                         </div>
                     </div>
 
@@ -400,7 +370,7 @@
                         <div class="focus-context-header">
                             <div class="focus-context-label">
                                 <i class="fas fa-info-circle"></i>
-                                Contexte <span id="focusContextPeriod" class="period-badge">T1</span>
+                                Contexte
                             </div>
 
                             <!-- NEW: Previous Grades next to Current Grade -->
@@ -409,7 +379,7 @@
                                     <!-- Populated by JS: T1: 12, T2: 14 -->
                                 </div>
                                 <div class="context-grade-group">
-                                    <label for="focusCurrentGradeInput">Moy.</label>
+                                    <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">T1</label>
                                     <input type="text" id="focusCurrentGradeInput" class="context-grade-input"
                                         placeholder="--" maxlength="4">
                                 </div>

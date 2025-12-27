@@ -1058,13 +1058,7 @@ export const FocusPanelManager = {
         // === 2. HEADER: Status Badges ===
         this._renderStatusBadges(result.studentData.statuses || []);
 
-        // === 3. CONTEXT CARD: Period Badge ===
-        const periodBadge = document.getElementById('focusContextPeriod');
-        if (periodBadge) {
-            periodBadge.textContent = Utils.getPeriodLabel(currentPeriod, false);
-        }
-
-        // === 4. CONTEXT CARD: Previous Grades ===
+        // === 3. CONTEXT CARD: Previous Grades ===
         const prevGradesEl = document.getElementById('focusPreviousGrades');
         if (prevGradesEl) {
             prevGradesEl.innerHTML = '';
@@ -1085,6 +1079,11 @@ export const FocusPanelManager = {
         }
 
         // === 5. CONTEXT CARD: Current Grade Input ===
+        const gradeLabel = document.getElementById('focusCurrentGradeLabel');
+        if (gradeLabel) {
+            gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false) + ' :';
+        }
+
         const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
             const currentGrade = result.studentData.periods?.[currentPeriod]?.grade;

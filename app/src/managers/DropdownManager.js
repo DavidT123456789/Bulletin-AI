@@ -261,6 +261,12 @@ export const DropdownManager = {
                     UI.initTooltips();
                 }
             }).catch(() => { });
+
+            // Fix z-index stacking context for settings cards
+            const parentCard = wrapper.closest('.settings-card');
+            if (parentCard) {
+                parentCard.classList.add('has-open-dropdown');
+            }
         }
     },
 
@@ -274,6 +280,11 @@ export const DropdownManager = {
             dd.querySelectorAll('.custom-dropdown-option.focused').forEach(opt => {
                 opt.classList.remove('focused');
             });
+            // Cleanup z-index fix
+            const parentCard = dd.closest('.settings-card');
+            if (parentCard) {
+                parentCard.classList.remove('has-open-dropdown');
+            }
         });
     },
 

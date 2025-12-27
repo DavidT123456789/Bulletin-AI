@@ -129,8 +129,7 @@ export function initDOM() {
     DOM.copyAllBtn = document.getElementById('copyAllBtn-shortcut');
     DOM.regenerateAllBtn = document.getElementById('regenerateAllBtn');
     DOM.regenerateErrorsBtn = document.getElementById('regenerateErrorsBtn-shortcut');
-    DOM.retryErrorsFloatingBtn = document.getElementById('retryErrorsFloatingBtn');
-    DOM.retryErrorsCount = document.getElementById('retryErrorsCount');
+    // retryErrorsFloatingBtn removed - headerRetryErrorsBtn is the single source of truth
     DOM.exportJsonBtn = document.getElementById('exportJsonBtn');
     DOM.exportCsvBtn = document.getElementById('exportCsvBtn');
     DOM.exportPdfBtn = document.getElementById('exportPdfBtn');

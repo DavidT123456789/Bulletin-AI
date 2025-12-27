@@ -10,7 +10,8 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--glass-surface-border);
-    overflow: hidden;
+    overflow: visible;
+    /* Permet au menu d'actions de déborder */
 }
 
 .student-list-table {
@@ -43,13 +44,38 @@
 .sortable-header {
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.2s, color 0.2s;
+    position: relative;
+    transition: color 0.25s ease;
+}
+
+/* Effet de survol via pseudo-élément pour préserver le fond du thead */
+.sortable-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(var(--primary-color-rgb), 0.06);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.sortable-header:hover::after {
+    opacity: 1;
 }
 
 .sortable-header:hover {
-    background-color: transparent;
     color: var(--text-primary);
-    /* Slight highlight on hover */
+}
+
+[data-theme="dark"] .sortable-header::after {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Contenu au-dessus du pseudo-élément */
+.sortable-header .header-content-wrapper {
+    position: relative;
+    z-index: 1;
 }
 
 .sortable-header.active-sort,
@@ -58,6 +84,12 @@
     color: var(--primary-color);
     background-color: transparent !important;
     outline: none;
+}
+
+/* Pas d'effet de survol sur la colonne triée active */
+.sortable-header.active-sort::after,
+.sortable-header.active-sort:hover::after {
+    opacity: 0 !important;
 }
 
 /* Header Content Alignment Wrapper - Ensures perfect centering */
@@ -253,42 +285,28 @@
 }
 
 /* === Appreciation Column Toggle (Expand/Collapse Content) === */
-.appreciation-toggle-header {
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.3s ease;
-}
-
-.appreciation-toggle-header:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-}
-
+/* Note: Uses .sortable-header hover effect for consistency */
 .appreciation-toggle-header .header-content-wrapper {
     position: relative;
-    /* Ensure icon positioning relative to text wrapper */
     display: inline-flex !important;
 }
 
-/* Expand Icon - subtle */
+/* Expand Icon - appears on hover */
 .appreciation-toggle-icon {
     font-size: 11px;
     opacity: 0;
     color: var(--text-tertiary);
     margin-left: 8px;
-    transition: all 0.25s ease;
+    transition: opacity 0.25s ease;
 }
 
 .appreciation-toggle-header:hover .appreciation-toggle-icon {
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
     opacity: 0.6;
     color: var(--primary-color);
-}
-
-[data-theme="dark"] .appreciation-toggle-header:hover {
-    background: rgba(255, 255, 255, 0.04);
 }
 
 /* === FULL VIEW STATE (Expanded Content) === */
@@ -486,6 +504,8 @@
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 100;
     overflow: hidden;
+    padding: 6px;
+    /* Harmonisé avec le menu global */
 }
 
 .action-dropdown-menu.open {
@@ -499,7 +519,8 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 10px 14px;
+    padding: 10px 12px;
+    /* Harmonisé avec le menu global */
     border: none;
     background: transparent;
     font-size: 13px;
@@ -508,6 +529,8 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: left;
+    border-radius: 8px;
+    /* Harmonisé avec le menu global */
 }
 
 .action-dropdown-item:hover {
@@ -531,6 +554,107 @@
 }
 
 [data-theme="dark"] .action-dropdown-menu {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* === GLOBAL ACTIONS DROPDOWN (Table Header) === */
+/* Réutilise .action-dropdown-menu et .action-dropdown-item - source unique de vérité */
+.global-actions-dropdown {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-action-menu-header {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.6;
+}
+
+.btn-action-menu-header:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Le menu global hérite de .action-dropdown-menu + surcharges spécifiques */
+.global-actions-dropdown-menu {
+    /* Override: hérite de action-dropdown-menu mais avec ces différences */
+    position: absolute;
+    top: 100%;
+    /* S'ouvre vers le BAS */
+    right: 0;
+    /* Le menu est décalé vers la gauche via translateX pour éviter le débordement */
+    margin-top: 8px;
+    min-width: 220px;
+    /* Plus large que le menu individuel */
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-20px) translateY(-8px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 200;
+    /* Plus élevé que le menu individuel (100) */
+    overflow: hidden;
+    padding: 6px;
+}
+
+.global-actions-dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-20px) translateY(0) scale(1);
+}
+
+/* === Headers sectionnels (spécifique au menu global) === */
+.global-actions-dropdown-menu .dropdown-header {
+    margin: 0;
+    padding: 8px 12px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid var(--border-color);
+}
+
+.global-actions-dropdown-menu .dropdown-header:first-of-type {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.global-actions-dropdown-menu .dropdown-header i {
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+/* Divider danger (spécifique au menu global) */
+.global-actions-dropdown-menu .dropdown-divider.danger-divider {
+    border-top: 1px solid rgba(var(--error-rgb), 0.2);
+    margin: 4px 8px;
+}
+
+[data-theme="dark"] .global-actions-dropdown-menu {
     background: rgba(17, 24, 39, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
 }
@@ -1158,18 +1282,19 @@
 .context-grade-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    /* Style "badge" plus subtil et premium - pas de contour ni ombre */
-    background: rgba(var(--primary-color-rgb), 0.08);
-    padding: 4px 6px 4px 10px;
+    gap: 2px;
+    /* Style interactif - contour pour indiquer l'éditabilité */
+    background: transparent;
+    padding: 4px 10px;
     border-radius: var(--radius-pill);
-    border: none;
+    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
     box-shadow: none;
-    transition: background var(--transition-fast);
+    transition: all var(--transition-fast);
 }
 
 .context-grade-group:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-color: rgba(var(--primary-color-rgb), 0.5);
 }
 
 .context-grade-group label {
@@ -1194,8 +1319,6 @@
 
 .context-grade-input:focus {
     outline: none;
-    background: rgba(var(--primary-color-rgb), 0.05);
-    border-radius: 4px;
 }
 
 /* History Grade Input (Small, inside badge) */
@@ -3074,7 +3197,7 @@
     padding: 4px 10px;
     border-radius: 20px;
     background: rgba(var(--primary-color-rgb), 0.04);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.08);
+    border: none;
     font-size: 12px;
     color: var(--text-secondary);
     transition: all 0.2s ease;
@@ -3083,7 +3206,6 @@
 
 [data-theme="dark"] .previous-grade-chip {
     background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.05);
 }
 
 .previous-grade-chip .prev-grade-label {

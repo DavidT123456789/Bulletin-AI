@@ -844,7 +844,9 @@ export const UI = {
 
     updateControlButtons() {
         const visible = appState.filteredResults;
-        DOM.regenerateAllBtn.disabled = visible.length === 0;
+        // Note: regenerateAllBtn est maintenant dans le dropdown dynamique du tableau
+        const regenerateBtn = document.getElementById('regenerateAllBtn');
+        if (regenerateBtn) regenerateBtn.disabled = visible.length === 0;
 
         // CORRECTIF: Filtrer les erreurs par la classe courante uniquement
         const currentClassId = appState.currentClassId;
@@ -859,7 +861,7 @@ export const UI = {
         const regenErrorsBtnShortcut = document.getElementById('regenerateErrorsBtn-shortcut');
         if (regenErrorsBtnShortcut) regenErrorsBtnShortcut.style.display = hasAnyErrors ? 'inline-flex' : 'none';
 
-        if (DOM.actionsDropdown) DOM.actionsDropdown.classList.toggle('has-errors', hasAnyErrors);
+        // Note: actionsDropdown n'existe plus dans le HTML statique (déplacé dans le tableau)
 
         const massImportErrorContainer = DOM.massImportErrorActions;
         if (massImportErrorContainer) {
@@ -878,10 +880,7 @@ export const UI = {
             }
         }
 
-        if (DOM.retryErrorsFloatingBtn) {
-            DOM.retryErrorsFloatingBtn.style.display = 'none';
-        }
-
+        // Update header error badge (single source of truth for error count)
         if (DOM.headerRetryErrorsBtn) {
             if (hasAnyErrors) {
                 DOM.headerRetryErrorsBtn.style.display = 'inline-flex';
@@ -1409,9 +1408,15 @@ export const UI = {
 
         const activePeriod = appState.currentPeriod;
         const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
+        const currentClassId = appState.currentClassId;
 
-        const activeStudents = appState.generatedResults.filter(result => {
-            const statuses = result.studentData.statuses || [];
+        // CORRECTIF: Filtrer par classe actuelle AVANT de compter
+        const classResults = appState.generatedResults.filter(r =>
+            !currentClassId || r.classId === currentClassId
+        );
+
+        const activeStudents = classResults.filter(result => {
+            const statuses = result.studentData?.statuses || [];
             const departStatus = statuses.find(s => s.startsWith('Départ'));
             if (!departStatus) return true;
 
