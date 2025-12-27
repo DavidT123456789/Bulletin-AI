@@ -373,7 +373,7 @@ export const ListViewManager = {
             const cleanText = decoded.replace(/<[^>]*>/g, '').trim();
 
             // Let CSS handle truncation dynamically based on available space
-            return `<div class="appreciation-preview" title="${cleanText}">${cleanText}</div>`;
+            return `<div class="appreciation-preview">${cleanText}</div>`;
         }
 
         // Si pas de contenu, on dÃ©termine le statut Ã  afficher
@@ -706,8 +706,8 @@ export const ListViewManager = {
                 targetEl.textContent = cleanText;
             }
 
-            // Restore proper title attribute after animation
-            targetEl.title = cleanText;
+            // Remove title attribute to avoid unwanted tooltips
+            targetEl.removeAttribute('title');
 
             // Add "just generated" flash effect to the row
             row.classList.add('just-generated');

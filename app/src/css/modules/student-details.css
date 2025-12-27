@@ -526,12 +526,13 @@
     background: rgba(var(--primary-color-rgb), 0.1);
     border: 1px solid var(--primary-color);
     color: var(--text-primary);
-    padding: 8px 14px;
-    border-radius: var(--radius-xs);
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
     margin-top: 0;
     margin-bottom: 12px;
     font-size: 13px;
     text-align: center;
+    line-height: 1.5;
 }
 
 .preview-student-selector {

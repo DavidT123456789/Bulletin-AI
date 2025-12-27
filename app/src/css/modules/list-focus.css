@@ -1606,6 +1606,10 @@
     border-radius: 100px;
 }
 
+.word-count:empty {
+    display: none;
+}
+
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
     display: inline-flex;
