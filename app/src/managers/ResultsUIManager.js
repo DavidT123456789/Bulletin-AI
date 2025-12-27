@@ -6,6 +6,7 @@ import { StorageManager } from './StorageManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ClassManager } from './ClassManager.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -19,7 +20,7 @@ export const ResultsUIManager = {
     renderResults(highlightId = null, highlightType = 'new') {
         if (document.activeElement?.contentEditable === 'true') return;
         const term = DOM.searchInput.value.toLowerCase();
-        const sort = DOM.sortSelect.value;
+        // const sort = DOM.sortSelect.value; // Removed for new sort system
         const filter = appState.activeStatFilter;
         const activePeriod = appState.currentPeriod;
         const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
@@ -27,9 +28,19 @@ export const ResultsUIManager = {
         // CORRECTIF: Toujours repartir de la liste complète (generatedResults) filtrée par la classe courante
         // Ne JAMAIS utiliser filteredResults comme source, sinon on perd les élèves masqués quand on retire un filtre.
         const currentClassId = appState.currentClassId;
-        const sourceResults = currentClassId
-            ? appState.generatedResults.filter(r => r.classId === currentClassId)
-            : appState.generatedResults.filter(r => !r.classId); // Mode legacy ou sans classe
+        const hasAnyClasses = ClassManager.getAllClasses().length > 0;
+
+        // Si aucune classe n'existe, sourceResults est vide (pas de mode legacy)
+        let sourceResults = [];
+        if (hasAnyClasses && currentClassId) {
+            sourceResults = appState.generatedResults.filter(r => r.classId === currentClassId);
+        } else if (!hasAnyClasses) {
+            // Aucune classe : afficher état vide
+            sourceResults = [];
+        } else {
+            // Classes existent mais pas de classe courante sélectionnée : mode legacy
+            sourceResults = appState.generatedResults.filter(r => !r.classId);
+        }
 
         const viewableResults = sourceResults
             .map(originalResult => {
@@ -112,10 +123,51 @@ export const ResultsUIManager = {
                 return false;
             })
             .sort((a, b) => {
-                if (sort === 'recent') return new Date(b.timestamp) - new Date(a.timestamp);
-                if (sort === 'name') return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`);
-                if (sort === 'grade') { const gA = a.studentData?.periods[a.studentData.currentPeriod]?.grade ?? -1, gB = b.studentData?.periods[b.studentData.currentPeriod]?.grade ?? -1; return gB - gA; }
-                if (sort === 'progress') { const getRank = r => { const e = Utils.getRelevantEvolution(r.evolutions, r.studentData.currentPeriod); return e ? { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[e.type] || 0 : 0; }; return getRank(b) - getRank(a); }
+                const { field, direction, param } = appState.sortState;
+                const dir = direction === 'asc' ? 1 : -1;
+
+                if (field === 'recent') return (new Date(b.timestamp) - new Date(a.timestamp)) * dir; // Usually desc is better for recent, but let's respect dir
+
+                if (field === 'name') {
+                    return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`) * dir;
+                }
+
+                if (field === 'grade') {
+                    const p = param || activePeriod;
+                    const gA = a.studentData?.periods[p]?.grade ?? -1;
+                    const gB = b.studentData?.periods[p]?.grade ?? -1;
+                    // Sort nulls/undefined to bottom always? Or respect direction?
+                    // Usually we want empty grades at bottom.
+                    if (gA === -1 && gB !== -1) return 1;
+                    if (gA !== -1 && gB === -1) return -1;
+                    return (gA - gB) * dir;
+                }
+
+                if (field === 'evolution') {
+                    const p = param || activePeriod;
+                    const getRank = r => {
+                        const e = Utils.getRelevantEvolution(r.evolutions, p); // Use specific period
+                        return e ? { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[e.type] || 0 : 0;
+                    };
+                    return (getRank(a) - getRank(b)) * dir;
+                }
+
+                if (field === 'status') {
+                    // Sort by student status tags (alphabetical)
+                    // Order: Errors -> Tags (A-Z) -> Empty
+                    const getStatusStr = (r) => {
+                        if (r.errorMessage) return '!'; // Errors first
+                        const statuses = r.studentData?.statuses || [];
+                        if (statuses.length > 0) {
+                            // Join tags to compare
+                            return statuses.slice().sort().join(' ').toLowerCase();
+                        }
+                        // Empty statuses last
+                        return '\uFFFF';
+                    };
+                    return getStatusStr(a).localeCompare(getStatusStr(b)) * dir;
+                }
+
                 return 0;
             });
 
@@ -262,24 +314,17 @@ export const ResultsUIManager = {
         UI.showCustomConfirm(`Régénérer les ${toRegen.length} appréciations ${onlyErrors ? 'en erreur' : 'visibles'} ?`, async () => {
             let successCount = 0;
 
-            // Afficher les skeletons sur toutes les cartes concernées immédiatement
+            // Afficher "En file" (skeleton pending) sur toutes les lignes concernées immédiatement
             toRegen.forEach(resultToRegen => {
-                const card = document.querySelector(`.appreciation-result[data-id="${resultToRegen.id}"]`);
-                if (card) {
-                    card.classList.add('is-regenerating');
-                    UI.showSkeletonInCard(card, 'En file', true);
-                }
+                ListViewManager.setRowStatus(resultToRegen.id, 'pending-skeleton');
             });
 
             // Traitement séquentiel pour un effet visuel progressif
             for (const resultToRegen of toRegen) {
-                const card = document.querySelector(`.appreciation-result[data-id="${resultToRegen.id}"]`);
-                const appreciationEl = card?.querySelector('[data-template="appreciation"]');
-
-                // Mettre à jour le badge pour indiquer la génération active
-                UI.activateCardBadge(card);
-
                 try {
+                    // Passer l'état à "Génération" (skeleton actif) juste pour celui-ci
+                    ListViewManager.setRowStatus(resultToRegen.id, 'generating');
+
                     const updatedStudentData = JSON.parse(JSON.stringify(resultToRegen.studentData));
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
@@ -291,12 +336,8 @@ export const ResultsUIManager = {
                         appState.generatedResults[resultIndex] = newResult;
                         successCount++;
 
-                        // Effet typewriter pour le succès
-                        if (appreciationEl) {
-                            await UI.typewriterReveal(appreciationEl, newResult.appreciation || '', { speed: 'fast' });
-                            card?.classList.add('just-generated');
-                            setTimeout(() => card?.classList.remove('just-generated'), 1000);
-                        }
+                        // Mettre à jour la ligne avec animation typewriter
+                        await ListViewManager.updateRow(newResult.id, newResult, true);
                     }
                 } catch (e) {
                     const msg = Utils.translateErrorMessage(e.message);
@@ -306,24 +347,17 @@ export const ResultsUIManager = {
                         errorResult.id = resultToRegen.id;
                         appState.generatedResults[resultIndex] = errorResult;
 
-                        // Afficher l'erreur
-                        if (appreciationEl) {
-                            await UI.fadeOutSkeleton(appreciationEl);
-                            appreciationEl.innerHTML = `<p class="error-text">⚠️ ${msg}</p>`;
-                            card?.classList.add('has-error', 'just-errored');
-                            setTimeout(() => card?.classList.remove('just-errored'), 1000);
-                        }
+                        // Mettre à jour la ligne pour afficher l'erreur
+                        // ListViewManager gère l'affichage des erreurs via _getAppreciationCell
+                        ListViewManager.updateRow(errorResult.id, errorResult, false);
                     }
-                } finally {
-                    card?.classList.remove('is-regenerating');
                 }
             }
 
             UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
             StorageManager.saveAppState();
 
-            // Rafraîchir filteredResults pour que le prochain clic ne cible que les erreurs restantes
-            this.renderResults();
+            // Pas besoin de re-render complet, les lignes sont mises à jour individuellement
             UI.updateStats();
             UI.updateControlButtons();
         });

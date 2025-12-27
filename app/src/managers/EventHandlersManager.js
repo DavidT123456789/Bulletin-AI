@@ -169,7 +169,41 @@ export const EventHandlersManager = {
             outputList.classList.add('filter-refresh-animation');
             setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
         }
-        // La valeur est lue directement depuis DOM.sortSelect.value dans renderResults
+        AppreciationsManager.renderResults();
+    },
+
+    /**
+     * Gère le clic sur le header du tableau pour trier.
+     * @param {HTMLElement} header - Le header cliqué
+     */
+    handleHeaderSortClick(header) {
+        const field = header.dataset.sortField;
+        const param = header.dataset.sortParam;
+        if (!field) return;
+
+        let direction = 'asc';
+
+        // Toggle direction if same field AND same param
+        const isSameSort = appState.sortState.field === field && appState.sortState.param === param;
+
+        if (isSameSort) {
+            direction = appState.sortState.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Default direction for grades/evolution is usually desc (highest first)
+            if (['grade', 'evolution', 'status'].includes(field)) direction = 'desc';
+        }
+
+        appState.sortState = { field, direction, param };
+
+        // Trigger generic page refresh animation
+        const outputList = document.getElementById('outputList');
+        if (outputList) {
+            outputList.classList.remove('filter-refresh-animation');
+            void outputList.offsetWidth;
+            outputList.classList.add('filter-refresh-animation');
+            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
+        }
+
         AppreciationsManager.renderResults();
     },
 

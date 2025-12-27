@@ -56,17 +56,12 @@ export const MassImportManager = {
                 // Mettre à jour l'affichage avec le nom (le temps sera mis à jour après)
                 UI.updateOutputProgress(index + 1, studentsToProcess.length, studentName);
 
-                // Marquer la carte courante comme "en cours de génération"
-                const cardId = pendingCards[index];
-                const currentCard = document.querySelector(`.appreciation-result[data-id="${cardId}"]`);
+                // Marquer la rangée courante comme "en cours de génération"
+                const resultId = pendingCards[index];
 
-                if (currentCard) {
-                    currentCard.classList.add('is-generating');
-                    currentCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-                    // Mettre à jour le badge pour indiquer la génération active
-                    UI.activateCardBadge(currentCard);
-                }
+                // Trigger skeleton animation on the row
+                const { ListViewManager } = await import('./ListViewManager.js');
+                ListViewManager.setRowStatus(resultId, 'generating');
 
                 let newResultObject;
                 let hasError = false;
@@ -104,6 +99,7 @@ export const MassImportManager = {
 
                     if (isAborted) {
                         wasAborted = true;
+                        ListViewManager.setRowStatus(resultId, 'pending'); // Revert skeleton
                         break;
                     }
 
@@ -147,8 +143,10 @@ export const MassImportManager = {
 
                 if (existingResultIndex > -1) {
                     const existingResult = appState.generatedResults[existingResultIndex];
-                    Object.assign(existingResult.studentData.periods, newResultObject.studentData.periods);
+                    // Keep the ID from the existing state to ensure we update the correct row
+                    newResultObject.id = existingResult.id;
 
+                    Object.assign(existingResult.studentData.periods, newResultObject.studentData.periods);
                     existingResult.appreciation = newResultObject.appreciation;
                     existingResult.studentData.currentPeriod = newResultObject.studentData.currentPeriod;
                     existingResult.studentData.subject = newResultObject.studentData.subject;
@@ -159,14 +157,18 @@ export const MassImportManager = {
                     existingResult.evolutions = newResultObject.evolutions;
                     existingResult.tokenUsage = newResultObject.tokenUsage;
                     existingResult.studentData.prompts = newResultObject.studentData.prompts;
+                    // Reset pending flag
+                    existingResult.isPending = false;
 
-                    newResultObject.id = existingResult.id;
                 } else {
+                    newResultObject.isPending = false;
                     appState.generatedResults.unshift(newResultObject);
                 }
 
-                // Mettre à jour la carte pré-remplie avec le résultat (avec effet typewriter)
-                await this._updatePendingCard(currentCard, newResultObject, hasError);
+                // Mettre à jour la ligne avec l'animation Typewriter
+                if (newResultObject) {
+                    await ListViewManager.updateRow(resultId, newResultObject, true);
+                }
             }
 
             if (!wasAborted) {
@@ -180,7 +182,7 @@ export const MassImportManager = {
                     UI.showNotification(successMessage, 'success');
                 }
                 appState.importJustCompleted = true;
-                DOM.massData.value = '';
+                if (DOM.massData) DOM.massData.value = '';
                 UI.updateMassImportPreview();
             } else {
                 // Notification d'annulation si pas déjà affichée

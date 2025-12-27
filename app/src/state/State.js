@@ -83,6 +83,7 @@ export const runtimeState = {
         modalNav: { currentIndex: -1 },
         lastUsedFallbackModel: null,
         lastFallbackReason: null,
+        sortState: { field: 'name', direction: 'asc' },
     },
 
     /** États des processus en cours */
@@ -165,6 +166,7 @@ const propertyMap = {
     modalNav: () => runtimeState.navigation,
     lastUsedFallbackModel: () => runtimeState.navigation,
     lastFallbackReason: () => runtimeState.navigation,
+    sortState: () => runtimeState.navigation,
 
     // runtimeState.process
     isMassImportCancelled: () => runtimeState.process,

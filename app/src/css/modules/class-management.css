@@ -217,7 +217,7 @@
 .class-delete-btn:hover {
     opacity: 1 !important;
     color: var(--error-color);
-    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.1);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
 }
 
 .class-dropdown-footer {

@@ -188,6 +188,9 @@ export const ImportUI = {
      * Version wizard avec nouveau design premium.
      */
     updateMassImportPreview() {
+        // Guard: DOM element may not exist if import wizard is not open
+        if (!DOM.massData) return;
+
         const text = DOM.massData.value;
         const hasText = text.trim() !== '';
 

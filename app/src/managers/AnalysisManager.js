@@ -168,8 +168,12 @@ export const AnalysisManager = {
                 try {
                     await generator(id, true);
                     const updated = appState.generatedResults.find(r => r.id === id);
-                    if (listEl) listEl.innerHTML = parser(updated[type]);
-                    else contentEl.innerHTML = parser(updated[type]);
+                    const html = parser(updated[type]);
+                    const target = listEl || contentEl;
+
+                    if (target) {
+                        await UI.animateHtmlReveal(target, html);
+                    }
                 } catch (e) {
                     (listEl || contentEl).innerHTML = `<p style="color:var(--error-color);">Échec.</p><button class="btn btn-warning btn-small" data-action="retry-analysis" data-id="${id}" data-type="${type.slice(0, 2)}">Réessayer</button>`;
                 }

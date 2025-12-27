@@ -33,7 +33,7 @@ export const ClassAnalysisManager = {
             const prompt = `Analyse ces appréciations de classe pour la période ${appState.currentPeriod} :\n\n${analyses}\n\nFais une synthèse globale : niveau général, ambiance de travail, points forts collectifs, points faibles récurrents. Sois constructif et professionnel.`;
 
             const resp = await AIService.callAIWithFallback(prompt);
-            contentDiv.innerHTML = Utils.cleanMarkdown(resp.text);
+            await UI.animateHtmlReveal(contentDiv, Utils.cleanMarkdown(resp.text));
             DOM.classAnalysisModal.dataset.analysisContent = resp.text;
         } catch (e) {
             contentDiv.innerHTML = `<p class="error-message">Erreur d'analyse : ${e.message}</p>`;
@@ -61,7 +61,7 @@ export const ClassAnalysisManager = {
 
         AIService.callAIWithFallback(`${prompts[type]}\n\nAnalyse originale :\n${currentContent}`)
             .then(resp => {
-                contentDiv.innerHTML = Utils.cleanMarkdown(resp.text);
+                UI.animateHtmlReveal(contentDiv, Utils.cleanMarkdown(resp.text));
             })
             .catch(e => UI.showNotification("Erreur : " + e.message, 'error'))
             .finally(() => UI.hideInlineSpinner(button));

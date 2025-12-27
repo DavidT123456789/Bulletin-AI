@@ -13,7 +13,7 @@ import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
-import { ResultCardsUI } from './ResultCardsUIManager.js';
+// ResultCardsUI removed - logic moved to Utils
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -249,8 +249,9 @@ export const FocusPanelManager = {
         const classes = ClassManager.getAllClasses();
         if (classes.length === 0) {
             UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
-            // Open class dropdown to guide user
+            // Open class dropdown and show creation prompt
             ClassUIManager.openDropdown();
+            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
             return;
         }
 
@@ -666,61 +667,79 @@ export const FocusPanelManager = {
             // Fallback sans animation
             this._saveContext();
             const targetIndex = direction === 'prev' ? this.currentIndex - 1 : this.currentIndex + 1;
-            const targetResult = appState.filteredResults[targetIndex];
-            if (targetResult) this.open(targetResult.id);
+            const filteredResult = appState.filteredResults[targetIndex];
+            if (filteredResult) {
+                const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
+                this.open(targetResult.id);
+            }
             return;
         }
 
-        // Classes d'animation basées sur la direction
+        // 1. Prepare Target Data
+        const targetIndex = direction === 'prev' ? this.currentIndex - 1 : this.currentIndex + 1;
+        const filteredResult = appState.filteredResults[targetIndex];
+        if (!filteredResult) return;
+
+        const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
+
+        // 2. Clone Current Content (Eliminates the "Empty Void")
+        const clone = content.cloneNode(true);
+        const parent = content.offsetParent || document.body;
+
+        clone.style.position = 'absolute';
+        clone.style.top = `${content.offsetTop}px`;
+        clone.style.left = `${content.offsetLeft}px`;
+        clone.style.width = `${content.offsetWidth}px`;
+        clone.style.height = `${content.offsetHeight}px`;
+        clone.style.margin = '0';
+        clone.style.zIndex = '10';
+        clone.style.pointerEvents = 'none';
+        clone.style.overflow = 'hidden';
+        clone.scrollTop = content.scrollTop;
+
+        parent.appendChild(clone);
+
+        // 3. Animation Classes
         const outClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
         const inClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
 
-        // Animation de sortie
-        content.classList.add(outClass);
+        // 4. Update State & Content IMMEDIATELY
+        this._saveContext();
 
-        // Après l'animation de sortie, charger le nouveau contenu
-        setTimeout(() => {
-            content.classList.remove(outClass);
+        this.currentStudentId = targetResult.id;
+        this.currentIndex = targetIndex;
+        this._clearHistory();
 
-            this._saveContext();
-            const targetIndex = direction === 'prev' ? this.currentIndex - 1 : this.currentIndex + 1;
-            const filteredResult = appState.filteredResults[targetIndex];
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        if (generateBtn) UI.hideInlineSpinner(generateBtn);
+        this._setAppreciationBadge('none');
 
-            if (filteredResult) {
-                // IMPORTANT: Use generatedResults as source of truth
-                const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
+        this._renderContent(targetResult);
+        this._updateNavigation();
 
-                this.currentStudentId = targetResult.id;
-                this.currentIndex = targetIndex;
-
-                // Clear history for new student
-                this._clearHistory();
-
-                // Reset generate button state (in case previous student had generation in progress)
-                const generateBtn = document.getElementById('focusGenerateBtn');
-                if (generateBtn) {
-                    UI.hideInlineSpinner(generateBtn);
-                }
-
-                // Reset appreciation badge state
-                this._setAppreciationBadge('none');
-
-                this._renderContent(targetResult);
-                this._updateNavigation();
-
-                // If analysis page is visible, reset and repopulate for new student
-                if (isAnalysisVisible) {
-                    this._resetAnalysisSection();
-                    if (targetResult.strengthsWeaknesses || targetResult.nextSteps) {
-                        this._populateExistingAnalysis(targetResult);
-                    }
-                }
-
-                // Animation d'entrée
-                content.classList.add(inClass);
-                setTimeout(() => content.classList.remove(inClass), 320);
+        if (isAnalysisVisible) {
+            this._resetAnalysisSection();
+            if (targetResult.strengthsWeaknesses || targetResult.nextSteps) {
+                this._populateExistingAnalysis(targetResult);
             }
-        }, 280);
+        }
+
+        content.scrollTop = 0;
+
+        // 5. Trigger Animations
+        requestAnimationFrame(() => {
+            clone.classList.add(outClass);
+
+            content.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            void content.offsetWidth;
+            content.classList.add(inClass);
+        });
+
+        // 6. Cleanup
+        setTimeout(() => {
+            clone.remove();
+            content.classList.remove(inClass);
+        }, 400);
     },
 
     /**
@@ -932,11 +951,9 @@ export const FocusPanelManager = {
         const appreciationEl = document.getElementById('focusAppreciationText');
         if (!appreciationEl) return;
 
-        appreciationEl.innerHTML = `<div class="appreciation-skeleton">
-            <div class="appreciation-skeleton-line"></div>
-            <div class="appreciation-skeleton-line"></div>
-            <div class="appreciation-skeleton-line"></div>
-        </div>`;
+        // Remove empty class to hide placeholder text during skeleton display
+        appreciationEl.classList.remove('empty');
+        appreciationEl.innerHTML = Utils.getSkeletonHTML(false);
     },
 
     /**
@@ -1369,7 +1386,7 @@ export const FocusPanelManager = {
         const showIndicator = hasAppreciation && (wasExplicitlyGenerated || hasTokenData || hasAiModelWithUsage);
 
         if (showIndicator) {
-            const { tooltip } = ResultCardsUI.getGenerationModeInfo(result);
+            const { tooltip } = Utils.getGenerationModeInfo(result);
             aiIndicator.style.display = 'inline-flex';
             aiIndicator.setAttribute('data-tooltip', tooltip);
             UI.initTooltips();
@@ -2520,13 +2537,13 @@ export const FocusPanelManager = {
                     if (updated?.strengthsWeaknesses) {
                         // Parse and display Forces
                         if (forcesContent) {
-                            forcesContent.innerHTML = this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'forces');
+                            UI.animateHtmlReveal(forcesContent, this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'forces'));
                             forcesCard?.classList.add('has-content');
                             this._setCardBadge(forcesCard, 'done');
                         }
                         // Parse and display Faiblesses
                         if (weaknessesContent) {
-                            weaknessesContent.innerHTML = this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'weaknesses');
+                            UI.animateHtmlReveal(weaknessesContent, this._parseStrengthsWeaknessesForCards(updated.strengthsWeaknesses, 'weaknesses'));
                             weaknessesCard?.classList.add('has-content');
                             this._setCardBadge(weaknessesCard, 'done');
                         }
@@ -2577,7 +2594,7 @@ export const FocusPanelManager = {
                     const updated = appState.generatedResults.find(r => r.id === id);
 
                     if (updated?.nextSteps?.length) {
-                        suggestionsContent.innerHTML = `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
+                        UI.animateHtmlReveal(suggestionsContent, `<ul>${updated.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`);
                         suggestionsCard?.classList.add('has-content');
                         this._setCardBadge(suggestionsCard, 'done');
                     } else {

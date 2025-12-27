@@ -224,7 +224,8 @@ export const SingleStudentManager = {
                 newResult.id = appState.currentEditingId;
 
                 UI.showNotification('Appréciation mise à jour !', 'success');
-                await UI.updateResultCard(newResult.id, { animate: true });
+                const { ListViewManager } = await import('./ListViewManager.js');
+                await ListViewManager.updateRow(newResult.id, newResult, true);
             }
         } catch (error) {
             console.error('Erreur de mise à jour:', error);

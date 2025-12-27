@@ -20,7 +20,6 @@ import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { ModalUI } from './ModalUIManager.js';
 import { FormUI } from './FormUIManager.js';
-import { ResultCardsUI } from './ResultCardsUIManager.js';
 import { ImportUI } from './ImportUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
@@ -56,7 +55,6 @@ export const UI = {
         App = appInstance;
         // Initialize sub-managers
         FormUI.init(appInstance);
-        ResultCardsUI.init(this);
         ImportUI.init(this, appInstance);
         // Initialize stats view toggle
         StatsUI.initViewToggle();
@@ -922,7 +920,7 @@ export const UI = {
             }, 350); // Match sidebar transition duration
         }
     },
-    getGradeClass(grade) { return ResultCardsUI.getGradeClass(grade); },
+    getGradeClass(grade) { return Utils.getGradeClass(grade); },
     populateLoadStudentSelect() {
         if (!DOM.loadStudentSelect) return;
 
@@ -1028,6 +1026,17 @@ export const UI = {
     // ====================================================================
 
     /**
+     * Génère le HTML pour le skeleton de l'appréciation
+     * @param {boolean} [compact=false] - Version compacte pour la vue liste
+     * @param {string} [label='Génération...'] - Texte du badge
+     * @param {boolean} [pending=false] - Si true, style "En attente"
+     * @returns {string} HTML string
+     */
+    getAppreciationSkeletonHTML(compact = false, label = 'Génération...', pending = false) {
+        return Utils.getSkeletonHTML(compact, label, pending);
+    },
+
+    /**
      * Affiche un skeleton dans la zone d'appréciation d'une carte
      * @param {HTMLElement} card - La carte élève
      * @param {string} [badgeText='Génération...'] - Texte du badge
@@ -1037,19 +1046,8 @@ export const UI = {
         if (!card) return;
         const appreciationEl = card.querySelector('[data-template="appreciation"]');
         if (appreciationEl) {
-            const badgeClass = isPending ? 'pending' : 'active';
-            const iconClass = isPending ? 'fa-clock' : 'fa-spinner';
-            appreciationEl.innerHTML = `
-                <div class="appreciation-skeleton">
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                    <span class="generating-badge ${badgeClass}">
-                        <i class="fas ${iconClass}"></i> ${badgeText}
-                    </span>
-                </div>
-            `;
+            // Use the unified utility with parameters
+            appreciationEl.innerHTML = this.getAppreciationSkeletonHTML(false, badgeText, isPending);
         }
     },
 
@@ -1092,11 +1090,11 @@ export const UI = {
     },
 
     /**
-     * Révèle le texte avec un effet typewriter fluide
+     * Révèle le texte avec un effet de fondu progressif par mots (style Claude/ChatGPT)
      * @param {HTMLElement} container - Le conteneur de l'appréciation
      * @param {string} text - Le texte à afficher
      * @param {Object} [options] - Options de configuration
-     * @param {number} [options.speed='normal'] - 'slow', 'normal', 'fast'
+     * @param {string} [options.speed='normal'] - 'slow', 'normal', 'fast'
      */
     async typewriterReveal(container, text, options = {}) {
         if (!container) return;
@@ -1105,31 +1103,168 @@ export const UI = {
         await this.fadeOutSkeleton(container);
         container.innerHTML = '';
 
-        // Créer un span pour le texte avec le curseur clignotant
-        const textSpan = document.createElement('span');
-        textSpan.className = 'typewriter-cursor';
-        container.appendChild(textSpan);
-
-        // Configuration de la vitesse
+        // Configuration de la vitesse (délai entre chaque mot en ms)
         const speedConfig = {
-            slow: { baseSpeed: 20, chunkSize: 3 },
-            normal: { baseSpeed: 12, chunkSize: 4 },
-            fast: { baseSpeed: 8, chunkSize: 5 }
+            slow: { wordDelay: 60, wordsPerBatch: 2 },
+            normal: { wordDelay: 40, wordsPerBatch: 3 },
+            fast: { wordDelay: 25, wordsPerBatch: 4 }
         };
         const config = speedConfig[options.speed] || speedConfig.normal;
 
-        // Vitesse adaptative basée sur la longueur du texte
-        const adaptiveSpeed = Math.max(3, Math.min(config.baseSpeed, 1500 / text.length));
+        // Diviser le texte en mots tout en préservant les espaces/ponctuations
+        const words = text.split(/(\s+)/);
 
-        // Afficher le texte caractère par caractère avec curseur
-        for (let i = 0; i < text.length; i += config.chunkSize) {
-            textSpan.textContent = text.substring(0, Math.min(i + config.chunkSize, text.length));
-            await new Promise(r => setTimeout(r, adaptiveSpeed));
+        // Créer le conteneur principal
+        const revealContainer = document.createElement('span');
+        revealContainer.className = 'progressive-reveal';
+        container.appendChild(revealContainer);
+
+        // Ajouter le curseur animé
+        const cursor = document.createElement('span');
+        cursor.className = 'reveal-cursor';
+        container.appendChild(cursor);
+
+        // Adapter la vitesse à la longueur du texte
+        const adaptiveDelay = Math.max(15, Math.min(config.wordDelay, 2000 / words.length));
+        const isFast = text.length > 200;
+
+        // Révéler les mots par lots avec animation
+        let wordIndex = 0;
+        while (wordIndex < words.length) {
+            const batch = words.slice(wordIndex, wordIndex + config.wordsPerBatch);
+
+            for (const word of batch) {
+                if (word.trim() === '') {
+                    // Préserver les espaces
+                    revealContainer.appendChild(document.createTextNode(word));
+                } else {
+                    const wordSpan = document.createElement('span');
+                    wordSpan.className = 'reveal-word' + (isFast ? ' fast' : '');
+                    wordSpan.textContent = word;
+                    // Décaler légèrement l'animation de chaque mot du lot
+                    wordSpan.style.animationDelay = `${(wordIndex % config.wordsPerBatch) * 30}ms`;
+                    revealContainer.appendChild(wordSpan);
+                }
+            }
+
+            wordIndex += config.wordsPerBatch;
+
+            // Pause entre les lots
+            await new Promise(r => setTimeout(r, adaptiveDelay));
         }
 
-        // Retirer le curseur et afficher le texte final
-        textSpan.classList.remove('typewriter-cursor');
-        textSpan.textContent = text;
+        // Retirer le curseur avec un fade-out
+        cursor.style.transition = 'opacity 0.3s ease-out';
+        cursor.style.opacity = '0';
+        await new Promise(r => setTimeout(r, 300));
+        cursor.remove();
+
+        // Nettoyer les spans pour laisser du texte brut (meilleur pour l'édition)
+        container.textContent = text;
+    },
+
+    /**
+     * Révèle le contenu HTML avec un effet de fondu progressif par mots (compatible tags HTML)
+     * Fonctionne comme typewriterReveal mais préserve la structure HTML existante (H4, UL, B, I, etc.)
+     * 
+     * @param {HTMLElement} container - Le conteneur cible
+     * @param {string} htmlContent - La chaîne HTML à injecter et animer
+     * @param {Object} [options] - Options de configuration
+     */
+    async animateHtmlReveal(container, htmlContent, options = {}) {
+        if (!container) return;
+
+        // Fade out du skeleton d'abord si présent
+        await this.fadeOutSkeleton(container);
+
+        // Configuration
+        const speedConfig = {
+            slow: { wordDelay: 60, wordsPerBatch: 2 },
+            normal: { wordDelay: 40, wordsPerBatch: 3 },
+            fast: { wordDelay: 25, wordsPerBatch: 4 }
+        };
+        const config = speedConfig[options.speed] || speedConfig.normal;
+
+        // Préparation DOM hors-ligne pour éviter le flash
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+
+        // Collecter tous les noeuds texte non vides
+        const textNodes = [];
+        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        let totalWordCount = 0;
+        while (node = walker.nextNode()) {
+            if (node.textContent.trim().length > 0) {
+                textNodes.push(node);
+                totalWordCount += node.textContent.split(/\s+/).length;
+            }
+        }
+
+        // Adapter la vitesse si beaucoup de texte
+        const isFast = totalWordCount > 100;
+
+        let globalWordIndex = 0;
+        let maxDelay = 0;
+
+        // Transformer les noeuds texte en spans animés
+        textNodes.forEach(textNode => {
+            const text = textNode.textContent;
+            const words = text.split(/(\s+)/);
+            const fragment = document.createDocumentFragment();
+
+            words.forEach(word => {
+                if (word.trim() === '') {
+                    fragment.appendChild(document.createTextNode(word));
+                } else {
+                    const wordSpan = document.createElement('span');
+                    wordSpan.className = 'reveal-word' + (isFast ? ' fast' : '');
+                    wordSpan.textContent = word;
+
+                    // Calcul du délai basé sur l'index global
+                    const batchIndex = Math.floor(globalWordIndex / config.wordsPerBatch);
+                    const offsetInBatch = globalWordIndex % config.wordsPerBatch;
+
+                    // Ajustement du temps entre les batchs pour simuler la pause
+                    const batchDelay = batchIndex * config.wordDelay;
+                    const intraBatchDelay = offsetInBatch * 30; // 30ms entre mots du même batch
+
+                    const delay = batchDelay + intraBatchDelay;
+
+                    wordSpan.style.animationDelay = `${delay}ms`;
+                    fragment.appendChild(wordSpan);
+
+                    globalWordIndex++;
+                    maxDelay = Math.max(maxDelay, delay);
+                }
+            });
+
+            textNode.parentNode.replaceChild(fragment, textNode);
+        });
+
+        // Vidage et injection dans le vrai conteneur
+        container.innerHTML = '';
+        container.className += ' progressive-reveal-container';
+
+        // Déplacer les enfants
+        while (tempDiv.firstChild) {
+            container.appendChild(tempDiv.firstChild);
+        }
+
+        // Ajouter le curseur à la fin
+        const cursor = document.createElement('span');
+        cursor.className = 'reveal-cursor';
+        container.appendChild(cursor);
+
+        // Attendre la fin de l'animation + marge
+        const totalDuration = maxDelay + 400;
+
+        await new Promise(r => setTimeout(r, totalDuration + 100));
+
+        // Retirer le curseur
+        cursor.style.transition = 'opacity 0.3s ease-out';
+        cursor.style.opacity = '0';
+        setTimeout(() => cursor.remove(), 300);
     },
 
     // ====================================================================
@@ -1337,10 +1472,6 @@ export const UI = {
         this.initTooltips();
     },
 
-    // Result card functions delegated to ResultCardsUIManager
-    getGenerationModeInfo(result) { return ResultCardsUI.getGenerationModeInfo(result); },
-    _getGradesHTML(result) { return ResultCardsUI._getGradesHTML(result); },
-    populateResultCard(result) { return ResultCardsUI.populateResultCard(result); },
-    async updateResultCard(id, options) { await ResultCardsUI.updateResultCard(id, options); },
-    async _updateCardContent(card, result, options) { await ResultCardsUI._updateCardContent(card, result, options); },
+    // Result card functions delegated to ResultCardsUIManager - REMOVED (Legacy Card View Deprecated)
+    // All card rendering is now handled by ListViewManager or direct DOM manipulation where needed.
 };

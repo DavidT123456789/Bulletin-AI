@@ -12,7 +12,7 @@ import { ApiValidationManager } from '../ApiValidationManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
-import { ResultCardsUI } from '../ResultCardsUIManager.js';
+
 import { DEMO_STUDENT_PROFILES } from '../../config/Config.js';
 
 let App = null;
@@ -384,7 +384,7 @@ export const SettingsModalListeners = {
             // Grade styling
             let gradeHtml = '-';
             if (pGrade !== null) {
-                const gradeClass = ResultCardsUI.getGradeClass(pGrade);
+                const gradeClass = Utils.getGradeClass(pGrade);
                 gradeHtml = `<div class="grade-pill ${gradeClass}" style="margin:0;">${pGrade.toFixed(1).replace('.', ',')}</div>`;
             }
 

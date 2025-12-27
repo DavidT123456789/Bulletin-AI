@@ -106,23 +106,7 @@ export const StatsUI = {
         }
     },
 
-    /**
-     * Determine le type d'évolution dynamiquement en fonction des seuils actuels.
-     * @param {number} diff - Valeur de l'évolution
-     * @returns {string} 'positive', 'negative', 'stable', etc.
-     */
-    _getEvolutionType(diff) {
-        if (diff === null || isNaN(diff)) return 'stable';
-        const t = appState.evolutionThresholds;
 
-        if (diff >= t.veryPositive) return 'very-positive';
-        if (diff >= t.positive) return 'positive';
-
-        if (diff <= t.veryNegative) return 'very-negative';
-        if (diff <= t.negative) return 'negative';
-
-        return 'stable';
-    },
 
     /**
      * Calcule les statistiques à partir des résultats filtrés.
@@ -165,8 +149,8 @@ export const StatsUI = {
 
                     // Calculer l'évolution directement à partir des notes
                     if (typeof currentGrade === 'number' && typeof prevGrade === 'number') {
-                        const diff = currentGrade - prevGrade;
-                        const evoType = this._getEvolutionType(diff);
+                        const dist = currentGrade - prevGrade;
+                        const evoType = Utils.getEvolutionType(dist);
                         if (['very-positive', 'positive'].includes(evoType)) stats.progress++;
                         else if (evoType === 'stable') stats.stable++;
                         else stats.regression++;

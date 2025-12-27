@@ -10,6 +10,8 @@ import { Utils } from '../utils/Utils.js';
 import { detectSeparator, parseLine } from '../utils/ImportUtils.js';
 import { UI } from './UIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ClassManager } from './ClassManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
 
 /**
  * Import Wizard Manager
@@ -90,8 +92,17 @@ export const ImportWizardManager = {
 
     /**
      * Open the Hub Modal
+     * Requires at least one class to exist
      */
     openHub() {
+        // Check if any classes exist first
+        if (ClassManager.getAllClasses().length === 0) {
+            UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
+            ClassUIManager.openDropdown();
+            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
+            return;
+        }
+
         const backdrop = document.getElementById('importHubBackdrop');
         if (backdrop) {
             backdrop.classList.add('active');
@@ -222,8 +233,17 @@ export const ImportWizardManager = {
 
     /**
      * Open the wizard modal
+     * Requires at least one class to exist
      */
     open() {
+        // Check if any classes exist first
+        if (ClassManager.getAllClasses().length === 0) {
+            UI.showNotification('Créez d\'abord une classe avant d\'importer des élèves', 'warning');
+            ClassUIManager.openDropdown();
+            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
+            return;
+        }
+
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             this.currentStep = 1;
@@ -234,9 +254,18 @@ export const ImportWizardManager = {
 
     /**
      * Open the wizard modal with pre-filled data
+     * Requires at least one class to exist
      * @param {string} dataText - The data to pre-fill in the textarea
      */
     openWithData(dataText) {
+        // Check if any classes exist first
+        if (ClassManager.getAllClasses().length === 0) {
+            UI.showNotification('Créez d\'abord une classe avant d\'importer des élèves', 'warning');
+            ClassUIManager.openDropdown();
+            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
+            return;
+        }
+
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             this.currentStep = 1;

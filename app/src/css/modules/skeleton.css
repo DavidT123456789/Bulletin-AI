@@ -217,11 +217,10 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 16px;
-    background: var(--bg-color);
+    padding: 8px 0;
+    background: transparent;
     border-radius: var(--radius-md);
     position: relative;
-    min-height: 80px;
 }
 
 .appreciation-skeleton .skeleton-line {
@@ -259,14 +258,100 @@
     transform: translate(-50%, -50%);
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 6px 14px;
     border-radius: var(--radius-pill);
     font-size: 12px;
     font-weight: 600;
+    line-height: 1;
+    height: 28px;
+    box-sizing: border-box;
     transition: all var(--transition-base) ease;
     z-index: 2;
     backdrop-filter: blur(4px);
+}
+
+/* Fix icon size to prevent stretching */
+.generating-badge i {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Compact version for List View */
+.appreciation-skeleton.compact {
+    padding: 6px;
+    /* Slightly more padding for badge space */
+    min-height: auto;
+    background: transparent;
+    gap: 8px;
+    /* Consistent gap */
+    position: relative;
+    /* Context for badge */
+}
+
+/* 
+ * Badge visible in compact mode (List View) but smaller.
+ * Harmonized with Focus Panel but adapted for table row constraints.
+ */
+.appreciation-skeleton.compact .generating-badge {
+    display: inline-flex;
+    /* Restore visibility */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 4px 10px;
+    /* Smaller padding */
+    font-size: 11px;
+    /* Smaller font */
+    gap: 5px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure lines represent text paragraphs consistently */
+.appreciation-skeleton .skeleton-line {
+    height: 14px;
+    border-radius: var(--radius-xs);
+    background: linear-gradient(90deg,
+            var(--bg-secondary) 0%,
+            rgba(var(--primary-color-rgb), 0.1) 50%,
+            var(--bg-secondary) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    margin-bottom: 0;
+    /* Let flex gap handle spacing */
+    opacity: 0.6;
+    /* Slight transparency so badge pops more */
+}
+
+/* Adjust line widths for realistic text look */
+.appreciation-skeleton .skeleton-line:nth-child(1) {
+    width: 95%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(2) {
+    width: 88%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(3) {
+    width: 92%;
+}
+
+.appreciation-skeleton .skeleton-line:nth-child(4) {
+    width: 75%;
+}
+
+/* Compact mode adjustment: lines are slightly smaller to fit row height */
+.appreciation-skeleton.compact .skeleton-line {
+    height: 10px;
 }
 
 /* État: En file d'attente */
@@ -305,26 +390,68 @@
 }
 
 /* ====================================================================
-   TYPEWRITER EFFECT - Apparition progressive du texte
+   PROGRESSIVE FADE-IN EFFECT - Modern AI text reveal
+   Words fade in progressively with blur-to-sharp effect (Claude/GPT style)
    ==================================================================== */
 
-.typewriter-text {
-    display: block;
-    animation: typewriter-fadein 0.2s ease-out;
+/* Container for progressive reveal */
+.progressive-reveal {
+    display: inline;
     line-height: 1.6;
 }
 
-@keyframes typewriter-fadein {
-    from {
-        opacity: 0.5;
+/* Each word segment with fade-in animation */
+.reveal-word {
+    display: inline;
+    opacity: 0;
+    filter: blur(4px);
+    animation: word-fade-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes word-fade-in {
+    0% {
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(2px);
     }
 
-    to {
+    100% {
         opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
     }
 }
 
-/* Curseur clignotant pendant la frappe (optionnel, ajouté via JS) */
+/* Slightly faster variant for long texts */
+.reveal-word.fast {
+    animation-duration: 0.3s;
+}
+
+/* Cursor shown at the end during generation */
+.reveal-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--primary-color);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: cursor-pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    border-radius: 1px;
+}
+
+@keyframes cursor-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Legacy typewriter cursor (kept for compatibility) */
 .typewriter-cursor::after {
     content: '▋';
     display: inline-block;

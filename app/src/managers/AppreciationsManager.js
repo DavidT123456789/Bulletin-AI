@@ -18,7 +18,7 @@ import { ResultsUIManager } from './ResultsUIManager.js';
 
 import { MassImportManager } from './MassImportManager.js';
 import { FileImportManager } from './FileImportManager.js';
-import { ResultCardsUI } from './ResultCardsUIManager.js';
+
 import { TooltipsUI } from './TooltipsManager.js';
 
 let App;
@@ -174,7 +174,7 @@ export const AppreciationsManager = {
             if (nameEl) {
                 const aiIconEl = nameEl.querySelector('.ai-icon');
                 if (aiIconEl) {
-                    const { tooltip } = ResultCardsUI.getGenerationModeInfo(result);
+                    const { tooltip } = Utils.getGenerationModeInfo(result);
                     TooltipsUI.updateTooltip(aiIconEl, tooltip);
                 }
             }
@@ -430,16 +430,14 @@ export const AppreciationsManager = {
         const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
         if (resultIndex === -1) return;
 
-        const card = document.querySelector(`.appreciation-result[data-id="${id}"]`);
-        card?.classList.add('is-regenerating');
         if (button) UI.showInlineSpinner(button);
+
+        // Afficher le skeleton dans la ligne
+        const { ListViewManager } = await import('./ListViewManager.js');
+        ListViewManager.setRowStatus(id, 'generating');
 
         const originalResult = appState.generatedResults[resultIndex];
         originalResult.copied = false;
-
-        // Afficher le skeleton dans la zone d'appréciation
-        UI.showSkeletonInCard(card, 'Génération...', false);
-        const appreciationEl = card?.querySelector('[data-template="appreciation"]');
 
         try {
             // Sauvegarder l'ancienne version dans l'historique AVANT régénération
@@ -455,21 +453,11 @@ export const AppreciationsManager = {
             newResult.history = originalResult.history || [];
             appState.generatedResults[resultIndex] = newResult;
 
-            // Effet typewriter pour afficher le texte progressivement
-            if (appreciationEl) {
-                await UI.typewriterReveal(appreciationEl, newResult.appreciation || '', { speed: 'fast' });
-                card?.classList.remove('has-error'); // Retirer l'état d'erreur après succès
-                card?.classList.add('just-generated');
-                setTimeout(() => card?.classList.remove('just-generated'), 1000);
-            }
-
-            // Mettre à jour la carte complètement pour synchroniser le compteur de mots, l'icône IA, etc.
-            // On le fait après l'animation typewriter pour que le compteur s'ajuste au texte final visible.
-            ResultCardsUI.updateResultCard(id, { animate: false });
+            // Mettre à jour la ligne avec animation typewriter
+            await ListViewManager.updateRow(id, newResult, true);
 
             UI.showNotification(`Réussi pour ${originalResult.prenom}.`, 'success');
 
-            // Refinement modal removed - Focus Panel handles all editing inline
         } catch (e) {
             const msg = Utils.translateErrorMessage(e.message);
             // Préserver l'appréciation originale en cas d'échec
@@ -486,21 +474,15 @@ export const AppreciationsManager = {
             errorResult.id = id;
             appState.generatedResults[resultIndex] = errorResult;
 
-            // Afficher l'erreur avec animation
-            if (appreciationEl) {
-                await UI.fadeOutSkeleton(appreciationEl);
-                appreciationEl.innerHTML = `<p class="error-text">⚠️ ${msg}</p>`;
-                card?.classList.add('has-error', 'just-errored');
-                setTimeout(() => card?.classList.remove('just-errored'), 1000);
-            }
+            // Afficher l'erreur via updateRow (qui gère l'état d'erreur via _getAppreciationCell)
+            ListViewManager.updateRow(id, errorResult, false);
 
             UI.showNotification(`Échec pour ${originalResult.prenom} : ${msg}`, 'error');
         } finally {
             if (button) UI.hideInlineSpinner(button);
-            card?.classList.remove('is-regenerating');
             StorageManager.saveAppState();
 
-            // Mettre à jour les autres éléments de la carte (nom, notes, etc.)
+            // Mettre à jour les autres éléments
             UI.updateStats();
             UI.updateControlButtons();
         }

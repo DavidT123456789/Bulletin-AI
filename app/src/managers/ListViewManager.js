@@ -1,5 +1,5 @@
-/**
- * @fileoverview List View Manager - Rend les élèves en vue tableau
+﻿/**
+ * @fileoverview List View Manager - Rend les Ã©lÃ¨ves en vue tableau
  * Part of Liste + Focus UX Revolution - REFACTORED: Inline Appreciation Display
  * @module managers/ListViewManager
  */
@@ -7,21 +7,28 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
-import { ResultCardsUI } from './ResultCardsUIManager.js';
+// ResultCardsUI removed - logic moved to Utils
 import { ClassUIManager } from './ClassUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 
 /**
- * Module de gestion de la vue Liste (tableau des élèves)
+ * Module de gestion de la vue Liste (tableau des Ã©lÃ¨ves)
  * @namespace ListViewManager
  */
 export const ListViewManager = {
+    _activeDocClickListener: null,
     /**
-     * Rend la liste des élèves en format tableau
-     * @param {Array} results - Tableau des résultats à afficher
+     * Rend la liste des Ã©lÃ¨ves en format tableau
+     * @param {Array} results - Tableau des rÃ©sultats Ã  afficher
      * @param {HTMLElement} container - Conteneur DOM
      */
     render(results, container) {
+        // Cleanup previous document listener if exists
+        if (this._activeDocClickListener) {
+            document.removeEventListener('click', this._activeDocClickListener, true);
+            this._activeDocClickListener = null;
+        }
+
         if (!container) return;
 
         if (results.length === 0) {
@@ -39,15 +46,29 @@ export const ListViewManager = {
                 <table class="student-list-table">
                     <thead>
                         <tr>
-                            <th>Nom</th>
-                            ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="appreciation-header">
-                                <div class="header-content-wrapper" style="display:flex; align-items:center;  justify-content:center; gap:8px;">
-                                    Appréciation
-                                    <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
+                            <th class="sortable-header" data-sort-field="name" title="Trier par nom">
+                                <div class="header-content-wrapper">
+                                    Nom <span class="sort-icon-placeholder name-sort-icon"></span>
                                 </div>
                             </th>
-                            <th>Action</th>
+                            <th class="sortable-header" data-sort-field="status" title="Trier par statut" style="width: 120px;">
+                                <div class="header-content-wrapper">
+                                    Statut<span class="sort-icon-placeholder"></span>
+                                </div>
+                            </th>
+                            ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
+                            <th class="appreciation-header appreciation-toggle-header" title="Cliquer pour voir tout le texte">
+                                <div class="header-content-wrapper">
+                                    Appréciation
+                                    <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
+                                    <i class="fas fa-expand appreciation-toggle-icon"></i>
+                                </div>
+                            </th>
+                            <th class="action-header" style="width: 50px;">
+                                <div class="header-content-wrapper">
+                                    <i class="fas fa-ellipsis-vertical" style="opacity: 0.5;"></i>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -55,26 +76,24 @@ export const ListViewManager = {
 
         results.forEach((result, index) => {
             try {
+                // Safeguard against missing studentData
+                const studentData = result.studentData || {};
+
+                // Ensure result.studentData is accessible for subsequent calls if it was missing
+                if (!result.studentData) result.studentData = studentData;
+
                 const status = this._getStatus(result);
                 const appreciationCell = this._getAppreciationCell(result, status);
-
-                // Génération des badges de statut élève (PPRE, etc.)
-                let studentTagsHtml = '';
-                const studentStatuses = result.studentData.statuses || [];
-                studentStatuses.forEach(tag => {
-                    const badgeInfo = Utils.getStatusBadgeInfo(tag);
-                    studentTagsHtml += `<span class="${badgeInfo.className}">${badgeInfo.label}</span>`;
-                });
 
                 html += `
                     <tr data-student-id="${result.id}" class="student-row" tabindex="0">
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper">
                                 <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
-                                ${studentTagsHtml ? `<div class="student-tags-list">${studentTagsHtml}</div>` : ''}
                             </div>
                         </td>
-                        ${this._renderGradeCells(result.studentData.periods || {}, periods, currentPeriodIndex)}
+                        <td class="status-cell">${this._getStudentStatusCellContent(result)}</td>
+                        ${this._renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
                         <td class="appreciation-cell">${appreciationCell}</td>
                         <td class="action-cell">
                             <div class="action-dropdown">
@@ -140,105 +159,157 @@ export const ListViewManager = {
             // Clean up after animations complete
             const cleanupDelay = 200 + maxTotalDuration + 300; // fade + stagger + animation duration
             setTimeout(() => {
-                container.style.transition = '';
-                container.style.opacity = '';
-                rows.forEach(row => {
-                    row.classList.remove('row-animate-in');
-                    row.style.removeProperty('--row-delay');
-                });
+                if (container) { // Check existence as view might have changed
+                    container.style.transition = '';
+                    container.style.opacity = '';
+                    rows.forEach(row => {
+                        row.classList.remove('row-animate-in');
+                        row.style.removeProperty('--row-delay');
+                    });
+                }
             }, cleanupDelay);
 
             this._attachEventListeners(viewElement);
+            this._updateHeaderSortIcons(viewElement);
         }
     },
 
     /**
-     * Génère les headers de notes avec colonnes d'évolution
-     * @param {Array} periods - Périodes à afficher
+     * GÃ©nÃ¨re les headers de notes avec colonnes d'Ã©volution
+     * @param {Array} periods - PÃ©riodes Ã  afficher
      * @returns {string} HTML des headers
      * @private
      */
     _renderGradeHeaders(periods) {
         let html = '';
         periods.forEach((p, i) => {
-            // Colonne de note
-            html += `<th class="grade-header">${Utils.getPeriodLabel(p, false)}</th>`;
+            // Colonne de note - Sortable
+            html += `<th class="grade-header sortable-header" data-sort-field="grade" data-sort-param="${p}" title="Trier par notes ${p}">
+                        <div class="header-content-wrapper">
+                             ${Utils.getPeriodLabel(p, false)} <span class="sort-icon-placeholder"></span>
+                        </div>
+                     </th>`;
+
             // Colonne d'évolution (sauf après la dernière période)
             if (i < periods.length - 1) {
-                html += `<th class="evolution-header"></th>`;
+                // Evolution is relevant to the NEXT period (target period)
+                const nextP = periods[i + 1];
+                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" title="Trier par évolution vers ${nextP}">
+                             <div class="header-content-wrapper">
+                                <i class="fas fa-chart-line" style="opacity:0.6; font-size:0.9em;"></i> <span class="sort-icon-placeholder"></span>
+                             </div>
+                         </th>`;
             }
         });
         return html;
     },
 
     /**
-     * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
-     * @param {Object} periods - Données par période
-     * @param {Array} allPeriods - Liste de toutes les périodes
-     * @param {number} currentIndex - Index de la période courante
+     * Updates sort icons based on current state
+     */
+    _updateHeaderSortIcons(viewElement) {
+        const { field, direction, param } = appState.sortState;
+
+        viewElement.querySelectorAll('.sortable-header').forEach(th => {
+            const sortField = th.dataset.sortField;
+            const sortParam = th.dataset.sortParam;
+
+            const isSorted = sortField === field && (sortParam === undefined || sortParam === param || (sortParam && param && sortParam === param));
+
+            th.classList.toggle('active-sort', isSorted);
+
+            // Remove old icon
+            const placeholder = th.querySelector('.sort-icon-placeholder');
+            if (placeholder) {
+                placeholder.innerHTML = '';
+                if (isSorted) {
+                    placeholder.innerHTML = direction === 'asc'
+                        ? '<i class="fas fa-sort-up" style="margin-left:4px; color:var(--primary-color);"></i>'
+                        : '<i class="fas fa-sort-down" style="margin-left:4px; color:var(--primary-color);"></i>';
+                }
+            }
+        });
+    },
+
+    /**
+     * Rend les cellules de notes pour un Ã©lÃ¨ve avec colonnes d'Ã©volution sÃ©parÃ©es
+     * @param {Object} periods - DonnÃ©es par pÃ©riode
+     * @param {Array} allPeriods - Liste de toutes les pÃ©riodes
+     * @param {number} currentIndex - Index de la pÃ©riode courante
      * @returns {string} HTML des cellules
      * @private
      */
-    _renderGradeCells(periods, allPeriods, currentIndex) {
+    _renderGradeCells(periodsData, allPeriods, currentIndex) {
         let html = '';
-        let prevGrade = null;
+        const safePeriodsData = periodsData || {}; // Ensure object (renamed for clarity)
 
         for (let i = 0; i <= currentIndex; i++) {
-            const p = allPeriods[i];
-            const data = periods[p] || {};
-            const grade = typeof data.grade === 'number' ? data.grade : null;
-            let gradeClass = '';
+            try {
+                const p = allPeriods[i];
+                if (!p) continue; // Skip if period name is somehow missing
 
-            if (grade !== null) {
-                gradeClass = ResultCardsUI.getGradeClass(grade);
-            }
+                const data = safePeriodsData[p] || {};
+                const grade = (data && typeof data.grade === 'number') ? data.grade : null;
+                let gradeClass = '';
 
-            // Cellule de note
-            html += `
-                <td class="grade-cell">
-                    <div class="grade-content-wrapper">
-                    ${grade !== null
-                    ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
-                    : `<span class="grade-empty">--</span>`
+                if (grade !== null) {
+                    gradeClass = Utils.getGradeClass(grade);
                 }
-                    </div>
-                </td>
-            `;
 
-            // Cellule d'évolution (entre cette note et la suivante)
-            if (i < currentIndex) {
-                const nextP = allPeriods[i + 1];
-                const nextData = periods[nextP] || {};
-                const nextGrade = typeof nextData.grade === 'number' ? nextData.grade : null;
-
-                let evolutionHtml = '';
-                if (grade !== null && nextGrade !== null) {
-                    const diff = nextGrade - grade;
-                    const diffText = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
-                    const evoType = StatsUI._getEvolutionType(diff);
-
-                    if (['very-positive', 'positive'].includes(evoType)) {
-                        evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts">↗</span>`;
-                    } else if (['very-negative', 'negative'].includes(evoType)) {
-                        evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts">↘</span>`;
-                    } else {
-                        // Stable - flèche horizontale discrète
-                        evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts">→</span>`;
+                // Cellule de note
+                html += `
+                    <td class="grade-cell">
+                        <div class="grade-content-wrapper">
+                        ${grade !== null
+                        ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
+                        : `<span class="grade-empty">--</span>`
                     }
+                        </div>
+                    </td>
+                `;
+
+                // Cellule d'Ã©volution (entre cette note et la suivante)
+                if (i < currentIndex) {
+                    let evolutionHtml = '';
+                    try {
+                        const nextP = allPeriods[i + 1];
+                        if (nextP) {
+                            const nextData = safePeriodsData[nextP] || {};
+                            const nextGrade = (nextData && typeof nextData.grade === 'number') ? nextData.grade : null;
+
+                            if (grade !== null && nextGrade !== null) {
+                                const diff = nextGrade - grade;
+                                const diffText = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+                                const evoType = Utils.getEvolutionType(diff);
+
+                                if (['very-positive', 'positive'].includes(evoType)) {
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><i class="fas fa-arrow-trend-up"></i></span>`;
+                                } else if (['very-negative', 'negative'].includes(evoType)) {
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><i class="fas fa-arrow-trend-down"></i></span>`;
+                                } else {
+                                    // Stable
+                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><i class="fas fa-arrow-right"></i></span>`;
+                                }
+                            }
+                        }
+                    } catch (evoErr) {
+                        console.warn("Evolution render error", evoErr);
+                    }
+                    html += `<td class="evolution-cell">${evolutionHtml}</td>`;
                 }
-
-                html += `<td class="evolution-cell">${evolutionHtml}</td>`;
+            } catch (cellErr) {
+                console.error("Cell render error", p, cellErr);
+                html += `<td class="grade-cell error">?</td>`;
+                if (i < currentIndex) html += `<td class="evolution-cell"></td>`;
             }
-
-            prevGrade = grade;
         }
 
         return html;
     },
 
     /**
-     * Détermine le statut d'un résultat
-     * @param {Object} result - Données de l'élève
+     * DÃ©termine le statut d'un rÃ©sultat
+     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
      * @returns {string} 'done' | 'pending' | 'error'
      * @private
      */
@@ -249,53 +320,53 @@ export const ListViewManager = {
     },
 
     /**
-     * Génère le contenu de la cellule d'appréciation
-     * Affiche l'appréciation tronquée si disponible, sinon le badge de statut
-     * @param {Object} result - Données de l'élève
-     * @param {string} status - Statut de génération (global)
+     * GÃ©nÃ¨re le contenu de la cellule d'apprÃ©ciation
+     * Affiche l'apprÃ©ciation tronquÃ©e si disponible, sinon le badge de statut
+     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
+     * @param {string} status - Statut de gÃ©nÃ©ration (global)
      * @returns {string} HTML de la cellule
      * @private
      */
     _getAppreciationCell(result, status) {
-        // [FIX] Récupérer l'appréciation spécifique à la période sélectionnée
+        // [FIX] RÃ©cupÃ©rer l'apprÃ©ciation spÃ©cifique Ã  la pÃ©riode sÃ©lectionnÃ©e
         const currentPeriod = appState.currentPeriod;
         let appreciation = '';
 
-        // 1. Priorité: appréciation stockée directement dans la période
+        // 1. PrioritÃ©: apprÃ©ciation stockÃ©e directement dans la pÃ©riode
         const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
         if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
             appreciation = periodApp.trim();
         }
-        // 2. Fallback: result.appreciation (déjà transformée dans renderResults pour la période courante)
+        // 2. Fallback: result.appreciation (dÃ©jÃ  transformÃ©e dans renderResults pour la pÃ©riode courante)
         else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            // Vérifier que cette appréciation correspond bien à la période courante
-            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule période
+            // VÃ©rifier que cette apprÃ©ciation correspond bien Ã  la pÃ©riode courante
+            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule pÃ©riode
             const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
             if (!storedPeriod || storedPeriod === currentPeriod) {
                 appreciation = result.appreciation.trim();
             }
         }
 
-        // Si c'est une autre période, et qu'on n'a rien trouvé, on n'affiche rien (plutôt que l'appréciation d'un autre trimestre)
-        // Cela répond à la demande : "T1 affiche T1".
+        // Si c'est une autre pÃ©riode, et qu'on n'a rien trouvÃ©, on n'affiche rien (plutÃ´t que l'apprÃ©ciation d'un autre trimestre)
+        // Cela rÃ©pond Ã  la demande : "T1 affiche T1".
 
-        // Supprimer les balises HTML pour la vérification
+        // Supprimer les balises HTML pour la vÃ©rification
         const textOnly = appreciation?.replace(/<[^>]*>/g, '').trim().toLowerCase() || '';
 
-        // Vérifier que c'est une vraie appréciation, pas un placeholder
+        // VÃ©rifier que c'est une vraie apprÃ©ciation, pas un placeholder
         const isPlaceholder = !appreciation ||
             textOnly === '' ||
-            textOnly.includes('aucune appréciation') ||
+            textOnly.includes('aucune apprÃ©ciation') ||
             textOnly.includes('en attente') ||
             textOnly.includes('cliquez sur') ||
             textOnly.startsWith('remplissez');
 
-        // [FIX] On vérifie aussi que status n'est pas 'pending' SI c'est la période active en cours de génération
-        // Mais ici on veut juste afficher le contenu stocké.
+        // [FIX] On vÃ©rifie aussi que status n'est pas 'pending' SI c'est la pÃ©riode active en cours de gÃ©nÃ©ration
+        // Mais ici on veut juste afficher le contenu stockÃ©.
         const hasContent = appreciation && !isPlaceholder;
 
         if (hasContent) {
-            // [FIX] Décoder les entités HTML (ex: &lt;span) avant d'afficher
+            // [FIX] DÃ©coder les entitÃ©s HTML (ex: &lt;span) avant d'afficher
             const decoded = Utils.decodeHtmlEntities(appreciation);
 
             // Supprimer les balises HTML pour l'affichage textuel dans la liste
@@ -305,59 +376,127 @@ export const ListViewManager = {
             return `<div class="appreciation-preview" title="${cleanText}">${cleanText}</div>`;
         }
 
-        // Si pas de contenu, on détermine le statut à afficher
-        // Pour les périodes passées sans donnée, afficher simplement un tiret
+        // Si pas de contenu, on dÃ©termine le statut Ã  afficher
+        // Pour les pÃ©riodes passÃ©es sans donnÃ©e, afficher simplement un tiret
         const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
         const errorPeriod = result.errorMessage ? storedPeriod : null;
 
-        // Si l'élève a une erreur qui concerne la période affichée
+        // Si l'Ã©lÃ¨ve a une erreur qui concerne la pÃ©riode affichÃ©e
         if (status === 'error' && errorPeriod === currentPeriod) {
             return this._getStatusBadge('error');
         }
 
-        // Pour les périodes passées sans appréciation, afficher un tiret
+        // Pour les pÃ©riodes passÃ©es sans apprÃ©ciation, afficher un tiret
         const periods = Utils.getPeriods();
         const currentIndex = periods.indexOf(currentPeriod);
         const periodIndex = periods.indexOf(storedPeriod);
 
         if (storedPeriod && currentIndex < periodIndex) {
             // On regarde une période passée où l'élève n'avait pas encore d'appréciation
-            return '<span class="appreciation-preview empty">—</span>';
+            return '<span class="appreciation-preview empty">&mdash;</span>';
         }
 
-        // Sinon, badge "En attente" pour la période actuelle
+        // Sinon, badge "En attente" pour la pÃ©riode actuelle
         return this._getStatusBadge('pending');
     },
 
     /**
      * Génère le badge de statut HTML
-     * @param {string} status - Statut
+     * @param {string} status - Statut ('pending', 'error', 'done')
      * @returns {string} HTML du badge
      * @private
      */
     _getStatusBadge(status) {
-        switch (status) {
-            case 'done':
-                return '<span class="status-badge done"><i class="fas fa-check"></i> Fait</span>';
-            case 'error':
-                return '<span class="status-badge error"><i class="fas fa-exclamation-triangle"></i> Erreur</span>';
-            default:
-                return '<span class="status-badge pending"><i class="fas fa-clock"></i> En attente</span>';
+        const labels = {
+            'pending': 'En attente',
+            'error': 'Erreur',
+            'done': 'Terminé',
+            'generating': 'Génération...'
+        };
+
+        // Icons usually handled by CSS or unnecessary for simple badges, 
+        // but adding icons for visual consistency if needed.
+        const icons = {
+            'pending': '<i class="fas fa-hourglass-start"></i>',
+            'error': '<i class="fas fa-exclamation-triangle"></i>',
+            'done': '<i class="fas fa-check"></i>',
+            'generating': '<i class="fas fa-spinner fa-spin"></i>'
+        };
+
+        const label = labels[status] || status;
+        const icon = icons[status] ? icons[status] + ' ' : '';
+
+        return `<span class="status-badge ${status}">${icon}${label}</span>`;
+    },
+    /**
+     * GÃ©nÃ¨re le contenu de la colonne Statut (Badges Ã©lÃ¨ve + Erreurs)
+     * @param {Object} result - RÃ©sultat Ã©lÃ¨ve
+     * @returns {string} HTML des badges
+     * @private
+     */
+    _getStudentStatusCellContent(result) {
+        let html = '';
+
+        // 1. Statut critique : Erreur de gÃ©nÃ©ration
+        if (result.errorMessage) {
+            html += '<span class="status-badge error" title="Erreur de gÃ©nÃ©ration"><i class="fas fa-exclamation-triangle"></i> Erreur</span>';
         }
+
+        // 2. Statuts Ã©lÃ¨ve (PPRE, DÃ©lÃ©guÃ©, Nouveau...)
+        const studentStatuses = result.studentData?.statuses || [];
+        // Dedup statuses to be safe
+        const uniqueStatuses = [...new Set(studentStatuses)];
+
+        uniqueStatuses.forEach(tag => {
+            const badgeInfo = Utils.getStatusBadgeInfo(tag);
+            // Use smaller gap/margin for multiple badges
+            html += `<span class="${badgeInfo.className}" style="margin: 2px;">${badgeInfo.label}</span>`;
+        });
+
+        // 3. Si vide, on affiche le statut de production UNIQUEMENT si en erreur ou particulier?
+        // Non, la demande est "Statut Ã©lÃ¨ve". Si pas de statut, on laisse vide ou tiret.
+        if (!html) {
+            return '<span style="color:var(--text-tertiary); font-size:12px;">&mdash;</span>';
+        }
+
+        return `<div class="status-badges-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:4px;">${html}</div>`;
     },
 
     /**
-     * Attache les event listeners aux éléments de la liste
-     * @param {HTMLElement} listContainer - Le conteneur spécifique de la liste
+     * Attache les event listeners aux Ã©lÃ©ments de la liste
+     * @param {HTMLElement} listContainer - Le conteneur spÃ©cifique de la liste
      * @private
      */
     _attachEventListeners(listContainer) {
+        // Import EventHandlersManager dynamically
+        import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
+
+            // Sort headers click
+            listContainer.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    EventHandlersManager.handleHeaderSortClick(header);
+                });
+            });
+
+        });
+
         // Close any open menus when clicking outside
         const closeAllMenus = () => {
             listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
                 menu.classList.remove('open');
             });
         };
+
+        // Global click listener to close menus when clicking outside
+        // Use capture=true to catch clicks even if other elements stop propagation
+        this._activeDocClickListener = (e) => {
+            // If click is NOT on a menu interaction, close all menus
+            if (!e.target.closest('.action-dropdown')) {
+                closeAllMenus();
+            }
+        };
+        document.addEventListener('click', this._activeDocClickListener, true);
 
         // Click handler
         listContainer.addEventListener('click', (e) => {
@@ -370,11 +509,16 @@ export const ListViewManager = {
                 const dropdown = menuBtn.closest('.action-dropdown');
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
 
+                // Check state before closing (because closeAllMenus will reset it)
+                const wasOpen = menu?.classList.contains('open');
+
                 // Close other menus first
                 closeAllMenus();
 
-                // Toggle this menu
-                menu?.classList.toggle('open');
+                // Toggle this menu (if it was closed, open it; if it was open, it stays closed)
+                if (!wasOpen) {
+                    menu?.classList.add('open');
+                }
                 return;
             }
 
@@ -403,9 +547,18 @@ export const ListViewManager = {
             // Close menus if clicking elsewhere
             closeAllMenus();
 
+            // Toggle appreciation column visibility (click on header)
+            const toggleHeader = target.closest('.appreciation-toggle-header');
+            if (toggleHeader) {
+                e.stopPropagation();
+                this._toggleAppreciationColumn(listContainer);
+                return;
+            }
+
             // Click anywhere on the row -> Open Focus Panel
             const row = target.closest('.student-row');
-            if (row && !target.closest('.action-dropdown') && !target.closest('a') && !target.closest('input')) {
+            // Prevent opening if clicking on sortable headers (which are in THEAD, but just in case)
+            if (row && !target.closest('.action-dropdown') && !target.closest('.sortable-header') && !target.closest('a') && !target.closest('input')) {
                 const studentId = row.dataset.studentId;
                 if (studentId) FocusPanelManager.open(studentId);
             }
@@ -429,8 +582,14 @@ export const ListViewManager = {
     },
 
     /**
-     * Supprime un élève avec confirmation
-     * @param {string} studentId - ID de l'élève
+     * Supprime un Ã©lÃ¨ve avec confirmation
+     * @param {string} studentId - ID de l'Ã©lÃ¨ve
+     * @param {HTMLElement} row - Ligne du tableau
+     * @private
+     */
+    /**
+     * Supprime un Ã©lÃ¨ve avec confirmation
+     * @param {string} studentId - ID de l'Ã©lÃ¨ve
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
@@ -441,7 +600,7 @@ export const ListViewManager = {
         const studentName = `${student.prenom} ${student.nom}`;
 
         // Simple confirmation via native confirm (or could use UI.showCustomConfirm)
-        if (!confirm(`Supprimer l'élève "${studentName}" ?`)) return;
+        if (!confirm(`Supprimer l'Ã©lÃ¨ve "${studentName}" ?`)) return;
 
         // Animate row removal
         row.style.opacity = '0';
@@ -462,12 +621,191 @@ export const ListViewManager = {
 
             // Update UI elements
             const { UI } = await import('./UIManager.js');
-            ClassUIManager.updateStudentCount();       // Compteur dans l'entête
-            UI?.populateLoadStudentSelect();           // Menu déroulant des élèves
+            ClassUIManager.updateStudentCount();       // Compteur dans l'entÃªte
+            UI?.populateLoadStudentSelect();           // Menu dÃ©roulant des Ã©lÃ¨ves
             UI?.updateStats();                         // Stats globales
 
             // Notify user
-            UI?.showNotification(`${studentName} supprimé`, 'success');
+            UI?.showNotification(`${studentName} supprimÃ©`, 'success');
         }, 300);
+    },
+
+    /**
+     * Updates the status of a specific row (e.g., to show a skeleton loader).
+     * @param {string} studentId - The ID of the student.
+     * @param {string} status - The new status ('generating', 'pending-skeleton', 'pending', etc.).
+     * @param {string} [label] - Optional custom label for the skeleton badge.
+     */
+    setRowStatus(studentId, status, label) {
+        const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+        if (!row) return;
+
+        const appreciationCell = row.querySelector('.appreciation-cell');
+        if (!appreciationCell) return;
+
+        if (status === 'generating') {
+            appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'Génération...', false);
+        } else if (status === 'pending-skeleton') {
+            appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'En file', true);
+        } else {
+            // Revert to standard badge if needed (though usually updateRow is called next)
+            appreciationCell.innerHTML = this._getStatusBadge(status);
+        }
+    },
+
+    /**
+     * Updates a specific row with new result data and triggers animation.
+     * @param {string} studentId - The ID of the student.
+     * @param {Object} result - The updated result object.
+     * @param {boolean} [animate=false] - Whether to use the typewriter effect.
+     */
+    async updateRow(studentId, result, animate = false) {
+        const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+        if (!row) return;
+
+        const appreciationCell = row.querySelector('.appreciation-cell');
+        if (!appreciationCell) return;
+
+        const statusCell = row.querySelector('.status-cell');
+
+        // Determine status for this result
+        // Update status cell
+        if (statusCell) {
+            statusCell.innerHTML = this._getStudentStatusCellContent(result);
+        }
+
+        // 1. Get the appreciation text
+        const currentPeriod = appState.currentPeriod;
+        let appreciation = '';
+
+        // Logic duplicated from _getAppreciationCell because we need the raw text for typewriter
+        const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
+        if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
+            appreciation = periodApp.trim();
+        } else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
+            const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
+            if (!storedPeriod || storedPeriod === currentPeriod) {
+                appreciation = result.appreciation.trim();
+            }
+        }
+
+        const decoded = Utils.decodeHtmlEntities(appreciation);
+        const cleanText = decoded.replace(/<[^>]*>/g, '').trim();
+
+        // 2. Render content
+        if (animate && cleanText) {
+            // Create container for typewriter with expanded class for full text during animation
+            appreciationCell.innerHTML = `<div class="appreciation-preview expanded"></div>`;
+            const targetEl = appreciationCell.querySelector('.appreciation-preview');
+
+            // Use UI Manager's typewriter effect
+            const { UI } = await import('./UIManager.js');
+            if (UI?.typewriterReveal) {
+                await UI.typewriterReveal(targetEl, cleanText, { speed: 'fast' });
+            } else {
+                targetEl.textContent = cleanText;
+            }
+
+            // Restore proper title attribute after animation
+            targetEl.title = cleanText;
+
+            // Add "just generated" flash effect to the row
+            row.classList.add('just-generated');
+            setTimeout(() => row.classList.remove('just-generated'), 1000);
+
+            // Smooth collapse - animate the CELL height for smooth row transition
+            setTimeout(() => {
+                // 1. Capture current cell height (determines row height)
+                const cellExpandedHeight = appreciationCell.offsetHeight;
+                appreciationCell.style.height = cellExpandedHeight + 'px';
+                appreciationCell.style.overflow = 'hidden';
+                appreciationCell.style.boxSizing = 'border-box';
+
+                // 2. Fade out content
+                targetEl.style.opacity = '0.3';
+                targetEl.style.transition = 'opacity 0.4s ease-out';
+
+                // 3. After fade, switch content to compact and animate cell height
+                setTimeout(() => {
+                    // Switch to compact mode
+                    targetEl.classList.remove('expanded');
+                    targetEl.style.opacity = '1';
+
+                    // Measure new compact height
+                    appreciationCell.style.height = 'auto';
+                    const cellCompactHeight = appreciationCell.offsetHeight;
+
+                    // Reset to expanded and animate
+                    appreciationCell.style.height = cellExpandedHeight + 'px';
+                    appreciationCell.offsetHeight; // Force reflow
+
+                    // Animate cell height (this controls row height)
+                    appreciationCell.style.transition = 'height 0.8s cubic-bezier(0.32, 0.72, 0, 1)';
+                    appreciationCell.style.height = cellCompactHeight + 'px';
+
+                    // Clean up after animation
+                    setTimeout(() => {
+                        appreciationCell.style.height = '';
+                        appreciationCell.style.overflow = '';
+                        appreciationCell.style.boxSizing = '';
+                        appreciationCell.style.transition = '';
+                        targetEl.style.transition = '';
+                    }, 900);
+                }, 400);
+            }, 2000);
+
+        } else {
+            // Standard render
+            appreciationCell.innerHTML = this._getAppreciationCell(result, 'done');
+        }
+    },
+
+    /**
+     * Generates the HTML for the appreciation skeleton loader.
+     * @param {string} [label] - Optional custom label for the skeleton badge.
+     * @param {boolean} [pending=false] - Whether it shows pending state.
+     * @returns {string} HTML string.
+     * @private
+     */
+    _getAppreciationSkeletonHTML(label, pending = false) {
+        return Utils.getSkeletonHTML(true, label, pending);
+    },
+
+    /**
+     * Toggle appreciation content mode (Truncated -> Full View)
+     * @param {HTMLElement} listContainer - The list container element
+     * @private
+     */
+    _toggleAppreciationColumn(listContainer) {
+        const table = listContainer.querySelector('.student-list-table');
+        if (!table) return;
+
+        const isFullView = table.classList.contains('appreciation-full-view');
+        const header = table.querySelector('.appreciation-toggle-header');
+        const icon = header?.querySelector('.appreciation-toggle-icon');
+
+        if (isFullView) {
+            // COLLAPSE: Return to truncated view
+            table.classList.remove('appreciation-full-view');
+            header?.classList.remove('expanded-view');
+            header.title = 'Cliquer pour voir tout le texte';
+
+            // Switch to Expand icon
+            if (icon) {
+                icon.classList.remove('fa-compress');
+                icon.classList.add('fa-expand');
+            }
+        } else {
+            // EXPAND: Show full text
+            table.classList.add('appreciation-full-view');
+            header?.classList.add('expanded-view');
+            header.title = 'Cliquer pour réduire';
+
+            // Switch to Compress icon
+            if (icon) {
+                icon.classList.remove('fa-expand');
+                icon.classList.add('fa-compress');
+            }
+        }
     }
 };

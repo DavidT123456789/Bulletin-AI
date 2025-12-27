@@ -132,6 +132,12 @@ export const ClassManager = {
         if (appState.currentClassId === classId) {
             const nextClass = classes[0] || null;
             appState.currentClassId = nextClass?.id || null;
+            userSettings.academic.currentClassId = nextClass?.id || null;
+
+            // CRITICAL: Si plus aucune classe, vider les résultats filtrés
+            if (!nextClass) {
+                appState.filteredResults = [];
+            }
         }
 
         // Sauvegarder

@@ -1,5 +1,6 @@
 
 import { appState } from '../state/State.js';
+import { MODEL_SHORT_NAMES } from '../config/models.js';
 
 /**
  * @typedef {Object} StudentPeriodData
@@ -444,5 +445,94 @@ export const Utils = {
 
         // Par défaut, neutre (on utilisera "cet élève")
         return 'neutre';
+    },
+
+    /**
+     * Génère le HTML pour le skeleton de l'appréciation (Source unique de vérité)
+     * @param {boolean} [compact=false] - Version liste (true) ou version carte/focus (false)
+     * @returns {string} HTML string
+     */
+    /**
+     * Génère le HTML pour le skeleton de l'appréciation (Source unique de vérité)
+     * @param {boolean} [compact=false] - Ajoute la classe 'compact' pour la vue liste
+     * @param {string} [label='Génération...'] - Texte du badge
+     * @param {boolean} [pending=false] - Si true, style "En attente" (gris/horloge) au lieu de "Actif" (bleu/spinner)
+     * @returns {string} HTML string
+     */
+    getSkeletonHTML(compact = false, label = 'Génération...', pending = false) {
+        const compactClass = compact ? ' compact' : '';
+        const badgeClass = pending ? 'pending' : 'active';
+        const iconClass = pending ? 'fa-clock' : 'fa-spinner';
+
+        // HTML minifié pour éviter les nœuds de texte (whitespace) qui causent des espacements
+        return `<div class="appreciation-skeleton${compactClass}"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><span class="generating-badge ${badgeClass}"><i class="fas ${iconClass}"></i> ${label}</span></div>`;
+    },
+
+    /**
+     * Détermine la classe CSS associée à une note, alignée sur l'histogramme.
+     * @param {number} grade - La note (0-20)
+     * @returns {string} Classe CSS ('grade-range-0-4', 'grade-range-4-8', etc.)
+     */
+    getGradeClass(grade) {
+        if (typeof grade !== 'number' || isNaN(grade)) return '';
+        if (grade < 4) return 'grade-range-0-4';
+        if (grade < 8) return 'grade-range-4-8';
+        if (grade < 12) return 'grade-range-8-12';
+        if (grade < 16) return 'grade-range-12-16';
+        return 'grade-range-16-20';
+    },
+
+    /**
+     * Determine le type d'évolution dynamiquement en fonction des seuils actuels.
+     * @param {number} diff - Valeur de l'évolution
+     * @returns {string} 'positive', 'negative', 'stable', etc.
+     */
+    getEvolutionType(diff) {
+        if (diff === null || isNaN(diff)) return 'stable';
+        const t = appState.evolutionThresholds;
+
+        if (diff >= t.veryPositive) return 'very-positive';
+        if (diff >= t.positive) return 'positive';
+
+        if (diff <= t.veryNegative) return 'very-negative';
+        if (diff <= t.negative) return 'negative';
+
+        return 'stable';
+    },
+
+    /**
+     * Retourne les informations sur le mode de génération (icône, tooltip).
+     * @param {Object} result - Résultat de l'élève
+     * @returns {{icon: string, tooltip: string}}
+     */
+    getGenerationModeInfo(result) {
+        const sd = result.studentData || {};
+        const modelKey = sd.currentAIModel || appState.currentAIModel;
+        // Utiliser le nom court s'il existe, sinon la clé brute
+        const modelName = MODEL_SHORT_NAMES[modelKey] || modelKey;
+
+        // Construire le tooltip selon les données disponibles
+        const parts = [modelName];
+
+        // Ajouter les tokens seulement s'ils sont disponibles et > 0
+        const tokens = result.tokenUsage?.appreciation?.total_tokens;
+        if (tokens && tokens > 0) {
+            parts.push(`${tokens} tokens`);
+        }
+
+        // Ajouter le temps seulement s'il est disponible et > 0
+        // Note: generationTimeMs est toujours mesuré côté client, indépendamment des tokens API
+        const timeMs = result.tokenUsage?.generationTimeMs;
+        if (timeMs && timeMs > 0) {
+            const timeStr = timeMs >= 1000
+                ? `${(timeMs / 1000).toFixed(1)}s`
+                : `${timeMs}ms`;
+            parts.push(timeStr);
+        }
+
+        // Fallback si aucune métadonnée disponible
+        const tip = parts.length > 1 ? parts.join(' • ') : `${modelName} • Généré par IA`;
+
+        return { icon: '✨', tooltip: tip };
     }
 };

@@ -280,6 +280,7 @@ export const ClassUIManager = {
         this.renderClassList();
         this.updateHeaderDisplay();
         AppreciationsManager.renderResults();
+        UI?.updateStats?.(); // Refresh stats panel
     },
 
     /**
@@ -320,9 +321,16 @@ export const ClassUIManager = {
      */
     updateHeaderDisplay() {
         const currentClass = ClassManager.getCurrentClass();
+        const hasClasses = ClassManager.getAllClasses().length > 0;
 
         if (DOM.headerClassName) {
-            DOM.headerClassName.textContent = currentClass?.name || 'Toutes les classes';
+            if (currentClass) {
+                DOM.headerClassName.textContent = currentClass.name;
+            } else if (hasClasses) {
+                DOM.headerClassName.textContent = 'Sélectionner une classe';
+            } else {
+                DOM.headerClassName.textContent = 'Créer une classe';
+            }
         }
 
         // Update student count
@@ -748,11 +756,16 @@ export const ClassUIManager = {
                         // Juste retirer la ligne, pas besoin de fermer/rouvrir
                         row.remove();
 
-                        // Si plus de classes, fermer la modale
+                        // Si plus de classes, fermer la modale et proposer d'en créer une
                         const remainingClasses = ClassManager.getAllClasses();
                         if (remainingClasses.length === 0) {
                             UI?.closeModal(modalEl);
-                            setTimeout(() => modalEl.remove(), 300);
+                            setTimeout(() => {
+                                modalEl.remove();
+                                // Ouvrir automatiquement le dropdown et proposer de créer une classe
+                                this.openDropdown();
+                                setTimeout(() => this.showNewClassPrompt(), 100);
+                            }, 300);
                         }
                     }, 280);
                 };
