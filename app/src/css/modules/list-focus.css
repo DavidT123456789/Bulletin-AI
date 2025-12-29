@@ -67,6 +67,7 @@
     transition: opacity 0.25s ease;
     pointer-events: none;
     z-index: 0;
+    border-radius: inherit;
 }
 
 .sortable-header:hover::after {
