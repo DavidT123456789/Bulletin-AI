@@ -215,7 +215,9 @@
 /* Focus Panel Header Avatar */
 .focus-panel-avatar-container {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .focus-panel-avatar-container .student-avatar {

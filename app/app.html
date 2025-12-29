@@ -296,13 +296,13 @@
     <div id="focusPanelBackdrop" class="focus-panel-backdrop"></div>
     <div id="focusPanel" class="focus-panel" role="dialog" aria-modal="true" aria-labelledby="focusStudentName">
         <div class="focus-header">
-            <!-- LEFT ZONE: Back button (read) OR Edit actions (edit mode) -->
+            <!-- LEFT ZONE: Avatar (always visible) + Edit actions overlay -->
             <div class="focus-header-left">
-                <!-- Read mode: Back button -->
-                <button id="focusBackBtn" class="focus-back-btn" aria-label="Retour à la liste">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <!-- Edit mode: Save/Cancel buttons (hidden by default) -->
+                <!-- AVATAR: Always visible, now part of left zone -->
+                <div id="focusAvatarContainer" class="focus-panel-avatar-container">
+                    <!-- Populated by FocusPanelManager -->
+                </div>
+                <!-- Edit mode: Save/Cancel buttons (overlay on avatar) -->
                 <div class="focus-edit-actions">
                     <button id="focusEditSaveBtn" class="btn-edit-action save tooltip" data-tooltip="Valider"
                         aria-label="Valider">
@@ -315,12 +315,7 @@
                 </div>
             </div>
 
-            <!-- AVATAR: Always visible -->
-            <div id="focusAvatarContainer" class="focus-panel-avatar-container">
-                <!-- Populated by FocusPanelManager -->
-            </div>
-
-            <!-- IDENTITY ZONE: Name/Badges (read) or Inputs (edit) -->
+            <!-- IDENTITY ZONE: Name/Badges (read) or Inputs (edit) - CENTERED -->
             <div id="focusHeaderContent" class="focus-header-content">
                 <!-- READ MODE: Name & Badges -->
                 <div class="focus-header-read">
@@ -351,7 +346,7 @@
                 </div>
             </div>
 
-            <!-- Navigation -->
+            <!-- RIGHT ZONE: Unified Navigation Pill (Close + Prev/Next) -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                     <i class="fas fa-chevron-left"></i>
@@ -359,6 +354,10 @@
                 <span id="focusPosition" class="focus-position">3/25</span>
                 <button id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
                     <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="focus-nav-divider"></div>
+                <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>

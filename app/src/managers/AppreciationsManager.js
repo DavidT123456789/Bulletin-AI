@@ -243,7 +243,9 @@ export const AppreciationsManager = {
         }
 
         const evolutions = this.analyserEvolution(studentData.periods);
-        return this.createResultObject(studentData.nom, studentData.prenom, appreciation, evolutions, studentData, prompts, tokenUsage, null, modelUsed);
+        const result = this.createResultObject(studentData.nom, studentData.prenom, appreciation, evolutions, studentData, prompts, tokenUsage, null, modelUsed);
+        result.copied = false; // Ensure initialized as false
+        return result;
     },
 
     /**

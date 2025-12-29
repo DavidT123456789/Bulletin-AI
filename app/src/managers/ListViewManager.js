@@ -18,6 +18,8 @@ import { StatsUI } from './StatsUIManager.js';
  */
 export const ListViewManager = {
     _activeDocClickListener: null,
+    _activeKeydownListener: null,
+    _lastRenderedClassId: null, // Track class changes to force fresh render
     /**
      * Rend la liste des élèves en format tableau
      * @param {Array} results - Tableau des résultats à afficher
@@ -49,6 +51,18 @@ export const ListViewManager = {
         const currentPeriod = appState.currentPeriod;
         const periods = Utils.getPeriods() || ['T1', 'T2', 'T3'];
         const currentPeriodIndex = Math.max(0, periods.indexOf(currentPeriod));
+
+        // CRITICAL FIX: Force fresh render when class changes
+        // This ensures event listeners are properly attached after class switch
+        const currentClassId = appState.currentClassId;
+        const classChanged = this._lastRenderedClassId !== null && this._lastRenderedClassId !== currentClassId;
+        this._lastRenderedClassId = currentClassId;
+
+        if (classChanged) {
+            // Class changed - force fresh render to reattach all event listeners
+            this._renderFresh(container, results, periods, currentPeriodIndex);
+            return;
+        }
 
         // Check if this is a filter/sort transition (table already exists)
         const existingTable = container.querySelector('.student-list-table');
@@ -460,9 +474,9 @@ export const ListViewManager = {
                             </th>
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
                             <th class="appreciation-header appreciation-toggle-header sortable-header" title="Cliquer pour voir tout le texte">
+                                <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="header-content-wrapper">
                                     Appréciation
-                                    <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                     <i class="fas fa-expand appreciation-toggle-icon"></i>
                                 </div>
                             </th>
@@ -796,19 +810,24 @@ export const ListViewManager = {
             textOnly.includes('cliquez sur') ||
             textOnly.startsWith('remplissez');
 
-        // [FIX] On vÃ©rifie aussi que status n'est pas 'pending' SI c'est la pÃ©riode active en cours de gÃ©nÃ©ration
-        // Mais ici on veut juste afficher le contenu stockÃ©.
+        // [FIX] On vérifie aussi que status n'est pas 'pending' SI c'est la période active en cours de génération
+        // Mais ici on veut juste afficher le contenu stocké.
+
         const hasContent = appreciation && !isPlaceholder;
 
         if (hasContent) {
-            // [FIX] DÃ©coder les entitÃ©s HTML (ex: &lt;span) avant d'afficher
-            const decoded = Utils.decodeHtmlEntities(appreciation);
+            // === COPY BUTTON INTEGRATION ===
+            const btnClass = result.copied ? 'btn-copy-appreciation was-copied' : 'btn-copy-appreciation';
+            const icon = result.copied ? '<i class="fas fa-check"></i>' : '<i class="fas fa-copy"></i>';
+            const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
-            // Supprimer les balises HTML pour l'affichage textuel dans la liste
-            const cleanText = decoded.replace(/<[^>]*>/g, '').trim();
+            const copyButtonHTML = `
+                <button class="${btnClass}" data-action="copy-appreciation" title="${title}" onclick="event.stopPropagation(); AppreciationsManager.copyAppreciation('${result.id}', this)">
+                    ${icon}
+                </button>
+            `;
 
-            // Let CSS handle truncation dynamically based on available space
-            return `<div class="appreciation-preview">${cleanText}</div>`;
+            return `${copyButtonHTML}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${appreciation}</div>`;
         }
 
         // Si pas de contenu, on dÃ©termine le statut Ã  afficher
@@ -926,6 +945,10 @@ export const ListViewManager = {
 
         // Global click listener to close menus when clicking outside
         // Use capture=true to catch clicks even if other elements stop propagation
+        // CRITICAL FIX: Remove previous listener to prevent accumulation on class switch
+        if (this._activeDocClickListener) {
+            document.removeEventListener('click', this._activeDocClickListener, true);
+        }
         this._activeDocClickListener = (e) => {
             // If click is NOT on a menu interaction, close all menus
             if (!e.target.closest('.action-dropdown') && !e.target.closest('.global-actions-dropdown')) {
@@ -1017,9 +1040,14 @@ export const ListViewManager = {
         });
 
         // Close menus on escape key
-        document.addEventListener('keydown', (e) => {
+        // CRITICAL FIX: Remove previous listener to prevent accumulation
+        if (this._activeKeydownListener) {
+            document.removeEventListener('keydown', this._activeKeydownListener);
+        }
+        this._activeKeydownListener = (e) => {
             if (e.key === 'Escape') closeAllMenus();
-        });
+        };
+        document.addEventListener('keydown', this._activeKeydownListener);
 
         // Keyboard navigation - Enter/Space opens Focus Panel
         listContainer.querySelectorAll('.student-row').forEach(row => {

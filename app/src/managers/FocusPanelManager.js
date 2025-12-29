@@ -480,7 +480,18 @@ export const FocusPanelManager = {
                 const currentStatuses = result.studentData.statuses || [];
                 checkboxes.forEach(cb => {
                     cb.checked = currentStatuses.includes(cb.value);
+
+                    // Add tooltip to parent label
+                    const label = cb.closest('label');
+                    if (label) {
+                        const description = this._statusDescriptions[cb.value] || cb.value;
+                        label.setAttribute('data-tooltip', description);
+                        label.classList.add('tooltip');
+                    }
                 });
+
+                // Initialize tooltips for these new elements
+                setTimeout(() => UI.initTooltips(), 0);
 
                 // Focus Name
                 if (nomInput) setTimeout(() => nomInput.focus(), 100);
@@ -1418,6 +1429,7 @@ export const FocusPanelManager = {
 
             if (content && textContent !== '' && !isSkeleton) {
                 result.appreciation = content;
+                result.copied = false; // Reset copied status
                 // Sync with period data
                 const currentPeriod = appState.currentPeriod;
                 if (!result.studentData.periods[currentPeriod]) {
@@ -1498,7 +1510,7 @@ export const FocusPanelManager = {
                     const words = Utils.countWords(text);
                     const charCount = Utils.countCharacters(text);
 
-                    wordCountEl.textContent = `${words} mot${words !== 1 ? 's' : ''}`;
+                    wordCountEl.innerHTML = `<i class="fas fa-align-left"></i>${words} mot${words !== 1 ? 's' : ''}`;
                     UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
                 }
             }
@@ -1630,6 +1642,7 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
         if (result) {
             result.appreciation = content;
+            result.copied = false; // Reset copied status on change
             if (result.studentData?.periods?.[appState.currentPeriod]) {
                 result.studentData.periods[appState.currentPeriod].appreciation = content;
             }
@@ -1876,6 +1889,7 @@ export const FocusPanelManager = {
 
                     // Save to result
                     result.appreciation = refined;
+                    result.copied = false; // Reset copied status
                     result.wasGenerated = true; // Mark as AI-generated
                     const currentPeriod = appState.currentPeriod;
                     if (result.studentData.periods[currentPeriod]) {
@@ -2483,6 +2497,16 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
         if (result && (result.strengthsWeaknesses || result.nextSteps)) {
             this._populateExistingAnalysis(result);
+        } else if (result) {
+            // Auto-trigger generation if appreciation exists and analysis not yet generated
+            const currentPeriod = appState.currentPeriod;
+            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+            const hasApiKey = UI.checkAPIKeyPresence();
+
+            if (periodAppreciation && periodAppreciation.trim() && hasApiKey) {
+                // Small delay to let the page slide animation start first
+                setTimeout(() => this._generateAnalysis(), 150);
+            }
         }
     },
 

@@ -523,8 +523,31 @@
 
 .student-name-container[role="button"]:hover,
 .student-name-container[role="button"]:focus-visible {
-    background-color: rgba(var(--primary-color-rgb), 0.1);
-    box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.15);
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    box-shadow:
+        inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.2),
+        0 0 16px rgba(var(--primary-color-rgb), 0.25),
+        0 0 32px rgba(var(--primary-color-rgb), 0.15);
+    animation: ai-glow-pulse 2s ease-in-out infinite;
+}
+
+/* AI Glow pulse animation for analyze button */
+@keyframes ai-glow-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.2),
+            0 0 16px rgba(var(--primary-color-rgb), 0.25),
+            0 0 32px rgba(var(--primary-color-rgb), 0.15);
+    }
+
+    50% {
+        box-shadow:
+            inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.35),
+            0 0 24px rgba(var(--primary-color-rgb), 0.4),
+            0 0 48px rgba(var(--primary-color-rgb), 0.2);
+    }
 }
 
 /* Atténuation des notes au survol - effet premium direct */
