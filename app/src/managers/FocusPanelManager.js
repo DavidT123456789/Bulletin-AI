@@ -79,22 +79,22 @@ export const FocusPanelManager = {
 
         // NEW: Header Edit Mode
         const studentName = document.getElementById('focusStudentName');
-        const headerSaveBtn = document.getElementById('headerSaveBtn');
+        const focusEditSaveBtn = document.getElementById('focusEditSaveBtn');
 
         if (studentName) {
             studentName.addEventListener('click', () => this._toggleHeaderEditMode(true));
         }
 
-        if (headerSaveBtn) {
-            headerSaveBtn.addEventListener('click', (e) => {
+        if (focusEditSaveBtn) {
+            focusEditSaveBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this._toggleHeaderEditMode(false); // Validates and closes
             });
         }
 
-        const headerCancelBtn = document.getElementById('headerCancelBtn');
-        if (headerCancelBtn) {
-            headerCancelBtn.addEventListener('click', (e) => {
+        const focusEditCancelBtn = document.getElementById('focusEditCancelBtn');
+        if (focusEditCancelBtn) {
+            focusEditCancelBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this._toggleHeaderEditMode(false, true); // Cancel without saving
             });
@@ -265,8 +265,8 @@ export const FocusPanelManager = {
         // Create a dummy result for the new student
         const dummyResult = {
             id: null,
-            nom: 'NOUVEAU',
-            prenom: 'Élève',
+            nom: '',
+            prenom: '',
             studentData: {
                 statuses: [],
                 periods: {},
@@ -289,6 +289,15 @@ export const FocusPanelManager = {
         if (panel) panel.classList.add('open');
         if (backdrop) backdrop.classList.add('visible');
 
+        // Explicitly clear inputs to ensure no residue from previous edits
+        const nomInput = document.getElementById('headerNomInput');
+        const prenomInput = document.getElementById('headerPrenomInput');
+        if (nomInput) nomInput.value = '';
+        if (prenomInput) prenomInput.value = '';
+
+        // Clear any stored original values to prevents "Cancel" from restoring previous student data
+        this._originalHeaderValues = null;
+
         // Enable Header Edit Mode (Identity + Statuses)
         this._toggleHeaderEditMode(true);
 
@@ -303,6 +312,12 @@ export const FocusPanelManager = {
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
 
+        // Exit edit mode if active (cancel, don't save)
+        const header = document.querySelector('.focus-header');
+        if (header && header.classList.contains('editing')) {
+            this._toggleHeaderEditMode(false, true); // Cancel without saving
+        }
+
         // Save context and identity changes before closing
         this._saveContext();
 
@@ -312,9 +327,11 @@ export const FocusPanelManager = {
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
 
+        // Reset state
         this.currentStudentId = null;
         this.currentIndex = -1;
         this.isCreationMode = false;
+        this._originalHeaderValues = null; // Clear stored edit values
     },
 
 
@@ -451,6 +468,13 @@ export const FocusPanelManager = {
                 if (nomInput) nomInput.value = result.nom;
                 if (prenomInput) prenomInput.value = result.prenom;
 
+                // STORE original values for cancel/revert
+                this._originalHeaderValues = {
+                    nom: result.nom,
+                    prenom: result.prenom,
+                    statuses: [...(result.studentData.statuses || [])]
+                };
+
                 // Populate Statuses
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 const currentStatuses = result.studentData.statuses || [];
@@ -467,6 +491,13 @@ export const FocusPanelManager = {
                 if (nomInput) nomInput.value = '';
                 if (prenomInput) prenomInput.value = '';
 
+                // Store empty original values
+                this._originalHeaderValues = {
+                    nom: '',
+                    prenom: '',
+                    statuses: []
+                };
+
                 // Uncheck all statuses
                 const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(cb => cb.checked = false);
@@ -476,8 +507,24 @@ export const FocusPanelManager = {
             }
         } else {
             // Exit Edit Mode
-            if (!cancel) {
+            if (cancel && this._originalHeaderValues) {
+                // RESTORE original values to inputs (for visual consistency)
+                const nomInput = document.getElementById('headerNomInput');
+                const prenomInput = document.getElementById('headerPrenomInput');
+                if (nomInput) nomInput.value = this._originalHeaderValues.nom;
+                if (prenomInput) prenomInput.value = this._originalHeaderValues.prenom;
+
+                // Restore checkboxes
+                const checkboxes = editMode.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = this._originalHeaderValues.statuses.includes(cb.value);
+                });
+
+                // Clear stored values
+                this._originalHeaderValues = null;
+            } else if (!cancel) {
                 this._saveHeaderChanges();
+                this._originalHeaderValues = null;
             }
 
             header.classList.remove('editing');
@@ -659,6 +706,12 @@ export const FocusPanelManager = {
      * @private
      */
     _navigateWithAnimation(direction) {
+        // Cancel edit mode before navigating (don't save, just discard)
+        const header = document.querySelector('.focus-header');
+        if (header && header.classList.contains('editing')) {
+            this._toggleHeaderEditMode(false, true); // Cancel without saving
+        }
+
         const isAnalysisVisible = this._isAnalysisPageVisible();
         const content = isAnalysisVisible
             ? document.querySelector('.focus-analysis-content-area')
@@ -1058,9 +1111,18 @@ export const FocusPanelManager = {
 
             // Add click handler for photo upload
             const avatarEl = avatarContainer.querySelector('.student-avatar');
-            if (avatarEl && result.id) {
-                avatarEl.classList.add('student-avatar--editable');
-                avatarEl.onclick = () => this._handleAvatarClick(result.id);
+            if (avatarEl) {
+                if (result.id) {
+                    // Existing student: enable photo upload
+                    avatarEl.classList.add('student-avatar--editable');
+                    avatarEl.onclick = () => this._handleAvatarClick(result.id);
+                } else {
+                    // Creation mode: show as editable but with tooltip + click feedback
+                    avatarEl.classList.add('student-avatar--editable-pending');
+                    avatarEl.setAttribute('data-tooltip', 'Enregistrez l\'élève pour ajouter une photo');
+                    avatarEl.classList.add('tooltip');
+                    avatarEl.onclick = () => UI.showNotification('Enregistrez l\'élève pour ajouter une photo', 'info');
+                }
             }
         }
 
@@ -1084,12 +1146,16 @@ export const FocusPanelManager = {
                 if (idx >= currentIdx) return; // Only past periods
                 const periodData = result.studentData.periods?.[period] || {};
                 const grade = periodData.grade;
-                if (grade !== undefined && grade !== null) {
-                    const chip = document.createElement('span');
-                    chip.className = 'previous-grade-chip';
-                    chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)} :</span> <span class="prev-grade-value">${parseFloat(grade).toFixed(1).replace('.', ',')}</span>`;
-                    prevGradesEl.appendChild(chip);
-                }
+
+                // Show chip for ALL past periods (even if empty) for consistency
+                const chip = document.createElement('span');
+                chip.className = 'previous-grade-chip';
+                const displayGrade = (grade !== undefined && grade !== null && grade !== '')
+                    ? parseFloat(grade).toFixed(1).replace('.', ',')
+                    : '--';
+
+                chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)} :</span> <span class="prev-grade-value">${displayGrade}</span>`;
+                prevGradesEl.appendChild(chip);
             });
         }
 
@@ -1241,7 +1307,20 @@ export const FocusPanelManager = {
 
 
     /**
-     * Rend les badges de statut
+     * Status descriptions for tooltips
+     * @private
+     */
+    _statusDescriptions: {
+        'Nouveau': 'Élève arrivé récemment dans la classe',
+        'Départ': 'Élève qui quitte la classe prochainement',
+        'PPRE': 'Programme Personnalisé de Réussite Éducative',
+        'PAP': 'Plan d\'Accompagnement Personnalisé',
+        'ULIS': 'Unité Localisée pour l\'Inclusion Scolaire',
+        'Délégué': 'Délégué de classe'
+    },
+
+    /**
+     * Rend les badges de statut avec tooltips et cliquables
      * @param {Array} statuses - Liste des statuts
      * @private
      */
@@ -1251,9 +1330,24 @@ export const FocusPanelManager = {
 
         container.innerHTML = statuses.map(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
-            // Use tag-badge style instead of status-pill for consistency
-            return `<span class="${badgeInfo.className}">${badgeInfo.label}</span>`;
+            const tooltip = this._statusDescriptions[s] || s;
+            // Clickable badge with tooltip
+            return `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
+                          data-tooltip="${tooltip}" 
+                          role="button" 
+                          tabindex="0">${badgeInfo.label}</span>`;
         }).join('');
+
+        // Add click listeners to badges
+        container.querySelectorAll('.status-badge-clickable').forEach(badge => {
+            badge.addEventListener('click', () => this._toggleHeaderEditMode(true));
+            badge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this._toggleHeaderEditMode(true);
+                }
+            });
+        });
     },
 
     // Period tabs methods removed - main header period selector is the single source of truth
@@ -1939,17 +2033,36 @@ export const FocusPanelManager = {
 
     /**
      * Update header name display from identity inputs (real-time)
+     * Uses headerNomInput/headerPrenomInput from edit mode, or falls back to student result data
      * @private
      */
     _updateHeaderName() {
-        const nomInput = document.getElementById('focusNomInput');
-        const prenomInput = document.getElementById('focusPrenomInput');
         const nameEl = document.getElementById('focusStudentName');
+        if (!nameEl) return;
 
-        if (!nameEl || !nomInput || !prenomInput) return;
+        // Try to get values from header edit inputs first
+        const nomInput = document.getElementById('headerNomInput');
+        const prenomInput = document.getElementById('headerPrenomInput');
 
-        const nom = nomInput.value.trim().toUpperCase() || '...';
-        const prenom = prenomInput.value.trim() || '...';
+        let nom, prenom;
+
+        if (nomInput && prenomInput && (nomInput.value.trim() || prenomInput.value.trim())) {
+            // Use edit inputs if available and have content
+            nom = nomInput.value.trim().toUpperCase() || '...';
+            prenom = prenomInput.value.trim() || '...';
+        } else if (this.currentStudentId) {
+            // Fallback: read from saved result data
+            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+            if (result) {
+                nom = result.nom || '...';
+                prenom = result.prenom || '...';
+            } else {
+                return; // No data to display
+            }
+        } else {
+            return; // No student selected
+        }
+
         // Preserve the edit icon
         nameEl.innerHTML = `${prenom} ${nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
     },

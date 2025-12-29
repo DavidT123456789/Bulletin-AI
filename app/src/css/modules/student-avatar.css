@@ -94,6 +94,26 @@
     opacity: 1;
 }
 
+/* Pending Editable State (creation mode - no ID yet) */
+.student-avatar--editable-pending {
+    cursor: help;
+    position: relative;
+}
+
+.student-avatar--editable-pending::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed var(--border-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.student-avatar--editable-pending:hover::after {
+    opacity: 0.6;
+}
+
 /* Loading State */
 .student-avatar--loading {
     background: var(--bg-secondary);

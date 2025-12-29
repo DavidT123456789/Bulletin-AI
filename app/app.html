@@ -296,16 +296,34 @@
     <div id="focusPanelBackdrop" class="focus-panel-backdrop"></div>
     <div id="focusPanel" class="focus-panel" role="dialog" aria-modal="true" aria-labelledby="focusStudentName">
         <div class="focus-header">
-            <button id="focusBackBtn" class="focus-back-btn" aria-label="Retour à la liste">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <!-- LEFT ZONE: Back button (read) OR Edit actions (edit mode) -->
+            <div class="focus-header-left">
+                <!-- Read mode: Back button -->
+                <button id="focusBackBtn" class="focus-back-btn" aria-label="Retour à la liste">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <!-- Edit mode: Save/Cancel buttons (hidden by default) -->
+                <div class="focus-edit-actions">
+                    <button id="focusEditSaveBtn" class="btn-edit-action save tooltip" data-tooltip="Valider"
+                        aria-label="Valider">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button id="focusEditCancelBtn" class="btn-edit-action cancel tooltip" data-tooltip="Annuler"
+                        aria-label="Annuler">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- AVATAR: Always visible -->
+            <div id="focusAvatarContainer" class="focus-panel-avatar-container">
+                <!-- Populated by FocusPanelManager -->
+            </div>
+
+            <!-- IDENTITY ZONE: Name/Badges (read) or Inputs (edit) -->
             <div id="focusHeaderContent" class="focus-header-content">
                 <!-- READ MODE: Name & Badges -->
                 <div class="focus-header-read">
-                    <!-- Avatar Container - for photo/initials bubble -->
-                    <div id="focusAvatarContainer" class="focus-panel-avatar-container">
-                        <!-- Populated by FocusPanelManager -->
-                    </div>
                     <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
                         data-tooltip="Cliquez pour éditer l'identité et les statuts">
                         Sophie DURAND
@@ -319,14 +337,8 @@
                 <!-- EDIT MODE: Inputs & Checkboxes (Hidden by default via CSS) -->
                 <div class="focus-header-edit">
                     <div class="focus-edit-row">
-                        <input type="text" id="headerNomInput" class="focus-input-header" placeholder="NOM">
                         <input type="text" id="headerPrenomInput" class="focus-input-header" placeholder="Prénom">
-                        <button id="headerCancelBtn" class="btn-icon-cancel tooltip" data-tooltip="Annuler">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        <button id="headerSaveBtn" class="btn-icon-check tooltip" data-tooltip="Valider">
-                            <i class="fas fa-check"></i>
-                        </button>
+                        <input type="text" id="headerNomInput" class="focus-input-header" placeholder="NOM">
                     </div>
                     <div class="focus-status-selection">
                         <label class="status-pill-check"><input type="checkbox" value="Nouveau"> Nouveau</label>
@@ -338,7 +350,8 @@
                     </div>
                 </div>
             </div>
-            <!-- Bouton historique supprimé - le header principal sert de sélecteur de période -->
+
+            <!-- Navigation -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                     <i class="fas fa-chevron-left"></i>

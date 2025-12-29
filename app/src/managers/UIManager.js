@@ -314,8 +314,52 @@ export const UI = {
             AppreciationsManager.renderResults();
 
             // [FIX] Refresh Focus Panel if open to show the new period's appreciation and context
-            if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
-                FocusPanelManager.open(FocusPanelManager.currentStudentId);
+            if (FocusPanelManager.isOpen()) {
+                if (FocusPanelManager.currentStudentId) {
+                    FocusPanelManager.open(FocusPanelManager.currentStudentId);
+                } else {
+                    // No student ID means we're in creation mode
+                    // Re-render the timeline to reflect the new period's context
+                    FocusPanelManager._renderStudentDetailsTimeline(null, true);
+
+                    // Also update the context card period label
+                    const gradeLabel = document.getElementById('focusCurrentGradeLabel');
+                    if (gradeLabel) {
+                        gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false) + ' :';
+                    }
+
+                    // Clear inputs for new period (since it's a new student with no data)
+                    const gradeInput = document.getElementById('focusCurrentGradeInput');
+                    if (gradeInput) gradeInput.value = '';
+
+                    const contextInput = document.getElementById('focusContextInput');
+                    if (contextInput) contextInput.value = '';
+
+                    // Update generate button label
+                    const generateBtn = document.getElementById('focusGenerateBtn');
+                    if (generateBtn) {
+                        const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
+                        generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer ${periodLabel}`;
+                    }
+
+                    // Update Previous Grades chips (force refresh for creation mode)
+                    const prevGradesEl = document.getElementById('focusPreviousGrades');
+                    if (prevGradesEl) {
+                        prevGradesEl.innerHTML = '';
+                        const periods = Utils.getPeriods();
+                        const currentIdx = periods.indexOf(appState.currentPeriod);
+
+                        periods.forEach((p, idx) => {
+                            if (idx >= currentIdx) return;
+
+                            // Render chip "--" for consistency
+                            const chip = document.createElement('span');
+                            chip.className = 'previous-grade-chip';
+                            chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(p, false)} :</span> <span class="prev-grade-value">--</span>`;
+                            prevGradesEl.appendChild(chip);
+                        });
+                    }
+                }
             }
 
             StorageManager.saveAppState();

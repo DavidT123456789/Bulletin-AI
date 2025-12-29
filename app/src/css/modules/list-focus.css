@@ -829,16 +829,28 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    /* Circle */
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.focus-back-btn i {
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .focus-back-btn:hover {
     background: rgba(0, 0, 0, 0.08);
-    transform: scale(1.05);
+    transform: scale(1.1);
+}
+
+.focus-back-btn:hover i {
+    transform: translateX(-2px);
+    /* Arrow slides left on hover */
+}
+
+.focus-back-btn:active {
+    transform: scale(0.95);
 }
 
 .focus-student-name {
@@ -850,9 +862,27 @@
     color: var(--text-primary);
     letter-spacing: -0.015em;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    /* Clickable/Editable styling */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    margin: -6px -12px;
+    border-radius: 12px;
+    transition: background 0.2s ease, transform 0.15s ease;
 }
 
-/* Helper to edit name */
+.focus-student-name:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
+.focus-student-name:active {
+    transform: scale(0.98);
+}
+
+/* Helper to edit name (legacy class, kept for compatibility) */
 .focus-name-editable {
     cursor: pointer;
     display: flex;
@@ -868,13 +898,14 @@
 }
 
 .focus-name-edit-icon {
-    font-size: 14px;
+    font-size: 12px;
     opacity: 0;
     color: var(--primary-color);
     transform: translateX(-5px);
-    transition: all var(--transition-fast);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.focus-student-name:hover .focus-name-edit-icon,
 .focus-name-editable:hover .focus-name-edit-icon {
     opacity: 1;
     transform: translateX(0);
@@ -2976,22 +3007,112 @@
     min-height: 40px;
 }
 
-/* Hide Back Button in Edit Mode */
-.focus-header.editing .focus-back-btn {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-10px);
-}
-
 /* Add class to header when editing */
 .focus-header {
-    transition: padding 0.3s ease;
+    transition: padding 0.3s ease, align-items 0.3s ease;
 }
 
 .focus-header.editing {
-    padding-top: 20px;
-    /* More space for inputs */
-    padding-bottom: 20px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    align-items: flex-start;
+    /* Keep left buttons/avatar at top while content expands */
+}
+
+/* ============================
+   LEFT ZONE: Back button OR Edit actions
+   ============================ */
+.focus-header-left {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    transition: width 0.25s ease, height 0.25s ease;
+}
+
+/* Expand height for vertical buttons in edit mode */
+.focus-header.editing .focus-header-left {
+    width: 40px;
+    /* Keep same width */
+    height: 70px;
+    /* 32px + 4px gap + 32px for vertical stack */
+}
+
+/* Back Button - visible in read mode */
+.focus-header-left .focus-back-btn {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.focus-header.editing .focus-header-left .focus-back-btn {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+}
+
+/* Edit Actions - visible in edit mode (Vertical Layout) */
+.focus-edit-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    /* Vertical stacking */
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.focus-header.editing .focus-edit-actions {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* Edit Action Buttons */
+.btn-edit-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-edit-action.cancel {
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-edit-action.cancel:hover {
+    background: rgba(var(--error-color-rgb), 0.1);
+    color: var(--error-color);
+    border-color: rgba(var(--error-color-rgb), 0.3);
+    transform: scale(1.08);
+}
+
+.btn-edit-action.save {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.btn-edit-action.save:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.35);
+}
+
+.btn-edit-action:active {
+    transform: scale(0.95);
 }
 
 /* Read Mode (Default) */

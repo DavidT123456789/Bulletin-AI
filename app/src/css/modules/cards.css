@@ -808,6 +808,24 @@
     color: var(--error-color);
 }
 
+/* Clickable status badges in focus panel header */
+.tag-badge.status-badge-clickable {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.tag-badge.status-badge-clickable:hover {
+    transform: scale(1.08);
+    filter: brightness(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tag-badge.status-badge-clickable:active {
+    transform: scale(0.98);
+}
+
 /* BOUTON D'ACTION "PREMIUM" (Crayon) */
 .btn-action-edit {
     background: transparent;
