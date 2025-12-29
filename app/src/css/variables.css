@@ -173,7 +173,12 @@
     --z-modal: 1000;
     --z-tooltip: 1100;
     --z-toast: 2000;
+    --z-toast: 2000;
     --z-skip-link: 10000;
+
+    /* --- Global Component Variables --- */
+    --scrollbar-width: 8px;
+    /* Standard OS-like width */
 }
 
 [data-theme="dark"] {

@@ -22,6 +22,15 @@ export const ClassDashboardManager = {
     /** @type {Object|null} Cached statistics */
     cachedStats: null,
 
+    /** @type {string|null} Cached AI synthesis HTML (persists across modal open/close) */
+    cachedSynthesisHTML: null,
+
+    /** @type {string|null} Class ID for which synthesis was generated */
+    cachedSynthesisClassId: null,
+
+    /** @type {string|null} Period for which synthesis was generated */
+    cachedSynthesisPeriod: null,
+
     /**
      * Initialize the dashboard modal reference
      */
@@ -57,16 +66,33 @@ export const ClassDashboardManager = {
     getStudentsData() {
         const period = appState.currentPeriod;
 
+        // Robust data gathering that doesn't fail on appreciation errors
         return appState.filteredResults
-            .filter(r => r.studentData?.periods?.[period]?.grade !== undefined)
             .map(r => {
-                const periodData = r.studentData.periods[period];
-                const previousPeriod = this.getPreviousPeriod(period);
-                const previousGrade = previousPeriod ? r.studentData.periods?.[previousPeriod]?.grade : null;
+                // 1. Safe access to period data
+                const periodData = r.studentData?.periods?.[period];
+                if (!periodData) return null;
 
-                const currentGrade = this.parseGrade(periodData.grade);
-                const prevGrade = previousGrade !== null ? this.parseGrade(previousGrade) : null;
-                const evolution = prevGrade !== null ? currentGrade - prevGrade : null;
+                // 2. Validate Grade existence (accepts 0, rejects null/undefined/empty)
+                const rawGrade = periodData.grade;
+                if (rawGrade === undefined || rawGrade === null || rawGrade === '') return null;
+
+                // 3. Parse Grade
+                const currentGrade = this.parseGrade(rawGrade);
+                if (isNaN(currentGrade)) return null;
+
+                // 4. Calculate Evolution
+                const previousPeriod = this.getPreviousPeriod(period);
+                const previousData = previousPeriod ? r.studentData.periods?.[previousPeriod] : null;
+                const previousRawGrade = previousData ? previousData.grade : null;
+
+                const prevGrade = (previousRawGrade !== null && previousRawGrade !== undefined)
+                    ? this.parseGrade(previousRawGrade)
+                    : null;
+
+                const evolution = (prevGrade !== null && !isNaN(prevGrade))
+                    ? currentGrade - prevGrade
+                    : null;
 
                 return {
                     id: r.id,
@@ -80,17 +106,21 @@ export const ClassDashboardManager = {
                     context: periodData.context || ''
                 };
             })
-            .filter(s => !isNaN(s.grade));
+            // Filter out nulls (students without valid grades for this period)
+            .filter(s => s !== null);
     },
 
     /**
-     * Parse grade string to number
+     * Parse grade string to number safely
      * @param {string|number} grade 
-     * @returns {number}
+     * @returns {number} Number or NaN
      */
     parseGrade(grade) {
         if (typeof grade === 'number') return grade;
-        return parseFloat(String(grade).replace(',', '.')) || 0;
+        if (!grade && grade !== 0) return NaN;
+
+        const parsed = parseFloat(String(grade).replace(',', '.'));
+        return isNaN(parsed) ? NaN : parsed;
     },
 
     /**
@@ -221,8 +251,8 @@ export const ClassDashboardManager = {
         // Update Highlights
         this.updateHighlights(stats);
 
-        // Reset AI section to placeholder
-        this.resetAISection();
+        // Restore cached AI synthesis if it matches current class/period, otherwise reset
+        this.restoreOrResetAISection();
     },
 
     /**
@@ -338,6 +368,8 @@ export const ClassDashboardManager = {
      */
     resetAISection() {
         const content = this.modal.querySelector('#aiSynthesisContent');
+        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+
         if (content) {
             content.innerHTML = `
                 <div class="ai-placeholder">
@@ -345,6 +377,42 @@ export const ClassDashboardManager = {
                     <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA contextuelle de votre classe.</p>
                 </div>
             `;
+        }
+
+        // Reset button text to "Générer"
+        if (generateBtn) {
+            generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Générer';
+        }
+    },
+
+    /**
+     * Restore cached AI synthesis if it matches current class/period, otherwise reset to placeholder
+     * This persists the synthesis between modal open/close operations
+     */
+    restoreOrResetAISection() {
+        const currentClassId = appState.currentClassId;
+        const currentPeriod = appState.currentPeriod;
+
+        // Check if we have a cached synthesis that matches current class and period
+        if (this.cachedSynthesisHTML &&
+            this.cachedSynthesisClassId === currentClassId &&
+            this.cachedSynthesisPeriod === currentPeriod) {
+
+            // Restore the cached synthesis
+            const content = this.modal.querySelector('#aiSynthesisContent');
+            const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+
+            if (content) {
+                content.innerHTML = this.cachedSynthesisHTML;
+            }
+
+            // Update button to show "Régénérer" since synthesis exists
+            if (generateBtn) {
+                generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Régénérer';
+            }
+        } else {
+            // No matching cache, reset to placeholder
+            this.resetAISection();
         }
     },
 
@@ -380,8 +448,14 @@ export const ClassDashboardManager = {
 
             // Parse the response into structured sections
             const formattedText = this._formatSynthesisText(response.text);
+            const synthesisHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
-            content.innerHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
+            content.innerHTML = synthesisHTML;
+
+            // Cache the synthesis for persistence across modal open/close
+            this.cachedSynthesisHTML = synthesisHTML;
+            this.cachedSynthesisClassId = appState.currentClassId;
+            this.cachedSynthesisPeriod = appState.currentPeriod;
 
         } catch (error) {
             content.innerHTML = `

@@ -144,15 +144,8 @@ export const EventHandlersManager = {
      * @param {Event} e - L'événement input
      */
     handleSearchInput(e) {
-        // Quick fade animation on outputList only (stats don't change)
-        const outputList = document.getElementById('outputList');
-        if (outputList) {
-            outputList.classList.remove('filter-refresh-animation');
-            void outputList.offsetWidth;
-            outputList.classList.add('filter-refresh-animation');
-            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
-        }
         // La valeur est lue directement depuis DOM.searchInput.value dans renderResults
+        // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();
     },
 
@@ -161,14 +154,7 @@ export const EventHandlersManager = {
      * @param {Event} e - L'événement change
      */
     handleSortSelectChange(e) {
-        // Quick fade animation on outputList only
-        const outputList = document.getElementById('outputList');
-        if (outputList) {
-            outputList.classList.remove('filter-refresh-animation');
-            void outputList.offsetWidth;
-            outputList.classList.add('filter-refresh-animation');
-            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
-        }
+        // FLIP animation is handled in ListViewManager
         AppreciationsManager.renderResults();
     },
 
@@ -193,17 +179,10 @@ export const EventHandlersManager = {
             if (['grade', 'evolution', 'status'].includes(field)) direction = 'desc';
         }
 
+
         appState.sortState = { field, direction, param };
 
-        // Trigger generic page refresh animation
-        const outputList = document.getElementById('outputList');
-        if (outputList) {
-            outputList.classList.remove('filter-refresh-animation');
-            void outputList.offsetWidth;
-            outputList.classList.add('filter-refresh-animation');
-            setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
-        }
-
+        // FLIP animation is now handled in ListViewManager
         AppreciationsManager.renderResults();
     },
 
@@ -253,50 +232,42 @@ export const EventHandlersManager = {
      * @param {HTMLElement|null} element - L'élément cliqué ou null pour reset
      */
     handleStatFilterClick(element) {
-        // Quick fade animation on outputList
-        const outputList = document.getElementById('outputList');
-        const triggerAnimation = () => {
-            if (outputList) {
-                outputList.classList.remove('filter-refresh-animation');
-                void outputList.offsetWidth;
-                outputList.classList.add('filter-refresh-animation');
-                setTimeout(() => outputList.classList.remove('filter-refresh-animation'), 200);
-            }
-        };
-
         if (!element) {
             appState.activeStatFilter = null;
             UI.showNotification("Filtre retiré.", "info");
             document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
             UI.updateActiveFilterInfo();
-            triggerAnimation();
-            setTimeout(() => {
-                AppreciationsManager.renderResults();
-            }, 10);
+            // FLIP animation is handled in ListViewManager
+            AppreciationsManager.renderResults();
             return;
         }
 
         const statId = element.dataset.filterId || element.dataset.statId;
         const isCurrentlyActive = element.classList.contains('active-filter');
 
+        // Reset visual state
         document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
 
         if (isCurrentlyActive) {
+            // DE-ACTIVATE
             appState.activeStatFilter = null;
             UI.showNotification("Filtre retiré.", "info");
         } else {
+            // ACTIVATE
             appState.activeStatFilter = statId;
             element.classList.add('active-filter');
-            const label = element.querySelector('.stat-label, .legend-label, .detail-label, .hist-label')?.textContent || 'Filtre';
+
+            // Get label for notification
+            const label = element.querySelector('.stat-label, .legend-label, .detail-label, .hist-label')?.textContent ||
+                element.dataset.tooltip ||
+                'Filtre';
             UI.showNotification(`Filtre activé : ${label}`, "info");
         }
+
         UI.updateActiveFilterInfo();
 
-        // Trigger animation and render
-        triggerAnimation();
-        setTimeout(() => {
-            AppreciationsManager.renderResults();
-        }, 10);
+        // FLIP animation is handled in ListViewManager
+        AppreciationsManager.renderResults();
     },
 
     /**

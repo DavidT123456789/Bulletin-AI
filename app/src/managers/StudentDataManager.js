@@ -28,6 +28,8 @@ export const StudentDataManager = {
             nextSteps: null,
             tokenUsage: tokenUsage || { appreciation: null, sw: null, ns: null },
             copied: false,
+            // Student photo data (base64)
+            studentPhoto: null,
             // Historique des versions précédentes (max 5)
             history: []
         };
@@ -72,6 +74,8 @@ export const StudentDataManager = {
             nextSteps: null,
             tokenUsage: { appreciation: null, sw: null, ns: null },
             copied: false,
+            // Student photo data (base64)
+            studentPhoto: null,
             history: []
         };
     },

@@ -28,7 +28,7 @@
     left: 50%;
     transform: translate(-50%, -50%) scale(0.95);
     width: 90vw;
-    max-width: 560px;
+    max-width: 680px;
     background: var(--card-glass-bg, rgba(255, 255, 255, 0.85));
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -99,7 +99,7 @@
 /* === CHOICES CONTAINER === */
 .import-hub-choices {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     padding: 0 24px 32px;
 }
@@ -110,8 +110,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 32px 20px;
+    gap: 12px;
+    padding: 24px 16px;
     background: var(--surface-color);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg, 16px);
@@ -141,14 +141,14 @@
 
 /* === CARD ICON === */
 .import-hub-icon {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: var(--primary-color);
     transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -168,9 +168,14 @@
     color: var(--primary-color);
 }
 
+/* Photos card specifics */
+.import-hub-card[data-action="photos"] .import-hub-icon {
+    color: var(--primary-color);
+}
+
 /* === CARD TEXT === */
 .import-hub-card-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
@@ -178,7 +183,7 @@
 }
 
 .import-hub-card-desc {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
     text-align: center;
@@ -186,19 +191,27 @@
 }
 
 /* === RESPONSIVE === */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     .import-hub-choices {
         grid-template-columns: 1fr;
     }
 
     .import-hub-card {
-        padding: 24px 16px;
+        flex-direction: row;
+        padding: 16px 20px;
+        gap: 16px;
+        text-align: left;
     }
 
-    .import-hub-icon {
-        width: 56px;
-        height: 56px;
-        font-size: 1.25rem;
+    .import-hub-card .import-hub-icon {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    .import-hub-card-title,
+    .import-hub-card-desc {
+        text-align: left;
     }
 }
 
@@ -212,6 +225,10 @@
 }
 
 .import-hub-backdrop.active .import-hub-card:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.import-hub-backdrop.active .import-hub-card:nth-child(3) {
     animation-delay: 0.2s;
 }
 

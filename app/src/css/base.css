@@ -60,8 +60,8 @@ a.btn-secondary:hover {
 
 /* Scrollbar personnalisée (webkit) */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
 }
 
 ::-webkit-scrollbar-track {

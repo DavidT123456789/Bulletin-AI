@@ -148,11 +148,21 @@
 
 .help-tab-content {
     display: none;
-    animation: fadeSlideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .help-tab-content.active {
     display: block;
+    animation: helpTabSlideIn 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Direction-based animations - going DOWN in list */
+[data-direction="down"] .help-tab-content.active {
+    animation-name: helpTabSlideUp;
+}
+
+/* Direction-based animations - going UP in list */
+[data-direction="up"] .help-tab-content.active {
+    animation-name: helpTabSlideDown;
 }
 
 .help-tab-title {
@@ -299,15 +309,49 @@
     }
 }
 
-@keyframes fadeSlideInRight {
+/* === Help Tab Transition Animations (iOS 2025 Style) === */
+/* Default animation when no direction is set yet */
+@keyframes helpTabSlideIn {
     from {
         opacity: 0;
-        transform: translateX(10px);
+        transform: translateY(12px);
+        filter: blur(2px);
     }
 
     to {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+/* When going DOWN in the sidebar list - content slides up from below */
+@keyframes helpTabSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+        filter: blur(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+/* When going UP in the sidebar list - content slides down from above */
+@keyframes helpTabSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-16px);
+        filter: blur(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
     }
 }
 

@@ -5,19 +5,29 @@
 
 /* === MODAL CONTAINER === */
 .import-wizard-modal .modal-content {
-    width: 960px;
+    width: 900px;
     max-width: 95vw;
+    width: 900px;
+    max-width: 95vw;
+    /* Fixed height for stability across steps */
     height: 680px;
-    max-height: 95vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
     padding: 0;
     overflow: hidden;
+    /* Enforce standardized radius to match settings modal */
+    border-radius: var(--radius-lg);
+    /* Enforce strict clipping context to prevent corner bleeding */
+    isolation: isolate;
 }
 
-/* Fix corner artifact: header needs matching radius for top corners */
+/* Fix corner artifact: header needs to respect parent radius */
 .import-wizard-modal .import-wizard-header-unified {
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    /* Remove explicit radius to let overflow:hidden from modal-content handle the clipping perfectly */
+    border-radius: 0;
+    /* Ensure clean clipping */
+    overflow: hidden;
 }
 
 /* Body fills remaining space without gaps */
@@ -259,11 +269,12 @@
 
 /* === BODY === */
 .import-wizard-body {
-    padding: 24px;
+    padding: 20px 24px;
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* CRITICAL: Must override .modal-body { overflow-y: auto } from modals.css */
+    overflow: hidden !important;
 }
 
 /* === STEP CONTENT === */
@@ -276,8 +287,10 @@
     display: flex !important;
     flex-direction: column;
     flex: 1;
+    min-height: 0;
+    /* Fix for flex item scrolling */
     animation: wizard-fade-in 0.3s ease;
-    overflow: hidden;
+    /* overflow: hidden; - REMOVED to allow focus ring/shadows to spill out */
 }
 
 @keyframes wizard-fade-in {
@@ -354,6 +367,8 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    /* Harmonize margin with textarea container for consistent alignment */
+    margin: 4px;
 }
 
 .import-drop-zone::before {
@@ -387,27 +402,27 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     text-align: center;
     z-index: 1;
 }
 
 .drop-zone-icon {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-radius: var(--radius-lg);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-radius: 50%;
     color: var(--primary-color);
-    font-size: 1.5rem;
-    transition: transform 0.3s ease, background 0.3s ease;
+    font-size: 1.25rem;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), background 0.3s ease;
 }
 
 .import-drop-zone:hover .drop-zone-icon {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    transform: translateY(-4px);
+    background: rgba(var(--primary-color-rgb), 0.18);
+    transform: translateY(-3px) scale(1.05);
 }
 
 .drop-zone-icon i {
@@ -433,7 +448,7 @@
 .drop-zone-text {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .drop-zone-title {
@@ -453,35 +468,53 @@
     border-bottom: 1px dashed var(--primary-color);
 }
 
+/* Format chips positioned in bottom-left corner of drop zone */
+/* Format chips positioned in bottom-RIGHT corner for better balance */
 .drop-zone-formats {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    left: auto;
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 6px;
+    opacity: 0.9;
+    /* Improved visibility */
+    transition: opacity 0.2s ease;
+}
+
+.import-drop-zone:hover .drop-zone-formats {
+    opacity: 0.9;
 }
 
 .format-chip {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     padding: 4px 10px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-pill);
+    background: var(--surface-color);
+    /* Solid background for readability */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
+    font-weight: 500;
     color: var(--text-secondary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .format-chip i {
-    font-size: 0.7rem;
-    opacity: 0.7;
+    font-size: 0.65rem;
+    opacity: 0.8;
 }
 
+/* Subtle divider - more minimal */
 .import-divider-horizontal {
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-tertiary);
-    font-size: 0.8rem;
-    margin: 4px 0;
+    font-size: 0.75rem;
+    margin: 2px 0;
+    opacity: 0.7;
 }
 
 .import-divider-horizontal::before,
@@ -490,37 +523,141 @@
     flex: 1;
     height: 1px;
     background: var(--border-color);
+    opacity: 0.5;
 }
 
 .import-divider-horizontal span {
-    padding: 6px 14px;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
+    padding: 4px 12px;
+    background: transparent;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
 }
 
+/* Textarea container with integrated actions */
 .import-input-container {
-    width: 100%;
+    /* width: 100% REMOVED - flex: 1 handles sizing, and 100% + margin: 4px causes overflow */
     flex: 1;
     display: flex;
     flex-direction: column;
+    position: relative;
+
+    /* Real Border Implementation - Single Source of Truth */
+    border: var(--input-border-width) solid var(--border-color);
+    box-shadow: none;
+    /* Shadow handled by hover/focus only if needed, or remove inset */
+    border-radius: var(--radius-lg);
+    background: var(--bg-color);
+    /* OPTIMIZED: Hardware acceleration to prevent painting flashes */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: border-color;
+    /* Faster linear transition */
+    transition: border-color 0.1s linear;
+
+    /* Safe margin for focus ring */
+    margin: 4px;
+
+    /* Clip children - REMOVED to prevent double-border artifact on rounding */
+    /* overflow: hidden; */
+    /* Fix z-index context */
+    z-index: 1;
+}
+
+/* Hover Effect - Clean Dynamic Color Change */
+/* Exclude hover effect when focus is active to prevent conflict */
+.import-input-container:hover:not(:has(.import-textarea:focus)) {
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background-image: none !important;
+    outline: none !important;
+    /* Removed box-shadow on hover to prevent "double contour" illusion */
+    box-shadow: none;
+}
+
+/* Focus State - Nebula Dynamic Gradient (Signature Effect) applied to container */
+.import-input-container:has(.import-textarea:focus) {
+    /* Use STRICT single source of truth for focus width */
+    border: var(--input-border-width-focus) solid transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+
+    /* Soft glow + inner highlight */
+    /* Exact Match to Global Components (Sharp Ring, no diffuse halo) */
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .import-textarea {
     width: 100%;
     flex: 1;
     min-height: 100px;
-    padding: 16px 18px;
+    /* Revert padding: Standard padding */
+    padding: 16px 18px 48px 18px;
     font-size: 0.85rem;
     font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
-    background: var(--bg-color);
-    border: 1.5px solid var(--border-color);
+    background: transparent;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    /* Prevents double-radius clipping artifacts */
     border-radius: var(--radius-lg);
     resize: none;
     line-height: 1.6;
     letter-spacing: 0.01em;
+}
+
+/* OVERRIDE GLOBAL COMPONENT STYLES (CRITICAL) */
+/* Must match specificity of components.css: textarea:hover:not(:disabled):not(:focus) */
+.import-textarea:hover:not(:disabled):not(:focus),
+.import-textarea:hover,
+.import-textarea:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+    background-origin: initial !important;
+    background-clip: initial !important;
+}
+
+/* Custom Scrollbar for Textarea */
+.import-textarea::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
+}
+
+.import-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.import-textarea::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: var(--radius-xs);
+    border-radius: var(--radius-xs);
+    /* Removed Floating Effect to match standard width and base.css */
+    border: none;
+    background-clip: border-box;
+}
+
+.import-textarea::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
 }
 
 .import-textarea::placeholder {
@@ -586,36 +723,124 @@
 
 /* === MAPPING TABLE === */
 .import-wizard-modal .import-mapping-table-container {
-    overflow-x: auto;
-    margin-top: 24px;
-    border: 1px solid var(--border-color);
+    position: relative;
+    /* CRITICAL: Must be hidden - only .table-scroll-wrapper handles scrolling */
+    overflow: hidden !important;
+    margin-top: 12px;
     border-radius: var(--radius-lg);
-    /* Larger radius */
-    background: var(--surface-color);
-    box-shadow: var(--shadow-md);
-    /* Deeper shadow */
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+    /* Margin for potential focus rings/shadows */
+    margin: 4px;
+    margin-top: 12px;
+    /* Flex Growth: Fill available space to fix gap issues */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* Allow shrinking for small screens/zoom */
+    min-height: 100px;
+
+    /* Force GPU layer to ensure sticky children are clipped */
+    transform: translateZ(0);
+    /* Strict Stacking Context (Fixes bleed-through) */
+    isolation: isolate;
+    backface-visibility: hidden;
+    z-index: 0;
+
+    /* No padding - wrapper handles spacing */
+    padding: 0;
 }
 
-.import-wizard-modal .import-mapping-table-container.horizontal-scroll {
+.import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper {
+    /* SCROLL WRAPPER: Contains the table and handles all scrolling */
+    overflow-x: auto;
+    overflow-y: auto;
+    /* Fill the container */
+    flex: 1;
+    /* Remove arbitrary limits */
+    max-height: none;
+    /* Inner radius slightly smaller than container */
+    border-radius: calc(var(--radius-lg) - 1px);
+    /* CRITICAL: Padding creates space INSIDE for the scrollbar tracks */
+    /* This prevents scrollbars from overlapping the rounded corners */
+    padding-right: 4px;
     padding-bottom: 4px;
 }
 
-/* Custom Scrollbar for the table container */
-.import-wizard-modal .import-mapping-table-container::-webkit-scrollbar {
-    height: 8px;
+/* Border overlay: Sits ABOVE scrollbars to clip them at rounded corners */
+.import-wizard-modal .import-mapping-table-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    z-index: 20;
+    /* Higher than sticky th (z-index: 10) and scrollbars */
+    pointer-events: none;
 }
 
-.import-wizard-modal .import-mapping-table-container::-webkit-scrollbar-track {
+/* === UNIFIED FOOTER - Single source of truth === */
+.import-wizard-footer {
+    display: none;
+    /* Hidden by default */
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    gap: 16px;
+    min-height: 56px;
+}
+
+/* Show footer based on active step */
+.import-wizard-modal:has(#modalStep1.active) #wizardStep1Footer {
+    display: flex;
+    justify-content: flex-end;
+    /* Step 1: buttons on right */
+}
+
+.import-wizard-modal:has(#modalStep2.active) #wizardStep2Footer {
+    display: flex;
+}
+
+.import-wizard-modal:has(#modalStep3.active) #wizardStep3Footer {
+    display: flex;
+}
+
+.import-wizard-modal .import-mapping-table-container.horizontal-scroll {
+    padding-bottom: 0;
+    /* Remove padding to let scrollbar sit flush if needed */
+}
+
+/* Custom Scrollbar for the table wrapper */
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar {
+    height: var(--scrollbar-width);
+    /* Horizontal */
+    width: var(--scrollbar-width);
+    /* Vertical - Same as horizontal for consistency */
+}
+
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.import-wizard-modal .import-mapping-table-container::-webkit-scrollbar-thumb {
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
 }
 
-.import-wizard-modal .import-mapping-table-container::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-tertiary);
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}
+
+/* Hide default scrollbar buttons (arrows) */
+.import-wizard-modal .table-scroll-wrapper::-webkit-scrollbar-button {
+    display: none;
 }
 
 .import-wizard-modal .import-mapping-table {
@@ -625,16 +850,19 @@
     font-size: 0.85rem;
     table-layout: auto;
     /* Let browser optimize column widths */
+    background: var(--bg-secondary);
+    /* Fill corners to prevent gray artifacts */
 }
 
 /* === AUTO-SIZED COLUMNS === */
 .import-wizard-modal .import-mapping-table th,
 .import-wizard-modal .import-mapping-table td {
-    padding: 8px 10px;
-    /* Slightly reduced padding */
+    padding: 10px 16px;
+    /* More breathing room */
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    border-right: none;
+    /* Removed vertical borders for cleaner look */
     vertical-align: middle;
     white-space: nowrap;
     /* Keep content on one line */
@@ -643,11 +871,11 @@
 /* === COLUMN WIDTHS (Millimetric Precision) === */
 .import-wizard-modal .import-mapping-table th,
 .import-wizard-modal .import-mapping-table td {
-    padding: 10px 12px;
+    padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-    /* Restored separator */
+    border-right: none;
+    /* Removed vertical borders */
     vertical-align: middle;
 }
 
@@ -656,22 +884,9 @@
     border-right: none;
 }
 
-/* Rounded Corners for "Ultima" look (without overflow:hidden on table) */
-.import-wizard-modal .import-mapping-table thead tr:first-child th:first-child {
-    border-top-left-radius: var(--radius-md);
-}
-
-.import-wizard-modal .import-mapping-table thead tr:first-child th:last-child {
-    border-top-right-radius: var(--radius-md);
-}
-
-.import-wizard-modal .import-mapping-table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: var(--radius-md);
-}
-
-.import-wizard-modal .import-mapping-table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: var(--radius-md);
-}
+/* Rounded Corners - Using container overflow instead of individual cell radius */
+/* Removed individual cell border-radius to prevent gray corner artifacts */
+/* The container (.import-mapping-table-container) already has border-radius: var(--radius-lg) and overflow is handled */
 
 /* IMPORTANT: Headers must allow dropdown overflow */
 .import-wizard-modal .import-mapping-table th {
@@ -792,30 +1007,11 @@
     font-weight: 600;
 }
 
-.import-wizard-modal .import-mapping-table th.col-grade,
-.import-wizard-modal .import-mapping-table td.col-grade {
-    min-width: 60px;
-    max-width: 80px;
-    text-align: center;
-}
-
-.import-wizard-modal .import-mapping-table th.col-status,
-.import-wizard-modal .import-mapping-table td.col-status {
-    min-width: 70px;
-    max-width: 90px;
-    text-align: center;
-}
-
-.import-wizard-modal .import-mapping-table th.col-text,
-.import-wizard-modal .import-mapping-table td.col-text {
-    min-width: 200px;
-    /* Reduced to prioritize other content */
-    width: auto;
-}
+/* [Duplicate column styles removed for cleanup] */
 
 .import-wizard-modal .import-mapping-table th {
-    background: var(--bg-secondary);
-    /* Softer header background */
+    background: var(--surface-color);
+    /* Distinct header background for better hierarchy */
     vertical-align: top;
     min-width: 190px;
     padding: 16px;
@@ -823,15 +1019,34 @@
     top: 0;
     z-index: 10;
     border-bottom: 1px solid var(--border-color);
-    backdrop-filter: blur(8px);
-    /* Glass header effect if scrolled under */
+    /* Removing backdrop-filter to prevent corner rendering artifacts */
+
+    /* Shadow for depth */
+    /* Shadow removed to fix GPU performance issues during scroll */
+    box-shadow: none;
     justify-content: flex-start;
     /* Left-align content (student count) */
 }
 
+/* Fix sticky header corners not clipping correctly - REVERTED */
+/* Manual radius caused bleed-through on scroll. We rely on container overflow:hidden now. */
+.import-wizard-modal .import-mapping-table th:first-child {
+    border-top-left-radius: 0;
+}
+
+.import-wizard-modal .import-mapping-table th:last-child {
+    border-top-right-radius: 0;
+    border-right: none;
+}
+
 .import-wizard-modal .import-mapping-table tr:nth-child(even) td {
     background: rgba(var(--surface-color-rgb), 0.3);
-    /* Subtle zebra striping */
+}
+
+/* Row Hover Effect - Premium Feel */
+.import-wizard-modal .import-mapping-table tr:hover td {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    cursor: default;
 }
 
 .import-wizard-modal .mapping-header-col {
@@ -1332,17 +1547,8 @@
     transform: scale(1);
 }
 
-/* === FOOTER === */
-.import-wizard-footer {
-    display: flex;
-    align-items: center;
-    /* Clean separation */
-    border-top: 1px solid var(--border-color);
-    padding: 16px 24px;
-    background: var(--surface-color);
-    border-bottom-left-radius: var(--radius-xl);
-    border-bottom-right-radius: var(--radius-xl);
-}
+/* === FOOTER - NOTE: Main definition is at line ~650 === */
+/* Additional footer rules below - DO NOT add display: flex here */
 
 .import-wizard-footer #wizardBackBtn {
     margin-right: auto;
@@ -1386,33 +1592,43 @@
     position: relative;
 }
 
+/* Sample button row - now positioned inside textarea container with high Z-index */
 .step-actions-row {
+    position: absolute;
+    bottom: 16px;
+    right: 18px;
+    z-index: 10;
+    /* Ensure strictly above textarea */
     display: flex;
-    justify-content: flex-end;
-    margin-top: 12px;
+    gap: 8px;
+    /* Space between buttons */
+    pointer-events: auto;
+    /* Ensure clickable */
 }
 
 .btn-text-action {
-    background: rgba(var(--bg-secondary-rgb), 0.5);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+    background: rgba(var(--surface-color-rgb, 30, 30, 35), 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.1);
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
     cursor: pointer;
-    padding: 6px 12px;
-    border-radius: var(--radius-pill);
+    padding: 5px 10px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+    gap: 6px;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    opacity: 0.7;
 }
 
 .btn-text-action:hover {
     background: var(--surface-color);
     border-color: var(--primary-color);
     color: var(--primary-color);
+    opacity: 1;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .import-wizard-modal .close-modal-btn {
@@ -1442,6 +1658,10 @@
 .import-wizard-modal .import-mapping-table td.col-grade {
     min-width: 70px;
     max-width: 90px;
+    text-align: center;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 
 .import-wizard-modal .import-mapping-table th.col-status,
@@ -1453,6 +1673,9 @@
 .import-wizard-modal .import-mapping-table td.col-text {
     min-width: 250px;
     width: auto;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.8rem;
 }
 
 /* === ADDITIONAL PILL COLORS === */
@@ -1595,19 +1818,8 @@
 
 /* === STEPPER PULSE ANIMATION === */
 .wizard-step.active .wizard-step-number {
-    animation: step-pulse 2s ease-in-out infinite;
-}
-
-@keyframes step-pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.4);
-    }
-
-    50% {
-        box-shadow: 0 0 0 6px rgba(var(--primary-color-rgb), 0);
-    }
+    /* Static shadow instead of animation (GPU Optimization) */
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
 }
 
 /* === MAGIC PILLS ENHANCED === */
@@ -1813,15 +2025,7 @@
 }
 
 /* === SIMPLIFIED WIZARD FOOTER === */
-.import-wizard-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
-    border-top: 1px solid var(--border-color);
-    background: var(--surface-color);
-    min-height: 48px;
-}
+/* NOTE: Main definition including display logic is at line ~650. DO NOT redefine display here. */
 
 .import-wizard-footer .wizard-footer-actions {
     display: flex;
@@ -1869,8 +2073,9 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 32px;
-    font-size: 1rem;
+    padding: 10px 24px;
+    /* Standardized sizing */
+    font-size: 0.95rem;
     font-weight: 600;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     border: none;
@@ -2162,24 +2367,8 @@
     border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
-/* === STEP 3 FOOTER === */
-.import-wizard-step3-footer {
-    display: none;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: var(--surface-color);
-    border-top: 1px solid var(--border-color);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-
-/* Show footer only on Step 3 */
-.import-wizard-modal:has(#modalStep3.active) .import-wizard-step3-footer {
-    display: flex;
-}
-
-/* Hide body bottom radius when footer is visible */
-.import-wizard-modal:has(#modalStep3.active) .import-wizard-body {
+/* Hide body bottom radius when any footer is visible (handled by unified footer) */
+.import-wizard-modal:has(.import-wizard-footer:not([style*="display: none"])) .import-wizard-body {
     border-radius: 0;
 }
 
@@ -2201,7 +2390,7 @@
 }
 
 /* Précédent button with icon */
-.import-wizard-step3-footer .btn-ghost {
+.import-wizard-footer .btn-ghost {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -2236,7 +2425,7 @@
         align-items: flex-start;
     }
 
-    .import-wizard-step3-footer {
+    .import-wizard-footer {
         flex-direction: column;
         gap: 12px;
         align-items: stretch;

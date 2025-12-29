@@ -25,6 +25,15 @@
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Coins arrondis sur le thead pour correspondre au conteneur */
+.student-list-table thead tr:first-child th:first-child {
+    border-top-left-radius: var(--radius-lg);
+}
+
+.student-list-table thead tr:first-child th:last-child {
+    border-top-right-radius: var(--radius-lg);
+}
+
 [data-theme="dark"] .student-list-table thead {
     background: rgba(255, 255, 255, 0.03);
 }
@@ -189,10 +198,85 @@
     animation: row-filter-highlight 0.6s ease-out;
 }
 
+/* Keyframes pour la sortie des lignes filtrées - fade + scale + collapse */
+@keyframes list-row-exit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.96) translateX(-15px);
+    }
+}
+
+/* Animation de sortie pour les lignes filtrées */
+.student-list-table tbody tr.row-exit {
+    animation: list-row-exit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    pointer-events: none;
+}
+
+/* Classe pour les lignes qui se repositionnent (FLIP) */
+.student-list-table tbody tr.row-move {
+    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+/* Effet "carte" pendant le déplacement pour un feedback visuel premium */
+.student-list-table tbody tr.row-moving {
+    position: relative;
+    z-index: 10;
+    background: var(--surface-color) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.student-list-table tbody tr.row-moving td {
+    background: var(--surface-color);
+}
+
+.student-list-table tbody tr.row-moving td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.student-list-table tbody tr.row-moving td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving {
+    background: var(--surface-elevated) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving td {
+    background: var(--surface-elevated);
+}
+
+/* Keyframes pour l'entrée retardée des nouvelles lignes lors du filtrage */
+@keyframes list-row-filter-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.student-list-table tbody tr.row-filter-enter {
+    animation: list-row-filter-enter 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: var(--enter-delay, 150ms);
+}
+
 /* Student name column */
 .student-name-cell {
     font-weight: 600;
     color: var(--text-primary);
+    /* Prevent column jump when avatar moves above name */
+    min-width: 180px;
+    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .student-name-cell .student-prenom {
@@ -319,9 +403,7 @@
 /* 2. Transform the preview bubble into full content */
 .student-list-table.appreciation-full-view .appreciation-preview {
     white-space: pre-wrap;
-    /* Allow text wrap */
     max-height: 500px;
-    /* Allow growth */
     overflow: visible;
     text-overflow: clip;
 
@@ -332,6 +414,22 @@
     line-height: 1.6;
     margin: 4px 0;
     border: 1px solid rgba(0, 0, 0, 0.02);
+
+    /* Micro-fade animation to mask white-space switch */
+    animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
+@keyframes appreciation-expand-reveal {
+    0% {
+        opacity: 0.4;
+        filter: blur(2px);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+    }
 }
 
 [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview {
@@ -340,31 +438,6 @@
     color: var(--text-secondary);
 }
 
-/* Standard preview styles (Collapsed) */
-.appreciation-preview {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 13px;
-    line-height: normal;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 10px;
-    background: transparent;
-    border: 1px solid transparent;
-
-    /* Transition properties for smooth expand */
-    transition:
-        max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        background 0.3s ease,
-        padding 0.3s ease,
-        line-height 0.3s ease;
-
-    max-width: 100%;
-    max-height: 32px;
-    /* Single line height constraint */
-}
 
 /* Appreciation Preview - Truncated inline display */
 .appreciation-preview {
@@ -378,13 +451,20 @@
     padding: 6px 12px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.02);
-    /* Ultra-smooth transition for collapse animation */
-    transition: all 0.8s cubic-bezier(0.25, 0.1, 0.25, 1),
-        max-height 0.8s cubic-bezier(0.25, 0.1, 0.25, 1),
-        opacity 0.3s ease;
     max-width: 100%;
     max-height: 32px;
-    /* Single line height */
+
+    /* iOS Spring transitions synced with row animation */
+    transition:
+        max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.15s ease;
+
+    /* Slight fade during collapse to mask white-space switch */
+    opacity: 1;
 }
 
 /* Expanded state during generation - smooth transition */

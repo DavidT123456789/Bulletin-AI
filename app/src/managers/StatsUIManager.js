@@ -130,25 +130,24 @@ export const StatsUI = {
         const currentGrades = [];
 
         filteredResults.forEach(res => {
-            if (!res.errorMessage) {
-                errFree++;
-                const currentGrade = res.studentData.periods[activePeriod]?.grade;
-                if (typeof currentGrade === 'number') {
-                    totalGrades += currentGrade;
-                    gradeCount++;
-                    minCurrentGrade = Math.min(minCurrentGrade, currentGrade);
-                    maxCurrentGrade = Math.max(maxCurrentGrade, currentGrade);
-                    currentGrades.push(currentGrade);
-                }
+            // Statistique 1: Notes (Indépendant des erreurs d'appréciation)
+            const currentGrade = res.studentData?.periods?.[activePeriod]?.grade;
+
+            if (typeof currentGrade === 'number') {
+                totalGrades += currentGrade;
+                gradeCount++;
+                minCurrentGrade = Math.min(minCurrentGrade, currentGrade);
+                maxCurrentGrade = Math.max(maxCurrentGrade, currentGrade);
+                currentGrades.push(currentGrade);
+
+                // Statistique 2: Évolution
                 if (previousPeriod) {
                     const prevGrade = res.studentData.periods[previousPeriod]?.grade;
                     if (typeof prevGrade === 'number') {
                         totalPrevGrades += prevGrade;
                         prevGradeCount++;
-                    }
 
-                    // Calculer l'évolution directement à partir des notes
-                    if (typeof currentGrade === 'number' && typeof prevGrade === 'number') {
+                        // Calculer l'évolution
                         const dist = currentGrade - prevGrade;
                         const evoType = Utils.getEvolutionType(dist);
                         if (['very-positive', 'positive'].includes(evoType)) stats.progress++;
@@ -156,6 +155,11 @@ export const StatsUI = {
                         else stats.regression++;
                     }
                 }
+            }
+
+            // Statistique 3: Mots (Dépend des erreurs)
+            if (!res.errorMessage) {
+                errFree++;
                 words += Utils.countWords(res.appreciation);
             }
         });

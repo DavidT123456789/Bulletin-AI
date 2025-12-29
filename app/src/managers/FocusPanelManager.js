@@ -13,6 +13,7 @@ import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
+import { StudentPhotoManager } from './StudentPhotoManager.js';
 // ResultCardsUI removed - logic moved to Utils
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -1049,6 +1050,20 @@ export const FocusPanelManager = {
         // Exit creation mode when viewing existing student
         this.isCreationMode = false;
 
+        // === 0. HEADER: Avatar ===
+        const avatarContainer = document.getElementById('focusAvatarContainer');
+        if (avatarContainer) {
+            avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+            avatarContainer.classList.add('focus-panel-avatar-container');
+
+            // Add click handler for photo upload
+            const avatarEl = avatarContainer.querySelector('.student-avatar');
+            if (avatarEl && result.id) {
+                avatarEl.classList.add('student-avatar--editable');
+                avatarEl.onclick = () => this._handleAvatarClick(result.id);
+            }
+        }
+
         // === 1. HEADER: Student Name ===
         const nameEl = document.getElementById('focusStudentName');
         if (nameEl) {
@@ -1188,6 +1203,40 @@ export const FocusPanelManager = {
 
         // === 11. AI Indicator (✨) ===
         this._updateAiIndicator(result);
+    },
+
+    /**
+     * Handle avatar click - opens file picker for photo upload
+     * @param {string} studentId - Student ID
+     * @private
+     */
+    async _handleAvatarClick(studentId) {
+        // Create hidden file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.className = 'student-avatar__input';
+
+        input.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const success = await StudentPhotoManager.uploadPhoto(studentId, file);
+            if (success) {
+                // Re-render to show new photo
+                const result = appState.generatedResults.find(r => r.id === studentId);
+                if (result) {
+                    this._renderContent(result);
+                    // Also update list view row
+                    this._updateListRow(result);
+                }
+                UI.showNotification('Photo ajoutée', 'success');
+            } else {
+                UI.showNotification('Erreur lors du téléchargement', 'error');
+            }
+        };
+
+        input.click();
     },
 
 

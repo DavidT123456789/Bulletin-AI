@@ -172,9 +172,12 @@ export const ResultsUIManager = {
             });
 
         appState.filteredResults = filteredAndSorted;
-        DOM.resultsDiv.innerHTML = '';
+
         // Afficher l'état vide si la classe courante n'a pas de résultats
         if (sourceResults.length === 0) {
+            // Clear for empty state
+            DOM.resultsDiv.innerHTML = '';
+
             const emptyTemplate = document.getElementById('empty-state-template');
             if (emptyTemplate && DOM.emptyStateCard) {
                 DOM.emptyStateCard.innerHTML = '';
@@ -187,25 +190,26 @@ export const ResultsUIManager = {
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
             // Masquer les statistiques et le header de liste quand il n'y a pas de données
-            if (DOM.statsHeader) DOM.statsHeader.style.display = 'none';
             if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
             if (DOM.outputHeader) DOM.outputHeader.style.display = 'none';
         }
         else if (filteredAndSorted.length === 0) {
+            // Clear for no results message
+            DOM.resultsDiv.innerHTML = '';
+
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'block';
 
             // Réafficher les statistiques si masquées précédemment
-            if (DOM.statsHeader) DOM.statsHeader.style.display = '';
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
         }
         else {
+            // DON'T clear DOM here - let ListViewManager handle animation
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
             // Réafficher les statistiques si masquées précédemment
-            if (DOM.statsHeader) DOM.statsHeader.style.display = '';
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
@@ -264,10 +268,14 @@ export const ResultsUIManager = {
         }).length;
 
         if (DOM.generateAllPendingBtn) {
-            DOM.generateAllPendingBtn.style.display = pendingCount > 0 ? 'flex' : 'none';
+            DOM.generateAllPendingBtn.disabled = pendingCount === 0;
         }
         if (DOM.pendingCountBadge) {
             DOM.pendingCountBadge.textContent = pendingCount;
+        }
+        // Bouton Analyser : disabled si aucun élève
+        if (DOM.analyzeClassBtn) {
+            DOM.analyzeClassBtn.disabled = results.length === 0;
         }
     },
 

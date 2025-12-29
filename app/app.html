@@ -137,13 +137,6 @@
 
             <main class="main-content" id="main-content">
                 <div class="output-section">
-                    <div class="stats-header" id="statsHeader">
-                        <h2 class="section-title">Bilan de la classe</h2>
-                        <button class="btn btn-ai tooltip" id="analyzeClassBtn" data-tooltip="Analyse IA de la classe.">
-                            <i class="fas fa-chart-pie"></i> Analyser
-                        </button>
-                    </div>
-
                     <div class="stats-container" id="statsContainer">
                         <!-- 1. PERFORMANCE (avec Médiane intégrée) -->
                         <div class="stat-card performance-card" id="performanceCard">
@@ -251,24 +244,8 @@
                     <!-- Progress and error UI moved to header chip (#headerGenerationStatus) -->
 
                     <div class="output-header" id="outputHeader">
-                        <h3 class="sub-section-title">
-                            Appréciations individuelles
-                        </h3>
-
-                        <!-- Liste + Focus: Add student button -->
-
-
-
                         <div class="output-toolbar">
-                            <!-- Import Button - Opens Slide-Over Panel -->
-
-                            <button class="btn btn-primary btn-generate-all" id="generateAllPendingBtn"
-                                style="display: none;"
-                                title="Générer les appréciations pour tous les élèves en attente">
-                                <i class="fas fa-wand-magic-sparkles"></i>
-                                <span>Générer</span>
-                                <span class="pending-badge" id="pendingCountBadge">0</span>
-                            </button>
+                            <!-- Recherche à gauche -->
                             <div class="search-container">
                                 <i class="fas fa-search search-icon"></i>
                                 <input type="text" class="search-input" id="searchInput" placeholder="Rechercher...">
@@ -277,12 +254,23 @@
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            <!-- Sort select removed - now sortable headers -->
-                            <!-- Actions dropdown déplacé dans le header du tableau pour cohérence UX -->
+                            <!-- Active filter badge - inline in toolbar -->
+                            <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
+                            <!-- Actions à droite - ordre stable -->
+                            <div class="toolbar-actions">
+                                <button class="btn btn-primary btn-generate-all tooltip" id="generateAllPendingBtn"
+                                    disabled data-tooltip="Générer les appréciations pour tous les élèves en attente">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                    <span>Générer</span>
+                                    <span class="pending-badge" id="pendingCountBadge">0</span>
+                                </button>
+                                <button class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
+                                    data-tooltip="Analyse IA de la classe">
+                                    <i class="fas fa-chart-pie"></i> Analyser
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <div id="activeFilterInfo" class="generic-info-box"></div>
 
                     <div id="outputList" role="region" aria-live="polite"></div>
                     <div id="skeletonContainer" class="skeleton-grid" style="display: none;">
@@ -314,6 +302,10 @@
             <div id="focusHeaderContent" class="focus-header-content">
                 <!-- READ MODE: Name & Badges -->
                 <div class="focus-header-read">
+                    <!-- Avatar Container - for photo/initials bubble -->
+                    <div id="focusAvatarContainer" class="focus-panel-avatar-container">
+                        <!-- Populated by FocusPanelManager -->
+                    </div>
                     <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
                         data-tooltip="Cliquez pour éditer l'identité et les statuts">
                         Sophie DURAND
@@ -570,25 +562,19 @@
                             <span>ou coller les données</span>
                         </div>
 
-                        <!-- Textarea -->
+                        <!-- Textarea with integrated sample button -->
                         <div class="import-input-container">
                             <textarea id="wizardDataTextarea" class="import-textarea" rows="6"
                                 placeholder="NOM Prénom      Moy. T1    Appréciation T1...&#10;MARTIN Lucas    12,5       Bon travail..."></textarea>
+                            <div class="step-actions-row">
+                                <button class="btn-text-action" id="wizardClearBtn" style="display: none;">
+                                    <i class="fas fa-trash-alt"></i> Vider
+                                </button>
+                                <button class="btn-text-action" id="wizardSampleBtn">
+                                    <i class="fas fa-file-lines"></i> Exemple
+                                </button>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="step-actions-row">
-                        <button class="btn-text-action" id="wizardSampleBtn">
-                            <i class="fas fa-pen-to-square"></i> Charger un exemple
-                        </button>
-                    </div>
-
-                    <!-- Step 1 Footer -->
-                    <div class="wizard-step1-footer">
-                        <button class="btn btn-ghost" id="wizardStep1CancelBtn">Annuler</button>
-                        <button class="btn btn-primary" id="wizardStep1NextBtn" disabled>
-                            Suivant <i class="fas fa-arrow-right"></i>
-                        </button>
                     </div>
                 </div>
 
@@ -625,16 +611,6 @@
 
                     <div class="import-mapping-table-container" id="wizardMappingContainer">
                         <!-- Generated by JS: mapping table -->
-                    </div>
-
-                    <!-- Step 2 Footer -->
-                    <div class="wizard-step2-footer">
-                        <button class="btn btn-ghost" id="wizardStep2PrevBtn">
-                            <i class="fas fa-arrow-left"></i> Précédent
-                        </button>
-                        <button class="btn btn-primary" id="wizardStep2NextBtn">
-                            Suivant <i class="fas fa-arrow-right"></i>
-                        </button>
                     </div>
                 </div>
 
@@ -698,8 +674,27 @@
                 </div>
             </div>
 
+            <!-- UNIFIED WIZARD FOOTER - Single source of truth -->
+            <!-- Step 1 Footer -->
+            <div class="import-wizard-footer" id="wizardStep1Footer">
+                <button class="btn btn-ghost" id="wizardStep1CancelBtn">Annuler</button>
+                <button class="btn btn-primary" id="wizardStep1NextBtn" disabled>
+                    Suivant <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Step 2 Footer -->
+            <div class="import-wizard-footer" id="wizardStep2Footer">
+                <button class="btn btn-ghost" id="wizardStep2PrevBtn">
+                    <i class="fas fa-arrow-left"></i> Précédent
+                </button>
+                <button class="btn btn-primary" id="wizardStep2NextBtn">
+                    Suivant <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
             <!-- Step 3 Footer -->
-            <div class="import-wizard-step3-footer" id="wizardStep3Footer">
+            <div class="import-wizard-footer" id="wizardStep3Footer">
                 <button class="btn btn-ghost" id="wizardStep3PrevBtn">
                     <i class="fas fa-arrow-left"></i> Précédent
                 </button>
@@ -746,6 +741,115 @@
                     </div>
                     <h3 class="import-hub-card-title">Classe entière</h3>
                     <p class="import-hub-card-desc">Importer depuis Excel / CSV</p>
+                </div>
+
+                <!-- Photo Import Card -->
+                <div class="import-hub-card" data-action="photos" tabindex="0" role="button">
+                    <div class="import-hub-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3 class="import-hub-card-title">Photos</h3>
+                    <p class="import-hub-card-desc">Associer depuis un trombinoscope</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TROMBINOSCOPE WIZARD - Photo import from class photo                  -->
+    <!-- ==================================================================== -->
+    <div id="trombiWizardModal" class="trombi-wizard-modal" role="dialog" aria-modal="true">
+        <div id="trombiWizardBackdrop" class="trombi-wizard-backdrop"></div>
+        <div class="trombi-wizard-content">
+            <div class="trombi-wizard-header">
+                <h2><i class="fas fa-camera"></i> Importer des photos</h2>
+                <div class="trombi-wizard-stepper">
+                    <div class="trombi-wizard-step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-label">Image</span>
+                    </div>
+                    <div class="trombi-wizard-step-connector"></div>
+                    <div class="trombi-wizard-step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Association</span>
+                    </div>
+                    <div class="trombi-wizard-step-connector"></div>
+                    <div class="trombi-wizard-step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-label">Confirmer</span>
+                    </div>
+                </div>
+                <button class="trombi-close-btn" id="closeTrombiWizardBtn" aria-label="Fermer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="trombi-wizard-body">
+                <!-- Step 1: Upload trombinoscope image -->
+                <div class="trombi-step-content" id="trombiStep1" style="display: block;">
+                    <div class="trombi-drop-zone" id="trombiDropZone">
+                        <div class="drop-zone-content">
+                            <div class="drop-zone-icon">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                            </div>
+                            <div class="drop-zone-text">
+                                <span class="drop-zone-title">Glissez le trombinoscope ici</span>
+                                <span class="drop-zone-hint">ou <u>cliquez pour parcourir</u></span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="trombiFileInput" accept="image/*" style="display: none;">
+
+                    <div id="trombiPreview" class="trombi-preview"></div>
+
+                    <div class="trombi-step-footer">
+                        <button class="btn btn-ghost" id="trombiStep1CancelBtn">Annuler</button>
+                        <button class="btn btn-primary" id="trombiStep1NextBtn" disabled>
+                            Suivant <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Assign students to zones -->
+                <div class="trombi-step-content" id="trombiStep2" style="display: none;">
+                    <div class="trombi-split-view">
+                        <div class="trombi-image-panel">
+                            <div id="trombiImageWithZones" class="trombi-image-wrapper">
+                                <!-- Image with zone overlay will be cloned here -->
+                            </div>
+                        </div>
+                        <div class="trombi-assignment-panel">
+                            <h4>Associer les élèves aux zones</h4>
+                            <div id="trombiAssignmentGrid" class="trombi-assignment-grid">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="trombi-step-footer">
+                        <button class="btn btn-ghost" id="trombiStep2PrevBtn">
+                            <i class="fas fa-arrow-left"></i> Précédent
+                        </button>
+                        <button class="btn btn-primary" id="trombiStep2NextBtn">
+                            Suivant <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Preview and confirm -->
+                <div class="trombi-step-content" id="trombiStep3" style="display: none;">
+                    <div id="trombiPreviewGrid" class="trombi-preview-grid">
+                        <!-- Preview generated by JS -->
+                    </div>
+
+                    <div class="trombi-step-footer">
+                        <button class="btn btn-ghost" id="trombiStep3PrevBtn">
+                            <i class="fas fa-arrow-left"></i> Précédent
+                        </button>
+                        <button class="btn btn-primary" id="trombiConfirmBtn">
+                            <i class="fas fa-check"></i> Importer les photos
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

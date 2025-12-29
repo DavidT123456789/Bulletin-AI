@@ -22,6 +22,8 @@
 @import './modules/animations.css';
 @import './modules/refinement.css';
 @import './modules/student-details.css';
+@import './modules/student-avatar.css';
+@import './modules/trombinoscope.css';
 @import './modules/output.css';
 @import './modules/dropdown.css';
 @import './modules/skeleton.css';

@@ -51,7 +51,7 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-6);
     gap: 12px;
 }
 
@@ -59,14 +59,22 @@
     display: flex;
     gap: 12px;
     align-items: center;
-    flex-grow: 0;
-    justify-content: flex-end;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+/* Conteneur pour les actions (Générer + Analyser) à droite */
+.toolbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .search-container {
     position: relative;
-    min-width: 140px;
-    max-width: 200px;
+    min-width: 180px;
+    max-width: 280px;
     flex-grow: 0;
     flex-shrink: 0;
 }
@@ -83,6 +91,13 @@
     color: var(--text-secondary);
     transition: all var(--transition-fast);
     box-shadow: none;
+}
+
+/* Search input - iOS 2025 premium style */
+.search-input {
+    background-color: var(--bg-secondary);
+    border: 1.5px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .output-toolbar select {
@@ -102,7 +117,6 @@
 }
 
 /* Hover States - Aligned with custom dropdown trigger */
-.output-toolbar .search-input:hover:not(:focus),
 .output-toolbar .custom-dropdown-trigger:hover:not(.open),
 .output-toolbar .btn-icon:hover:not(:disabled) {
     border-color: transparent;
@@ -111,6 +125,13 @@
     background-origin: padding-box, border-box;
     background-clip: padding-box, border-box;
     color: var(--text-primary);
+}
+
+/* Search input hover - iOS 2025 style with subtle elevation */
+.search-input:hover:not(:focus) {
+    background-color: var(--bg-secondary);
+    border-color: rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.05);
 }
 
 /* Focus States - Aligned with custom dropdown trigger open state */
@@ -162,7 +183,7 @@
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    background: var(--border-color);
+    background: var(--text-tertiary);
     border: none;
     border-radius: 50%;
     width: 20px;
@@ -171,7 +192,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--surface-color);
+    color: var(--bg-color);
     font-size: 10px;
     transition: all var(--transition-fast);
     opacity: 0;
@@ -391,9 +412,18 @@
     }
 }
 
-/* Hide when no pending students */
-.btn-generate-all[style*="display: none"] {
-    display: none !important;
+/* Boutons disabled dans la toolbar - subtils mais visibles */
+.btn-generate-all:disabled,
+.toolbar-actions .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    animation: none;
+    box-shadow: none;
+}
+
+/* Masquer le badge "0" quand le bouton est disabled */
+.btn-generate-all:disabled .pending-badge {
+    display: none;
 }
 
 /* Responsive: hide text on small screens */

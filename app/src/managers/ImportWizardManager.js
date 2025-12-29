@@ -192,6 +192,16 @@ export const ImportWizardManager = {
         // Step 1: Sample data
         document.getElementById('wizardSampleBtn')?.addEventListener('click', () => this._loadSample());
 
+        // Step 1: Clear data
+        document.getElementById('wizardClearBtn')?.addEventListener('click', () => {
+            const textarea = document.getElementById('wizardDataTextarea');
+            if (textarea) {
+                textarea.value = '';
+                textarea.focus();
+                this._processData();
+            }
+        });
+
         // Step 2: Separator change
         document.getElementById('wizardSeparatorSelect')?.addEventListener('change', () => this._processData());
 
@@ -428,6 +438,10 @@ export const ImportWizardManager = {
         this.state.rawData = text;
 
         const step1NextBtn = document.getElementById('wizardStep1NextBtn');
+        const clearBtn = document.getElementById('wizardClearBtn');
+
+        // Toggle clear button visibility
+        if (clearBtn) clearBtn.style.display = text ? 'inline-flex' : 'none';
 
         if (!text) {
             this.state.lines = [];
@@ -633,7 +647,8 @@ export const ImportWizardManager = {
 
         html += '</tbody></table>';
 
-        container.innerHTML = html;
+        // Wrap table in scroll wrapper for proper scrollbar containment
+        container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
         container.classList.add('horizontal-scroll');
 
         // Bind SIMPLE change events to native selects

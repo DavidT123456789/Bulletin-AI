@@ -7,6 +7,7 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { StudentPhotoManager } from './StudentPhotoManager.js';
 // ResultCardsUI removed - logic moved to Utils
 import { ClassUIManager } from './ClassUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
@@ -18,8 +19,8 @@ import { StatsUI } from './StatsUIManager.js';
 export const ListViewManager = {
     _activeDocClickListener: null,
     /**
-     * Rend la liste des Ã©lÃ¨ves en format tableau
-     * @param {Array} results - Tableau des rÃ©sultats Ã  afficher
+     * Rend la liste des élèves en format tableau
+     * @param {Array} results - Tableau des résultats à afficher
      * @param {HTMLElement} container - Conteneur DOM
      */
     render(results, container) {
@@ -31,8 +32,17 @@ export const ListViewManager = {
 
         if (!container) return;
 
+        // Handle empty results
         if (results.length === 0) {
-            container.innerHTML = '';
+            // Animate out existing rows if any
+            const existingRows = container.querySelectorAll('.student-row');
+            if (existingRows.length > 0) {
+                this._animateRowsOut(existingRows, () => {
+                    container.innerHTML = '';
+                });
+            } else {
+                container.innerHTML = '';
+            }
             return;
         }
 
@@ -40,6 +50,398 @@ export const ListViewManager = {
         const periods = Utils.getPeriods() || ['T1', 'T2', 'T3'];
         const currentPeriodIndex = Math.max(0, periods.indexOf(currentPeriod));
 
+        // Check if this is a filter/sort transition (table already exists)
+        const existingTable = container.querySelector('.student-list-table');
+        const existingRows = existingTable ? Array.from(existingTable.querySelectorAll('.student-row')) : [];
+
+        // Clean up any stuck animation classes from previous animations
+        existingRows.forEach(row => {
+            row.classList.remove('row-move', 'row-moving', 'row-exit', 'row-filter-enter');
+            row.style.transform = '';
+            row.style.transition = '';
+        });
+
+        if (existingRows.length > 0) {
+            const existingIds = existingRows.map(r => r.dataset.studentId);
+            const newIds = results.map(r => r.id);
+
+            // Check if there's any actual change
+            const hasIdChange = existingIds.length !== newIds.length ||
+                existingIds.some(id => !newIds.includes(id)) ||
+                newIds.some(id => !existingIds.includes(id));
+
+            const hasOrderChange = !hasIdChange &&
+                existingIds.some((id, i) => id !== newIds[i]);
+
+            if (hasIdChange) {
+                // Filter change: use FLIP animation
+                this._animateFilterTransition(container, existingRows, results, periods, currentPeriodIndex);
+                return;
+            } else if (hasOrderChange) {
+                // Sort change: use simple reorder
+                this._animateSortTransition(container, existingRows, results, periods, currentPeriodIndex);
+                return;
+            }
+        }
+
+        // === INITIAL RENDER (no existing table) ===
+        this._renderFresh(container, results, periods, currentPeriodIndex);
+    },
+
+    /**
+     * Anime la transition de filtrage avec technique FLIP
+     * @param {HTMLElement} container - Conteneur DOM
+     * @param {Array} existingRows - Lignes existantes
+     * @param {Array} newResults - Nouveaux résultats filtrés
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index de la période courante
+     * @private
+     */
+    _animateFilterTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
+        const tbody = container.querySelector('tbody');
+        if (!tbody) {
+            this._renderFresh(container, newResults, periods, currentPeriodIndex);
+            return;
+        }
+
+        const newIds = new Set(newResults.map(r => r.id));
+        const newResultsMap = new Map(newResults.map(r => [r.id, r]));
+
+        // Identify rows to exit, keep
+        const toExit = existingRows.filter(r => !newIds.has(r.dataset.studentId));
+        const toKeep = existingRows.filter(r => newIds.has(r.dataset.studentId));
+        const existingIdsSet = new Set(existingRows.map(r => r.dataset.studentId));
+
+        // *** FIRST: Capture positions of KEPT rows BEFORE any DOM changes ***
+        // This is critical for the "flow up" animation when rows are filtered out
+        const firstPositions = new Map();
+        toKeep.forEach(row => {
+            const rect = row.getBoundingClientRect();
+            firstPositions.set(row.dataset.studentId, {
+                top: rect.top,
+                left: rect.left
+            });
+        });
+
+        // Step 1: Animate exiting rows (fade + scale out)
+        toExit.forEach(row => {
+            row.classList.add('row-exit');
+        });
+
+        // Step 2: After exit animation, reorganize and animate movement
+        const exitDuration = toExit.length > 0 ? 250 : 0;
+        setTimeout(() => {
+            // Remove exited rows from DOM
+            toExit.forEach(row => row.remove());
+
+            // Build map of kept rows
+            const keepMap = new Map(toKeep.map(r => [r.dataset.studentId, r]));
+
+            // Reorder rows IN-PLACE
+            const orderedIds = newResults.map(r => r.id);
+            let previousNode = null;
+
+            orderedIds.forEach((id, index) => {
+                let row;
+
+                if (keepMap.has(id)) {
+                    // Existing row - reuse it
+                    row = keepMap.get(id);
+
+                    // Update content if needed
+                    const result = newResultsMap.get(id);
+                    if (result) {
+                        this._updateRowContent(row, result);
+                    }
+                } else {
+                    // New row - create it
+                    const result = newResultsMap.get(id);
+                    if (result) {
+                        row = this._createRowElement(result, periods, currentPeriodIndex);
+                        row.classList.add('row-filter-enter');
+                        row.style.setProperty('--enter-delay', `${50 + index * 30}ms`);
+                    }
+                }
+
+                if (row) {
+                    // Insert in correct position
+                    if (previousNode) {
+                        if (previousNode.nextSibling !== row) {
+                            tbody.insertBefore(row, previousNode.nextSibling);
+                        }
+                    } else {
+                        if (tbody.firstChild !== row) {
+                            tbody.insertBefore(row, tbody.firstChild);
+                        }
+                    }
+                    previousNode = row;
+                }
+            });
+
+            // Force layout recalculation
+            void tbody.offsetHeight;
+
+            // *** LAST + INVERT + PLAY: Animate kept rows to their new positions ***
+            requestAnimationFrame(() => {
+                toKeep.forEach(row => {
+                    const id = row.dataset.studentId;
+                    const first = firstPositions.get(id);
+                    if (!first) return;
+
+                    // LAST: Get current (final) position
+                    const last = row.getBoundingClientRect();
+
+                    // Calculate how much the row moved (negative = moved up)
+                    const deltaY = first.top - last.top;
+
+                    if (Math.abs(deltaY) > 2) {
+                        // Add card effect class for visual feedback
+                        row.classList.add('row-moving');
+
+                        // INVERT: Move row back to where it was (its old position)
+                        row.style.transform = `translateY(${deltaY}px)`;
+                        row.style.transition = 'none';
+
+                        // Force browser to render the inverted state
+                        void row.offsetHeight;
+
+                        // PLAY: Animate smoothly to final position (transform: none)
+                        requestAnimationFrame(() => {
+                            row.classList.add('row-move');
+                            row.style.transform = '';
+
+                            // Cleanup after animation
+                            const cleanup = (e) => {
+                                if (e.propertyName === 'transform') {
+                                    row.classList.remove('row-move', 'row-moving');
+                                    row.style.transition = '';
+                                    row.removeEventListener('transitionend', cleanup);
+                                }
+                            };
+                            row.addEventListener('transitionend', cleanup);
+                        });
+                    }
+                });
+            });
+
+            // Re-attach event listeners
+            const viewElement = container.querySelector('.student-list-view');
+            if (viewElement) {
+                this._attachEventListeners(viewElement);
+                this._updateHeaderSortIcons(viewElement);
+            }
+
+            // Cleanup enter animations after delay
+            setTimeout(() => {
+                const enterRows = tbody.querySelectorAll('.row-filter-enter');
+                enterRows.forEach(row => {
+                    row.classList.remove('row-filter-enter');
+                    row.style.removeProperty('--enter-delay');
+                });
+            }, 500);
+
+        }, exitDuration);
+    },
+
+    /**
+     * Animation simple pour le tri (réordonnancement sans changement d'IDs)
+     * @param {HTMLElement} container - Conteneur DOM
+     * @param {Array} existingRows - Lignes existantes
+     * @param {Array} newResults - Nouveaux résultats triés
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index de la période courante
+     * @private
+     */
+    _animateSortTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
+        const tbody = container.querySelector('tbody');
+        if (!tbody) return;
+
+        // Build map of existing rows by ID
+        const rowMap = new Map(existingRows.map(r => [r.dataset.studentId, r]));
+        const newResultsMap = new Map(newResults.map(r => [r.id, r]));
+
+        // *** FIRST: Capture positions BEFORE any DOM changes ***
+        const firstPositions = new Map();
+        existingRows.forEach(row => {
+            const rect = row.getBoundingClientRect();
+            firstPositions.set(row.dataset.studentId, { top: rect.top });
+        });
+
+        // Reorder rows in correct order
+        const orderedIds = newResults.map(r => r.id);
+        let previousNode = null;
+
+        orderedIds.forEach(id => {
+            const row = rowMap.get(id);
+            if (row) {
+                // Update content if needed
+                const result = newResultsMap.get(id);
+                if (result) {
+                    this._updateRowContent(row, result);
+                }
+
+                // Insert in correct position
+                if (previousNode) {
+                    if (previousNode.nextSibling !== row) {
+                        tbody.insertBefore(row, previousNode.nextSibling);
+                    }
+                } else {
+                    if (tbody.firstChild !== row) {
+                        tbody.insertBefore(row, tbody.firstChild);
+                    }
+                }
+                previousNode = row;
+            }
+        });
+
+        // Force layout recalculation
+        void tbody.offsetHeight;
+
+        // *** LAST + INVERT + PLAY ***
+        existingRows.forEach(row => {
+            const id = row.dataset.studentId;
+            const first = firstPositions.get(id);
+            if (!first) return;
+
+            // LAST: Get new position
+            const last = row.getBoundingClientRect();
+            const deltaY = first.top - last.top;
+
+            if (Math.abs(deltaY) > 2) {
+                // INVERT: Move back to old position
+                row.style.transform = `translateY(${deltaY}px)`;
+                row.style.transition = 'none';
+            }
+        });
+
+        // Force browser to render inverted state
+        void tbody.offsetHeight;
+
+        // PLAY: Animate to final position
+        requestAnimationFrame(() => {
+            existingRows.forEach(row => {
+                const id = row.dataset.studentId;
+                const first = firstPositions.get(id);
+                if (!first) return;
+
+                const last = row.getBoundingClientRect();
+                // Recalculate because we applied transforms
+                const currentTransform = row.style.transform;
+                if (currentTransform && currentTransform !== 'none') {
+                    row.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
+                    row.style.transform = '';
+                }
+            });
+
+            // Cleanup with timeout (more reliable than transitionend)
+            setTimeout(() => {
+                existingRows.forEach(row => {
+                    row.style.transform = '';
+                    row.style.transition = '';
+                });
+            }, 400);
+        });
+
+        // Update header icons
+        const viewElement = container.querySelector('.student-list-view');
+        if (viewElement) {
+            this._updateHeaderSortIcons(viewElement);
+        }
+    },
+
+    /**
+     * Anime la sortie de toutes les lignes
+     * @param {NodeList} rows - Lignes à animer
+     * @param {Function} callback - Callback après animation
+     * @private
+     */
+    _animateRowsOut(rows, callback) {
+        rows.forEach((row, index) => {
+            row.style.setProperty('--row-delay', `${index * 15}ms`);
+            row.classList.add('row-exit');
+        });
+        setTimeout(callback, 300);
+    },
+
+    /**
+     * Crée un élément TR pour une ligne d'élève
+     * @param {Object} result - Données de l'élève
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
+     * @returns {HTMLElement} Élément TR
+     * @private
+     */
+    _createRowElement(result, periods, currentPeriodIndex) {
+        const tr = document.createElement('tr');
+        tr.dataset.studentId = result.id;
+        tr.className = 'student-row';
+        tr.tabIndex = 0;
+
+        const studentData = result.studentData || {};
+        const status = this._getStatus(result);
+        const appreciationCell = this._getAppreciationCell(result, status);
+        const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+
+        tr.innerHTML = `
+            <td class="student-name-cell">
+                <div class="student-identity-wrapper">
+                    ${avatarHTML}
+                    <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
+                </div>
+            </td>
+            <td class="status-cell">${this._getStudentStatusCellContent(result)}</td>
+            ${this._renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
+            <td class="appreciation-cell">${appreciationCell}</td>
+            <td class="action-cell">
+                <div class="action-dropdown">
+                    <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
+                        <i class="fas fa-ellipsis-vertical"></i>
+                    </button>
+                    <div class="action-dropdown-menu">
+                        <button class="action-dropdown-item" data-action="move-student">
+                            <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
+                        </button>
+                        <button class="action-dropdown-item danger" data-action="delete-student">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        return tr;
+    },
+
+    /**
+     * Met à jour le contenu d'une ligne existante
+     * @param {HTMLElement} row - Ligne à mettre à jour
+     * @param {Object} result - Nouvelles données
+     * @private
+     */
+    _updateRowContent(row, result) {
+        // Update appreciation cell
+        const appreciationCell = row.querySelector('.appreciation-cell');
+        if (appreciationCell) {
+            const status = this._getStatus(result);
+            appreciationCell.innerHTML = this._getAppreciationCell(result, status);
+        }
+
+        // Update status cell
+        const statusCell = row.querySelector('.status-cell');
+        if (statusCell) {
+            statusCell.innerHTML = this._getStudentStatusCellContent(result);
+        }
+    },
+
+    /**
+     * Rendu initial complet de la liste
+     * @param {HTMLElement} container - Conteneur
+     * @param {Array} results - Résultats
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
+     * @private
+     */
+    _renderFresh(container, results, periods, currentPeriodIndex) {
         // Build table HTML (no animation classes in HTML - we'll add them after)
         let html = `
             <div class="student-list-view">
@@ -113,10 +515,14 @@ export const ListViewManager = {
                 const status = this._getStatus(result);
                 const appreciationCell = this._getAppreciationCell(result, status);
 
+                // Generate avatar HTML
+                const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+
                 html += `
                     <tr data-student-id="${result.id}" class="student-row" tabindex="0">
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper">
+                                ${avatarHTML}
                                 <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
                             </div>
                         </td>
@@ -201,6 +607,7 @@ export const ListViewManager = {
             this._updateHeaderSortIcons(viewElement);
         }
     },
+
 
     /**
      * GÃ©nÃ¨re les headers de notes avec colonnes d'Ã©volution
@@ -407,10 +814,9 @@ export const ListViewManager = {
         // Si pas de contenu, on dÃ©termine le statut Ã  afficher
         // Pour les pÃ©riodes passÃ©es sans donnÃ©e, afficher simplement un tiret
         const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-        const errorPeriod = result.errorMessage ? storedPeriod : null;
-
-        // Si l'Ã©lÃ¨ve a une erreur qui concerne la pÃ©riode affichÃ©e
-        if (status === 'error' && errorPeriod === currentPeriod) {
+        // Si l'élève a une erreur qui concerne la période affichée
+        // On affiche l'erreur si: le statut est 'error' ET (pas de période définie OU période == actuelle)
+        if (status === 'error' && (!storedPeriod || storedPeriod === currentPeriod)) {
             return this._getStatusBadge('error');
         }
 
@@ -465,12 +871,10 @@ export const ListViewManager = {
     _getStudentStatusCellContent(result) {
         let html = '';
 
-        // 1. Statut critique : Erreur de gÃ©nÃ©ration
-        if (result.errorMessage) {
-            html += '<span class="status-badge error" title="Erreur de gÃ©nÃ©ration"><i class="fas fa-exclamation-triangle"></i> Erreur</span>';
-        }
+        // Note: Le statut d'erreur de génération est affiché dans la colonne Appréciation,
+        // pas dans cette colonne Statut qui est réservée aux statuts personnels de l'élève.
 
-        // 2. Statuts Ã©lÃ¨ve (PPRE, DÃ©lÃ©guÃ©, Nouveau...)
+        // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.)
         const studentStatuses = result.studentData?.statuses || [];
         // Dedup statuses to be safe
         const uniqueStatuses = [...new Set(studentStatuses)];
@@ -481,10 +885,9 @@ export const ListViewManager = {
             html += `<span class="${badgeInfo.className}" style="margin: 2px;">${badgeInfo.label}</span>`;
         });
 
-        // 3. Si vide, on affiche le statut de production UNIQUEMENT si en erreur ou particulier?
-        // Non, la demande est "Statut Ã©lÃ¨ve". Si pas de statut, on laisse vide ou tiret.
+        // Si vide, afficher un tiret très subtil (presque invisible)
         if (!html) {
-            return '<span style="color:var(--text-tertiary); font-size:12px;">&mdash;</span>';
+            return '<span style="color:var(--text-tertiary); font-size:10px; opacity:0.4;">&mdash;</span>';
         }
 
         return `<div class="status-badges-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:4px;">${html}</div>`;

@@ -685,7 +685,7 @@ export const UI = {
             if (DOM.headerErrorAction) {
                 DOM.headerErrorAction.classList.add('visible');
                 DOM.headerErrorAction.setAttribute('data-tooltip',
-                    `${errorCount} erreur${errorCount > 1 ? 's' : ''} - Cliquer pour régénérer`);
+                    `${errorCount} Erreur${errorCount > 1 ? 's' : ''} - Cliquer pour régénérer`);
             }
 
             if (DOM.headerErrorCount) {
@@ -729,7 +729,7 @@ export const UI = {
             if (DOM.headerErrorAction) {
                 DOM.headerErrorAction.classList.add('visible');
                 DOM.headerErrorAction.setAttribute('data-tooltip',
-                    `${count} erreur${count > 1 ? 's' : ''} - Cliquer pour régénérer`);
+                    `${count} Erreur${count > 1 ? 's' : ''} - Cliquer pour régénérer`);
             }
 
             if (DOM.headerErrorCount) {
@@ -1050,7 +1050,11 @@ export const UI = {
         DropdownManager.refresh('loadStudentSelect');
     },
     updateActiveFilterInfo() {
+        // Remove any existing close buttons from previous filters
+        document.querySelectorAll('.filter-close-btn').forEach(btn => btn.remove());
+
         if (!DOM.activeFilterInfo) return;
+
         if (appState.activeStatFilter) {
             const filterLabels = {
                 'minGrade': 'Moyenne la plus basse',
@@ -1059,16 +1063,40 @@ export const UI = {
                 'gradeRange_4-8': 'Notes 4-8',
                 'gradeRange_8-12': 'Notes 8-12',
                 'gradeRange_12-16': 'Notes 12-16',
-                'gradeRange_16-20': 'Notes 16-20'
+                'gradeRange_16-20': 'Notes 16-20',
+                'progressCount': 'Élèves en progression',
+                'stableCount': 'Élèves stables',
+                'regressionCount': 'Élèves en régression'
             };
 
             const card = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
             const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
 
-            DOM.activeFilterInfo.innerHTML = `<p><i class="fas fa-filter"></i> Filtre actif : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn">Retirer le filtre</button>`;
+            // Show overlay banner
+            DOM.activeFilterInfo.innerHTML = `<p><i class="fas fa-filter"></i> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><i class="fas fa-times"></i> Retirer</button>`;
             DOM.activeFilterInfo.classList.add('show');
+
+            // Also add close button on the active element
+            const activeElement = document.querySelector('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter');
+            if (activeElement) {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'filter-close-btn';
+                closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                closeBtn.setAttribute('aria-label', 'Retirer le filtre');
+                activeElement.style.position = 'relative';
+                activeElement.appendChild(closeBtn);
+
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
+                        EventHandlersManager.handleStatFilterClick(null);
+                    });
+                });
+            }
         } else {
             DOM.activeFilterInfo.classList.remove('show');
+            DOM.activeFilterInfo.innerHTML = '';
         }
     },
     // DEPRECATED: Use ImportWizardManager.openWithData() instead

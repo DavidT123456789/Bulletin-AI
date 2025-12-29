@@ -21,18 +21,22 @@
 .main-content-wrapper {
     grid-area: main;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    /* Scroll moved to .main-content */
     display: flex;
     flex-direction: column;
-    /* Scroll fluide moderne */
-    scroll-behavior: smooth;
     border-radius: 0;
-    /* Plein écran */
+    overflow: hidden;
+    /* Ensure content is constrained to wrapper height */
 }
 
 .main-content {
     flex-grow: 1;
+    min-height: 0;
+    /* Scroll happens here now */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+
     /* Ajustement des marges internes pour éviter l'effet "collé" */
     padding: var(--space-6) var(--space-8) var(--space-12);
     /* MAX-WIDTH RETIRÉ : Pleine largeur disponible */
@@ -48,6 +52,8 @@
 .output-section {
     margin: 0;
     padding: 0;
+    position: relative;
+    /* For absolute positioned filter banner */
 }
 
 .section-title {
@@ -73,7 +79,7 @@
 .header {
     flex-shrink: 0;
     height: 64px;
-    /* Transparence prononcée - visible quand les cartes défilent dessous */
+    /* Transparence prononcée */
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -82,8 +88,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--space-8);
-    position: sticky;
-    top: 0;
+    /* Position sticky removed - layout is now flex column */
+    position: relative;
     z-index: var(--z-header);
 }
 
@@ -741,22 +747,4 @@
 
 /* ====================================================================
    ANIMATION: Filter/Sort Switch (Quick Fade)
-   Very fast, subtle fade - for instant feedback without empty flash
-   ==================================================================== */
-@keyframes quick-filter-fade {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.filter-refresh-animation {
-    animation: quick-filter-fade 0.2s ease-out forwards;
-}
+/* End of layout.css */

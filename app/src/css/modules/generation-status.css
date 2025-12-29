@@ -292,9 +292,9 @@
     transform: scale(0.97);
 }
 
-/* Add "erreur(s)" text after count */
+/* Add "Erreur(s)" text after count */
 .generation-error-badge span::after {
-    content: " erreur";
+    content: " Erreur";
     font-weight: 500;
 }
 

@@ -83,6 +83,10 @@ export const App = {
         // Slide-Over Import Panel: Initialize
         const { ImportWizardManager } = await import('./ImportWizardManager.js');
         ImportWizardManager.init();
+
+        // Trombinoscope Photo Import: Initialize
+        const { TrombinoscopeManager } = await import('./TrombinoscopeManager.js');
+        TrombinoscopeManager.init();
     },
 
     // --- Initialisation et Setup ---

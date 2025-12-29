@@ -26,8 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Expose global functions for inline HTML onclick handlers
         window.switchHelpTab = (btn, tabId) => {
+            const buttons = Array.from(document.querySelectorAll('.modal-tabs-sidebar .modal-tab-btn'));
+            const currentButton = buttons.find(b => b.classList.contains('active'));
+            const newIndex = buttons.indexOf(btn);
+            const currentIndex = currentButton ? buttons.indexOf(currentButton) : 0;
+
+            // Determine direction: going down in list = content exits up
+            const direction = newIndex > currentIndex ? 'down' : 'up';
+            const contentArea = document.querySelector('.modal-tabs-content-area');
+            if (contentArea) contentArea.dataset.direction = direction;
+
             // Remove active class from all buttons and contents
-            document.querySelectorAll('.modal-tabs-sidebar .modal-tab-btn').forEach(b => b.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
             // Add active class to clicked button and corresponding content
             btn.classList.add('active');
