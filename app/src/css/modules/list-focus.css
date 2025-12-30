@@ -1451,24 +1451,32 @@
     text-transform: uppercase;
 }
 
-/* Editable style (EDIT mode) - Gray background */
+/* Editable style (Current Period) - Premium themed accent */
 .history-grade-badge.editable {
     cursor: pointer;
-    background: var(--surface-secondary);
+    background: rgba(var(--primary-color-rgb), 0.08);
     color: var(--text-primary);
     padding: 3px 10px;
-    border: 1px solid var(--border-color);
+    border: 1.5px solid rgba(var(--primary-color-rgb), 0.35);
     border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* The T-label inside editable badges gets theme color */
+.history-grade-badge.editable span:first-child {
+    color: var(--primary-color);
+    opacity: 0.85;
 }
 
 .history-grade-badge.editable:hover {
-    background: var(--surface-hover);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+    background: rgba(var(--primary-color-rgb), 0.14);
+    border-color: rgba(var(--primary-color-rgb), 0.55);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.18);
 }
 
 [data-theme="dark"] .history-grade-badge.editable {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 /* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
@@ -3581,29 +3589,24 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
-/* Active/Current Grade Container (Pixel Perfect White - Flat/No Halo) */
+/* Active/Current Grade Container (Minimal - White with Subtle Gray Border) */
 .context-grade-group {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    /* Tighter gap between label and value */
     padding: 6px 10px;
-    /* Reduced horizontal padding */
     border-radius: 99px;
     background: var(--surface-color);
-    /* Clean border, no glowish shadow */
-    border: 1px solid var(--border-color);
-    /* Minimal functional shadow only, no aesthetic halo */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    /* Fine subtle gray border */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     height: 34px;
     transition: all 0.2s ease;
 }
 
-/* Subtle border highlight on hover instead of shadow bloom */
+/* Hover: subtle lift only */
 .context-grade-group:hover {
     transform: translateY(-1px);
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .context-grade-group label {
@@ -3638,12 +3641,12 @@
 
 [data-theme="dark"] .context-grade-group {
     background: var(--surface-elevated, #1f2937);
-    border-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: none;
 }
 
 [data-theme="dark"] .context-grade-group:hover {
-    border-color: var(--primary-color);
+    transform: translateY(-1px);
 }
 
 .previous-grade-chip .prev-grade-label {

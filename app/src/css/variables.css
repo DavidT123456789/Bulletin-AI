@@ -49,10 +49,10 @@
     --card-glass-bg: rgba(255, 255, 255, 0.7);
     --card-glass-border: rgba(255, 255, 255, 0.9);
 
-    /* Niveau 3 : Overlay (Modales / Popovers) */
-    --glass-overlay-bg: rgba(245, 245, 244, 0.95);
-    --glass-overlay-border: rgba(255, 255, 255, 0.8);
-    --glass-overlay-blur: 32px;
+    /* Niveau 3 : Overlay (Modales / Popovers) - Frosted glass effect */
+    --glass-overlay-bg: rgba(255, 255, 255, 0.7);
+    --glass-overlay-border: rgba(255, 255, 255, 0.5);
+    --glass-overlay-blur: 24px;
 
     /* --- Physique & Géométrie --- */
     /* Rayons unifiés */
@@ -210,8 +210,8 @@
     --glass-surface-bg: rgba(31, 41, 55, 0.75);
     --glass-surface-border: rgba(255, 255, 255, 0.12);
 
-    --glass-overlay-bg: rgba(17, 24, 39, 0.9);
-    --glass-overlay-border: rgba(255, 255, 255, 0.15);
+    --glass-overlay-bg: rgba(17, 24, 39, 0.7);
+    --glass-overlay-border: rgba(255, 255, 255, 0.1);
 
     /* Ombres plus fortes en dark mode pour détacher */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);

@@ -3073,8 +3073,9 @@ export const FocusPanelManager = {
                         // Animate removal
                         const entryEl = btn.closest('.journal-entry');
                         if (entryEl) {
-                            // FIX: Set explicit height first for transition to work
-                            entryEl.style.height = entryEl.offsetHeight + 'px';
+                            // Set explicit max-height first for transition to work (matches entry animation)
+                            entryEl.style.maxHeight = entryEl.offsetHeight + 'px';
+                            entryEl.style.overflow = 'hidden';
                             entryEl.offsetHeight; // Force reflow
 
                             // Then add class to collapse
@@ -3082,10 +3083,35 @@ export const FocusPanelManager = {
 
                             // Wait for animation to finish
                             setTimeout(() => {
+                                // Remove from DOM (no full re-render to avoid flash)
+                                entryEl.remove();
+
+                                // Delete from data
                                 JournalManager.deleteEntry(result.id, entryId);
-                                this._renderJournal(result);
+
+                                // Update count badge
+                                const countBadge = document.getElementById('focusJournalCount');
+                                if (countBadge) {
+                                    const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
+                                    countBadge.textContent = entries.length;
+                                    countBadge.style.display = entries.length > 0 ? '' : 'none';
+
+                                    // Show empty state if no entries left
+                                    if (entries.length === 0) {
+                                        const contentEl = document.getElementById('focusJournalContent');
+                                        if (contentEl) {
+                                            contentEl.innerHTML = `
+                                                <div class="journal-empty">
+                                                    <i class="fas fa-book-open"></i>
+                                                    <span>Aucune observation</span>
+                                                </div>
+                                            `;
+                                        }
+                                    }
+                                }
+
                                 UI.showNotification('Observation supprimée', 'success');
-                            }, 300);
+                            }, 400);
                         }
                     }
                     // State 1: First click (Ask confirmation)

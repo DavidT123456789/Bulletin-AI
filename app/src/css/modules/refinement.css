@@ -593,7 +593,7 @@ button[data-refine-type="variations"]:hover i {
 
 /* Baguette */
 .polish-wand {
-    color: #D4A836;
+    color: var(--primary-color);
     font-size: 14px;
     transition: transform 0.3s ease;
 }
@@ -601,7 +601,7 @@ button[data-refine-type="variations"]:hover i {
 /* Étoiles positionnées autour de la baguette */
 .polish-sparkle {
     position: absolute;
-    color: #D4A836;
+    color: var(--primary-color);
     font-size: 6px;
     opacity: 0.85;
     transition: all 0.3s ease;
