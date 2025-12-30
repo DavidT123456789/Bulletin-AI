@@ -392,6 +392,40 @@
                             placeholder="Contexte spécifique (bavardages, efforts, attitude...)"></textarea>
                     </div>
 
+                    <!-- 3. JOURNAL DE BORD - Observation notes -->
+                    <div class="journal-section" id="focusJournalSection">
+                        <div class="journal-header" id="focusJournalHeader">
+                            <div class="journal-header-left">
+                                <i class="fas fa-book"></i>
+                                <span>Journal de bord</span>
+                                <span class="journal-count-badge" id="focusJournalCount">0</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="journal-add-btn" id="focusJournalAddBtn"
+                                    aria-label="Ajouter une observation">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <i class="fas fa-chevron-down journal-chevron"></i>
+                            </div>
+                        </div>
+                        <div class="journal-content" id="focusJournalContent">
+                            <!-- Timeline rendered by JS -->
+                        </div>
+                        <div class="journal-quick-add" id="focusJournalQuickAdd">
+                            <div class="journal-tag-buttons" id="focusJournalTags">
+                                <!-- Tag buttons rendered by JS -->
+                            </div>
+                            <textarea class="journal-note-input" id="focusJournalNoteInput"
+                                placeholder="Note optionnelle (max 280 caractères)" maxlength="280" rows="2"></textarea>
+                            <div class="journal-quick-add-actions">
+                                <button class="btn btn-ghost btn-sm" id="focusJournalCancelBtn">Annuler</button>
+                                <button class="btn btn-primary btn-sm" id="focusJournalSaveBtn" disabled>
+                                    <i class="fas fa-check"></i> Enregistrer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Appréciation - Now editable with refinement options -->
                     <div class="focus-appreciation">
                         <div class="focus-appreciation-header">
@@ -428,7 +462,13 @@
                                 <i class="fas fa-sync-alt"></i> Variation
                             </button>
                             <button class="btn btn-ai-outline btn-tiny" data-refine-type="polish">
-                                <i class="fas fa-wand-magic-sparkles"></i> Peaufiner
+                                <span class="polish-icon-wrapper">
+                                    <i class="fas fa-wand-magic polish-wand"></i>
+                                    <span class="polish-sparkle s1">✦</span>
+                                    <span class="polish-sparkle s2">✦</span>
+                                    <span class="polish-sparkle s3">✧</span>
+                                </span>
+                                Peaufiner
                             </button>
                         </div>
                     </div>

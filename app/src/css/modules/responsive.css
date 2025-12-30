@@ -327,4 +327,64 @@
     #empty-state-card h3 {
         font-size: 1.2rem;
     }
+
+    /* Header: Period selector compact */
+    .header-center {
+        flex-grow: 0;
+    }
+
+    .generation-mode-selector.header-style {
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .generation-mode-selector.header-style .mode-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    /* Toolbar: Stack vertically */
+    .output-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .search-container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .toolbar-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .toolbar-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Stats container: Horizontal scroll on mobile */
+    .stats-container {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        padding-bottom: 8px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .stats-container .stat-card {
+        flex: 0 0 auto;
+        min-width: 200px;
+        scroll-snap-align: start;
+    }
+
+    /* FAB positioning */
+    .fab-add-student {
+        bottom: max(20px, env(safe-area-inset-bottom) + 12px);
+        right: 16px;
+    }
 }

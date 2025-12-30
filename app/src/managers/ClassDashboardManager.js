@@ -9,6 +9,7 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
+import { StorageManager } from './StorageManager.js';
 
 /**
  * Class Dashboard Manager
@@ -387,32 +388,60 @@ export const ClassDashboardManager = {
 
     /**
      * Restore cached AI synthesis if it matches current class/period, otherwise reset to placeholder
-     * This persists the synthesis between modal open/close operations
+     * This persists the synthesis between modal open/close operations and sessions (via persistent storage)
      */
     restoreOrResetAISection() {
         const currentClassId = appState.currentClassId;
         const currentPeriod = appState.currentPeriod;
 
-        // Check if we have a cached synthesis that matches current class and period
+        // 1. Check in-memory cache first (fastest)
         if (this.cachedSynthesisHTML &&
             this.cachedSynthesisClassId === currentClassId &&
             this.cachedSynthesisPeriod === currentPeriod) {
 
-            // Restore the cached synthesis
-            const content = this.modal.querySelector('#aiSynthesisContent');
-            const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+            this._applySynthesisToUI(this.cachedSynthesisHTML);
+            return;
+        }
 
-            if (content) {
-                content.innerHTML = this.cachedSynthesisHTML;
-            }
+        // 2. Check persistent storage (Class data)
+        const classes = appState.classes || [];
+        const currentClass = classes.find(c => c.id === currentClassId);
 
-            // Update button to show "Régénérer" since synthesis exists
-            if (generateBtn) {
-                generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Régénérer';
+        if (currentClass && currentClass.analyses && currentClass.analyses[currentPeriod]) {
+            const savedAnalysis = currentClass.analyses[currentPeriod];
+
+            // Check if saved analysis has valid content
+            if (savedAnalysis.content) {
+                // Restore to UI
+                this._applySynthesisToUI(savedAnalysis.content);
+
+                // Update in-memory cache
+                this.cachedSynthesisHTML = savedAnalysis.content;
+                this.cachedSynthesisClassId = currentClassId;
+                this.cachedSynthesisPeriod = currentPeriod;
+                return;
             }
-        } else {
-            // No matching cache, reset to placeholder
-            this.resetAISection();
+        }
+
+        // 3. No matching cache or saved data, reset to placeholder
+        this.resetAISection();
+    },
+
+    /**
+     * Apply synthesis HTML to the UI and update button state
+     * @private
+     */
+    _applySynthesisToUI(htmlContent) {
+        const content = this.modal.querySelector('#aiSynthesisContent');
+        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+
+        if (content) {
+            content.innerHTML = htmlContent;
+        }
+
+        // Update button to show "Régénérer" since synthesis exists
+        if (generateBtn) {
+            generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Régénérer';
         }
     },
 
@@ -457,6 +486,9 @@ export const ClassDashboardManager = {
             this.cachedSynthesisClassId = appState.currentClassId;
             this.cachedSynthesisPeriod = appState.currentPeriod;
 
+            // PERSISTENCE: Save to Class Object in Storage
+            this._saveSynthesisToStorage(synthesisHTML);
+
         } catch (error) {
             content.innerHTML = `
                 <div class="ai-placeholder">
@@ -469,6 +501,39 @@ export const ClassDashboardManager = {
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Régénérer';
             }
+        }
+    },
+
+    /**
+     * Helper to save synthesis to the persistent Class object
+     * @private
+     */
+    _saveSynthesisToStorage(htmlContent) {
+        const currentClassId = appState.currentClassId;
+        const currentPeriod = appState.currentPeriod;
+
+        if (!currentClassId) return; // Legacy mode (no class ID) might not support persistence
+
+        const classes = appState.classes || [];
+        const classObj = classes.find(c => c.id === currentClassId);
+
+        if (classObj) {
+            // Init analyses object if missing
+            if (!classObj.analyses) {
+                classObj.analyses = {};
+            }
+
+            // Save analysis for this period
+            classObj.analyses[currentPeriod] = {
+                content: htmlContent,
+                timestamp: Date.now(),
+                model: appState.currentAIModel,
+                statsSnapshot: this.cachedStats // Optional: save stats used for generation
+            };
+
+            // Trigger storage save
+            StorageManager.saveAppState();
+            // console.log('[ClassDashboardManager] Synthesis saved to persistent storage.');
         }
     },
 

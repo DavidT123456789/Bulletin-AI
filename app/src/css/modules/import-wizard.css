@@ -1251,7 +1251,8 @@
 /* === PREVIEW GRID - ULTIMA DESIGN === */
 .import-wizard-modal .import-preview-grid {
     display: flex;
-    gap: 24px;
+    gap: 16px;
+    /* REDUCED from 24px to fit 3 columns */
     margin-bottom: 0;
     justify-content: center;
     align-items: stretch;
@@ -1270,8 +1271,10 @@
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
-    max-width: 420px;
-    min-width: 260px;
+    max-width: 320px;
+    /* REDUCED from 420px */
+    min-width: 200px;
+    /* REDUCED from 260px */
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     box-shadow: var(--shadow-sm);
 }
@@ -2692,4 +2695,363 @@
     flex: 1;
     min-height: 150px;
     resize: none;
+}
+
+/* ====================================================================
+   MOBILE RESPONSIVE - Import Wizard
+   Full-screen takeover on mobile with proper scrolling
+   ==================================================================== */
+
+@media (max-width: 600px) {
+
+    /* Modal: Full-screen takeover */
+    .import-wizard-modal .modal-content {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        /* Dynamic viewport for mobile browsers */
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    /* Header: Compact */
+    .import-wizard-header-unified {
+        padding: 10px 16px;
+        height: 56px;
+    }
+
+    .wizard-header-title {
+        font-size: 1rem;
+    }
+
+    /* Stepper: Numbers only */
+    .import-wizard-stepper.compact .wizard-step-label {
+        display: none;
+    }
+
+    .import-wizard-stepper.compact .wizard-step {
+        padding: 4px 10px;
+    }
+
+    /* Body: CRITICAL - Enable scrolling on mobile */
+    .import-wizard-body {
+        padding: 12px 16px;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Step content: Allow natural height */
+    .import-wizard-modal .wizard-step-content.active {
+        overflow: visible;
+        min-height: auto;
+    }
+
+    /* Step 1 layout: Stack vertically */
+    .step-one-layout {
+        gap: 10px;
+    }
+
+    /* Drop zone: Smaller */
+    .import-drop-zone {
+        min-height: 100px;
+        padding: 16px;
+    }
+
+    .drop-zone-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .drop-zone-title {
+        font-size: 0.9rem;
+    }
+
+    /* Format chips: Smaller */
+    .drop-zone-formats {
+        position: static;
+        margin-top: 8px;
+        justify-content: center;
+    }
+
+    .format-chip {
+        padding: 3px 8px;
+        font-size: 0.7rem;
+    }
+
+    /* Textarea: Smaller */
+    .import-input-container {
+        min-height: 120px;
+    }
+
+    .import-textarea {
+        min-height: 100px;
+        padding: 12px 14px 44px 14px;
+        font-size: 0.8rem;
+    }
+
+    /* Footer: Fixed bottom with safe-area */
+    .import-wizard-footer {
+        padding: 10px 16px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        min-height: auto;
+        flex-shrink: 0;
+    }
+
+    /* Step 1 Footer: Stack buttons if needed */
+    .wizard-step1-footer {
+        padding: 12px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .wizard-step1-footer .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    /* Step 2 Footer */
+    .wizard-step2-footer {
+        margin-top: 12px;
+        padding-top: 12px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* Buttons: Touch-friendly */
+    .import-wizard-footer .btn,
+    .wizard-step1-footer .btn,
+    .wizard-step2-footer .btn {
+        min-height: 44px;
+        padding: 10px 16px;
+    }
+
+    /* Mapping table: Compress */
+    .import-wizard-modal .import-mapping-table-container {
+        margin: 4px 0;
+    }
+
+    .import-wizard-modal .import-mapping-table th,
+    .import-wizard-modal .import-mapping-table td {
+        padding: 8px 6px;
+        font-size: 0.75rem;
+    }
+
+    .import-wizard-modal .import-mapping-table select {
+        font-size: 0.75rem;
+        padding: 4px 6px;
+    }
+
+    /* === STEP 3: VERIFICATION - Mobile Redesign === */
+
+    /* Header: Stack on mobile */
+    .wizard-step3-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 0;
+    }
+
+    .wizard-step3-header .wizard-step-title {
+        font-size: 0.95rem;
+    }
+
+    .period-badge-pill {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    /* Preview Grid: Horizontal scroll with snap */
+    .import-wizard-modal .import-preview-grid {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        padding: 8px 4px;
+        margin: 0 -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        min-height: 180px;
+        flex: 0 0 auto;
+        /* CRITICAL: flex-start prevents left clipping when content overflows */
+        justify-content: flex-start;
+    }
+
+    .import-wizard-modal .import-preview-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Columns: Fixed width for horizontal scroll - WIDER to prevent truncation */
+    .import-wizard-modal .import-preview-col {
+        flex: 0 0 85%;
+        min-width: 280px;
+        max-width: 320px;
+        scroll-snap-align: center;
+    }
+
+    /* Column header: More compact */
+    .import-wizard-modal .import-col-header {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+    }
+
+    .import-wizard-modal .import-col-header i {
+        font-size: 0.85rem;
+    }
+
+    .import-wizard-modal .import-col-count {
+        padding: 2px 6px;
+        font-size: 0.7rem;
+    }
+
+    /* List items: More compact */
+    .import-wizard-modal .import-col-list {
+        padding: 8px;
+        gap: 4px;
+        max-height: 120px;
+    }
+
+    .import-wizard-modal .import-col-list li {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .import-wizard-modal .li-avatar {
+        width: 22px;
+        height: 22px;
+        font-size: 0.6rem;
+    }
+
+    .import-wizard-modal .li-name {
+        font-size: 0.75rem;
+        /* Allow wrapping on mobile instead of truncating */
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .import-wizard-modal .empty-state-li {
+        padding: 16px 12px;
+        font-size: 0.75rem;
+        min-height: 60px;
+    }
+
+    /* Strategy section: Vertical stack, more compact */
+    .import-strategy-section {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .import-strategy-radio {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .import-strategy-radio .strategy-icon {
+        font-size: 1rem;
+        width: 32px;
+        height: 32px;
+    }
+
+    .import-strategy-radio strong {
+        font-size: 0.85rem;
+    }
+
+    .import-strategy-radio .strategy-desc {
+        font-size: 0.7rem;
+        /* Show full text on mobile - don't truncate */
+        display: block;
+        line-height: 1.4;
+    }
+
+    .strategy-check {
+        width: 20px;
+        height: 20px;
+        font-size: 0.6rem;
+    }
+
+    /* Step 3 Footer adjustments */
+    #wizardStep3Footer {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+
+    #wizardStep3Footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .step3-footer-warning {
+        order: 2;
+        font-size: 0.7rem;
+    }
+
+    #wizardStep3PrevBtn {
+        order: 1;
+    }
+
+    #wizardImportOnlyBtn {
+        order: 3;
+    }
+
+    /* "Absent du fichier" badge style for departed students */
+    .import-wizard-modal .import-col-departed .li-status {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
+}
+
+/* Extra small screens (375px and below) */
+@media (max-width: 375px) {
+    .import-wizard-header-unified {
+        padding: 8px 12px;
+        height: 52px;
+    }
+
+    .wizard-header-title {
+        font-size: 0.9rem;
+        gap: 6px;
+    }
+
+    .import-wizard-body {
+        padding: 10px 12px;
+    }
+
+    .import-drop-zone {
+        min-height: 80px;
+    }
+
+    .drop-zone-formats {
+        gap: 4px;
+    }
+
+    /* Step 3: Even more compact */
+    .import-wizard-modal .import-preview-col {
+        flex: 0 0 85%;
+        min-width: 200px;
+        max-width: 260px;
+    }
+
+    .import-wizard-modal .import-col-list {
+        max-height: 100px;
+    }
+
+    .import-strategy-radio .strategy-desc {
+        -webkit-line-clamp: 1;
+    }
 }

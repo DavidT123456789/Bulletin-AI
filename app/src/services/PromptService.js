@@ -3,6 +3,7 @@ import { DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../config/Config.js
 import { Utils } from '../utils/Utils.js';
 import { DOM } from '../utils/DOM.js';
 import { StatsService } from './StatsService.js';
+import { JournalManager } from '../managers/JournalManager.js';
 
 export const PromptService = {
     /**
@@ -94,7 +95,13 @@ export const PromptService = {
         const contextToUse = periodContext ?? negativeInstructions;
         const specificInfoLine = contextToUse ? `\n"${contextToUse}"` : '';
 
-        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (élève ${genderLabel})${statusLine}${specificInfoLine}\nPériode à évaluer : ${currentPeriod}\n\nHistorique :\n${periodsInfo}\n\n${evolutionText}`);
+        // === JOURNAL DE BORD: Synthesis for prompt ===
+        // Injects tag counts and recent notes to enrich AI context
+        const studentId = studentData.id;
+        const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
+
+        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (élève ${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nHistorique :\n${periodsInfo}\n\n${evolutionText}`);
 
         // Instruction finale simple (déplacée dans les instructions de style)
         // promptParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);

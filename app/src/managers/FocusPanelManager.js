@@ -14,6 +14,7 @@ import { PromptService } from '../services/PromptService.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
+import { JournalManager } from './JournalManager.js';
 // ResultCardsUI removed - logic moved to Utils
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -167,13 +168,16 @@ export const FocusPanelManager = {
         // Context textarea
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) contextInput.addEventListener('input', () => this._autoResizeTextarea(contextInput));
+
+        // === JOURNAL DE BORD EVENT LISTENERS ===
+        this._setupJournalListeners();
     },
 
     /**
-     * Auto-resize textarea based on content
-     * @param {HTMLTextAreaElement} textarea - The textarea element
-     * @private
-     */
+         * Auto-resize textarea based on content
+         * @param {HTMLTextAreaElement} textarea - The textarea element
+         * @private
+         */
     _autoResizeTextarea(textarea) {
         if (!textarea) return;
         // Reset to 1 row to allow full shrink
@@ -1280,6 +1284,9 @@ export const FocusPanelManager = {
 
         // === 11. AI Indicator (✨) ===
         this._updateAiIndicator(result);
+
+        // === 12. JOURNAL DE BORD ===
+        this._renderJournal(result);
     },
 
     /**
@@ -2976,5 +2983,238 @@ export const FocusPanelManager = {
 
         // Release Push Layout
         document.body.classList.remove('sidebar-open');
+    },
+
+    // ====================================================================
+    // JOURNAL DE BORD - Observation notes for students
+    // ====================================================================
+
+    /** Selected tags for quick add */
+    _selectedJournalTags: [],
+
+    /**
+     * Setup Journal event listeners
+     * @private
+     */
+    _setupJournalListeners() {
+        // Section collapse toggle
+        const journalHeader = document.getElementById('focusJournalHeader');
+        if (journalHeader) {
+            journalHeader.addEventListener('click', (e) => {
+                // Don't toggle if clicking the add button
+                if (e.target.closest('.journal-add-btn')) return;
+
+                const section = document.getElementById('focusJournalSection');
+                section?.classList.toggle('collapsed');
+            });
+        }
+
+        // Add button
+        const addBtn = document.getElementById('focusJournalAddBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._toggleJournalQuickAdd(true);
+            });
+        }
+
+        // Cancel button
+        const cancelBtn = document.getElementById('focusJournalCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this._toggleJournalQuickAdd(false));
+        }
+
+        // Save button
+        const saveBtn = document.getElementById('focusJournalSaveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this._saveJournalEntry());
+        }
+
+        // Note input - enable save button when tags are selected
+        const noteInput = document.getElementById('focusJournalNoteInput');
+        if (noteInput) {
+            noteInput.addEventListener('input', () => this._updateJournalSaveButton());
+        }
+    },
+
+    /**
+     * Render Journal section for current student
+     * @param {Object} result - Student data
+     * @private
+     */
+    _renderJournal(result, highlightEntryId = null) {
+        if (!result?.id) {
+            // Hide journal section in creation mode
+            const section = document.getElementById('focusJournalSection');
+            if (section) section.style.display = 'none';
+            return;
+        }
+
+        const section = document.getElementById('focusJournalSection');
+        if (section) section.style.display = '';
+
+        // Render timeline
+        const contentEl = document.getElementById('focusJournalContent');
+        if (contentEl) {
+            contentEl.innerHTML = JournalManager.renderTimeline(result.id, appState.currentPeriod, highlightEntryId);
+
+            // Add delete handlers
+            contentEl.querySelectorAll('.journal-entry-delete').forEach(btn => {
+                let deleteTimeout;
+
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    // State 2: Confirmation click
+                    if (btn.classList.contains('confirm-delete')) {
+                        clearTimeout(deleteTimeout);
+                        const entryId = btn.dataset.entryId;
+
+                        // Animate removal
+                        const entryEl = btn.closest('.journal-entry');
+                        if (entryEl) {
+                            // FIX: Set explicit height first for transition to work
+                            entryEl.style.height = entryEl.offsetHeight + 'px';
+                            entryEl.offsetHeight; // Force reflow
+
+                            // Then add class to collapse
+                            entryEl.classList.add('leave');
+
+                            // Wait for animation to finish
+                            setTimeout(() => {
+                                JournalManager.deleteEntry(result.id, entryId);
+                                this._renderJournal(result);
+                                UI.showNotification('Observation supprimée', 'success');
+                            }, 300);
+                        }
+                    }
+                    // State 1: First click (Ask confirmation)
+                    else {
+                        // Reset any other active delete buttons
+                        contentEl.querySelectorAll('.confirm-delete').forEach(otherBtn => {
+                            otherBtn.classList.remove('confirm-delete');
+                        });
+
+                        btn.classList.add('confirm-delete');
+
+                        // Auto-reset after 3 seconds
+                        deleteTimeout = setTimeout(() => {
+                            btn.classList.remove('confirm-delete');
+                        }, 3000);
+
+                        // Handle click outside to cancel
+                        const outsideClickListener = (evt) => {
+                            if (!btn.contains(evt.target)) {
+                                btn.classList.remove('confirm-delete');
+                                clearTimeout(deleteTimeout);
+                                document.removeEventListener('click', outsideClickListener);
+                            }
+                        };
+                        setTimeout(() => {
+                            document.addEventListener('click', outsideClickListener);
+                        }, 0);
+                    }
+                });
+            });
+        }
+
+        // Update count badge
+        const countBadge = document.getElementById('focusJournalCount');
+        if (countBadge) {
+            const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
+            countBadge.textContent = entries.length;
+            countBadge.style.display = entries.length > 0 ? '' : 'none';
+        }
+
+        // Render tag buttons in quick-add panel
+        const tagsContainer = document.getElementById('focusJournalTags');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = JournalManager.renderTagButtons();
+
+            // Add click handlers for tags
+            tagsContainer.querySelectorAll('.journal-tag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tagId = btn.dataset.tagId;
+                    if (this._selectedJournalTags.includes(tagId)) {
+                        this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
+                        btn.classList.remove('selected');
+                    } else {
+                        this._selectedJournalTags.push(tagId);
+                        btn.classList.add('selected');
+                    }
+                    this._updateJournalSaveButton();
+                });
+            });
+        }
+
+        // Reset quick-add panel state
+        this._toggleJournalQuickAdd(false);
+    },
+
+    /**
+     * Toggle the quick-add panel visibility
+     * @param {boolean} show - True to show, false to hide
+     * @private
+     */
+    _toggleJournalQuickAdd(show) {
+        const quickAdd = document.getElementById('focusJournalQuickAdd');
+        const noteInput = document.getElementById('focusJournalNoteInput');
+        const saveBtn = document.getElementById('focusJournalSaveBtn');
+
+        if (show) {
+            quickAdd?.classList.add('open');
+            // Reset state
+            this._selectedJournalTags = [];
+            if (noteInput) noteInput.value = '';
+            if (saveBtn) saveBtn.disabled = true;
+
+            // Deselect all tag buttons
+            document.querySelectorAll('.journal-tag-btn.selected').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Focus note input after a short delay
+            setTimeout(() => noteInput?.focus(), 100);
+        } else {
+            quickAdd?.classList.remove('open');
+        }
+    },
+
+    /**
+     * Update save button state based on selected tags
+     * @private
+     */
+    _updateJournalSaveButton() {
+        const saveBtn = document.getElementById('focusJournalSaveBtn');
+        if (saveBtn) {
+            // Enable save if at least one tag is selected
+            saveBtn.disabled = this._selectedJournalTags.length === 0;
+        }
+    },
+
+    /**
+     * Save a new journal entry
+     * @private
+     */
+    _saveJournalEntry() {
+        if (!this.currentStudentId || this._selectedJournalTags.length === 0) return;
+
+        const noteInput = document.getElementById('focusJournalNoteInput');
+        const note = noteInput?.value?.trim() || '';
+
+        const entry = JournalManager.addEntry(this.currentStudentId, {
+            tags: [...this._selectedJournalTags],
+            note: note
+        });
+
+        if (entry) {
+            // Re-render journal with animation for new entry
+            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+            if (result) {
+                this._renderJournal(result, entry.id);
+            }
+            this._toggleJournalQuickAdd(false);
+            UI.showNotification('Observation enregistrée', 'success');
+        }
     }
 };

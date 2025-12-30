@@ -1207,18 +1207,45 @@
 }
 
 /* Common Card Style - identity has its own animated styles */
+/* REDESIGNED: Compact header style inspired by Journal de bord */
 .grades-timeline,
 .focus-context-group,
 .focus-appreciation {
-    background: var(--card-glass-bg);
-    backdrop-filter: blur(var(--glass-surface-blur));
-    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-    border: 1px solid var(--card-glass-border);
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    /* No padding - header handles its own padding */
+    box-shadow: none;
+    border: 1px solid var(--border-color);
     margin: 0;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* FIXED: Remove overflow hidden that clips content */
+    overflow: visible;
+    height: auto;
+    min-height: auto;
+}
+
+/* FIX: Journal de bord (Grades Timeline) specifically needs overflow hidden to fix corners
+   because its header structure is different/wrapped */
+.grades-timeline {
+    overflow: hidden;
+}
+
+
+/* Fix header corners matching card radius to prevent background bleed */
+.grades-timeline> :first-child,
+.focus-context-group> :first-child,
+.focus-appreciation> :first-child {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+/* Fix footer corners if needed */
+.grades-timeline> :last-child,
+.focus-context-group> :last-child,
+.focus-appreciation> :last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
 }
 
 [data-theme="dark"] .grades-timeline,
@@ -1289,13 +1316,13 @@
 
 
 /* ============================
-   4. CONTEXT CARD
+   4. CONTEXT CARD - Compact Header Style (matching Journal)
    ============================ */
 .focus-context-label {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 16px;
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1303,6 +1330,7 @@
 
 .focus-context-label i {
     color: var(--primary-color);
+    font-size: 14px;
 }
 
 .period-badge {
@@ -1321,20 +1349,20 @@
     min-height: 48px;
     max-height: 200px;
     height: auto;
-    padding: 8px 4px;
-    /* Harmonized with .focus-appreciation-text */
+    /* Content area padding (increased for better breathing room) */
+    padding: 16px;
+    margin: 0;
     background: transparent;
-    border: var(--input-border-width) solid transparent;
-    border-radius: 12px;
+    border: none;
+    border-radius: 0;
     font-size: 15px;
-    /* Harmonized with .focus-appreciation-text */
     line-height: 1.6;
-    /* Harmonized with .focus-appreciation-text */
     color: var(--text-primary);
     resize: none;
     overflow-y: auto;
     transition: all var(--transition-fast);
     font-family: inherit;
+    box-sizing: border-box;
 }
 
 /* Unified placeholder style - single source of truth */
@@ -1488,12 +1516,18 @@
     font-style: italic;
 }
 
-/* Context Header with Grade Input */
+/* Context Header with Grade Input - Compact Style (matching Journal) */
 .focus-context-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .focus-context-header {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .context-grade-group {
@@ -1561,23 +1595,24 @@
 /* Main Appreciation Card - Harmonized Style */
 /* .focus-appreciation uses shared styles defined above with .grades-timeline and .focus-context-group for harmonization */
 
+/* Appreciation Header - Compact Style (matching Journal/Context) */
 .focus-appreciation-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid var(--border-color);
-    /* Standard separator */
 }
 
 [data-theme="dark"] .focus-appreciation-header {
+    background: rgba(255, 255, 255, 0.03);
     border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .focus-appreciation-label {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -1641,6 +1676,28 @@
     background: var(--primary-color);
     color: white;
     box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Main Appreciation Text Area - ContentEditable */
+.focus-appreciation-text {
+    width: 100%;
+    min-height: 80px;
+    max-height: 500px;
+    height: auto;
+    padding: 16px;
+    /* Matching padding with header/context */
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    outline: none;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    position: relative;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
 }
 
 /* Indicator for periods with content */
@@ -2000,21 +2057,7 @@
     color: rgb(251, 191, 36);
 }
 
-.focus-appreciation-text {
-    font-size: 15px;
-    /* Readable size */
-    line-height: 1.6;
-    color: var(--text-primary);
-    min-height: 48px;
-    /* Match context textarea */
-    padding: 8px 0;
-    outline: none;
-    white-space: pre-wrap;
-    background: transparent;
-    border: var(--input-border-width) solid transparent;
-    border-radius: 12px;
-    transition: all var(--transition-fast);
-}
+/* Redefinition removed to avoid conflict with lines 1659-1678 */
 
 /* Editable appreciation */
 .focus-appreciation-text[contenteditable="true"] {
@@ -2082,10 +2125,11 @@
 .focus-refinement-options {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    gap: 8px;
+    margin-top: 0;
+    /* Consistent padding with other card elements */
+    padding: 16px;
+
 }
 
 /* Redesigned Chips - Compact */
@@ -2266,10 +2310,9 @@
     border-radius: 20px;
     border: 1px solid var(--card-glass-border);
     overflow: visible;
-    margin-top: 16px;
-    /* Added for separation when bottom-placed */
-    margin-bottom: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+    margin: 0;
+    /* Spacing handled by parent gap */
+    box-shadow: none;
     padding: 20px;
 }
 
@@ -3859,5 +3902,381 @@
     50%,
     100% {
         left: 100%;
+    }
+}
+
+/* ====================================================================
+   MOBILE RESPONSIVE - Focus Panel & List View
+   Full-screen experience on mobile devices
+   ==================================================================== */
+
+/* Tablet Breakpoint (max-width: 768px) */
+@media (max-width: 768px) {
+
+    /* Focus Panel: Wider on tablet */
+    .focus-panel {
+        max-width: 100%;
+        width: 90%;
+    }
+
+    /* Simplify header layout */
+    .focus-header {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .focus-student-name {
+        font-size: 18px;
+    }
+
+    /* Navigation buttons more compact */
+    .focus-nav-buttons {
+        gap: 4px;
+        padding: 4px 8px;
+    }
+
+    .focus-nav-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .focus-position {
+        font-size: 12px;
+        min-width: 36px;
+    }
+
+    /* Content area */
+    .focus-content {
+        padding: 16px;
+    }
+
+    /* Footer buttons stack on smaller tablets */
+    .focus-footer {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .focus-footer .btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    /* Refinement options: scroll horizontally */
+    .focus-refinement-options {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+
+    .focus-refinement-options .btn {
+        flex-shrink: 0;
+    }
+
+    /* List table: hide evolution column */
+    .student-list-table .evolution-header,
+    .student-list-table .evolution-cell {
+        display: none;
+    }
+}
+
+/* Mobile Breakpoint (max-width: 600px) */
+@media (max-width: 600px) {
+
+    /* Focus Panel: Full screen takeover */
+    .focus-panel {
+        max-width: 100%;
+        width: 100%;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        /* Dynamic viewport height for mobile browsers */
+        border-radius: 0;
+        border-top: none;
+    }
+
+    /* Backdrop: full screen */
+    .focus-panel-backdrop {
+        top: 0;
+        height: 100%;
+    }
+
+    /* Header: Simplified for mobile */
+    .focus-header {
+        padding: 12px 16px;
+        gap: 8px;
+        /* Safe area for notched devices */
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .focus-header-left {
+        flex-shrink: 0;
+    }
+
+    .focus-panel-avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+
+    .focus-student-name {
+        font-size: 16px;
+        padding: 4px 8px;
+        margin: -4px -8px;
+    }
+
+    .focus-name-edit-icon {
+        font-size: 10px;
+    }
+
+    /* Status badges wrap on mobile */
+    .focus-status-badges {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .focus-status-badges .status-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    /* Navigation: Compact pill */
+    .focus-nav-buttons {
+        gap: 2px;
+        padding: 4px 6px;
+        border-radius: 12px;
+    }
+
+    .focus-nav-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .focus-position {
+        font-size: 11px;
+        min-width: 32px;
+    }
+
+    .focus-nav-divider {
+        height: 16px;
+        margin: 0 4px;
+    }
+
+    /* Content: Full width, less padding */
+    .focus-content {
+        padding: 12px 16px;
+    }
+
+    /* Context group */
+    .focus-context-group {
+        padding: 12px;
+    }
+
+    .focus-context-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .grades-wrapper {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .focus-context-textarea {
+        min-height: 60px;
+        font-size: 14px;
+    }
+
+    /* Appreciation area */
+    .focus-appreciation {
+        padding: 12px;
+    }
+
+    .focus-appreciation-text {
+        min-height: 100px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Refinement buttons: Horizontal scroll */
+    .focus-refinement-options {
+        margin: 8px -12px 0;
+        padding: 0 12px 8px;
+        gap: 6px;
+    }
+
+    .focus-refinement-options .btn {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    /* Footer: Fixed at bottom with safe area */
+    .focus-footer {
+        padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .focus-footer .btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    /* Analysis page on mobile */
+    .focus-analysis-header {
+        padding: 12px 16px;
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .focus-analysis-title {
+        font-size: 16px;
+    }
+
+    .analysis-card {
+        padding: 12px;
+    }
+
+    .analysis-card-header h4 {
+        font-size: 14px;
+    }
+
+    /* List Table Mobile Adaptations */
+    .student-list-view {
+        border-radius: var(--radius-md);
+        /* CRITICAL: Allow horizontal scroll on mobile */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Bottom padding to avoid FAB overlap */
+        padding-bottom: 80px;
+    }
+
+    .student-list-table {
+        /* Ensure table doesn't shrink - allow horizontal scroll */
+        min-width: 500px;
+    }
+
+    .student-list-table th,
+    .student-list-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    /* Hide less important columns on mobile */
+    .student-list-table .evolution-header,
+    .student-list-table .evolution-cell,
+    .student-list-table th[data-sort-field="evolution"],
+    .student-list-table td.evolution-cell {
+        display: none;
+    }
+
+    /* Name cell: More space */
+    .student-name-cell {
+        min-width: 120px;
+    }
+
+    /* Grade cells: Compact */
+    .grade-cell {
+        min-width: 45px;
+    }
+
+    /* Appreciation preview: Shorter */
+    .appreciation-cell {
+        max-width: 150px;
+        min-width: 100px;
+    }
+
+    .appreciation-preview {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* Action dropdown */
+    .btn-action-menu {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* Small Mobile Breakpoint (max-width: 375px) */
+@media (max-width: 375px) {
+    .focus-header {
+        padding: 8px 12px;
+        padding-top: max(8px, env(safe-area-inset-top));
+    }
+
+    .focus-panel-avatar-container {
+        width: 36px;
+        height: 36px;
+    }
+
+    .focus-student-name {
+        font-size: 15px;
+    }
+
+    .focus-nav-buttons {
+        padding: 3px 5px;
+    }
+
+    .focus-nav-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .focus-content {
+        padding: 10px 12px;
+    }
+
+    .focus-footer {
+        padding: 10px 12px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    .focus-footer .btn {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    /* List: Ultra compact */
+    .student-list-table th,
+    .student-list-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    .student-name-cell {
+        min-width: 100px;
+    }
+
+    /* Hide appreciation column on very small screens */
+    .student-list-table .appreciation-header,
+    .student-list-table .appreciation-cell {
+        display: none;
+    }
+}
+
+/* Touch-friendly: Larger tap targets */
+@media (pointer: coarse) {
+
+    .focus-nav-btn,
+    .btn-action-menu,
+    .focus-back-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .focus-footer .btn {
+        min-height: 44px;
+    }
+
+    /* FAB: Larger on touch devices */
+    .fab-add-student {
+        width: 56px;
+        height: 56px;
+        font-size: 20px;
     }
 }
