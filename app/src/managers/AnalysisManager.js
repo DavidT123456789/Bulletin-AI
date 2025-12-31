@@ -102,7 +102,7 @@ export const AnalysisManager = {
         }
 
         try {
-            const prompts = AppreciationsManager.getAllPrompts(result.studentData);
+            const prompts = AppreciationsManager.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.sw = prompts.sw;
             const resp = await AIService.callAIWithFallback(prompts.sw);
             result.strengthsWeaknesses = resp.text;
@@ -129,7 +129,7 @@ export const AnalysisManager = {
         }
 
         try {
-            const prompts = AppreciationsManager.getAllPrompts(result.studentData);
+            const prompts = AppreciationsManager.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.ns = prompts.ns;
             const resp = await AIService.callAIWithFallback(prompts.ns);
 

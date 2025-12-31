@@ -399,30 +399,42 @@
                                 <i class="fas fa-book"></i>
                                 <span>Journal de bord</span>
                                 <span class="journal-count-badge" id="focusJournalCount">0</span>
+                                <!-- Threshold quick control -->
+                                <div class="journal-threshold-control" id="journalThresholdControl">
+                                    <button class="journal-threshold-btn tooltip" id="journalThresholdBtn"
+                                        data-tooltip="Cliquez pour régler le seuil">
+                                        <i class="fas fa-filter"></i>
+                                        <span id="journalThresholdValue">≥2×</span>
+                                    </button>
+                                    <div class="journal-threshold-popover" id="journalThresholdPopover">
+                                        <div class="threshold-popover-header">Seuil de signalement</div>
+                                        <div class="threshold-popover-desc">Observations répétées transmises à l'IA
+                                        </div>
+                                        <div class="threshold-popover-controls">
+                                            <button class="threshold-adjust-btn" data-delta="-1">−</button>
+                                            <span class="threshold-current" id="thresholdCurrentValue">2</span>
+                                            <button class="threshold-adjust-btn" data-delta="+1">+</button>
+                                        </div>
+                                        <div class="threshold-popover-hint">
+                                            <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="journal-add-btn" id="focusJournalAddBtn"
-                                    aria-label="Ajouter une observation">
-                                    <i class="fas fa-plus"></i>
+                            <div class="journal-header-controls" id="journalHeaderControls">
+                                <!-- Tag dropdowns (Always visible) -->
+                                <div class="journal-inline-tags" id="journalInlineTags" style="display: flex;">
+                                    <!-- Rendered by JS: Positif/Négatif dropdowns -->
+                                </div>
+                                <!-- Manual note button (Pen icon) -->
+                                <button class="btn-icon-ghost tooltip" id="focusJournalNoteBtn"
+                                    data-tooltip="Ajouter une note libre">
+                                    <i class="fas fa-pen"></i>
                                 </button>
-                                <i class="fas fa-chevron-down journal-chevron"></i>
                             </div>
                         </div>
                         <div class="journal-content" id="focusJournalContent">
-                            <!-- Timeline rendered by JS -->
-                        </div>
-                        <div class="journal-quick-add" id="focusJournalQuickAdd">
-                            <div class="journal-tag-buttons" id="focusJournalTags">
-                                <!-- Tag buttons rendered by JS -->
-                            </div>
-                            <textarea class="journal-note-input" id="focusJournalNoteInput"
-                                placeholder="Note optionnelle (max 280 caractères)" maxlength="280" rows="2"></textarea>
-                            <div class="journal-quick-add-actions">
-                                <button class="btn btn-ghost btn-sm" id="focusJournalCancelBtn">Annuler</button>
-                                <button class="btn btn-primary btn-sm" id="focusJournalSaveBtn" disabled>
-                                    <i class="fas fa-check"></i> Enregistrer
-                                </button>
-                            </div>
+                            <!-- Draft preview (when editing) + Timeline rendered by JS -->
                         </div>
                     </div>
 

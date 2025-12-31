@@ -371,7 +371,7 @@ export const AppreciationsManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
         try {
-            const prompts = this.getAllPrompts(result.studentData);
+            const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.sw = prompts.sw;
             const resp = await AIService.callAIWithFallback(prompts.sw);
             result.strengthsWeaknesses = resp.text;
@@ -389,7 +389,7 @@ export const AppreciationsManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result || !UI.checkAPIKeyPresence(silent)) throw new Error("Conditions non remplies.");
         try {
-            const prompts = this.getAllPrompts(result.studentData);
+            const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.ns = prompts.ns;
             const resp = await AIService.callAIWithFallback(prompts.ns);
 
@@ -446,6 +446,7 @@ export const AppreciationsManager = {
             this.pushToHistory(originalResult, 'regenerate');
 
             const updatedStudentData = JSON.parse(JSON.stringify(originalResult.studentData));
+            updatedStudentData.id = id; // Include ID for journal lookup
             updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
             updatedStudentData.currentAIModel = appState.currentAIModel;
 
