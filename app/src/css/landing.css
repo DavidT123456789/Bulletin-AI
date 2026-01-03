@@ -325,6 +325,11 @@ img {
     align-items: center;
 }
 
+.lp-section--demo {
+    padding-top: 40px;
+    padding-bottom: 60px;
+}
+
 /* ============================================
    NAVIGATION
    ============================================ */
@@ -613,6 +618,23 @@ img {
     animation: fadeInBlur 0.8s var(--lp-ease-spring) 0.3s both;
 }
 
+/* CTA Group: Button + Badge fused */
+.lp-hero__cta-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+    animation: fadeInBlur 0.8s var(--lp-ease-spring) 0.3s both;
+}
+
+.lp-hero__cta-group .lp-hero__badge {
+    margin-bottom: 0;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    animation: none;
+}
+
 .lp-hero__stats {
     display: flex;
     align-items: center;
@@ -831,7 +853,7 @@ img {
 }
 
 .lp-compare__side {
-    padding: 48px 40px;
+    padding: 32px 28px;
     border-radius: var(--lp-radius-xl);
     position: relative;
     backdrop-filter: blur(20px);
@@ -888,14 +910,14 @@ img {
 }
 
 .lp-compare__icon {
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
-    font-size: 2rem;
-    margin-bottom: 24px;
+    border-radius: 16px;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
     position: relative;
     /* Unified Icon Style using variables */
     background: rgba(var(--side-rgb), 0.1);
@@ -905,43 +927,44 @@ img {
 /* Remove redundant specific rules since we use variables now */
 
 .lp-compare__label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 16px;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
     opacity: 0.9;
     color: rgb(var(--side-rgb));
 }
 
 .lp-compare__title {
     font-family: var(--lp-font-heading);
-    font-size: 1.75rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     color: var(--lp-text-main);
     letter-spacing: -0.01em;
 }
 
 .lp-compare__text {
     color: var(--lp-text-muted);
-    line-height: 1.7;
-    margin-bottom: 32px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
 }
 
 .lp-compare__list {
     list-style: none;
-    margin-top: 24px;
+    margin-top: 16px;
 }
 
 .lp-compare__list li {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 10px;
     color: var(--lp-text-muted);
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.85rem;
+    line-height: 1.4;
 }
 
 .lp-compare__list li i {
@@ -1022,10 +1045,15 @@ img {
 }
 
 /* Connection line - styled below with animation */
+/* .lp-step base styles moved below after connection line animation */
 
-.lp-step {
-    position: relative;
-    z-index: 1;
+.lp-step:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(var(--lp-primary-rgb), 0.3);
+    box-shadow:
+        0 8px 32px -8px rgba(var(--lp-primary-rgb), 0.2),
+        0 0 0 1px rgba(var(--lp-primary-rgb), 0.1);
+    transform: translateY(-4px);
 }
 
 .lp-step__number {
@@ -1043,6 +1071,13 @@ img {
     font-weight: 700;
     color: var(--lp-primary);
     box-shadow: var(--lp-shadow-md);
+    transition: all var(--lp-duration-normal) var(--lp-ease-spring);
+}
+
+.lp-step:hover .lp-step__number {
+    background: var(--lp-primary);
+    color: white;
+    box-shadow: 0 4px 20px -4px rgba(var(--lp-primary-rgb), 0.5);
 }
 
 .lp-step__icon {
@@ -1234,28 +1269,69 @@ img {
     font-size: 0.9rem;
 }
 
-/* Enhanced connection line with pulse animation */
-@keyframes linePulse {
+/* ============================================
+   STEP NUMBER ANIMATION
+   Simple: static color inversion + scale (no GPU-heavy animations)
+   ============================================ */
 
-    0%,
-    100% {
-        opacity: 0.2;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
+/* Step card base */
+.lp-step {
+    position: relative;
+    z-index: 1;
+    padding: 32px 24px;
+    border-radius: var(--lp-radius-xl);
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    transition: all var(--lp-duration-normal) var(--lp-ease-spring);
 }
 
-.lp-steps__grid::before {
-    content: '';
-    position: absolute;
-    top: 60px;
-    left: 20%;
-    right: 20%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--lp-primary), var(--lp-accent), transparent);
-    animation: linePulse 3s ease-in-out infinite;
+/* Step number */
+.lp-step__number {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--lp-surface);
+    border: 2px solid var(--lp-primary);
+    border-radius: 50%;
+    font-family: var(--lp-font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--lp-primary);
+    box-shadow: var(--lp-shadow-md);
+    transition: all 0.5s var(--lp-ease-spring);
+    z-index: 2;
+}
+
+/* Active number: inverted colors + scale (no animation) */
+.lp-step.is-active .lp-step__number {
+    background: var(--lp-primary);
+    color: white;
+    border-color: var(--lp-primary);
+    transform: scale(1.08);
+    box-shadow: 0 4px 20px -4px rgba(var(--lp-primary-rgb), 0.5);
+}
+
+/* Step card active state - simplified, no card border animation */
+.lp-step.is-active {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(var(--lp-primary-rgb), 0.2);
+    box-shadow:
+        0 8px 32px -8px rgba(var(--lp-primary-rgb), 0.2),
+        0 0 0 1px rgba(var(--lp-primary-rgb), 0.08);
+    transform: translateY(-4px);
+}
+
+.lp-step.is-active .lp-step__icon {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 30px -10px rgba(var(--lp-primary-rgb), 0.4);
+    background: white;
+    border: 1px solid rgba(var(--lp-primary-rgb), 0.2);
 }
 
 
@@ -1568,6 +1644,47 @@ img {
     letter-spacing: 2px;
 }
 
+/* Featured Testimonial CTA Variant */
+.lp-testimonial--featured {
+    border-style: solid;
+    border-color: rgba(var(--lp-primary-rgb), 0.4);
+    background: rgba(var(--lp-primary-rgb), 0.05);
+}
+
+.lp-testimonial--featured:hover {
+    border-color: var(--lp-primary);
+    background: rgba(var(--lp-primary-rgb), 0.08);
+    box-shadow: var(--lp-shadow-glow);
+}
+
+.lp-testimonial__cta-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    background: rgba(var(--lp-primary-rgb), 0.1);
+    border-radius: var(--lp-radius-pill);
+    color: var(--lp-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--lp-duration-fast) var(--lp-ease-spring);
+}
+
+.lp-testimonial--featured:hover .lp-testimonial__cta-hint {
+    background: var(--lp-primary);
+    color: white;
+    transform: translateX(4px);
+}
+
+/* Compact grid for 2 items */
+.lp-testimonials__grid--compact {
+    max-width: 800px;
+    margin: 0 auto;
+    grid-template-columns: repeat(2, 1fr);
+}
+
 /* Skeleton Testimonials */
 .lp-testimonial--skeleton {
     background: var(--lp-surface);
@@ -1690,7 +1807,10 @@ img {
 }
 
 .lp-faq__list {
-    max-width: 800px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -1698,7 +1818,6 @@ img {
     background: var(--lp-surface);
     border: 1px solid var(--lp-border);
     border-radius: var(--lp-radius-lg);
-    margin-bottom: 16px;
     overflow: hidden;
     transition: all var(--lp-duration-fast) var(--lp-ease-material);
 }
@@ -1821,6 +1940,71 @@ img {
     background: rgba(255, 255, 255, 0.9);
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Primary button variant in CTA */
+.lp-cta .lp-btn--primary {
+    background: white;
+    color: var(--lp-primary-dark);
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.lp-cta .lp-btn--primary:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.lp-cta .lp-btn--primary::before {
+    display: none;
+    /* No shine sweep on white button */
+}
+
+/* Open Source Footer in CTA */
+.lp-cta__opensource {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    font-size: 0.95rem;
+    opacity: 0.9;
+    flex-wrap: wrap;
+}
+
+.lp-cta__opensource-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.lp-cta__opensource-label i {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.lp-cta__opensource-divider {
+    opacity: 0.5;
+}
+
+.lp-cta__opensource-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    opacity: 0.85;
+    transition: all var(--lp-duration-fast) var(--lp-ease-material);
+    text-decoration: none;
+}
+
+.lp-cta__opensource-link:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.lp-cta__opensource-link i {
+    font-size: 1.1rem;
 }
 
 /* ============================================
@@ -2140,6 +2324,10 @@ img {
     }
 
     .lp-testimonials__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lp-faq__list {
         grid-template-columns: 1fr;
     }
 
