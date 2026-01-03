@@ -2380,6 +2380,28 @@
             }
         };
     </script>
+
+    <!-- Page Entrance Transition from Landing Page -->
+    <script>
+        (function initPageEntrance() {
+            // Check if user is coming from landing page (within last 2 seconds)
+            const transitionTimestamp = sessionStorage.getItem('landingTransition');
+            const now = Date.now();
+
+            if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
+                // Clear the flag
+                sessionStorage.removeItem('landingTransition');
+
+                // Apply entrance animation class
+                document.body.classList.add('is-transitioning-in');
+
+                // Remove the class after animation completes
+                setTimeout(() => {
+                    document.body.classList.remove('is-transitioning-in');
+                }, 800); // Slightly longer than animation duration
+            }
+        })();
+    </script>
 </body>
 
 </html>

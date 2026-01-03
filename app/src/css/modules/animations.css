@@ -490,3 +490,42 @@
 .selected-glow-subtle[data-radius="full"]::before {
     border-radius: var(--radius-pill);
 }
+
+/* ====================================================================
+   PAGE ENTRANCE ANIMATION (iOS 2025 Style)
+   Triggered when user arrives from landing page
+   ==================================================================== */
+
+/* Entry animation: Blur-to-sharp + Fade-in + slight scale-up */
+@keyframes pageEnterBlur {
+    0% {
+        opacity: 0;
+        filter: blur(12px);
+        transform: scale(0.96);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+}
+
+/* Applied to body when transitioning in from landing */
+body.is-transitioning-in {
+    animation: pageEnterBlur 0.7s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Staggered entrance for key elements (optional enhancement) */
+body.is-transitioning-in .header {
+    animation: pageEnterBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.05s both;
+}
+
+body.is-transitioning-in .main-content {
+    animation: pageEnterBlur 0.7s cubic-bezier(0.32, 0.72, 0, 1) 0.1s both;
+}
+
+/* Prevent flash of unstyled content during transition */
+body.preload-transition {
+    opacity: 0;
+}
