@@ -1021,17 +1021,7 @@ img {
     position: relative;
 }
 
-/* Connection line */
-.lp-steps__grid::before {
-    content: '';
-    position: absolute;
-    top: 60px;
-    left: 20%;
-    right: 20%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--lp-primary), var(--lp-accent), transparent);
-    opacity: 0.25;
-}
+/* Connection line - styled below with animation */
 
 .lp-step {
     position: relative;
@@ -1087,7 +1077,187 @@ img {
     color: var(--lp-text-muted);
     font-size: 0.95rem;
     line-height: 1.6;
+    margin-bottom: 16px;
 }
+
+/* Step Badge (time indicators) */
+.lp-step__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(var(--lp-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--lp-primary-rgb), 0.2);
+    border-radius: var(--lp-radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--lp-primary);
+    margin-bottom: 12px;
+}
+
+.lp-step__badge i {
+    font-size: 0.7rem;
+}
+
+/* Step Visual Illustrations */
+.lp-step__visual {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(var(--lp-primary-rgb), 0.04);
+    border-radius: var(--lp-radius-md);
+    border: 1px dashed rgba(var(--lp-primary-rgb), 0.15);
+}
+
+/* Step 1: Table Visual */
+.lp-step__visual-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.lp-step__visual-row:last-child {
+    margin-bottom: 0;
+}
+
+.lp-step__visual-cell {
+    flex: 1;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--lp-text-muted);
+    text-align: left;
+}
+
+.lp-step__visual-cell--data {
+    font-weight: 500;
+    color: var(--lp-text-main);
+    background: white;
+}
+
+/* Step 2: AI Animation Visual */
+.lp-step__visual--ai {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+}
+
+.lp-step__visual-ai-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--lp-primary), var(--lp-accent));
+    border-radius: 50%;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.lp-step__visual-ai-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lp-step__visual-ai-line {
+    height: 8px;
+    background: linear-gradient(90deg, rgba(var(--lp-primary-rgb), 0.3), rgba(var(--lp-primary-rgb), 0.1));
+    border-radius: 4px;
+    animation: shimmerLine 1.5s ease-in-out infinite;
+}
+
+.lp-step__visual-ai-line--short {
+    width: 70%;
+}
+
+@keyframes shimmerLine {
+
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scaleX(0.95);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+/* Step 3: Export Visual */
+.lp-step__visual--export {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+}
+
+.lp-step__visual-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: white;
+    border-radius: var(--lp-radius-sm);
+    box-shadow: var(--lp-shadow-sm);
+    font-size: 0.7rem;
+    color: var(--lp-text-muted);
+}
+
+.lp-step__visual-card i {
+    color: var(--lp-primary);
+    font-size: 0.65rem;
+}
+
+.lp-step__visual-arrow {
+    color: var(--lp-primary);
+    font-size: 0.85rem;
+    animation: slideRight 2s ease-in-out infinite;
+}
+
+.lp-step__visual-target {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--lp-primary), var(--lp-accent));
+    border-radius: 50%;
+    color: white;
+    font-size: 0.9rem;
+}
+
+/* Enhanced connection line with pulse animation */
+@keyframes linePulse {
+
+    0%,
+    100% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.lp-steps__grid::before {
+    content: '';
+    position: absolute;
+    top: 60px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--lp-primary), var(--lp-accent), transparent);
+    animation: linePulse 3s ease-in-out infinite;
+}
+
 
 /* ============================================
    BENTO GRID FEATURES
