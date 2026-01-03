@@ -3,7 +3,7 @@
 > **Assistant intelligent pour la rédaction d'appréciations scolaires**
 
 [![Version](https://img.shields.io/badge/version-0.1.0_Beta-blue.svg)](./CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-orange.svg)](./LICENSE.txt)
 
 ## 🎯 Description
 
@@ -117,7 +117,7 @@ npm run test:coverage
 
 ## 📄 Licence
 
-MIT — Voir [LICENSE](./LICENSE)
+CC BY-NC-SA 4.0 — Voir [LICENSE.txt](./LICENSE.txt)
 
 ---
 

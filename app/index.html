@@ -47,15 +47,10 @@
                 <a href="#features" class="lp-nav__link">Fonctionnalités</a>
                 <a href="#testimonials" class="lp-nav__link">Témoignages</a>
                 <a href="#faq" class="lp-nav__link">FAQ</a>
-                <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
-                    target="_blank" class="lp-nav__link"><i class="fas fa-comment-dots"></i> Avis</a>
             </div>
 
             <div class="lp-nav__cta">
-                <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank" class="lp-nav__link"
-                    title="GitHub">
-                    <i class="fab fa-github" style="font-size: 1.2rem;"></i>
-                </a>
+
                 <a href="./app.html" class="lp-btn lp-btn--primary lp-btn--sm">
                     Lancer l'App
                 </a>
@@ -76,22 +71,20 @@
                 </div>
 
                 <h1 class="lp-hero__title">
-                    Vos appréciations, rédigées par <br>
-                    <span class="lp-hero__title-gradient">votre Assistant Personnel</span>.
+                    Vos bulletins, rédigés par <br>
+                    <span class="lp-hero__title-gradient">votre assistant</span>.
                 </h1>
 
                 <p class="lp-hero__subtitle">
-                    Importez vos notes, choisissez le ton et laissez l'IA rédiger des appréciations uniques,
-                    constructives et personnalisées pour chaque élève en quelques secondes.
+                    Importez vos notes, choisissez le ton et laissez l'IA rédiger des appréciations uniques
+                    et personnalisées pour chaque élève. Vous supervisez, vous gagnez du temps.
                 </p>
 
                 <div class="lp-hero__actions">
                     <a href="./app.html" class="lp-btn lp-btn--primary lp-btn--lg">
                         <i class="fas fa-wand-magic-sparkles"></i> Commencer gratuitement
                     </a>
-                    <a href="#demo" class="lp-btn lp-btn--secondary lp-btn--lg">
-                        <i class="fas fa-play"></i> Voir une démo
-                    </a>
+
                 </div>
 
                 <div class="lp-hero__stats">
@@ -100,12 +93,12 @@
                         <span>100% Gratuit</span>
                     </div>
                     <div class="lp-hero__stat">
-                        <div class="lp-hero__stat-icon"><i class="fas fa-shield-alt"></i></div>
-                        <span>Données locales (Privé)</span>
+                        <div class="lp-hero__stat-icon"><i class="fas fa-user-secret"></i></div>
+                        <span>Élèves anonymisés</span>
                     </div>
                     <div class="lp-hero__stat">
-                        <div class="lp-hero__stat-icon"><i class="fas fa-bolt"></i></div>
-                        <span>Génération instantanée</span>
+                        <div class="lp-hero__stat-icon"><i class="fas fa-shield-alt"></i></div>
+                        <span>Données locales</span>
                     </div>
                 </div>
             </div>
@@ -114,9 +107,14 @@
             <div class="lp-hero__visual">
                 <div class="lp-hero__mockup">
                     <div class="lp-hero__mockup-header">
-                        <div class="lp-hero__mockup-dot lp-hero__mockup-dot--red"></div>
-                        <div class="lp-hero__mockup-dot lp-hero__mockup-dot--yellow"></div>
-                        <div class="lp-hero__mockup-dot lp-hero__mockup-dot--green"></div>
+                        <div class="lp-hero__mockup-title">
+                            <i class="fas fa-bolt"></i> Assistant de rédaction
+                        </div>
+                        <div class="lp-hero__mockup-controls">
+                            <!-- Fake app controls -->
+                            <span class="lp-hero__control"></span>
+                            <span class="lp-hero__control"></span>
+                        </div>
                     </div>
                     <div class="lp-hero__mockup-content">
                         <!-- Left: Input/Problem -->
@@ -132,14 +130,12 @@
                         </div>
 
                         <!-- Right: Output/Solution -->
-                        <div class="lp-hero__mockup-after">
+                        <div class="lp-hero__mockup-after" id="mockup-ai-card">
                             <div class="lp-hero__mockup-label">
                                 <i class="fas fa-robot"></i> Appréciation IA
                             </div>
-                            <div class="lp-hero__mockup-text">
-                                "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des
-                                bavardages perturbent sa progression. Il est impératif qu'il se recentre et adopte une
-                                attitude plus studieuse pour redresser la barre."
+                            <div class="lp-hero__mockup-text" id="mockup-ai-text">
+                                <!-- Text will be injected by JS -->
                             </div>
                         </div>
                     </div>
@@ -149,17 +145,7 @@
     </header>
 
     <!-- Social Proof -->
-    <section class="lp-proof">
-        <div class="lp-container lp-proof__inner">
-            <p class="lp-proof__text">Recommandé par des enseignants innovants</p>
-            <div class="lp-proof__logos">
-                <div class="lp-proof__logo"><i class="fas fa-school"></i> Collège Jean Jaurès</div>
-                <div class="lp-proof__logo"><i class="fas fa-university"></i> Lycée Victor Hugo</div>
-                <div class="lp-proof__logo"><i class="fas fa-graduation-cap"></i> Académie Numérique</div>
-                <div class="lp-proof__logo"><i class="fas fa-chalkboard-teacher"></i> Profs 3.0</div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Problem / Solution (Avant/Après) -->
     <section class="lp-section" id="problem-solution">
@@ -173,11 +159,11 @@
                     <div class="lp-compare__label">Avant</div>
                     <h3 class="lp-compare__title">La corvée des bulletins</h3>
                     <p class="lp-compare__text">
-                        Passer des week-ends entiers à répéter les mêmes phrases, chercher ses mots et copier-coller des
-                        données.
+                        Passer des heures à chercher ses mots, répéter les mêmes phrases et perdre de vue l'ensemble de
+                        la classe.
                     </p>
                     <ul class="lp-compare__list">
-                        <li><i class="fas fa-times-circle"></i> 10h+ de rédaction par trimestre</li>
+                        <li><i class="fas fa-times-circle"></i> Plusieurs heures par trimestre</li>
                         <li><i class="fas fa-times-circle"></i> Formulations répétitives</li>
                         <li><i class="fas fa-times-circle"></i> Fatigue mentale</li>
                     </ul>
@@ -194,16 +180,15 @@
                         <i class="fas fa-magic"></i>
                     </div>
                     <div class="lp-compare__label">Avec Bulletin AI</div>
-                    <h3 class="lp-compare__title">Assistant Intelligent</h3>
+                    <h3 class="lp-compare__title">Supervision intelligente</h3>
                     <p class="lp-compare__text">
-                        Générez des appréciations uniques et bienveillantes en 3 clics. Gardez le contrôle final, gagnez
-                        du temps.
+                        L'IA rédige, vous supervisez. Gardez une vue d'ensemble sur votre classe tout en gagnant du
+                        temps.
                     </p>
                     <ul class="lp-compare__list">
-                        <li><i class="fas fa-check-circle"></i>
-                            &lt; 30 min pour une classe</li>
+                        <li><i class="fas fa-check-circle"></i> Quelques minutes par trimestre</li>
                         <li><i class="fas fa-check-circle"></i> Personnalisation unique</li>
-                        <li><i class="fas fa-check-circle"></i> Zéro charge mentale</li>
+                        <li><i class="fas fa-check-circle"></i> Moins de tâches robotiques</li>
                     </ul>
                 </div>
             </div>
@@ -267,7 +252,7 @@
         <div class="lp-container">
             <div class="lp-features__header lp-reveal">
                 <h2 class="lp-features__title">Tout ce dont vous avez besoin</h2>
-                <p class="lp-features__subtitle">Puissant, flexible et respectueux de votre vie privée.</p>
+                <p class="lp-features__subtitle">Une interface fluide et ergonomique, pensée pour les enseignants.</p>
             </div>
 
             <div class="lp-bento">
@@ -278,8 +263,8 @@
                     </div>
                     <h3 class="lp-bento__title">Multi-Modèles IA</h3>
                     <p class="lp-bento__text">
-                        Utilisez gratuitement Google Gemini intégré, ou connectez vos propres clés API (OpenAI,
-                        Anthropic). Compatible avec Ollama pour une utilisation 100% locale et hors-ligne.
+                        Utilisez gratuitement Google Gemini intégré, ou Ollama pour une utilisation 100% locale
+                        et hors-ligne. Vous gardez le contrôle total.
                     </p>
                 </div>
 
@@ -298,11 +283,12 @@
                 <!-- Feature 3 -->
                 <div class="lp-bento__item lp-reveal lp-reveal--delay-3">
                     <div class="lp-bento__icon">
-                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-user-secret"></i>
                     </div>
-                    <h3 class="lp-bento__title">100% Privé</h3>
+                    <h3 class="lp-bento__title">Anonymisation Auto</h3>
                     <p class="lp-bento__text">
-                        Vos données élèves restent sur votre ordinateur. Aucune donnée n'est envoyée sur nos serveurs.
+                        Les noms des élèves sont automatiquement anonymisés avant envoi à l'IA. Vos données sont
+                        stockées localement dans votre navigateur.
                     </p>
                 </div>
 
@@ -320,12 +306,13 @@
                 <!-- Feature 5 (Wide) -->
                 <div class="lp-bento__item lp-bento__item--wide lp-reveal lp-reveal--delay-1">
                     <div class="lp-bento__icon">
-                        <i class="fas fa-history"></i>
+                        <i class="fas fa-user-graduate"></i>
                     </div>
-                    <h3 class="lp-bento__title">Historique & Journal de bord</h3>
+                    <h3 class="lp-bento__title">Contexte Personnalisé</h3>
                     <p class="lp-bento__text">
-                        Retrouvez facilement les appréciations générées. Tenez un journal de bord durant le trimestre
-                        pour nourrir l'IA avec des faits précis lors de la rédaction finale.
+                        Bien plus qu'une simple moyenne ! Tenez un journal de bord durant le trimestre : observations,
+                        comportement, participation. L'IA synthétise tout pour des appréciations vraiment
+                        personnalisées.
                     </p>
                 </div>
             </div>
@@ -340,127 +327,60 @@
                 <p class="lp-testimonials__subtitle">Découvrez ce que les enseignants pensent de Bulletin AI.</p>
             </div>
 
-            <!-- Carousel Container -->
-            <div class="lp-carousel" id="testimonials-carousel">
-                <div class="lp-carousel__track">
-                    <!-- Slide 1 (3 cards) -->
-                    <div class="lp-carousel__slide is-active">
-                        <div class="lp-testimonials__grid">
-                            <!-- Review 1 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    C'est bluffant. J'ai passé 20 minutes pour ma classe de 30 élèves au lieu de 4
-                                    heures
-                                    habituellement. Les parents ont trouvé les appréciations très justes.
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">S</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Sarah M.</div>
-                                        <div class="lp-testimonial__role">Professeur d'Histoire-Géo</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Review 2 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    J'aime le fait que ce soit Open Source et que je puisse utiliser mes propres clés
-                                    API. L'outil
-                                    est propre, rapide et ne plante jamais. Bravo pour le travail.
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">T</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Thomas L.</div>
-                                        <div class="lp-testimonial__role">Professeur de Technologie</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Review 3 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    Enfin un outil qui comprend que chaque élève est différent. La fonction "ton
-                                    bienveillant" aide
-                                    beaucoup pour les élèves en difficulté.
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">M</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Marie D.</div>
-                                        <div class="lp-testimonial__role">Professeur de Français</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Placeholder Testimonials Grid -->
+            <div class="lp-testimonials__grid">
+                <!-- Active Placeholder - CTA -->
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
+                    target="_blank" class="lp-testimonial lp-testimonial--placeholder lp-reveal">
+                    <div class="lp-testimonial__placeholder-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <p class="lp-testimonial__placeholder-text">
+                        "Votre témoignage pourrait apparaître ici..."
+                    </p>
+                    <div class="lp-testimonial__placeholder-author">
+                        <div class="lp-testimonial__placeholder-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="lp-testimonial__placeholder-info">
+                            <div class="lp-testimonial__placeholder-name">Vous ?</div>
+                            <div class="lp-testimonial__placeholder-role">Testeur Beta</div>
+                            <div class="lp-testimonial__placeholder-stars">☆☆☆☆☆</div>
                         </div>
                     </div>
+                </a>
 
-                    <!-- Slide 2 (3 cards) -->
-                    <div class="lp-carousel__slide">
-                        <div class="lp-testimonials__grid">
-                            <!-- Review 4 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    Je suis PP de 3ème et je gère 6 classes. Ce qui me prenait un week-end entier se
-                                    fait
-                                    maintenant en une soirée. Un vrai game-changer !
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">J</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Julien R.</div>
-                                        <div class="lp-testimonial__role">Professeur de Mathématiques</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Review 5 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    Le journal de bord est une pépite ! Je note mes observations au fil du trimestre et
-                                    l'IA s'en souvient pour les appréciations. Mes commentaires sont devenus
-                                    ultra-précis.
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">C</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Claire B.</div>
-                                        <div class="lp-testimonial__role">Professeur de SVT</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Review 6 -->
-                            <div class="lp-testimonial">
-                                <p class="lp-testimonial__quote">
-                                    Sceptique au début, je suis maintenant convaincu. L'outil respecte mon style
-                                    d'écriture et
-                                    les appréciations sonnent naturelles. Mes collègues l'ont tous adopté.
-                                </p>
-                                <div class="lp-testimonial__author">
-                                    <div class="lp-testimonial__avatar">P</div>
-                                    <div class="lp-testimonial__info">
-                                        <div class="lp-testimonial__name">Philippe A.</div>
-                                        <div class="lp-testimonial__role">Professeur d'Anglais</div>
-                                        <div class="lp-testimonial__stars">★★★★★</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Skeleton 1 -->
+                <div class="lp-testimonial lp-testimonial--skeleton lp-reveal lp-reveal--delay-1">
+                    <div class="lp-skeleton lp-skeleton--icon"></div>
+                    <div class="lp-skeleton lp-skeleton--text"></div>
+                    <div class="lp-skeleton lp-skeleton--text lp-skeleton--short"></div>
+                    <div class="lp-testimonial__placeholder-author">
+                        <div class="lp-skeleton lp-skeleton--avatar"></div>
+                        <div class="lp-skeleton lp-skeleton--info"></div>
                     </div>
                 </div>
 
-                <!-- Carousel Navigation Dots -->
-                <div class="lp-carousel__dots">
-                    <button class="lp-carousel__dot is-active" data-slide="0" aria-label="Slide 1"></button>
-                    <button class="lp-carousel__dot" data-slide="1" aria-label="Slide 2"></button>
+                <!-- Skeleton 2 -->
+                <div class="lp-testimonial lp-testimonial--skeleton lp-reveal lp-reveal--delay-2">
+                    <div class="lp-skeleton lp-skeleton--icon"></div>
+                    <div class="lp-skeleton lp-skeleton--text"></div>
+                    <div class="lp-skeleton lp-skeleton--text lp-skeleton--short"></div>
+                    <div class="lp-testimonial__placeholder-author">
+                        <div class="lp-skeleton lp-skeleton--avatar"></div>
+                        <div class="lp-skeleton lp-skeleton--info"></div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Beta Notice -->
+            <div class="lp-testimonials__beta-notice lp-reveal lp-reveal--delay-3">
+                <p>
+                    <i class="fas fa-flask"></i>
+                    Bulletin AI est en beta. Testez l'application et
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
+                        target="_blank">partagez votre avis</a> !
+                </p>
             </div>
         </div>
     </section>
@@ -482,9 +402,10 @@
                     </button>
                     <div class="lp-faq__answer">
                         <div class="lp-faq__answer-content">
-                            Oui, Bulletin AI est un projet Open Source. Vous pouvez l'utiliser gratuitement avec Google
-                            Gemini (clé API gratuite) ou Ollama (local). Si vous utilisez OpenAI (GPT-4), vous payez
-                            uniquement votre consommation API directement à OpenAI.
+                            Oui, Bulletin AI est un projet Open Source. L'application fonctionne 100% gratuitement avec
+                            Google Gemini ou Ollama (local). Vous pouvez aussi connecter des modèles payants (OpenAI,
+                            etc.)
+                            si vous le souhaitez, mais ce n'est pas obligatoire.
                         </div>
                     </div>
                 </div>
@@ -497,10 +418,10 @@
                     </button>
                     <div class="lp-faq__answer">
                         <div class="lp-faq__answer-content">
-                            Absolument. Bulletin AI est une application "client-side". Cela signifie que toutes les
-                            données (noms des élèves, notes) restent stockées localement dans votre navigateur. Rien
-                            n'est envoyé sur un serveur central chez nous. Seul le texte à générer est envoyé à l'IA de
-                            votre choix lors de la génération.
+                            Absolument. Bulletin AI anonymise automatiquement les noms des élèves avant tout envoi à
+                            l'IA.
+                            Vos données sont stockées localement dans votre navigateur. Une synchronisation Google Drive
+                            optionnelle est disponible, mais son usage dépend des règles RGPD de votre établissement.
                         </div>
                     </div>
                 </div>
@@ -539,76 +460,58 @@
     <!-- Final CTA -->
     <section class="lp-section lp-cta">
         <div class="lp-container lp-cta__content">
-            <h2 class="lp-cta__title">Prêt à gagner du temps ?</h2>
-            <p class="lp-cta__text">Rejoignez les enseignants qui ont déjà adopté l'IA pour leurs bulletins.</p>
+            <h2 class="lp-cta__title">Prêt à essayer ?</h2>
+            <p class="lp-cta__text">Testez Bulletin AI gratuitement et dites-nous ce que vous en pensez.</p>
             <a href="./app.html" class="lp-btn lp-btn--secondary lp-btn--lg">
                 <i class="fas fa-rocket"></i> Commencer maintenant
             </a>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="lp-footer">
+    <!-- Contribute Section -->
+    <section class="lp-section lp-contribute">
         <div class="lp-container">
-            <div class="lp-footer__grid">
-                <!-- Brand -->
-                <div class="lp-footer__brand">
-                    <div class="lp-footer__logo">
-                        <img src="./assets/icon.png" alt="Logo">
-                        Bulletin AI
-                    </div>
-                    <p class="lp-footer__desc">
-                        L'outil open source indispensable pour les enseignants modernes. Rédigez vos bulletins plus
-                        vite, sans sacrifier la qualité.
-                    </p>
-                    <div class="lp-footer__social">
-                        <a href="#" class="lp-footer__social-link"><i class="fab fa-twitter"></i></a>
-                        <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank"
-                            class="lp-footer__social-link"><i class="fab fa-github"></i></a>
-                        <a href="https://ko-fi.com/profassistant" target="_blank" class="lp-footer__social-link"><i
-                                class="fas fa-coffee"></i></a>
-                    </div>
+            <div class="lp-contribute__content lp-reveal">
+                <div class="lp-contribute__text">
+                    <h3 class="lp-contribute__title"><i class="fas fa-heart"></i> Projet Open Source</h3>
+                    <p>Bulletin AI est développé bénévolement. Vous pouvez contribuer au code, signaler des bugs,
+                        ou soutenir le projet.</p>
                 </div>
-
-                <!-- Links 1 -->
-                <div>
-                    <h4 class="lp-footer__column-title">Produit</h4>
-                    <ul class="lp-footer__links">
-                        <li><a href="#features">Fonctionnalités</a></li>
-                        <li><a href="#how-it-works">Comment ça marche</a></li>
-                        <li><a href="#testimonials">Témoignages</a></li>
-                        <li><a href="./app.html">Lancer l'App</a></li>
-                    </ul>
-                </div>
-
-                <!-- Links 2 -->
-                <div>
-                    <h4 class="lp-footer__column-title">Ressources</h4>
-                    <ul class="lp-footer__links">
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank">Code Source</a>
-                        </li>
-                        <li><a href="#">Changelog</a></li>
-                        <li><a href="#">Signaler un bug</a></li>
-                    </ul>
-                </div>
-
-                <!-- Links 3 -->
-                <div>
-                    <h4 class="lp-footer__column-title">Légal</h4>
-                    <ul class="lp-footer__links">
-                        <li><a href="#">Confidentialité</a></li>
-                        <li><a href="#">Mentions légales</a></li>
-                        <li><a href="#">Licence MIT</a></li>
-                    </ul>
+                <div class="lp-contribute__actions">
+                    <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank"
+                        class="lp-btn lp-btn--secondary lp-btn--sm">
+                        <i class="fab fa-github"></i> Contribuer
+                    </a>
+                    <a href="https://ko-fi.com/profassistant" target="_blank"
+                        class="lp-btn lp-btn--secondary lp-btn--sm">
+                        <i class="fas fa-coffee"></i> Soutenir
+                    </a>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="lp-footer__bottom">
-                <div>© 2025 Bulletin AI. Développé avec ❤️ pour les profs.</div>
-                <div class="lp-footer__legal">
-                    <a href="#">Privacy</a>
-                    <a href="#">Terms</a>
+    <!-- Footer -->
+    <footer class="lp-footer lp-footer--minimal">
+        <div class="lp-container">
+            <div class="lp-footer__minimal">
+                <div class="lp-footer__brand-inline">
+                    <img src="./assets/icon.png" alt="Logo" class="lp-footer__logo-sm">
+                    <span>Bulletin AI</span>
+                </div>
+                <div class="lp-footer__links-inline">
+                    <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank" title="GitHub"><i
+                            class="fab fa-github"></i></a>
+                    <a href="https://ko-fi.com/profassistant" target="_blank" title="Ko-fi"><i
+                            class="fas fa-coffee"></i></a>
+                    <span class="lp-footer__separator">•</span>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
+                        target="_blank"><i class="fas fa-comment-dots"></i> Avis</a>
+                    <span class="lp-footer__separator">•</span>
+                    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank">CC BY-NC-SA</a>
+                </div>
+                <div class="lp-footer__copyright">
+                    © 2025 — Développé avec ❤️ pour les profs
                 </div>
             </div>
         </div>
@@ -831,6 +734,108 @@
 
         // Initialize carousel when DOM is ready
         initTestimonialsCarousel();
+
+        // ============================================
+        // HERO MOCKUP TYPING ANIMATION
+        // ============================================
+        function initMockupAnimation() {
+            const aiTextElement = document.getElementById('mockup-ai-text');
+            const aiCard = document.getElementById('mockup-ai-card');
+
+            if (!aiTextElement || !aiCard) return;
+
+            const fullText = "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des bavardages perturbent sa progression. Il est impératif qu'il se recentre et adopte une attitude plus studieuse pour redresser la barre.";
+
+            // Split text into word chunks for natural typing
+            const words = fullText.split(' ');
+            let currentWordIndex = 0;
+            let isTyping = false;
+
+            function typeWords() {
+                if (currentWordIndex < words.length) {
+                    // Create word span
+                    const span = document.createElement('span');
+                    span.textContent = words[currentWordIndex] + ' ';
+                    span.style.opacity = '0';
+                    span.style.filter = 'blur(4px)';
+                    span.style.transition = 'all 0.4s ease';
+
+                    aiTextElement.appendChild(span);
+
+                    // Trigger reflow
+                    span.offsetHeight;
+
+                    // Animate in
+                    span.style.opacity = '1';
+                    span.style.filter = 'blur(0)';
+
+                    currentWordIndex++;
+
+                    // Random typing speed
+                    const delay = Math.random() * 50 + 30;
+                    setTimeout(typeWords, delay);
+                } else {
+                    // Done typing
+                    aiCard.classList.remove('is-generating');
+                    setTimeout(resetAnimation, 5000); // Wait 5s before restart
+                }
+            }
+
+            function resetAnimation() {
+                // Clear text
+                aiTextElement.innerHTML = '';
+                currentWordIndex = 0;
+
+                // Start "Thinking" phase
+                aiCard.classList.add('is-generating'); // Add pulsing border or effect
+
+                // Simulate processing time then start typing
+                setTimeout(() => {
+                    typeWords();
+                }, 800);
+            }
+
+            // Start initial animation after a small delay
+            setTimeout(resetAnimation, 1000);
+        }
+
+        initMockupAnimation();
+
+        // ============================================
+        // SCROLLSPY (Dynamic Header)
+        // ============================================
+        function initScrollSpy() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.lp-nav__links a');
+
+            // Options to trigger when section is in the middle of viewport
+            const observerOptions = {
+                rootMargin: '-20% 0px -60% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Clean all active classes
+                        navLinks.forEach(link => link.classList.remove('is-active'));
+
+                        // Add active class to corresponding link
+                        const id = entry.target.getAttribute('id');
+                        const activeLink = document.querySelector(`.lp-nav__links a[href="#${id}"]`);
+                        if (activeLink) {
+                            activeLink.classList.add('is-active');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        initScrollSpy();
     </script>
 </body>
 
