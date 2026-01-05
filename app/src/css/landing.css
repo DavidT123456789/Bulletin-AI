@@ -1118,23 +1118,135 @@ img {
     margin-bottom: 16px;
 }
 
-/* Step Badge (time indicators) */
+/* Step Badge (time indicators) - with organic liquid fill */
 .lp-step__badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(var(--lp-primary-rgb), 0.1);
-    border: 1px solid rgba(var(--lp-primary-rgb), 0.2);
+    background: rgba(var(--lp-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--lp-primary-rgb), 0.15);
     border-radius: var(--lp-radius-pill);
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--lp-primary);
     margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: all 0.5s var(--lp-ease-spring);
+}
+
+/* Liquid fill background layer */
+.lp-step__badge::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            rgba(var(--lp-primary-rgb), 0.25) 0%,
+            rgba(var(--lp-primary-rgb), 0.35) 50%,
+            rgba(var(--lp-primary-rgb), 0.25) 100%);
+    border-radius: inherit;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 4.5s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: -1;
+}
+
+/* Organic wave effect overlay */
+.lp-step__badge::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    top: 0;
+    width: 140%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 40%,
+            rgba(255, 255, 255, 0.6) 50%,
+            rgba(255, 255, 255, 0.4) 60%,
+            transparent 100%);
+    transform: translateX(-100%);
+    transition: none;
+    z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Active state - fill the badge */
+.lp-step.is-active .lp-step__badge::before {
+    transform: scaleX(1);
+}
+
+/* Wave animation on active */
+.lp-step.is-active .lp-step__badge::after {
+    opacity: 1;
+    animation: liquidWave 4.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes liquidWave {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Active badge text styling */
+.lp-step.is-active .lp-step__badge {
+    border-color: rgba(var(--lp-primary-rgb), 0.35);
+    color: var(--lp-primary-dark);
+}
+
+/* Smooth reset when step was just active */
+.lp-step.was-active .lp-step__badge::before {
+    transform: scaleX(0);
+    transition: transform 0.6s var(--lp-ease-spring);
+}
+
+.lp-step.was-active .lp-step__badge::after {
+    opacity: 0;
+    animation: none;
 }
 
 .lp-step__badge i {
     font-size: 0.7rem;
+    transition: transform 0.4s var(--lp-ease-spring);
+}
+
+/* Icon subtle animation on active */
+.lp-step.is-active .lp-step__badge i {
+    animation: badgeIconPulse 0.6s var(--lp-ease-spring);
+}
+
+@keyframes badgeIconPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* Step Visual Illustrations */
@@ -2576,4 +2688,28 @@ body.is-transitioning-out>*:not(.lp-transition-overlay) {
     background: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   ACCESSIBILITY: REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .lp-step__badge::before,
+    .lp-step__badge::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .lp-step.is-active .lp-step__badge::before {
+        transform: scaleX(1);
+    }
 }

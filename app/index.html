@@ -863,32 +863,58 @@
         initScrollSpy();
 
         // ============================================
-        // STEP CARDS BREATHING GLOW ANIMATION
-        // Simple: each step activates in sequence with breathing glow
+        // STEP CARDS SEQUENTIAL ACTIVATION
+        // Badge fills organically, then moves to next step
         // ============================================
         function initStepActivation() {
             const steps = document.querySelectorAll('.lp-step');
             if (steps.length === 0) return;
 
-            const STEP_DURATION = 2500;  // Time each step stays active (ms)
+            // Duration synced EXACTLY with CSS liquid fill animation (4.5s)
+            // Transition happens the moment the fill completes = visual timer
+            const STEP_DURATION = 4500;
             let currentStep = 0;
+            let isAnimating = false;
 
             function activateStep() {
-                // Remove active from all
-                steps.forEach(s => s.classList.remove('is-active'));
+                // Mark previous step as "was-active" for smooth reset
+                steps.forEach(s => {
+                    if (s.classList.contains('is-active')) {
+                        s.classList.add('was-active');
+                    }
+                    s.classList.remove('is-active');
+                });
 
-                // Activate current
+                // Activate current step
+                steps[currentStep].classList.remove('was-active');
                 steps[currentStep].classList.add('is-active');
 
                 // Next step
                 currentStep = (currentStep + 1) % steps.length;
             }
 
-            // Start with first step
-            activateStep();
+            // Only start animation when section is visible
+            const howItWorksSection = document.getElementById('how-it-works');
+            if (!howItWorksSection) {
+                // Fallback: start immediately
+                activateStep();
+                setInterval(activateStep, STEP_DURATION);
+                return;
+            }
 
-            // Cycle through steps
-            setInterval(activateStep, STEP_DURATION);
+            const sectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !isAnimating) {
+                        isAnimating = true;
+                        // Reset to first step when section comes into view
+                        currentStep = 0;
+                        activateStep();
+                        setInterval(activateStep, STEP_DURATION);
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            sectionObserver.observe(howItWorksSection);
         }
 
         initStepActivation();
