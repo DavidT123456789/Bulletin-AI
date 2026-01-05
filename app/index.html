@@ -45,6 +45,7 @@
             <div class="lp-nav__links">
                 <a href="#how-it-works" class="lp-nav__link">Comment ça marche</a>
                 <a href="#features" class="lp-nav__link">Fonctionnalités</a>
+                <a href="#problem-solution" class="lp-nav__link">Objectifs</a>
                 <a href="#testimonials" class="lp-nav__link">Témoignages</a>
                 <a href="#faq" class="lp-nav__link">FAQ</a>
             </div>
@@ -62,7 +63,7 @@
     </nav>
 
     <!-- Hero Section -->
-    <header class="lp-section lp-section--hero">
+    <header class="lp-section lp-section--hero" id="hero">
         <div class="lp-container">
             <div class="lp-hero__content">
                 <div class="lp-hero__badge">
@@ -76,8 +77,8 @@
                 </h1>
 
                 <p class="lp-hero__subtitle">
-                    Importez vos données, ajoutez du contexte, et laissez l'IA rédiger des appréciations
-                    personnalisées pour chaque élève. Vous supervisez, vous gagnez du temps.
+                    Importez vos notes, ajoutez du contexte, et l'IA produit analyses et appréciations.
+                    Vous supervisez, vous gagnez du temps.
                 </p>
 
                 <div class="lp-hero__actions">
@@ -126,10 +127,20 @@
                                 </div>
                             </div>
 
+                            <!-- Middle: Analysis -->
+                            <div class="lp-hero__mockup-middle" id="mockup-analysis-card">
+                                <div class="lp-hero__mockup-label">
+                                    <i class="fas fa-chart-pie"></i> Analyse IA
+                                </div>
+                                <div class="lp-hero__mockup-text" id="mockup-analysis-content">
+                                    <!-- Content injected by JS -->
+                                </div>
+                            </div>
+
                             <!-- Right: Output/Solution -->
                             <div class="lp-hero__mockup-after" id="mockup-ai-card">
                                 <div class="lp-hero__mockup-label">
-                                    <i class="fas fa-robot"></i> Appréciation IA
+                                    <i class="fas fa-robot"></i> Appréciation
                                 </div>
                                 <div class="lp-hero__mockup-text-container">
                                     <div class="lp-hero__mockup-text-ghost">
@@ -149,54 +160,7 @@
         </div>
     </header>
 
-    <!-- Social Proof -->
 
-
-    <!-- Problem / Solution (Avant/Après) -->
-    <section class="lp-section" id="problem-solution">
-        <div class="lp-container">
-            <div class="lp-compare">
-                <!-- Sans Bulletin AI -->
-                <div class="lp-compare__side lp-compare__side--problem lp-reveal">
-                    <div class="lp-compare__icon">
-                        <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div class="lp-compare__label">Avant</div>
-                    <h3 class="lp-compare__title">La corvée des bulletins</h3>
-                    <p class="lp-compare__text">
-                        Des heures à chercher ses mots, les mêmes phrases qui reviennent.
-                    </p>
-                    <ul class="lp-compare__list">
-                        <li><i class="fas fa-times-circle"></i> Plusieurs heures par trimestre</li>
-                        <li><i class="fas fa-times-circle"></i> Formulations répétitives</li>
-                        <li><i class="fas fa-times-circle"></i> Fatigue mentale</li>
-                    </ul>
-                </div>
-
-                <!-- Arrow -->
-                <div class="lp-compare__arrow lp-reveal lp-reveal--delay-1">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-
-                <!-- Avec Bulletin AI -->
-                <div class="lp-compare__side lp-compare__side--solution lp-reveal lp-reveal--delay-2">
-                    <div class="lp-compare__icon">
-                        <i class="fas fa-magic"></i>
-                    </div>
-                    <div class="lp-compare__label">Avec Bulletin AI</div>
-                    <h3 class="lp-compare__title">Supervision intelligente</h3>
-                    <p class="lp-compare__text">
-                        L'IA rédige, vous supervisez et gardez le contrôle.
-                    </p>
-                    <ul class="lp-compare__list">
-                        <li><i class="fas fa-check-circle"></i> Quelques minutes par trimestre</li>
-                        <li><i class="fas fa-check-circle"></i> Personnalisation unique</li>
-                        <li><i class="fas fa-check-circle"></i> Moins de tâches robotiques</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- How it Works -->
     <section class="lp-section" id="how-it-works">
@@ -231,7 +195,7 @@
                     <h3 class="lp-step__title">Générez en un clic</h3>
                     <div class="lp-step__badge"><i class="fas fa-robot"></i> Automatique</div>
                     <p class="lp-step__text">
-                        Choisissez le ton souhaité et l'IA rédige des appréciations uniques pour chaque élève.
+                        L'IA analyse et génère points forts, axes d'amélioration et appréciation pour chaque élève.
                     </p>
                 </div>
 
@@ -255,7 +219,7 @@
     <section class="lp-section" id="features">
         <div class="lp-container">
             <div class="lp-features__header lp-reveal">
-                <h2 class="lp-features__title">Tout ce dont vous avez besoin</h2>
+                <h2 class="lp-features__title">Fonctionnalités clés</h2>
                 <p class="lp-features__subtitle">Une interface fluide et ergonomique, pensée pour les enseignants.</p>
             </div>
 
@@ -323,12 +287,58 @@
         </div>
     </section>
 
+    <!-- Problem Solution -->
+    <section class="lp-section" id="problem-solution">
+        <div class="lp-container">
+            <div class="lp-compare__header lp-reveal">
+                <h2 class="lp-compare__section-title">L'objectif</h2>
+                <p class="lp-compare__section-subtitle">Valorisez vos observations tout en gagnant un temps précieux.
+                </p>
+            </div>
+
+            <div class="lp-compare">
+                <!-- Sans Bulletin AI -->
+                <div class="lp-compare__side lp-compare__side--problem lp-reveal">
+                    <div class="lp-compare__header-row">
+                        <div class="lp-compare__icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="lp-compare__label">Rédaction manuelle</div>
+                    </div>
+
+                    <ul class="lp-compare__list">
+                        <li><i class="fas fa-times"></i> Plusieurs heures par trimestre</li>
+                        <li><i class="fas fa-times"></i> Formulations répétitives</li>
+                        <li><i class="fas fa-times"></i> Focus sur la forme, pas l'élève</li>
+                        <li><i class="fas fa-times"></i> Biais émotionnel possible</li>
+                    </ul>
+                </div>
+
+                <!-- Avec Bulletin AI -->
+                <div class="lp-compare__side lp-compare__side--solution lp-reveal lp-reveal--delay-2">
+                    <div class="lp-compare__header-row">
+                        <div class="lp-compare__icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="lp-compare__label">Supervision avec Bulletin AI</div>
+                    </div>
+
+                    <ul class="lp-compare__list">
+                        <li><i class="fas fa-check"></i> Quelques minutes par trimestre</li>
+                        <li><i class="fas fa-check"></i> Personnalisation unique</li>
+                        <li><i class="fas fa-check"></i> Moins de tâches répétitives</li>
+                        <li><i class="fas fa-check"></i> Objectivité renforcée</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Testimonials Carousel -->
     <section class="lp-section" id="testimonials">
         <div class="lp-container lp-testimonials">
             <div class="lp-testimonials__header lp-reveal">
-                <h2 class="lp-testimonials__title">Ils ont gagné du temps</h2>
-                <p class="lp-testimonials__subtitle">Découvrez ce que les enseignants pensent de Bulletin AI.</p>
+                <h2 class="lp-testimonials__title">Retours d'enseignants</h2>
             </div>
 
             <!-- Placeholder Testimonials Grid -->
@@ -766,15 +776,33 @@
         function initMockupAnimation() {
             const aiTextElement = document.getElementById('mockup-ai-text');
             const aiCard = document.getElementById('mockup-ai-card');
+            const analysisCard = document.getElementById('mockup-analysis-card');
+            const analysisContent = document.getElementById('mockup-analysis-content');
 
             if (!aiTextElement || !aiCard) return;
 
             const fullText = "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des bavardages perturbent sa progression. Il est impératif qu'il se recentre et adopte une attitude plus studieuse pour redresser la barre.";
 
+            // Define analysis HTML blocks
+            const blockPointsForts = `
+                <div style="margin-bottom: 12px; opacity: 0; transform: translateY(10px); transition: all 0.5s ease" id="anim-pf">
+                    <div style="color: #65a30d; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
+                        <i class="fas fa-check-circle"></i> Points forts
+                    </div>
+                    <div style="font-size: 0.85rem;">Curiosité intellectuelle, Participation orale</div>
+                </div>`;
+
+            const blockToImprove = `
+                <div style="opacity: 0; transform: translateY(10px); transition: all 0.5s ease" id="anim-ti">
+                    <div style="color: #c2785c; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
+                        <i class="fas fa-exclamation-circle"></i> À améliorer
+                    </div>
+                    <div style="font-size: 0.85rem;">Concentration, Bavardages fréquents</div>
+                </div>`;
+
             // Split text into word chunks for natural typing
             const words = fullText.split(' ');
             let currentWordIndex = 0;
-            let isTyping = false;
 
             function typeWords() {
                 if (currentWordIndex < words.length) {
@@ -802,21 +830,43 @@
                 } else {
                     // Done typing
                     aiCard.classList.remove('is-generating');
+                    if (analysisCard) analysisCard.classList.remove('is-generating');
                     setTimeout(resetAnimation, 5000); // Wait 5s before restart
                 }
             }
 
             function resetAnimation() {
-                // Clear text
+                // Clear contents
                 aiTextElement.innerHTML = '';
+                if (analysisContent) analysisContent.innerHTML = ''; // Clear analysis
+
                 currentWordIndex = 0;
 
-                // Start "Thinking" phase
-                aiCard.classList.add('is-generating'); // Add pulsing border or effect
+                // Start "Thinking" phase (border animation)
+                aiCard.classList.add('is-generating');
+                if (analysisCard) analysisCard.classList.add('is-generating');
 
-                // Simulate processing time then start typing
+                // Simulate processing time then start generation
                 setTimeout(() => {
+                    // 1. Start typing appreciation
                     typeWords();
+
+                    // 2. Inject and Animate Analysis (staggered)
+                    if (analysisContent) {
+                        analysisContent.innerHTML = blockPointsForts + blockToImprove;
+
+                        // Animate Points Forts immediately
+                        setTimeout(() => {
+                            const pf = document.getElementById('anim-pf');
+                            if (pf) { pf.style.opacity = '1'; pf.style.transform = 'translateY(0)'; }
+                        }, 100);
+
+                        // Animate Improve after 1.2s
+                        setTimeout(() => {
+                            const ti = document.getElementById('anim-ti');
+                            if (ti) { ti.style.opacity = '1'; ti.style.transform = 'translateY(0)'; }
+                        }, 1200);
+                    }
                 }, 800);
             }
 
@@ -830,7 +880,8 @@
         // SCROLLSPY (Dynamic Header)
         // ============================================
         function initScrollSpy() {
-            const sections = document.querySelectorAll('section[id]');
+            // Include the header (hero) in the observed sections
+            const sections = document.querySelectorAll('section[id], header[id]');
             const navLinks = document.querySelectorAll('.lp-nav__links a');
 
             // Options to trigger when section is in the middle of viewport
@@ -845,8 +896,12 @@
                         // Clean all active classes
                         navLinks.forEach(link => link.classList.remove('is-active'));
 
-                        // Add active class to corresponding link
                         const id = entry.target.getAttribute('id');
+
+                        // If we are in the Hero section, keep all links inactive
+                        if (id === 'hero') return;
+
+                        // Add active class to corresponding link
                         const activeLink = document.querySelector(`.lp-nav__links a[href="#${id}"]`);
                         if (activeLink) {
                             activeLink.classList.add('is-active');
