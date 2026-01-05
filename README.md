@@ -4,6 +4,13 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.0_Beta-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-orange.svg)](./LICENSE.txt)
+[![Demo](https://img.shields.io/badge/🚀_Démo_Live-bulletin--ai.pages.dev-00d4aa.svg)](https://bulletin-ai.pages.dev/app.html)
+
+## 🌐 Accès rapide
+
+| 🎯 Application | 📄 Landing Page |
+|:-------------:|:---------------:|
+| **[Lancer l'application →](https://bulletin-ai.pages.dev/app.html)** | [Découvrir le projet](https://bulletin-ai.pages.dev/) |
 
 ## 🎯 Description
 
