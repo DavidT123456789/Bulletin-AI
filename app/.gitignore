@@ -1,0 +1,33 @@
+# Dependencies - regenerated with npm install
+node_modules/
+
+# Build outputs - regenerated with npm run build
+dist/
+dist_test/
+
+# Test artifacts - regenerated when running tests
+coverage/
+playwright-report/
+test-results/
+*.test-results/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
