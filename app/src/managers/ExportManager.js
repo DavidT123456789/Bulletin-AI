@@ -16,7 +16,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App = null;
 
 /**

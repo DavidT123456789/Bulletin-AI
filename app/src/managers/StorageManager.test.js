@@ -114,7 +114,7 @@ vi.mock('./UIManager.js', () => ({
 }));
 
 // Mock AppManager
-vi.mock('./AppManager_v2.js', () => ({
+vi.mock('./AppManager.js', () => ({
     App: {
         renderSubjectManagementList: vi.fn(),
         updateUIOnLoad: vi.fn()
@@ -138,7 +138,7 @@ describe('StorageManager', () => {
         const dbModule = await import('../services/DBService.js');
         DBService = dbModule.DBService;
         const { UI } = await import('./UIManager.js');
-        const { App } = await import('./AppManager_v2.js');
+        const { App } = await import('./AppManager.js');
         StorageManager.init(UI, App);
 
         vi.clearAllMocks();

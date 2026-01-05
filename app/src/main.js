@@ -1,6 +1,6 @@
 import { initDOM, DOM } from './utils/DOM.js';
 import { initErrorBoundary } from './utils/ErrorBoundary.js';
-import { App } from './managers/AppManager_v2.js';
+import { App } from './managers/AppManager.js';
 import { UI } from './managers/UIManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';

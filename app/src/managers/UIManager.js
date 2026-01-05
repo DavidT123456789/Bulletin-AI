@@ -39,7 +39,7 @@ import { FocusPanelManager } from './FocusPanelManager.js';
  * @typedef {'success'|'error'|'warning'|'info'} NotificationType
  */
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App;
 
 /**

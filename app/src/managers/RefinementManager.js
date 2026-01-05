@@ -44,7 +44,7 @@ const _createModalTitleHTML = (result, mode) => {
             </div>`;
 };
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App = null;
 
 /**

@@ -14,7 +14,7 @@ import { ModalUI } from './ModalUIManager.js';
 
 /** @type {import('./UIManager.js').UI} */
 let UI;
-/** @type {import('./AppManager_v2.js').App} */
+/** @type {import('./AppManager.js').App} */
 let App;
 
 /**

@@ -14,7 +14,7 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App;
 
 /**

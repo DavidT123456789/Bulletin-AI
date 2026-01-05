@@ -15,7 +15,7 @@ import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { OtherModalsListeners } from './listeners/OtherModalsListeners.js';
 import { GlobalListeners } from './listeners/GlobalListeners.js';
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App = null;
 
 /**

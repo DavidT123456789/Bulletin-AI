@@ -16,7 +16,7 @@ import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { StorageManager } from './StorageManager.js';
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App = null;
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */

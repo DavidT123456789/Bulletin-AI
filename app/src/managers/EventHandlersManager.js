@@ -3,7 +3,7 @@
  * 
  * Ce module regroupe la logique de gestion des événements utilisateur qui ne 
  * relèvent pas spécifiquement d'un autre manager métier (comme l'import ou les paramètres).
- * Il allège AppManager_v2.js en prenant en charge les clics sur les cartes, 
+ * Il allège AppManager.js en prenant en charge les clics sur les cartes, 
  * la navigation clavier, et les filtres.
  * 
  * @module managers/EventHandlersManager
@@ -18,7 +18,7 @@ import { AppreciationsManager } from './AppreciationsManager.js';
 import { VariationsManager } from './VariationsManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
 
-/** @type {import('./AppManager_v2.js').App|null} */
+/** @type {import('./AppManager.js').App|null} */
 let App = null;
 
 export const EventHandlersManager = {
