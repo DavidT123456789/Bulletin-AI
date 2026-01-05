@@ -1,0 +1,649 @@
+/* ====================================================================
+   MODULE: Class Management
+   Styles pour le sélecteur et la gestion multi-classes
+   ==================================================================== */
+
+/* ====================================================================
+   HEADER CLASS SELECTOR
+   ==================================================================== */
+
+.class-selector-wrapper {
+    position: relative;
+}
+
+.class-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding-right: 10px;
+}
+
+.class-chip .student-count-badge {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.class-chip .class-chevron {
+    font-size: 0.7em;
+    color: var(--text-secondary);
+    transition: transform var(--transition-fast);
+    margin-left: 2px;
+}
+
+.class-chip.active .class-chevron {
+    transform: rotate(180deg);
+}
+
+/* ====================================================================
+   CLASS DROPDOWN
+   ==================================================================== */
+
+.class-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    /* Plus d'espace */
+    left: 0;
+    min-width: 280px;
+    /* Plus large */
+    max-width: 340px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    /* Coins plus arrondis */
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.1);
+    /* Ombre plus douce et large */
+    z-index: var(--z-dropdown);
+    overflow: hidden;
+    /* Animation */
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    transform-origin: top left;
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: none;
+}
+
+.class-dropdown.visible {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.class-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    font-weight: 600;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.class-dropdown-header .btn-icon-small {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    transition: all var(--transition-fast);
+}
+
+.class-dropdown-header .btn-icon-small:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.class-dropdown-list {
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.class-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+}
+
+.class-dropdown-item:last-child {
+    margin-bottom: 0;
+}
+
+.class-dropdown-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.class-dropdown-item.active {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    box-shadow: inset 4px 0 0 var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.class-dropdown-item .class-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.class-dropdown-item .class-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.class-dropdown-item .class-meta {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.class-dropdown-item .class-meta i {
+    font-size: 0.9em;
+}
+
+.class-dropdown-item .class-student-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.class-dropdown-item.active .class-student-count {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+}
+
+/* Ensure badge contrast on hover */
+.class-dropdown-item:hover .class-student-count {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+
+/* Class actions container */
+.class-dropdown-item .class-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Delete button */
+.class-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition-fast);
+}
+
+.class-dropdown-item:hover .class-delete-btn {
+    opacity: 0.6;
+}
+
+.class-delete-btn:hover {
+    opacity: 1 !important;
+    color: var(--error-color);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+}
+
+.class-dropdown-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.class-dropdown-footer .btn-link {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.class-dropdown-footer .btn-link:hover {
+    color: var(--primary-color);
+}
+
+/* Empty state */
+.class-dropdown-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.class-dropdown-empty i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+/* ====================================================================
+   CLASS MANAGEMENT MODAL
+   ==================================================================== */
+
+#classManagementModal .modal-content {
+    max-width: 700px;
+}
+
+.class-management-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.class-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.class-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.class-card.active {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.class-card-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.class-card-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    border-radius: var(--radius-md);
+    font-size: 1.2em;
+}
+
+.class-card-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.class-card-details .class-card-meta {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 12px;
+}
+
+.class-card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.class-card-actions .btn-icon {
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.class-card:hover .class-card-actions .btn-icon {
+    opacity: 1;
+}
+
+/* New class form */
+.new-class-form {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+}
+
+.new-class-form input {
+    flex: 1;
+}
+
+/* ====================================================================
+   RESPONSIVE
+   ==================================================================== */
+
+@media (max-width: 768px) {
+    .class-chip #headerClassName {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .class-dropdown {
+        right: 0;
+        left: auto;
+        transform-origin: top right;
+    }
+}
+
+@media (max-width: 480px) {
+    .class-chip #headerClassName {
+        display: none;
+    }
+
+    .class-chip .class-chevron {
+        display: none;
+    }
+}
+
+/* ====================================================================
+   MODAL MINI - Style iOS 2025 pour création de classe
+   ==================================================================== */
+.modal-mini .modal-mini-content {
+    max-width: 420px;
+    border-radius: var(--radius-xl);
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-header-centered {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px 24px 16px;
+    border-bottom: none;
+    gap: 12px;
+}
+
+.modal-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color, var(--primary-color)));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.3);
+    animation: icon-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes icon-pop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-icon-wrapper i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.modal-header-centered .modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-body-compact {
+    padding: 8px 24px 24px;
+}
+
+/* Premium Input Group */
+.premium-input-group {
+    position: relative;
+}
+
+.premium-input {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    background: var(--bg-color);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.premium-input:focus {
+    outline: none;
+    background: var(--bg-color);
+    /* Style dynamique harmonisé - focus signature */
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.premium-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.input-char-count {
+    position: absolute;
+    right: 12px;
+    bottom: -24px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* Footer buttons */
+.modal-footer-buttons {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px 24px;
+    border-top: none;
+    justify-content: center;
+}
+
+.modal-footer-buttons .btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+}
+
+.btn-gradient {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color, var(--primary-color)));
+    border: none;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-gradient:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.4);
+}
+
+.btn-gradient:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ====================================================================
+   INLINE DELETE CONFIRMATION ANIMATIONS
+   ==================================================================== */
+@keyframes slideInConfirm {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRow {
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+        height: 0;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+}
+
+/* Style pour confirmation inline */
+.delete-confirm-inline {
+    animation: slideInConfirm 0.2s ease-out;
+}
+
+.class-management-item {
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
+}
+
+/* ====================================================================
+   INLINE CREATE FORM ANIMATIONS (Dropdown)
+   ==================================================================== */
+@keyframes slideDownExpand {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        max-height: 80px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUpCollapse {
+    from {
+        opacity: 1;
+        max-height: 80px;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        max-height: 0;
+        padding: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Inline create form styling */
+.inline-create-form {
+    overflow: hidden;
+}
+
+.inline-class-input {
+    flex: 1;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.inline-class-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Hover state - subtle border preview (harmonized with context/appreciation textareas) */
+.inline-class-input:hover:not(:focus) {
+    background: var(--bg-color);
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+.inline-class-input:focus {
+    outline: none;
+    /* Style dynamique harmonisé - focus signature */
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}

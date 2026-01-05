@@ -1,0 +1,230 @@
+/* ====================================================================
+   NEBULA DESIGN SYSTEM - APP VARIABLES
+   ==================================================================== */
+:root {
+    /* --- Palette Nebula (Zen & Sable - Light Mode) --- */
+    /* Primaire : Amber/Gold (Sable Chaud) au lieu de l'Indigo */
+    /* Primaire : Sable Doré (Golden Sand) - Plus éclatant */
+    --primary-color: #e6a23c;
+    /* Golden Sand */
+    --primary-color-rgb: 230, 162, 60;
+    --primary-hover: #d18b26;
+    /* Deep Sand */
+
+    /* Neutres : Palette Warm Stone / Paper */
+    --bg-color: #f5f5f4;
+    /* Stone 100 (Contrasté pour faire ressortir les cartes) */
+    --bg-secondary: #e7e5e4;
+    /* Stone 200 (Inputs/Panels) */
+    --bg-tertiary: #d6d3d1;
+    /* Stone 300 */
+
+    --surface-color: #ffffff;
+    --surface-color-rgb: 255, 255, 255;
+    --border-color: rgba(214, 211, 209, 0.6);
+    /* Stone 300 - Compromis équilibré */
+
+    /* Texte : Pierre Chaude (Pas de noir froid) */
+    --text-primary: #1c1917;
+    /* Stone 900 */
+    --text-secondary: #57534e;
+    /* Stone 600 */
+    --text-tertiary: #a8a29e;
+    /* Stone 400 */
+
+    /* --- Système Glassmorphism Unifié (Warm) --- */
+    /* Niveau 1 : Base (Panneaux fixes) */
+    --glass-base-bg: rgba(245, 245, 244, 0.75);
+    /* Plus opaque */
+    --glass-base-border: rgba(214, 211, 209, 0.45);
+    /* Compromis bordure glass */
+    --glass-base-blur: 24px;
+
+    /* Niveau 2 : Surface (Cartes interactions) */
+    --glass-surface-bg: rgba(255, 255, 255, 0.90);
+    --glass-surface-border: rgba(255, 255, 255, 0.8);
+    --glass-surface-blur: 16px;
+
+    /* --- Universal Card Style (Single Source of Truth) --- */
+    --card-glass-bg: rgba(255, 255, 255, 0.7);
+    --card-glass-border: rgba(255, 255, 255, 0.9);
+
+    /* Niveau 3 : Overlay (Modales / Popovers) - Frosted glass effect */
+    --glass-overlay-bg: rgba(255, 255, 255, 0.7);
+    --glass-overlay-border: rgba(255, 255, 255, 0.5);
+    --glass-overlay-blur: 24px;
+
+    /* --- Physique & Géométrie --- */
+    /* Rayons unifiés */
+    --radius-pill: 9999px;
+    /* Pour badges, chips, pilules */
+    --radius-xl: 32px;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+    --radius-xs: 4px;
+    /* Pour petits éléments internes */
+
+    /* Input border width (single source of truth) */
+    --input-border-width: 1.5px;
+    --input-border-width-focus: 2px;
+    /* Thicker for animated gradient focus */
+    --input-focus-bg: var(--bg-color);
+    /* Single source of truth for input focus background */
+    --card-input-padding: 12px 16px;
+    /* Single source of truth for card inputs */
+
+    /* Ombres "Lift" (Warm) - Accentuées pour le contraste */
+    --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.08);
+    /* Stone 900 tint */
+    --shadow-md: 0 4px 12px -2px rgba(28, 25, 23, 0.08), 0 2px 6px -1px rgba(28, 25, 23, 0.04);
+    --shadow-lg: 0 12px 32px -4px rgba(28, 25, 23, 0.12), 0 4px 12px -2px rgba(28, 25, 23, 0.06);
+    --shadow-xl: 0 24px 48px -12px rgba(28, 25, 23, 0.15);
+
+    /* --- Couleurs Sémantiques (Vives mais dosées) --- */
+    --success-color: #10b981;
+    --success-rgb: 16, 185, 129;
+    --success-light: rgba(16, 185, 129, 0.15);
+
+    --warning-color: #f59e0b;
+    --warning-rgb: 245, 158, 11;
+    --warning-light: rgba(245, 158, 11, 0.15);
+
+    --error-color: #ef4444;
+    --error-rgb: 239, 68, 68;
+    --error-light: rgba(239, 68, 68, 0.15);
+
+    --purple-color: #8b5cf6;
+    --purple-rgb: 139, 92, 246;
+    --purple-light: rgba(139, 92, 246, 0.15);
+
+    --neutral-light: rgba(87, 83, 78, 0.15);
+    /* Stone 600 tint */
+
+    --info-color: #3b82f6;
+    --info-rgb: 59, 130, 246;
+    --info-light: rgba(59, 130, 246, 0.15);
+
+    /* Grade Range Colors */
+    --grade-range-0-4: #EF4444;
+    --grade-range-4-8: #F97316;
+    --grade-range-8-12: #EAB308;
+    --grade-range-12-16: #22C55E;
+    --grade-range-16-20: #10B981;
+
+    /* Transitions & Animations */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* --- Typography Scale --- */
+    --font-xs: 0.75rem;
+    /* 12px */
+    --font-sm: 0.8125rem;
+    /* 13px - Mapping existing common size */
+    --font-base: 0.875rem;
+    /* 14px - Standard body */
+    --font-md: 1rem;
+    /* 16px */
+    --font-lg: 1.125rem;
+    /* 18px */
+    --font-xl: 1.25rem;
+    /* 20px */
+    --font-2xl: 1.5rem;
+    /* 24px */
+
+    /* Spacing System (Scale) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* Legacy Gap Variables (Mapped to new scale for backward compatibility) */
+    --gap-xs: var(--space-2);
+    --gap-sm: var(--space-3);
+    --gap-md: var(--space-4);
+    --gap-lg: var(--space-5);
+    --gap-xl: var(--space-6);
+
+    /* Layout */
+    --sidebar-width: 460px;
+    --glow-highlight: rgba(217, 119, 6, 1);
+    /* Amber Glow */
+
+    /* --- Gradients --- */
+    --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    --gradient-ai: linear-gradient(135deg, var(--primary-color) 0%, #f59e0b 100%);
+    /* Amber Gradient */
+
+    /* --- Z-Index Scale --- */
+    --z-negative: -1;
+    --z-normal: 1;
+    --z-base: 1;
+    --z-sidebar: 50;
+    --z-header: 100;
+    --z-dropdown: 100;
+    --z-sticky: 500;
+    --z-modal-backdrop: 900;
+    --z-modal: 1000;
+    --z-tooltip: 1100;
+    --z-toast: 2000;
+    --z-toast: 2000;
+    --z-skip-link: 10000;
+
+    /* --- Global Component Variables --- */
+    --scrollbar-width: 8px;
+    /* Standard OS-like width */
+}
+
+[data-theme="dark"] {
+    /* Nebula Dark Mode (Deep Space) */
+    --primary-color: #818cf8;
+    --primary-color-rgb: 129, 140, 248;
+    --primary-hover: #6366f1;
+
+    /* Dark Mode Neutral Tint */
+    --neutral-light: rgba(156, 163, 175, 0.15);
+    /* Gray 400 tint */
+
+    --bg-color: #030712;
+    /* Noir très profond, légèrement bleuté */
+    --bg-secondary: #1f2937;
+    --bg-tertiary: #374151;
+    --surface-color: #111827;
+    --surface-color-rgb: 17, 24, 39;
+    --border-color: rgba(255, 255, 255, 0.08);
+
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #4b5563;
+
+    /* Glass Dark */
+    --glass-base-bg: rgba(17, 24, 39, 0.65);
+    --glass-base-border: rgba(255, 255, 255, 0.08);
+
+    --glass-surface-bg: rgba(31, 41, 55, 0.75);
+    --glass-surface-border: rgba(255, 255, 255, 0.12);
+
+    --glass-overlay-bg: rgba(17, 24, 39, 0.7);
+    --glass-overlay-border: rgba(255, 255, 255, 0.1);
+
+    /* Ombres plus fortes en dark mode pour détacher */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.6);
+
+    --glow-highlight: rgba(255, 255, 255, 0.9);
+
+    /* Gradients Dark Mode - Mauve standard (cohérent avec --primary-color) */
+    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    --gradient-ai: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+
+    /* --- Universal Card Style (Single Source of Truth) --- */
+    --card-glass-bg: #111827;
+    --card-glass-border: rgba(255, 255, 255, 0.12);
+}
