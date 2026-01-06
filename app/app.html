@@ -457,6 +457,12 @@
                             </div>
                             <div class="focus-appreciation-meta">
                                 <span id="focusWordCount" class="word-count">0 mots</span>
+                                <!-- History Indicator: Shows modification count, click for history popover -->
+                                <button id="focusHistoryIndicator" class="history-indicator tooltip"
+                                    style="display: none;" data-tooltip="Historique des modifications">
+                                    <i class="fas fa-history"></i>
+                                    <span class="history-count">0</span>
+                                </button>
                                 <!-- AI Indicator: Shows if AI-generated, with model/token details -->
                                 <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;">
                                     ✨
@@ -949,49 +955,33 @@
             <div class="modal-body">
 
                 <div id="templatesTabContent" class="tab-content active" role="tabpanel">
-                    <!-- CARTE 1: SÉLECTION DE LA MATIÈRE -->
-                    <div class="settings-card">
-                        <h3 class="settings-card-title"><i class="fas fa-book"></i> Gestion des Matières</h3>
-                        <div class="settings-card-content">
-                            <div class="subject-selection-row">
-                                <div class="subject-toggle-group">
-                                    <label for="settingsSubjectSelect">Personnalisation par matière</label>
+                    <!-- GRILLE: RÉGLAGES IA + APERÇU -->
+                    <div class="settings-layout-grid">
+                        <!-- CARTE 2: RÉGLAGES DE STYLE IA -->
+                        <div class="settings-controls-column">
+                            <div class="settings-card settings-card-full-height" id="settings-controls-panel">
+                                <div class="settings-card-header-row">
+                                    <h3 class="settings-card-title" id="iaStyleHeader">
+                                        <i class="fas fa-sliders-h"></i> Style de Rédaction
+                                    </h3>
                                     <div class="toggle-switch-container tooltip"
-                                        data-tooltip="Activer pour définir des styles d'IA uniques pour chaque matière.">
+                                        data-tooltip="Activer pour personnaliser le style de rédaction (Ton, Longueur, Voix, etc.)">
                                         <label class="toggle-switch">
                                             <input type="checkbox" id="personalizationToggle">
                                             <span class="slider"></span>
                                         </label>
                                     </div>
                                 </div>
-                                <span id="genericSubjectInfo" class="generic-info-inline"></span>
-                                <div class="subject-header-controls">
-                                    <select id="settingsSubjectSelect"></select>
-                                    <input type="text" id="newSubjectInput" placeholder="Nouvelle matière..."
-                                        class="form-input input-sm">
-                                    <button class="btn btn-small" id="addSubjectBtn"
-                                        data-tooltip="Ajouter une nouvelle matière"><i class="fas fa-plus"
-                                            aria-hidden="true"></i></button>
-                                    <button class="btn btn-warning btn-small" id="resetSubjectBtn"
-                                        data-tooltip="Réinitialiser la matière aux valeurs par défaut"><i
-                                            class="fas fa-undo" aria-hidden="true"></i></button>
-                                    <button class="btn btn-danger btn-small" id="deleteSubjectBtn"
-                                        data-tooltip="Supprimer la matière sélectionnée"><i class="fas fa-trash-alt"
-                                            aria-hidden="true"></i></button>
-                                </div>
-                            </div>
-                            <div id="subjectManagementList" class="subject-management-list"></div>
-                        </div>
-                    </div>
 
-                    <!-- GRILLE: RÉGLAGES IA + APERÇU -->
-                    <div class="settings-layout-grid">
-                        <!-- CARTE 2: RÉGLAGES DE STYLE IA -->
-                        <div class="settings-controls-column">
-                            <div class="settings-card settings-card-full-height" id="settings-controls-panel">
-                                <h3 class="settings-card-title" id="iaStyleHeader"><i class="fas fa-sliders-h"></i>
-                                    Style de Rédaction</h3>
+                                <p id="genericSubjectInfo" class="generic-info-card"
+                                    style="margin-top: 0; margin-bottom: 20px;">
+                                    <i class="fas fa-info-circle"></i>
+                                    Activez "Mon Style" pour modifier ces paramètres. Sinon, les réglages par défaut
+                                    s'appliquent.
+                                </p>
+
                                 <div class="settings-card-content">
+
                                     <div class="form-group">
                                         <div class="slider-header-row">
                                             <label for="iaLengthSlider">Cible de Mots</label>
@@ -1047,7 +1037,7 @@
                                     <div class="form-group">
                                         <label for="iaStyleInstructions">Ma "Patte" (Optionnel)</label>
                                         <textarea id="iaStyleInstructions"
-                                            placeholder="Ex: 'Ne jamais utiliser le mot performance', 'Toujours mentionner l'autonomie'..."
+                                            placeholder="Exemples : Mettre l'accent sur l'expression orale • Mentionner la rigueur du raisonnement • Ne jamais utiliser le mot performance • Toujours encourager la participation..."
                                             class="style-instructions-textarea"></textarea>
                                     </div>
                                 </div>
@@ -1117,6 +1107,7 @@
                         </div>
                     </div>
                 </div>
+
 
                 <div id="advancedTabContent" class="tab-content" style="display: none;" role="tabpanel">
 
@@ -1554,6 +1545,7 @@
                     </div>
 
                 </div>
+
             </div>
 
             <div class="modal-footer">

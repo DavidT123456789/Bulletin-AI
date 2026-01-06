@@ -121,19 +121,44 @@ export const UI = {
         };
         notif.innerHTML = `${iconMap[type] || iconMap.info} <span>${message}</span>`;
 
+        // Interaction: Click to dismiss
+        notif.style.cursor = 'pointer';
+        notif.onclick = () => removeNotification();
+
+        // Interaction: Pause on hover
+        let timeoutId;
+        const duration = 4000; // Increased to 4s for better readability
+
+        const removeNotification = () => {
+            if (notif.dataset.removing) return;
+            notif.dataset.removing = 'true';
+
+            notif.classList.remove('show');
+            setTimeout(() => {
+                if (notif.parentNode === container) container.removeChild(notif);
+                if (container.children.length === 0 && container.parentNode === document.body) {
+                    if (document.body.contains(container)) document.body.removeChild(container);
+                }
+            }, 300);
+        };
+
+        const startTimer = () => {
+            timeoutId = setTimeout(removeNotification, duration);
+        };
+
+        const pauseTimer = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+
+        notif.addEventListener('mouseenter', pauseTimer);
+        notif.addEventListener('mouseleave', startTimer);
+
         container.appendChild(notif);
         // RAF for animation to ensure class addition happens after DOM insertion
         requestAnimationFrame(() => {
             notif.classList.add('show');
+            startTimer();
         });
-
-        setTimeout(() => {
-            notif.classList.remove('show');
-            setTimeout(() => {
-                if (notif.parentNode === container) container.removeChild(notif);
-                if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
-            }, 300);
-        }, 3000);
     },
     /**
      * Affiche une notification cliquable avec action.

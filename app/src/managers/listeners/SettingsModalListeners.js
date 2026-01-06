@@ -167,16 +167,9 @@ export const SettingsModalListeners = {
     },
 
     _setupSubjectListeners(addClickListener) {
-        addClickListener(DOM.addSubjectBtn, SettingsUIManager.addSubject.bind(SettingsUIManager));
-        addClickListener(DOM.resetSubjectBtn, SettingsUIManager.resetCurrentSubject.bind(SettingsUIManager));
-        addClickListener(DOM.deleteSubjectBtn, () => {
-            SettingsUIManager.deleteSubject(appState.currentSettingsSubject);
-        });
-        DOM.settingsSubjectSelect?.addEventListener('change', (e) => {
-            appState.currentSettingsSubject = e.target.value;
-            UI.updateSettingsPromptFields();
-            SettingsUIManager.renderSubjectManagementList();
-        });
+        // Note: Les listeners pour le dropdown de matières et les boutons add/delete/reset
+        // ont été supprimés avec la simplification vers un profil unique "MonStyle".
+        // Le toggle de personnalisation est géré par le listener existant sur personalizationToggle.
     },
 
     _setupIASliders() {
@@ -186,6 +179,16 @@ export const SettingsModalListeners = {
                 const approxChars = Math.round(lengthVal * 6.5);
                 const lengthDisplay = document.getElementById('iaLengthSliderValue');
                 if (lengthDisplay) lengthDisplay.textContent = `~ ${lengthVal} mots (≈ ${approxChars} car.)`;
+
+                // [FIX] Update appState in real-time so generation uses current value immediately
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: {} };
+                }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = {};
+                }
+                appState.subjects['MonStyle'].iaConfig.length = lengthVal;
+
                 SettingsUIManager.showPreviewRefreshHint();
             });
         }
@@ -202,6 +205,12 @@ export const SettingsModalListeners = {
                 };
                 const toneDisplay = document.getElementById('iaToneSliderValue');
                 if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Équilibré, factuel et neutre';
+
+                // [FIX] Update appState in real-time so generation uses current value immediately
+                if (appState.subjects['MonStyle']?.iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig.tone = toneVal;
+                }
+
                 SettingsUIManager.showPreviewRefreshHint();
             });
 
@@ -220,12 +229,22 @@ export const SettingsModalListeners = {
 
         if (DOM.iaStyleInstructions) {
             DOM.iaStyleInstructions.addEventListener('input', () => {
+                // [FIX] Update appState in real-time so generation uses current value immediately
+                if (appState.subjects['MonStyle']?.iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
+                }
+
                 SettingsUIManager.showPreviewRefreshHint();
             });
         }
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
-            radio.addEventListener('change', () => {
+            radio.addEventListener('change', (e) => {
+                // [FIX] Update appState in real-time so generation uses current value immediately
+                if (appState.subjects['MonStyle']?.iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig.voice = e.target.value;
+                }
+
                 SettingsUIManager.showPreviewRefreshHint();
                 this._updateStudentContextAndPrompt(); // Update prompt preview on voice change
             });

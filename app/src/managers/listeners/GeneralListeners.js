@@ -27,7 +27,6 @@ export const GeneralListeners = {
         addClickListener(DOM.darkModeToggle, UI.toggleDarkMode);
 
         addClickListener(DOM.settingsButton, () => {
-            SettingsUIManager.renderSubjectManagementList();
             UI.openModal(DOM.settingsModal);
             FormUI.showSettingsTab('templates'); // Ensure default tab is visible
             SettingsUIManager.updateApiStatusDisplay();
@@ -35,7 +34,6 @@ export const GeneralListeners = {
 
         // Clic sur l'indicateur de modèle IA => ouvre les paramètres sur l'onglet Application
         addClickListener(DOM.headerAiModelChip, () => {
-            SettingsUIManager.renderSubjectManagementList();
             UI.openModal(DOM.settingsModal);
             FormUI.showSettingsTab('advanced');
             SettingsUIManager.updateApiStatusDisplay();

@@ -42,9 +42,10 @@ export const FormUI = {
             subjectName = "Paramètres par défaut";
             iaConfig = DEFAULT_IA_CONFIG;
         } else {
-            subjectName = appState.currentSettingsSubject;
-            const subjectData = appState.subjects[subjectName] || appState.subjects['Générique'];
-            iaConfig = subjectData.iaConfig || DEFAULT_IA_CONFIG;
+            // Mode personnalisé - utiliser MonStyle
+            subjectName = "Mon Style";
+            const subjectData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
+            iaConfig = subjectData?.iaConfig || DEFAULT_IA_CONFIG;
         }
 
         DOM.periodSystemRadios.forEach(r => r.checked = r.value === appState.periodSystem);
@@ -57,7 +58,7 @@ export const FormUI = {
             DOM.iaLengthSlider.value = iaConfig.length;
         }
         DOM.iaToneSlider.value = iaConfig.tone;
-        DOM.iaStyleInstructions.value = isGenericMode ? '' : iaConfig.styleInstructions;
+        DOM.iaStyleInstructions.value = isGenericMode ? '' : (iaConfig.styleInstructions || '');
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
             radio.checked = radio.value === (iaConfig.voice || 'default');
@@ -65,8 +66,7 @@ export const FormUI = {
 
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            let subjectDisplayName = isGenericMode ? "Paramètres par défaut" : subjectName;
-            let headerText = `<i class="fas fa-brain" aria-hidden="true"></i> Style de l'IA : <span>${subjectDisplayName}</span>`;
+            let headerText = `<i class="fas fa-brain" aria-hidden="true"></i> Style de l'IA`;
             if (isGenericMode) {
                 headerText += ` <span class="generic-lock-icon tooltip" data-tooltip="Les réglages sont verrouillés sur les valeurs par défaut lorsque la personnalisation est désactivée."><i class="fas fa-lock"></i></span>`;
             }
@@ -116,7 +116,6 @@ export const FormUI = {
         if (DOM.sessionCost) DOM.sessionCost.textContent = `${appState.sessionCost.toFixed(4)}$`;
 
         this.toggleAIKeyFields();
-        if (App && App.renderSubjectManagementList) App.renderSubjectManagementList();
         this.renderSettingsLists();
         this.updateModelDescription();
         this._updateApiStatusDisplay();

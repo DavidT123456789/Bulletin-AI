@@ -65,7 +65,6 @@ export const SyncService = {
 
                 // If connected, perform initial sync to get cloud data
                 if (connected) {
-                    console.log('[SyncService] Provider restored, performing sync...');
                     await this.sync();
                 }
             } catch (e) {

@@ -76,8 +76,7 @@ export const runtimeState = {
     /** État de navigation et sélection */
     navigation: {
         currentPeriod: 'T1',
-        currentSubject: 'Français',
-        currentSettingsSubject: 'Français',
+        currentSubject: 'MonStyle',
         currentInputMode: CONSTS.INPUT_MODE.SINGLE,
         currentEditingId: null,
         currentRefiningAppreciationId: null,
@@ -161,7 +160,6 @@ const propertyMap = {
     // runtimeState.navigation
     currentPeriod: () => runtimeState.navigation,
     currentSubject: () => runtimeState.navigation,
-    currentSettingsSubject: () => runtimeState.navigation,
     currentInputMode: () => runtimeState.navigation,
     currentEditingId: () => runtimeState.navigation,
     currentRefiningAppreciationId: () => runtimeState.navigation,

@@ -389,7 +389,7 @@ export const App = {
         }
     },
 
-    // --- Méthodes de délégation simples (pour compatibilité si appelées ailleurs) ---\r\n    deleteSubject(name) { SettingsUIManager.deleteSubject(name); },\r\n    renderSubjectManagementList() { SettingsUIManager.renderSubjectManagementList(); },
+    // --- Méthodes de délégation simples (pour compatibilité si appelées ailleurs) ---
 
     // Class Analysis
     analyzeClass() { return ClassAnalysisManager.analyzeClass(); },
@@ -405,8 +405,7 @@ export const App = {
     // Settings
     saveSettings() { SettingsUIManager.saveSettings(); },
     cancelSettings() { SettingsUIManager.cancelSettings(); },
-    addSubject() { SettingsUIManager.addSubject(); },
-    resetCurrentSubject() { SettingsUIManager.resetCurrentSubject(); },
+    resetPersonalStyle() { SettingsUIManager.resetPersonalStyle(); },
     handlePersonalizationToggleChange(e) {
         appState.useSubjectPersonalization = e.target.checked;
         SettingsUIManager.updatePersonalizationState();

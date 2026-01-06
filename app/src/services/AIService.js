@@ -9,7 +9,7 @@ import { OLLAMA_CONFIG } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 
 // Mode debug : activé uniquement en développement (vite définit import.meta.env.DEV)
-const DEBUG_FALLBACK = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
+
 
 /**
  * @typedef {Object} AICallOptions
@@ -518,12 +518,7 @@ export const AIService = {
         let attemptedModels = [];
 
         // Log conditionnel (visible uniquement en développement)
-        if (DEBUG_FALLBACK) {
-            console.groupCollapsed('[AI Fallback] Tentative de génération');
-            console.log('Fallback:', fallbackEnabled, '| Modèle:', appState.currentAIModel);
-            console.log('File:', fallbackModels.join(' → '));
-            console.groupEnd();
-        }
+
 
         try {
 

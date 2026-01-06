@@ -79,9 +79,6 @@ function handleError(error, context) {
 
     // Éviter les doublons
     if (CONFIG.groupSimilarErrors && errorHistory.has(fingerprint)) {
-        if (IS_DEV) {
-            console.debug('[ErrorBoundary] Erreur similaire déjà capturée, ignorée.');
-        }
         return;
     }
 
@@ -148,9 +145,7 @@ export function initErrorBoundary() {
     };
 
     // Log d'initialisation en dev
-    if (IS_DEV) {
-        console.log('✅ [ErrorBoundary] Initialisé - Les erreurs seront capturées globalement');
-    }
+
 }
 
 /**

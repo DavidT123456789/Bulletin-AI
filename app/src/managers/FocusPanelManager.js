@@ -1547,6 +1547,13 @@ export const FocusPanelManager = {
                     appreciationEl.classList.remove('empty');
                     appreciationEl.classList.add('filled');
                     hasAppreciation = true;
+
+                    // [FIX] Initialize history with the initial content
+                    // This ensures the history button appears after the FIRST modification
+                    if (this._appreciationHistory.versions.length === 0) {
+                        this._appreciationHistory.versions.push(cleanText);
+                        this._appreciationHistory.currentIndex = 0;
+                    }
                 } else {
                     // Apply empty state class directly on the element for proper styling
                     appreciationEl.textContent = ''; // Clear content to show ::before placeholder

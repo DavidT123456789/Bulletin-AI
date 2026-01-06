@@ -1,5 +1,5 @@
-/**
- * @fileoverview List View Manager - Rend les élèves en vue tableau
+﻿/**
+ * @fileoverview List View Manager - Rend les Ã©lÃ¨ves en vue tableau
  * Part of Liste + Focus UX Revolution - REFACTORED: Inline Appreciation Display
  * @module managers/ListViewManager
  */
@@ -13,7 +13,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 
 /**
- * Module de gestion de la vue Liste (tableau des élèves)
+ * Module de gestion de la vue Liste (tableau des Ã©lÃ¨ves)
  * @namespace ListViewManager
  */
 export const ListViewManager = {
@@ -21,8 +21,8 @@ export const ListViewManager = {
     _activeKeydownListener: null,
     _lastRenderedClassId: null, // Track class changes to force fresh render
     /**
-     * Rend la liste des �l�ves en format tableau
-     * @param {Array} results - Tableau des r�sultats � afficher
+     * Rend la liste des élèves en format tableau
+     * @param {Array} results - Tableau des résultats à afficher
      * @param {HTMLElement} container - Conteneur DOM
      */
     render(results, container) {
@@ -106,9 +106,9 @@ export const ListViewManager = {
      * Anime la transition de filtrage avec technique FLIP
      * @param {HTMLElement} container - Conteneur DOM
      * @param {Array} existingRows - Lignes existantes
-     * @param {Array} newResults - Nouveaux r�sultats filtr�s
-     * @param {Array} periods - P�riodes
-     * @param {number} currentPeriodIndex - Index de la p�riode courante
+     * @param {Array} newResults - Nouveaux résultats filtrés
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index de la période courante
      * @private
      */
     _animateFilterTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
@@ -258,12 +258,12 @@ export const ListViewManager = {
     },
 
     /**
-     * Animation simple pour le tri (r�ordonnancement sans changement d'IDs)
+     * Animation simple pour le tri (réordonnancement sans changement d'IDs)
      * @param {HTMLElement} container - Conteneur DOM
      * @param {Array} existingRows - Lignes existantes
-     * @param {Array} newResults - Nouveaux r�sultats tri�s
-     * @param {Array} periods - P�riodes
-     * @param {number} currentPeriodIndex - Index de la p�riode courante
+     * @param {Array} newResults - Nouveaux résultats triés
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index de la période courante
      * @private
      */
     _animateSortTransition(container, existingRows, newResults, periods, currentPeriodIndex) {
@@ -365,8 +365,8 @@ export const ListViewManager = {
 
     /**
      * Anime la sortie de toutes les lignes
-     * @param {NodeList} rows - Lignes � animer
-     * @param {Function} callback - Callback apr�s animation
+     * @param {NodeList} rows - Lignes à animer
+     * @param {Function} callback - Callback après animation
      * @private
      */
     _animateRowsOut(rows, callback) {
@@ -378,11 +378,11 @@ export const ListViewManager = {
     },
 
     /**
-     * Cr�e un �l�ment TR pour une ligne d'�l�ve
-     * @param {Object} result - Donn�es de l'�l�ve
-     * @param {Array} periods - P�riodes
-     * @param {number} currentPeriodIndex - Index p�riode courante
-     * @returns {HTMLElement} �l�ment TR
+     * Crée un élément TR pour une ligne d'élève
+     * @param {Object} result - Données de l'élève
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
+     * @returns {HTMLElement} Élément TR
      * @private
      */
     _createRowElement(result, periods, currentPeriodIndex) {
@@ -413,7 +413,7 @@ export const ListViewManager = {
                     </button>
                     <div class="action-dropdown-menu">
                         <button class="action-dropdown-item" data-action="move-student">
-                            <i class="fas fa-arrow-right-arrow-left"></i> D�placer
+                            <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
                         </button>
                         <button class="action-dropdown-item danger" data-action="delete-student">
                             <i class="fas fa-trash"></i> Supprimer
@@ -427,9 +427,9 @@ export const ListViewManager = {
     },
 
     /**
-     * Met � jour le contenu d'une ligne existante
-     * @param {HTMLElement} row - Ligne � mettre � jour
-     * @param {Object} result - Nouvelles donn�es
+     * Met à jour le contenu d'une ligne existante
+     * @param {HTMLElement} row - Ligne à mettre à jour
+     * @param {Object} result - Nouvelles données
      * @private
      */
     _updateRowContent(row, result) {
@@ -450,9 +450,9 @@ export const ListViewManager = {
     /**
      * Rendu initial complet de la liste
      * @param {HTMLElement} container - Conteneur
-     * @param {Array} results - R�sultats
-     * @param {Array} periods - P�riodes
-     * @param {number} currentPeriodIndex - Index p�riode courante
+     * @param {Array} results - Résultats
+     * @param {Array} periods - Périodes
+     * @param {number} currentPeriodIndex - Index période courante
      * @private
      */
     _renderFresh(container, results, periods, currentPeriodIndex) {
@@ -476,7 +476,7 @@ export const ListViewManager = {
                             <th class="appreciation-header appreciation-toggle-header sortable-header" title="Cliquer pour voir tout le texte">
                                 <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="header-content-wrapper">
-                                    Appr�ciation
+                                    Appréciation
                                     <i class="fas fa-expand appreciation-toggle-icon"></i>
                                 </div>
                             </th>
@@ -486,19 +486,19 @@ export const ListViewManager = {
                                         <i class="fas fa-ellipsis-vertical"></i>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
-                                        <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les �l�ves</h5>
+                                        <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les élèves</h5>
                                         <button class="action-dropdown-item" id="copyAllBtn-shortcut">
                                             <i class="fas fa-copy"></i> Copier les visibles
                                         </button>
                                         <button class="action-dropdown-item" id="regenerateAllBtn">
-                                            <i class="fas fa-sync-alt"></i> R�g�n�rer les visibles
+                                            <i class="fas fa-sync-alt"></i> Régénérer les visibles
                                         </button>
                                         <button class="action-dropdown-item" id="regenerateErrorsBtn-shortcut" style="display:none;">
-                                            <i class="fas fa-exclamation-triangle"></i> R�g�n�rer les erreurs
+                                            <i class="fas fa-exclamation-triangle"></i> Régénérer les erreurs
                                         </button>
                                         <h5 class="dropdown-header"><i class="fas fa-download"></i> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
-                                            <i class="fas fa-file-code"></i> Donn�es (JSON)
+                                            <i class="fas fa-file-code"></i> Données (JSON)
                                         </button>
                                         <button class="action-dropdown-item" id="exportCsvBtn">
                                             <i class="fas fa-file-csv"></i> Tableau (CSV)
@@ -550,7 +550,7 @@ export const ListViewManager = {
                                 </button>
                                 <div class="action-dropdown-menu">
                                     <button class="action-dropdown-item" data-action="move-student">
-                                        <i class="fas fa-arrow-right-arrow-left"></i> D�placer
+                                        <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
                                     </button>
                                     <button class="action-dropdown-item danger" data-action="delete-student">
                                         <i class="fas fa-trash"></i> Supprimer
@@ -561,10 +561,10 @@ export const ListViewManager = {
                     </tr>
                 `;
             } catch (e) {
-                console.error("Erreur rendu �l�ve:", result?.nom, e);
+                console.error("Erreur rendu élève:", result?.nom, e);
                 html += `
                     <tr class="error-row">
-                        <td colspan="100%">Erreur d'affichage pour ${result?.nom || '�l�ve inconnu'}</td>
+                        <td colspan="100%">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
                     </tr>
                 `;
             }
@@ -624,8 +624,8 @@ export const ListViewManager = {
 
 
     /**
-     * Génère les headers de notes avec colonnes d'évolution
-     * @param {Array} periods - Périodes à afficher
+     * GÃ©nÃ¨re les headers de notes avec colonnes d'Ã©volution
+     * @param {Array} periods - PÃ©riodes Ã  afficher
      * @returns {string} HTML des headers
      * @private
      */
@@ -639,11 +639,11 @@ export const ListViewManager = {
                         </div>
                      </th>`;
 
-            // Colonne d'�volution (sauf apr�s la derni�re p�riode)
+            // Colonne d'évolution (sauf après la dernière période)
             if (i < periods.length - 1) {
                 // Evolution is relevant to the NEXT period (target period)
                 const nextP = periods[i + 1];
-                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" title="Trier par �volution vers ${nextP}">
+                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" title="Trier par évolution vers ${nextP}">
                              <div class="header-content-wrapper">
                                 <i class="fas fa-chart-line" style="opacity:0.6; font-size:0.9em;"></i> <span class="sort-icon-placeholder"></span>
                              </div>
@@ -681,10 +681,10 @@ export const ListViewManager = {
     },
 
     /**
-     * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
-     * @param {Object} periods - Données par période
-     * @param {Array} allPeriods - Liste de toutes les périodes
-     * @param {number} currentIndex - Index de la période courante
+     * Rend les cellules de notes pour un Ã©lÃ¨ve avec colonnes d'Ã©volution sÃ©parÃ©es
+     * @param {Object} periods - DonnÃ©es par pÃ©riode
+     * @param {Array} allPeriods - Liste de toutes les pÃ©riodes
+     * @param {number} currentIndex - Index de la pÃ©riode courante
      * @returns {string} HTML des cellules
      * @private
      */
@@ -717,7 +717,7 @@ export const ListViewManager = {
                     </td>
                 `;
 
-                // Cellule d'évolution (entre cette note et la suivante)
+                // Cellule d'Ã©volution (entre cette note et la suivante)
                 if (i < currentIndex) {
                     let evolutionHtml = '';
                     try {
@@ -757,8 +757,8 @@ export const ListViewManager = {
     },
 
     /**
-     * Détermine le statut d'un résultat
-     * @param {Object} result - Données de l'élève
+     * DÃ©termine le statut d'un rÃ©sultat
+     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
      * @returns {string} 'done' | 'pending' | 'error'
      * @private
      */
@@ -769,49 +769,49 @@ export const ListViewManager = {
     },
 
     /**
-     * Génère le contenu de la cellule d'appréciation
-     * Affiche l'appréciation tronquée si disponible, sinon le badge de statut
-     * @param {Object} result - Données de l'élève
-     * @param {string} status - Statut de génération (global)
+     * GÃ©nÃ¨re le contenu de la cellule d'apprÃ©ciation
+     * Affiche l'apprÃ©ciation tronquÃ©e si disponible, sinon le badge de statut
+     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
+     * @param {string} status - Statut de gÃ©nÃ©ration (global)
      * @returns {string} HTML de la cellule
      * @private
      */
     _getAppreciationCell(result, status) {
-        // [FIX] Récupérer l'appréciation spécifique à la période sélectionnée
+        // [FIX] RÃ©cupÃ©rer l'apprÃ©ciation spÃ©cifique Ã  la pÃ©riode sÃ©lectionnÃ©e
         const currentPeriod = appState.currentPeriod;
         let appreciation = '';
 
-        // 1. Priorité: appréciation stockée directement dans la période
+        // 1. PrioritÃ©: apprÃ©ciation stockÃ©e directement dans la pÃ©riode
         const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
         if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
             appreciation = periodApp.trim();
         }
-        // 2. Fallback: result.appreciation (déjà transformée dans renderResults pour la période courante)
+        // 2. Fallback: result.appreciation (dÃ©jÃ  transformÃ©e dans renderResults pour la pÃ©riode courante)
         else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            // Vérifier que cette appréciation correspond bien à la période courante
-            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule période
+            // VÃ©rifier que cette apprÃ©ciation correspond bien Ã  la pÃ©riode courante
+            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule pÃ©riode
             const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
             if (!storedPeriod || storedPeriod === currentPeriod) {
                 appreciation = result.appreciation.trim();
             }
         }
 
-        // Si c'est une autre période, et qu'on n'a rien trouvé, on n'affiche rien (plutôt que l'appréciation d'un autre trimestre)
-        // Cela répond à la demande : "T1 affiche T1".
+        // Si c'est une autre pÃ©riode, et qu'on n'a rien trouvÃ©, on n'affiche rien (plutÃ´t que l'apprÃ©ciation d'un autre trimestre)
+        // Cela rÃ©pond Ã  la demande : "T1 affiche T1".
 
-        // Supprimer les balises HTML pour la vérification
+        // Supprimer les balises HTML pour la vÃ©rification
         const textOnly = appreciation?.replace(/<[^>]*>/g, '').trim().toLowerCase() || '';
 
-        // Vérifier que c'est une vraie appréciation, pas un placeholder
+        // VÃ©rifier que c'est une vraie apprÃ©ciation, pas un placeholder
         const isPlaceholder = !appreciation ||
             textOnly === '' ||
-            textOnly.includes('aucune appréciation') ||
+            textOnly.includes('aucune apprÃ©ciation') ||
             textOnly.includes('en attente') ||
             textOnly.includes('cliquez sur') ||
             textOnly.startsWith('remplissez');
 
-        // [FIX] On v�rifie aussi que status n'est pas 'pending' SI c'est la p�riode active en cours de g�n�ration
-        // Mais ici on veut juste afficher le contenu stock�.
+        // [FIX] On vérifie aussi que status n'est pas 'pending' SI c'est la période active en cours de génération
+        // Mais ici on veut juste afficher le contenu stocké.
 
         const hasContent = appreciation && !isPlaceholder;
 
@@ -819,7 +819,7 @@ export const ListViewManager = {
             // === COPY BUTTON INTEGRATION ===
             const btnClass = result.copied ? 'btn-copy-appreciation was-copied' : 'btn-copy-appreciation';
             const icon = result.copied ? '<i class="fas fa-check"></i>' : '<i class="fas fa-copy"></i>';
-            const title = result.copied ? 'Appr�ciation copi�e' : 'Copier l\'appr�ciation';
+            const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
             const copyButtonHTML = `
                 <button class="${btnClass}" data-action="copy-appreciation" title="${title}" onclick="event.stopPropagation(); AppreciationsManager.copyAppreciation('${result.id}', this)">
@@ -830,31 +830,31 @@ export const ListViewManager = {
             return `${copyButtonHTML}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${appreciation}</div>`;
         }
 
-        // Si pas de contenu, on détermine le statut à afficher
-        // Pour les périodes passées sans donnée, afficher simplement un tiret
+        // Si pas de contenu, on dÃ©termine le statut Ã  afficher
+        // Pour les pÃ©riodes passÃ©es sans donnÃ©e, afficher simplement un tiret
         const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-        // Si l'�l�ve a une erreur qui concerne la p�riode affich�e
-        // On affiche l'erreur si: le statut est 'error' ET (pas de p�riode d�finie OU p�riode == actuelle)
+        // Si l'élève a une erreur qui concerne la période affichée
+        // On affiche l'erreur si: le statut est 'error' ET (pas de période définie OU période == actuelle)
         if (status === 'error' && (!storedPeriod || storedPeriod === currentPeriod)) {
             return this._getStatusBadge('error');
         }
 
-        // Pour les périodes passées sans appréciation, afficher un tiret
+        // Pour les pÃ©riodes passÃ©es sans apprÃ©ciation, afficher un tiret
         const periods = Utils.getPeriods();
         const currentIndex = periods.indexOf(currentPeriod);
         const periodIndex = periods.indexOf(storedPeriod);
 
         if (storedPeriod && currentIndex < periodIndex) {
-            // On regarde une p�riode pass�e o� l'�l�ve n'avait pas encore d'appr�ciation
+            // On regarde une période passée où l'élève n'avait pas encore d'appréciation
             return '<span class="appreciation-preview empty">&mdash;</span>';
         }
 
-        // Sinon, badge "En attente" pour la période actuelle
+        // Sinon, badge "En attente" pour la pÃ©riode actuelle
         return this._getStatusBadge('pending');
     },
 
     /**
-     * G�n�re le badge de statut HTML
+     * Génère le badge de statut HTML
      * @param {string} status - Statut ('pending', 'error', 'done')
      * @returns {string} HTML du badge
      * @private
@@ -863,8 +863,8 @@ export const ListViewManager = {
         const labels = {
             'pending': 'En attente',
             'error': 'Erreur',
-            'done': 'Termin�',
-            'generating': 'G�n�ration...'
+            'done': 'Terminé',
+            'generating': 'Génération...'
         };
 
         // Icons usually handled by CSS or unnecessary for simple badges, 
@@ -882,18 +882,18 @@ export const ListViewManager = {
         return `<span class="status-badge ${status}">${icon}${label}</span>`;
     },
     /**
-     * Génère le contenu de la colonne Statut (Badges élève + Erreurs)
-     * @param {Object} result - Résultat élève
+     * GÃ©nÃ¨re le contenu de la colonne Statut (Badges Ã©lÃ¨ve + Erreurs)
+     * @param {Object} result - RÃ©sultat Ã©lÃ¨ve
      * @returns {string} HTML des badges
      * @private
      */
     _getStudentStatusCellContent(result) {
         let html = '';
 
-        // Note: Le statut d'erreur de g�n�ration est affich� dans la colonne Appr�ciation,
-        // pas dans cette colonne Statut qui est r�serv�e aux statuts personnels de l'�l�ve.
+        // Note: Le statut d'erreur de génération est affiché dans la colonne Appréciation,
+        // pas dans cette colonne Statut qui est réservée aux statuts personnels de l'élève.
 
-        // Statuts �l�ve (PPRE, D�l�gu�, Nouveau, ULIS, etc.)
+        // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.)
         const studentStatuses = result.studentData?.statuses || [];
         // Dedup statuses to be safe
         const uniqueStatuses = [...new Set(studentStatuses)];
@@ -904,7 +904,7 @@ export const ListViewManager = {
             html += `<span class="${badgeInfo.className}" style="margin: 2px;">${badgeInfo.label}</span>`;
         });
 
-        // Si vide, afficher un tiret tr�s subtil (presque invisible)
+        // Si vide, afficher un tiret très subtil (presque invisible)
         if (!html) {
             return '<span style="color:var(--text-tertiary); font-size:10px; opacity:0.4;">&mdash;</span>';
         }
@@ -913,8 +913,8 @@ export const ListViewManager = {
     },
 
     /**
-     * Attache les event listeners aux éléments de la liste
-     * @param {HTMLElement} listContainer - Le conteneur spécifique de la liste
+     * Attache les event listeners aux Ã©lÃ©ments de la liste
+     * @param {HTMLElement} listContainer - Le conteneur spÃ©cifique de la liste
      * @private
      */
     _attachEventListeners(listContainer) {
@@ -1084,11 +1084,11 @@ export const ListViewManager = {
             }
         };
 
-        // Import dynamique des d�pendances
+        // Import dynamique des dépendances
         import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
             import('./StorageManager.js').then(({ StorageManager }) => {
                 import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
-                    // Actions sur les �l�ves
+                    // Actions sur les élèves
                     addAction('#copyAllBtn-shortcut', AppreciationsManager.copyAllResults);
                     addAction('#regenerateAllBtn', EventHandlersManager.handleRegenerateAllClick);
                     addAction('#regenerateErrorsBtn-shortcut', EventHandlersManager.handleRegenerateErrorsClick);
@@ -1104,14 +1104,14 @@ export const ListViewManager = {
     },
 
     /**
-     * Supprime un élève avec confirmation
-     * @param {string} studentId - ID de l'élève
+     * Supprime un Ã©lÃ¨ve avec confirmation
+     * @param {string} studentId - ID de l'Ã©lÃ¨ve
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
     /**
-     * Supprime un élève avec confirmation
-     * @param {string} studentId - ID de l'élève
+     * Supprime un Ã©lÃ¨ve avec confirmation
+     * @param {string} studentId - ID de l'Ã©lÃ¨ve
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
@@ -1122,7 +1122,7 @@ export const ListViewManager = {
         const studentName = `${student.prenom} ${student.nom}`;
 
         // Simple confirmation via native confirm (or could use UI.showCustomConfirm)
-        if (!confirm(`Supprimer l'élève "${studentName}" ?`)) return;
+        if (!confirm(`Supprimer l'Ã©lÃ¨ve "${studentName}" ?`)) return;
 
         // Animate row removal
         row.style.opacity = '0';
@@ -1143,12 +1143,12 @@ export const ListViewManager = {
 
             // Update UI elements
             const { UI } = await import('./UIManager.js');
-            ClassUIManager.updateStudentCount();       // Compteur dans l'entête
-            UI?.populateLoadStudentSelect();           // Menu déroulant des élèves
+            ClassUIManager.updateStudentCount();       // Compteur dans l'entÃªte
+            UI?.populateLoadStudentSelect();           // Menu dÃ©roulant des Ã©lÃ¨ves
             UI?.updateStats();                         // Stats globales
 
             // Notify user
-            UI?.showNotification(`${studentName} supprimé`, 'success');
+            UI?.showNotification(`${studentName} supprimÃ©`, 'success');
         }, 300);
     },
 
@@ -1166,7 +1166,7 @@ export const ListViewManager = {
         if (!appreciationCell) return;
 
         if (status === 'generating') {
-            appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'G�n�ration...', false);
+            appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'Génération...', false);
         } else if (status === 'pending-skeleton') {
             appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'En file', true);
         } else {
@@ -1321,7 +1321,7 @@ export const ListViewManager = {
             // EXPAND: Show full text
             table.classList.add('appreciation-full-view');
             header?.classList.add('expanded-view');
-            header.title = 'Cliquer pour r�duire';
+            header.title = 'Cliquer pour réduire';
 
             // Switch to Compress icon
             if (icon) {
@@ -1331,3 +1331,4 @@ export const ListViewManager = {
         }
     }
 };
+

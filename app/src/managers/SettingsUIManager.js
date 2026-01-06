@@ -22,28 +22,31 @@ import { DropdownManager } from './DropdownManager.js';
  */
 export const SettingsUIManager = {
     /**
-     * Sauvegarde les modifications des paramètres de la matière courante.
+     * Sauvegarde les modifications du style personnalisé.
      * @private
      */
-    _saveCurrentSettingsSubjectChanges() {
-        const currentSubject = appState.currentSettingsSubject;
-        const subjectData = appState.subjects[currentSubject];
-        if (!subjectData) return;
+    _savePersonalStyleChanges() {
+        // S'assurer que MonStyle existe
+        if (!appState.subjects['MonStyle']) {
+            appState.subjects['MonStyle'] = JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG));
+            appState.subjects['MonStyle'] = { iaConfig: appState.subjects['MonStyle'] };
+        }
 
-        subjectData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
-        subjectData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
-        subjectData.iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
+        const styleData = appState.subjects['MonStyle'];
+        if (!styleData.iaConfig) styleData.iaConfig = {};
+
+        styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
+        styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
+        styleData.iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
-        if (selectedVoice) subjectData.iaConfig.voice = selectedVoice.value;
-
-
+        if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
     },
 
     /**
      * Sauvegarde tous les paramètres de l'application.
      */
     saveSettings() {
-        this._saveCurrentSettingsSubjectChanges();
+        this._savePersonalStyleChanges();
 
         if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
         if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
@@ -67,11 +70,6 @@ export const SettingsUIManager = {
         setTimeout(() => {
             this.updateApiStatusDisplay();
             UI.showNotification('Paramètres enregistrés.', 'success');
-
-            // Synchroniser la matière active avec celle des paramètres
-            if (appState.useSubjectPersonalization) {
-                appState.currentSubject = appState.currentSettingsSubject;
-            }
             AppreciationsManager.renderResults();
         }, 260);
     },
@@ -84,13 +82,10 @@ export const SettingsUIManager = {
         UI.closeModal(DOM.settingsModal);
 
         // Restaurer l'état après l'animation de fermeture (250ms)
-        // pour éviter les mises à jour DOM qui interfèrent avec l'animation
         setTimeout(() => {
             if (Object.keys(UIState.settingsBeforeEdit).length > 0) {
                 appState.useSubjectPersonalization = UIState.settingsBeforeEdit.useSubjectPersonalization;
                 appState.subjects = UIState.settingsBeforeEdit.subjects;
-                appState.currentSettingsSubject = UIState.settingsBeforeEdit.currentSettingsSubject;
-                appState.currentSubject = UIState.settingsBeforeEdit.currentSubject;
             }
             this.updatePersonalizationState();
             UI.updateSettingsFields();
@@ -98,114 +93,61 @@ export const SettingsUIManager = {
     },
 
     /**
-     * Ajoute une nouvelle matière.
+     * Réinitialise le style personnalisé aux valeurs par défaut.
      */
-    addSubject() {
-        const name = DOM.newSubjectInput.value.trim();
-        if (!name) return;
-        if (appState.subjects[name]) {
-            UI.showNotification('Cette matière existe déjà.', 'warning');
-            return;
-        }
-
-        appState.subjects[name] = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES['Français']));
-        appState.subjects[name].iaConfig = JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG));
-
-
-        appState.currentSettingsSubject = name;
-        DOM.newSubjectInput.value = '';
-
-        this.renderSubjectManagementList();
-        UI.updateSettingsPromptFields();
-        UI.showNotification(`Matière "${name}" ajoutée.`, 'success');
-    },
-
-    /**
-     * Supprime une matière.
-     * @param {string} name - Nom de la matière à supprimer
-     */
-    deleteSubject(name) {
-        if (Object.keys(appState.subjects).length <= 1) {
-            UI.showNotification("Impossible de supprimer la dernière matière.", "error");
-            return;
-        }
-        if (DEFAULT_PROMPT_TEMPLATES[name]) {
-            UI.showNotification("Les matières par défaut ne peuvent pas être supprimées.", "warning");
-            return;
-        }
-
-        UI.showCustomConfirm(`Supprimer définitivement la matière "${name}" ?`, () => {
-            delete appState.subjects[name];
-            const remaining = Object.keys(appState.subjects);
-            appState.currentSettingsSubject = remaining[0];
-            if (appState.currentSubject === name) appState.currentSubject = remaining[0];
-
-            this.renderSubjectManagementList();
+    resetPersonalStyle() {
+        UI.showCustomConfirm("Réinitialiser votre style personnalisé ?", () => {
+            appState.subjects['MonStyle'] = { iaConfig: JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG)) };
             UI.updateSettingsPromptFields();
-            UI.showNotification(`Matière "${name}" supprimée.`, 'success');
+            UI.showNotification("Style réinitialisé.", "success");
         }, null, { compact: true });
     },
 
     /**
-     * Met à jour la liste des matières dans les paramètres.
-     */
-    renderSubjectManagementList() {
-        const list = DOM.subjectManagementList;
-        if (!list) return;
-
-        const subjects = Object.keys(appState.subjects).sort().filter(s => s !== 'Générique');
-        DOM.settingsSubjectSelect.innerHTML = subjects.map(s =>
-            `<option value="${s}" ${s === appState.currentSettingsSubject ? 'selected' : ''}>${s}</option>`
-        ).join('');
-
-        // Refresh the custom dropdown to reflect the new options
-        DropdownManager.refresh('settingsSubjectSelect');
-
-        // Clear the redundant list - subjects are managed via the dropdown + delete button in header controls
-        list.innerHTML = '';
-    },
-
-    /**
-     * Réinitialise les paramètres de la matière courante.
-     */
-    resetCurrentSubject() {
-        UI.showCustomConfirm("Réinitialiser les réglages de CETTE matière par défaut ?", () => {
-            const subject = appState.currentSettingsSubject;
-            if (DEFAULT_PROMPT_TEMPLATES[subject]) {
-                appState.subjects[subject] = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES[subject]));
-            } else {
-                appState.subjects[subject].iaConfig = JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG));
-            }
-            UI.updateSettingsPromptFields();
-            UI.showNotification("Réglages de la matière réinitialisés.", "success");
-        }, null, { compact: true });
-    },
-
-    /**
-     * Met à jour l'état de personnalisation par matière.
+     * Met à jour l'état de personnalisation.
      */
     updatePersonalizationState() {
+        // Renamed from useSubjectPersonalization to be generic
         const enabled = appState.useSubjectPersonalization;
-        DOM.personalizationToggle.checked = enabled;
-
-        const subjectHeaderControls = document.querySelector('.subject-header-controls');
-        if (subjectHeaderControls) {
-            subjectHeaderControls.style.display = enabled ? 'flex' : 'none';
+        if (DOM.personalizationToggle) {
+            DOM.personalizationToggle.checked = enabled;
         }
 
-        // Afficher le message d'info "Générique" uniquement si la personnalisation est désactivée
+        // Toggle visibility of the info message
         if (DOM.genericSubjectInfo) {
-            DOM.genericSubjectInfo.style.display = enabled ? 'none' : 'flex';
-            if (!enabled) {
-                DOM.genericSubjectInfo.innerHTML = `<i class="fas fa-info-circle"></i> Personnalisation désactivée : paramètres par défaut appliqués.`;
+            // Use CSS class for smooth transition instead of display: none
+            if (enabled) {
+                DOM.genericSubjectInfo.classList.add('collapsed');
+            } else {
+                DOM.genericSubjectInfo.classList.remove('collapsed');
             }
         }
 
-        UI.updateSettingsFields();
-    },
+        // Disable/Enable inputs
+        const inputsToToggle = [
+            DOM.iaLengthSlider,
+            DOM.iaToneSlider,
+            DOM.iaStyleInstructions,
+            ...document.querySelectorAll('input[name="iaVoiceRadio"]')
+        ];
 
-    // Note: Les fonctions addVocabItem, saveVocabItemEdit et handleVocabItemKeydown
-    // ont été supprimées avec la bibliothèque de mots-clés.
+        inputsToToggle.forEach(input => {
+            if (input) input.disabled = !enabled;
+        });
+
+        // Add visual class to disabled container
+        const controlsPanel = document.getElementById('settings-controls-panel');
+        if (controlsPanel) {
+            if (!enabled) controlsPanel.classList.add('disabled');
+            else controlsPanel.classList.remove('disabled');
+        }
+
+        // Keep header simple - no lock icon needed as the toggle is right there
+        const iaStyleHeader = document.getElementById('iaStyleHeader');
+        if (iaStyleHeader) {
+            iaStyleHeader.innerHTML = `<i class="fas fa-sliders-h"></i> Style de Rédaction`;
+        }
+    },
 
     /**
      * Met à jour l'affichage du récapitulatif des APIs configurées.

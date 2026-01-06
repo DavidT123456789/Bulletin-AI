@@ -375,6 +375,8 @@ export const AppreciationsManager = {
             result.studentData.prompts.sw = prompts.sw;
             const resp = await AIService.callAIWithFallback(prompts.sw);
             result.strengthsWeaknesses = resp.text;
+            // Ensure tokenUsage exists before setting properties
+            if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.sw = resp.usage;
             StorageManager.saveAppState();
             if (!silent) UI.showNotification('Analyse générée.', 'success');
@@ -405,6 +407,8 @@ export const AppreciationsManager = {
             });
 
             result.nextSteps = steps.slice(0, 3).filter(Boolean);
+            // Ensure tokenUsage exists before setting properties
+            if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.ns = resp.usage;
             StorageManager.saveAppState();
             if (!silent) UI.showNotification('Pistes générées.', 'success');

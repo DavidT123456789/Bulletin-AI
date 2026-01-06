@@ -188,8 +188,8 @@
 }
 
 .provider-suffix-local {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--purple-light);
+    color: var(--purple-color);
 }
 
 /* Mode sombre - ajustements subtils */

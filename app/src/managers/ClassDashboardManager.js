@@ -533,7 +533,6 @@ export const ClassDashboardManager = {
 
             // Trigger storage save
             StorageManager.saveAppState();
-            // console.log('[ClassDashboardManager] Synthesis saved to persistent storage.');
         }
     },
 

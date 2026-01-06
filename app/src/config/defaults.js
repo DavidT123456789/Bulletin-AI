@@ -10,41 +10,25 @@ export const DEFAULT_IA_CONFIG = {
     styleInstructions: "",
 };
 
-export const DEFAULT_SUBJECTS_SAMPLES = {
-    "Français": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 60, tone: 3, styleInstructions: "Mettre l'accent sur la qualité de l'expression et de l'argumentation." }
-    },
-    "Mathématiques": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 45, tone: 4, styleInstructions: "Être factuel et précis. Mentionner une compétence clé comme le raisonnement ou la rigueur." }
-    },
-    "Histoire-Géographie": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 60, tone: 3, styleInstructions: "Insister sur la capacité à mettre en perspective les événements et les informations." }
-    },
-    "Anglais (LV1)": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 50, tone: 2, styleInstructions: "Mentionner le niveau de participation orale et encourager la prise de parole." }
-    },
-    "Espagnol (LV2)": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 50, tone: 2, styleInstructions: "Valoriser l'effort de communication, même si des erreurs persistent." }
-    },
-    "Physique-Chimie": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 50, tone: 4, styleInstructions: "Focaliser sur la méthode scientifique et la compréhension des phénomènes." }
-    },
-    "SVT": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 55, tone: 3, styleInstructions: "Insister sur la rigueur de l'observation et la qualité du raisonnement." }
-    },
-    "Technologie": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 50, tone: 3, styleInstructions: "Évaluer l'implication dans les projets et la capacité à collaborer." }
-    },
-    "EPS": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 40, tone: 2, styleInstructions: "Se concentrer sur l'engagement, l'attitude et les progrès moteurs." }
-    }
+/**
+ * Configuration par défaut du style personnalisé.
+ * Un seul profil "MonStyle" remplace l'ancien système multi-matières.
+ */
+export const DEFAULT_PERSONAL_STYLE = {
+    iaConfig: { ...DEFAULT_IA_CONFIG }
 };
 
+/**
+ * Templates de prompt par défaut.
+ * Simplifié : "Générique" pour le mode OFF, "MonStyle" pour le mode ON.
+ */
 export const DEFAULT_PROMPT_TEMPLATES = {
     "Générique": {
-        iaConfig: { ...DEFAULT_IA_CONFIG, length: 50 }
+        iaConfig: { ...DEFAULT_IA_CONFIG }
     },
-    ...DEFAULT_SUBJECTS_SAMPLES
+    "MonStyle": {
+        iaConfig: { ...DEFAULT_IA_CONFIG }
+    }
 };
 
 export const DEFAULT_EVOLUTION_THRESHOLDS = {

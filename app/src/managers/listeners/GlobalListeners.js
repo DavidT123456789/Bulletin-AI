@@ -105,9 +105,18 @@ export const GlobalListeners = {
             if (now - this._lastFallbackNotificationTime > this._fallbackNotificationDebounceMs) {
                 this._lastFallbackNotificationTime = now;
 
-                // Notification toast améliorée
+                // Notification toast améliorée avec séparateurs clairs et typographie française
+                // Formater la raison pour la rendre plus courte si possible
+                let shortReason = reason || 'Erreur API';
+                // Tronquer les messages d'erreur trop longs
+                if (shortReason.length > 60) {
+                    shortReason = shortReason.substring(0, 60) + '…';
+                }
+
+                // Format: "Fallback : Modèle A → Modèle B" sur une ligne
+                // puis "Raison : message d'erreur" sur la ligne suivante
                 UI.showNotification(
-                    `⚡ Fallback : ${shortOriginal} → ${shortUsed}`,
+                    `⚡ <strong>Fallback</strong> • ${shortOriginal} → ${shortUsed}<br>📋 <strong>Raison</strong> • ${shortReason}`,
                     'warning'
                 );
             }
@@ -142,9 +151,9 @@ export const GlobalListeners = {
                     }, 200);
                 }
 
-                // 3. Tooltip avec détails du fallback
+                // 3. Tooltip avec détails du fallback (typographie française, sans HTML)
                 DOM.headerAiModelChip.setAttribute('data-tooltip',
-                    `⚡ Fallback : ${shortOriginal} → ${shortUsed}\nRaison : ${reason || 'Erreur API'}`
+                    `⚡ Fallback • ${shortOriginal} → ${shortUsed}\n📋 Raison • ${reason || 'Erreur API'}`
                 );
 
                 // 4. Retour à l'état normal après quelques secondes
@@ -176,9 +185,9 @@ export const GlobalListeners = {
                         DOM.headerAiModelChip.classList.remove('fallback-active');
                     }
 
-                    // Restaurer le nom du modèle configuré dans le tooltip
+                    // Restaurer le nom du modèle configuré dans le tooltip (standardisé)
                     DOM.headerAiModelChip.setAttribute('data-tooltip',
-                        `Modèle configuré : ${MODEL_SHORT_NAMES[appState.currentAIModel] || appState.currentAIModel}\nDernier utilisé : ${shortUsed}`
+                        `⚙️ Configuré • ${MODEL_SHORT_NAMES[appState.currentAIModel] || appState.currentAIModel}\n✅ Utilisé • ${shortUsed}`
                     );
                 }, 5000);
             }

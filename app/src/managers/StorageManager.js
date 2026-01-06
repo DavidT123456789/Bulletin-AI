@@ -54,7 +54,7 @@ export const StorageManager = {
                     // Navigation State
                     if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
                     if (settings.currentSubject !== undefined) runtimeState.navigation.currentSubject = settings.currentSubject;
-                    if (settings.currentSettingsSubject !== undefined) runtimeState.navigation.currentSettingsSubject = settings.currentSettingsSubject;
+
                     if (settings.currentInputMode !== undefined) runtimeState.navigation.currentInputMode = settings.currentInputMode;
                     if (settings.activeStatFilter !== undefined) runtimeState.navigation.activeStatFilter = settings.activeStatFilter;
 
@@ -175,10 +175,7 @@ export const StorageManager = {
         }
 
         if (!subjects[runtimeState.navigation.currentSubject]) {
-            runtimeState.navigation.currentSubject = 'Français';
-        }
-        if (!subjects[runtimeState.navigation.currentSettingsSubject]) {
-            runtimeState.navigation.currentSettingsSubject = 'Français';
+            runtimeState.navigation.currentSubject = 'MonStyle';
         }
 
         // Migration de modèles obsolètes vers la version stable actuelle
@@ -274,7 +271,7 @@ export const StorageManager = {
             // État de navigation (persisté)
             currentPeriod: runtimeState.navigation.currentPeriod,
             currentSubject: runtimeState.navigation.currentSubject,
-            currentSettingsSubject: runtimeState.navigation.currentSettingsSubject,
+
             currentInputMode: runtimeState.navigation.currentInputMode,
             activeStatFilter: runtimeState.navigation.activeStatFilter,
 
@@ -307,12 +304,7 @@ export const StorageManager = {
             if (closeBtn) closeBtn.disabled = true;
 
             try {
-                const userSubjects = {};
-                for (const subjectName in appState.subjects) {
-                    if (!DEFAULT_PROMPT_TEMPLATES.hasOwnProperty(subjectName)) {
-                        userSubjects[subjectName] = appState.subjects[subjectName];
-                    }
-                }
+
 
                 Object.assign(appState, {
                     useSubjectPersonalization: true,
@@ -320,8 +312,7 @@ export const StorageManager = {
                     subjects: JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES)),
                     evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
                     massImportFormats: { trimestres: {}, semestres: {} },
-                    currentSubject: 'Français',
-                    currentSettingsSubject: 'Français',
+                    currentSubject: 'MonStyle',
                     currentAIModel: 'gemini-2.0-flash',
                 });
 
@@ -329,14 +320,13 @@ export const StorageManager = {
                 appState.googleApiKey = '';
                 appState.openrouterApiKey = '';
 
-                Object.assign(appState.subjects, userSubjects);
+
 
                 await this.saveAppState();
 
                 UI.updatePeriodSystemUI();
                 UI.updateSettingsPromptFields();
                 UI.updateSettingsFields();
-                App.renderSubjectManagementList();
                 UI.renderSettingsLists();
                 UI.showNotification('Paramètres réinitialisés (données conservées).', 'success');
             } catch (e) {

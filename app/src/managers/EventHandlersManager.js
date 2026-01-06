@@ -220,7 +220,6 @@ export const EventHandlersManager = {
 
         UI.updatePeriodSystemUI();
         UI.updateSettingsPromptFields();
-        SettingsUIManager.renderSubjectManagementList(); // Rafraîchir pour MAJ les formats mémorisés si besoin
 
         // MàJ des sliders si on change de système (bien que config globale pour l'instant)
         UI.updateSettingsFields();

@@ -70,6 +70,7 @@
 
 .settings-card-content {
     flex: 1;
+    transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
 .options-grid {
@@ -791,6 +792,15 @@
     color: var(--text-secondary);
 }
 
+/* Info card reste visible pour expliquer l'état désactivé */
+#settings-controls-panel.disabled .generic-info-card {
+    opacity: 1;
+    filter: none;
+    pointer-events: auto;
+    user-select: auto;
+    cursor: default;
+}
+
 #vocabulaireSection.disabled {
     opacity: 0.6;
 }
@@ -1275,7 +1285,47 @@
     margin-top: 2px;
 }
 
-[data-theme="dark"] .sync-rgpd-warning {
-    background: rgba(251, 191, 36, 0.08);
-    border-color: rgba(251, 191, 36, 0.2);
+
+/* === Personalization Toggle Animation === */
+.generic-info-card {
+    transition:
+        max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+        /* iOS Spring-like for height */
+        opacity 0.25s ease-out,
+        margin 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow: hidden;
+    max-height: 200px;
+    /* Sufficient height for text */
+    opacity: 1;
+    /* Maintain the layout presence */
+    display: block;
+    color: var(--primary-color);
+    font-weight: 500;
+
+    /* Standard Info Box Style */
+    background: rgba(var(--primary-color-rgb), 0.08);
+    /* Fond doux */
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    /* Cadre subtil */
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+.generic-info-card.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    pointer-events: none;
+}
+
+/* === Placeholder styling for settings textareas === */
+.style-instructions-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+    opacity: 1;
 }

@@ -15,19 +15,18 @@ export const PromptService = {
     getAllPrompts(studentData, overrideConfig = null) {
         const { nom, prenom, statuses, periods, currentPeriod, negativeInstructions } = studentData;
 
-        const activeSubjectName = studentData.subject || appState.currentSubject;
+        // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
+        const usePersonalization = appState.useSubjectPersonalization;
         let iaConfig;
 
         if (overrideConfig) {
             iaConfig = overrideConfig;
-        } else if (appState.useSubjectPersonalization) {
-            const activeSubjectData = appState.subjects[activeSubjectName] || appState.subjects['Générique'];
-            iaConfig = activeSubjectData.iaConfig || DEFAULT_IA_CONFIG;
+        } else if (usePersonalization) {
+            const styleData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
+            iaConfig = styleData?.iaConfig || DEFAULT_IA_CONFIG;
         } else {
             iaConfig = DEFAULT_PROMPT_TEMPLATES["Générique"].iaConfig;
         }
-
-        const usePersonalizationInPrompt = appState.useSubjectPersonalization && activeSubjectName !== 'Générique';
 
         // Anonymisation RGPD : on utilise [PRÉNOM] au lieu du vrai prénom
         // Le genre est détecté pour permettre l'accord grammatical correct
@@ -36,11 +35,8 @@ export const PromptService = {
 
         const promptParts = [];
 
-        if (usePersonalizationInPrompt) {
-            promptParts.push(`En tant que professeur de ${activeSubjectName}, rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
-        } else {
-            promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
-        }
+        // Introduction du prompt (simplifié sans nom de matière)
+        promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
 
 
         const styleParts = [];
@@ -129,7 +125,7 @@ ${evolutionText}
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
-        const nsPrompt = `Suggère 3 pistes d'amélioration concrètes${usePersonalizationInPrompt ? ` en ${activeSubjectName}` : ''}. Liste numérotée, bref et direct. Pas d'intro ni conclusion.
+        const nsPrompt = `Suggère 3 pistes d'amélioration concrètes. Liste numérotée, bref et direct. Pas d'intro ni conclusion.
 
 Données de l'élève :
 ${periodsInfoForAnalysis}

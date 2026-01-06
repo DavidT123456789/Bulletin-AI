@@ -279,10 +279,6 @@ export function initDOM() {
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
     DOM.iaToneSlider = document.getElementById('iaToneSlider');
     DOM.genericSubjectInfo = document.getElementById('genericSubjectInfo');
-    DOM.deleteSubjectBtn = document.getElementById('deleteSubjectBtn');
-    DOM.resetSubjectBtn = document.getElementById('resetSubjectBtn');
-    DOM.addSubjectBtn = document.getElementById('addSubjectBtn');
-    DOM.settingsSubjectSelect = document.getElementById('settingsSubjectSelect');
     DOM.previewStudentSelect = document.getElementById('previewStudentSelect');
     DOM.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
     DOM.settingsPreviewResult = document.getElementById('settingsPreviewResult');
@@ -291,8 +287,6 @@ export function initDOM() {
     DOM.settingsPreviewWordCount = document.getElementById('settingsPreviewWordCount');
     DOM.settingsPreviewTokenCount = document.getElementById('settingsPreviewTokenCount');
     DOM.previewMetaContainer = document.getElementById('previewMetaContainer');
-    DOM.subjectManagementList = document.getElementById('subjectManagementList');
-    DOM.newSubjectInput = document.getElementById('newSubjectInput');
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
 
 
@@ -339,9 +333,5 @@ export function initDOM() {
     DOM.massImportActions = document.getElementById('massImportActions');
 
     // Rapport final (en développement uniquement)
-    if (IS_DEV && missingElementsCount > 0) {
-        console.groupCollapsed(`[DOM] ⚠️ ${missingElementsCount} élément(s) manquant(s) - Cliquez pour voir`);
-        console.log('Astuce: Vérifiez que index.html contient tous les IDs requis.');
-        console.groupEnd();
-    }
+
 }
