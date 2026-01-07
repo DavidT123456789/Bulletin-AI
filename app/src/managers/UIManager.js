@@ -1330,8 +1330,6 @@ export const UI = {
 
         // Révéler les mots par lots avec animation
         let wordIndex = 0;
-        let currentText = '';
-
         while (wordIndex < words.length) {
             const batch = words.slice(wordIndex, wordIndex + config.wordsPerBatch);
 
@@ -1347,12 +1345,6 @@ export const UI = {
                     wordSpan.style.animationDelay = `${(wordIndex % config.wordsPerBatch) * 30}ms`;
                     revealContainer.appendChild(wordSpan);
                 }
-                currentText += word;
-            }
-
-            // Notify progress if callback provided
-            if (options.onProgress) {
-                options.onProgress(currentText);
             }
 
             wordIndex += config.wordsPerBatch;

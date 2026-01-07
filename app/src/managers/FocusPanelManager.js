@@ -1256,7 +1256,8 @@ export const FocusPanelManager = {
                     this._updateAppreciationStatus(result, { state: 'generated' });
 
                     // Update word count and button states
-                    this._updateWordCount(true);
+                    // Use start count 0 as we cleared content before generation
+                    this._updateWordCount(true, 0);
 
                     // Update AI indicator with new metadata
                     this._updateAiIndicator(result);
@@ -1389,18 +1390,19 @@ export const FocusPanelManager = {
             // Apply new text with typewriter effect
             appText.style.opacity = '1';
 
-            // Live update of word count during typing
-            await UI.typewriterReveal(appText, newText, {
-                speed: 'fast',
-                onProgress: (partialText) => {
-                    this._updateWordCount(false, partialText);
-                }
-            });
+            // Capture start count for animation
+            const startCount = Utils.countWords(currentText);
+
+            // Apply new text with typewriter effect
+            appText.style.opacity = '1';
+            await UI.typewriterReveal(appText, newText, { speed: 'fast' });
 
             // Save & History
             this._pushToHistory(newText);
             this._saveContext(); // Persist changes
-            this._updateWordCount(true); // Final animation check (e.g. slight adjustment)
+
+            // Animate word count from previous value
+            this._updateWordCount(true, startCount);
 
             UI.showNotification('Appréciation améliorée !', 'success');
 
@@ -1800,12 +1802,18 @@ export const FocusPanelManager = {
      * @param {string|null} [overrideText=null] - Text to count instead of reading DOM (for live updates)
      * @private
      */
-    _updateWordCount(animate = false, overrideText = null) {
+    /**
+     * Update word count display
+     * @param {boolean} [animate=false] - Whether to animate the number change
+     * @param {number|null} [fromCount=null] - Optional starting value for animation
+     * @private
+     */
+    _updateWordCount(animate = false, fromCount = null) {
         const appreciationText = document.getElementById('focusAppreciationText');
         const wordCountEl = document.getElementById('focusWordCount');
 
         if (appreciationText) {
-            const text = overrideText !== null ? overrideText : (appreciationText.textContent || '');
+            const text = appreciationText.textContent || '';
             // Check if empty or placeholder
             const isEmpty = !text.trim();
 
@@ -1844,15 +1852,18 @@ export const FocusPanelManager = {
                     const templateFn = (val) => `<i class="fas fa-align-left"></i>${val} mot${val !== 1 ? 's' : ''}`;
 
                     if (animate) {
-                        // Extract previous value (number only)
-                        const prevText = wordCountEl.textContent || '';
-                        const prevMatch = prevText.match(/(\d+)/);
-                        const prevVal = prevMatch ? parseInt(prevMatch[1], 10) : 0;
+                        // Determine start value: explicit > DOM > 0
+                        let startVal = 0;
+                        if (fromCount !== null) {
+                            startVal = fromCount;
+                        } else {
+                            const prevText = wordCountEl.textContent || '';
+                            const prevMatch = prevText.match(/(\d+)/);
+                            startVal = prevMatch ? parseInt(prevMatch[1], 10) : 0;
+                        }
 
-                        console.log('[FocusPanel] WordCount Animation Debug:', { prevVal, words, animate });
-
-                        if (prevVal !== words) {
-                            StatsUI.animateNumberWithMarkup(wordCountEl, prevVal, words, 600, templateFn);
+                        if (startVal !== words) {
+                            StatsUI.animateNumberWithMarkup(wordCountEl, startVal, words, 600, templateFn);
                         } else {
                             wordCountEl.innerHTML = templateFn(words);
                         }
