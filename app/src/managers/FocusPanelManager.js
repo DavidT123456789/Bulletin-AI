@@ -1796,12 +1796,7 @@ export const FocusPanelManager = {
         }
     },
 
-    /**
-     * Update word count display
-     * @param {boolean} [animate=false] - Whether to animate the number change
-     * @param {string|null} [overrideText=null] - Text to count instead of reading DOM (for live updates)
-     * @private
-     */
+
     /**
      * Update word count display
      * @param {boolean} [animate=false] - Whether to animate the number change
