@@ -54,6 +54,8 @@ export const SettingsModalListeners = {
         addClickListener(DOM.validateOpenaiApiKeyBtn, () => ApiValidationManager.validateApiKey('openai'));
         addClickListener(DOM.validateGoogleApiKeyBtn, () => ApiValidationManager.validateApiKey('google'));
         addClickListener(DOM.validateOpenrouterApiKeyBtn, () => ApiValidationManager.validateApiKey('openrouter'));
+        addClickListener(DOM.validateAnthropicApiKeyBtn, () => ApiValidationManager.validateApiKey('anthropic'));
+        addClickListener(DOM.validateMistralApiKeyBtn, () => ApiValidationManager.validateApiKey('mistral'));
 
         // Bouton "Tester tout" pour vérifier toutes les connexions
         addClickListener(DOM.testAllConnectionsBtn, () => SettingsUIManager.testAllConnections());
@@ -64,7 +66,7 @@ export const SettingsModalListeners = {
             SettingsUIManager.updateApiStatusDisplay();
         });
 
-        [DOM.openaiApiKey, DOM.googleApiKey, DOM.openrouterApiKey].forEach(input => {
+        [DOM.openaiApiKey, DOM.googleApiKey, DOM.openrouterApiKey, DOM.anthropicApiKey, DOM.mistralApiKey].forEach(input => {
             if (input) input.addEventListener('input', ApiValidationManager.handleApiKeyInput);
         });
 
@@ -104,7 +106,9 @@ export const SettingsModalListeners = {
         const statusCardMap = {
             'googleApiStatus': 'google',
             'openaiApiStatus': 'openai',
-            'openrouterApiStatus': 'openrouter'
+            'openrouterApiStatus': 'openrouter',
+            'anthropicApiStatus': 'anthropic',
+            'mistralApiStatus': 'mistral'
         };
         Object.entries(statusCardMap).forEach(([cardId, provider]) => {
             const card = document.getElementById(cardId);

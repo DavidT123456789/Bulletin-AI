@@ -112,8 +112,10 @@ export const FormUI = {
         if (DOM.openaiApiKey) DOM.openaiApiKey.value = appState.openaiApiKey;
         if (DOM.googleApiKey) DOM.googleApiKey.value = appState.googleApiKey;
         if (DOM.openrouterApiKey) DOM.openrouterApiKey.value = appState.openrouterApiKey;
+        if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;
+        if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
-        if (DOM.sessionCost) DOM.sessionCost.textContent = `${appState.sessionCost.toFixed(4)}$`;
+        if (DOM.sessionTokens) DOM.sessionTokens.textContent = (appState.sessionTokens || 0).toLocaleString('fr-FR');
 
         this.toggleAIKeyFields();
         this.renderSettingsLists();
@@ -131,6 +133,8 @@ export const FormUI = {
             { id: 'google', key: appState.googleApiKey, inputId: 'googleApiKey' },
             { id: 'openai', key: appState.openaiApiKey, inputId: 'openaiApiKey' },
             { id: 'openrouter', key: appState.openrouterApiKey, inputId: 'openrouterApiKey' },
+            { id: 'anthropic', key: appState.anthropicApiKey, inputId: 'anthropicApiKey' },
+            { id: 'mistral', key: appState.mistralApiKey, inputId: 'mistralApiKey' },
         ];
 
         providers.forEach(({ id, key, inputId }) => {
@@ -311,6 +315,8 @@ export const FormUI = {
             google: 'Google Gemini',
             openai: 'OpenAI',
             openrouter: 'OpenRouter',
+            anthropic: 'Claude (Anthropic)',
+            mistral: 'Mistral',
             ollama: 'Ollama (local)'
         };
 
@@ -324,6 +330,12 @@ export const FormUI = {
         } else if (model.startsWith('gemini')) {
             requiredProvider = 'google';
             hasKey = !!appState.googleApiKey && appState.googleApiKey.length > 5;
+        } else if (model.startsWith('anthropic')) {
+            requiredProvider = 'anthropic';
+            hasKey = !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
+        } else if (model.startsWith('mistral-direct')) {
+            requiredProvider = 'mistral';
+            hasKey = !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
         } else {
             // Mistral, DeepSeek via OpenRouter, etc.
             requiredProvider = 'openrouter';

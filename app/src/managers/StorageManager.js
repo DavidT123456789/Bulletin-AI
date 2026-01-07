@@ -40,6 +40,8 @@ export const StorageManager = {
                     if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
                     if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;
                     if (settings.openrouterApiKey !== undefined) userSettings.api.openrouterApiKey = settings.openrouterApiKey;
+                    if (settings.anthropicApiKey !== undefined) userSettings.api.anthropicApiKey = settings.anthropicApiKey;
+                    if (settings.mistralApiKey !== undefined) userSettings.api.mistralApiKey = settings.mistralApiKey;
                     if (settings.apiKeyStatus !== undefined) runtimeState.apiStatus = settings.apiKeyStatus;
                     if (settings.validatedApiKeys !== undefined) runtimeState.validatedApiKeys = settings.validatedApiKeys;
 
@@ -257,6 +259,8 @@ export const StorageManager = {
             openaiApiKey: userSettings.api.openaiApiKey,
             googleApiKey: userSettings.api.googleApiKey,
             openrouterApiKey: userSettings.api.openrouterApiKey,
+            anthropicApiKey: userSettings.api.anthropicApiKey,
+            mistralApiKey: userSettings.api.mistralApiKey,
             apiKeyStatus: runtimeState.apiStatus || {},
             validatedApiKeys: runtimeState.validatedApiKeys || {},
 
@@ -319,6 +323,8 @@ export const StorageManager = {
                 appState.openaiApiKey = '';
                 appState.googleApiKey = '';
                 appState.openrouterApiKey = '';
+                appState.anthropicApiKey = '';
+                appState.mistralApiKey = '';
 
 
 

@@ -45,6 +45,8 @@ export const userSettings = {
         openaiApiKey: '',
         googleApiKey: '',
         openrouterApiKey: '',
+        anthropicApiKey: '',   // Claude (Anthropic)
+        mistralApiKey: '',     // Mistral AI direct
         // Ollama (IA locale)
         ollamaEnabled: false,
         ollamaBaseUrl: 'http://localhost:11434',
@@ -70,6 +72,7 @@ export const runtimeState = {
     /** Statistiques de session */
     session: {
         sessionCost: 0,
+        sessionTokens: 0,
         isDemoMode: false,
     },
 
@@ -99,6 +102,8 @@ export const runtimeState = {
         google: 'not-configured',
         openai: 'not-configured',
         openrouter: 'not-configured',
+        anthropic: 'not-configured',
+        mistral: 'not-configured',
         ollama: 'not-configured',
     },
 
@@ -107,6 +112,8 @@ export const runtimeState = {
         google: false,
         openai: false,
         openrouter: false,
+        anthropic: false,
+        mistral: false,
         ollama: false,
     },
 
@@ -146,6 +153,8 @@ const propertyMap = {
     openaiApiKey: () => userSettings.api,
     googleApiKey: () => userSettings.api,
     openrouterApiKey: () => userSettings.api,
+    anthropicApiKey: () => userSettings.api,
+    mistralApiKey: () => userSettings.api,
     ollamaEnabled: () => userSettings.api,
     ollamaBaseUrl: () => userSettings.api,
     ollamaInstalledModels: () => userSettings.api,
@@ -155,6 +164,7 @@ const propertyMap = {
 
     // runtimeState.session
     sessionCost: () => runtimeState.session,
+    sessionTokens: () => runtimeState.session,
     isDemoMode: () => runtimeState.session,
 
     // runtimeState.navigation

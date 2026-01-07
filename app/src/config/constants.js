@@ -17,6 +17,8 @@ export const CONFIG = {
     OPENROUTER_API_BASE: 'https://openrouter.ai/api/v1',
     OPENAI_API_BASE: 'https://api.openai.com/v1',
     GOOGLE_API_BASE: 'https://generativelanguage.googleapis.com/v1beta',
+    ANTHROPIC_API_BASE: 'https://api.anthropic.com/v1',
+    MISTRAL_API_BASE: 'https://api.mistral.ai/v1',
     API_CALL_TIMEOUT_MS: 25000,
     API_CALL_TIMEOUT_OLLAMA_MS: 120000, // 2 minutes pour Ollama (modèles locaux lents au premier chargement)
     WORD_COUNT_TOLERANCE: 0.25,

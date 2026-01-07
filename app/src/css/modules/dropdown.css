@@ -167,6 +167,18 @@
     color: var(--primary-color);
 }
 
+/* Anthropic (Claude) */
+.provider-anthropic {
+    color: #cc785c;
+    /* Couleur cuivre/terracotta d'Anthropic */
+}
+
+/* Mistral */
+.provider-mistral {
+    color: #ff7000;
+    /* Orange Mistral */
+}
+
 /* === Badges de suffix (GRATUIT, PAYANT, LOCAL) === */
 .provider-suffix {
     font-size: 9px;
@@ -177,8 +189,9 @@
     letter-spacing: 0.3px;
 }
 
-.provider-suffix-gratuit {
-    background: rgba(var(--success-color-rgb), 0.15);
+.provider-suffix-gratuit,
+.provider-suffix-quota {
+    background: rgba(var(--success-rgb), 0.15);
     color: var(--success-color);
 }
 

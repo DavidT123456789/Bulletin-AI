@@ -120,15 +120,25 @@ export const DropdownManager = {
             { pattern: /💰\s*OpenRouter/i, icon: '<i class="fas fa-bolt provider-icon provider-openrouter-paid"></i>', text: 'OpenRouter' },
             // OpenAI - utilise le robot
             { pattern: /💰\s*OpenAI/i, icon: '<i class="fas fa-robot provider-icon provider-openai"></i>', text: 'OpenAI' },
+            // Anthropic Claude
+            { pattern: /💰\s*Anthropic Claude/i, icon: '<i class="fas fa-brain provider-icon provider-anthropic"></i>', text: 'Anthropic Claude' },
+            // Mistral AI
+            { pattern: /🐱\s*Mistral AI/i, icon: '<i class="fas fa-cat provider-icon provider-mistral"></i>', text: 'Mistral AI' },
             // Ollama - maison pour local
             { pattern: /🏠\s*Ollama/i, icon: '<i class="fas fa-home provider-icon provider-ollama"></i>', text: 'Ollama' },
         ];
 
         for (const mapping of iconMappings) {
             if (mapping.pattern.test(labelText)) {
-                // Extraire la partie après le nom du provider (ex: "— GRATUIT", "— PAYANT", "— LOCAL")
+                // Extraire la partie après le nom du provider (ex: "— GRATUIT", "— PAYANT (économique)", "— LOCAL")
                 const suffixMatch = labelText.match(/—\s*(.+)$/);
-                const suffix = suffixMatch ? ` <span class="provider-suffix provider-suffix-${suffixMatch[1].toLowerCase()}">${suffixMatch[1]}</span>` : '';
+                let suffix = '';
+                if (suffixMatch) {
+                    const fullSuffix = suffixMatch[1];
+                    // Extraire le premier mot pour la classe CSS (GRATUIT, PAYANT, LOCAL)
+                    const firstWord = fullSuffix.split(/[\s(]/)[0].toLowerCase();
+                    suffix = ` <span class="provider-suffix provider-suffix-${firstWord}">${fullSuffix}</span>`;
+                }
                 return `${mapping.icon} ${mapping.text}${suffix}`;
             }
         }

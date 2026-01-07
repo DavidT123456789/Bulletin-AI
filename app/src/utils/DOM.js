@@ -169,6 +169,18 @@ export function initDOM() {
     DOM.openrouterApiKeyError = document.getElementById('openrouterApiKeyError');
     DOM.openrouterApiKeyValidationIcon = document.getElementById('openrouterApiKeyValidationIcon');
     DOM.validateOpenrouterApiKeyBtn = document.getElementById('validateOpenrouterApiKeyBtn');
+    // Anthropic (Claude)
+    DOM.anthropicApiKey = document.getElementById('anthropicApiKey');
+    DOM.anthropicApiKeyGroup = document.getElementById('anthropicApiKeyGroup');
+    DOM.anthropicApiKeyError = document.getElementById('anthropicApiKeyError');
+    DOM.anthropicApiKeyValidationIcon = document.getElementById('anthropicApiKeyValidationIcon');
+    DOM.validateAnthropicApiKeyBtn = document.getElementById('validateAnthropicApiKeyBtn');
+    // Mistral (API directe)
+    DOM.mistralApiKey = document.getElementById('mistralApiKey');
+    DOM.mistralApiKeyGroup = document.getElementById('mistralApiKeyGroup');
+    DOM.mistralApiKeyError = document.getElementById('mistralApiKeyError');
+    DOM.mistralApiKeyValidationIcon = document.getElementById('mistralApiKeyValidationIcon');
+    DOM.validateMistralApiKeyBtn = document.getElementById('validateMistralApiKeyBtn');
     // Ollama (IA locale)
     DOM.ollamaEnabledToggle = document.getElementById('ollamaEnabledToggle');
     DOM.ollamaBaseUrl = document.getElementById('ollamaBaseUrl');
@@ -178,7 +190,7 @@ export function initDOM() {
     DOM.ollamaModelsInfo = document.getElementById('ollamaModelsInfo');
     DOM.ollamaModelsText = document.getElementById('ollamaModelsText');
     DOM.ollamaApiStatus = document.getElementById('ollamaApiStatus');
-    DOM.sessionCost = document.getElementById('sessionCost');
+    DOM.sessionTokens = document.getElementById('sessionTokens');
     DOM.testAllConnectionsBtn = document.getElementById('testAllConnectionsBtn');
     DOM.activeModelName = document.getElementById('activeModelName');
     DOM.studentDetailsModal = document.getElementById('studentDetailsModal');

@@ -3,7 +3,7 @@
  * @module managers/ApiValidationManager
  * 
  * Responsabilités :
- * - Validation des clés API (Google, OpenAI, OpenRouter)
+ * - Validation des clés API (Google, OpenAI, OpenRouter, Anthropic, Mistral)
  * - Auto-correction des modèles non trouvés
  */
 
@@ -88,7 +88,7 @@ export const ApiValidationManager = {
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
 
-                        StorageManager.saveAppState();
+                        await StorageManager.saveAppState();
                         SettingsUIManager.updateApiStatusDisplay();
                         if (onSuccess) onSuccess();
                         return;
@@ -96,7 +96,7 @@ export const ApiValidationManager = {
                     throw quotaError;
                 }
             } else {
-                // Pour OpenAI et OpenRouter: validation simple
+                // Pour OpenAI, OpenRouter, Anthropic, Mistral: validation simple
                 let modelOverride = 'openai-gpt-3.5-turbo';
                 if (provider === 'openrouter') {
                     modelOverride = 'deepseek/deepseek-chat';
@@ -109,6 +109,14 @@ export const ApiValidationManager = {
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
                     }
+                } else if (provider === 'anthropic') {
+                    // Anthropic uses claude-sonnet as default test model
+                    modelOverride = 'anthropic-claude-sonnet-4.5';
+                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
+                } else if (provider === 'mistral') {
+                    // Mistral uses small-latest as default test model
+                    modelOverride = 'mistral-direct-small-latest';
+                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                 } else {
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                 }
@@ -130,7 +138,7 @@ export const ApiValidationManager = {
             errorEl.style.display = 'none';
             errorEl.style.color = ''; // Reset color
 
-            StorageManager.saveAppState();
+            await StorageManager.saveAppState();
             SettingsUIManager.updateApiStatusDisplay();
             UI.showNotification(`Clé ${provider} validée et sauvegardée !`, 'success');
             if (onSuccess) onSuccess();
@@ -214,11 +222,39 @@ export const ApiValidationManager = {
                 errorEl.innerHTML = `✓ <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
                 errorEl.style.display = 'block';
                 errorEl.style.color = 'var(--success-color)';
+
+                // Sauvegarder la clé validée même si quota limité
+                await StorageManager.saveAppState();
             } else {
                 // Vraie erreur de clé invalide - effacer la clé de appState
                 appState.validatedApiKeys[provider] = false;
                 appState[`${provider}ApiKey`] = '';
-                errorEl.textContent = `Clé invalide : ${e.message}`;
+
+                // Formater le message d'erreur de manière lisible
+                let errorMsg = e.message;
+                let formattedError = '';
+
+                // Extraire le code d'erreur si présent
+                const codeMatch = errorMsg.match(/\((\d{3})\)/);
+                const errorCode = codeMatch ? codeMatch[1] : null;
+
+                // Nettoyer le message JSON brut si présent
+                const jsonMatch = errorMsg.match(/:\s*(\{.*\})/);
+                if (jsonMatch) {
+                    try {
+                        const jsonError = JSON.parse(jsonMatch[1]);
+                        const detail = jsonError.detail || jsonError.message || jsonError.error || 'Erreur inconnue';
+                        formattedError = `<strong>Clé invalide</strong>${errorCode ? ` (Erreur ${errorCode})` : ''}<br><small>${detail}</small>`;
+                    } catch {
+                        formattedError = `<strong>Clé invalide</strong>${errorCode ? ` (Erreur ${errorCode})` : ''}`;
+                    }
+                } else {
+                    // Message simple sans JSON
+                    const cleanMsg = errorMsg.replace(/Clé invalide\s*:\s*/i, '').trim();
+                    formattedError = `<strong>Clé invalide</strong>${cleanMsg ? `<br><small>${cleanMsg}</small>` : ''}`;
+                }
+
+                errorEl.innerHTML = formattedError;
                 errorEl.style.display = 'block';
                 errorEl.style.color = ''; // Reset to default error color
                 inputEl.classList.add('input-error');
@@ -236,17 +272,23 @@ export const ApiValidationManager = {
         const inputMap = {
             'openai': DOM.openaiApiKey,
             'google': DOM.googleApiKey,
-            'openrouter': DOM.openrouterApiKey
+            'openrouter': DOM.openrouterApiKey,
+            'anthropic': DOM.anthropicApiKey,
+            'mistral': DOM.mistralApiKey
         };
         const errorMap = {
             'openai': DOM.openaiApiKeyError,
             'google': DOM.googleApiKeyError,
-            'openrouter': DOM.openrouterApiKeyError
+            'openrouter': DOM.openrouterApiKeyError,
+            'anthropic': DOM.anthropicApiKeyError,
+            'mistral': DOM.mistralApiKeyError
         };
         const btnMap = {
             'openai': DOM.validateOpenaiApiKeyBtn,
             'google': DOM.validateGoogleApiKeyBtn,
-            'openrouter': DOM.validateOpenrouterApiKeyBtn
+            'openrouter': DOM.validateOpenrouterApiKeyBtn,
+            'anthropic': DOM.validateAnthropicApiKeyBtn,
+            'mistral': DOM.validateMistralApiKeyBtn
         };
 
         this.validateApiKeyUI(provider, inputMap[provider], errorMap[provider], btnMap[provider], () => {
@@ -277,6 +319,8 @@ export const ApiValidationManager = {
         if (inputId === 'googleApiKey') { btnEl = DOM.validateGoogleApiKeyBtn; provider = 'google'; }
         else if (inputId === 'openaiApiKey') { btnEl = DOM.validateOpenaiApiKeyBtn; provider = 'openai'; }
         else if (inputId === 'openrouterApiKey') { btnEl = DOM.validateOpenrouterApiKeyBtn; provider = 'openrouter'; }
+        else if (inputId === 'anthropicApiKey') { btnEl = DOM.validateAnthropicApiKeyBtn; provider = 'anthropic'; }
+        else if (inputId === 'mistralApiKey') { btnEl = DOM.validateMistralApiKeyBtn; provider = 'mistral'; }
 
         // Réinitialiser le statut de validation quand la clé change
         if (provider && appState.validatedApiKeys) {

@@ -67,21 +67,16 @@ export const AIService = {
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
                 payload: (p, m) => {
                     // Mapping des modèles vers leurs identifiants OpenRouter
-                    // IDs mis à jour décembre 2024 - https://openrouter.ai/models
+                    // IDs vérifiés sur openrouter.ai - Janvier 2026
+                    // NOTE: La plupart des modèles :free partagent le même quota quotidien
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
-                        'devstral-free': 'mistralai/devstral-2512:free',
-                        'qwen3-235b-free': 'qwen/qwen3-235b-a22b:free',
-                        'qwen3-4b-free': 'qwen/qwen3-4b:free',
-                        'gemini-2.0-flash-exp-free': 'google/gemini-2.0-flash-exp:free',
-                        'mistral-small-free': 'mistralai/mistral-small-3.1-24b-instruct:free',
-                        'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free',
-                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
-                        'amazon-nova-v2-lite': 'amazon/nova-2-lite-v1',
-                        'deepseek-nex-free': 'nex-agi/deepseek-v3.1-nex-n1:free',
-                        'deepseek-r1-free': 'deepseek/deepseek-r1:free',
-                        'kimi-k2-free': 'moonshotai/kimi-k2:free',
-                        'minimax-m21': 'minimax/minimax-m2.1',
+                        // === GRATUITS ===
+                        'devstral-free': 'mistralai/devstral-2512:free',          // ⭐ Quota indépendant
+                        'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
+                        // === PAYANTS ÉCONOMIQUES ===
+                        'ministral-3b': 'mistralai/ministral-3b-2512',             // ~0.00005$/requête, Mistral
+                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',          // Très économique
                         'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
                         'mistral-large': 'mistralai/mistral-large-2411'
                     };
@@ -111,6 +106,37 @@ export const AIService = {
                         top_p: 0.9,
                         repeat_penalty: 1.1,   // Évite les répétitions
                     }
+                }),
+            },
+            anthropic: {
+                // Claude (Anthropic) - API directe
+                apiKey: appState.anthropicApiKey,
+                apiUrl: `${CONFIG.ANTHROPIC_API_BASE}/messages`,
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'x-api-key': key,
+                    'anthropic-version': '2023-06-01'
+                }),
+                payload: (p, m) => ({
+                    model: m.replace('anthropic-', ''), // ex: 'anthropic-claude-sonnet-4.5' → 'claude-sonnet-4.5'
+                    messages: [{ role: 'user', content: p }],
+                    max_tokens: 1024
+                }),
+            },
+            mistral: {
+                // Mistral AI - API directe (format OpenAI-compatible)
+                apiKey: appState.mistralApiKey,
+                apiUrl: `${CONFIG.MISTRAL_API_BASE}/chat/completions`,
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                }),
+                payload: (p, m) => ({
+                    // ex: 'mistral-direct-small-latest' → 'mistral-small-latest'
+                    // ex: 'mistral-direct-large-latest' → 'mistral-large-latest'
+                    model: m.replace('mistral-direct-', 'mistral-'),
+                    messages: [{ role: 'user', content: p }],
+                    max_tokens: 512
                 }),
             }
         };
@@ -254,17 +280,20 @@ export const AIService = {
                 outTokens = res.eval_count || 0;
             }
 
-            // Calcul du coût de la session
+            // Calcul du coût de la session et accumulation des tokens
+            const totalTokens = inTokens + outTokens;
+            appState.sessionTokens += totalTokens;
+            if (DOM.sessionTokens) DOM.sessionTokens.textContent = appState.sessionTokens.toLocaleString('fr-FR');
+
             const modelKey = (options.modelOverride || appState.currentAIModel).replace('openai-', '');
             if (COSTS_PER_MILLION_TOKENS[modelKey]) {
                 const cost = (inTokens / 1e6 * COSTS_PER_MILLION_TOKENS[modelKey].input) + (outTokens / 1e6 * COSTS_PER_MILLION_TOKENS[modelKey].output);
                 appState.sessionCost += cost;
-                if (DOM.sessionCost) DOM.sessionCost.textContent = `${appState.sessionCost.toFixed(4)}$`;
             }
 
             return {
                 text,
-                usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
+                usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: totalTokens },
                 generationTimeMs // Temps de génération en millisecondes
             };
         } catch (error) {
@@ -307,7 +336,7 @@ export const AIService = {
     /**
      * Détermine le provider d'un modèle
      * @param {string} model - Nom du modèle
-     * @returns {'google'|'openai'|'openrouter'|'ollama'} Le provider
+     * @returns {'google'|'openai'|'openrouter'|'ollama'|'anthropic'|'mistral'} Le provider
      */
     _getProviderForModel(model) {
         // Les modèles gratuits OpenRouter (suffixe -free) sont toujours routés vers OpenRouter
@@ -316,6 +345,8 @@ export const AIService = {
         if (model.startsWith('openai')) return 'openai';
         if (model.startsWith('gemini')) return 'google';
         if (model.startsWith('ollama')) return 'ollama';
+        if (model.startsWith('anthropic')) return 'anthropic';
+        if (model.startsWith('mistral-direct')) return 'mistral';
         return 'openrouter';
     },
 
@@ -328,6 +359,8 @@ export const AIService = {
         const provider = this._getProviderForModel(model);
         if (provider === 'openai') return !!appState.openaiApiKey;
         if (provider === 'google') return !!appState.googleApiKey;
+        if (provider === 'anthropic') return !!appState.anthropicApiKey;
+        if (provider === 'mistral') return !!appState.mistralApiKey;
         if (provider === 'ollama') {
             if (!appState.ollamaEnabled) return false;
             // Vérifier si ce modèle spécifique est installé

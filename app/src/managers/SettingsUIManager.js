@@ -51,6 +51,8 @@ export const SettingsUIManager = {
         if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
         if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
         if (DOM.openrouterApiKey) appState.openrouterApiKey = DOM.openrouterApiKey.value.trim();
+        if (DOM.anthropicApiKey) appState.anthropicApiKey = DOM.anthropicApiKey.value.trim();
+        if (DOM.mistralApiKey) appState.mistralApiKey = DOM.mistralApiKey.value.trim();
         if (DOM.aiModelSelect) appState.currentAIModel = DOM.aiModelSelect.value;
         // Ollama
         if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
@@ -167,6 +169,10 @@ export const SettingsUIManager = {
             activeProvider = 'openai';
         } else if (model.startsWith('ollama')) {
             activeProvider = 'ollama';
+        } else if (model.startsWith('anthropic')) {
+            activeProvider = 'anthropic';
+        } else if (model.startsWith('mistral-direct')) {
+            activeProvider = 'mistral';
         }
 
         // Check values from DOM if available (live typing) or fall back to state
@@ -174,6 +180,8 @@ export const SettingsUIManager = {
             { id: 'google', key: DOM.googleApiKey ? DOM.googleApiKey.value.trim() : appState.googleApiKey },
             { id: 'openai', key: DOM.openaiApiKey ? DOM.openaiApiKey.value.trim() : appState.openaiApiKey },
             { id: 'openrouter', key: DOM.openrouterApiKey ? DOM.openrouterApiKey.value.trim() : appState.openrouterApiKey },
+            { id: 'anthropic', key: DOM.anthropicApiKey ? DOM.anthropicApiKey.value.trim() : appState.anthropicApiKey },
+            { id: 'mistral', key: DOM.mistralApiKey ? DOM.mistralApiKey.value.trim() : appState.mistralApiKey },
         ];
 
         let activeProviderIssue = null; // Pour le bandeau intelligent
@@ -366,8 +374,16 @@ export const SettingsUIManager = {
                         isAvailable = true;
                     }
                 }
+            } else if (model.startsWith('anthropic')) {
+                // Claude (Anthropic) - nécessite clé API directe
+                isAvailable = !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
+                requiredProvider = 'Claude (Anthropic)';
+            } else if (model.startsWith('mistral-direct')) {
+                // Mistral API directe - nécessite clé Mistral
+                isAvailable = !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
+                requiredProvider = 'Mistral';
             } else {
-                // OpenRouter / Mistral / DeepSeek
+                // OpenRouter / DeepSeek
                 isAvailable = !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
                 requiredProvider = 'OpenRouter';
             }
@@ -413,6 +429,8 @@ export const SettingsUIManager = {
             'google': 'Google Gemini',
             'openai': 'OpenAI',
             'openrouter': 'OpenRouter',
+            'anthropic': 'Claude (Anthropic)',
+            'mistral': 'Mistral AI',
             'ollama': 'Ollama'
         };
         return names[providerId] || providerId;
