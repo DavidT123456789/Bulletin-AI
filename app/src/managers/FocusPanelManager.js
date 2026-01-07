@@ -1388,12 +1388,19 @@ export const FocusPanelManager = {
 
             // Apply new text with typewriter effect
             appText.style.opacity = '1';
-            await UI.typewriterReveal(appText, newText, { speed: 'fast' });
+
+            // Live update of word count during typing
+            await UI.typewriterReveal(appText, newText, {
+                speed: 'fast',
+                onProgress: (partialText) => {
+                    this._updateWordCount(false, partialText);
+                }
+            });
 
             // Save & History
             this._pushToHistory(newText);
             this._saveContext(); // Persist changes
-            this._updateWordCount(true);
+            this._updateWordCount(true); // Final animation check (e.g. slight adjustment)
 
             UI.showNotification('Appréciation améliorée !', 'success');
 
@@ -1790,14 +1797,15 @@ export const FocusPanelManager = {
     /**
      * Update word count display
      * @param {boolean} [animate=false] - Whether to animate the number change
+     * @param {string|null} [overrideText=null] - Text to count instead of reading DOM (for live updates)
      * @private
      */
-    _updateWordCount(animate = false) {
+    _updateWordCount(animate = false, overrideText = null) {
         const appreciationText = document.getElementById('focusAppreciationText');
         const wordCountEl = document.getElementById('focusWordCount');
 
         if (appreciationText) {
-            const text = appreciationText.textContent || '';
+            const text = overrideText !== null ? overrideText : (appreciationText.textContent || '');
             // Check if empty or placeholder
             const isEmpty = !text.trim();
 
@@ -1840,6 +1848,8 @@ export const FocusPanelManager = {
                         const prevText = wordCountEl.textContent || '';
                         const prevMatch = prevText.match(/(\d+)/);
                         const prevVal = prevMatch ? parseInt(prevMatch[1], 10) : 0;
+
+                        console.log('[FocusPanel] WordCount Animation Debug:', { prevVal, words, animate });
 
                         if (prevVal !== words) {
                             StatsUI.animateNumberWithMarkup(wordCountEl, prevVal, words, 600, templateFn);

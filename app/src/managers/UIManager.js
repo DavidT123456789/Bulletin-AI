@@ -1294,6 +1294,7 @@ export const UI = {
      * @param {string} text - Le texte à afficher
      * @param {Object} [options] - Options de configuration
      * @param {string} [options.speed='normal'] - 'slow', 'normal', 'fast'
+     * @param {Function} [options.onProgress] - Callback appelé à chaque étape avec le texte partiel
      */
     async typewriterReveal(container, text, options = {}) {
         if (!container) return;
@@ -1329,6 +1330,8 @@ export const UI = {
 
         // Révéler les mots par lots avec animation
         let wordIndex = 0;
+        let currentText = '';
+
         while (wordIndex < words.length) {
             const batch = words.slice(wordIndex, wordIndex + config.wordsPerBatch);
 
@@ -1344,6 +1347,12 @@ export const UI = {
                     wordSpan.style.animationDelay = `${(wordIndex % config.wordsPerBatch) * 30}ms`;
                     revealContainer.appendChild(wordSpan);
                 }
+                currentText += word;
+            }
+
+            // Notify progress if callback provided
+            if (options.onProgress) {
+                options.onProgress(currentText);
             }
 
             wordIndex += config.wordsPerBatch;
