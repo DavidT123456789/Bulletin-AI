@@ -94,24 +94,38 @@ export const StatsUI = {
      * @returns {Promise<void>}
      */
     animateNumberWithMarkup(element, start, end, duration, templateFn) {
+        // Cancel any existing animation on this element
+        if (element._animationFrame) {
+            window.cancelAnimationFrame(element._animationFrame);
+            element._animationFrame = null;
+        }
+
         return new Promise(resolve => {
             if (!element || start === end) {
-                if (element) element.innerHTML = templateFn(end);
+                if (element) {
+                    element.innerHTML = templateFn(end);
+                    element._animationFrame = null;
+                }
                 return resolve();
             }
             let startTimestamp = null;
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const currentVal = Math.round(start + progress * (end - start));
+                // Use easeOutQuad for smoother feel
+                const ease = 1 - (1 - progress) * (1 - progress);
+
+                const currentVal = Math.round(start + ease * (end - start));
                 element.innerHTML = templateFn(currentVal);
+
                 if (progress < 1) {
-                    window.requestAnimationFrame(step);
+                    element._animationFrame = window.requestAnimationFrame(step);
                 } else {
+                    element._animationFrame = null;
                     resolve();
                 }
             };
-            window.requestAnimationFrame(step);
+            element._animationFrame = window.requestAnimationFrame(step);
         });
     },
 
