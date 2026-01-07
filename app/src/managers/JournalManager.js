@@ -251,8 +251,8 @@ export const JournalManager = {
 
         if (entries.length === 0) return '';
 
-        // Get threshold from settings (default 2 = "droit à l'erreur")
-        const threshold = appState.journalThreshold ?? 2;
+        // Get threshold from settings (default 1 = include everything by default)
+        const threshold = appState.journalThreshold ?? 1;
 
         // Count tags
         const tagCounts = this.countTags(studentId, targetPeriod);

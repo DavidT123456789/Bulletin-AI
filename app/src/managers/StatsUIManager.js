@@ -85,6 +85,37 @@ export const StatsUI = {
     },
 
     /**
+     * Anime un nombre avec un template HTML.
+     * @param {HTMLElement|null} element - Élément DOM cible
+     * @param {number} start - Valeur de départ
+     * @param {number} end - Valeur d'arrivée
+     * @param {number} duration - Durée de l'animation en ms
+     * @param {function(number): string} templateFn - Fonction de template retournant du HTML
+     * @returns {Promise<void>}
+     */
+    animateNumberWithMarkup(element, start, end, duration, templateFn) {
+        return new Promise(resolve => {
+            if (!element || start === end) {
+                if (element) element.innerHTML = templateFn(end);
+                return resolve();
+            }
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const currentVal = Math.round(start + progress * (end - start));
+                element.innerHTML = templateFn(currentVal);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    resolve();
+                }
+            };
+            window.requestAnimationFrame(step);
+        });
+    },
+
+    /**
      * Met à jour les tooltips des statistiques avec les seuils actuels.
      */
     updateStatsTooltips() {

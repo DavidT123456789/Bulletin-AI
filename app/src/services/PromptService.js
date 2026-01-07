@@ -16,16 +16,23 @@ export const PromptService = {
         const { nom, prenom, statuses, periods, currentPeriod, negativeInstructions } = studentData;
 
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
+        // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
+        // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
+        // Si l'utilisateur a modifié le style, il s'attend à ce qu'il soit appliqué partout
         const usePersonalization = appState.useSubjectPersonalization;
         let iaConfig;
 
         if (overrideConfig) {
             iaConfig = overrideConfig;
-        } else if (usePersonalization) {
-            const styleData = appState.subjects['MonStyle'] || appState.subjects['Générique'];
-            iaConfig = styleData?.iaConfig || DEFAULT_IA_CONFIG;
         } else {
-            iaConfig = DEFAULT_PROMPT_TEMPLATES["Générique"].iaConfig;
+            // Priorité : 
+            // 1. 'MonStyle' si présent (c'est le "Custom Profile" de l'utilisateur)
+            // 2. 'Générique' édité dans appState
+            // 3. Default config
+            const customStyle = appState.subjects?.['MonStyle']?.iaConfig;
+            const genericStyle = appState.subjects?.['Générique']?.iaConfig;
+
+            iaConfig = customStyle || genericStyle || DEFAULT_PROMPT_TEMPLATES["Générique"].iaConfig;
         }
 
         // Anonymisation RGPD : on utilise [PRÉNOM] au lieu du vrai prénom
@@ -59,7 +66,9 @@ export const PromptService = {
             styleParts.push(voiceInstruction);
         }
 
-        styleParts.push(`Rédige une appréciation d'environ ${iaConfig.length} mots.`);
+        if (iaConfig.length) {
+            styleParts.push(`Rédige une appréciation d'environ ${iaConfig.length} mots.`);
+        }
         styleParts.push(`Ne mentionne pas les notes chiffrées (moyennes) dans le texte.`);
         styleParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
 

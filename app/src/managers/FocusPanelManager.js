@@ -15,6 +15,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { JournalManager } from './JournalManager.js';
+import { StatsUI } from './StatsUIManager.js';
 // ResultCardsUI removed - logic moved to Utils
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -508,8 +509,8 @@ export const FocusPanelManager = {
         this.currentStudentId = studentId;
         this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
 
-        // Clear history for new student
-        this._clearHistory();
+        // Load history from student if available
+        this._clearHistory(true);
 
         // Reset generate button state (only if target student is NOT being generated)
         // If target is being generated, _renderContent will restore the loading state
@@ -1068,7 +1069,7 @@ export const FocusPanelManager = {
 
         this.currentStudentId = targetResult.id;
         this.currentIndex = targetIndex;
-        this._clearHistory();
+        this._clearHistory(true);
 
         const generateBtn = document.getElementById('focusGenerateBtn');
         if (generateBtn) UI.hideInlineSpinner(generateBtn);
@@ -1160,8 +1161,9 @@ export const FocusPanelManager = {
             UI.showInlineSpinner(generateBtn);
         }
 
-        // Clear history for fresh start
-        this._clearHistory();
+        // Save current state to history before generating (allows Undo)
+        const currentText = document.getElementById('focusAppreciationText')?.textContent;
+        if (currentText) this._pushToHistory(currentText);
 
         // Show pending badge and skeleton loading in appreciation area
         this._updateAppreciationStatus(null, { state: 'pending' });
@@ -1254,7 +1256,7 @@ export const FocusPanelManager = {
                     this._updateAppreciationStatus(result, { state: 'generated' });
 
                     // Update word count and button states
-                    this._updateWordCount();
+                    this._updateWordCount(true);
 
                     // Update AI indicator with new metadata
                     this._updateAiIndicator(result);
@@ -1391,7 +1393,7 @@ export const FocusPanelManager = {
             // Save & History
             this._pushToHistory(newText);
             this._saveContext(); // Persist changes
-            this._updateWordCount();
+            this._updateWordCount(true);
 
             UI.showNotification('Appréciation améliorée !', 'success');
 
@@ -1763,6 +1765,11 @@ export const FocusPanelManager = {
             }
         }
 
+        // Save History (Persist versions)
+        if (this._appreciationHistory && this._appreciationHistory.versions.length > 0) {
+            result.appreciationHistory = JSON.parse(JSON.stringify(this._appreciationHistory));
+        }
+
         // Persist to storage
         StorageManager.saveAppState();
     },
@@ -1782,9 +1789,10 @@ export const FocusPanelManager = {
 
     /**
      * Update word count display
+     * @param {boolean} [animate=false] - Whether to animate the number change
      * @private
      */
-    _updateWordCount() {
+    _updateWordCount(animate = false) {
         const appreciationText = document.getElementById('focusAppreciationText');
         const wordCountEl = document.getElementById('focusWordCount');
 
@@ -1825,8 +1833,23 @@ export const FocusPanelManager = {
                 } else {
                     const words = Utils.countWords(text);
                     const charCount = Utils.countCharacters(text);
+                    const templateFn = (val) => `<i class="fas fa-align-left"></i>${val} mot${val !== 1 ? 's' : ''}`;
 
-                    wordCountEl.innerHTML = `<i class="fas fa-align-left"></i>${words} mot${words !== 1 ? 's' : ''}`;
+                    if (animate) {
+                        // Extract previous value (number only)
+                        const prevText = wordCountEl.textContent || '';
+                        const prevMatch = prevText.match(/(\d+)/);
+                        const prevVal = prevMatch ? parseInt(prevMatch[1], 10) : 0;
+
+                        if (prevVal !== words) {
+                            StatsUI.animateNumberWithMarkup(wordCountEl, prevVal, words, 600, templateFn);
+                        } else {
+                            wordCountEl.innerHTML = templateFn(words);
+                        }
+                    } else {
+                        wordCountEl.innerHTML = templateFn(words);
+                    }
+
                     UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
                 }
             }
@@ -1966,11 +1989,21 @@ export const FocusPanelManager = {
     },
 
     /**
-     * Clear history when switching students
+     * Clear or restore history when switching students
+     * @param {boolean} [restore=false] - If true, attempts to restore history from student data
      * @private
      */
-    _clearHistory() {
-        this._appreciationHistory = {
+    _clearHistory(restore = false) {
+        let history = null;
+
+        if (restore && this.currentStudentId) {
+            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+            if (result && result.appreciationHistory) {
+                history = JSON.parse(JSON.stringify(result.appreciationHistory));
+            }
+        }
+
+        this._appreciationHistory = history || {
             versions: [],
             currentIndex: -1,
             maxVersions: 10

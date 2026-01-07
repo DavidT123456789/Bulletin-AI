@@ -1413,23 +1413,34 @@
 
 .focus-context-textarea {
     width: 100%;
-    min-height: 48px;
+    min-height: 56px;
+    /* Increased to fit 1 line + padding */
     max-height: 200px;
     height: auto;
-    /* Content area padding (increased for better breathing room) */
-    padding: 16px;
+    /* Adjusted padding to prevent scrollbar on single line */
+    padding: 14px 16px;
     margin: 0;
     background: transparent;
-    border: none;
-    border-radius: 0;
+    border: 2px solid transparent;
+    /* Fix: match container radius (bottom corners) */
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     font-size: 15px;
     line-height: 1.6;
     color: var(--text-primary);
     resize: none;
-    overflow-y: auto;
+    /* Auto-resize handled by JS typically, but simple none here */
+    overflow-y: hidden;
+    /* Hide scrollbar by default, JS should handle expansion */
     transition: all var(--transition-fast);
     font-family: inherit;
     box-sizing: border-box;
+    display: block;
+    /* Ensure block display */
+}
+
+/* Show scrollbar only when focused if needed or let JS handle height */
+.focus-context-textarea:focus {
+    overflow-y: auto;
 }
 
 /* Unified placeholder style - single source of truth */
