@@ -38,9 +38,28 @@
 .journal-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
+    /* Increased gap */
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.journal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.journal-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Separator removed */
+}
+
+.journal-header-right {
+    display: flex;
+    align-items: center;
 }
 
 .journal-header-left i {
@@ -70,38 +89,74 @@
 /* === Threshold Quick Control === */
 .journal-threshold-control {
     position: relative;
-    margin-left: 6px;
+    /* margin-left removed as order changed */
 }
 
-.journal-threshold-btn {
+/* === Header Buttons (Shared Style) === */
+.journal-header-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
+    justify-content: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: rgba(var(--primary-color-rgb), 0.05);
+    border-radius: var(--radius-md);
+    /* Standard button shape */
+    /* Pill shape removed */
+    background: var(--surface-color);
+    /* Clean surface */
     color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.journal-header-btn i {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    /* Muted icon by default */
+    transition: color 0.2s ease;
+}
+
+.journal-header-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.journal-header-btn:hover i {
+    color: var(--primary-color);
+}
+
+.journal-header-btn:active {
+    transform: translateY(0);
+}
+
+/* Icon-only variant */
+.journal-header-btn.icon-only {
+    width: 28px;
+    padding: 0;
+    border-radius: 50%;
+    /* Circle for icon only */
+}
+
+/* Specific overrides for Threshold button to keep compatibility */
+.journal-threshold-btn {
+    /* Inherits journal-header-btn via HTML class */
 }
 
 .journal-threshold-btn i {
-    font-size: 10px;
     color: var(--primary-color);
-}
-
-.journal-threshold-btn:hover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    /* Always colored for threshold */
 }
 
 .journal-threshold-control.open .journal-threshold-btn {
+    background: var(--surface-hover);
     border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
 }
 
@@ -190,12 +245,7 @@
     text-align: center;
 }
 
-/* === Header Controls === */
-.journal-header-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+
 
 .journal-inline-tags {
     display: flex;
@@ -209,30 +259,7 @@
     font-size: 12px;
 }
 
-/* Note button (ghost icon) */
-#focusJournalNoteBtn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1px solid transparent;
-    color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: transparent;
-}
 
-#focusJournalNoteBtn:hover {
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-}
-
-.journal-section.editing #focusJournalNoteBtn {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
 
 /* === Draft Preview / New Entry === */
 .journal-draft-preview {
@@ -376,7 +403,7 @@
 /* === Journal Content === */
 .journal-content {
     padding: 12px 16px;
-    max-height: 260px;
+    max-height: 180px;
     overflow-y: auto;
     transition: max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         padding 0.3s ease,
@@ -389,6 +416,11 @@
     padding-bottom: 0;
     opacity: 0;
     overflow: hidden;
+}
+
+/* Increase height when draft is being edited - gives room for draft + entries */
+.journal-content:has(.journal-draft-preview.visible) {
+    max-height: 320px;
 }
 
 /* FIX: Handle collapsed state appearance */
@@ -493,6 +525,14 @@
     color: var(--tag-color);
 }
 
+.journal-tag.below-threshold {
+    opacity: 0.5;
+    background: color-mix(in srgb, var(--tag-color) 8%, transparent);
+    /* Lighter background */
+    filter: saturate(0.7);
+    /* Desaturate slightly */
+}
+
 .journal-tag i {
     font-size: 10px;
 }
@@ -505,12 +545,41 @@
     margin-top: 8px;
 }
 
+/* Info Icon for Isolated Entries */
+.journal-entry-info {
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    cursor: help;
+    z-index: 5;
+}
+
+.journal-entry:hover .journal-entry-info {
+    opacity: 0.6;
+}
+
+.journal-entry-info:hover {
+    opacity: 1 !important;
+    color: var(--primary-color);
+}
+
 .journal-entry-delete {
     position: absolute;
-    top: 8px;
+    top: 50%;
     right: 8px;
-    width: 20px;
-    height: 20px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: none;
     background: transparent;
@@ -519,9 +588,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 12px;
     opacity: 0;
     transition: all 0.2s ease;
+    z-index: 5;
 }
 
 .journal-entry:hover .journal-entry-delete {
@@ -539,9 +609,9 @@
     background: var(--error-color);
     color: white;
     width: auto;
-    padding: 0 8px;
-    border-radius: 12px;
-    transform: scale(1);
+    padding: 0 10px;
+    border-radius: 14px;
+    transform: translateY(-50%) scale(1);
     aspect-ratio: auto;
 }
 

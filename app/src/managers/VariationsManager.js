@@ -112,7 +112,8 @@ Produis UNIQUEMENT la nouvelle appréciation, sans introduction ni commentaire.`
      * Applies a specific refinement to a text (concise, detailed, encouraging, etc.)
      * @param {string} text - The text to refine
      * @param {string} refineType - Type of refinement (concise, detailed, encouraging, variations, polish)
-     * @returns {Promise<string|null>} The refined text or null if error
+     * @returns {Promise<{text: string, modelUsed?: string, usage?: object, generationTimeMs?: number}|null>} 
+     *          The refined text with AI metadata or null if error
      */
     async applyRefinement(text, refineType) {
         if (!text) return null;
@@ -146,7 +147,13 @@ Produis UNIQUEMENT le texte reformulé, sans guillemets, sans introduction ni co
 
         try {
             const aiResp = await AIService.callAIWithFallback(prompt);
-            return aiResp.text.trim();
+            // Return full response with text and metadata
+            return {
+                text: aiResp.text.trim(),
+                modelUsed: aiResp.modelUsed,
+                usage: aiResp.usage,
+                generationTimeMs: aiResp.generationTimeMs
+            };
         } catch (error) {
             console.error("VariationsManager.applyRefinement error:", error);
             throw error;

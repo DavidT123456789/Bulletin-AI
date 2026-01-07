@@ -2,7 +2,6 @@ import { appState } from '../state/State.js';
 import { CONFIG, CONSTS, DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES, DEFAULT_MASS_IMPORT_FORMATS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
-// import { UI } from './UIManager.js'; // REMOVED
 
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
@@ -418,19 +417,8 @@ export const AppreciationsManager = {
             throw e;
         }
     },
+    // NOTE: Deprecated refinement methods removed - Focus Panel handles all refinement inline
 
-    // RefinementManager methods removed - Focus Panel handles all refinement inline
-    async generateRefinedAppreciation(type, button) {
-        console.warn('generateRefinedAppreciation: Deprecated - use FocusPanelManager._refineAppreciation instead');
-    },
-
-    applyRefinedAppreciation() {
-        console.warn('applyRefinedAppreciation: Deprecated - Focus Panel auto-saves edits');
-    },
-
-    acceptRefinedSuggestion() {
-        console.warn('acceptRefinedSuggestion: Deprecated - Focus Panel inline refinement applies directly');
-    },
 
     async regenerateFailedAppreciation(id, button) {
         const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
@@ -505,39 +493,6 @@ export const AppreciationsManager = {
             UI.updateStats();
             UI.updateControlButtons();
         }
-    },
-
-    renderResults(highlightId = null, highlightType = 'new') {
-        return ResultsUIManager.renderResults(highlightId, highlightType);
-    },
-
-
-
-    // NOTE: showAppreciationDetails and refineAppreciation are defined further below
-
-
-
-    exportToCsv() {
-        ExportManager.exportToCsv();
-    },
-
-    exportToPdf() {
-        ExportManager.exportToPdf();
-    },
-
-    // Refinement modal removed - Focus Panel handles all refinement inline
-    refineAppreciation(id, fromNav = false) {
-        console.warn('refineAppreciation: Deprecated - use FocusPanelManager.open(id) instead');
-        // Forward to Focus Panel for backwards compatibility
-        import('./FocusPanelManager.js').then(({ FocusPanelManager }) => {
-            FocusPanelManager.open(id);
-        });
-    },
-
-
-
-    clearAllResults() {
-        return ResultsUIManager.clearAllResults();
     },
 
     /**

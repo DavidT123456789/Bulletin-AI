@@ -1400,6 +1400,64 @@
     background: rgba(var(--primary-color-rgb), 0.15);
 }
 
+/* === History Button - Harmonized with journal-header-btn (Seuil style) === */
+/* Rectangular rounded button with icon + count inline */
+.focus-history-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.focus-history-btn i {
+    font-size: 12px;
+    color: var(--primary-color);
+    transition: color 0.2s ease;
+}
+
+.focus-history-btn .history-count {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.focus-history-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.focus-history-btn:hover i,
+.focus-history-btn:hover .history-count {
+    color: var(--primary-color);
+}
+
+.focus-history-btn:active {
+    transform: translateY(0);
+}
+
+[data-theme="dark"] .focus-history-btn {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-history-btn:hover {
+    background: var(--surface-hover);
+}
+
 .period-badge {
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
@@ -1768,8 +1826,8 @@
     min-height: 80px;
     max-height: 500px;
     height: auto;
-    padding: 16px;
-    /* Matching padding with header/context */
+    padding: 14px 16px;
+    /* Harmonized with context-textarea */
     font-size: 15px;
     line-height: 1.6;
     color: var(--text-primary);
@@ -1819,22 +1877,45 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    display: none;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+    gap: 8px;
+    /* High-quality spacing */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* iOS-like fluid transition */
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+    pointer-events: none;
+    background: var(--surface-variant);
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    /* Prepare for border changes */
+    white-space: nowrap;
+    overflow: hidden;
+    /* Clean resize */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .appreciation-status-badge.visible {
-    display: flex;
+    display: inline-flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .appreciation-status-badge.pending {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
     animation: pending-pulse 1.5s infinite;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    justify-content: center;
+    border-radius: 50%;
 }
 
 .appreciation-status-badge.done {
@@ -1856,6 +1937,7 @@
     gap: 4px;
     font-size: 11px;
     font-weight: 600;
+    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .appreciation-status-badge.saved {
@@ -1868,6 +1950,18 @@
     font-size: 11px;
     font-weight: 600;
     animation: saved-fade-in 0.3s ease, saved-fade-out 0.4s ease 1.6s forwards;
+}
+
+.appreciation-status-badge.valid {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @keyframes saved-fade-in {
@@ -2074,10 +2168,13 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 10px 16px;
+    padding: 10px 16px 10px 24px;
+    /* Extra padding-left for indicator */
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: background 0.15s ease;
+    position: relative;
+    /* Anchor for ::before indicator */
 }
 
 .history-version-item:last-child {
@@ -2093,11 +2190,17 @@
 }
 
 .history-version-item.current::before {
-    content: '•';
+    content: '';
     position: absolute;
-    left: 8px;
-    color: var(--primary-color);
-    font-weight: bold;
+    left: 10px;
+    top: 17px;
+    /* Centré verticalement sur le titre (padding-top: 10px + moitié hauteur texte) */
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
 }
 
 .history-version-label {
@@ -2335,11 +2438,11 @@
     pointer-events: none;
     /* Use same padding as parent so text aligns */
     position: absolute;
-    top: 8px;
+    top: 14px;
     /* Match padding-top */
-    left: 4px;
+    left: 16px;
     /* Match padding-left */
-    right: 4px;
+    right: 16px;
 }
 
 .focus-refinement-options {
@@ -3779,13 +3882,13 @@
 .previous-grade-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 20px;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
     /* Style notes antérieures - fond gris neutre pour être discret */
     background: rgba(0, 0, 0, 0.04);
     border: none;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
     transition: all 0.2s ease;
     user-select: none;
@@ -3806,13 +3909,13 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border-radius: 99px;
     background: var(--surface-color);
     /* Fine subtle gray border */
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: none;
-    height: 34px;
+    height: 28px;
     transition: all 0.2s ease;
 }
 
@@ -3822,7 +3925,7 @@
 }
 
 .context-grade-group label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--primary-color);
     text-transform: uppercase;
@@ -3835,9 +3938,9 @@
 .context-grade-input {
     border: none;
     background: transparent;
-    width: 42px;
+    width: 38px;
     /* Slightly narrower input */
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: center;
@@ -3865,8 +3968,8 @@
     font-weight: 600;
     opacity: 0.7;
     text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
+    font-size: 10px;
+    letter-spacing: 0.3px;
 }
 
 .previous-grade-chip .prev-grade-value {

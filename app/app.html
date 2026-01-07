@@ -401,41 +401,47 @@
                     <div class="journal-section" id="focusJournalSection">
                         <div class="journal-header" id="focusJournalHeader">
                             <div class="journal-header-left">
-                                <i class="fas fa-book"></i>
-                                <span>Journal de bord</span>
-                                <span class="journal-count-badge" id="focusJournalCount">0</span>
-                                <!-- Threshold quick control -->
-                                <div class="journal-threshold-control" id="journalThresholdControl">
-                                    <button class="journal-threshold-btn tooltip" id="journalThresholdBtn"
-                                        data-tooltip="Cliquez pour régler le seuil">
-                                        <i class="fas fa-filter"></i>
-                                        <span id="journalThresholdValue">≥2×</span>
+                                <div class="journal-title-group">
+                                    <i class="fas fa-book"></i>
+                                    <span>Journal de bord</span>
+                                </div>
+                                <div class="journal-controls-group">
+                                    <!-- Manual note button (Pen icon) -->
+                                    <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
+                                        data-tooltip="Ajouter une note">
+                                        <i class="fas fa-pen"></i>
                                     </button>
-                                    <div class="journal-threshold-popover" id="journalThresholdPopover">
-                                        <div class="threshold-popover-header">Seuil de signalement</div>
-                                        <div class="threshold-popover-desc">Observations répétées transmises à l'IA
-                                        </div>
-                                        <div class="threshold-popover-controls">
-                                            <button class="threshold-adjust-btn" data-delta="-1">−</button>
-                                            <span class="threshold-current" id="thresholdCurrentValue">2</span>
-                                            <button class="threshold-adjust-btn" data-delta="+1">+</button>
-                                        </div>
-                                        <div class="threshold-popover-hint">
-                                            <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
+
+                                    <!-- Tag dropdowns (Always visible) -->
+                                    <div class="journal-inline-tags" id="journalInlineTags" style="display: flex;">
+                                        <!-- Rendered by JS: Positif/Négatif dropdowns -->
+                                    </div>
+
+                                    <!-- Threshold quick control -->
+                                    <div class="journal-threshold-control" id="journalThresholdControl">
+                                        <button class="journal-threshold-btn journal-header-btn tooltip"
+                                            id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
+                                            <i class="fas fa-filter"></i>
+                                            <span id="journalThresholdValue">≥2×</span>
+                                        </button>
+                                        <div class="journal-threshold-popover" id="journalThresholdPopover">
+                                            <div class="threshold-popover-header">Seuil de signalement</div>
+                                            <div class="threshold-popover-desc">Observations répétées transmises à l'IA
+                                            </div>
+                                            <div class="threshold-popover-controls">
+                                                <button class="threshold-adjust-btn" data-delta="-1">−</button>
+                                                <span class="threshold-current" id="thresholdCurrentValue">2</span>
+                                                <button class="threshold-adjust-btn" data-delta="+1">+</button>
+                                            </div>
+                                            <div class="threshold-popover-hint">
+                                                <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="journal-header-controls" id="journalHeaderControls">
-                                <!-- Tag dropdowns (Always visible) -->
-                                <div class="journal-inline-tags" id="journalInlineTags" style="display: flex;">
-                                    <!-- Rendered by JS: Positif/Négatif dropdowns -->
-                                </div>
-                                <!-- Manual note button (Pen icon) -->
-                                <button class="btn-icon-ghost tooltip" id="focusJournalNoteBtn"
-                                    data-tooltip="Ajouter une note libre">
-                                    <i class="fas fa-pen"></i>
-                                </button>
+                            <div class="journal-header-right">
+                                <span class="journal-count-badge" id="focusJournalCount">0</span>
                             </div>
                         </div>
                         <div class="journal-content" id="focusJournalContent">
@@ -454,15 +460,15 @@
                                     data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
                                     <i class="fas fa-microphone"></i>
                                 </button>
-                            </div>
-                            <div class="focus-appreciation-meta">
-                                <span id="focusWordCount" class="word-count">0 mots</span>
                                 <!-- History Indicator: Shows modification count, click for history popover -->
-                                <button id="focusHistoryIndicator" class="history-indicator tooltip"
+                                <button id="focusHistoryIndicator" class="focus-history-btn tooltip"
                                     style="display: none;" data-tooltip="Historique des modifications">
                                     <i class="fas fa-history"></i>
                                     <span class="history-count">0</span>
                                 </button>
+                            </div>
+                            <div class="focus-appreciation-meta">
+                                <span id="focusWordCount" class="word-count">0 mots</span>
                                 <!-- AI Indicator: Shows if AI-generated, with model/token details -->
                                 <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;">
                                     ✨

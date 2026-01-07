@@ -225,6 +225,34 @@ export const JournalManager = {
     },
 
     /**
+     * Get aggregated tag counts by icon/color for header display
+     * @param {string} studentId
+     * @param {string} period
+     * @returns {Array<{icon: string, color: string, count: number, label: string}>}
+     */
+    getAggregatedCounts(studentId, period = null) {
+        const tagCounts = this.countTags(studentId, period);
+
+        const aggregated = [];
+        Object.entries(tagCounts).forEach(([tagId, count]) => {
+            if (count > 0) {
+                const tag = this.getTag(tagId);
+                if (tag) {
+                    aggregated.push({
+                        icon: tag.icon,
+                        color: tag.color,
+                        count: count,
+                        label: tag.label
+                    });
+                }
+            }
+        });
+
+        // Sort by count desc
+        return aggregated.sort((a, b) => b.count - a.count);
+    },
+
+    /**
      * Check if an entry is "isolated" (all its tags are below threshold)
      * Used for visual feedback - isolated entries won't influence AI
      * @param {Object} entry - Journal entry object
@@ -352,26 +380,30 @@ export const JournalManager = {
                 if (!tag) return '';
                 const count = tagCounts[tagId] || 0;
                 // Show count badge if significant (≥ threshold)
-                const countBadge = count >= threshold ? ` <small style="opacity:0.7">×${count}</small>` : '';
+                // MODIFIED: Badge removed as per new design (detailed header)
+                // const countBadge = count >= threshold ? ` <small style="opacity:0.7">×${count}</small>` : '';
                 return `<span class="journal-tag" style="--tag-color: ${tag.color}">
-                    <i class="fas ${tag.icon}"></i> ${tag.label}${countBadge}
+                    <i class="fas ${tag.icon}"></i> ${tag.label}
                 </span>`;
             }).join('');
 
             const animationClass = entry.id === highlightEntryId ? 'enter' : '';
             const isIsolated = this.isEntryIsolated(entry, tagCounts);
             const isolatedClass = isIsolated ? 'isolated' : '';
-            const isolatedTooltip = isIsolated
-                ? `data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"`
+
+            // New design: Tooltip is only on the small 'i' icon, not the whole row
+            const infoIcon = isIsolated
+                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><i class="fas fa-info-circle"></i></div>`
                 : '';
 
             return `
-                <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${entry.id}" ${isolatedTooltip}>
+                <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${entry.id}">
                     <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
                     <div class="journal-entry-content">
                         <div class="journal-entry-tags">${tagsHTML}</div>
                         ${entry.note ? `<div class="journal-entry-note">${entry.note}</div>` : ''}
                     </div>
+                    ${infoIcon}
                     <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
                         <i class="fas fa-times"></i>
                     </button>

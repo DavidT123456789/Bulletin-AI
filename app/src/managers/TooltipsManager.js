@@ -148,5 +148,28 @@ export const TooltipsUI = {
             });
             _tippyInstances.push(instance);
         }
+    },
+
+    /**
+     * Nettoie (détruit) les tooltips attachés aux éléments à l'intérieur d'un conteneur spécifique.
+     * Utile avant de remplacer le innerHTML d'un conteneur.
+     * @param {HTMLElement} container - Le conteneur à nettoyer
+     */
+    cleanupTooltipsIn(container) {
+        if (!container) return;
+
+        // 1. Trouver les éléments avec propriété _tippy (instances directes)
+        const elementsWithTippy = container.querySelectorAll('*');
+        elementsWithTippy.forEach(el => {
+            if (el._tippy) {
+                // Retirer de la liste globale si présent
+                const idx = _tippyInstances.indexOf(el._tippy);
+                if (idx > -1) {
+                    _tippyInstances.splice(idx, 1);
+                }
+                // Détruire l'instance
+                el._tippy.destroy();
+            }
+        });
     }
 };

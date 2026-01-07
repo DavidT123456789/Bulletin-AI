@@ -16,6 +16,7 @@ import { ClassManager } from './ClassManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { JournalManager } from './JournalManager.js';
 import { StatsUI } from './StatsUIManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 // ResultCardsUI removed - logic moved to Utils
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -34,10 +35,6 @@ export const FocusPanelManager = {
 
     /** Map of active generation controllers by student ID */
     _activeGenerations: new Map(),
-
-    // Removed legacy single-tracking properties: 
-    // _generationAbortController
-    // _generatingForStudentId
 
     /**
      * Initialise le module avec les références nécessaires
@@ -105,6 +102,14 @@ export const FocusPanelManager = {
             });
         }
 
+        // Settings Change Listener (for instant Threshold updates)
+        document.addEventListener('app-settings-changed', () => {
+            // If we are viewing a student, refresh the badge status
+            if (this.currentStudentId) {
+                this._refreshAppreciationStatus();
+            }
+        });
+
         const focusEditCancelBtn = document.getElementById('focusEditCancelBtn');
         if (focusEditCancelBtn) {
             focusEditCancelBtn.addEventListener('click', (e) => {
@@ -128,7 +133,7 @@ export const FocusPanelManager = {
         // so we need to attach listener THERE or delegate. 
         // delegated listener for convenience:
         document.addEventListener('input', (e) => {
-            if (e.target && e.target.id === 'focusCurrentGradeInput') {
+            if (e.target && (e.target.id === 'focusCurrentGradeInput' || e.target.id === 'focusEditGradeInput')) {
                 this._refreshAppreciationStatus();
             }
         });
@@ -330,11 +335,46 @@ export const FocusPanelManager = {
         if (currentContext !== snapshotContext) return true;
 
         // 4. Comparer le Journal de bord
-        // Journal is stored on result directly, not in studentData
-        // We need to compare against a snapshot count stored at generation time
-        const currentJournalCount = result.journal?.length || 0;
-        const snapshotJournalCount = result.generationSnapshotJournalCount ?? 0;
-        if (currentJournalCount !== snapshotJournalCount) return true;
+        // Logic: Only changes that affect the AI prompt should trigger "Modified"
+        // - Any change to textual notes is relevant.
+        // - Tag changes are only relevant if they cross the threshold.
+
+        const currentJournal = result.journal || [];
+        const snapshotJournal = result.generationSnapshotJournal || [];
+        // Fallback for old snapshots (backward compatibility)
+        if (!result.generationSnapshotJournal && result.generationSnapshotJournalCount !== undefined) {
+            const currentJournalCount = result.journal?.length || 0;
+            const snapshotJournalCount = result.generationSnapshotJournalCount ?? 0;
+            if (currentJournalCount !== snapshotJournalCount) return true;
+            return false;
+        }
+
+        // A. Check Notes (Any content difference is dirty)
+        const currentNotes = currentJournal.filter(e => e.note && e.note.trim()).map(e => e.note.trim()).sort().join('||');
+        const snapshotNotes = snapshotJournal.filter(e => e.note && e.note.trim()).map(e => e.note.trim()).sort().join('||');
+        if (currentNotes !== snapshotNotes) return true;
+
+        // B. Check Active Tags (Threshold-based)
+        const currentThreshold = appState.journalThreshold ?? 2;
+        const snapshotThreshold = result.generationThreshold ?? currentThreshold;
+
+        const getActiveTags = (entries, thresh) => {
+            const counts = {};
+            entries.forEach(e => {
+                e.tags.forEach(t => {
+                    counts[t] = (counts[t] || 0) + 1;
+                });
+            });
+            // Return sorted list of tags that meet threshold
+            return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
+        };
+
+        const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
+        const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
+
+        if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) return true;
+
+        return false;
 
         return false;
     },
@@ -370,8 +410,12 @@ export const FocusPanelManager = {
                 tooltip = 'Données modifiées depuis la génération.\nPensez à régénérer.';
             } else if (isGenerated && hasAppreciation) {
                 state = 'generated';
-                // Simple tooltip for status badge - detailed AI info is in the AI indicator (✨)
+                // Simple tooltip for status badge
                 tooltip = 'Appréciation générée et à jour';
+            } else if (hasAppreciation && !isGenerated) {
+                // Manual edit or legacy content
+                state = 'valid';
+                tooltip = 'Appréciation validée (éditée manuellement)';
             } else {
                 state = 'none';
             }
@@ -389,6 +433,11 @@ export const FocusPanelManager = {
 
         // Apply state-specific styling
         badge.classList.add('visible', state);
+
+        // CRITICAL FIX: Always ensure icon-only is REMOVED for states that need text
+        // Only 'generated' is allowed to collapse (handled in its case block)
+        badge.classList.remove('icon-only');
+
         // Special case: dictating uses 'is-dictating' class in CSS
         if (state === 'dictating') {
             badge.classList.add('is-dictating');
@@ -409,9 +458,12 @@ export const FocusPanelManager = {
                     text = '<span class="badge-text">Généré</span>';
                     // Schedule collapse to icon-only after 2s
                     setTimeout(() => {
-                        badge.classList.add('icon-only');
-                        // Re-init tooltips after collapse to ensure hover works
-                        UI.initTooltips();
+                        // Check if we are still in generated state before collapsing
+                        if (badge.classList.contains('generated')) {
+                            badge.classList.add('icon-only');
+                            // Re-init tooltips after collapse
+                            UI.initTooltips();
+                        }
                     }, 2000);
                 } else {
                     // When not animating (e.g., on navigation), directly show icon-only
@@ -421,7 +473,9 @@ export const FocusPanelManager = {
                 break;
             case 'modified':
                 icon = '<i class="fas fa-sync-alt"></i>';
-                text = '<span class="badge-text">Modifié</span>';
+                text = '<span class="badge-text" style="display:inline-block;">Modifié</span>';
+                // Note: CSS might hide badge-text if icon-only is present, but we removed it above.
+                // Inline block ensures layout stability.
                 break;
             case 'saved':
                 icon = '<i class="fas fa-check"></i>';
@@ -432,6 +486,35 @@ export const FocusPanelManager = {
                         badge.classList.remove('visible', 'saved');
                     }
                 }, 2000);
+                break;
+            case 'valid':
+                // New state for manual edits - persistent checkmark (no text to avoid clutter, or text?)
+                // User asked for "Badge (validé?) invisible".
+                // Let's make it a simple checkmark that doesn't hide, or maybe "Validé".
+                // User said: "Seul le Badge 'Généré' doit se mettre en mode contracté... ou harmoniser"
+                // Let's try "Validé" then contract? Or just persistent "Validé"?
+                // Standard behavior: Manual edit = valid.
+                icon = '<i class="fas fa-check-circle"></i>';
+                text = '<span class="badge-text">Validé</span>';
+                // Let's contract it to icon-only too for harmony, or keep it text?
+                // User said "Seul le Badge Généré doit se mettre en mode contracté".
+                // So "Validé" should stay text? Or maybe "Validé" is not a primary state.
+                // Actually, "Validé" is often synonym for "Saved".
+                // Let's Keep text for "Modifié", and maybe "Validé" too.
+                // BUT, constant "Validé" might be annoying.
+                // Let's make "Validé" behave like "Généré" (collapse) for harmony? 
+                // User said "Seul le Badge Généré... OU ALORS harmoniser".
+                // Harmonizing is simpler. Let's collapse "Validé" too.
+                if (animate) {
+                    setTimeout(() => {
+                        if (badge.classList.contains('valid')) {
+                            badge.classList.add('icon-only');
+                        }
+                    }, 2000);
+                } else {
+                    badge.classList.add('icon-only');
+                    text = '';
+                }
                 break;
             case 'error':
                 icon = '<i class="fas fa-exclamation-triangle"></i>';
@@ -460,35 +543,6 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
         if (result) {
             this._updateAppreciationStatus(result);
-        }
-    },
-
-    /**
-     * Update the AI indicator (✨) separately from status badge
-     * Shows provenance info: model, tokens, generation time
-     * @param {Object} result - Student result object
-     */
-    _updateAiIndicator(result) {
-        const aiIndicator = document.getElementById('focusAiIndicator');
-        if (!aiIndicator) return;
-
-        const hasAppreciation = result?.appreciation && result.appreciation.trim().length > 0;
-        const isGenerated = result?.wasGenerated === true;
-
-        // Check for AI generation indicators
-        const hasTokenData = result?.tokenUsage?.generationTimeMs > 0 ||
-            result?.tokenUsage?.appreciation?.total_tokens > 0;
-        const hasAiModelWithUsage = result?.studentData?.currentAIModel && result?.tokenUsage?.appreciation;
-
-        const showIndicator = hasAppreciation && (isGenerated || hasTokenData || hasAiModelWithUsage);
-
-        if (showIndicator) {
-            const { tooltip } = Utils.getGenerationModeInfo(result);
-            aiIndicator.style.display = 'inline-flex';
-            aiIndicator.setAttribute('data-tooltip', tooltip);
-            UI.initTooltips();
-        } else {
-            aiIndicator.style.display = 'none';
         }
     },
 
@@ -1215,7 +1269,12 @@ export const FocusPanelManager = {
             // CRITICAL: Update generationSnapshot to capture current state for dirty detection
             // This must be done BEFORE any UI updates to capture the "baseline" at generation time
             result.generationSnapshot = Utils.deepClone(result.studentData);
-            // Also capture journal entry count (journal is on result directly, not studentData)
+            // Also capture full journal for granular comparison
+            result.generationSnapshotJournal = Utils.deepClone(result.journal || []);
+            // Capture threshold used at generation time
+            result.generationThreshold = appState.journalThreshold ?? 2;
+
+            // Deprecated: existing count (kept for backward compat)
             result.generationSnapshotJournalCount = result.journal?.length || 0;
 
             // CRITICAL FIX: Use captured period, not current one (user may have switched)
@@ -1255,8 +1314,7 @@ export const FocusPanelManager = {
                     // Show done badge
                     this._updateAppreciationStatus(result, { state: 'generated' });
 
-                    // Update word count and button states
-                    // Use start count 0 as we cleared content before generation
+                    // Animate word count from 0 (skeleton had no words)
                     this._updateWordCount(true, 0);
 
                     // Update AI indicator with new metadata
@@ -1351,67 +1409,6 @@ export const FocusPanelManager = {
             UI.showNotification('Appréciation copiée !', 'success');
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
-        }
-    },
-
-    /**
-     * Handle inline refinement of appreciation
-     * @param {string} type - polish, concise, detailed, etc.
-     * @param {HTMLElement} button - The button clicked
-     */
-    async _handleRefinement(type, button) {
-        const appText = document.getElementById('focusAppreciationText');
-        if (!appText) return;
-
-        const currentText = appText.innerText.trim();
-        if (!currentText || appText.classList.contains('empty')) {
-            UI.showNotification('Générez d\'abord une appréciation', 'warning');
-            return;
-        }
-
-        // Show loading state
-        UI.showInlineSpinner(button);
-        const originalTextLength = currentText.length;
-        appText.style.opacity = '0.5';
-
-        try {
-            // Retrieve context if needed (from textfield or result)
-            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-            const context = result?.studentData?.periods?.[appState.currentPeriod]?.context || '';
-
-            const prompt = PromptService.getRefinementPrompt(type, currentText, context);
-            const resp = await AIService.callAIWithFallback(prompt);
-
-            let newText = resp.text.trim();
-            if (newText.startsWith('"') && newText.endsWith('"')) {
-                newText = newText.slice(1, -1);
-            }
-
-            // Apply new text with typewriter effect
-            appText.style.opacity = '1';
-
-            // Capture start count for animation
-            const startCount = Utils.countWords(currentText);
-
-            // Apply new text with typewriter effect
-            appText.style.opacity = '1';
-            await UI.typewriterReveal(appText, newText, { speed: 'fast' });
-
-            // Save & History
-            this._pushToHistory(newText);
-            this._saveContext(); // Persist changes
-
-            // Animate word count from previous value
-            this._updateWordCount(true, startCount);
-
-            UI.showNotification('Appréciation améliorée !', 'success');
-
-        } catch (error) {
-            console.error('Refinement error:', error);
-            UI.showNotification('Erreur lors du raffinement', 'error');
-            appText.style.opacity = '1';
-        } finally {
-            UI.hideInlineSpinner(button);
         }
     },
 
@@ -1781,6 +1778,9 @@ export const FocusPanelManager = {
 
         // Persist to storage
         StorageManager.saveAppState();
+
+        // Refresh appreciation status (dirty check)
+        this._refreshAppreciationStatus();
     },
 
     /**
@@ -2092,9 +2092,39 @@ export const FocusPanelManager = {
         const indicator = document.getElementById('focusHistoryIndicator');
         if (indicator) {
             const rect = indicator.getBoundingClientRect();
+            // Smart positioning logic
+            const spaceBelow = window.innerHeight - rect.bottom - 20;
+            const spaceAbove = rect.top - 20;
+            const minSpaceNeeded = 200; // Min height for a usable menu
+
+            // Prefer bottom if enough space, otherwise check top
+            let placement = 'bottom';
+            let maxListHeight = 300; // Default max height
+
+            if (spaceBelow < minSpaceNeeded && spaceAbove > spaceBelow) {
+                placement = 'top';
+                // Calculate max height for top placement (accounting for title ~50px)
+                maxListHeight = Math.min(300, spaceAbove - 60);
+            } else {
+                // Calculate max height for bottom placement
+                maxListHeight = Math.min(300, spaceBelow - 60);
+            }
+
             popover.style.position = 'fixed';
-            popover.style.top = `${rect.bottom + 8}px`;
+            if (placement === 'bottom') {
+                popover.style.top = `${rect.bottom + 8}px`;
+                popover.style.transformOrigin = 'top right';
+            } else {
+                popover.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+                popover.style.transformOrigin = 'bottom right';
+            }
             popover.style.right = `${window.innerWidth - rect.right}px`;
+
+            // Apply dynamic max-height to list
+            const listEl = popover.querySelector('.history-popover-list');
+            if (listEl) {
+                listEl.style.maxHeight = `${Math.max(100, maxListHeight)}px`; // Ensure at least 100px
+            }
         }
 
         document.body.appendChild(popover);
@@ -2258,9 +2288,11 @@ export const FocusPanelManager = {
 
                 // Import VariationsManager dynamically
                 const { VariationsManager } = await import('./VariationsManager.js');
-                const refined = await VariationsManager.applyRefinement(currentText, refineType);
+                const response = await VariationsManager.applyRefinement(currentText, refineType);
 
-                if (refined) {
+                if (response && response.text) {
+                    const refined = response.text;
+
                     // Effet typewriter pour afficher le nouveau texte
                     await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
                     this._updateWordCount();
@@ -2277,8 +2309,24 @@ export const FocusPanelManager = {
                         result.studentData.periods[currentPeriod].appreciation = refined;
                     }
 
+                    // Update AI metadata (model, tokens, time)
+                    if (response.modelUsed) {
+                        result.studentData.currentAIModel = response.modelUsed;
+                    }
+                    // Structure expected by Utils.getGenerationModeInfo
+                    result.tokenUsage = {
+                        appreciation: {
+                            total_tokens: response.usage?.total_tokens || 0
+                        },
+                        generationTimeMs: response.generationTimeMs || 0
+                    };
+                    result.timestamp = new Date().toISOString();
+
                     // Show done badge after successful refinement
                     this._updateAppreciationStatus(result, { state: 'generated' });
+
+                    // Update AI indicator with new metadata
+                    this._updateAiIndicator(result);
 
                     UI.showNotification('Appréciation raffinée !', 'success');
                 }
@@ -2547,6 +2595,9 @@ export const FocusPanelManager = {
 
         // Update the list row to reflect changes
         this._updateListRow(result);
+
+        // Refresh appreciation status (dirty check)
+        this._refreshAppreciationStatus();
     },
 
     // ===============================
@@ -2819,6 +2870,9 @@ export const FocusPanelManager = {
 
         // Persist to storage
         StorageManager.saveAppState();
+
+        // Refresh appreciation status (dirty check)
+        this._refreshAppreciationStatus();
     },
 
     /**
@@ -3426,7 +3480,10 @@ export const FocusPanelManager = {
                     this._updateThresholdUI();
                     // Re-render journal to update isolated states
                     const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                    if (result) this._renderJournal(result);
+                    if (result) {
+                        this._renderJournal(result);
+                        this._refreshAppreciationStatus();
+                    }
                 });
             });
         }
@@ -3452,7 +3509,7 @@ export const FocusPanelManager = {
      * @param {Object} result - Student data
      * @private
      */
-    _renderJournal(result, highlightEntryId = null) {
+    _renderJournal(result, highlightEntryId = null, restoringEntryId = null) {
         if (!result?.id) {
             // Hide journal section in creation mode
             const section = document.getElementById('focusJournalSection');
@@ -3485,6 +3542,9 @@ export const FocusPanelManager = {
                 highlightEntryId,
                 this._editingJournalEntryId
             );
+
+            // Destroy existing tooltips in the container using centralized manager
+            TooltipsUI.cleanupTooltipsIn(contentEl);
 
             contentEl.innerHTML = html;
 
@@ -3545,7 +3605,11 @@ export const FocusPanelManager = {
                                 JournalManager.deleteEntry(result.id, entryId);
                                 // Re-render to update timeline and isolated states
                                 this._renderJournal(result);
+                                // Re-render to update timeline and isolated states
+                                this._renderJournal(result);
                                 UI.showNotification('Observation supprimée', 'success');
+                                // Refresh badge status
+                                this._refreshAppreciationStatus();
                             }, 400); // Wait for animation
                         }
                     }
@@ -3566,14 +3630,62 @@ export const FocusPanelManager = {
                     this._updateDraftPreviewVisibility();
                 });
             });
+
+            // Initialize tooltips for the timeline entries (e.g. isolated entries)
+            // This is required because re-rendering destroys the DOM elements tippy was attached to
+            setTimeout(() => {
+                contentEl.querySelectorAll('[data-tooltip]').forEach(el => {
+                    const tooltipText = el.getAttribute('data-tooltip');
+                    if (tooltipText) {
+                        TooltipsUI.updateTooltip(el, tooltipText);
+                    }
+                });
+            }, 0);
         }
 
         // Update count badge
         const countBadge = document.getElementById('focusJournalCount');
         if (countBadge) {
-            const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
-            countBadge.textContent = entries.length;
-            countBadge.style.display = entries.length > 0 ? '' : 'none';
+            const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod);
+
+            if (aggregated.length > 0) {
+                const threshold = appState.journalThreshold ?? 2;
+
+                // Render detailed counts with icons using standard journal-tag class for consistency
+                const html = aggregated.map(item => {
+                    const isBelow = item.count < threshold;
+                    const belowClass = isBelow ? 'below-threshold' : '';
+                    return `
+                    <span class="journal-tag ${belowClass}" style="--tag-color: ${item.color}; margin-right: 0; cursor: help;" data-tooltip="${item.label} : ${item.count}">
+                        <i class="fas ${item.icon}"></i> ${item.count}
+                    </span>
+                `}).join('');
+
+                countBadge.innerHTML = html;
+
+                // Override default badge styles to act as a container
+                countBadge.style.display = 'inline-flex';
+                countBadge.style.gap = '6px';
+                countBadge.style.background = 'transparent';
+                countBadge.style.padding = '0';
+                countBadge.style.minWidth = 'auto';
+                countBadge.style.boxShadow = 'none';
+                countBadge.style.border = 'none'; // Ensure no border overrides
+                countBadge.style.fontSize = 'inherit'; // Reset font size if badged
+                countBadge.style.height = 'auto';
+
+                // Initialize tooltips for the new elements manualy since they are created dynamically
+                setTimeout(() => {
+                    countBadge.querySelectorAll('[data-tooltip]').forEach(tag => {
+                        const tooltipText = tag.getAttribute('data-tooltip');
+                        if (tooltipText) {
+                            TooltipsUI.updateTooltip(tag, tooltipText);
+                        }
+                    });
+                }, 50);
+            } else {
+                countBadge.style.display = 'none';
+            }
         }
 
         // Header + button: opens the draft (tags are now inside draft)
@@ -3584,6 +3696,13 @@ export const FocusPanelManager = {
                 const draftPreview = document.getElementById('journalDraftPreview');
                 if (draftPreview) {
                     draftPreview.classList.add('visible');
+                    // Auto-scroll journal content to top to show draft (not scrollIntoView which affects entire panel)
+                    const journalContent = document.getElementById('focusJournalContent');
+                    if (journalContent) {
+                        requestAnimationFrame(() => {
+                            journalContent.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
+                    }
                 }
                 // Open editing mode
                 this._toggleJournalQuickAdd(true, true);
@@ -3605,7 +3724,16 @@ export const FocusPanelManager = {
             this._toggleJournalQuickAdd(true, true);
             // Show draft preview immediately since we are adding a tag
             const draftPreview = document.getElementById('journalDraftPreview');
-            draftPreview?.classList.add('visible');
+            if (draftPreview) {
+                draftPreview.classList.add('visible');
+                // Auto-scroll journal content to top to show draft
+                const journalContent = document.getElementById('focusJournalContent');
+                if (journalContent) {
+                    requestAnimationFrame(() => {
+                        journalContent.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                }
+            }
         }
 
         const tag = JournalManager.getTag(tagId);
@@ -3926,6 +4054,9 @@ export const FocusPanelManager = {
             }
 
             if (entry) {
+                // Refresh badge status (dirty check)
+                this._refreshAppreciationStatus();
+
                 // Reset editing state
                 this._editingJournalEntryId = null;
                 this._selectedJournalTags = [];

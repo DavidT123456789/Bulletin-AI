@@ -58,6 +58,16 @@ export const SettingsUIManager = {
         if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
         if (DOM.ollamaBaseUrl) appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
 
+        const journalThresholdInput = document.getElementById('journalThresholdInput');
+        if (journalThresholdInput) {
+            appState.journalThreshold = parseInt(journalThresholdInput.value, 10) || 2;
+        }
+
+        // Dispatch event for responsive updates (e.g., FocusPanel badge)
+        document.dispatchEvent(new CustomEvent('app-settings-changed', {
+            detail: { settings: appState }
+        }));
+
         appState.evolutionThresholds.positive = parseFloat(DOM.settingsEvolutionThresholdPositive.value);
         appState.evolutionThresholds.veryPositive = appState.evolutionThresholds.positive * 4;
         appState.evolutionThresholds.negative = parseFloat(DOM.settingsEvolutionThresholdNegative.value);
