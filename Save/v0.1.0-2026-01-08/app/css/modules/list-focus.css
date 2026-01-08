@@ -1,0 +1,4600 @@
+/* ====================================================================
+   LISTE + FOCUS VIEW - UX Revolution
+   Vue Liste pour aperçu + Vue Focus pour édition
+   ==================================================================== */
+
+/* === Vue Liste (Table) === */
+.student-list-view {
+    width: 100%;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--glass-surface-border);
+    overflow: visible;
+    /* Permet au menu d'actions de déborder */
+}
+
+.student-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.student-list-table thead {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Coins arrondis sur le thead pour correspondre au conteneur */
+.student-list-table thead tr:first-child th:first-child {
+    border-top-left-radius: var(--radius-lg);
+}
+
+.student-list-table thead tr:first-child th:last-child {
+    border-top-right-radius: var(--radius-lg);
+}
+
+[data-theme="dark"] .student-list-table thead {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.student-list-table th {
+    padding: 14px 16px;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+/* Sortable Headers */
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: color 0.25s ease;
+}
+
+/* Effet de survol via pseudo-élément pour préserver le fond du thead */
+.sortable-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(var(--primary-color-rgb), 0.06);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.sortable-header:hover::after {
+    opacity: 1;
+}
+
+.sortable-header:hover {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .sortable-header::after {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Contenu au-dessus du pseudo-élément */
+.sortable-header .header-content-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+.sortable-header.active-sort,
+.sortable-header.active-sort:hover,
+.sortable-header.active-sort:focus {
+    color: var(--primary-color);
+    background-color: transparent !important;
+    outline: none;
+}
+
+/* Pas d'effet de survol sur la colonne triée active */
+.sortable-header.active-sort::after,
+.sortable-header.active-sort:hover::after {
+    opacity: 0 !important;
+}
+
+/* Header Content Alignment Wrapper - Ensures perfect centering */
+.header-content-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+/* Sort Icon - In-flow to center the group (Text + Icon) */
+.sortable-header .sort-icon-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    min-width: 14px;
+    /* Do NOT use absolute positioning - we want the group centered */
+}
+
+/* Hide placeholder completely when empty to ensure perfect centering of text */
+.sortable-header .sort-icon-placeholder:empty {
+    display: none;
+    margin-left: 0;
+    min-width: 0;
+}
+
+/* Ensure Name header is left-aligned */
+.student-list-table th[data-sort-field="name"] {
+    text-align: left;
+}
+
+.student-list-table th[data-sort-field="name"] .header-content-wrapper {
+    justify-content: flex-start;
+}
+
+.student-list-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.student-list-table tbody tr {
+    transition: background var(--transition-fast);
+    cursor: pointer;
+}
+
+.student-list-table tbody tr:hover {
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.student-list-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ====================================================================
+   PREMIUM LIST FILTER ANIMATIONS
+   Animations fluides iOS-style pour le filtrage de la liste
+   ==================================================================== */
+
+/* Keyframes pour l'entrée des lignes - slide up + fade */
+@keyframes list-row-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation d'entrée staggerée pour les lignes */
+.student-list-table tbody tr.row-animate-in {
+    animation: list-row-enter 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: var(--row-delay, 0ms);
+}
+
+/* Animation de highlight subtile lors du filtrage */
+@keyframes row-filter-highlight {
+    0% {
+        background-color: transparent;
+    }
+
+    30% {
+        background-color: rgba(var(--primary-color-rgb), 0.06);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.student-list-table tbody tr.filter-highlight {
+    animation: row-filter-highlight 0.6s ease-out;
+}
+
+/* Keyframes pour la sortie des lignes filtrées - fade + scale + collapse */
+@keyframes list-row-exit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.96) translateX(-15px);
+    }
+}
+
+/* Animation de sortie pour les lignes filtrées */
+.student-list-table tbody tr.row-exit {
+    animation: list-row-exit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    pointer-events: none;
+}
+
+/* Classe pour les lignes qui se repositionnent (FLIP) */
+.student-list-table tbody tr.row-move {
+    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+/* Effet "carte" pendant le déplacement pour un feedback visuel premium */
+.student-list-table tbody tr.row-moving {
+    position: relative;
+    z-index: 10;
+    background: var(--surface-color) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.student-list-table tbody tr.row-moving td {
+    background: var(--surface-color);
+}
+
+.student-list-table tbody tr.row-moving td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.student-list-table tbody tr.row-moving td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving {
+    background: var(--surface-elevated) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving td {
+    background: var(--surface-elevated);
+}
+
+/* Keyframes pour l'entrée retardée des nouvelles lignes lors du filtrage */
+@keyframes list-row-filter-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.student-list-table tbody tr.row-filter-enter {
+    animation: list-row-filter-enter 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: var(--enter-delay, 150ms);
+}
+
+/* Student name column */
+.student-name-cell {
+    font-weight: 600;
+    color: var(--text-primary);
+    /* Prevent column jump when avatar moves above name */
+    min-width: 180px;
+    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.student-name-cell .student-prenom {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Grade columns */
+.grade-cell {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+}
+
+.grade-cell .grade-value {
+    font-weight: 600;
+}
+
+.grade-cell .grade-empty {
+    color: var(--text-tertiary);
+}
+
+/* Evolution column - enlarged to fit sort icon */
+.evolution-header {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    padding: 0 !important;
+}
+
+/* Sort icon re-enabled by removing display:none rule */
+
+.evolution-cell {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    padding: 0 !important;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.grade-cell .grade-evolution,
+.evolution-cell .grade-evolution {
+    font-size: 14px;
+    font-weight: 600;
+    cursor: help;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+}
+
+.grade-cell .grade-evolution:hover,
+.evolution-cell .grade-evolution:hover {
+    transform: scale(1.3);
+    opacity: 1;
+}
+
+.grade-cell .grade-evolution.positive,
+.evolution-cell .grade-evolution.positive {
+    color: var(--success-color);
+}
+
+.grade-cell .grade-evolution.negative,
+.evolution-cell .grade-evolution.negative {
+    color: var(--error-color);
+}
+
+.grade-cell .grade-evolution.stable,
+.evolution-cell .grade-evolution.stable {
+    color: var(--text-tertiary);
+    opacity: 0.6;
+}
+
+/* Appreciation/Status column */
+.appreciation-cell {
+    max-width: 320px;
+    min-width: 200px;
+    text-align: left;
+}
+
+/* Center status badges when no appreciation */
+.appreciation-cell:has(.status-badge) {
+    text-align: center;
+}
+
+.appreciation-header {
+    text-align: center;
+    position: relative;
+}
+
+/* Word count chip - positioned absolutely to the right */
+.appreciation-header>.detail-chip {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* === Appreciation Column Toggle (Expand/Collapse Content) === */
+/* Note: Uses .sortable-header hover effect for consistency */
+.appreciation-toggle-header .header-content-wrapper {
+    position: relative;
+    display: inline-flex !important;
+}
+
+/* Expand Icon - appears on hover */
+.appreciation-toggle-icon {
+    font-size: 11px;
+    opacity: 0;
+    color: var(--text-tertiary);
+    margin-left: 8px;
+    transition: opacity 0.25s ease;
+}
+
+.appreciation-toggle-header:hover .appreciation-toggle-icon {
+    opacity: 0.7;
+}
+
+.appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
+    opacity: 0.6;
+    color: var(--primary-color);
+}
+
+/* === FULL VIEW STATE (Expanded Content) === */
+
+/* 1. Animate cell height transition */
+.appreciation-cell {
+    transition: padding 0.3s ease;
+}
+
+/* 2. Transform the preview bubble into full content */
+.student-list-table.appreciation-full-view .appreciation-preview {
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow: visible;
+    text-overflow: clip;
+
+    /* Card-like styling for full view */
+    background: rgba(0, 0, 0, 0.03);
+    padding: 12px 16px;
+    /* Equal horizontal padding for centered text in card */
+    border-radius: 12px;
+    line-height: 1.6;
+    margin: 4px 0;
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    /* Enforce left align even in full view to prevent centering issues */
+    text-align: left !important;
+
+    /* Micro-fade animation to mask white-space switch */
+    animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
+@keyframes appreciation-expand-reveal {
+    0% {
+        opacity: 0.4;
+        filter: blur(2px);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+
+/* Appreciation Preview - Truncated inline display */
+.appreciation-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.02);
+    max-width: 100%;
+    max-height: 32px;
+
+    /* iOS Spring transitions synced with row animation */
+    transition:
+        max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        /* Added for smooth zoom */
+        box-shadow 0.3s ease,
+        /* Added for smooth shadow lift */
+        opacity 0.15s ease;
+
+    /* Slight fade during collapse to mask white-space switch */
+    opacity: 1;
+}
+
+/* Expanded state during generation - smooth transition */
+.appreciation-preview.expanded {
+    white-space: pre-wrap;
+    max-height: 300px;
+    /* Allow multi-line */
+}
+
+[data-theme="dark"] .appreciation-preview {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+
+.appreciation-preview:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--text-primary);
+    /* No zoom in compact view as requested */
+}
+
+/* Harmonization: Apply hover effect to expanded view with enhanced zoom */
+.student-list-table.appreciation-full-view .appreciation-preview:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--text-primary);
+    /* Maintain the card shape while scaling - INCREASED ZOOM (5% boost) */
+    transform: scale(1.05);
+    /* Flat design - no shadow */
+    box-shadow: none;
+}
+
+/* Subtle indicator removed - JS handles truncation with "..." */
+
+/* Status badges (shown when no appreciation) */
+.appreciation-cell .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.done {
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    color: var(--success-color);
+}
+
+.status-badge.pending {
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.1);
+    color: var(--warning-color);
+}
+
+.status-badge.error {
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+    color: var(--error-color);
+}
+
+
+
+/* Status Column */
+.status-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 120px;
+    padding: 8px 4px !important;
+}
+
+.status-cell .status-badge {
+    /* Reuse existing badge appearance but ensure centered */
+    margin: 0 auto;
+    width: fit-content;
+}
+
+/* Action column */
+.action-cell {
+    text-align: center;
+    position: relative;
+}
+
+.action-cell .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* === 3-Dot Action Dropdown === */
+.action-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+
+.btn-action-menu {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-action-menu:hover {
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    color: var(--primary-color);
+}
+
+.action-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 160px;
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 100;
+    overflow: hidden;
+    padding: 6px;
+    /* Harmonisé avec le menu global */
+}
+
+.action-dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.action-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    /* Harmonisé avec le menu global */
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    border-radius: 8px;
+    /* Harmonisé avec le menu global */
+}
+
+.action-dropdown-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+}
+
+.action-dropdown-item i {
+    width: 16px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.action-dropdown-item.danger {
+    color: var(--error-color);
+}
+
+.action-dropdown-item.danger:hover {
+    background: rgba(var(--error-rgb), 0.1);
+    color: var(--error-color);
+}
+
+[data-theme="dark"] .action-dropdown-menu {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* === GLOBAL ACTIONS DROPDOWN (Table Header) === */
+/* Réutilise .action-dropdown-menu et .action-dropdown-item - source unique de vérité */
+.global-actions-dropdown {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-action-menu-header {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.6;
+}
+
+.btn-action-menu-header:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Le menu global hérite de .action-dropdown-menu + surcharges spécifiques */
+.global-actions-dropdown-menu {
+    /* Override: hérite de action-dropdown-menu mais avec ces différences */
+    position: absolute;
+    top: 100%;
+    /* S'ouvre vers le BAS */
+    right: 0;
+    /* Le menu est décalé vers la gauche via translateX pour éviter le débordement */
+    margin-top: 8px;
+    min-width: 220px;
+    /* Plus large que le menu individuel */
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-20px) translateY(-8px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 200;
+    /* Plus élevé que le menu individuel (100) */
+    overflow: hidden;
+    padding: 6px;
+}
+
+.global-actions-dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-20px) translateY(0) scale(1);
+}
+
+/* === Headers sectionnels (spécifique au menu global) === */
+.global-actions-dropdown-menu .dropdown-header {
+    margin: 0;
+    padding: 8px 12px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid var(--border-color);
+}
+
+.global-actions-dropdown-menu .dropdown-header:first-of-type {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.global-actions-dropdown-menu .dropdown-header i {
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+/* Divider danger (spécifique au menu global) */
+.global-actions-dropdown-menu .dropdown-divider.danger-divider {
+    border-top: 1px solid rgba(var(--error-rgb), 0.2);
+    margin: 4px 8px;
+}
+
+[data-theme="dark"] .global-actions-dropdown-menu {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* === Vue Focus (Panel) - Redesign 2025 "Premium iOS" === */
+.focus-panel {
+    position: fixed;
+    /* Start BELOW the main header so period selector remains accessible */
+    top: 64px;
+    right: 0;
+    width: 100%;
+    max-width: 680px;
+    /* Adjust height to account for header */
+    height: calc(100vh - 64px);
+    background: var(--bg-color);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0);
+    z-index: var(--z-modal);
+    /* GPU-accelerated transform for smooth animations */
+    transform: translateX(100%);
+    /* iOS Spring easing for authentic feel */
+    transition:
+        transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    will-change: transform;
+    /* Subtle top border to separate from header */
+    border-top: 1px solid var(--border-color);
+}
+
+/* Open state - slide in from right */
+.focus-panel.open {
+    transform: translateX(0);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.18);
+}
+
+.focus-panel-backdrop {
+    position: fixed;
+    /* Start below header so it remains interactive */
+    top: 64px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 64px);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    /* Stronger blur for focus */
+    -webkit-backdrop-filter: blur(8px);
+    z-index: calc(var(--z-modal) - 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.focus-panel-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================
+   1. HEADER (Floating Large Title)
+   ============================ */
+.focus-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 12px;
+    /* Compact padding */
+    background: rgba(245, 245, 244, 0.85);
+    /* Translucent fallback */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+    z-index: 10;
+    position: sticky;
+    top: 0;
+}
+
+[data-theme="dark"] .focus-header {
+    background: rgba(3, 7, 18, 0.85);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.focus-back-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border: none;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.focus-back-btn i {
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.focus-back-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    transform: scale(1.1);
+}
+
+.focus-back-btn:hover i {
+    /* Transform removed to prevent shifting on down-chevron */
+    transform: none;
+}
+
+.focus-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* Tab-style Name Container with integrated close */
+.focus-name-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    padding-right: 4px;
+    /* Space for close button */
+    transition: background 0.25s ease;
+}
+
+[data-theme="dark"] .focus-name-tab {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.focus-name-tab:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .focus-name-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Close button integrated in tab */
+.focus-tab-close {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    flex-shrink: 0;
+}
+
+.focus-tab-close:hover {
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+    color: var(--error-color);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.focus-tab-close:active {
+    transform: scale(0.95);
+}
+
+.focus-student-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.015em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    /* Clickable/Editable styling - no default background */
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    margin: -6px -12px;
+    border-radius: 12px;
+    transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.focus-student-name:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
+[data-theme="dark"] .focus-student-name:hover {
+    background: rgba(var(--primary-color-rgb), 0.12);
+}
+
+.focus-student-name:active {
+    transform: scale(0.98);
+}
+
+/* Helper to edit name (legacy class, kept for compatibility) */
+.focus-name-editable {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    margin: -6px -10px;
+    border-radius: 12px;
+}
+
+.focus-name-editable:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.focus-name-edit-icon {
+    font-size: 12px;
+    opacity: 0;
+    color: var(--primary-color);
+    transform: translateX(-5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.focus-student-name:hover .focus-name-edit-icon,
+.focus-name-editable:hover .focus-name-edit-icon {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Header Status Badges Container - inline horizontal */
+.focus-status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.focus-status-badges .status-pill {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 100px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Bouton Détails/Historique - Séparé de la navigation */
+.focus-details-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-left: auto;
+    /* Pousse à droite */
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.focus-details-toggle:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    transform: scale(1.05);
+}
+
+.focus-details-toggle.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .focus-details-toggle {
+    background: rgba(var(--primary-color-rgb), 0.15);
+}
+
+[data-theme="dark"] .focus-details-toggle:hover {
+    background: rgba(var(--primary-color-rgb), 0.25);
+}
+
+/* Nav Buttons - Unified Pill with Close + Navigation */
+.focus-nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 4px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    margin-left: auto;
+    /* Push to the right */
+}
+
+[data-theme="dark"] .focus-nav-buttons {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Divider between close and navigation */
+.focus-nav-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    margin: 0 4px;
+    opacity: 0.5;
+}
+
+.focus-position {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.focus-nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all var(--transition-fast);
+}
+
+.focus-nav-btn:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Close button specific styling */
+/* Close button specific styling */
+.focus-nav-btn.focus-close-btn {
+    color: var(--text-secondary);
+}
+
+.focus-nav-btn.focus-close-btn:hover {
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+    color: var(--error-color);
+    transform: scale(1.1);
+}
+
+.focus-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: transparent;
+}
+
+
+/* ============================
+   2. CONTENT (Cards Grid)
+   ============================ */
+.focus-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* Enable positioned children for transition animations */
+    position: relative;
+}
+
+/* Student Transition Animations - Navigation entre élèves */
+.focus-content.slide-out-left {
+    animation: focus-slide-out-left 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.focus-content.slide-in-right {
+    animation: focus-slide-in-right 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.focus-content.slide-out-right {
+    animation: focus-slide-out-right 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.focus-content.slide-in-left {
+    animation: focus-slide-in-left 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes focus-slide-out-left {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(-40px) scale(0.97);
+    }
+}
+
+@keyframes focus-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(40px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes focus-slide-out-right {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(40px) scale(0.97);
+    }
+}
+
+@keyframes focus-slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-40px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* Common Card Style - identity has its own animated styles */
+/* REDESIGNED: Compact header style inspired by Journal de bord */
+.grades-timeline,
+.focus-context-group,
+.focus-appreciation {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    /* No padding - header handles its own padding */
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+    margin: 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* FIXED: Remove overflow hidden that clips content */
+    overflow: visible;
+    height: auto;
+    min-height: auto;
+}
+
+/* FIX: Journal de bord (Grades Timeline) specifically needs overflow hidden to fix corners
+   because its header structure is different/wrapped */
+.grades-timeline {
+    overflow: hidden;
+}
+
+
+/* Fix header corners matching card radius to prevent background bleed */
+.grades-timeline> :first-child,
+.focus-context-group> :first-child,
+.focus-appreciation> :first-child {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+/* Fix footer corners if needed */
+.grades-timeline> :last-child,
+.focus-context-group> :last-child,
+.focus-appreciation> :last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+}
+
+[data-theme="dark"] .grades-timeline,
+[data-theme="dark"] .focus-context-group,
+[data-theme="dark"] .focus-appreciation {
+    /* Background and border handled by variables */
+    box-shadow: none;
+}
+
+/* ============================
+    box-shadow:
+        0 0 0 3px rgba(var(--primary-color-rgb), 0.1),
+        0 6px 16px -4px rgba(var(--primary-color-rgb), 0.2),
+        0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Input Specific */
+.timeline-grade-input {
+    text-align: center;
+    caret-color: var(--primary-color);
+}
+
+.timeline-grade-input:focus {
+    outline: none;
+}
+
+/* Future Periods - Subtle & Faded */
+.timeline-period.future {
+    opacity: 0.35;
+}
+
+.timeline-period.future .timeline-grade-display {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--text-tertiary);
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+
+/* Arrows - Compact Modern Style */
+.timeline-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 22px;
+    color: var(--text-tertiary);
+    opacity: 0.4;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.timeline-arrow.positive {
+    color: var(--success-color);
+    opacity: 1;
+    background: rgba(var(--success-rgb), 0.1);
+    border-radius: 50%;
+}
+
+.timeline-arrow.negative {
+    color: var(--error-color);
+    opacity: 1;
+    background: rgba(var(--error-rgb), 0.1);
+    border-radius: 50%;
+}
+
+
+/* ============================
+   4. CONTEXT CARD - Compact Header Style (matching Journal)
+   ============================ */
+.focus-context-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Icon styling - matches focus-appreciation-label > i:first-child */
+.focus-context-label>i:first-child {
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+/* === Voice Dictation Button (Mic) - iOS 2025 Style === */
+/* Neutral gray at rest (like the edit pencil), orange on hover */
+.focus-mic-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+/* Single source of truth for mic icon size - prevents inheritance from parent labels */
+.focus-mic-btn i {
+    font-size: 12px;
+}
+
+.focus-mic-btn:hover {
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    transform: scale(1.08);
+}
+
+.focus-mic-btn.recording {
+    background: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
+    animation: mic-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+}
+
+.focus-mic-btn.recording:hover {
+    background: var(--error-color);
+    transform: scale(1.05);
+}
+
+@keyframes mic-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.15);
+    }
+}
+
+/* Dark theme adjustments - keep neutral at rest */
+[data-theme="dark"] .focus-mic-btn {
+    background: transparent;
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-mic-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+}
+
+/* === History Button - Harmonized with journal-header-btn (Seuil style) === */
+/* Rectangular rounded button with icon + count inline */
+.focus-history-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.focus-history-btn i {
+    font-size: 12px;
+    color: var(--primary-color);
+    transition: color 0.2s ease;
+}
+
+.focus-history-btn .history-count {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.focus-history-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.focus-history-btn:hover i,
+.focus-history-btn:hover .history-count {
+    color: var(--primary-color);
+}
+
+.focus-history-btn:active {
+    transform: translateY(0);
+}
+
+[data-theme="dark"] .focus-history-btn {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .focus-history-btn:hover {
+    background: var(--surface-hover);
+}
+
+.period-badge {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.focus-context-textarea {
+    width: 100%;
+    min-height: 56px;
+    /* Increased to fit 1 line + padding */
+    max-height: 200px;
+    height: auto;
+    /* Adjusted padding to prevent scrollbar on single line */
+    padding: 14px 16px;
+    margin: 0;
+    background: transparent;
+    border: 2px solid transparent;
+    /* Fix: match container radius (bottom corners) */
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    resize: none;
+    /* Auto-resize handled by JS typically, but simple none here */
+    overflow-y: hidden;
+    /* Hide scrollbar by default, JS should handle expansion */
+    transition: all var(--transition-fast);
+    font-family: inherit;
+    box-sizing: border-box;
+    display: block;
+    /* Ensure block display */
+}
+
+/* Show scrollbar only when focused if needed or let JS handle height */
+.focus-context-textarea:focus {
+    overflow-y: auto;
+}
+
+/* Unified placeholder style - single source of truth */
+.focus-context-textarea::placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+    opacity: 1;
+}
+
+/* Hover state - subtle border glow before focus */
+.focus-context-textarea:hover:not(:focus) {
+    background: var(--bg-color);
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+.focus-context-textarea:focus {
+    outline: none;
+    background: var(--bg-color);
+    /* Style dynamique harmonisé - focus signature */
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* ============================
+   3. OPTIMIZED HISTORY & CONTEXT
+   ============================ */
+
+/* History Grades Summary (In Header) */
+.student-card-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-grades-summary {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+/* --- Badges de Notes Historiques Premium --- */
+/* Style de base (lecture) */
+.history-grade-badge {
+    font-size: 12px;
+    background: var(--surface-color);
+    /* White background for pop */
+    color: var(--text-primary);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    /* Subtle lift */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+
+.history-grade-badge span:first-child {
+    color: var(--text-tertiary);
+    /* T1 label slightly dimmer */
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/* Editable style (Current Period) - Premium themed accent */
+.history-grade-badge.editable {
+    cursor: pointer;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--text-primary);
+    padding: 3px 10px;
+    border: 1.5px solid rgba(var(--primary-color-rgb), 0.35);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* The T-label inside editable badges gets theme color */
+.history-grade-badge.editable span:first-child {
+    color: var(--primary-color);
+    opacity: 0.85;
+}
+
+.history-grade-badge.editable:hover {
+    background: rgba(var(--primary-color-rgb), 0.14);
+    border-color: rgba(var(--primary-color-rgb), 0.55);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.18);
+}
+
+[data-theme="dark"] .history-grade-badge.editable {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
+/* --- Sections "Précédent" (T1) - Style "Citation" Minimaliste --- */
+.read-prev-appreciation,
+.read-prev-context,
+#focusPrevAppreciationSection,
+#focusPrevContextSection {
+    border-left: 3px solid var(--primary-color) !important;
+    padding-left: 12px !important;
+    margin-top: 12px !important;
+    background: transparent !important;
+    /* Force removal of gray box */
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+/* Header des sections précédentes (Titre + Icône) */
+.read-prev-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.read-prev-header i {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Texte des sections précédentes */
+.read-prev-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    /* Slightly softer than main text */
+    line-height: 1.4;
+    font-style: italic;
+}
+
+/* Context Header with Grade Input - Compact Style (matching Journal) */
+.focus-context-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .focus-context-header {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.context-grade-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    /* Style note actuelle - fond couleur thème pour mise en évidence */
+    background: rgba(var(--primary-color-rgb), 0.08);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: none;
+    transition: all var(--transition-fast);
+}
+
+.context-grade-group:hover {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+}
+
+.context-grade-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0;
+    opacity: 0.8;
+}
+
+.context-grade-input {
+    width: 50px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-color);
+    padding: 0;
+}
+
+.context-grade-input:focus {
+    outline: none;
+}
+
+/* History Grade Input (Small, inside badge) */
+.history-grade-input {
+    width: 30px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+.history-grade-input:focus {
+    outline: none;
+}
+
+/* ============================
+   5. APPRECIATION PREVIEW (The Main Event)
+   ============================ */
+
+/* Main Appreciation Card - Harmonized Style */
+/* .focus-appreciation uses shared styles defined above with .grades-timeline and .focus-context-group for harmonization */
+
+/* Appreciation Header - Compact Style (matching Journal/Context) */
+.focus-appreciation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .focus-appreciation-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.focus-appreciation-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+/* Icon styling - matches focus-context-label i */
+.focus-appreciation-label>i:first-child {
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.focus-appreciation-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ============================
+   Period Tabs in Appreciation Header
+   iOS 2025 Premium Style
+   ============================ */
+.focus-period-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 3px;
+    border-radius: 10px;
+}
+
+[data-theme="dark"] .focus-period-tabs {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.focus-period-tab {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.focus-period-tab:hover:not(.active) {
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .focus-period-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.focus-period-tab.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Main Appreciation Text Area - ContentEditable */
+.focus-appreciation-text {
+    width: 100%;
+    min-height: 80px;
+    max-height: 500px;
+    height: auto;
+    padding: 14px 16px;
+    /* Harmonized with context-textarea */
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    outline: none;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    position: relative;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
+/* Indicator for periods with content */
+.focus-period-tab.has-content:not(.active)::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--success-color);
+    border-radius: 50%;
+}
+
+/* Current generation target - subtle glow */
+.focus-period-tab.current-target {
+    animation: pulse-subtle 2s infinite;
+}
+
+@keyframes pulse-subtle {
+
+    0%,
+    100% {
+        box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
+    }
+
+    50% {
+        box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.5);
+    }
+}
+
+/* Appreciation Status Badge */
+.appreciation-status-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* High-quality spacing */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* iOS-like fluid transition */
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+    pointer-events: none;
+    background: var(--surface-variant);
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    /* Prepare for border changes */
+    white-space: nowrap;
+    overflow: hidden;
+    /* Clean resize */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.appreciation-status-badge.visible {
+    display: inline-flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.appreciation-status-badge.pending {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    animation: pending-pulse 1.5s infinite;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.appreciation-status-badge.done {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.appreciation-status-badge.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.appreciation-status-badge.modified {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.appreciation-status-badge.saved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: saved-fade-in 0.3s ease, saved-fade-out 0.4s ease 1.6s forwards;
+}
+
+.appreciation-status-badge.valid {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes saved-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes saved-fade-out {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes pending-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(0.95);
+    }
+}
+
+/* Generated state - AI appreciation created successfully */
+.appreciation-status-badge.generated {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Collapse animation - text fades out, badge shrinks to icon */
+.appreciation-status-badge.icon-only {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.3s ease;
+}
+
+.appreciation-status-badge.icon-only .badge-text {
+    display: none;
+}
+
+@keyframes badge-pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    60% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* === Morph from Check to Warning === */
+@keyframes morph-to-warning {
+    0% {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+
+    100% {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+}
+
+.appreciation-status-badge.morphing-to-warning {
+    animation: morph-to-warning 0.4s ease forwards;
+}
+
+/* State classes for SpeechRecognitionManager */
+.appreciation-status-badge.is-saved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: saved-fade-in 0.3s ease;
+}
+
+.appreciation-status-badge.is-dictating {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    width: auto;
+    border-radius: 12px;
+    padding: 4px 10px;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    animation: pending-pulse 1.5s infinite;
+}
+
+/* History Indicator */
+.history-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+    border-radius: 12px;
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-indicator:hover {
+    background: rgba(var(--primary-color-rgb), 0.2);
+    transform: scale(1.02);
+}
+
+.history-indicator i {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.history-indicator .history-count {
+    font-weight: 600;
+}
+
+/* History Popover */
+
+.history-popover {
+    position: fixed;
+    z-index: 10000;
+    background: var(--glass-overlay-bg);
+    border: 1px solid var(--glass-overlay-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    min-width: 280px;
+    max-width: 400px;
+    overflow: hidden;
+    animation: popover-in 0.2s ease;
+}
+
+@keyframes popover-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.history-popover-title {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.history-popover-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-version-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 16px 10px 24px;
+    /* Extra padding-left for indicator */
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s ease;
+    position: relative;
+    /* Anchor for ::before indicator */
+}
+
+.history-version-item:last-child {
+    border-bottom: none;
+}
+
+.history-version-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
+.history-version-item.current {
+    background: rgba(var(--primary-color-rgb), 0.12);
+}
+
+.history-version-item.current::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 17px;
+    /* Centré verticalement sur le titre (padding-top: 10px + moitié hauteur texte) */
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.history-version-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.history-version-preview {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+/* Hardcoded dark mode block removed as variables handle it now */
+
+/* ============================================
+   HISTORY VERSION CHANGE ANIMATIONS
+   iOS 2025 Premium Style - Blur + Scale + Fade
+   ============================================ */
+
+/* Base transition for appreciation text */
+.focus-appreciation-text {
+    transition: opacity 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: opacity, transform, filter;
+}
+
+/* Prevent flicker during animation */
+.focus-appreciation-text.history-animating {
+    pointer-events: none;
+}
+
+/* Exit animations - going backward (undo) slides forward out */
+.focus-appreciation-text.history-exit-forward {
+    opacity: 0;
+    transform: translateX(12px) scale(0.98);
+    filter: blur(3px);
+}
+
+/* Exit animations - going forward (redo) slides backward out */
+.focus-appreciation-text.history-exit-backward {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.98);
+    filter: blur(3px);
+}
+
+/* Enter animations - coming from backward (undo) enters from left */
+.focus-appreciation-text.history-enter-backward {
+    animation: history-enter-from-left 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Enter animations - coming from forward (redo) enters from right */
+.focus-appreciation-text.history-enter-forward {
+    animation: history-enter-from-right 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes history-enter-from-left {
+    0% {
+        opacity: 0;
+        transform: translateX(-12px) scale(0.98);
+        filter: blur(3px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes history-enter-from-right {
+    0% {
+        opacity: 0;
+        transform: translateX(12px) scale(0.98);
+        filter: blur(3px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Subtle flash to indicate successful change */
+@keyframes history-flash {
+    0% {
+        background: transparent;
+    }
+
+    25% {
+        background: rgba(var(--primary-color-rgb), 0.08);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+/* Skeleton styles are defined in skeleton.css (single source of truth) */
+
+/* Focus Panel: Override when skeleton is displayed */
+.focus-appreciation-text:has(.appreciation-skeleton) {
+    line-height: 1;
+    min-height: auto;
+    padding: 0;
+}
+
+
+.word-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-variant-numeric: tabular-nums;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    text-transform: none;
+}
+
+.word-count:empty {
+    display: none;
+}
+
+.word-count i {
+    margin-right: 6px;
+    opacity: 0.6;
+    font-size: 10px;
+}
+
+.word-count:hover {
+    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* AI Indicator - Shows generation metadata on hover */
+.ai-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    /* Style épuré - icône seule sans fond */
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: help;
+    transition: all 0.2s ease;
+    color: rgba(251, 191, 36, 0.8);
+}
+
+.ai-indicator:hover {
+    background: rgba(251, 191, 36, 0.1);
+    transform: scale(1.15);
+    color: rgb(251, 191, 36);
+}
+
+[data-theme="dark"] .ai-indicator {
+    color: rgba(251, 191, 36, 0.9);
+}
+
+[data-theme="dark"] .ai-indicator:hover {
+    background: rgba(251, 191, 36, 0.15);
+    color: rgb(251, 191, 36);
+}
+
+/* Redefinition removed to avoid conflict with lines 1659-1678 */
+
+/* Editable appreciation */
+.focus-appreciation-text[contenteditable="true"] {
+    /* No additional styling needed - base styles handle it */
+}
+
+/* Hover state - subtle border glow before focus (harmonized with context textarea) */
+.focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
+    background: var(--bg-color);
+    border-color: transparent;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+.focus-appreciation-text[contenteditable="true"]:focus {
+    outline: none;
+    background: var(--bg-color);
+    /* Style dynamique harmonisé - focus signature */
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Empty state for appreciation - CSS-only placeholder using data attribute */
+/* Position relative on parent to allow absolute positioning of placeholder */
+.focus-appreciation-text[contenteditable] {
+    position: relative;
+    color: var(--text-primary);
+}
+
+.focus-appreciation-text[contenteditable]:empty::before,
+.focus-appreciation-text[contenteditable].empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-tertiary);
+    font-style: italic;
+    font-weight: 400;
+    pointer-events: none;
+    /* Use same padding as parent so text aligns */
+    position: absolute;
+    top: 14px;
+    /* Match padding-top */
+    left: 16px;
+    /* Match padding-left */
+    right: 16px;
+}
+
+.focus-refinement-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0;
+    /* Consistent padding with other card elements */
+    padding: 16px;
+
+}
+
+/* Redesigned Chips - Compact */
+/* Redesigned Chips - Modern & Premium */
+/* Redesigned Chips - Modern & Premium with Shine */
+.btn-ai-outline {
+    background: rgba(0, 0, 0, 0.04);
+    /* Plus de contraste pour les boutons */
+    border: none;
+    color: var(--text-secondary);
+    padding: 7px 14px;
+    border-radius: 100px;
+    /* Pill shape restauré */
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+    /* Pour l'effet shine */
+}
+
+.btn-ai-outline i {
+    color: var(--primary-color);
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.btn-ai-outline:hover {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    /* Texte devient coloré au survol */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.btn-ai-outline:hover i {
+    transform: scale(1.1);
+}
+
+/* Effet Shine au survol */
+.btn-ai-outline:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.6) 50%,
+            transparent 100%);
+    animation: shine-sweep 1.5s ease-in-out infinite;
+}
+
+/* État Hover : Fond léger + Texte coloré + Bordure subtile - SPECIFICITY INCREASED */
+.btn-ai-outline:hover:not(:disabled) {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+
+.btn-ai-outline.active {
+    background: var(--primary-color);
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.btn-ai-outline.active i {
+    color: #ffffff !important;
+}
+
+/* État désactivé pour les boutons de raffinement */
+.btn-ai-outline:disabled,
+.btn-ai-outline.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--text-tertiary);
+}
+
+.btn-ai-outline:disabled i,
+.btn-ai-outline.disabled i {
+    color: var(--text-tertiary);
+}
+
+/* ============================
+   6. FOOTER (Glass with Primary Action)
+   ============================ */
+.focus-footer {
+    padding: 14px 20px;
+    background: rgba(245, 245, 244, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    /* Very faint border */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    z-index: 10;
+    position: sticky;
+    /* Keep it reachable */
+    bottom: 0;
+}
+
+[data-theme="dark"] .focus-footer {
+    background: rgba(3, 7, 18, 0.8);
+    border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.focus-footer .btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+/* Hover state inherited from .btn-secondary in components.css for consistency */
+
+.focus-footer .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+#focusGenerateBtn {
+    background: var(--gradient-primary);
+    /* Use gradient */
+    color: white;
+    border: none;
+    border-radius: 14px;
+    /* Refined corners */
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: none;
+    flex: 1;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    letter-spacing: 0.3px;
+}
+
+#focusGenerateBtn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 14px 30px -8px rgba(var(--primary-color-rgb), 0.5);
+}
+
+#focusGenerateBtn:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* ============================
+   STUDENT CARD (Fiche Élève)
+   Mode lecture par défaut, mode édition au clic
+   ============================ */
+
+/* Student Card Container */
+/* Student Card Container */
+.focus-student-card {
+    /* Glassmorphism style matching other focus cards */
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur));
+    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
+    border-radius: 20px;
+    border: 1px solid var(--card-glass-border);
+    overflow: visible;
+    margin: 0;
+    /* Spacing handled by parent gap */
+    box-shadow: none;
+    padding: 20px;
+}
+
+/* [data-theme="dark"] block removed as variables handle it */
+
+/* Card Header - Minimal style like other cards */
+.student-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+
+
+.student-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.student-card-title i {
+    color: var(--primary-color);
+}
+
+/* Edit Toggle Button */
+.btn-icon-edit {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all var(--transition-fast);
+}
+
+.btn-icon-edit:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.btn-icon-edit.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Edit Mode Styles */
+.student-card-edit-mode {
+    padding: 16px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Hidden state */
+.student-card-read-mode.hidden,
+.student-card-edit-mode.hidden {
+    display: none;
+}
+
+/* Hiding animation (fade out) */
+.student-card-read-mode.hiding,
+.student-card-edit-mode.hiding {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+/* Showing animation (fade in) */
+.student-card-read-mode.showing,
+.student-card-edit-mode.showing {
+    animation: cardModeAppear 0.25s ease forwards;
+}
+
+@keyframes cardModeAppear {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.read-section {
+    margin-bottom: 12px;
+}
+
+.read-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Identity Section - MASQUÉE (nom et badges sont dans l'en-tête) */
+.read-identity {
+    display: none;
+}
+
+.read-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.read-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.read-badges .status-pill {
+    font-size: 10px;
+    padding: 4px 10px;
+}
+
+/* Grade Section - MASQUÉE (la note est dans la timeline) */
+.read-grade {
+    display: none;
+}
+
+.read-grade-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.read-grade-label i {
+    color: var(--primary-color);
+}
+
+.read-grade-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Previous Appreciation Section */
+.read-prev-appreciation {
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .read-prev-appreciation {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.read-prev-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.read-prev-header i {
+    color: var(--text-tertiary);
+}
+
+.read-prev-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+/* Edit Mode Styles */
+.student-card-edit-mode {
+    padding: 16px;
+}
+
+/* Grade input in edit mode */
+.focus-grade-input {
+    width: 100px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ============================
+   IDENTITY EDIT SECTION (Legacy)
+   ============================ */
+/* Container takes no visual space */
+.focus-identity-section {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.focus-identity-content {
+    /* Compact layout - ensure no space when collapsed */
+    padding: 16px;
+    background: var(--surface-color);
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    /* Smooth expand/collapse animation */
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    transform: translateY(-10px);
+    transition:
+        max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        margin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-identity-content.expanded {
+    max-height: 300px;
+    opacity: 1;
+    transform: translateY(0);
+    padding: 16px;
+    margin-bottom: 0;
+}
+
+/* Name inputs on same row */
+.focus-identity-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.focus-identity-row .focus-form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* Identity inputs - compact */
+.focus-form-group {
+    margin-bottom: 10px;
+}
+
+.focus-form-group label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.focus-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.focus-input:focus {
+    outline: none;
+    background: var(--bg-color);
+    /* Style dynamique harmonisé - focus signature */
+    border: 2px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Status Pills - compact */
+.focus-status-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Hide actual checkboxes */
+.focus-status-pills input[type="checkbox"] {
+    display: none;
+}
+
+.focus-status-pills label {
+    padding: 6px 12px;
+    background: var(--bg-color);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+    user-select: none;
+}
+
+.focus-status-pills label:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+}
+
+.focus-status-pills input:checked+label {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-color: var(--primary-color);
+}
+
+/* ============================
+   RESPONSIVE
+   ============================ */
+@media (max-width: 600px) {
+    .focus-content {
+        padding: 20px 16px;
+    }
+
+    .focus-header {
+        padding: 16px 16px;
+    }
+
+    .focus-student-name {
+        font-size: 20px;
+    }
+
+    .grades-timeline {
+        padding: 24px 10px;
+    }
+
+    .timeline-grade-input,
+    .timeline-grade-display {
+        width: 52px;
+        height: 52px;
+        font-size: 20px;
+    }
+
+    .focus-footer {
+        padding: 16px 20px;
+    }
+}
+
+/* Identity Footer with Save Button */
+.focus-identity-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 8px;
+    margin-top: 0;
+}
+
+.btn-icon-check,
+.btn-icon-cancel {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all var(--transition-fast);
+}
+
+.btn-icon-check {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.btn-icon-check:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+}
+
+.btn-icon-cancel {
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-icon-cancel:hover {
+    background: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
+    transform: scale(1.1);
+}
+
+.btn-icon-check:active,
+.btn-icon-cancel:active {
+    transform: scale(0.95);
+}
+
+/* Name editing state indicator */
+.focus-name-editable.editing {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+}
+
+.focus-name-editable.editing .focus-name-edit-icon {
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+/* Dark mode */
+[data-theme="dark"] .focus-identity-section {
+    background: transparent;
+}
+
+[data-theme="dark"] .focus-identity-content {
+    background: rgba(255, 255, 255, 0.05);
+    /* Same as others */
+}
+
+[data-theme="dark"] .focus-input {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .focus-status-pills label {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================
+   8. FOCUS PANEL SLIDING PAGES SYSTEM
+   Two-page horizontal slide navigation
+   ============================ */
+
+/* Pages Container - Horizontal scroll container */
+.focus-pages-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Individual Page */
+/* Utility: Small Button */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+    height: 32px;
+    min-width: auto;
+}
+
+.focus-page {
+    min-width: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+}
+
+/* Main Page (default visible) */
+.focus-main-page {
+    transform: scale(1);
+    opacity: 1;
+    transform-origin: center center;
+    transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Analysis Page (hidden below) */
+.focus-analysis-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: translateY(100%);
+    background: var(--bg-color);
+    z-index: 10;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* When analysis page is active */
+.focus-pages-container.show-analysis .focus-main-page {
+    transform: scale(0.92);
+    opacity: 0.6;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.focus-pages-container.show-analysis .focus-analysis-page {
+    transform: translateY(0);
+}
+
+/* Analysis Page Header */
+.focus-analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    background: rgba(245, 245, 244, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .focus-analysis-header {
+    background: rgba(3, 7, 18, 0.85);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.focus-analysis-title {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.focus-analysis-title i {
+    color: var(--primary-color);
+}
+
+.focus-analysis-student {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.04);
+    padding: 6px 12px;
+    border-radius: 100px;
+}
+
+[data-theme="dark"] .focus-analysis-student {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Analysis Content Area */
+.focus-analysis-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Individual Analysis Card */
+.analysis-card {
+    background: var(--surface-color);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+    /* box-shadow removed */
+}
+
+[data-theme="dark"] .analysis-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+}
+
+/* Colored Borders for Analysis Cards */
+/* Colored Borders for Analysis Cards - Specificity increased to override .has-content */
+.analysis-card.analysis-forces,
+.analysis-card.analysis-forces.has-content {
+    border-color: rgba(16, 185, 129, 0.3);
+    /* box-shadow removed */
+}
+
+.analysis-card.analysis-weaknesses,
+.analysis-card.analysis-weaknesses.has-content {
+    border-color: rgba(245, 158, 11, 0.3);
+    /* box-shadow removed */
+}
+
+.analysis-card.analysis-suggestions,
+.analysis-card.analysis-suggestions.has-content {
+    border-color: rgba(99, 102, 241, 0.3);
+    /* box-shadow removed */
+}
+
+.analysis-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: rgba(0, 0, 0, 0.01);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .analysis-card-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.analysis-card-header h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* Analysis Status Badges */
+.analysis-status-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.analysis-status-badge.loading {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.analysis-status-badge.done {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.analysis-status-badge.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* Colored Icons - Larger for better visibility */
+.analysis-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.analysis-icon.forces {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.analysis-icon.weaknesses {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.analysis-icon.suggestions {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+/* Card Body - Content */
+.analysis-card-body {
+    padding: 16px 18px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.analysis-card-body ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.analysis-card-body li {
+    margin-bottom: 8px;
+}
+
+.analysis-card-body li:last-child {
+    margin-bottom: 0;
+}
+
+/* Placeholder State */
+.analysis-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    font-size: 13px;
+    padding: 8px 0;
+}
+
+.analysis-placeholder i {
+    opacity: 0.5;
+    font-size: 16px;
+}
+
+/* Loading Skeleton */
+.analysis-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.analysis-skeleton-line {
+    height: 14px;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.04) 25%,
+            rgba(0, 0, 0, 0.08) 50%,
+            rgba(0, 0, 0, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 7px;
+}
+
+[data-theme="dark"] .analysis-skeleton-line {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.04) 25%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+}
+
+.analysis-skeleton-line:nth-child(1) {
+    width: 90%;
+}
+
+.analysis-skeleton-line:nth-child(2) {
+    width: 70%;
+}
+
+.analysis-skeleton-line:nth-child(3) {
+    width: 80%;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Card Content States */
+.analysis-card.has-content {
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+}
+
+.analysis-card.has-content .analysis-card-body {
+    color: var(--text-primary);
+}
+
+.analysis-card.has-error .analysis-card-body {
+    color: var(--error-color);
+}
+
+/* Staggered Card Entrance Animation */
+.focus-pages-container.show-analysis .analysis-card {
+    animation: analysis-card-slide-in 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.focus-pages-container.show-analysis .analysis-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.focus-pages-container.show-analysis .analysis-card:nth-child(2) {
+    animation-delay: 0.18s;
+}
+
+.focus-pages-container.show-analysis .analysis-card:nth-child(3) {
+    animation-delay: 0.26s;
+}
+
+@keyframes analysis-card-slide-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Analysis Footer */
+.focus-analysis-page .focus-footer {
+    justify-content: space-between;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .focus-analysis-header {
+        padding: 14px 16px;
+    }
+
+    .focus-analysis-content-area {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .analysis-card-header {
+        padding: 14px 16px;
+    }
+
+    .analysis-card-body {
+        padding: 14px 16px;
+    }
+
+    .analysis-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}
+
+@keyframes shine-sweep {
+    0% {
+        left: -100%;
+    }
+
+    50%,
+    100% {
+        left: 100%;
+    }
+}
+
+/* ============================
+   EXPANDABLE HEADER (In-Place Editing)
+   ============================ */
+
+.focus-header-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 40px;
+}
+
+/* Add class to header when editing */
+.focus-header {
+    transition: padding 0.3s ease, align-items 0.3s ease;
+}
+
+.focus-header.editing {
+    padding-top: 16px;
+    padding-bottom: 16px;
+    align-items: flex-start;
+    /* Keep left buttons/avatar at top while content expands */
+}
+
+/* ============================
+   LEFT ZONE: Avatar + Edit actions overlay
+   ============================ */
+.focus-header-left {
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Avatar container inside left zone */
+.focus-header-left .focus-panel-avatar-container {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Hide avatar in edit mode to show edit actions */
+.focus-header.editing .focus-header-left .focus-panel-avatar-container {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}
+
+/* Edit Actions - visible in edit mode (Vertical Layout) */
+.focus-edit-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+
+.focus-header.editing .focus-edit-actions {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* Edit Action Buttons */
+.btn-edit-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-edit-action.cancel {
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-edit-action.cancel:hover {
+    background: rgba(var(--error-color-rgb), 0.1);
+    color: var(--error-color);
+    border-color: rgba(var(--error-color-rgb), 0.3);
+    transform: scale(1.08);
+}
+
+.btn-edit-action.save {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.btn-edit-action.save:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.35);
+}
+
+.btn-edit-action:active {
+    transform: scale(0.95);
+}
+
+/* Read Mode (Default) */
+.focus-header-read {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.focus-header-read.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    position: absolute;
+    pointer-events: none;
+}
+
+/* Edit Mode (Hidden by default) */
+.focus-header-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 0;
+    width: 100%;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+.focus-header-edit.visible {
+    max-height: 200px;
+    /* Enough to show content */
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Inputs Row in Header */
+.focus-edit-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.focus-input-header {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+    /* Pill shape inputs */
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    width: 100%;
+    outline: none;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.focus-input-header:focus {
+    border-color: var(--primary-color);
+    background: var(--surface-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Status Selection in Header (Chips) */
+.focus-status-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.status-pill-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.status-pill-check input {
+    display: none;
+    /* Hide actual checkbox */
+}
+
+.status-pill-check:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+}
+
+/* Selected State */
+.status-pill-check:has(input:checked) {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 2px 5px rgba(var(--primary-color-rgb), 0.15);
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .focus-input-header {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .status-pill-check {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================
+   RETRACTABLE DETAILS MENU (Identity & History)
+   ============================ */
+.focus-retractable-details {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+        opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+        margin 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    opacity: 0;
+    margin-bottom: 0;
+}
+
+.focus-retractable-details.expanded {
+    max-height: 2000px;
+    /* Increased to accommodate more content */
+    opacity: 1;
+    margin-bottom: 16px;
+    overflow: visible;
+    /* Allow content to be fully visible after expansion */
+}
+
+.details-inner-content {
+    background: var(--surface-color);
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.details-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.details-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+}
+
+/* Compact Identity (Inside Menu) */
+.focus-identity-row.minimal {
+    display: flex;
+    gap: 8px;
+}
+
+.focus-identity-row.minimal .focus-input {
+    flex: 1;
+    height: 38px;
+    /* Fixed height for alignment */
+}
+
+/* Compact Timeline (Inside Menu) */
+.details-timeline-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.timeline-compact-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.timeline-compact-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.timeline-compact-badge {
+    padding: 4px 8px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.timeline-compact-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.timeline-compact-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.timeline-compact-appreciation {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-style: italic;
+}
+
+/* New Previous Grades Inline (Context Card) */
+.grades-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.previous-grades-inline {
+    display: flex;
+    gap: 6px;
+}
+
+.prev-grade-badge {
+    font-size: 11px;
+    /* Style harmonisé avec context-grade-group mais plus discret */
+    background: rgba(var(--primary-color-rgb), 0.05);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background var(--transition-fast);
+}
+
+.prev-grade-badge:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.prev-grade-badge strong {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+[data-theme="dark"] .prev-grade-badge {
+    background: rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Subtle Historical Grades Chips */
+/* Subtle Historical Grades Chips (Original Grey Style) */
+.previous-grade-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    /* Style notes antérieures - fond gris neutre pour être discret */
+    background: rgba(0, 0, 0, 0.04);
+    border: none;
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+[data-theme="dark"] .previous-grade-chip {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.previous-grade-chip:hover {
+    background: rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+/* Active/Current Grade Container (Minimal - White with Subtle Gray Border) */
+.context-grade-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    border-radius: 99px;
+    background: var(--surface-color);
+    /* Fine subtle gray border */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: none;
+    height: 28px;
+    transition: all 0.2s ease;
+}
+
+/* Hover: subtle lift only */
+.context-grade-group:hover {
+    transform: translateY(-1px);
+}
+
+.context-grade-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin-right: 2px;
+    /* Micro-adjust spacing */
+}
+
+.context-grade-input {
+    border: none;
+    background: transparent;
+    width: 38px;
+    /* Slightly narrower input */
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    outline: none;
+    padding: 0;
+    font-family: inherit;
+}
+
+.context-grade-input::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+[data-theme="dark"] .context-grade-group {
+    background: var(--surface-elevated, #1f2937);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .context-grade-group:hover {
+    transform: translateY(-1px);
+}
+
+.previous-grade-chip .prev-grade-label {
+    font-weight: 600;
+    opacity: 0.7;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+}
+
+.previous-grade-chip .prev-grade-value {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+
+[data-theme="dark"] .read-prev-data-container {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Ensure inputs in sidebar behave nicely */
+.focus-identity-row {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.focus-form-group {
+    margin-bottom: 0;
+}
+
+.focus-status-pills {
+    justify-content: flex-start;
+}
+
+/* Main Header History Summary (Added back for visibility) */
+.focus-header-history-grades {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 1px solid var(--border-color);
+    height: 24px;
+}
+
+.focus-header-history-grades .history-grade-badge {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* === Copy Button (Appreciation Cell) === */
+.appreciation-cell {
+    position: relative;
+    /* Anchor for absolute positioning */
+    /* Removed padding-right from cell to prevent layout shift */
+}
+
+/* Add space inside the text container instead (List View Only) */
+/* Padding-right includes space for the copy button to maintain visual balance */
+.student-list-table .appreciation-preview.has-copy-btn {
+    padding-right: 24px !important;
+    /* Just enough space for the copy button */
+    text-align: left !important;
+}
+
+/* Adjust button position to align nicely */
+/* ====================================================================
+   COPY BUTTON - SINGLE SOURCE OF TRUTH
+   Glassmorphism style cohérent pour tous les modes et états
+   ==================================================================== */
+
+/* === BASE STATE (Default - Hidden until hover) === */
+.btn-copy-appreciation {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    opacity: 0;
+    z-index: 5;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* GLASSMORPHISM - Fond blanc translucide + bordure blanche */
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    color: var(--text-tertiary);
+}
+
+/* === VISIBLE STATE (on row hover or expanded view) === */
+.student-row:hover .btn-copy-appreciation,
+.student-row:focus-within .btn-copy-appreciation,
+.student-list-table.appreciation-full-view .btn-copy-appreciation {
+    opacity: 1;
+    transform: translateY(-50%);
+}
+
+/* Expanded view: position en bas à droite */
+.student-list-table.appreciation-full-view .btn-copy-appreciation {
+    top: auto;
+    bottom: 8px;
+    transform: none;
+    /* Reset du translateY */
+}
+
+/* === HOVER STATE === */
+.btn-copy-appreciation:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.2);
+    transform: translateY(-50%);
+}
+
+.student-list-table.appreciation-full-view .btn-copy-appreciation:hover {
+    transform: none;
+    /* Sans translateY pour la vue étendue */
+}
+
+/* === SUCCESS STATE (Copied!) - Only icon changes color === */
+.btn-copy-appreciation.copy-success,
+.btn-copy-appreciation.was-copied {
+    opacity: 1;
+    /* Fond neutre blanc translucide (comme la référence) */
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    /* Bordure blanche opaque */
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    /* Seule l'icône est verte */
+    color: var(--success-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-50%);
+    /* FIX: Disable default animation that overrides box-shadow */
+    animation: none !important;
+}
+
+/* FIX: Apply wave animation to pseudo-element to preserve main shadow */
+.btn-copy-appreciation.copy-success::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    animation: copy-success-pulse 0.6s ease-out;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* === ACTIVE STATE (Click) === */
+.btn-copy-appreciation:active {
+    /* Maintain centering while scaling down */
+    transform: translateY(-50%) scale(0.92);
+    /* Keep a subtle shadow */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    transition-duration: 0.1s;
+}
+
+.student-list-table.appreciation-full-view .btn-copy-appreciation:active {
+    /* In full view, no translateY needed */
+    transform: scale(0.92);
+}
+
+.student-list-table.appreciation-full-view .btn-copy-appreciation.copy-success,
+.student-list-table.appreciation-full-view .btn-copy-appreciation.was-copied {
+    transform: none;
+    /* Sans translateY pour la vue étendue */
+}
+
+/* === DARK MODE OVERRIDES === */
+[data-theme="dark"] .btn-copy-appreciation {
+    background: rgba(255, 255, 255, 0.08);
+    /* More subtle glass */
+    border-color: rgba(255, 255, 255, 0.2);
+    /* Softer border */
+    color: var(--text-secondary);
+    /* Grey icon (not stark white) */
+}
+
+[data-theme="dark"] .btn-copy-appreciation:hover {
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .btn-copy-appreciation.copy-success,
+[data-theme="dark"] .btn-copy-appreciation.was-copied {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    /* Restore green color for success state */
+    color: var(--success-color);
+}
+
+/* ====================================================================
+   ANALYZE BUTTON - AI SUBTLE HOVER EFFECT
+   Effet visuel subtil au survol pour signaler l'action IA
+   ==================================================================== */
+
+#focusAnalyzeBtn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#focusAnalyzeBtn:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: rgba(var(--primary-color-rgb), 0.25);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.12);
+}
+
+#focusAnalyzeBtn:hover i {
+    color: var(--primary-color);
+}
+
+/* Effet Shine traversant au survol */
+#focusAnalyzeBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+#focusAnalyzeBtn:hover::before {
+    opacity: 1;
+    animation: analyze-shine-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes analyze-shine-sweep {
+    0% {
+        left: -100%;
+    }
+
+    50%,
+    100% {
+        left: 100%;
+    }
+}
+
+/* ====================================================================
+   MOBILE RESPONSIVE - Focus Panel & List View
+   Full-screen experience on mobile devices
+   ==================================================================== */
+
+/* Tablet Breakpoint (max-width: 768px) */
+@media (max-width: 768px) {
+
+    /* Focus Panel: Wider on tablet */
+    .focus-panel {
+        max-width: 100%;
+        width: 90%;
+    }
+
+    /* Simplify header layout */
+    .focus-header {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .focus-student-name {
+        font-size: 18px;
+    }
+
+    /* Navigation buttons more compact */
+    .focus-nav-buttons {
+        gap: 4px;
+        padding: 4px 8px;
+    }
+
+    .focus-nav-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .focus-position {
+        font-size: 12px;
+        min-width: 36px;
+    }
+
+    /* Content area */
+    .focus-content {
+        padding: 16px;
+    }
+
+    /* Footer buttons stack on smaller tablets */
+    .focus-footer {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .focus-footer .btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    /* Refinement options: scroll horizontally */
+    .focus-refinement-options {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+
+    .focus-refinement-options .btn {
+        flex-shrink: 0;
+    }
+
+    /* List table: hide evolution column */
+    .student-list-table .evolution-header,
+    .student-list-table .evolution-cell {
+        display: none;
+    }
+}
+
+/* Mobile Breakpoint (max-width: 600px) */
+@media (max-width: 600px) {
+
+    /* Focus Panel: Full screen takeover */
+    .focus-panel {
+        max-width: 100%;
+        width: 100%;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        /* Dynamic viewport height for mobile browsers */
+        border-radius: 0;
+        border-top: none;
+    }
+
+    /* Backdrop: full screen */
+    .focus-panel-backdrop {
+        top: 0;
+        height: 100%;
+    }
+
+    /* Header: Simplified for mobile */
+    .focus-header {
+        padding: 12px 16px;
+        gap: 8px;
+        /* Safe area for notched devices */
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .focus-header-left {
+        flex-shrink: 0;
+    }
+
+    .focus-panel-avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+
+    .focus-student-name {
+        font-size: 16px;
+        padding: 4px 8px;
+        margin: -4px -8px;
+    }
+
+    .focus-name-edit-icon {
+        font-size: 10px;
+    }
+
+    /* Status badges wrap on mobile */
+    .focus-status-badges {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .focus-status-badges .status-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    /* Navigation: Compact pill */
+    .focus-nav-buttons {
+        gap: 2px;
+        padding: 4px 6px;
+        border-radius: 12px;
+    }
+
+    .focus-nav-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .focus-position {
+        font-size: 11px;
+        min-width: 32px;
+    }
+
+    .focus-nav-divider {
+        height: 16px;
+        margin: 0 4px;
+    }
+
+    /* Content: Full width, less padding */
+    .focus-content {
+        padding: 12px 16px;
+    }
+
+    /* Context group */
+    .focus-context-group {
+        padding: 12px;
+    }
+
+    .focus-context-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .grades-wrapper {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .focus-context-textarea {
+        min-height: 60px;
+        font-size: 14px;
+    }
+
+    /* Appreciation area */
+    .focus-appreciation {
+        padding: 12px;
+    }
+
+    .focus-appreciation-text {
+        min-height: 100px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Refinement buttons: Horizontal scroll */
+    .focus-refinement-options {
+        margin: 8px -12px 0;
+        padding: 0 12px 8px;
+        gap: 6px;
+    }
+
+    .focus-refinement-options .btn {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    /* Footer: Fixed at bottom with safe area */
+    .focus-footer {
+        padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .focus-footer .btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    /* Analysis page on mobile */
+    .focus-analysis-header {
+        padding: 12px 16px;
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .focus-analysis-title {
+        font-size: 16px;
+    }
+
+    .analysis-card {
+        padding: 12px;
+    }
+
+    .analysis-card-header h4 {
+        font-size: 14px;
+    }
+
+    /* List Table Mobile Adaptations */
+    .student-list-view {
+        border-radius: var(--radius-md);
+        /* CRITICAL: Allow horizontal scroll on mobile */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Bottom padding to avoid FAB overlap */
+        padding-bottom: 80px;
+    }
+
+    .student-list-table {
+        /* Ensure table doesn't shrink - allow horizontal scroll */
+        min-width: 500px;
+    }
+
+    .student-list-table th,
+    .student-list-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    /* Hide less important columns on mobile */
+    .student-list-table .evolution-header,
+    .student-list-table .evolution-cell,
+    .student-list-table th[data-sort-field="evolution"],
+    .student-list-table td.evolution-cell {
+        display: none;
+    }
+
+    /* Name cell: More space */
+    .student-name-cell {
+        min-width: 120px;
+    }
+
+    /* Grade cells: Compact */
+    .grade-cell {
+        min-width: 45px;
+    }
+
+    /* Appreciation preview: Shorter */
+    .appreciation-cell {
+        max-width: 150px;
+        min-width: 100px;
+    }
+
+    .appreciation-preview {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* Action dropdown */
+    .btn-action-menu {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* Small Mobile Breakpoint (max-width: 375px) */
+@media (max-width: 375px) {
+    .focus-header {
+        padding: 8px 12px;
+        padding-top: max(8px, env(safe-area-inset-top));
+    }
+
+    .focus-panel-avatar-container {
+        width: 36px;
+        height: 36px;
+    }
+
+    .focus-student-name {
+        font-size: 15px;
+    }
+
+    .focus-nav-buttons {
+        padding: 3px 5px;
+    }
+
+    .focus-nav-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .focus-content {
+        padding: 10px 12px;
+    }
+
+    .focus-footer {
+        padding: 10px 12px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    .focus-footer .btn {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    /* List: Ultra compact */
+    .student-list-table th,
+    .student-list-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    .student-name-cell {
+        min-width: 100px;
+    }
+
+    /* Hide appreciation column on very small screens */
+    .student-list-table .appreciation-header,
+    .student-list-table .appreciation-cell {
+        display: none;
+    }
+}
+
+/* Touch-friendly: Larger tap targets */
+@media (pointer: coarse) {
+
+    .focus-nav-btn,
+    .btn-action-menu,
+    .focus-back-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .focus-footer .btn {
+        min-height: 44px;
+    }
+
+    /* FAB: Larger on touch devices */
+    .fab-add-student {
+        width: 56px;
+        height: 56px;
+        font-size: 20px;
+    }
+}
