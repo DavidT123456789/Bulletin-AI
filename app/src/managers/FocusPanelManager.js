@@ -2,6 +2,71 @@
  * @fileoverview Focus Panel Manager - Gestion du panneau de détail élève
  * Part of Liste + Focus UX Revolution
  * @module managers/FocusPanelManager
+ * 
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                           TABLE OF CONTENTS                              ║
+ * ╠══════════════════════════════════════════════════════════════════════════╣
+ * ║  Use Ctrl+G to jump to line numbers                                      ║
+ * ╠══════════════════════════════════════════════════════════════════════════╣
+ * ║  SECTION 1: CORE & LIFECYCLE                              [Lines 39-690] ║
+ * ║    - init, _setupEventListeners                                          ║
+ * ║    - isOpen, open, openNew, close                                        ║
+ * ║    - navigatePrev, navigateNext, _navigateWithAnimation                  ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 2: STUDENT CARD & IDENTITY                      [Lines 693-900] ║
+ * ║    - _renderStudentDetailsTimeline                                       ║
+ * ║    - _toggleHeaderEditMode, _saveHeaderChanges                           ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 3: APPRECIATION GENERATION                    [Lines 1178-1421] ║
+ * ║    - generate, copy                                                      ║
+ * ║    - _showAppreciationSkeleton                                           ║
+ * ║    - _renderContent                                                      ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 4: APPRECIATION STATUS & BADGES               [Lines 259-541]   ║
+ * ║    - _checkDirtyState                                                    ║
+ * ║    - _updateAppreciationStatus                                           ║
+ * ║    - _refreshAppreciationStatus                                          ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 5: WORD COUNT & AI INDICATOR                  [Lines 1808-1918] ║
+ * ║    - _updateWordCount                                                    ║
+ * ║    - _updateAiIndicator                                                  ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 6: HISTORY (UNDO/REDO)                        [Lines 1919-2218] ║
+ * ║    - _pushToHistory, _canUndo, _canRedo                                  ║
+ * ║    - _undo, _redo, _animateVersionChange                                 ║
+ * ║    - _showHistoryPopover, _restoreVersion                                ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 7: REFINEMENT                                 [Lines 2220-2400] ║
+ * ║    - _setAppreciationBadge                                               ║
+ * ║    - _refineAppreciation                                                 ║
+ * ║    - _saveAppreciationEdits, _checkIfDataModified                        ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 8: IDENTITY SECTION (Accordion)               [Lines 2402-2614] ║
+ * ║    - _toggleIdentitySection, _openIdentitySection                        ║
+ * ║    - _closeIdentitySection, _revertIdentityChanges                       ║
+ * ║    - _updateHeaderName, _saveIdentityChanges                             ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 9: STUDENT CARD (Read/Edit Mode)              [Lines 2618-2945] ║
+ * ║    - _toggleEditMode, _setEditMode                                       ║
+ * ║    - _renderStudentCard, _updateReadModeDisplay                          ║
+ * ║    - _saveStudentCardChanges, getFormData                                ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 10: AI ANALYSIS PAGE                          [Lines 2946-3421] ║
+ * ║    - _showAnalysisPage, _hideAnalysisPage                                ║
+ * ║    - _generateAnalysis, _fetchAnalysesForStudent                         ║
+ * ║    - _parseStrengthsWeaknessesForCards                                   ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 11: SETTINGS PANEL                            [Lines 3425-3449] ║
+ * ║    - _openSettingsPanel, _closeSettingsPanel                             ║
+ * ╠──────────────────────────────────────────────────────────────────────────╣
+ * ║  SECTION 12: JOURNAL DE BORD                           [Lines 3451-4143] ║
+ * ║    - _setupJournalListeners                                              ║
+ * ║    - _renderJournal                                                      ║
+ * ║    - _handleTagSelection, _updateThresholdUI                             ║
+ * ║    - _toggleJournalQuickAdd, _updateDraftPreviewVisibility               ║
+ * ║    - _setupDraftPillButtons                                              ║
+ * ║    - _onEditJournalEntry, _saveJournalEntry                              ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
 import { appState, userSettings } from '../state/State.js';
