@@ -1,0 +1,36 @@
+/* ==========================================================================
+   bulletin ai - main css entry point
+   (Last updated: Ultima Redesign)
+   ========================================================================== */
+
+@import './variables.css';
+@import './base.css';
+@import './layout.css';
+@import './components.css';
+
+
+/* Modules refactorisés */
+@import './modules/modals.css';
+@import './modules/stats.css';
+@import './modules/cards.css';
+@import './modules/settings.css';
+@import './modules/import.css';
+@import './modules/import-wizard.css';
+@import './modules/import-hub.css';
+@import './modules/notifications.css';
+@import './modules/generation-status.css';
+@import './modules/animations.css';
+@import './modules/refinement.css';
+@import './modules/student-details.css';
+@import './modules/student-avatar.css';
+@import './modules/trombinoscope.css';
+@import './modules/output.css';
+@import './modules/dropdown.css';
+@import './modules/skeleton.css';
+@import './modules/class-management.css';
+@import './modules/class-dashboard.css';
+@import './modules/journal.css';
+@import './modules/list-focus.css';
+@import './modules/responsive.css';
+@import './utilities.css';
+@import './accessibility.css';

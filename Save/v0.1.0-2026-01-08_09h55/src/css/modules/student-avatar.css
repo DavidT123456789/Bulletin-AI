@@ -1,0 +1,260 @@
+/* ====================================================================
+   MODULE: Student Avatar - Photo/Initials Bubble
+   Composant d'avatar élève réutilisable
+   ==================================================================== */
+
+/* Base Avatar Container */
+.student-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.student-avatar:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Size Variants */
+.student-avatar--sm {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+}
+
+.student-avatar--md {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+.student-avatar--lg {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+}
+
+/* Initials Display */
+.student-avatar__initials {
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Photo Display */
+.student-avatar__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Upload Overlay (shown on hover in editable contexts) */
+.student-avatar--editable::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+}
+
+.student-avatar--editable:hover::after {
+    opacity: 1;
+}
+
+.student-avatar--editable::before {
+    content: '\f030';
+    /* Font Awesome camera icon */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.student-avatar--editable.student-avatar--lg::before {
+    font-size: 18px;
+}
+
+.student-avatar--editable:hover::before {
+    opacity: 1;
+}
+
+/* Pending Editable State (creation mode - no ID yet) */
+.student-avatar--editable-pending {
+    cursor: help;
+    position: relative;
+}
+
+.student-avatar--editable-pending::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed var(--border-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.student-avatar--editable-pending:hover::after {
+    opacity: 0.6;
+}
+
+/* Loading State */
+.student-avatar--loading {
+    background: var(--bg-secondary);
+    animation: avatar-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes avatar-pulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 0.9;
+    }
+}
+
+/* Hidden file input for upload */
+.student-avatar__input {
+    display: none;
+}
+
+/* List View Integration - Avatar in Name Cell */
+.student-identity-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* Smooth transition for expand/collapse layout change */
+    transition: flex-direction 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        align-items 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        gap 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Avatar size transition for expand/collapse */
+.student-identity-wrapper .student-avatar {
+    transition: width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        font-size 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.2s var(--ease-spring),
+        box-shadow 0.2s ease;
+}
+
+/* === EXPANDED VIEW: Avatar Above Name === */
+/* When appreciation column is expanded, switch to vertical layout */
+.appreciation-full-view .student-identity-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    /* Blur-to-sharp animation masks the instant flex-direction change */
+    animation: identity-expand-reveal 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Larger avatar in expanded view */
+.appreciation-full-view .student-identity-wrapper .student-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+    /* Sync with wrapper animation */
+    animation: avatar-expand 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Keyframe: subtle blur-to-sharp masks layout change */
+@keyframes identity-expand-reveal {
+    0% {
+        opacity: 0.5;
+        filter: blur(2px);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+/* Keyframe: avatar grows with slight scale overshoot for iOS feel */
+@keyframes avatar-expand {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.6;
+    }
+
+    70% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.student-identity-wrapper .student-nom-prenom {
+    flex: 1;
+    min-width: 0;
+    /* Allow text truncation */
+}
+
+/* Focus Panel Header Avatar */
+.focus-panel-avatar-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.focus-panel-avatar-container .student-avatar {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Remove photo button */
+.avatar-remove-btn {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--error-color);
+    color: white;
+    border: 2px solid var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.focus-panel-avatar-container:hover .avatar-remove-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .student-avatar {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .student-avatar:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}

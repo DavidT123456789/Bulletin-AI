@@ -1,0 +1,1603 @@
+/* ====================================================================
+   MODULE: Import Modal
+   Styles pour l'import de données et la prévisualisation
+   ==================================================================== */
+
+#importPreviewModal .modal-content {
+    max-width: 1000px;
+}
+
+#importPreviewModal .modal-body {
+    padding-top: 24px;
+}
+
+#importPreviewModal .import-strategy-container {
+    margin-bottom: 20px;
+}
+
+#importPreviewModal .generic-info-box {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.import-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.import-preview-grid.replace-mode {
+    grid-template-columns: 1fr 1fr;
+}
+
+.import-preview-column {
+    background: var(--surface-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-top: 3px solid var(--border-color);
+}
+
+.import-preview-column.is-empty {
+    opacity: 0.7;
+    background: var(--bg-secondary);
+}
+
+.import-preview-column .column-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+
+.import-preview-column .column-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.import-preview-column.import-preview-new {
+    border-top-color: var(--success-color);
+}
+
+.import-preview-column.import-preview-new .column-header {
+    background-color: var(--success-light);
+}
+
+.import-preview-column.import-preview-updated {
+    border-top-color: var(--primary-color);
+}
+
+.import-preview-column.import-preview-updated .column-header {
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.import-preview-column.import-preview-departed {
+    border-top-color: var(--warning-color);
+}
+
+.import-preview-column.import-preview-departed .column-header {
+    background-color: var(--warning-light);
+}
+
+.import-preview-list {
+    list-style: none;
+    padding: 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.import-preview-list li {
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.import-preview-list li.empty-list-placeholder {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    background: transparent;
+}
+
+.count-badge {
+    background: var(--bg-color);
+    color: var(--text-primary);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.import-preview-column.import-preview-new .count-badge {
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+.import-preview-column.import-preview-updated .count-badge {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.import-preview-column.import-preview-departed .count-badge {
+    background: var(--warning-light);
+    color: var(--warning-color);
+}
+
+.mapping-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mapping-preview-table th,
+.mapping-preview-table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+}
+
+.mapping-preview-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.mapping-select {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    background-color: var(--bg-color);
+}
+
+.mass-import-preview {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.mass-import-preview .strong {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.api-key-warning {
+    background: var(--warning-light);
+    border: 1px solid var(--warning-color);
+    color: var(--text-primary);
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.api-key-input-group {
+    position: relative;
+}
+
+.api-key-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.api-key-input-container {
+    position: relative;
+    flex-grow: 1;
+}
+
+.api-key-validation-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translatey(-50%);
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.api-key-validation-icon.visible {
+    opacity: 1;
+}
+
+.api-key-validation-icon.success {
+    color: var(--success-color);
+}
+
+.api-key-validation-icon.error {
+    color: var(--error-color);
+}
+
+/* Container pour les steps - hauteur fixe pour éviter le redimensionnement */
+#welcomeModal .modal-body {
+    position: relative;
+    overflow: hidden;
+    /* Hauteur fixe pour que toutes les pages occupent le même espace */
+    min-height: 280px;
+}
+
+.welcome-step {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    /* iOS 2025 Premium Transition System */
+    opacity: 0;
+    transform: translateX(0) scale(1);
+}
+
+.welcome-step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+/* Slide In from Right (Next) - iOS Spring Animation */
+.welcome-step.slide-in-right {
+    animation: welcome-slide-in-right 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Slide In from Left (Previous) - iOS Spring Animation */
+.welcome-step.slide-in-left {
+    animation: welcome-slide-in-left 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Slide Out - Position absolute pour superposer sans doubler la hauteur */
+/* Note: pas de top:0 pour éviter le saut vers le haut - l'élément reste à sa position originale */
+.welcome-step.slide-out-left,
+.welcome-step.slide-out-right {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.welcome-step.slide-out-left {
+    animation: welcome-slide-out-left 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.welcome-step.slide-out-right {
+    animation: welcome-slide-out-right 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes welcome-slide-in-right {
+    0% {
+        opacity: 0;
+        transform: translateX(80px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes welcome-slide-in-left {
+    0% {
+        opacity: 0;
+        transform: translateX(-80px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes welcome-slide-out-left {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-80px) scale(0.95);
+    }
+}
+
+@keyframes welcome-slide-out-right {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(80px) scale(0.95);
+    }
+}
+
+.welcome-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    /* Subtle entrance animation */
+    animation: welcome-icon-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+@keyframes welcome-icon-bounce {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.welcome-nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--surface-color);
+}
+
+#welcome-dots {
+    display: flex;
+    gap: 8px;
+}
+
+#welcome-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--border-color);
+    /* iOS Spring Transition */
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#welcome-dots .dot.active {
+    background: var(--primary-color);
+    width: 24px;
+    border-radius: var(--radius-xs);
+}
+
+#welcome-finish-options {
+    display: none;
+    gap: 12px;
+}
+
+.welcome-api-key-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 20px auto;
+    max-width: 480px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1.5px solid var(--border-color);
+    transition: all var(--transition-fast);
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+}
+
+/* État hover - bordure dégradée dynamique */
+.welcome-api-key-group:hover:not(:focus-within) {
+    border-color: transparent;
+    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
+        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+/* État focus - bordure animée rotative (harmonisé avec .search-input) */
+.welcome-api-key-group:focus-within {
+    border-color: transparent;
+    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    z-index: 5;
+}
+
+/* Input interne - suppression des styles par défaut */
+#welcomeModal .welcome-api-key-group input,
+.welcome-api-key-group input:focus,
+.welcome-api-key-group input:active {
+    border: none !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 14px 20px;
+    flex: 1;
+    font-size: 0.95em;
+    height: auto;
+    color: var(--text-primary);
+}
+
+/* Placeholder styling */
+.welcome-api-key-group input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* Bouton de validation - neutre aux effets hover globaux */
+.welcome-api-key-group button {
+    border-radius: 0;
+    margin: 0;
+    padding: 0 24px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: auto;
+    z-index: 2;
+    transition: filter var(--transition-fast);
+    /* Empêcher le décollement au hover */
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.welcome-api-key-group button:hover {
+    filter: brightness(1.1);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.welcome-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    margin: 20px 0;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.welcome-divider::before,
+.welcome-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.welcome-divider::before {
+    margin-right: 1em;
+}
+
+.welcome-divider::after {
+    margin-left: 1em;
+}
+
+.btn-demo-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    box-shadow: none;
+    transition: all 0.2s ease;
+}
+
+.btn-demo-outline:hover {
+    background: var(--surface-color);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.get-key-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.95em;
+    text-decoration: none;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-radius: var(--radius-pill);
+    margin-top: 8px;
+    transition: all 0.2s ease;
+}
+
+.get-key-link:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+#welcome-next-step-info {
+    display: none;
+    background: var(--success-light);
+    color: var(--success-color);
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    margin-top: 20px;
+    font-weight: 500;
+}
+
+/* Welcome modal selector: styling for proper display */
+#welcomeModal .generation-mode-selector {
+    justify-content: center;
+}
+
+/* === WELCOME MODAL STABILIZATION === */
+/* Ensures consistent height during transitions to prevent layout jumps */
+#welcomeModal .modal-body {
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    /* Important for absolute positioning of sliding steps */
+    overflow-x: hidden;
+    /* Hide horizontal overflow during slide */
+}
+
+#welcomeModal .modal-content {
+    max-width: 800px;
+    /* Slightly wider for better breathing room */
+    margin: 0 auto;
+    width: 95%;
+}
+
+/* Ensure step content is centered and bounded */
+.welcome-step {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 10px;
+}
+
+.welcome-subtitle {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+    line-height: 1.5;
+}
+
+/* Harmonized h3 size across all welcome steps */
+.welcome-step h3 {
+    font-size: 1.5em;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.welcome-features-list {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+    justify-content: center;
+}
+
+.welcome-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    flex: 1;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid transparent;
+    /* Prepare for border transition */
+}
+
+.welcome-feature:hover {
+    cursor: default;
+    /* No interactive hover - cards are informational */
+}
+
+.feature-icon {
+    font-size: 1.75em;
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-radius: var(--radius-md);
+    margin-bottom: 5px;
+}
+
+.feature-text {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.feature-text strong {
+    color: var(--text-primary);
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.security-note {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.security-note i {
+    color: var(--success-color);
+    /* Le cadenas en vert pour dire "Sûr" */
+}
+
+/* === NEW WELCOME ELEMENTS === */
+
+.provider-pills {
+    display: inline-flex;
+    background: var(--bg-secondary);
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    gap: 4px;
+    position: relative;
+}
+
+/* Note: provider-pills in welcome modal uses CSS-only styling (no JS glider)
+   The .provider-pill.active class provides the visual feedback */
+
+.provider-pill {
+    background: transparent;
+    border: none;
+    padding: 8px 18px;
+    border-radius: var(--radius-pill);
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s ease, font-weight 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.provider-pill:hover:not(.active):not(.disabled) {
+    color: var(--text-primary);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    /* Subtle hover background */
+}
+
+/* Quand le glider est présent, l'élément actif n'a pas besoin de son propre background */
+.provider-pills.has-glider .provider-pill.active {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+/* Fallback pour le cas sans glider */
+.provider-pills:not(.has-glider) .provider-pill.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+.provider-pill.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.get-key-link-subtle {
+    font-size: 0.9em;
+    color: var(--primary-color);
+    text-decoration: none;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+}
+
+.get-key-link-subtle:hover {
+    text-decoration: underline;
+    opacity: 1;
+}
+
+.welcome-step-footer {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-text-link {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.2s;
+}
+
+.btn-text-link:hover {
+    color: var(--text-primary);
+}
+
+.security-note-mini {
+    font-size: 0.8em;
+    color: var(--text-tertiary);
+    /* Très discret */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.6;
+}
+
+/* === WELCOME SPLIT LAYOUT (STEP 2) === */
+
+.welcome-split-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 40px;
+    align-items: center;
+    padding: 10px 20px;
+    text-align: left;
+}
+
+.welcome-split-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.welcome-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.welcome-icon-small {
+    font-size: 2.2rem;
+    line-height: 1;
+}
+
+/* Animation "Coucou" pour la clé */
+.wave-animation {
+    display: inline-block;
+    animation: wave-effect 2.5s infinite;
+    transform-origin: 70% 70%;
+}
+
+@keyframes wave-effect {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    10% {
+        transform: rotate(14deg);
+    }
+
+    20% {
+        transform: rotate(-8deg);
+    }
+
+    30% {
+        transform: rotate(14deg);
+    }
+
+    40% {
+        transform: rotate(-4deg);
+    }
+
+    50% {
+        transform: rotate(10deg);
+    }
+
+    60% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.welcome-split-info h3 {
+    margin: 0;
+    /* Remove bottom margin as row handles spacing */
+    font-size: 1.5em;
+    color: var(--text-primary);
+}
+
+.welcome-subtitle-left {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.security-note-left {
+    display: flex;
+    gap: 10px;
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    line-height: 1.4;
+    border: 1px solid var(--border-color);
+}
+
+.security-note-left i {
+    color: var(--success-color);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.welcome-split-action {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.provider-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.get-key-link-mini {
+    font-size: 0.85em;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+}
+
+.get-key-link-mini:hover {
+    opacity: 0.8;
+}
+
+.btn-text-link-left {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    /* Slightly larger */
+    cursor: pointer;
+    padding: 6px 0;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-text-link-left:hover {
+    color: var(--primary-color);
+    transform: translateX(2px);
+    /* Petit mouvement */
+}
+
+.btn-text-link-left:hover strong {
+    text-decoration: underline;
+}
+
+/* Ensure API Group fills width in split view */
+.welcome-split-action .welcome-api-key-group {
+    margin: 0;
+    max-width: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Responsive: Stack on small screens if needed, but modal min-width is ok for tablets */
+@media (max-width: 700px) {
+    .welcome-split-layout {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .welcome-split-info {
+        align-items: center;
+    }
+
+    .welcome-subtitle-left {
+        max-width: 400px;
+    }
+
+    .welcome-split-action {
+        text-align: left;
+    }
+}
+
+/* === PERIOD CARD SELECTOR (STEP 3) === */
+
+.period-card-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.period-card {
+    cursor: pointer;
+    display: block;
+}
+
+.period-card input[type="radio"] {
+    display: none;
+    /* Hide native radio */
+}
+
+.period-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: var(--radius-lg);
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.period-card:hover .period-card-content {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Checked state */
+.period-card input[type="radio"]:checked+.period-card-content {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.03);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.period-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    font-size: 1.6rem;
+    color: var(--text-tertiary);
+    transition: all 0.25s ease;
+    border: 1px solid var(--border-color);
+}
+
+.period-card input[type="radio"]:checked+.period-card-content .period-card-icon {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.period-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.period-card-title {
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.period-card-desc {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Hint text at the bottom */
+.welcome-hint {
+    margin-top: 24px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+@media (max-width: 500px) {
+    .period-card-selector {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === WELCOME ILLUSTRATION (STEP 4) === */
+
+/* === WELCOME ILLUSTRATION (STEP 4) === */
+
+.welcome-transformation-svg {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    padding: 5px;
+}
+
+.welcome-transformation-svg svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+    overflow: visible;
+}
+
+@media (max-width: 600px) {
+    .welcome-transformation-svg {
+        height: 200px;
+        margin-bottom: 20px;
+    }
+}
+
+/* Step 4 Title - Larger for impact */
+#welcome-step-4 h3 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* Full-width CTA Button */
+.btn-cta-full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+    margin: 28px auto 0 auto;
+    padding: 16px 28px;
+    font-size: 1.05em;
+    font-weight: 600;
+    background: var(--gradient-ai);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: 0 4px 16px rgba(var(--primary-color-rgb), 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet de brillance qui traverse le bouton au hover */
+.btn-cta-full::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+}
+
+.btn-cta-full:hover::before {
+    left: 100%;
+}
+
+.btn-cta-full:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.35);
+}
+
+.btn-cta-full:active {
+    transform: translateY(0);
+}
+
+/* ====================================================================
+   MASS IMPORT WIZARD - Premium iOS 2025 Ultima Design
+   ==================================================================== */
+
+/* === WIZARD STEPPER === */
+.import-wizard-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 0;
+    margin-bottom: 16px;
+}
+
+.wizard-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    cursor: default;
+    opacity: 0.6;
+}
+
+.wizard-step.active {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.wizard-step.completed {
+    background: var(--success-light);
+    border-color: var(--success-color);
+    color: var(--success-color);
+    opacity: 1;
+}
+
+.wizard-step-number {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: currentColor;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.wizard-step.completed .wizard-step-number {
+    background: var(--success-color);
+}
+
+.wizard-step.completed .wizard-step-number::before {
+    content: '✓';
+    font-size: 0.7rem;
+}
+
+.wizard-step-connector {
+    width: 24px;
+    height: 2px;
+    background: var(--border-color);
+    border-radius: 1px;
+    transition: background 0.3s ease;
+}
+
+.wizard-step-connector.active {
+    background: var(--primary-color);
+}
+
+/* === PREMIUM DROP ZONE === */
+.drop-zone-premium {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    text-align: center;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow: hidden;
+}
+
+.drop-zone-premium::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            transparent 0%,
+            transparent 40%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            transparent 60%,
+            transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.drop-zone-premium.dragging {
+    border-color: transparent;
+    background: rgba(var(--primary-color-rgb), 0.05);
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.drop-zone-premium.dragging::before {
+    opacity: 1;
+    animation: rotate-gradient 2s linear infinite;
+}
+
+.drop-zone-premium .drop-zone-icon {
+    font-size: 2.5rem;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.drop-zone-premium.dragging .drop-zone-icon {
+    color: var(--primary-color);
+    transform: scale(1.1) translateY(-4px);
+}
+
+.drop-zone-premium .drop-zone-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.drop-zone-premium .drop-zone-text strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* === DATA PREVIEW CARD === */
+.import-data-preview {
+    background: var(--card-glass-bg, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--card-glass-border, var(--border-color));
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-top: 12px;
+    backdrop-filter: blur(8px);
+}
+
+.import-data-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.import-data-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.import-data-count .count-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--gradient-ai);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.import-data-separator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+/* === MAPPING PILLS === */
+.mapping-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.mapping-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.mapping-pill.type-name {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+}
+
+.mapping-pill.type-grade {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: rgb(59, 130, 246);
+}
+
+.mapping-pill.type-context {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.3);
+    color: rgb(168, 85, 247);
+}
+
+.mapping-pill.type-ignored {
+    opacity: 0.5;
+}
+
+.mapping-pill-col {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: currentColor;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* === IMPORT ACTION BUTTON === */
+.btn-import-wizard {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--gradient-ai);
+    color: white;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.25);
+    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-import-wizard:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.35);
+}
+
+.btn-import-wizard:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-import-wizard:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-import-wizard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-import-wizard:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+/* === PROGRESS INLINE === */
+.import-progress-inline {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--card-glass-bg);
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(8px);
+}
+
+.import-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.import-progress-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.import-progress-title i {
+    color: var(--primary-color);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.import-progress-count {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.import-progress-bar {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.import-progress-fill {
+    height: 100%;
+    background: var(--gradient-ai);
+    border-radius: var(--radius-pill);
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.import-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.import-progress-detail {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.import-progress-student {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* === SAMPLE DATA BUTTON === */
+.btn-sample-data {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-sample-data:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    transform: translateY(-1px);
+}
+
+/* === IMPORT SEPARATOR REDESIGN === */
+.import-separator-modern {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 0;
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.import-separator-modern::before,
+.import-separator-modern::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+/* === TEXTAREA PREMIUM === */
+.mass-import-textarea-premium {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.mass-import-textarea-premium:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.mass-import-textarea-premium::placeholder {
+    color: var(--text-tertiary);
+    font-family: inherit;
+}
