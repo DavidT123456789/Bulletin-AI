@@ -476,8 +476,8 @@ export const FocusPanelJournal = {
         // Update tooltip on button
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {
-            const contextLabel = currentClass ? `(Classe: ${currentClass.name})` : '(Global)';
-            btn.setAttribute('data-tooltip', `Seuil : ${threshold}× ${contextLabel} — cliquez pour modifier`);
+            const contextLabel = currentClass ? `(Classe : ${currentClass.name})` : '(Global)';
+            btn.setAttribute('data-tooltip', `Seuil : ${threshold} ${contextLabel} — cliquez pour modifier`);
         }
     },
 
