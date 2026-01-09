@@ -4,7 +4,7 @@
  * @module managers/JournalManager
  */
 
-import { appState } from '../state/State.js';
+import { appState, userSettings } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 
