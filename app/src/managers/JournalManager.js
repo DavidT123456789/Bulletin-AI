@@ -6,16 +6,7 @@
 
 import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
-
-// Lazy import to avoid circular dependency - resolved when needed
-let FocusPanelManager = null;
-const getFocusPanelManager = async () => {
-    if (!FocusPanelManager) {
-        const module = await import('./FocusPanelManager.js');
-        FocusPanelManager = module.FocusPanelManager;
-    }
-    return FocusPanelManager;
-};
+import { FocusPanelStatus } from './FocusPanelStatus.js';
 
 /**
  * Predefined tags for quick observation categorization
@@ -137,7 +128,7 @@ export const JournalManager = {
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
-        getFocusPanelManager().then(fpm => fpm._refreshAppreciationStatus());
+        FocusPanelStatus.refreshAppreciationStatus();
 
         return entry;
     },
@@ -162,7 +153,7 @@ export const JournalManager = {
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
-        getFocusPanelManager().then(fpm => fpm._refreshAppreciationStatus());
+        FocusPanelStatus.refreshAppreciationStatus();
 
         return true;
     },

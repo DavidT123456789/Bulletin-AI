@@ -1737,50 +1737,6 @@
     gap: 12px;
 }
 
-/* ============================
-   Period Tabs in Appreciation Header
-   iOS 2025 Premium Style
-   ============================ */
-.focus-period-tabs {
-    display: flex;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.04);
-    padding: 3px;
-    border-radius: 10px;
-}
-
-[data-theme="dark"] .focus-period-tabs {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.focus-period-tab {
-    padding: 5px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    background: transparent;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.focus-period-tab:hover:not(.active) {
-    color: var(--text-secondary);
-    background: rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="dark"] .focus-period-tab:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.focus-period-tab.active {
-    background: var(--primary-color);
-    color: white;
-    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
-}
-
 /* Main Appreciation Text Area - ContentEditable */
 .focus-appreciation-text {
     width: 100%;
@@ -1801,36 +1757,6 @@
     border: none;
     border-radius: 0;
     box-sizing: border-box;
-}
-
-/* Indicator for periods with content */
-.focus-period-tab.has-content:not(.active)::after {
-    content: '';
-    position: absolute;
-    bottom: 3px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    background: var(--success-color);
-    border-radius: 50%;
-}
-
-/* Current generation target - subtle glow */
-.focus-period-tab.current-target {
-    animation: pulse-subtle 2s infinite;
-}
-
-@keyframes pulse-subtle {
-
-    0%,
-    100% {
-        box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
-    }
-
-    50% {
-        box-shadow: 0 2px 10px rgba(var(--primary-color-rgb), 0.5);
-    }
 }
 
 /* Appreciation Status Badge */
