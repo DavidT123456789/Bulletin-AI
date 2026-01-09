@@ -24,6 +24,7 @@ export const StorageManager = {
 
                     // UI Settings
                     if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
+                    if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
 
                     // Academic Settings
                     if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
@@ -33,6 +34,9 @@ export const StorageManager = {
                     // Multi-class support
                     if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
                     if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
+
+                    // Journal threshold
+                    if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
 
                     // API Settings
                     if (settings.currentAIModel !== undefined) userSettings.api.currentAIModel = settings.currentAIModel;
@@ -243,6 +247,7 @@ export const StorageManager = {
         const settings = {
             // Paramètres utilisateur (structure complète aplatie)
             theme: userSettings.ui.theme,
+            isAppreciationFullView: userSettings.ui.isAppreciationFullView,
 
             // Configuration académique
             useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
@@ -281,6 +286,9 @@ export const StorageManager = {
 
             // Données de travail persistées
             refinementEdits: runtimeState.data.refinementEdits,
+
+            // Journal threshold
+            journalThreshold: userSettings.academic.journalThreshold,
         };
 
         const lsData = { version: APP_VERSION, settings: settings };
