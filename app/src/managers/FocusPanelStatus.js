@@ -502,7 +502,7 @@ export const FocusPanelStatus = {
                 break;
             case 'modified':
                 badge.innerHTML = '<i class="fas fa-sync-alt"></i> Données modifiées';
-                badge.setAttribute('data-tooltip', 'Le contexte ou la note ont changé. Cliquez sur Générer pour mettre à jour.');
+                badge.setAttribute('data-tooltip', 'Le contexte ou la note ont changé<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer sur Générer pour mettre à jour</i>');
                 badge.classList.add('tooltip');
                 UI.initTooltips();
                 break;

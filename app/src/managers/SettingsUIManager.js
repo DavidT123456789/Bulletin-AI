@@ -238,7 +238,7 @@ export const SettingsUIManager = {
             } else {
                 // Clé présente mais non testée
                 el.classList.add('pending');
-                tooltipText = '⏳ Non vérifiée (cliquez pour tester)';
+                tooltipText = '⏳ Non vérifiée<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour tester</i>';
             }
 
             // Appliquer le tooltip
