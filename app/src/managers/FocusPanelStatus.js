@@ -9,6 +9,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { JournalManager } from './JournalManager.js';
 
 /**
  * Module de gestion des badges et indicateurs du Focus Panel
@@ -23,6 +24,7 @@ export const FocusPanelStatus = {
      * @param {Object} callbacks - Callback functions
      * @param {Function} callbacks.getCurrentStudentId - Get current student ID
      * @param {Function} callbacks.getActiveGenerations - Get active generations map
+     * @param {Function} [callbacks.onUpdateGenerateButton] - Update generate button state
      */
     init(callbacks) {
         this._callbacks = callbacks;
@@ -53,17 +55,101 @@ export const FocusPanelStatus = {
      * @param {Object} result - Student result object
      * @returns {boolean} true si des données pertinentes ont changé
      */
+    /**
+     * Pure comparison logic between current data and snapshot
+     * Centralized Source of Truth for "Dirty" state
+     * @param {Object} current - Current data { statuses, grade, context, journalCount }
+     * @param {Object} snapshot - Snapshot data
+     * @returns {boolean} True if data differs
+     */
+    compareDataWithSnapshot(current, snapshot) {
+        if (!snapshot) return false;
+
+        // 1. Compare Statuses
+        const currentStatuses = (current.statuses || []).sort();
+        const snapshotStatuses = (snapshot.statuses || []).sort();
+        if (!Utils.isEqual(currentStatuses, snapshotStatuses)) return true;
+
+        // 2. Compare Data (Period)
+        // Normalize Grade (handle string/number/null)
+        const normalizeGrade = (g) => {
+            if (g === undefined || g === null || g === '') return null;
+            if (typeof g === 'string') g = g.replace(',', '.');
+            const f = parseFloat(g);
+            return isNaN(f) ? null : f;
+        };
+        const currentGrade = normalizeGrade(current.grade);
+        const snapshotGrade = normalizeGrade(snapshot.periods?.[appState.currentPeriod]?.grade ?? snapshot.grade);
+
+        if (currentGrade !== snapshotGrade) return true;
+
+        // Normalize Context
+        const currentContext = (current.context || '').trim();
+        const snapshotContext = (snapshot.periods?.[appState.currentPeriod]?.context ?? snapshot.context ?? '').trim();
+
+        if (currentContext !== snapshotContext) return true;
+
+        // 3. Compare Journal Count
+        const currentJournalCount = current.journalCount || 0;
+        // Handle various snapshot formats for journal
+        const snapshotJournalCount = snapshot.journal ? snapshot.journal.length : (snapshot.journalCount ?? 0);
+
+        // Note: For strict correctness regarding thresholds, we might need deeper check, 
+        // but count is sufficient for general "something changed" warning.
+        // If needed, we can add the threshold logic here later.
+        const currentJournal = current.journal || [];
+        // Legacy snapshot fallback (count only)
+        if (!snapshot.journal && snapshot.journalCount !== undefined) {
+            const cCount = currentJournal.length;
+            const cCountVal = (current.journalCount !== undefined) ? current.journalCount : cCount;
+            if (cCountVal !== snapshot.journalCount) return true;
+        } else {
+            const snapshotJournal = snapshot.journal || [];
+            // Use class-specific threshold if possible, otherwise global fallback
+            const currentThreshold = JournalManager.getThreshold();
+            const snapshotThreshold = snapshot.threshold ?? currentThreshold;
+            const getActiveTags = (entries, thresh) => {
+                const counts = {};
+                entries.forEach(e => {
+                    if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+                });
+                return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
+            };
+            const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
+            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
+            if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) return true;
+            const getRelevantNotes = (entries, thresh) => {
+                const tagCounts = {};
+                entries.forEach(e => {
+                    if (e.tags) e.tags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
+                });
+                const activeTags = new Set(Object.keys(tagCounts).filter(t => tagCounts[t] >= thresh));
+                return entries
+                    .filter(e => e.note && e.note.trim() && e.tags && e.tags.some(t => activeTags.has(t)))
+                    .map(e => e.note.trim())
+                    .sort()
+                    .join('||');
+            };
+            if (getRelevantNotes(currentJournal, currentThreshold) !== getRelevantNotes(snapshotJournal, snapshotThreshold)) return true;
+        }
+
+        return false;
+    },
+
+    /**
+     * Vérifie si les données actuelles diffèrent du snapshot de génération
+     * @param {Object} result - Student result object
+     * @returns {boolean} true si des données pertinentes ont changé
+     */
     checkDirtyState(result) {
         if (!result || !result.wasGenerated || !result.generationSnapshot) return false;
 
-        // CRITICAL FIX: Only check dirty state if we're viewing the SAME period that was generated
         const currentPeriod = appState.currentPeriod;
         if (result.generationPeriod && result.generationPeriod !== currentPeriod) {
             return false;
         }
 
-        // 1. Comparer les statuts
-        const snapshot = result.generationSnapshot;
+        // Gather Live Data from DOM
         let currentStatuses = result.studentData.statuses || [];
         const editMode = document.querySelector('.focus-header-edit');
         if (editMode && editMode.classList.contains('visible')) {
@@ -71,92 +157,23 @@ export const FocusPanelStatus = {
             currentStatuses = Array.from(checkedBoxes).map(cb => cb.value);
         }
 
-        const snapshotStatuses = snapshot.statuses || [];
-        if (!Utils.isEqual([...currentStatuses].sort(), [...snapshotStatuses].sort())) return true;
-
-        // 2. Comparer les données de la période (Grade + Contexte)
-        const gradeInput = document.getElementById('focusCurrentGradeInput');
-        const contextInput = document.getElementById('focusContextInput');
-
         let currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
-        if (gradeInput) {
-            const val = gradeInput.value.replace(',', '.');
-            currentGrade = (val === '' || val === null) ? null : parseFloat(val);
-        }
+        const gradeInput = document.getElementById('focusCurrentGradeInput');
+        if (gradeInput) currentGrade = gradeInput.value;
 
         let currentContext = result.studentData.periods?.[currentPeriod]?.context || '';
-        if (contextInput) {
-            currentContext = contextInput.value.trim();
-        }
+        const contextInput = document.getElementById('focusContextInput');
+        if (contextInput) currentContext = contextInput.value;
 
-        const snapshotPeriod = snapshot.periods?.[currentPeriod] || {};
-        const snapshotGrade = snapshotPeriod.grade;
-        const snapshotContext = snapshotPeriod.context || '';
-
-        // Comparaison Note
-        const normCurrentGrade = (currentGrade === undefined || currentGrade === null || isNaN(currentGrade)) ? null : currentGrade;
-        const normSnapshotGrade = (snapshotGrade === undefined || snapshotGrade === null || isNaN(snapshotGrade)) ? null : snapshotGrade;
-
-        if (normCurrentGrade !== normSnapshotGrade) return true;
-
-        // Comparaison Contexte
-        if (currentContext !== snapshotContext) return true;
-
-        // 3. Comparer le Journal de bord
         const currentJournal = result.journal || [];
-        const snapshotJournal = result.generationSnapshotJournal || [];
 
-        // Fallback for old snapshots
-        if (!result.generationSnapshotJournal && result.generationSnapshotJournalCount !== undefined) {
-            const currentJournalCount = result.journal?.length || 0;
-            const snapshotJournalCount = result.generationSnapshotJournalCount ?? 0;
-            if (currentJournalCount !== snapshotJournalCount) return true;
-            return false;
-        }
-
-        // A. Get threshold values
-        const currentThreshold = appState.journalThreshold ?? 2;
-        const snapshotThreshold = result.generationThreshold ?? currentThreshold;
-
-        // B. Helper to get active tags (tags that meet threshold)
-        const getActiveTags = (entries, thresh) => {
-            const counts = {};
-            entries.forEach(e => {
-                e.tags.forEach(t => {
-                    counts[t] = (counts[t] || 0) + 1;
-                });
-            });
-            return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
-        };
-
-        const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
-        const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
-
-        // C. Check Active Tags
-        if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) return true;
-
-        // D. Check Notes - ONLY for entries with tags that reached threshold
-        const getRelevantNotes = (entries, thresh) => {
-            const tagCounts = {};
-            entries.forEach(e => {
-                e.tags.forEach(t => {
-                    tagCounts[t] = (tagCounts[t] || 0) + 1;
-                });
-            });
-            const activeTags = new Set(Object.keys(tagCounts).filter(t => tagCounts[t] >= thresh));
-
-            return entries
-                .filter(e => e.note && e.note.trim() && e.tags.some(t => activeTags.has(t)))
-                .map(e => e.note.trim())
-                .sort()
-                .join('||');
-        };
-
-        const currentNotes = getRelevantNotes(currentJournal, currentThreshold);
-        const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotThreshold);
-        if (currentNotes !== snapshotNotes) return true;
-
-        return false;
+        // Delegate to pure comparison
+        return this.compareDataWithSnapshot({
+            statuses: currentStatuses,
+            grade: currentGrade,
+            context: currentContext,
+            journal: currentJournal
+        }, result.generationSnapshot);
     },
 
     /**
@@ -191,7 +208,8 @@ export const FocusPanelStatus = {
                 state = 'valid';
                 tooltip = 'Appréciation validée (éditée manuellement)';
             } else {
-                state = 'none';
+                state = 'empty';
+                tooltip = 'En attente de génération';
             }
         }
 
@@ -200,9 +218,7 @@ export const FocusPanelStatus = {
         badge.innerHTML = '';
         badge.removeAttribute('data-tooltip');
 
-        if (state === 'none') {
-            return;
-        }
+        // Always show badge (including empty state)
 
         badge.classList.add('visible', state);
         badge.classList.remove('icon-only');
@@ -248,8 +264,8 @@ export const FocusPanelStatus = {
                 }, 2000);
                 break;
             case 'valid':
-                icon = '<i class="fas fa-check-circle"></i>';
-                text = '<span class="badge-text">Validé</span>';
+                icon = '<i class="fas fa-pen"></i>';
+                text = '<span class="badge-text">Édité</span>';
                 if (animate) {
                     setTimeout(() => {
                         if (badge.classList.contains('valid')) {
@@ -268,6 +284,11 @@ export const FocusPanelStatus = {
             case 'dictating':
                 icon = '<i class="fas fa-microphone"></i>';
                 text = '<span class="badge-text">Dictée...</span>';
+                break;
+            case 'empty':
+                icon = '<i class="fas fa-clock"></i>';
+                text = '<span class="badge-text">En attente</span>';
+                badge.classList.add('icon-only'); // Show subtle, icon-only by default
                 break;
         }
 
@@ -288,6 +309,8 @@ export const FocusPanelStatus = {
         const result = appState.generatedResults.find(r => r.id === currentStudentId);
         if (result) {
             this.updateAppreciationStatus(result);
+            // Also update generate button to reflect dirty state
+            this._callbacks?.onUpdateGenerateButton?.(result);
         }
     },
 

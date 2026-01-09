@@ -5,9 +5,10 @@
  * @module managers/FocusPanelJournal
  */
 
-import { appState } from '../state/State.js';
+import { appState, userSettings } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { JournalManager } from './JournalManager.js';
+import { ClassManager } from './ClassManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 
@@ -97,11 +98,21 @@ export const FocusPanelJournal = {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const delta = parseInt(btn.dataset.delta, 10);
-                    const current = appState.journalThreshold ?? 2;
+                    // Get current value via JournalManager (handles class vs global)
+                    const current = JournalManager.getThreshold();
                     const newValue = Math.max(1, Math.min(5, current + delta)); // Clamp 1-5
-                    appState.journalThreshold = newValue;
-                    StorageManager.saveAppState();
+
+                    // SAVE: Update Class if selected, or global fallback
+                    const currentClassId = appState.currentClassId;
+                    if (currentClassId) {
+                        ClassManager.updateClass(currentClassId, { journalThreshold: newValue });
+                    } else {
+                        appState.journalThreshold = newValue;
+                        StorageManager.saveAppState();
+                    }
+
                     this._updateThresholdUI();
+
                     // Re-render journal to update isolated states
                     const studentId = this._getCurrentStudentId();
                     const result = appState.generatedResults.find(r => r.id === studentId);
@@ -446,7 +457,9 @@ export const FocusPanelJournal = {
      * @private
      */
     _updateThresholdUI() {
-        const threshold = appState.journalThreshold ?? 2;
+        const threshold = JournalManager.getThreshold();
+        const currentClassId = appState.currentClassId;
+        const currentClass = currentClassId ? ClassManager.getClassById(currentClassId) : null;
 
         // Update button label
         const btnValue = document.getElementById('journalThresholdValue');
@@ -463,7 +476,8 @@ export const FocusPanelJournal = {
         // Update tooltip on button
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {
-            btn.setAttribute('data-tooltip', `Seuil : ${threshold}× (cliquez pour modifier)`);
+            const contextLabel = currentClass ? `(Classe: ${currentClass.name})` : '(Global)';
+            btn.setAttribute('data-tooltip', `Seuil : ${threshold}× ${contextLabel} — cliquez pour modifier`);
         }
     },
 

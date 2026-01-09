@@ -250,10 +250,23 @@ export const JournalManager = {
      * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
      * @returns {boolean} True if ALL tags in entry are below threshold
      */
-    isEntryIsolated(entry, tagCounts) {
-        const threshold = appState.journalThreshold ?? 2;
-        // Entry is isolated if ALL its tags are below threshold
-        return entry.tags.every(tagId => (tagCounts[tagId] || 0) < threshold);
+    /**
+     * Get the effective journal threshold for a student/class
+     * @param {string} [classId] - Optional class ID
+     * @returns {number} Threshold value (default 2)
+     */
+    getThreshold(classId = null) {
+        // 1. Try to get specific class
+        const targetClassId = classId || appState.currentClassId;
+        if (targetClassId) {
+            const classObj = userSettings.academic.classes?.find(c => c.id === targetClassId);
+            if (classObj && classObj.journalThreshold !== undefined) {
+                return classObj.journalThreshold;
+            }
+        }
+
+        // 2. Fallback to global setting or default
+        return appState.journalThreshold ?? 2;
     },
 
     /**
@@ -270,8 +283,9 @@ export const JournalManager = {
 
         if (entries.length === 0) return '';
 
-        // Get threshold from settings (default 1 = include everything by default)
-        const threshold = appState.journalThreshold ?? 1;
+        // Get threshold from class settings
+        const student = appState.generatedResults?.find(s => s.id === studentId);
+        const threshold = this.getThreshold(student?.classId);
 
         // Count tags
         const tagCounts = this.countTags(studentId, targetPeriod);
@@ -306,6 +320,20 @@ export const JournalManager = {
         }
 
         return parts.join('. ');
+    },
+
+    /**
+     * Check if an entry is "isolated" (all its tags are below threshold)
+     * Used for visual feedback - isolated entries won't influence AI
+     * @param {Object} entry - Journal entry object
+     * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
+     * @param {number} [threshold] - Threshold value (optional, computed if not provided)
+     * @returns {boolean} True if ALL tags in entry are below threshold
+     */
+    isEntryIsolated(entry, tagCounts, threshold = null) {
+        const limit = threshold ?? this.getThreshold(appState.currentClassId);
+        // Entry is isolated if ALL its tags are below limit
+        return entry.tags.every(tagId => (tagCounts[tagId] || 0) < limit);
     },
 
     /**
@@ -352,7 +380,9 @@ export const JournalManager = {
 
         // Compute tag counts for threshold check (visual feedback)
         const tagCounts = this.countTags(studentId, period);
-        const threshold = appState.journalThreshold ?? 2;
+        // Find Class ID for student
+        const student = appState.generatedResults?.find(s => s.id === studentId);
+        const threshold = this.getThreshold(student?.classId);
 
         // Sort by date (newest first)
         const sortedEntries = [...entries].sort((a, b) =>
