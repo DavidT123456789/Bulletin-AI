@@ -853,7 +853,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 16px 24px 12px;
+    padding: 12px 24px 8px;
     /* Compact padding */
     background: rgba(245, 245, 244, 0.85);
     /* Translucent fallback */
