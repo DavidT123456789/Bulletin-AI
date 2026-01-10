@@ -442,15 +442,7 @@ export const ClassUIManager = {
                 ` : `
                     <div class="class-management-list" style="display: flex; flex-direction: column; gap: 8px;">
                         ${classes.map(cls => `
-                            <div class="class-management-item" data-class-id="${cls.id}" style="
-                                display: flex;
-                                align-items: center;
-                                justify-content: space-between;
-                                padding: 12px 16px;
-                                background: var(--bg-secondary);
-                                border-radius: var(--radius-md);
-                                border: 1px solid var(--border-color);
-                            ">
+                            <div class="class-management-item" data-class-id="${cls.id}">
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
                                     <span style="font-weight: 500;">${this._escapeHtml(cls.name)}</span>
                                     <span style="font-size: 0.8em; color: var(--text-secondary);">
@@ -459,11 +451,11 @@ export const ClassUIManager = {
                                 </div>
                                 <div style="display: flex; gap: 8px;">
                                     <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
-                                            title="Renommer" style="background: var(--bg-tertiary); border: none; cursor: pointer; padding: 6px 10px; border-radius: var(--radius-sm);">
+                                            title="Renommer">
                                         <i class="fas fa-pencil"></i>
                                     </button>
                                     <button class="btn-icon-small manage-delete-btn" data-class-id="${cls.id}" 
-                                            title="Supprimer" style="background: var(--bg-tertiary); border: none; cursor: pointer; padding: 6px 10px; border-radius: var(--radius-sm); color: var(--error-color);">
+                                            title="Supprimer">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>

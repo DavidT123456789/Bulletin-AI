@@ -54,7 +54,7 @@
     max-width: 340px;
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     /* Coins plus arrondis */
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.1);
     /* Ombre plus douce et large */
@@ -79,7 +79,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
     font-weight: 600;
@@ -90,21 +90,22 @@
 .class-dropdown-header .btn-icon-small {
     width: 28px;
     height: 28px;
-    border-radius: var(--radius-sm);
-    background: var(--primary-color);
-    color: white;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8em;
+    font-size: 0.9em;
     transition: all var(--transition-fast);
 }
 
 .class-dropdown-header .btn-icon-small:hover {
-    background: var(--primary-dark);
-    transform: scale(1.05);
+    background: var(--primary-color);
+    color: white;
+    transform: rotate(90deg);
 }
 
 .class-dropdown-list {
@@ -554,6 +555,13 @@
 }
 
 .class-management-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
 }
 
@@ -646,4 +654,43 @@
     animation: rotate-gradient 10s linear infinite;
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* ====================================================================
+   CLASS MANAGEMENT ITEM ACTIONS
+   ==================================================================== */
+
+.class-management-item .manage-rename-btn,
+.class-management-item .manage-delete-btn {
+    background: var(--bg-tertiary);
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95em;
+}
+
+.class-management-item .manage-rename-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+}
+
+.class-management-item .manage-delete-btn {
+    color: var(--error-color);
+    opacity: 0.85;
+}
+
+.class-management-item .manage-delete-btn:hover {
+    background: var(--error-color);
+    color: white;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(var(--error-rgb, 239, 68, 68), 0.3);
+    opacity: 1;
 }

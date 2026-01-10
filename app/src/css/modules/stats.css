@@ -444,7 +444,6 @@
     background: linear-gradient(135deg, rgba(var(--success-rgb), 0.18) 0%, rgba(var(--success-rgb), 0.12) 100%);
     color: var(--success-color);
     border-color: rgba(var(--success-rgb), 0.3);
-    animation: success-glow 3s ease-in-out infinite;
 }
 
 .evolution-chip.positive::before {

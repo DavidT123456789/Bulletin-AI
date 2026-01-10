@@ -360,6 +360,8 @@
     min-width: 200px;
     text-align: left;
     transition: padding 0.3s ease;
+    position: relative;
+    /* Anchor for absolute positioning */
 }
 
 /* Center status badges when no appreciation */
@@ -1799,16 +1801,15 @@
 
 /* Appreciation Status Badge */
 .appreciation-status-badge {
-    width: 24px;
-    height: 24px;
+    height: 26px;
+    width: 26px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    /* High-quality spacing */
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.9em;
+    justify-content: center;
+    gap: 6px;
+    padding: 0;
+    font-size: 12px;
     font-weight: 500;
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     /* iOS-like fluid transition */
@@ -1837,9 +1838,8 @@
     color: var(--primary-color);
     animation: pending-pulse 1.5s infinite;
     padding: 0;
-    width: 24px;
-    height: 24px;
-    justify-content: center;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
 }
 
@@ -1868,10 +1868,10 @@
     background: rgba(245, 158, 11, 0.15);
     color: #f59e0b;
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -1880,10 +1880,10 @@
     background: rgba(16, 185, 129, 0.15);
     color: #10b981;
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: saved-fade-in 0.3s ease, saved-fade-out 0.4s ease 1.6s forwards;
 }
@@ -1892,10 +1892,10 @@
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -1941,19 +1941,19 @@
     background: rgba(16, 185, 129, 0.15);
     color: #10b981;
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Collapse animation - text fades out, badge shrinks to icon */
 .appreciation-status-badge.icon-only {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
     padding: 0;
     border-radius: 50%;
     display: flex;
@@ -2007,10 +2007,10 @@
     background: rgba(16, 185, 129, 0.15);
     color: #10b981;
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: saved-fade-in 0.3s ease;
 }
@@ -2019,10 +2019,10 @@
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
     width: auto;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px 10px;
-    gap: 4px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     animation: pending-pulse 1.5s infinite;
 }
@@ -2660,17 +2660,25 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
+.appreciation-cell {
+    position: relative;
+}
+
 .dirty-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    z-index: 5;
     color: var(--warning-color);
-    margin-right: 8px;
-    /* Slightly more space */
-    font-size: 0.95em;
+    font-size: 14px;
+    /* Removed margin-right to prevent flow shift */
     animation: pulse-orange 2s infinite;
     cursor: help;
     /* Indicate tooltip presence */
+}
+
+.dirty-indicator:hover {
+    transform: scale(1.1);
 }
 
 /* ============================
