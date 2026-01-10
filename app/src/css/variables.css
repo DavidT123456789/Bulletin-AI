@@ -109,8 +109,8 @@
     --grade-range-0-4: #EF4444;
     --grade-range-4-8: #F97316;
     --grade-range-8-12: #EAB308;
-    --grade-range-12-16: #22C55E;
-    --grade-range-16-20: #10B981;
+    --grade-range-12-16: #14b8a6;
+    --grade-range-16-20: #22c55e;
 
     /* Transitions & Animations */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);

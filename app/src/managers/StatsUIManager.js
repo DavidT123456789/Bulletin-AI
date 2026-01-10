@@ -349,18 +349,20 @@ export const StatsUI = {
             }
         }
 
-        // Apply semantic color classes to the main average grade display
-        // Thresholds aligned with histogram distribution: 0-4, 4-8, 8-12, 12-16, 16-20
+        // Apply grade color classes to the main average grade display
+        // Using Utils.getGradeClass() which returns 5 distinct ranges: 0-4, 4-8, 8-12, 12-16, 16-20
         const avgGradeEl = document.getElementById('currentAvgGradeOutput');
         if (avgGradeEl) {
-            avgGradeEl.classList.remove('grade-high', 'grade-average', 'grade-low');
+            // Remove all possible grade range classes
+            avgGradeEl.classList.remove(
+                'grade-range-0-4', 'grade-range-4-8', 'grade-range-8-12',
+                'grade-range-12-16', 'grade-range-16-20',
+                'grade-high', 'grade-average', 'grade-low' // Legacy classes cleanup
+            );
             if (typeof stats.avgGrade === 'number' && !isNaN(stats.avgGrade)) {
-                if (stats.avgGrade >= 12) {
-                    avgGradeEl.classList.add('grade-high');
-                } else if (stats.avgGrade >= 8) {
-                    avgGradeEl.classList.add('grade-average');
-                } else {
-                    avgGradeEl.classList.add('grade-low');
+                const gradeClass = Utils.getGradeClass(stats.avgGrade);
+                if (gradeClass) {
+                    avgGradeEl.classList.add(gradeClass);
                 }
             }
         }

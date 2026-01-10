@@ -413,24 +413,40 @@
     margin-left: 2px;
 }
 
-/* Semantic grade colors - High (≥12): Green/Teal (Matches 12-16 & 16-20 ranges) */
-.performance-card .main-average-value.grade-high {
-    background: linear-gradient(135deg, var(--grade-range-12-16) 0%, var(--grade-range-16-20) 100%);
+/* Grade range colors - 5 distinct ranges aligned with histogram */
+/* Same approach as histogram bars: gradient within same hue for elegance */
+
+/* Range 0-4: Red gradient */
+.performance-card .main-average-value.grade-range-0-4 {
+    background: linear-gradient(135deg, var(--grade-range-0-4) 0%, #dc2626 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
-/* Semantic grade colors - Average (8-12): Yellow/Amber (Matches 8-12 range) */
-.performance-card .main-average-value.grade-average {
-    /* Transition from Yellow (8-12) to slightly warm Amber for readability */
-    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, #d97706 100%);
+/* Range 4-8: Orange gradient */
+.performance-card .main-average-value.grade-range-4-8 {
+    background: linear-gradient(135deg, var(--grade-range-4-8) 0%, #ea580c 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
-/* Semantic grade colors - Low (<8): Red/Orange (Matches 0-4 & 4-8 ranges) */
-.performance-card .main-average-value.grade-low {
-    background: linear-gradient(135deg, var(--grade-range-0-4) 0%, var(--grade-range-4-8) 100%);
+/* Range 8-12: Yellow/Amber gradient */
+.performance-card .main-average-value.grade-range-8-12 {
+    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, #ca8a04 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+/* Range 12-16: Turquoise gradient */
+.performance-card .main-average-value.grade-range-12-16 {
+    background: linear-gradient(135deg, var(--grade-range-12-16) 0%, #0d9488 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+/* Range 16-20: Green gradient */
+.performance-card .main-average-value.grade-range-16-20 {
+    background: linear-gradient(135deg, var(--grade-range-16-20) 0%, #16a34a 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
@@ -1015,11 +1031,11 @@
 }
 
 .hist-bar-group[data-range="12-16"] .hist-bar {
-    background: linear-gradient(180deg, var(--grade-range-12-16) 0%, rgba(var(--success-rgb), 0.6) 100%);
+    background: linear-gradient(180deg, var(--grade-range-12-16) 0%, rgba(20, 184, 166, 0.6) 100%);
 }
 
 .hist-bar-group[data-range="16-20"] .hist-bar {
-    background: linear-gradient(180deg, var(--grade-range-16-20) 0%, rgba(var(--success-rgb), 0.6) 100%);
+    background: linear-gradient(180deg, var(--grade-range-16-20) 0%, rgba(34, 197, 94, 0.6) 100%);
 }
 
 .hist-bar-group:hover .hist-bar {

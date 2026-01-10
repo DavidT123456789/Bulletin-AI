@@ -379,13 +379,13 @@
 
 .grade-bubble.grade-range-12-16,
 .grade-value.grade-range-12-16 {
-    background: rgba(34, 197, 94, 0.12);
+    background: rgba(20, 184, 166, 0.12);
     color: var(--grade-range-12-16);
 }
 
 .grade-bubble.grade-range-16-20,
 .grade-value.grade-range-16-20 {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(34, 197, 94, 0.12);
     color: var(--grade-range-16-20);
 }
 

@@ -327,7 +327,7 @@
 }
 
 .distribution-bar-fill[data-range="12-16"] {
-    background: linear-gradient(90deg, #22C55E 0%, #4ADE80 100%);
+    background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
 }
 
 .distribution-bar-fill[data-range="16-20"] {
