@@ -274,9 +274,9 @@ export const SpeechRecognitionManager = {
      * @private
      */
     _setAppreciationBadge(state) {
-        // Delegate to FocusPanelManager's unified status method
-        import('./FocusPanelManager.js').then(({ FocusPanelManager }) => {
-            FocusPanelManager._updateAppreciationStatus(null, { state: state });
+        // Delegate to FocusPanelStatus unified status method
+        import('./FocusPanelStatus.js').then(({ FocusPanelStatus }) => {
+            FocusPanelStatus.updateAppreciationStatus(null, { state: state });
         });
     },
 
@@ -287,16 +287,20 @@ export const SpeechRecognitionManager = {
      * @private
      */
     _saveAppreciationAndUpdateList(content) {
-        // Import FocusPanelManager dynamically to avoid circular dependency
-        import('./FocusPanelManager.js').then(({ FocusPanelManager }) => {
+        // Import modules dynamically to avoid circular dependency
+        Promise.all([
+            import('./FocusPanelManager.js'),
+            import('./FocusPanelHistory.js'),
+            import('./FocusPanelStatus.js')
+        ]).then(([{ FocusPanelManager }, { FocusPanelHistory }, { FocusPanelStatus }]) => {
             const studentId = FocusPanelManager.currentStudentId;
             if (!studentId) return;
 
             const result = appState.generatedResults.find(r => r.id === studentId);
             if (!result) return;
 
-            // Update the result
-            result.output = content;
+            // Update the result logic to match FocusPanelManager
+            result.appreciation = content; // Fix: was result.output
             result.wasGenerated = false; // Mark as manually edited (dictated)
             result.tokenUsage = null;
 
@@ -305,16 +309,16 @@ export const SpeechRecognitionManager = {
             if (aiIndicator) aiIndicator.style.display = 'none';
 
             // Push to history
-            FocusPanelManager._pushToHistory(content);
+            FocusPanelHistory.push(content);
 
-            // Save context
+            // Save context (and appreciation via DOM)
             FocusPanelManager._saveContext();
 
             // Update list row
             FocusPanelManager._updateListRow(result);
 
             // Show saved badge
-            this._setAppreciationBadge('saved');
+            FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
         });
     },
 
