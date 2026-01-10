@@ -610,7 +610,15 @@
     box-shadow: none !important;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-fast), opacity 0.2s ease;
+    /* Hidden by default - appears on row hover (iOS 2025 pattern) */
+    opacity: 0;
+}
+
+/* Reveal on row hover or when menu is open */
+.student-list-table tbody tr:hover .btn-action-menu,
+.action-dropdown.open .btn-action-menu {
+    opacity: 1;
 }
 
 .btn-action-menu:hover {

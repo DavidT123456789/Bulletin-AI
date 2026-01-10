@@ -326,12 +326,14 @@
     margin-bottom: var(--space-6);
 }
 
-/* === Stat Card - Version Compacte === */
-.stat-card {
+/* === Stat Card - Version Aérée (iOS 2025 mockup) === */
+/* Override cards.css grid layout - stats cards use flexbox */
+.stats-container .stat-card {
     display: flex;
     flex-direction: column;
     min-height: auto;
-    padding: 16px 20px;
+    gap: 0;
+    /* Remove grid gap, we use margins instead */
 }
 
 /* Dark mode: Match list view background (Original list view color) */
@@ -380,19 +382,20 @@
 }
 
 /* ====================================================================
-   PERFORMANCE CARD - Version Compacte
+   PERFORMANCE CARD - Version Compacte (Inspired by iOS 2025 Mockup)
    ==================================================================== */
 .performance-card .performance-overview {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    align-items: baseline;
+    gap: 6px;
     flex-grow: 1;
-    margin-bottom: 0;
+    margin-bottom: 12px;
+    /* Reduced for tighter spacing */
 }
 
 /* Grande valeur avec gradient */
 .performance-card .main-average-value {
-    font-size: 2.6rem;
+    font-size: 2.8rem;
     font-weight: 800;
     line-height: 1;
     background: var(--gradient-brand, linear-gradient(135deg, var(--text-secondary) 0%, var(--text-primary) 100%));
@@ -400,6 +403,14 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     letter-spacing: -0.02em;
+}
+
+/* "/20" suffix - subtle denominator */
+.performance-card .average-denominator {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-left: 2px;
 }
 
 /* Semantic grade colors - High (≥12): Green/Teal (Matches 12-16 & 16-20 ranges) */
@@ -424,26 +435,25 @@
     background-clip: text;
 }
 
-/* Chip d'évolution - Compact */
+/* Chip d'évolution - Minimaliste (harmonisé avec homogeneity-badge) */
 .performance-card .evolution-chip {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 5px 12px;
+    padding: 4px 10px;
     border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 600;
     transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
-    background-color: var(--bg-secondary);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
-    border: 1px solid transparent;
+    white-space: nowrap;
 }
 
-/* Chip positif avec glow animé */
+/* Chip positif - Minimaliste */
 .evolution-chip.positive {
-    background: linear-gradient(135deg, rgba(var(--success-rgb), 0.18) 0%, rgba(var(--success-rgb), 0.12) 100%);
+    background: rgba(var(--success-rgb), 0.1);
     color: var(--success-color);
-    border-color: rgba(var(--success-rgb), 0.3);
 }
 
 .evolution-chip.positive::before {
@@ -452,12 +462,10 @@
     font-size: 0.85em;
 }
 
-/* Chip négatif avec glow animé */
+/* Chip négatif - Minimaliste */
 .evolution-chip.negative {
-    background: linear-gradient(135deg, rgba(var(--error-rgb), 0.18) 0%, rgba(var(--error-rgb), 0.12) 100%);
+    background: rgba(var(--error-rgb), 0.1);
     color: var(--error-color);
-    border-color: rgba(var(--error-rgb), 0.3);
-    animation: error-glow 3s ease-in-out infinite;
 }
 
 .evolution-chip.negative::before {
@@ -467,22 +475,20 @@
 }
 
 .evolution-chip.stable {
-    background-color: var(--bg-secondary);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
-    border-color: var(--border-color);
 }
 
-/* === Performance Details - Version Compacte === */
+/* === Performance Details - Marges homogènes (iOS 2025 mockup) === */
 .performance-card .performance-details {
     display: flex;
-    gap: 6px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] .performance-card .performance-details {
-    border-top-color: rgba(255, 255, 255, 0.08);
+    gap: 12px;
+    margin-top: 0;
+    padding-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    /* Bottom margin to match card padding - adjusted to 0 since we want natural padding */
+    margin-bottom: 0;
 }
 
 .performance-card .detail-item {
@@ -669,26 +675,33 @@
     animation: segment-grow 0.5s ease-out 0.4s backwards;
 }
 
-/* === Légende - Version Compacte === */
+/* === Légende - Marges homogènes (iOS 2025 mockup) === */
 .evolution-card .evolution-legend {
     display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: nowrap;
+    /* Reset margins for uniform spacing */
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
 }
 
 .evolution-card .legend-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 8px;
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--bg-secondary);
     flex: 1;
-    min-width: 90px;
+    min-width: unset;
     border: 1px solid transparent;
+    text-align: center;
 }
 
 /* Hover style dynamique (exclut l'état actif) */
@@ -735,13 +748,10 @@
     color: var(--primary-color);
 }
 
-/* Points colorés de la légende - Compact */
+/* Points colorés de la légende - Masqués, couleur appliquée au chiffre */
 .evolution-card .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: var(--radius-pill);
-    flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: none;
+    /* Couleur maintenant sur le chiffre */
 }
 
 .evolution-card .legend-dot.progress {
@@ -759,22 +769,43 @@
 /* Texte de la légende - Layout horizontal compact */
 .evolution-card .legend-text {
     display: flex;
-    align-items: baseline;
-    gap: 6px;
+    flex-direction: column-reverse;
+    /* Count on top, Label on bottom */
+    align-items: center;
+    gap: 0;
 }
 
 .evolution-card .legend-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+    /* Match detail-label */
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
     font-weight: 500;
     color: var(--text-secondary);
     transition: color 0.2s ease;
 }
 
 .evolution-card .legend-count {
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--text-primary);
     font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    margin-bottom: 2px;
+    /* Default color, will be overridden by semantic colors */
+    color: var(--text-primary);
+}
+
+/* Semantic colors applied directly to the count */
+.evolution-card .legend-item[data-filter-id="progressCount"] .legend-count {
+    color: var(--success-color);
+}
+
+.evolution-card .legend-item[data-filter-id="stableCount"] .legend-count {
+    color: var(--text-tertiary);
+}
+
+.evolution-card .legend-item[data-filter-id="regressionCount"] .legend-count {
+    color: var(--error-color);
 }
 
 /* ====================================================================
@@ -858,14 +889,9 @@
     flex-direction: column;
 }
 
-.dispersion-card .stat-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
+/* Header uses global .stat-card-header (margin-bottom: 12px) */
 
-/* Badge Homogénéité - Compact et coloré */
+/* Badge Homogénéité - Minimaliste (harmonisé avec evolution-chip) */
 .homogeneity-badge {
     font-size: 0.7rem;
     font-weight: 600;
@@ -878,17 +904,17 @@
 }
 
 .homogeneity-badge.positive {
-    background: linear-gradient(135deg, rgba(var(--success-rgb), 0.15), rgba(var(--success-rgb), 0.08));
+    background: rgba(var(--success-rgb), 0.1);
     color: var(--success-color);
 }
 
 .homogeneity-badge.warning {
-    background: linear-gradient(135deg, rgba(var(--warning-rgb), 0.15), rgba(var(--warning-rgb), 0.08));
+    background: rgba(var(--warning-rgb), 0.1);
     color: var(--warning-color);
 }
 
 .homogeneity-badge.negative {
-    background: linear-gradient(135deg, rgba(var(--error-rgb), 0.15), rgba(var(--error-rgb), 0.08));
+    background: rgba(var(--error-rgb), 0.1);
     color: var(--error-color);
 }
 
@@ -896,8 +922,9 @@
     flex: 1;
     display: flex;
     align-items: flex-end;
-    padding: 12px 0 0 0;
-    min-height: 80px;
+    padding: 0;
+    /* Removed top padding for tighter spacing */
+    min-height: 90px;
 }
 
 /* === Chart Toggles === */
@@ -938,12 +965,13 @@
 
 /* === Histogram (Distribution) === */
 .histogram-container {
-    height: 100px;
+    height: 85px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-top: 10px;
+    padding-top: 4px;
     width: 100%;
+    flex-grow: 1;
 }
 
 .histogram-bars {
