@@ -200,7 +200,6 @@
 #refreshPreviewBtn.pulsing {
     position: relative;
     overflow: hidden;
-    animation: pulsing 2s ease-in-out infinite;
     transform: none !important;
     /* Prevents bouncing/scaling/rebound */
 }

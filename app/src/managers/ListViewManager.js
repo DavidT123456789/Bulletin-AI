@@ -846,22 +846,8 @@ export const ListViewManager = {
      * @private
      */
     _isResultDirty(result) {
-        if (!result || !result.wasGenerated || !result.generationSnapshot) return false;
-
-        const currentPeriod = appState.currentPeriod;
-        // Only check dirty state for current period generation
-        if (result.generationPeriod && result.generationPeriod !== currentPeriod) return false;
-
-        // Construct current data object for comparison (pure model data, ignoring DOM)
-        // This ensures the List View check is consistent with the Focus Panel logic
-        const currentData = {
-            statuses: result.studentData.statuses,
-            grade: result.studentData.periods?.[currentPeriod]?.grade,
-            context: result.studentData.periods?.[currentPeriod]?.context,
-            journal: result.journal // Pass full journal for smart threshold check
-        };
-
-        return FocusPanelStatus.compareDataWithSnapshot(currentData, result.generationSnapshot);
+        // Use the centralized Source of Truth from FocusPanelStatus
+        return FocusPanelStatus.checkDirtyState(result);
     },
 
     /**

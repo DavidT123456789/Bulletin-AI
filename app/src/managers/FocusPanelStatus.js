@@ -74,6 +74,7 @@ export const FocusPanelStatus = {
         // Normalize Grade (handle string/number/null)
         const normalizeGrade = (g) => {
             if (g === undefined || g === null || g === '') return null;
+            // Handle comma/dot
             if (typeof g === 'string') g = g.replace(',', '.');
             const f = parseFloat(g);
             return isNaN(f) ? null : f;
@@ -84,8 +85,11 @@ export const FocusPanelStatus = {
         if (currentGrade !== snapshotGrade) return true;
 
         // Normalize Context
-        const currentContext = (current.context || '').trim();
-        const snapshotContext = (snapshot.periods?.[appState.currentPeriod]?.context ?? snapshot.context ?? '').trim();
+        const normalizeContext = (c) => {
+            return (c || '').trim();
+        };
+        const currentContext = normalizeContext(current.context);
+        const snapshotContext = normalizeContext(snapshot.periods?.[appState.currentPeriod]?.context ?? snapshot.context);
 
         if (currentContext !== snapshotContext) return true;
 
@@ -103,8 +107,9 @@ export const FocusPanelStatus = {
             const cCount = currentJournal.length;
             const cCountVal = (current.journalCount !== undefined) ? current.journalCount : cCount;
             if (cCountVal !== snapshot.journalCount) return true;
-        } else {
-            const snapshotJournal = snapshot.journal || [];
+        } else if (snapshot.journal) {
+            // Full snapshot available (New Data)
+            const snapshotJournal = snapshot.journal;
             // Use class-specific threshold if possible, otherwise global fallback
             const currentThreshold = JournalManager.getThreshold();
             const snapshotThreshold = snapshot.threshold ?? currentThreshold;
@@ -132,6 +137,8 @@ export const FocusPanelStatus = {
             };
             if (getRelevantNotes(currentJournal, currentThreshold) !== getRelevantNotes(snapshotJournal, snapshotThreshold)) return true;
         }
+        // If snapshot.journal AND snapshot.journalCount are undefined (Very Old Data)
+        // We skip journal comparison to avoid false positives (Assume sync)
 
         return false;
     },
@@ -149,31 +156,27 @@ export const FocusPanelStatus = {
             return false;
         }
 
-        // Gather Live Data from DOM
-        let currentStatuses = result.studentData.statuses || [];
-        const editMode = document.querySelector('.focus-header-edit');
-        if (editMode && editMode.classList.contains('visible')) {
-            const checkedBoxes = editMode.querySelectorAll('input[type="checkbox"]:checked');
-            currentStatuses = Array.from(checkedBoxes).map(cb => cb.value);
-        }
-
-        let currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
-        const gradeInput = document.getElementById('focusCurrentGradeInput');
-        if (gradeInput) currentGrade = gradeInput.value;
-
-        let currentContext = result.studentData.periods?.[currentPeriod]?.context || '';
-        const contextInput = document.getElementById('focusContextInput');
-        if (contextInput) currentContext = contextInput.value;
-
+        // REFACTOR: Use Model Data directly (Single Source of Truth)
+        // Eliminates DOM parsing issues, timing bugs, and string/number mismatches
+        const currentStatuses = result.studentData.statuses || [];
+        const currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
+        const currentContext = result.studentData.periods?.[currentPeriod]?.context || '';
         const currentJournal = result.journal || [];
 
-        // Delegate to pure comparison
+        // CRITICAL FIX: Include generationSnapshotJournal in the snapshot object
+        const snapshot = {
+            ...result.generationSnapshot,
+            journal: result.generationSnapshotJournal,
+            journalCount: result.generationSnapshotJournalCount, // BACKWARD COMPAT: Include legacy count
+            threshold: result.generationThreshold
+        };
+
         return this.compareDataWithSnapshot({
             statuses: currentStatuses,
             grade: currentGrade,
             context: currentContext,
             journal: currentJournal
-        }, result.generationSnapshot);
+        }, snapshot);
     },
 
     /**

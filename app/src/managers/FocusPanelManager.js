@@ -56,6 +56,11 @@ export const FocusPanelManager = {
             onContentChange: (content) => {
                 FocusPanelStatus.updateWordCount();
                 FocusPanelStatus.syncAppreciationToResult(content);
+                // CRITICAL FIX: Ensure List View updates on Undo/Redo
+                if (this.currentStudentId) {
+                    const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+                    if (result) this._updateListRow(result);
+                }
             },
             onHistoryChange: () => {
                 FocusPanelStatus.updateHistoryIndicator();
@@ -252,29 +257,50 @@ export const FocusPanelManager = {
 
         const appreciationText = document.getElementById('focusAppreciationText');
         if (appreciationText) {
-            appreciationText.addEventListener('input', () => FocusPanelStatus.updateWordCount());
+            // Use 'input' logic to reliably detect manual edits
+            appreciationText.addEventListener('input', () => {
+                // Update word count
+                FocusPanelStatus.updateWordCount();
+
+                // Detect manual edit
+                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+                const isGenerating = FocusPanelStatus._isGenerating(this.currentStudentId);
+
+                // If content changes & we are NOT generating -> It's a manual edit
+                if (result && !isGenerating) {
+                    // Only mark as edited if it wasn't already (optimization)
+                    if (result.wasGenerated !== false) {
+                        result.wasGenerated = false;
+                        result.tokenUsage = null;
+
+                        // Hide AI indicator immediately
+                        const aiIndicator = document.getElementById('focusAiIndicator');
+                        if (aiIndicator) aiIndicator.style.display = 'none';
+
+                        // Update List Row (remove AI icon)
+                        this._updateListRow(result);
+                    }
+                    // Note: We don't saveContext on every input, wait for debounce or blur
+                }
+            });
+
             appreciationText.addEventListener('blur', () => {
                 const content = appreciationText.textContent?.trim();
-                if (content && !content.includes('Aucune appréciation')) {
-                    FocusPanelHistory.push(content);
+                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
 
-                    // Mark as manually edited (no longer AI generated)
-                    const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                    if (result) {
-                        result.wasGenerated = false; // Mark as manually edited
-                        result.tokenUsage = null; // Clear AI metadata
+                if (result && content !== undefined) {
+                    // Simple save on blur (sync model)
+                    if (!content.includes('Aucune appréciation')) {
+                        FocusPanelHistory.push(content);
+                        this._saveContext();
+
+                        // If it was manual, show "Saved" feedback
+                        if (result.wasGenerated === false) {
+                            FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                        }
                     }
-
-                    // Save and show feedback for manual edits
-                    this._saveContext();
-                    FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
-
-                    // Hide AI indicator (manual edit)
-                    const aiIndicator = document.getElementById('focusAiIndicator');
-                    if (aiIndicator) aiIndicator.style.display = 'none';
-
-                    // Update list view to reflect changes
-                    if (result) this._updateListRow(result);
+                    // ALWAYS refresh status to ensure button state is correct
+                    FocusPanelStatus.refreshAppreciationStatus();
                 }
             });
             appreciationText.addEventListener('keydown', (e) => {
@@ -717,8 +743,10 @@ export const FocusPanelManager = {
                 return;
             }
 
-            // Generation complete - remove from active map
-            this._activeGenerations.delete(generatingForStudentId);
+            // Generation complete
+            // Note: We do NOT delete from _activeGenerations here anymore.
+            // We wait for the finally block or UI completion to ensure 'isGenerating' remains true
+            // during the typewriter effect (preventing false "manual edit" detection)
 
             // ALWAYS save the result to the correct student (even if user navigated away)
             // This ensures the appreciation is there when they come back
@@ -1233,25 +1261,27 @@ export const FocusPanelManager = {
     async _updateListRow(result) {
         if (!result) return;
 
-        // Use injected manager if available (Synchronous & Fast)
-        if (this.listViewManager && this.listViewManager.updateStudentRow) {
-            const updated = this.listViewManager.updateStudentRow(result.id);
+        try {
+            let manager = this.listViewManager;
 
-            // If the row doesn't exist (returns false), we need to full render to ADD it
-            // This happens on creation or when a filter previously excluded the student
-            if (!updated && AppreciationsManager) {
-                AppreciationsManager.renderResults(result.id, 'new');
+            // Fallback: If injected manager is missing or invalid, try global or dynamic import
+            if (!manager || !manager.updateStudentRow) {
+                const module = await import('./ListViewManager.js');
+                manager = module.ListViewManager;
             }
-            return;
-        }
 
-        // Fallback to dynamic import (should not be needed with proper injection)
-        const { ListViewManager } = await import('./ListViewManager.js');
-        if (ListViewManager && ListViewManager.updateStudentRow) {
-            const updated = ListViewManager.updateStudentRow(result.id);
-            if (!updated && AppreciationsManager) {
-                AppreciationsManager.renderResults(result.id, 'new');
+            if (manager && manager.updateStudentRow) {
+                const updated = manager.updateStudentRow(result.id);
+
+                // If the row doesn't exist (returns false), we need to full render to ADD it
+                if (!updated && AppreciationsManager) {
+                    AppreciationsManager.renderResults(result.id, 'new');
+                }
+            } else {
+                console.warn('[FocusPanelManager] ListViewManager not available for update');
             }
+        } catch (e) {
+            console.error('[FocusPanelManager] Failed to update list row:', e);
         }
     },
 

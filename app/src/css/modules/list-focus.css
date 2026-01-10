@@ -413,9 +413,9 @@
 /* Expanded View - Width Optimization */
 .student-list-table.appreciation-full-view .appreciation-cell {
     /* Control width explicitly: Wider than normal (340px) but capped */
-    width: clamp(360px, 40vw, 500px);
+    width: clamp(360px, 40vw, 515px);
     min-width: 360px;
-    max-width: 500px;
+    max-width: 515px;
 }
 
 /* 2. Transform the preview bubble into full content */
