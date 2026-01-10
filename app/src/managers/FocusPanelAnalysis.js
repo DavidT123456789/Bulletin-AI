@@ -47,6 +47,69 @@ export const FocusPanelAnalysis = {
     },
 
     /**
+     * Check if any data used for analysis has changed since generation
+     * @param {Object} result - Student result object
+     * @returns {boolean} True if any analysis-relevant data has changed
+     * @private
+     */
+    _checkAnalysisDirtyState(result) {
+        if (!result) return false;
+
+        // No analysis generated yet
+        if (!result.strengthsWeaknesses && !result.nextSteps) return false;
+
+        // No snapshot stored (legacy data)
+        if (!result.analysisSnapshot) {
+            // Fallback to old appreciation-only check for legacy data
+            if (result.analysisSourceAppreciation) {
+                const currentPeriod = appState.currentPeriod;
+                const currentAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation || '';
+                return currentAppreciation.trim() !== result.analysisSourceAppreciation.trim();
+            }
+            return false;
+        }
+
+        const snapshot = result.analysisSnapshot;
+        const currentPeriod = appState.currentPeriod;
+        const studentData = result.studentData || {};
+        const periodData = studentData.periods?.[currentPeriod] || {};
+
+        // Check appreciation
+        const currentAppreciation = periodData.appreciation || '';
+        if (currentAppreciation.trim() !== (snapshot.appreciation || '').trim()) {
+            return true;
+        }
+
+        // Check statuses
+        const currentStatuses = (studentData.statuses || []).sort().join(',');
+        const snapshotStatuses = (snapshot.statuses || []).sort().join(',');
+        if (currentStatuses !== snapshotStatuses) {
+            return true;
+        }
+
+        // Check period context
+        const currentContext = periodData.context || '';
+        if (currentContext.trim() !== (snapshot.context || '').trim()) {
+            return true;
+        }
+
+        // Check grade
+        const currentGrade = periodData.grade;
+        if (currentGrade !== snapshot.grade) {
+            return true;
+        }
+
+        // Check journal entries count (simple comparison)
+        // Full content check would be too heavy, count is sufficient
+        const currentJournalCount = result.journal?.length || 0;
+        if (currentJournalCount !== (snapshot.journalCount || 0)) {
+            return true;
+        }
+
+        return false;
+    },
+
+    /**
      * Show the analysis page (slide from right)
      */
     show() {
@@ -63,6 +126,10 @@ export const FocusPanelAnalysis = {
         // If analysis data already exists for CURRENT student, populate it
         const studentId = this._getCurrentStudentId();
         const result = appState.generatedResults.find(r => r.id === studentId);
+
+        // Update generate button state
+        this._updateAnalysisGenerateButton(result);
+
         if (result && (result.strengthsWeaknesses || result.nextSteps)) {
             this._populateExisting(result);
         } else if (result) {
@@ -95,6 +162,30 @@ export const FocusPanelAnalysis = {
     isVisible() {
         const container = document.getElementById('focusPagesContainer');
         return container?.classList.contains('show-analysis') ?? false;
+    },
+
+    /**
+     * Update analysis generate button state (Générer vs Régénérer)
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _updateAnalysisGenerateButton(result) {
+        const generateBtn = document.getElementById('focusGenerateAnalysisBtn');
+        if (!generateBtn) return;
+
+        const hasAnalysis = result && (result.strengthsWeaknesses || result.nextSteps);
+
+        if (hasAnalysis) {
+            // Régénérer mode: outline style + sync icon
+            generateBtn.classList.remove('btn-ai');
+            generateBtn.classList.add('btn-ai-outline');
+            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+        } else {
+            // Générer mode: standard AI button + sparkles icon
+            generateBtn.classList.remove('btn-ai-outline');
+            generateBtn.classList.add('btn-ai');
+            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer`;
+        }
     },
 
     /**
@@ -160,7 +251,7 @@ export const FocusPanelAnalysis = {
     /**
      * Set badge state on an analysis card
      * @param {HTMLElement} card - The analysis card element
-     * @param {'loading'|'done'|'error'} state - Badge state
+     * @param {'loading'|'done'|'error'|'modified'} state - Badge state
      * @private
      */
     _setCardBadge(card, state) {
@@ -191,6 +282,11 @@ export const FocusPanelAnalysis = {
             case 'error':
                 badge.classList.add('error');
                 badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+            case 'modified':
+                badge.classList.add('modified');
+                badge.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                badge.setAttribute('title', 'L\'appréciation a changé. Régénérez l\'analyse.');
                 break;
         }
     },
@@ -236,8 +332,28 @@ export const FocusPanelAnalysis = {
             // Fetch analyses using existing AppreciationsManager methods
             await this._fetchAnalyses(result);
 
+            // Store comprehensive snapshot for dirty state detection
+            const currentPeriod = appState.currentPeriod;
+            const periodData = result.studentData?.periods?.[currentPeriod] || {};
+
+            result.analysisSnapshot = {
+                appreciation: periodData.appreciation || '',
+                statuses: [...(result.studentData?.statuses || [])],
+                context: periodData.context || '',
+                grade: periodData.grade,
+                journalCount: result.journal?.length || 0,
+                period: currentPeriod
+            };
+
+            // Keep legacy field for backward compatibility
+            result.analysisSourceAppreciation = periodData.appreciation || '';
+            result.analysisGenerationPeriod = currentPeriod;
+
             // Save to persist new analysis data
             StorageManager.saveAppState();
+
+            // Update button to Régénérer state
+            this._updateAnalysisGenerateButton(result);
 
             UI.showNotification('Analyse générée !', 'success');
         } catch (error) {
@@ -480,17 +596,21 @@ export const FocusPanelAnalysis = {
         const weaknessesCard = weaknessesContent?.closest('.analysis-card');
         const suggestionsCard = suggestionsContent?.closest('.analysis-card');
 
+        // Check if appreciation has changed since analysis was generated
+        const isDirty = this._checkAnalysisDirtyState(result);
+        const badgeState = isDirty ? 'modified' : 'done';
+
         // Populate strengths/weaknesses if available
         if (result.strengthsWeaknesses) {
             if (forcesContent) {
                 forcesContent.innerHTML = this._parseStrengthsWeaknesses(result.strengthsWeaknesses, 'forces');
                 forcesCard?.classList.add('has-content');
-                this._setCardBadge(forcesCard, 'done');
+                this._setCardBadge(forcesCard, badgeState);
             }
             if (weaknessesContent) {
                 weaknessesContent.innerHTML = this._parseStrengthsWeaknesses(result.strengthsWeaknesses, 'weaknesses');
                 weaknessesCard?.classList.add('has-content');
-                this._setCardBadge(weaknessesCard, 'done');
+                this._setCardBadge(weaknessesCard, badgeState);
             }
         }
 
@@ -499,7 +619,7 @@ export const FocusPanelAnalysis = {
             if (suggestionsContent) {
                 suggestionsContent.innerHTML = `<ul>${result.nextSteps.map(s => `<li>${Utils.cleanMarkdown(Utils.decodeHtmlEntities(s))}</li>`).join('')}</ul>`;
                 suggestionsCard?.classList.add('has-content');
-                this._setCardBadge(suggestionsCard, 'done');
+                this._setCardBadge(suggestionsCard, badgeState);
             }
         }
     }

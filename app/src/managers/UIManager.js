@@ -210,73 +210,15 @@ export const UI = {
     },
     /**
      * Affiche une modale de confirmation personnalisée.
+     * Délégué à ModalUIManager.
      * @param {string} message - Le message de confirmation
      * @param {Function} [onConfirm] - Callback appelé si l'utilisateur confirme
      * @param {Function} [onCancel] - Callback appelé si l'utilisateur annule
      * @param {ConfirmOptions} [options={}] - Options de personnalisation
+     * @returns {Promise<boolean>}
      */
     showCustomConfirm(message, onConfirm, onCancel, options = {}) {
-        const { confirmText = 'Confirmer', cancelText = 'Annuler', extraButton = null } = options;
-        const modalId = 'customConfirmModal';
-        let modal = document.getElementById(modalId);
-        if (modal) modal.remove();
-
-        modal = document.createElement('div');
-        modal.id = modalId;
-        modal.className = 'modal';
-
-        let buttonsHTML = `<button class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button><button class="btn btn-danger" id="confirmOkBtn">${confirmText}</button>`;
-        if (extraButton) {
-            buttonsHTML = `<button class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
-        }
-
-        if (options.compact) {
-            modal.innerHTML = `
-            <div class="modal-content modal-content-confirm modal-compact">
-                <div class="modal-compact-body">
-                    <div class="modal-icon-wrapper">
-                         <i class="fas fa-question-circle" style="color: var(--warning-color); font-size: 24px;"></i>
-                    </div>
-                    <div class="modal-text-wrapper">
-                        <p>${message}</p>
-                    </div>
-                </div>
-                <div class="modal-compact-actions">
-                    ${buttonsHTML}
-                </div>
-            </div>`;
-        } else {
-            modal.innerHTML = `
-            <div class="modal-content modal-content-confirm">
-                <div class="modal-header">
-                    <h2 class="modal-title"><i class="fas fa-question-circle" style="color: var(--warning-color);"></i> Confirmation</h2>
-                    <button class="close-button" aria-label="Fermer">×</button>
-                </div>
-                <div class="modal-body">
-                    <p>${message}</p>
-                </div>
-                <div class="modal-footer">
-                    ${buttonsHTML}
-                </div>
-            </div>`;
-        }
-        document.body.appendChild(modal);
-
-        this.openModal(modal);
-
-        const okBtn = document.getElementById('confirmOkBtn');
-        const cancelBtn = document.getElementById('confirmCancelBtn');
-        const extraBtn = document.getElementById('confirmExtraBtn');
-        const closeBtn = modal.querySelector('.close-button');
-
-        const confirmHandler = () => { try { if (onConfirm) onConfirm(); } finally { this.closeModal(modal); } };
-        const cancelHandler = () => { try { if (onCancel) onCancel(); } finally { this.closeModal(modal); } };
-        const extraHandler = () => { try { if (extraButton && extraButton.action) extraButton.action(); } finally { this.closeModal(modal); } };
-
-        okBtn.addEventListener('click', confirmHandler, { once: true });
-        cancelBtn.addEventListener('click', cancelHandler, { once: true });
-        if (closeBtn) closeBtn.addEventListener('click', cancelHandler, { once: true });
-        if (extraBtn) extraBtn.addEventListener('click', extraHandler, { once: true });
+        return ModalUI.showCustomConfirm(message, onConfirm, onCancel, options);
     },
 
     // ====================================================================

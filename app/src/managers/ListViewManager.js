@@ -7,6 +7,7 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 // ResultCardsUI removed - logic moved to Utils
 import { ClassUIManager } from './ClassUIManager.js';
@@ -445,6 +446,63 @@ export const ListViewManager = {
         if (statusCell) {
             statusCell.innerHTML = this._getStudentStatusCellContent(result);
         }
+
+        // Update Identity (Name + Avatar)
+        const identityWrapper = row.querySelector('.student-identity-wrapper');
+        if (identityWrapper) {
+            const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+            identityWrapper.innerHTML = `
+                ${avatarHTML}
+                <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
+            `;
+        }
+
+        // Update Grades (replace all cells between status and appreciation)
+        const currentPeriod = appState.currentPeriod;
+        const periods = Utils.getPeriods() || ['T1', 'T2', 'T3'];
+        const currentPeriodIndex = Math.max(0, periods.indexOf(currentPeriod));
+
+        // Re-generate grade cells HTML
+        const newGradeCellsHtml = this._renderGradeCells(result.studentData.periods || {}, periods, currentPeriodIndex);
+
+        // Replace existing grade cells
+        if (statusCell && appreciationCell) {
+            // Remove all siblings between statusCell and appreciationCell
+            let next = statusCell.nextElementSibling;
+            while (next && next !== appreciationCell) {
+                const toRemove = next;
+                next = next.nextElementSibling;
+                toRemove.remove();
+            }
+
+            // Insert new cells after status cell
+            statusCell.insertAdjacentHTML('afterend', newGradeCellsHtml);
+        }
+    },
+
+    /**
+     * Updates a specific student row in the list view (Reactive Update)
+     * Called when data changes in Focus Panel
+     * @param {string} studentId
+     */
+    updateStudentRow(studentId) {
+        if (!studentId) return false;
+        const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+        if (!row) return false;
+
+        // Find result object in current state
+        const results = appState.filteredResults || appState.generatedResults || [];
+        const result = results.find(r => r.id === studentId);
+
+        if (result) {
+            this._updateRowContent(row, result);
+            // Also update the global generate button state as dirty counts may have changed
+            import('./ResultsUIManager.js').then(({ ResultsUIManager }) => {
+                ResultsUIManager.updateGenerateButtonState();
+            });
+            return true;
+        }
+        return false;
     },
 
     /**
@@ -456,10 +514,17 @@ export const ListViewManager = {
      * @private
      */
     _renderFresh(container, results, periods, currentPeriodIndex) {
+        // Read view preference
+        const isExpanded = appState.isAppreciationFullView;
+        const tableClass = isExpanded ? 'student-list-table appreciation-full-view' : 'student-list-table';
+        const headerClass = isExpanded ? 'appreciation-header appreciation-toggle-header sortable-header expanded-view' : 'appreciation-header appreciation-toggle-header sortable-header';
+        const iconClass = isExpanded ? 'fas fa-compress appreciation-toggle-icon' : 'fas fa-expand appreciation-toggle-icon';
+        const title = isExpanded ? 'Cliquer pour réduire' : 'Cliquer pour voir tout le texte';
+
         // Build table HTML (no animation classes in HTML - we'll add them after)
         let html = `
             <div class="student-list-view">
-                <table class="student-list-table">
+                <table class="${tableClass}">
                     <thead>
                         <tr>
                             <th class="sortable-header" data-sort-field="name" title="Trier par nom">
@@ -473,11 +538,11 @@ export const ListViewManager = {
                                 </div>
                             </th>
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="appreciation-header appreciation-toggle-header sortable-header" title="Cliquer pour voir tout le texte">
+                            <th class="${headerClass}" title="${title}">
                                 <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="header-content-wrapper">
                                     Appréciation
-                                    <i class="fas fa-expand appreciation-toggle-icon"></i>
+                                    <i class="${iconClass}"></i>
                                 </div>
                             </th>
                             <th class="action-header" style="width: 50px;">
@@ -762,10 +827,41 @@ export const ListViewManager = {
      * @returns {string} 'done' | 'pending' | 'error'
      * @private
      */
+    /**
+     * DÃ©termine le statut d'un rÃ©sultat
+     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
+     * @returns {string} 'done' | 'pending' | 'error'
+     * @private
+     */
     _getStatus(result) {
         if (result.errorMessage) return 'error';
         if (result.appreciation && !result.isPending) return 'done';
         return 'pending';
+    },
+
+    /**
+     * Checks if result data has changed since generation (Harmonized with FocusPanelStatus)
+     * @param {Object} result - Student result
+     * @returns {boolean} True if dirty
+     * @private
+     */
+    _isResultDirty(result) {
+        if (!result || !result.wasGenerated || !result.generationSnapshot) return false;
+
+        const currentPeriod = appState.currentPeriod;
+        // Only check dirty state for current period generation
+        if (result.generationPeriod && result.generationPeriod !== currentPeriod) return false;
+
+        // Construct current data object for comparison (pure model data, ignoring DOM)
+        // This ensures the List View check is consistent with the Focus Panel logic
+        const currentData = {
+            statuses: result.studentData.statuses,
+            grade: result.studentData.periods?.[currentPeriod]?.grade,
+            context: result.studentData.periods?.[currentPeriod]?.context,
+            journal: result.journal // Pass full journal for smart threshold check
+        };
+
+        return FocusPanelStatus.compareDataWithSnapshot(currentData, result.generationSnapshot);
     },
 
     /**
@@ -827,7 +923,13 @@ export const ListViewManager = {
                 </button>
             `;
 
-            return `${copyButtonHTML}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${appreciation}</div>`;
+            // === DIRTY STATE INDICATOR ===
+            let dirtyBadge = '';
+            if (this._isResultDirty(result)) {
+                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><i class="fas fa-exclamation-circle"></i></span>`;
+            }
+
+            return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${appreciation}</div>`;
         }
 
         // Si pas de contenu, on dÃ©termine le statut Ã  afficher
@@ -870,7 +972,7 @@ export const ListViewManager = {
         // Icons usually handled by CSS or unnecessary for simple badges, 
         // but adding icons for visual consistency if needed.
         const icons = {
-            'pending': '<i class="fas fa-hourglass-start"></i>',
+            'pending': '<i class="fas fa-clock"></i>',
             'error': '<i class="fas fa-exclamation-triangle"></i>',
             'done': '<i class="fas fa-check"></i>',
             'generating': '<i class="fas fa-spinner fa-spin"></i>'
@@ -1121,8 +1223,21 @@ export const ListViewManager = {
 
         const studentName = `${student.prenom} ${student.nom}`;
 
-        // Simple confirmation via native confirm (or could use UI.showCustomConfirm)
-        if (!confirm(`Supprimer l'Ã©lÃ¨ve "${studentName}" ?`)) return;
+        // Confirmation via modale personnalisée
+        const { ModalUI } = await import('./ModalUIManager.js');
+        const confirmed = await ModalUI.showCustomConfirm(
+            `Êtes-vous sûr de vouloir supprimer définitivement <strong>${studentName}</strong> ?<br>Cette action est irréversible.`,
+            null,
+            null,
+            {
+                title: 'Supprimer l\'élève ?',
+                confirmText: 'Supprimer',
+                cancelText: 'Annuler',
+                isDanger: true
+            }
+        );
+
+        if (!confirmed) return;
 
         // Animate row removal
         row.style.opacity = '0';
@@ -1306,6 +1421,7 @@ export const ListViewManager = {
         const header = table.querySelector('.appreciation-toggle-header');
         const icon = header?.querySelector('.appreciation-toggle-icon');
 
+        // Toggle UI
         if (isFullView) {
             // COLLAPSE: Return to truncated view
             table.classList.remove('appreciation-full-view');
@@ -1317,6 +1433,9 @@ export const ListViewManager = {
                 icon.classList.remove('fa-compress');
                 icon.classList.add('fa-expand');
             }
+
+            // Update State & Persistence
+            appState.isAppreciationFullView = false;
         } else {
             // EXPAND: Show full text
             table.classList.add('appreciation-full-view');
@@ -1328,7 +1447,15 @@ export const ListViewManager = {
                 icon.classList.remove('fa-expand');
                 icon.classList.add('fa-compress');
             }
+
+            // Update State & Persistence
+            appState.isAppreciationFullView = true;
         }
+
+        // Save preference
+        import('./StorageManager.js').then(({ StorageManager }) => {
+            StorageManager.saveAppState();
+        });
     }
 };
 

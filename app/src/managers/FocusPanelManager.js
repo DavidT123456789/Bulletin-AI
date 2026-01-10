@@ -23,7 +23,7 @@ import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
 import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
-// ResultCardsUI removed - logic moved to Utils
+
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -45,9 +45,11 @@ export const FocusPanelManager = {
     /**
      * Initialise le module avec les références nécessaires
      * @param {Object} appreciationsManager - Référence à AppreciationsManager
+     * @param {Object} listViewManager - Référence à ListViewManager (injected to avoid circular dependency)
      */
-    init(appreciationsManager) {
+    init(appreciationsManager, listViewManager) {
         AppreciationsManager = appreciationsManager;
+        this.listViewManager = listViewManager;
 
         // Initialize History module with callbacks
         FocusPanelHistory.init({
@@ -89,7 +91,8 @@ export const FocusPanelManager = {
         // Initialize Status module with callbacks
         FocusPanelStatus.init({
             getCurrentStudentId: () => this.currentStudentId,
-            getActiveGenerations: () => this._activeGenerations
+            getActiveGenerations: () => this._activeGenerations,
+            onUpdateGenerateButton: (result) => this._updateGenerateButton(result)
         });
 
         FocusPanelNavigation.init({
@@ -161,15 +164,62 @@ export const FocusPanelManager = {
         const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (generateAnalysisBtn) generateAnalysisBtn.addEventListener('click', () => FocusPanelAnalysis.generate());
 
-        // Grade Input Listener for dirty check
-        // Note: focusCurrentGradeInput is dynamically created/valued in _renderContent, 
-        // so we need to attach listener THERE or delegate. 
-        // delegated listener for convenience:
-        document.addEventListener('input', (e) => {
-            if (e.target && (e.target.id === 'focusCurrentGradeInput' || e.target.id === 'focusEditGradeInput')) {
-                FocusPanelStatus.refreshAppreciationStatus();
+        // Unified Data Change Listener (Live Model Update)
+        const handleDataChange = (e) => {
+            // Only process if Focus Panel is open and we have a valid student ID
+            if (!this.isOpen() || !this.currentStudentId) return;
+
+            // Find result object in current state
+            const currentPeriod = appState.currentPeriod;
+            const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+
+            if (!result) return;
+
+            const target = e.target;
+            let changed = false;
+
+            // 1. Grade Input
+            if (target.id === 'focusCurrentGradeInput' || target.id === 'focusEditGradeInput') {
+                const val = target.value.replace(',', '.');
+                let numVal = val === '' ? null : parseFloat(val);
+                if (isNaN(numVal)) numVal = null; // Store as null if invalid
+
+                // Init structure if missing
+                if (!result.studentData.periods) result.studentData.periods = {};
+                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
+
+                result.studentData.periods[currentPeriod].grade = numVal;
+                changed = true;
             }
-        });
+
+            // 2. Context Input
+            else if (target.id === 'focusContextInput') {
+                if (!result.studentData.periods) result.studentData.periods = {};
+                if (!result.studentData.periods[currentPeriod]) result.studentData.periods[currentPeriod] = {};
+
+                result.studentData.periods[currentPeriod].context = target.value;
+                changed = true;
+            }
+
+            // 3. Status Checkboxes (Delegated from header edit container)
+            else if (target.type === 'checkbox' && target.closest('.focus-header-edit')) {
+                const checked = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]:checked')).map(cb => cb.value);
+                result.studentData.statuses = checked;
+                changed = true;
+            }
+
+            if (changed) {
+                // Refresh Status (Badge) - This dispatch event for List View update
+                FocusPanelStatus.refreshAppreciationStatus();
+                // Note: We deliberately update the model LIVE so ListViewManager._isResultDirty sees changes immediately
+                // LIVE UPDATE: Update the List View row immediately to show/hide dirty indicator
+                this._updateListRow(result);
+            }
+        };
+
+        // Attach global listeners for these inputs (delegated)
+        document.addEventListener('input', handleDataChange);
+        document.addEventListener('change', handleDataChange);
 
 
 
@@ -255,6 +305,35 @@ export const FocusPanelManager = {
             });
         }
 
+        // [NEW] Word Count Badge Click Listener (Quick access to Settings)
+        const wordCountBadge = document.getElementById('focusWordCount');
+        if (wordCountBadge) {
+            wordCountBadge.addEventListener('click', () => {
+                // 1. Open Settings Modal
+                if (DOM.settingsModal) UI.openModal(DOM.settingsModal);
+
+                // 2. Switch to "Style de Rédaction" tab (templates)
+                // Use a small timeout to ensure modal is rendered and transitions started
+                setTimeout(() => {
+                    UI.showSettingsTab('templates');
+
+                    // 3. Scroll to and Focus the Length Slider
+                    const slider = document.getElementById('iaLengthSlider');
+                    if (slider) {
+                        // Smooth scroll the slider into view
+                        slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                        // Highlight or Focus for accessibility
+                        slider.focus();
+
+                        // Optional: Add a temporary flash effect using CSS class
+                        slider.classList.add('highlight-flash');
+                        setTimeout(() => slider.classList.remove('highlight-flash'), 1000);
+                    }
+                }, 100);
+            });
+        }
+
         // Journal listeners are now handled by FocusPanelJournal module
     },
 
@@ -276,7 +355,7 @@ export const FocusPanelManager = {
     /** Creation mode flag */
     isCreationMode: false,
 
-    // _parseGrade removed - dead code (no call sites)
+
 
     /**
      * Vérifie si le panel est ouvert
@@ -287,15 +366,14 @@ export const FocusPanelManager = {
         return panel?.classList.contains('open') ?? false;
     },
 
-    // _checkDirtyState extracted to FocusPanelStatus.checkDirtyState()
-    // _updateAppreciationStatus extracted to FocusPanelStatus.updateAppreciationStatus()
-    // _refreshAppreciationStatus extracted to FocusPanelStatus.refreshAppreciationStatus()
+
 
     /**
      * Ouvre le Focus Panel pour un élève
      * @param {string} studentId - ID de l'élève
      */
     open(studentId) {
+        this.isCreationMode = false;
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
 
@@ -396,6 +474,12 @@ export const FocusPanelManager = {
 
         // Enable Header Edit Mode (Identity + Statuses)
         FocusPanelHeader.toggleEditMode(true);
+
+        // Clear previous periods history for creation mode
+        this._newStudentHistory = {};
+
+        // Render empty timeline for creation (clears previous data)
+        this._renderStudentDetailsTimeline(null, true);
 
         // Clear history for fresh start
         FocusPanelHistory.clear();
@@ -717,6 +801,9 @@ export const FocusPanelManager = {
                     // Update AI indicator with new metadata
                     FocusPanelStatus.updateAiIndicator(result);
 
+                    // Update button to "Régénérer" state
+                    this._updateGenerateButton(result);
+
                     UI.showNotification('Appréciation générée !', 'success');
                 } else {
                     // User navigated away - just show a subtle notification
@@ -782,6 +869,56 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Update the Generate button state (Générer vs Régénérer)
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _updateGenerateButton(result) {
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        if (!generateBtn) return;
+
+        const currentPeriod = appState.currentPeriod;
+        const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
+        const hasAppreciation = periodAppreciation && periodAppreciation.trim().length > 0;
+        const wasGenerated = result?.wasGenerated === true;
+        const isCurrentPeriodGenerated = result?.generationPeriod === currentPeriod;
+
+        // Determine if this is a regeneration scenario
+        const isRegenerate = hasAppreciation && (wasGenerated && isCurrentPeriodGenerated);
+
+        // Check if data is modified (dirty state) - needs regeneration
+        const isDirty = hasAppreciation && isRegenerate && FocusPanelStatus.checkDirtyState(result);
+
+        const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
+
+        // Remove all state classes first
+        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral');
+
+        // NEW UX LOGIC:
+        // - Bold style (btn-ai) = ACTION NEEDED → "Générer" first time
+        // - Warning style = ACTION RECOMMENDED → "Régénérer" when data changed  
+        // - Neutral style = OPTIONAL → "Régénérer" when already up to date
+
+        if (!hasAppreciation) {
+            // STATE 1: No appreciation yet → Bold primary style (action needed)
+            generateBtn.classList.add('btn-ai');
+            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+        } else if (isDirty) {
+            // STATE 2: Data modified since generation → Warning style (action recommended)
+            generateBtn.classList.add('btn-ai', 'btn-regenerate-warning');
+            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+        } else if (isRegenerate) {
+            // STATE 3: Already generated and up to date → Neutral style (optional)
+            generateBtn.classList.add('btn-neutral');
+            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+        } else {
+            // Fallback: Has appreciation but not AI-generated (manual) → Neutral
+            generateBtn.classList.add('btn-neutral');
+            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+        }
+    },
+
+    /**
      * Copie l'appréciation dans le presse-papier
      */
     async copy() {
@@ -819,7 +956,7 @@ export const FocusPanelManager = {
         const currentPeriod = appState.currentPeriod;
 
         // Exit creation mode when viewing existing student
-        this.isCreationMode = false;
+        // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
 
         // === 0. HEADER: Avatar ===
         const avatarContainer = document.getElementById('focusAvatarContainer');
@@ -966,11 +1103,8 @@ export const FocusPanelManager = {
             FocusPanelStatus.updateWordCount();
         }
 
-        // === 8. FOOTER: Generate Button Period ===
-        const genPeriodSpan = document.getElementById('focusGeneratePeriod');
-        if (genPeriodSpan) {
-            genPeriodSpan.textContent = Utils.getPeriodLabel(currentPeriod, false);
-        }
+        // === 8. FOOTER: Generate Button State (Générer vs Régénérer) ===
+        this._updateGenerateButton(result);
 
         // === 9. Copy Button State ===
         const copyBtn = document.getElementById('focusCopyBtn');
@@ -1001,7 +1135,7 @@ export const FocusPanelManager = {
 
 
 
-    // _updateNavigation extracted to FocusPanelNavigation.updateControls
+
 
     /**
      * Public method to save current context (called by UIManager before period switch)
@@ -1096,19 +1230,32 @@ export const FocusPanelManager = {
      * @param {Object} result - Données de l'élève
      * @private
      */
-    _updateListRow(result) {
-        // Will be implemented when ListView is created
-        // For now, trigger a full re-render
-        if (AppreciationsManager?.renderResults) {
-            AppreciationsManager.renderResults();
+    async _updateListRow(result) {
+        if (!result) return;
+
+        // Use injected manager if available (Synchronous & Fast)
+        if (this.listViewManager && this.listViewManager.updateStudentRow) {
+            const updated = this.listViewManager.updateStudentRow(result.id);
+
+            // If the row doesn't exist (returns false), we need to full render to ADD it
+            // This happens on creation or when a filter previously excluded the student
+            if (!updated && AppreciationsManager) {
+                AppreciationsManager.renderResults(result.id, 'new');
+            }
+            return;
+        }
+
+        // Fallback to dynamic import (should not be needed with proper injection)
+        const { ListViewManager } = await import('./ListViewManager.js');
+        if (ListViewManager && ListViewManager.updateStudentRow) {
+            const updated = ListViewManager.updateStudentRow(result.id);
+            if (!updated && AppreciationsManager) {
+                AppreciationsManager.renderResults(result.id, 'new');
+            }
         }
     },
 
-    // _updateWordCount extracted to FocusPanelStatus.updateWordCount()
-    // _updateAiIndicator extracted to FocusPanelStatus.updateAiIndicator()
-    // _syncAppreciationToResult extracted to FocusPanelStatus.syncAppreciationToResult()
-    // _updateHistoryIndicator extracted to FocusPanelStatus.updateHistoryIndicator()
-    // _setAppreciationBadge extracted to FocusPanelStatus.setAppreciationBadge()
+
 
     /**
      * Apply a refinement style to the appreciation
@@ -1207,8 +1354,7 @@ export const FocusPanelManager = {
         }
     },
 
-    // _saveAppreciationEdits extracted to FocusPanelStatus.saveAppreciationEdits()
-    // _checkIfDataModified extracted to FocusPanelStatus.checkIfDataModified()
+
 
 
     // ===============================
@@ -1431,11 +1577,7 @@ export const FocusPanelManager = {
         }
     },
 
-    // _saveStudentCardChanges removed - dead code (no call sites, obsolete DOM IDs)
 
-    // getFormData removed - dead code (no call sites, obsolete DOM IDs)
-
-    // Analysis functionality moved to FocusPanelAnalysis.js module
 
     /**
      * Ouvre le volet latéral "Paramètres Élève"
@@ -1463,5 +1605,5 @@ export const FocusPanelManager = {
         document.body.classList.remove('sidebar-open');
     }
 
-    // Journal functionality moved to FocusPanelJournal.js module
+
 };

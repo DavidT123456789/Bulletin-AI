@@ -23,6 +23,7 @@ export const userSettings = {
     /** Préférences d'interface */
     ui: {
         theme: 'light',
+        isAppreciationFullView: false,
     },
 
     /** Configuration académique */
@@ -137,6 +138,7 @@ export const runtimeState = {
 const propertyMap = {
     // userSettings.ui
     theme: () => userSettings.ui,
+    isAppreciationFullView: () => userSettings.ui,
 
     // userSettings.academic
     periodSystem: () => userSettings.academic,

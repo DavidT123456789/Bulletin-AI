@@ -161,7 +161,8 @@
 /* When appreciation column is expanded, switch to vertical layout */
 .appreciation-full-view .student-identity-wrapper {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
     gap: 8px;
     /* Blur-to-sharp animation masks the instant flex-direction change */
     animation: identity-expand-reveal 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;

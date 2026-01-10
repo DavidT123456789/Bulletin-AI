@@ -22,6 +22,7 @@ import { DropdownManager } from './DropdownManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ListViewManager } from './ListViewManager.js';
 
 
 
@@ -78,7 +79,8 @@ export const App = {
         await ClassUIManager.checkAndOfferMigration();
 
         // Liste + Focus UX: Initialize Focus Panel
-        FocusPanelManager.init(AppreciationsManager);
+        // Liste + Focus UX: Initialize Focus Panel
+        FocusPanelManager.init(AppreciationsManager, ListViewManager);
 
         // Slide-Over Import Panel: Initialize
         const { ImportWizardManager } = await import('./ImportWizardManager.js');

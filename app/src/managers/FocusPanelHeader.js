@@ -109,7 +109,8 @@ export const FocusPanelHeader = {
             editMode.classList.add('visible');
 
             // Populate Inputs
-            const result = currentStudentId ? appState.filteredResults.find(r => r.id === currentStudentId) : null;
+            // FORCE null result if in creation mode to ensure we don't load a previous student
+            const result = (currentStudentId && !isCreationMode) ? appState.filteredResults.find(r => r.id === currentStudentId) : null;
             if (result) {
                 const nomInput = document.getElementById('headerNomInput');
                 const prenomInput = document.getElementById('headerPrenomInput');

@@ -232,47 +232,80 @@ export const ResultsUIManager = {
         UI.updateHeaderContext();
         UI.initTooltips();
 
-        // Mettre à jour le compteur d'élèves en attente et afficher/masquer le bouton
-        this.updatePendingCount(sourceResults);
+        // Mettre à jour le bouton d'action Générer/Régénérer
+        this.updateGenerateButtonState(sourceResults);
     },
 
     /**
-     * Met à jour le compteur d'élèves en attente et affiche/masque le bouton de génération
-     * @param {Array} results - Les résultats à analyser
+     * Updates the Generate/Regenerate button state based on list content
+     * @param {Array} results - The results to analyze
      */
-    updatePendingCount(results = appState.filteredResults || appState.generatedResults) {
+    updateGenerateButtonState(results = appState.filteredResults || appState.generatedResults) {
         const currentPeriod = appState.currentPeriod;
 
-        // CORRECTION: Vérification stricte du contenu (gestion des espaces vides et HTML résiduel)
+        // Count pending (empty/placeholder)
         const pendingCount = results.filter(r => {
             const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
             const appCurrent = (r.studentData?.currentPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
-
-            // Erreur bloquante uniquement si elle concerne la période actuelle
             const hasBlockingError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
-            if (hasBlockingError) return false;
 
+            if (hasBlockingError) return false;
             // Si pas de contenu défini -> En attente
             if (!effectiveApp) return true;
 
             // Si contenu existant, vérifier s'il est vide ou placeholder
             const textOnly = effectiveApp.replace(/<[^>]*>/g, '').trim().toLowerCase();
-            const isPlaceholder = textOnly === '' ||
+            return textOnly === '' ||
                 textOnly.includes('en attente') ||
                 textOnly.includes('aucune appréciation') ||
                 textOnly.includes('cliquez sur') ||
                 textOnly.startsWith('remplissez');
-
-            return isPlaceholder;
         }).length;
 
         if (DOM.generateAllPendingBtn) {
-            DOM.generateAllPendingBtn.disabled = pendingCount === 0;
+            const btn = DOM.generateAllPendingBtn;
+            let mode = 'disabled';
+
+            if (pendingCount > 0) {
+                mode = 'generate';
+            } else if (results.length > 0) {
+                mode = 'regenerate';
+            }
+
+            btn.dataset.mode = mode;
+            btn.disabled = (mode === 'disabled');
+
+            // Reset base classes to ensure clean state
+            btn.classList.remove('btn-primary', 'btn-neutral');
+
+            const icon = btn.querySelector('i');
+            const label = btn.querySelector('span:not(.pending-badge)');
+            const badge = btn.querySelector('.pending-badge');
+
+            if (mode === 'generate') {
+                btn.classList.add('btn-primary');
+                // Ensure btn-neutral is gone (handled by remove above)
+                if (icon) icon.className = 'fas fa-wand-magic-sparkles';
+                if (label) label.textContent = 'Générer';
+                if (badge) {
+                    badge.style.display = 'inline-flex';
+                    badge.textContent = pendingCount;
+                }
+                btn.dataset.tooltip = "Générer les appréciations pour tous les élèves en attente";
+            } else if (mode === 'regenerate') {
+                btn.classList.add('btn-neutral'); // Use generic neutral style
+                if (icon) icon.className = 'fas fa-sync-alt';
+                if (label) label.textContent = 'Régénérer';
+                if (badge) badge.style.display = 'none';
+                btn.dataset.tooltip = "Régénérer les appréciations visibles";
+            }
         }
-        if (DOM.pendingCountBadge) {
+
+        if (DOM.pendingCountBadge && pendingCount > 0) {
             DOM.pendingCountBadge.textContent = pendingCount;
         }
+
         // Bouton Analyser : disabled si aucun élève
         if (DOM.analyzeClassBtn) {
             DOM.analyzeClassBtn.disabled = results.length === 0;

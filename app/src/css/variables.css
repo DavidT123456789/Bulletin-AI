@@ -166,7 +166,9 @@
     --z-normal: 1;
     --z-base: 1;
     --z-sidebar: 50;
-    --z-header: 100;
+    --z-focus-panel-backdrop: 590;
+    --z-focus-panel: 600;
+    --z-header: 700;
     --z-dropdown: 100;
     --z-sticky: 500;
     --z-modal-backdrop: 900;

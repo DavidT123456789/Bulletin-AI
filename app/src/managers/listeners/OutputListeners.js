@@ -58,10 +58,17 @@ export const OutputListeners = {
             });
         }
 
-        // Bouton "Générer les appréciations" pour les élèves en attente
+        // Bouton "Générer/Régénérer" : Action contextuelle (Option C)
         addClickListener(DOM.generateAllPendingBtn, async () => {
-            const { MassImportManager } = await import('../MassImportManager.js');
-            await MassImportManager.generateAllPending();
+            const mode = DOM.generateAllPendingBtn.dataset.mode || 'generate';
+
+            if (mode === 'regenerate') {
+                const { ResultsUIManager } = await import('../ResultsUIManager.js');
+                ResultsUIManager.regenerateVisible();
+            } else {
+                const { MassImportManager } = await import('../MassImportManager.js');
+                await MassImportManager.generateAllPending();
+            }
         });
 
         // Bouton Analyse de classe -> Ouvre le nouveau Dashboard

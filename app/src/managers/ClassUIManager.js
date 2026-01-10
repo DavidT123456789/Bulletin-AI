@@ -127,7 +127,7 @@ export const ClassUIManager = {
 
         // Créer le formulaire inline
         const formHtml = `
-            <div class="inline-create-form" style="
+            <form class="inline-create-form" action="javascript:void(0)" autocomplete="off" style="
                 padding: 12px;
                 background: var(--surface-color);
                 border-bottom: 1px solid var(--border-color);
@@ -136,15 +136,17 @@ export const ClassUIManager = {
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <input type="text" class="inline-class-input" 
                            placeholder="Nom de la classe..." 
-                           maxlength="50">
-                    <button class="btn btn-primary btn-small inline-create-btn" style="padding: 10px 14px;" disabled>
+                           autocomplete="off"
+                           maxlength="50"
+                           name="newClassName_ignore">
+                    <button type="button" class="btn btn-primary btn-small inline-create-btn" style="padding: 10px 14px;" disabled>
                         <i class="fas fa-check"></i>
                     </button>
-                    <button class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
+                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-            </div>
+            </form>
         `;
 
         // Insérer au début de la liste
@@ -224,7 +226,7 @@ export const ClassUIManager = {
                 <div class="class-dropdown-empty">
                     <i class="fas fa-graduation-cap"></i>
                     <p>Aucune classe créée</p>
-                    <button class="btn btn-primary btn-small" id="createFirstClassBtn">
+                    <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
                         <i class="fas fa-plus"></i> Créer ma première classe
                     </button>
                 </div>
@@ -543,7 +545,8 @@ export const ClassUIManager = {
                                background: var(--surface-color);
                                font-size: 0.95em;
                                outline: none;
-                           ">
+                           "
+                           autocomplete="off">
                     <button class="btn btn-primary btn-small create-class-confirm" style="padding: 10px 14px;" disabled>
                         <i class="fas fa-check"></i>
                     </button>

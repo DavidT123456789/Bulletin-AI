@@ -125,12 +125,38 @@ export const PromptService = {
         }).join('\n');
 
         // Analysis prompts - use the current period's appreciation as reference
+        // Enriched with student context for more accurate insights
+
+        // Build condensed student context for analysis
+        const analysisContextParts = [];
+
+        // Add statuses if present
+        if (statuses && statuses.length > 0) {
+            analysisContextParts.push(`Statuts : ${statuses.join(', ')}`);
+        }
+
+        // Add period context if present
+        const periodContextForAnalysis = periods?.[currentPeriod]?.context;
+        if (periodContextForAnalysis) {
+            analysisContextParts.push(`Contexte : "${periodContextForAnalysis}"`);
+        }
+
+        // Add journal synthesis for richer insights
+        const journalSynthesisForAnalysis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        if (journalSynthesisForAnalysis) {
+            analysisContextParts.push(`Observations : ${journalSynthesisForAnalysis}`);
+        }
+
+        const analysisContext = analysisContextParts.length > 0
+            ? '\n' + analysisContextParts.join('\n')
+            : '';
+
         const swPrompt = `Analyse pour la période '${currentPeriod}'. Liste 2-3 points forts puis 2-3 points faibles.
 Format : "### Points Forts" puis "### Points Faibles". Pas d'intro ni conclusion.
 
 Données de l'élève :
 ${periodsInfoForAnalysis}
-${evolutionText}
+${evolutionText}${analysisContext}
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
@@ -138,7 +164,7 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
 Données de l'élève :
 ${periodsInfoForAnalysis}
-${evolutionText}
+${evolutionText}${analysisContext}
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 

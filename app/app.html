@@ -258,13 +258,14 @@
                             <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
                             <!-- Actions à droite - ordre stable -->
                             <div class="toolbar-actions">
-                                <button class="btn btn-primary btn-generate-all tooltip" id="generateAllPendingBtn"
-                                    disabled data-tooltip="Générer les appréciations pour tous les élèves en attente">
+                                <button type="button" class="btn btn-primary btn-generate-all tooltip"
+                                    id="generateAllPendingBtn" disabled
+                                    data-tooltip="Générer les appréciations pour tous les élèves en attente">
                                     <i class="fas fa-wand-magic-sparkles"></i>
                                     <span>Générer</span>
                                     <span class="pending-badge" id="pendingCountBadge">0</span>
                                 </button>
-                                <button class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
+                                <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
                                     data-tooltip="Analyse IA de la classe">
                                     <i class="fas fa-chart-pie"></i> Analyser
                                 </button>
@@ -1245,183 +1246,180 @@
 
                             <details class="details-accordion" id="apiKeysAccordion">
                                 <summary><i class="fas fa-key"></i> Gérer mes clés API</summary>
-                                <div class="details-content">
-                                    <div class="details-content-inner api-keys-container">
-                                        <div class="api-key-section" id="googleApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fab fa-google"></i> Google
-                                                    Gemini</span>
-                                                <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                                    rel="noopener noreferrer" class="btn-link">Obtenir une clé
-                                                    (gratuit limité)</a>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="googleApiKey" placeholder="AIzaSy...">
-                                                    <span id="googleApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateGoogleApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="googleApiKeyError" style="display: none;">
-                                            </div>
+                                <form class="details-content-inner api-keys-container" action="javascript:void(0)"
+                                    autocomplete="off">
+                                    <div class="api-key-section" id="googleApiKeyGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fab fa-google"></i> Google
+                                                Gemini</span>
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                                                rel="noopener noreferrer" class="btn-link">Obtenir une clé
+                                                (gratuit limité)</a>
                                         </div>
-
-                                        <div class="api-key-section" id="openrouterApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fas fa-route"></i>
-                                                    OpenRouter
-                                                    (Mistral, DeepSeek...)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://openrouter.ai/keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (gratuit dispo.)</a>
-                                                    <a href="https://openrouter.ai/credits" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
+                                        <div class="api-key-actions">
+                                            <div class="api-key-input-container">
+                                                <input type="password" id="googleApiKey" placeholder="AIzaSy..."
+                                                    autocomplete="new-password">
+                                                <span id="googleApiKeyValidationIcon"
+                                                    class="api-key-validation-icon"></span>
                                             </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="openrouterApiKey"
-                                                        placeholder="sk-or-...">
-                                                    <span id="openrouterApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateOpenrouterApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="openrouterApiKeyError"
-                                                style="display: none;">
-                                            </div>
+                                            <button type="button" id="validateGoogleApiKeyBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
                                         </div>
-
-                                        <div class="api-key-section" id="openaiApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fas fa-robot"></i> OpenAI
-                                                    (ChatGPT)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://platform.openai.com/api-keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (payant)</a>
-                                                    <a href="https://platform.openai.com/usage" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="openaiApiKey" placeholder="sk-...">
-                                                    <span id="openaiApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateOpenaiApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="openaiApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="anthropicApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fas fa-brain"></i> Claude
-                                                    (Anthropic)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://console.anthropic.com/settings/keys"
-                                                        target="_blank" rel="noopener noreferrer"
-                                                        class="btn-link">Obtenir une
-                                                        clé (payant)</a>
-                                                    <a href="https://console.anthropic.com/settings/usage"
-                                                        target="_blank" rel="noopener noreferrer"
-                                                        class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="anthropicApiKey"
-                                                        placeholder="sk-ant-...">
-                                                    <span id="anthropicApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateAnthropicApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="anthropicApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="mistralApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fas fa-cat"></i> Mistral AI
-                                                    (API directe)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://console.mistral.ai/api-keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (gratuit)</a>
-                                                    <a href="https://console.mistral.ai/usage" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="mistralApiKey"
-                                                        placeholder="Clé Mistral...">
-                                                    <span id="mistralApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateMistralApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="mistralApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <!-- Section Ollama (IA locale) -->
-                                        <div class="api-key-section ollama-section" id="ollamaConfigGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><i class="fas fa-home"></i> Ollama (IA
-                                                    Locale)</span>
-                                                <div style="display:flex; gap:10px; align-items:center;">
-                                                    <a href="https://ollama.com" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Installer Ollama</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-info">
-                                                <i class="fas fa-info-circle"></i>
-                                                Ollama permet d'exécuter des IA sur votre PC. <strong>Gratuit et
-                                                    illimité</strong>, sans envoyer vos données sur internet.
-                                            </div>
-                                            <div class="api-key-actions api-key-actions-wrap">
-                                                <div class="toggle-switch-container toggle-full-width">
-                                                    <label class="toggle-switch">
-                                                        <input type="checkbox" id="ollamaEnabledToggle">
-                                                        <span class="slider"></span>
-                                                    </label>
-                                                    <label for="ollamaEnabledToggle" class="toggle-switch-label">Activer
-                                                        Ollama</label>
-                                                </div>
-                                                <div class="api-key-input-container" style="flex: 1;">
-                                                    <input type="text" id="ollamaBaseUrl"
-                                                        placeholder="http://localhost:11434"
-                                                        value="http://localhost:11434" style="font-family: monospace;">
-                                                    <span id="ollamaValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button id="validateOllamaBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="ollamaError" style="display: none;"></div>
-                                            <div id="ollamaModelsInfo"
-                                                style="display: none; margin-top: 10px; font-size: 0.85em;">
-                                                <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
-                                                <span id="ollamaModelsText">Modèles installés : ...</span>
-                                            </div>
+                                        <div class="error-message" id="googleApiKeyError" style="display: none;">
                                         </div>
                                     </div>
-                                </div>
+
+                                    <div class="api-key-section" id="openrouterApiKeyGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fas fa-route"></i>
+                                                OpenRouter
+                                                (Mistral, DeepSeek...)</span>
+                                            <div class="api-key-links">
+                                                <a href="https://openrouter.ai/keys" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link">Obtenir une
+                                                    clé (gratuit dispo.)</a>
+                                                <a href="https://openrouter.ai/credits" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
+                                                        class="fas fa-wallet"></i> Usage</a>
+                                            </div>
+                                        </div>
+                                        <div class="api-key-actions">
+                                            <div class="api-key-input-container">
+                                                <input type="password" id="openrouterApiKey" placeholder="sk-or-..."
+                                                    autocomplete="new-password">
+                                                <span id="openrouterApiKeyValidationIcon"
+                                                    class="api-key-validation-icon"></span>
+                                            </div>
+                                            <button type="button" id="validateOpenrouterApiKeyBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
+                                        </div>
+                                        <div class="error-message" id="openrouterApiKeyError" style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <div class="api-key-section" id="openaiApiKeyGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fas fa-robot"></i> OpenAI
+                                                (ChatGPT)</span>
+                                            <div class="api-key-links">
+                                                <a href="https://platform.openai.com/api-keys" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link">Obtenir une
+                                                    clé (payant)</a>
+                                                <a href="https://platform.openai.com/usage" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
+                                                        class="fas fa-wallet"></i> Usage</a>
+                                            </div>
+                                        </div>
+                                        <div class="api-key-actions">
+                                            <div class="api-key-input-container">
+                                                <input type="password" id="openaiApiKey" placeholder="sk-..."
+                                                    autocomplete="new-password">
+                                                <span id="openaiApiKeyValidationIcon"
+                                                    class="api-key-validation-icon"></span>
+                                            </div>
+                                            <button type="button" id="validateOpenaiApiKeyBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
+                                        </div>
+                                        <div class="error-message" id="openaiApiKeyError" style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <div class="api-key-section" id="anthropicApiKeyGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fas fa-brain"></i> Claude
+                                                (Anthropic)</span>
+                                            <div class="api-key-links">
+                                                <a href="https://console.anthropic.com/settings/keys" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link">Obtenir une
+                                                    clé (payant)</a>
+                                                <a href="https://console.anthropic.com/settings/usage" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
+                                                        class="fas fa-wallet"></i> Usage</a>
+                                            </div>
+                                        </div>
+                                        <div class="api-key-actions">
+                                            <div class="api-key-input-container">
+                                                <input type="password" id="anthropicApiKey" placeholder="sk-ant-..."
+                                                    autocomplete="new-password">
+                                                <span id="anthropicApiKeyValidationIcon"
+                                                    class="api-key-validation-icon"></span>
+                                            </div>
+                                            <button type="button" id="validateAnthropicApiKeyBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
+                                        </div>
+                                        <div class="error-message" id="anthropicApiKeyError" style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <div class="api-key-section" id="mistralApiKeyGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fas fa-cat"></i> Mistral AI
+                                                (API directe)</span>
+                                            <div class="api-key-links">
+                                                <a href="https://console.mistral.ai/api-keys" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link">Obtenir une
+                                                    clé (gratuit)</a>
+                                                <a href="https://console.mistral.ai/usage" target="_blank"
+                                                    rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
+                                                        class="fas fa-wallet"></i> Usage</a>
+                                            </div>
+                                        </div>
+                                        <div class="api-key-actions">
+                                            <div class="api-key-input-container">
+                                                <input type="password" id="mistralApiKey" placeholder="Clé Mistral..."
+                                                    autocomplete="new-password">
+                                                <span id="mistralApiKeyValidationIcon"
+                                                    class="api-key-validation-icon"></span>
+                                            </div>
+                                            <button type="button" id="validateMistralApiKeyBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
+                                        </div>
+                                        <div class="error-message" id="mistralApiKeyError" style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Section Ollama (IA locale) -->
+                                    <div class="api-key-section ollama-section" id="ollamaConfigGroup">
+                                        <div class="api-key-header">
+                                            <span class="api-key-provider"><i class="fas fa-home"></i> Ollama (IA
+                                                Locale)</span>
+                                            <div style="display:flex; gap:10px; align-items:center;">
+                                                <a href="https://ollama.com" target="_blank" rel="noopener noreferrer"
+                                                    class="btn-link">Installer Ollama</a>
+                                            </div>
+                                        </div>
+                                        <div class="api-key-info">
+                                            <i class="fas fa-info-circle"></i>
+                                            Ollama permet d'exécuter des IA sur votre PC. <strong>Gratuit et
+                                                illimité</strong>, sans envoyer vos données sur internet.
+                                        </div>
+                                        <div class="api-key-actions api-key-actions-wrap">
+                                            <div class="toggle-switch-container toggle-full-width">
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="ollamaEnabledToggle">
+                                                    <span class="slider"></span>
+                                                </label>
+                                                <label for="ollamaEnabledToggle" class="toggle-switch-label">Activer
+                                                    Ollama</label>
+                                            </div>
+                                            <div class="api-key-input-container" style="flex: 1;">
+                                                <input type="text" id="ollamaBaseUrl"
+                                                    placeholder="http://localhost:11434" value="http://localhost:11434"
+                                                    style="font-family: monospace;">
+                                                <span id="ollamaValidationIcon" class="api-key-validation-icon"></span>
+                                            </div>
+                                            <button type="button" id="validateOllamaBtn"
+                                                class="btn btn-purple btn-small">Vérifier</button>
+                                        </div>
+                                        <div class="error-message" id="ollamaError" style="display: none;"></div>
+                                        <div id="ollamaModelsInfo"
+                                            style="display: none; margin-top: 10px; font-size: 0.85em;">
+                                            <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                                            <span id="ollamaModelsText">Modèles installés : ...</span>
+                                        </div>
+                                    </div>
+                                </form>
                             </details>
                         </div>
                     </div>

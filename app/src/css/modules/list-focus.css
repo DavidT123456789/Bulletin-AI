@@ -276,7 +276,8 @@
     font-weight: 600;
     color: var(--text-primary);
     /* Prevent column jump when avatar moves above name */
-    min-width: 180px;
+    min-width: 140px;
+    padding-right: 8px !important;
     transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -355,9 +356,10 @@
 
 /* Appreciation/Status column */
 .appreciation-cell {
-    max-width: 320px;
+    max-width: 340px;
     min-width: 200px;
     text-align: left;
+    transition: padding 0.3s ease;
 }
 
 /* Center status badges when no appreciation */
@@ -406,8 +408,12 @@
 /* === FULL VIEW STATE (Expanded Content) === */
 
 /* 1. Animate cell height transition */
-.appreciation-cell {
-    transition: padding 0.3s ease;
+/* Expanded View - Width Optimization */
+.student-list-table.appreciation-full-view .appreciation-cell {
+    /* Control width explicitly: Wider than normal (340px) but capped */
+    width: clamp(360px, 40vw, 500px);
+    min-width: 360px;
+    max-width: 500px;
 }
 
 /* 2. Transform the preview bubble into full content */
@@ -430,6 +436,17 @@
 
     /* Micro-fade animation to mask white-space switch */
     animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Shrink name column in expanded view to profit from vertical stacking */
+.student-list-table.appreciation-full-view .student-name-cell {
+    min-width: 230px;
+    width: 230px;
+}
+
+/* Center name header in expanded view */
+.student-list-table.appreciation-full-view th[data-sort-field="name"] .header-content-wrapper {
+    justify-content: center;
 }
 
 /* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
@@ -531,8 +548,13 @@
 }
 
 .status-badge.pending {
-    background: rgba(var(--warning-rgb, 245, 158, 11), 0.1);
-    color: var(--warning-color);
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .status-badge.pending {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
 }
 
 .status-badge.error {
@@ -779,7 +801,7 @@
     height: calc(100vh - 64px);
     background: var(--bg-color);
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0);
-    z-index: var(--z-modal);
+    z-index: var(--z-focus-panel);
     /* GPU-accelerated transform for smooth animations */
     transform: translateX(100%);
     /* iOS Spring easing for authentic feel */
@@ -811,7 +833,7 @@
     backdrop-filter: blur(8px);
     /* Stronger blur for focus */
     -webkit-backdrop-filter: blur(8px);
-    z-index: calc(var(--z-modal) - 1);
+    z-index: var(--z-focus-panel-backdrop);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.4s ease, visibility 0.4s ease;
@@ -1737,6 +1759,22 @@
     gap: 12px;
 }
 
+/* [NEW] Interactive Word Count Badge */
+#focusWordCount {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    /* Compensate padding layout shift */
+    user-select: none;
+}
+
+#focusWordCount:hover {
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.1);
+}
+
 /* Main Appreciation Text Area - ContentEditable */
 .focus-appreciation-text {
     width: 100%;
@@ -1813,6 +1851,17 @@
 .appreciation-status-badge.error {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
+}
+
+/* Empty state - "En attente" - neutral grey, distinct from orange "modified" */
+.appreciation-status-badge.empty {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .appreciation-status-badge.empty {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
 }
 
 .appreciation-status-badge.modified {
@@ -2236,6 +2285,34 @@
     box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
+/* Word Count Badge - Premium UI (Specific ID override) */
+#focusWordCount {
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    cursor: default;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] #focusWordCount {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#focusWordCount:hover {
+    transform: scale(1.05);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    cursor: help;
+}
+
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
     display: inline-flex;
@@ -2503,6 +2580,97 @@
 
 #focusGenerateBtn:active {
     transform: translateY(-1px) scale(0.98);
+}
+
+/* Régénérer state - Override gradient with outline style */
+#focusGenerateBtn.btn-ai-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+#focusGenerateBtn.btn-ai-outline:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -6px rgba(var(--primary-color-rgb), 0.35);
+}
+
+#focusGenerateBtn.btn-ai-outline i {
+    color: var(--primary-color);
+}
+
+/* Warning state - data modified, action RECOMMENDED */
+/* Uses same primary gradient as "Générer" for harmony, pulse draws attention */
+/* Warning state - data modified, action RECOMMENDED */
+/* Uses same primary gradient as "Générer" for harmony, pulse draws attention */
+/* Generic class for both Focus and List buttons */
+.btn-regenerate-warning {
+    /* Animation removed: Color change (Neutral -> Gradient) is sufficient to attract attention */
+    /* and provides a cleaner, less distracting UI. */
+}
+
+@keyframes pulse-orange {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Neutral state - already up to date, OPTIONAL action */
+/* Shared by Focus Panel and List View "Régénérer" buttons */
+#focusGenerateBtn.btn-neutral,
+.btn.btn-neutral {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    animation: none !important;
+    /* CRITICAL: Kill any lingering pulse */
+}
+
+#focusGenerateBtn.btn-neutral i,
+.btn.btn-neutral i {
+    color: var(--text-tertiary);
+}
+
+#focusGenerateBtn.btn-neutral:hover,
+.btn.btn-neutral:hover {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+#focusGenerateBtn.btn-neutral:hover i,
+.btn.btn-neutral:hover i {
+    color: var(--text-secondary);
+}
+
+#focusGenerateBtn.btn-neutral:active,
+.btn.btn-neutral:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.dirty-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--warning-color);
+    margin-right: 8px;
+    /* Slightly more space */
+    font-size: 0.95em;
+    animation: pulse-orange 2s infinite;
+    cursor: help;
+    /* Indicate tooltip presence */
 }
 
 /* ============================
@@ -3183,6 +3351,24 @@
 .analysis-status-badge.error {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
+}
+
+.analysis-status-badge.modified {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    animation: analysis-modified-pulse 2s ease-in-out infinite;
+}
+
+@keyframes analysis-modified-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 /* Colored Icons - Larger for better visibility */
@@ -4461,6 +4647,67 @@
     .student-list-table .appreciation-header,
     .student-list-table .appreciation-cell {
         display: none;
+    }
+}
+
+
+/* ====================================================================
+   RESPONSIVE TABLE OPTIMIZATIONS (Tablet / Narrow Desktop)
+   ==================================================================== */
+
+@media (max-width: 1200px) {
+
+    /* Reduce generous padding */
+    .student-list-table th,
+    .student-list-table td {
+        padding: 12px 10px;
+    }
+
+    /* Compress fixed columns */
+    .student-name-cell {
+        min-width: 140px;
+    }
+
+    .grade-cell {
+        min-width: 45px;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    .status-cell {
+        width: 100px;
+    }
+}
+
+@media (max-width: 900px) {
+
+    /* Hide less critical columns to preserve appreciation legibility */
+    .evolution-header,
+    .evolution-cell {
+        display: none;
+    }
+
+    /* Further compress Status */
+    .status-cell {
+        width: auto;
+        /* Let it shrink to content */
+    }
+
+    /* Compress name further */
+    .student-name-cell {
+        min-width: 120px;
+    }
+
+    /* Ensure the Grades are not too wide */
+    .grade-cell {
+        font-size: 13px;
+        font-weight: 500;
+        min-width: 35px;
+    }
+
+    /* Ensure the table container scrolls if needed specifically here */
+    .student-list-view {
+        overflow-x: auto;
     }
 }
 
