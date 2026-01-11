@@ -40,6 +40,9 @@ export const TrombinoscopeManager = {
      */
     _zones: [],
 
+    /** Cached Image object for canvas operations */
+    _cachedImage: null,
+
     /** Counter for zone IDs */
     _zoneIdCounter: 0,
 
@@ -89,7 +92,8 @@ export const TrombinoscopeManager = {
         });
 
         // Sample button
-        document.getElementById('trombiSampleBtn')?.addEventListener('click', () => {
+        document.getElementById('trombiSampleBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             this._loadImageFromUrl('/images/sample-trombinoscope.png');
         });
 
@@ -130,9 +134,23 @@ export const TrombinoscopeManager = {
         this._zoneIdCounter = 0;
         this._dragging = null;
         this._resizing = null;
+        this._cachedImage = null;
 
-        const preview = document.getElementById('trombiPreview');
-        if (preview) preview.innerHTML = '';
+        // Reset dropzone state
+        const placeholder = document.getElementById('trombiDropPlaceholder');
+        const preview = document.getElementById('trombiDropPreview');
+        const previewImg = document.getElementById('trombiPreviewImg');
+        const dropZone = document.getElementById('trombiDropZone');
+        const sampleBtn = document.getElementById('trombiSampleBtn');
+
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+        if (previewImg) previewImg.src = '';
+        dropZone?.classList.remove('has-image');
+        if (sampleBtn) sampleBtn.style.display = '';
+
+        const footerInfo = document.getElementById('trombiImageInfo');
+        if (footerInfo) footerInfo.innerHTML = '';
 
         const nextBtn = document.getElementById('trombiStep1NextBtn');
         if (nextBtn) nextBtn.disabled = true;
@@ -145,21 +163,247 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     _goToStep(step) {
+        const previousStep = this._currentStep;
         this._currentStep = step;
 
-        // Show/hide step content
-        document.querySelectorAll('.trombi-step-content').forEach(el => {
-            el.style.display = 'none';
-        });
-        document.getElementById(`trombiStep${step}`)?.style.setProperty('display', 'block');
+        // Animate transition based on direction
+        if (step > previousStep) {
+            this._animateStepTransition(previousStep, step, 'forward');
+        } else {
+            this._animateStepTransition(previousStep, step, 'backward');
+        }
 
         this._updateStepperUI();
 
-        // Initialize step content
+        // Initialize step content (after animation starts)
         if (step === 2) {
-            this._initStep2();
+            setTimeout(() => this._initStep2(), 50);
         } else if (step === 3) {
-            this._initStep3();
+            setTimeout(() => this._initStep3(), 50);
+        }
+    },
+
+    _animateStepTransition(fromStep, toStep, direction) {
+        const fromContent = document.getElementById(`trombiStep${fromStep}`);
+        const toContent = document.getElementById(`trombiStep${toStep}`);
+        const fromFooter = document.getElementById(`trombiStep${fromStep}Footer`);
+        const toFooter = document.getElementById(`trombiStep${toStep}Footer`);
+
+        if (!fromContent || !toContent) return;
+
+        // Switch footers immediately (no animation - content is the same)
+        if (fromFooter) fromFooter.style.display = 'none';
+        if (toFooter) toFooter.style.display = 'flex';
+
+        // Special FLIP animation for Step 1 ↔ Step 2
+        if (fromStep === 1 && toStep === 2) {
+            this._animateFLIPTransition(fromContent, toContent, 'forward');
+            return;
+        }
+        if (fromStep === 2 && toStep === 1) {
+            this._animateFLIPTransition(fromContent, toContent, 'backward');
+            return;
+        }
+
+        // Generic animation for other transitions
+        this._animateGenericTransition(fromContent, toContent, direction);
+    },
+
+    _animateFLIPTransition(fromContent, toContent, direction) {
+        // Determine source and target image elements based on direction
+        let sourceImageEl, targetImageEl;
+
+        if (direction === 'forward') {
+            // Step 1 → Step 2: from dropzone to image panel
+            sourceImageEl = fromContent.querySelector('.drop-zone-image');
+            targetImageEl = null; // Will get trombi-image-wrapper after toContent is visible
+        } else {
+            // Step 2 → Step 1: from image panel to dropzone
+            sourceImageEl = fromContent.querySelector('.trombi-image-wrapper img, .trombi-image');
+            targetImageEl = toContent.querySelector('.drop-zone-image');
+        }
+
+        if (!sourceImageEl || !sourceImageEl.src) {
+            // Fallback to generic if no image
+            this._animateGenericTransition(fromContent, toContent, direction);
+            return;
+        }
+
+        // FIRST: Capture source position
+        const sourceRect = sourceImageEl.getBoundingClientRect();
+
+        // Create ghost element for FLIP animation
+        const ghost = document.createElement('div');
+        ghost.className = 'trombi-flip-ghost';
+        ghost.style.cssText = `
+            top: ${sourceRect.top}px;
+            left: ${sourceRect.left}px;
+            width: ${sourceRect.width}px;
+            height: ${sourceRect.height}px;
+        `;
+        ghost.innerHTML = `<img src="${this._imageSrc || sourceImageEl.src}" alt="">`;
+        document.body.appendChild(ghost);
+
+        // Hide source immediately
+        sourceImageEl.style.opacity = '0';
+
+        // Prepare destination
+        toContent.style.display = 'flex';
+        toContent.style.opacity = '0';
+
+        // Fade out fromContent
+        fromContent.style.transition = 'opacity 0.25s ease';
+        fromContent.style.opacity = '0';
+
+        // Setup target panels for reveal animation (forward only)
+        const imagePanel = toContent.querySelector('.trombi-image-panel');
+        const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
+        const dropZone = toContent.querySelector('.trombi-drop-zone');
+
+        if (direction === 'forward') {
+            if (imagePanel) imagePanel.classList.add('morph-target');
+            if (assignmentPanel) assignmentPanel.classList.add('slide-in');
+        } else {
+            // Backward: prepare dropzone for reveal
+            if (dropZone) {
+                dropZone.style.opacity = '0';
+                dropZone.style.transform = 'scale(0.95)';
+            }
+        }
+
+        setTimeout(() => {
+            fromContent.style.display = 'none';
+            fromContent.style.opacity = '';
+            fromContent.style.transition = '';
+            sourceImageEl.style.opacity = '';
+
+            // Show destination content
+            toContent.style.opacity = '1';
+
+            // LAST: Get target position after content is visible
+            requestAnimationFrame(() => {
+                let targetRect;
+
+                if (direction === 'forward') {
+                    const targetWrapper = toContent.querySelector('.trombi-image-wrapper');
+                    if (targetWrapper) {
+                        targetRect = targetWrapper.getBoundingClientRect();
+                    }
+                } else {
+                    // Backward: target is the dropzone preview
+                    const targetPreview = toContent.querySelector('.drop-zone-image');
+                    if (targetPreview) {
+                        targetRect = targetPreview.parentElement.getBoundingClientRect();
+                    }
+                }
+
+                if (targetRect) {
+                    // INVERT & PLAY: Animate ghost to target position
+                    ghost.style.transition = 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)';
+                    ghost.style.top = `${targetRect.top}px`;
+                    ghost.style.left = `${targetRect.left}px`;
+                    ghost.style.width = `${targetRect.width}px`;
+                    ghost.style.height = `${targetRect.height}px`;
+                    ghost.style.borderRadius = direction === 'forward' ? 'var(--radius-md)' : 'var(--radius-lg)';
+                    ghost.style.boxShadow = direction === 'forward'
+                        ? '0 4px 20px rgba(0, 0, 0, 0.15)'
+                        : '0 8px 32px rgba(0, 0, 0, 0.2)';
+                }
+
+                // Reveal panels with delay
+                setTimeout(() => {
+                    if (direction === 'forward') {
+                        if (imagePanel) imagePanel.classList.add('revealed');
+                        if (assignmentPanel) assignmentPanel.classList.add('revealed');
+                    } else {
+                        // Backward: reveal dropzone
+                        if (dropZone) {
+                            dropZone.style.transition = 'opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+                            dropZone.style.opacity = '1';
+                            dropZone.style.transform = 'scale(1)';
+                        }
+                    }
+                }, 150);
+
+                // Cleanup ghost after animation
+                setTimeout(() => {
+                    ghost.style.opacity = '0';
+                    ghost.style.transition = 'opacity 0.2s ease';
+                    setTimeout(() => {
+                        ghost.remove();
+                        // Remove animation classes/styles
+                        if (direction === 'forward') {
+                            if (imagePanel) imagePanel.classList.remove('morph-target', 'revealed');
+                            if (assignmentPanel) assignmentPanel.classList.remove('slide-in', 'revealed');
+                        } else {
+                            if (dropZone) {
+                                dropZone.style.transition = '';
+                                dropZone.style.transform = '';
+                            }
+                        }
+                    }, 200);
+                }, 550);
+            });
+        }, 200);
+    },
+
+    _animateGenericTransition(fromContent, toContent, direction) {
+        // Prepare the incoming step
+        toContent.style.display = 'flex';
+        toContent.style.opacity = '0';
+        toContent.style.transform = direction === 'forward' ? 'translateX(30px)' : 'translateX(-30px)';
+
+        // Animate out the current step
+        fromContent.style.transition = 'opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+        fromContent.style.opacity = '0';
+        fromContent.style.transform = direction === 'forward' ? 'translateX(-30px)' : 'translateX(30px)';
+
+        // After outgoing animation, animate in the new step
+        setTimeout(() => {
+            fromContent.style.display = 'none';
+            fromContent.style.transform = '';
+            fromContent.style.opacity = '';
+            fromContent.style.transition = '';
+
+            // Animate in the new step
+            toContent.style.transition = 'opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+
+            requestAnimationFrame(() => {
+                toContent.style.opacity = '1';
+                toContent.style.transform = 'translateX(0)';
+
+                // Animate child elements sequentially for premium feel
+                this._animateStepChildren(toContent, this._currentStep);
+            });
+
+            // Cleanup after animation
+            setTimeout(() => {
+                toContent.style.transition = '';
+                toContent.style.transform = '';
+            }, 500);
+
+        }, 250);
+    },
+
+    _animateStepChildren(container, step) {
+        // Step 3: Animate preview grid items with stagger
+        if (step === 3) {
+            const gridItems = container.querySelectorAll('.trombi-preview-item');
+            gridItems.forEach((item, index) => {
+                item.classList.add('stagger-in');
+                item.style.transitionDelay = `${index * 40}ms`;
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        item.classList.add('revealed');
+                    });
+                });
+
+                setTimeout(() => {
+                    item.classList.remove('stagger-in', 'revealed');
+                    item.style.transitionDelay = '';
+                }, 600 + index * 40);
+            });
         }
     },
 
@@ -184,6 +428,7 @@ export const TrombinoscopeManager = {
     },
 
     _loadImageFromUrl(url) {
+        this._cachedImage = null; // Clear cache
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
@@ -200,18 +445,30 @@ export const TrombinoscopeManager = {
     },
 
     _displayImagePreview() {
-        const preview = document.getElementById('trombiPreview');
-        if (!preview) return;
+        const placeholder = document.getElementById('trombiDropPlaceholder');
+        const preview = document.getElementById('trombiDropPreview');
+        const previewImg = document.getElementById('trombiPreviewImg');
+        const dropZone = document.getElementById('trombiDropZone');
+        const sampleBtn = document.getElementById('trombiSampleBtn');
 
-        preview.innerHTML = `
-            <div class="trombi-image-container">
-                <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image">
-            </div>
-            <p class="trombi-image-info">
-                <i class="fas fa-check-circle"></i> 
-                Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)
-            </p>
-        `;
+        if (!placeholder || !preview || !previewImg) return;
+
+        // Show preview, hide placeholder
+        placeholder.style.display = 'none';
+        preview.style.display = 'flex';
+        previewImg.src = this._imageSrc;
+
+        // Add loaded state to dropzone for styling
+        dropZone?.classList.add('has-image');
+
+        // Hide sample button when image is loaded
+        if (sampleBtn) sampleBtn.style.display = 'none';
+
+        // Display info message in footer
+        const footerInfo = document.getElementById('trombiImageInfo');
+        if (footerInfo) {
+            footerInfo.innerHTML = `<i class="fas fa-check-circle"></i> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
+        }
     },
 
     // ========================================================================
@@ -250,6 +507,11 @@ export const TrombinoscopeManager = {
 
         // Setup control panel with sliders
         this._setupControlPanel();
+
+        // Bind Auto button (now in HTML, not generated by _setupControlPanel)
+        document.getElementById('autoOrderBtn')?.addEventListener('click', () => {
+            this._autoAssignInOrder();
+        });
     },
 
     _setupControlPanel() {
@@ -282,15 +544,9 @@ export const TrombinoscopeManager = {
                     <label><i class="fas fa-expand-alt"></i> Taille</label>
                     <div class="slider-group">
                         <input type="range" class="control-slider" id="sizeSlider" 
-                               min="20" max="100" value="60">
+                               min="10" max="100" value="60">
                         <span class="slider-value" id="sizeValue">60%</span>
                     </div>
-                </div>
-                <div class="control-actions">
-                    <button class="btn-auto-order" id="autoOrderBtn" title="Attribution automatique">
-                        <i class="fas fa-sort-alpha-down"></i> Auto
-                    </button>
-                </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', panelHtml);
@@ -319,10 +575,6 @@ export const TrombinoscopeManager = {
             const percent = parseInt(e.target.value);
             sizeValue.textContent = percent + '%';
             this._updateSizeFromPercent(percent);
-        });
-
-        document.getElementById('autoOrderBtn')?.addEventListener('click', () => {
-            this._autoAssignInOrder();
         });
 
         // Create initial grid
@@ -609,26 +861,23 @@ export const TrombinoscopeManager = {
 
     _renderAssignmentGrid() {
         const container = document.getElementById('trombiAssignmentGrid');
+        const panel = document.querySelector('.trombi-assignment-panel');
         if (!container) return;
 
         const students = appState.filteredResults || [];
+
+
 
         if (this._zones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-hand-pointer"></i>
                     <p>Cliquez sur l'image pour ajouter des zones</p>
-                </div>
             `;
             return;
         }
 
         container.innerHTML = `
-            <div class="assignment-header">
-                <span></span>
-                <span>Élève</span>
-                <span>Zone</span>
-            </div>
             ${students.map(student => {
             return `
                     <div class="assignment-row" data-student-id="${student.id}">
@@ -651,10 +900,14 @@ export const TrombinoscopeManager = {
                     </div>
                 `;
         }).join('')}
-            <div class="assignment-summary">
-                ${this._zones.filter(z => z.studentId).length} / ${this._zones.length} zones assignées
-            </div>
         `;
+
+        // Update zones count in footer
+        const assignedCount = this._zones.filter(z => z.studentId).length;
+        const zonesInfo = document.getElementById('trombiZonesInfo');
+        if (zonesInfo) {
+            zonesInfo.textContent = `${assignedCount} / ${this._zones.length} zones assignées`;
+        }
 
         // Bind select events
         container.querySelectorAll('.assignment-select').forEach(select => {

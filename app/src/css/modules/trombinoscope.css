@@ -26,8 +26,9 @@
 .trombi-wizard-content {
     position: relative;
     width: 90%;
-    max-width: 900px;
-    max-height: 85vh;
+    max-width: 1000px;
+    height: 680px;
+    max-height: 90vh;
     background: var(--bg-color);
     border-radius: 16px;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
@@ -88,14 +89,50 @@
 }
 
 .trombi-wizard-step.active {
-    background: rgba(var(--primary-color-rgb), 0.1);
+    /* Reset background color as we use layered images */
+    background-color: transparent;
     color: var(--primary-color);
+
+    /* Transparent border handles the spacing for the gradient border */
+    border: 1.5px solid transparent;
+
+    /* 
+       Layer 1: The Blue Tint (Visual requirement) - clipped to padding
+       Layer 2: The Surface Color (Opaque blocker) - clipped to padding
+       Layer 3: The Conic Gradient (Border) - clipped to border
+    */
+    background-image:
+        linear-gradient(rgba(var(--primary-color-rgb), 0.1), rgba(var(--primary-color-rgb), 0.1)),
+        linear-gradient(var(--surface-color), var(--surface-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+
+    background-origin: padding-box, padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
+
+    /* Animation */
+    animation: rotate-gradient 10s linear infinite;
+
+    /* Box Shadow from inputs */
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08), 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .trombi-wizard-step.completed {
     color: var(--success-color);
     background: transparent;
     box-shadow: none;
+    border: 1.5px solid transparent;
+    /* Keep consistent border width to prevent layout shift */
 }
 
 .trombi-wizard-step .step-number {
@@ -171,24 +208,29 @@
     color: var(--text-primary);
 }
 
-/* Body */
+/* Body - Flex pour permettre au contenu de croître et au footer de rester ancré */
 .trombi-wizard-body {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-/* Step Content */
+/* Step Content - Prend toute la hauteur disponible */
 .trombi-step-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Drop Zone - Harmonized with import-wizard style */
 .trombi-drop-zone {
-    flex: 1;
-    min-height: 140px;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -199,6 +241,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .trombi-drop-zone::before {
@@ -295,17 +338,137 @@
     border-bottom: 1px dashed var(--primary-color);
 }
 
-/* Preview */
-.trombi-preview {
-    margin-top: 16px;
+/* Floating Sample Button */
+.trombi-floating-sample-btn {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 10;
+    margin: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.trombi-floating-sample-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Unified Dropzone with Integrated Preview
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Preview container (hidden by default) */
+.drop-zone-preview {
+    display: none;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The preview image */
+.drop-zone-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Overlay shown on hover when image is loaded */
+.drop-zone-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    pointer-events: none;
+}
+
+.drop-zone-overlay i {
+    font-size: 1.5rem;
+}
+
+/* Dropzone with image loaded - adjust styling */
+.trombi-drop-zone.has-image {
+    border-style: solid;
+    border-color: var(--primary-color);
+    background: var(--bg-secondary);
+    padding: 12px;
+}
+
+.trombi-drop-zone.has-image:hover {
+    transform: none;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.trombi-drop-zone.has-image:hover .drop-zone-overlay {
+    opacity: 1;
+}
+
+.trombi-drop-zone.has-image:hover .drop-zone-image {
+    transform: scale(0.98);
+    filter: brightness(0.9);
 }
 
 .trombi-image-container {
     position: relative;
-    max-height: 450px;
-    overflow: auto;
     border-radius: 12px;
     background: var(--bg-secondary);
+    overflow: hidden;
+    /* Clip l'image aux coins arrondis, pas de scroll */
+}
+
+/* Image s'adapte au container */
+.trombi-image-container .trombi-image {
+    width: 100%;
+    height: auto;
+    max-height: 350px;
+    /* Limite la hauteur de l'image, pas du container */
+    object-fit: contain;
+    display: block;
+}
+
+/* Footer info message (image loaded confirmation) */
+.trombi-footer-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--success-color);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.trombi-footer-info:not(:empty) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.trombi-footer-info i {
+    font-size: 14px;
 }
 
 /* Inner wrapper to maintain positioning context */
@@ -450,7 +613,8 @@
 /* Step 2: Split View */
 .trombi-split-view {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 7fr 3fr;
+    /* 70% mappage / 30% association */
     gap: 24px;
     min-height: 400px;
 }
@@ -458,7 +622,7 @@
 .trombi-image-panel {
     background: var(--bg-secondary);
     border-radius: 12px;
-    padding: 16px;
+    padding: 0;
     overflow: hidden;
 }
 
@@ -479,7 +643,7 @@
     background: var(--bg-secondary);
     border-radius: 10px;
     padding: 14px;
-    margin-top: 12px;
+    margin: 12px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -564,53 +728,69 @@
     border-radius: 4px;
 }
 
-.control-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color);
-}
-
-.control-actions .btn-auto-order {
+/* Bouton Auto (affiché dans le header du panneau d'association) */
+.btn-auto-order {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 6px 12px;
     background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
-.control-actions .btn-auto-order:hover {
+.btn-auto-order:hover {
     opacity: 0.9;
     transform: translateY(-1px);
 }
 
+/* Panneau d'association restructuré avec header, liste flex et summary sticky */
+.trombi-assignment-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    /* Crucial pour flex overflow */
+}
+
+.trombi-assignment-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
 .trombi-assignment-panel h4 {
-    margin: 0 0 12px;
+    margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-/* Assignment Grid */
+/* Assignment Grid - flexible et scrollable */
 .trombi-assignment-grid {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 350px;
+    flex: 1;
+    min-height: 0;
+    /* Permet le scroll */
     overflow-y: auto;
+    padding-right: 4px;
+    /* Espace pour scrollbar */
 }
 
 .assignment-header {
     display: grid;
-    grid-template-columns: 44px 1fr 100px;
+    grid-template-columns: 44px 1fr 65px;
     gap: 10px;
     padding: 8px 12px;
     font-size: 11px;
@@ -622,7 +802,7 @@
 
 .assignment-row {
     display: grid;
-    grid-template-columns: 44px 1fr 100px;
+    grid-template-columns: 44px 1fr 65px;
     gap: 10px;
     align-items: center;
     padding: 6px 12px;
@@ -631,9 +811,7 @@
     transition: background 0.2s ease;
 }
 
-.assignment-row:hover {
-    background: var(--bg-hover);
-}
+
 
 .assignment-preview {
     display: flex;
@@ -663,13 +841,35 @@
 }
 
 .assignment-select {
-    padding: 5px 8px;
+    padding: 5px 2px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    background: var(--bg-color);
+    background-color: var(--bg-color);
+    background-image: none !important;
+    /* Remove global SVG arrow */
     color: var(--text-primary);
     font-size: 12px;
     cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-align: center;
+    text-align-last: center;
+    padding-right: 2px !important;
+}
+
+.assignment-select:hover {
+    border-color: var(--primary-color);
+    background-image: none !important;
+    padding-right: 2px !important;
+}
+
+.assignment-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    outline: none;
+    background-image: none !important;
+    padding-right: 2px !important;
 }
 
 /* Step 3: Preview Grid */
@@ -732,23 +932,19 @@
     white-space: nowrap;
 }
 
-/* Assignment Summary */
-.assignment-summary {
-    text-align: center;
-    padding: 12px;
-    font-size: 12px;
-    color: var(--text-secondary);
-    border-top: 1px dashed var(--border-color);
-    margin-top: 8px;
-}
 
-/* Footer */
+/* Footer - Style standard comme import-wizard-footer (ancré en bas) */
 .trombi-step-footer {
     display: flex;
     justify-content: space-between;
-    padding-top: 20px;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--surface-color);
     border-top: 1px solid var(--border-color);
-    margin-top: auto;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    min-height: 56px;
+    flex-shrink: 0;
+    gap: 16px;
 }
 
 /* Empty State */
@@ -875,6 +1071,92 @@
 .trombi-hint i {
     color: var(--primary-color);
     font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Step Transition Animations (iOS 2025 Premium)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* FLIP Animation placeholder for image morphing */
+.trombi-flip-ghost {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    will-change: transform, width, height, top, left;
+}
+
+.trombi-flip-ghost img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--bg-secondary);
+}
+
+/* Step content transition states */
+.trombi-step-content.animating-out {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.98);
+    transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.trombi-step-content.animating-in {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+}
+
+.trombi-step-content.animating-in.active {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    transition: opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Image panel morphing animation */
+.trombi-image-panel.morph-target {
+    opacity: 0;
+    transform: scale(1.05);
+    transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.2s,
+        transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.2s;
+}
+
+.trombi-image-panel.morph-target.revealed {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Assignment panel slide-in animation */
+.trombi-assignment-panel.slide-in {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.25s,
+        transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.25s;
+}
+
+.trombi-assignment-panel.slide-in.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Preview grid stagger animation */
+.trombi-preview-item.stagger-in {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+}
+
+.trombi-preview-item.stagger-in.revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Footer fade animation */
+.trombi-step-footer.fade-transition {
+    transition: opacity 0.25s ease;
 }
 
 /* Responsive */

@@ -21,6 +21,12 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Harmonization: Icons inherit text color */
+.btn i {
+    color: inherit;
+    opacity: 0.95;
+}
+
 .btn:hover:not(:disabled) {
     background: var(--primary-hover);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);

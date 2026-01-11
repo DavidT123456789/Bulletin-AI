@@ -80,26 +80,35 @@
 }
 
 /* Toolbar Items Standardization (Search, Select, Buttons) */
+/* Harmonized with stat-cards: glass border + subtle shadow */
 .search-input,
 .output-toolbar .custom-dropdown-trigger,
 .output-toolbar .btn-icon,
-.btn-generate-all,
-.btn-ai {
-    height: 48px !important;
+.btn-generate-all {
+    height: 40px !important;
     border-radius: var(--radius-md) !important;
     font-size: 14px;
     background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-glass-border);
     color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* Bouton Analyser - préserve le texte blanc sur fond gradient */
+.btn-ai {
+    height: 40px !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 14px;
+    color: white !important;
     transition: all var(--transition-fast);
     box-shadow: var(--shadow-sm);
 }
 
-/* Search input - iOS 2025 premium style */
+/* Search input - iOS 2025 premium style (harmonized with stat-cards) */
 .search-input {
     background-color: var(--surface-color);
-    border: 1px solid transparent;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    /* border and box-shadow inherited from unified toolbar rule above */
 }
 
 /* Action buttons "Ghost" style from mockup */
@@ -126,6 +135,13 @@
     padding: 0 32px 0 38px;
     color: var(--text-primary);
     width: 100%;
+}
+
+/* Harmonization: Placeholder matches icon color */
+.search-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+    /* Firefox default is lower */
 }
 
 /* Hover States - Aligned with custom dropdown trigger */
@@ -182,6 +198,8 @@
     pointer-events: none;
     font-size: 14px;
     transition: color var(--transition-fast);
+    /* Harmonization */
+    opacity: 1;
 }
 
 .search-input:focus~.search-icon,

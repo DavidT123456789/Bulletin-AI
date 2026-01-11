@@ -81,9 +81,42 @@
 }
 
 .import-wizard-stepper.compact .wizard-step.active {
-    background: rgba(var(--primary-color-rgb), 0.1);
+    /* Reset background color as we use layered images */
+    background-color: transparent;
     color: var(--primary-color);
-    /* Number visible */
+
+    /* Transparent border handles the spacing for the gradient border */
+    border: 1.5px solid transparent;
+
+    /* 
+       Layer 1: The Blue Tint (Visual requirement) - clipped to padding
+       Layer 2: The Surface Color (Opaque blocker) - clipped to padding
+       Layer 3: The Conic Gradient (Border) - clipped to border
+    */
+    background-image:
+        linear-gradient(rgba(var(--primary-color-rgb), 0.1), rgba(var(--primary-color-rgb), 0.1)),
+        linear-gradient(var(--surface-color), var(--surface-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+
+    background-origin: padding-box, padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
+
+    /* Animation */
+    animation: rotate-gradient 10s linear infinite;
+
+    /* Box Shadow from inputs */
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08), 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
 /* Fix for completed state overlay issue (legacy conflict) */
