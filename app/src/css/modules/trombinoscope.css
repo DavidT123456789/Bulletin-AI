@@ -613,8 +613,8 @@
 /* Step 2: Split View */
 .trombi-split-view {
     display: grid;
-    grid-template-columns: 7fr 3fr;
-    /* 70% mappage / 30% association */
+    grid-template-columns: 7.5fr 2.5fr;
+    /* 75% mappage / 25% association */
     gap: 24px;
     min-height: 400px;
 }
@@ -628,8 +628,7 @@
 
 .trombi-image-wrapper {
     position: relative;
-    max-height: 320px;
-    overflow: auto;
+    /* No max-height - let image fit naturally */
 }
 
 .trombi-image-wrapper .trombi-image {
@@ -638,50 +637,63 @@
     height: auto;
 }
 
-/* Grid Control Panel */
+/* Grid Control Panel - Compact 2-column layout */
 .grid-control-panel {
     background: var(--bg-secondary);
-    border-radius: 10px;
-    padding: 14px;
-    margin: 12px 16px 16px 16px;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 8px 12px 12px 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
+}
+
+/* Two-column layout for compact display */
+.control-row-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
 }
 
 .control-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+}
+
+/* Full width row (for size slider) */
+.control-row.full-width {
+    grid-column: 1 / -1;
 }
 
 .control-row label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 5px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--text-secondary);
-    min-width: 85px;
+    min-width: 70px;
+    white-space: nowrap;
 }
 
 .control-row label i {
-    color: var(--primary-color);
-    width: 14px;
+    color: var(--text-tertiary);
+    width: 12px;
     text-align: center;
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .slider-group {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .control-slider {
     flex: 1;
-    height: 6px;
+    height: 5px;
     -webkit-appearance: none;
     appearance: none;
     background: linear-gradient(to right,
@@ -693,39 +705,105 @@
 
 .control-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: var(--primary-color);
+    background: white;
     cursor: pointer;
-    border: 2px solid var(--bg-color);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(var(--primary-color-rgb), 0.3);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .control-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
 }
 
 .control-slider::-moz-range-thumb {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: var(--primary-color);
+    background: white;
     cursor: pointer;
-    border: 2px solid var(--bg-color);
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Slider value - More visible box design */
 .slider-value {
-    min-width: 28px;
+    min-width: 32px;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--primary-color);
-    background: rgba(108, 92, 231, 0.1);
-    padding: 3px 6px;
-    border-radius: 4px;
+    background: var(--bg-color);
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+/* Sync Toggle - iOS style switch */
+.sync-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.toggle-text {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.sync-toggle-checkbox {
+    display: none;
+}
+
+.sync-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border-color);
+    border-radius: 10px;
+    transition: background 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sync-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sync-toggle-checkbox:checked+.sync-toggle-switch {
+    background: var(--primary-color);
+}
+
+.sync-toggle-checkbox:checked+.sync-toggle-switch::after {
+    transform: translateX(16px);
+}
+
+.sync-toggle-label i {
+    color: var(--text-tertiary);
+    font-size: 10px;
 }
 
 /* Bouton Auto (affiché dans le header du panneau d'association) */
@@ -775,25 +853,23 @@
     color: var(--text-primary);
 }
 
-/* Assignment Grid - flexible et scrollable */
+/* Assignment Grid - flexible et scrollable (compact) */
 .trombi-assignment-grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     flex: 1;
     min-height: 0;
-    /* Permet le scroll */
     overflow-y: auto;
     padding-right: 4px;
-    /* Espace pour scrollbar */
 }
 
 .assignment-header {
     display: grid;
-    grid-template-columns: 44px 1fr 65px;
-    gap: 10px;
-    padding: 8px 12px;
-    font-size: 11px;
+    grid-template-columns: 40px 1fr 42px;
+    gap: 8px;
+    padding: 4px 8px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -802,16 +878,18 @@
 
 .assignment-row {
     display: grid;
-    grid-template-columns: 44px 1fr 65px;
-    gap: 10px;
+    grid-template-columns: 40px 1fr 42px;
+    gap: 8px;
     align-items: center;
-    padding: 6px 12px;
+    padding: 6px 8px;
     background: var(--bg-secondary);
-    border-radius: 8px;
+    border-radius: 6px;
     transition: background 0.2s ease;
 }
 
-
+.assignment-row:hover {
+    background: var(--bg-hover);
+}
 
 .assignment-preview {
     display: flex;
@@ -823,13 +901,30 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* Avatar placeholder with gradient (when no photo) */
+.assignment-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #9b59b6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
 }
 
 .assignment-student {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 6px;
+    font-size: 12px;
     color: var(--text-primary);
     overflow: hidden;
 }
@@ -877,6 +972,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    flex: 1;
+    min-height: 0;
 }
 
 .preview-summary {
@@ -896,9 +993,11 @@
 
 .preview-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-    max-height: 350px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    align-content: start;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 8px;
 }
@@ -907,17 +1006,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 12px;
+    gap: 6px;
+    padding: 10px;
     background: var(--bg-secondary);
-    border-radius: 12px;
-    font-size: 12px;
+    border-radius: 10px;
+    font-size: 11px;
     text-align: center;
 }
 
 .preview-item .preview-canvas {
-    width: 80px;
-    height: 80px;
+    width: 75px;
+    height: 75px;
     border-radius: 50%;
     border: 2px solid var(--primary-color);
     object-fit: cover;

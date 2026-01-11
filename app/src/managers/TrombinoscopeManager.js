@@ -521,32 +521,67 @@ export const TrombinoscopeManager = {
         // Default values
         this._gridCols = 4;
         this._gridRows = Math.ceil((appState.filteredResults?.length || 8) / 4);
+        this._gapH = 0;  // Horizontal spacing between zones (%)
+        this._gapV = 0;  // Vertical spacing between zones (%)
+        this._groupedDrag = true; // Grouped drag mode (default = true)
 
         const panelHtml = `
             <div class="grid-control-panel">
-                <div class="control-row">
-                    <label><i class="fas fa-columns"></i> Colonnes</label>
-                    <div class="slider-group">
-                        <input type="range" class="control-slider" id="colsSlider" 
-                               min="1" max="8" value="${this._gridCols}">
-                        <span class="slider-value" id="colsValue">${this._gridCols}</span>
+                <div class="control-row-group">
+                    <div class="control-row">
+                        <label><i class="fas fa-columns"></i> Colonnes</label>
+                        <div class="slider-group">
+                            <input type="range" class="control-slider" id="colsSlider" 
+                                   min="1" max="8" value="${this._gridCols}">
+                            <span class="slider-value" id="colsValue">${this._gridCols}</span>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <label><i class="fas fa-bars"></i> Lignes</label>
+                        <div class="slider-group">
+                            <input type="range" class="control-slider" id="rowsSlider" 
+                                   min="1" max="10" value="${this._gridRows}">
+                            <span class="slider-value" id="rowsValue">${this._gridRows}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="control-row">
-                    <label><i class="fas fa-bars"></i> Lignes</label>
-                    <div class="slider-group">
-                        <input type="range" class="control-slider" id="rowsSlider" 
-                               min="1" max="10" value="${this._gridRows}">
-                        <span class="slider-value" id="rowsValue">${this._gridRows}</span>
+                <div class="control-row-group">
+                    <div class="control-row">
+                        <label><i class="fas fa-arrows-left-right-to-line"></i> Écart H</label>
+                        <div class="slider-group">
+                            <input type="range" class="control-slider" id="gapHSlider" 
+                                   min="-50" max="50" step="0.5" value="0">
+                            <span class="slider-value" id="gapHValue">0</span>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <label><i class="fas fa-arrows-up-down-left-right"></i> Écart V</label>
+                        <div class="slider-group">
+                            <input type="range" class="control-slider" id="gapVSlider" 
+                                   min="-50" max="50" step="0.5" value="0">
+                            <span class="slider-value" id="gapVValue">0</span>
+                        </div>
                     </div>
                 </div>
-                <div class="control-row">
-                    <label><i class="fas fa-expand-alt"></i> Taille</label>
-                    <div class="slider-group">
-                        <input type="range" class="control-slider" id="sizeSlider" 
-                               min="10" max="100" value="60">
-                        <span class="slider-value" id="sizeValue">60%</span>
+                <div class="control-row-group">
+                    <div class="control-row">
+                        <label><i class="fas fa-expand-alt"></i> Taille</label>
+                        <div class="slider-group">
+                            <input type="range" class="control-slider" id="sizeSlider" 
+                                   min="10" max="100" value="60">
+                            <span class="slider-value" id="sizeValue">60%</span>
+                        </div>
                     </div>
+                    <div class="control-row">
+                        <label class="sync-toggle-label">
+                            <span class="toggle-text"><i class="fas fa-object-group"></i> Groupé</span>
+                            <span class="toggle-wrapper">
+                                <input type="checkbox" id="groupedDragToggle" class="sync-toggle-checkbox" checked>
+                                <span class="sync-toggle-switch"></span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', panelHtml);
@@ -555,9 +590,14 @@ export const TrombinoscopeManager = {
         const colsSlider = document.getElementById('colsSlider');
         const rowsSlider = document.getElementById('rowsSlider');
         const sizeSlider = document.getElementById('sizeSlider');
+        const gapHSlider = document.getElementById('gapHSlider');
+        const gapVSlider = document.getElementById('gapVSlider');
+        const groupedToggle = document.getElementById('groupedDragToggle');
         const colsValue = document.getElementById('colsValue');
         const rowsValue = document.getElementById('rowsValue');
         const sizeValue = document.getElementById('sizeValue');
+        const gapHValue = document.getElementById('gapHValue');
+        const gapVValue = document.getElementById('gapVValue');
 
         colsSlider?.addEventListener('input', e => {
             this._gridCols = parseInt(e.target.value);
@@ -577,8 +617,90 @@ export const TrombinoscopeManager = {
             this._updateSizeFromPercent(percent);
         });
 
-        // Create initial grid
+        gapHSlider?.addEventListener('input', e => {
+            this._gapH = parseFloat(e.target.value);
+            gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
+            this._applyGaps();
+        });
+
+        gapVSlider?.addEventListener('input', e => {
+            this._gapV = parseFloat(e.target.value);
+            gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
+            this._applyGaps();
+        });
+
+        groupedToggle?.addEventListener('change', e => {
+            this._groupedDrag = e.target.checked;
+        });
+
+        // Create initial grid with auto-assignment
         this._createGridSilent(this._gridCols, this._gridRows);
+    },
+
+    /**
+     * Apply gap values to all zones relative to the FIRST zone (0,0)
+     * The first zone stays fixed as the reference point.
+     */
+    _applyGaps() {
+        if (this._zones.length === 0) return;
+
+        const cols = this._gridCols;
+        const w = this._imageNaturalWidth;
+        const h = this._imageNaturalHeight;
+
+        // Base cell size
+        const baseCellW = w / cols;
+        const baseCellH = h / Math.ceil(this._zones.length / cols);
+
+        // The first zone (index 0) is the reference - it stays fixed
+        const refZone = this._zones[0];
+        const refCx = refZone.cx;
+        const refCy = refZone.cy;
+
+        // Gap adjustment (% of cell size) - affects spacing between zones
+        const gapPxH = (this._gapH / 100) * baseCellW;
+        const gapPxV = (this._gapV / 100) * baseCellH;
+
+        this._zones.forEach((zone, idx) => {
+            if (idx === 0) return; // Skip first zone - it's the reference
+
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+
+            // Position relative to first zone with gap applied
+            // Each column/row adds base cell size + gap adjustment
+            zone.cx = refCx + (col * (baseCellW + gapPxH));
+            zone.cy = refCy + (row * (baseCellH + gapPxV));
+        });
+
+        this._renderZones();
+        this._updateLivePreviews();
+    },
+
+    /**
+     * Internal gap application with explicit cell dimensions (used during grid rebuild)
+     */
+    _applyGapsInternal(baseCellW, baseCellH) {
+        if (this._zones.length === 0) return;
+
+        const cols = this._gridCols;
+        const refZone = this._zones[0];
+        const refCx = refZone.cx;
+        const refCy = refZone.cy;
+
+        // Gap adjustment (% of cell size)
+        const gapPxH = (this._gapH / 100) * baseCellW;
+        const gapPxV = (this._gapV / 100) * baseCellH;
+
+        this._zones.forEach((zone, idx) => {
+            if (idx === 0) return;
+
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+
+            zone.cx = refCx + (col * (baseCellW + gapPxH));
+            zone.cy = refCy + (row * (baseCellH + gapPxV));
+        });
     },
 
     _updateSizeFromPercent(percent) {
@@ -608,7 +730,14 @@ export const TrombinoscopeManager = {
         }
     },
 
-    _createGrid(cols, rows) {
+    _createGrid(cols, rows, preserveReference = false) {
+        // Save the reference zone position if we want to preserve it
+        let refCx = null, refCy = null;
+        if (preserveReference && this._zones.length > 0) {
+            refCx = this._zones[0].cx;
+            refCy = this._zones[0].cy;
+        }
+
         this._zones = [];
         this._zoneIdCounter = 0;
 
@@ -633,6 +762,16 @@ export const TrombinoscopeManager = {
             }
         }
 
+        // If we had a reference position stored, restore it and rebuild positions
+        if (refCx !== null && refCy !== null) {
+            // Move zone 0 back to its original position
+            this._zones[0].cx = refCx;
+            this._zones[0].cy = refCy;
+
+            // Recalculate other zone positions relative to zone 0 with gaps
+            this._applyGapsInternal(cellW, cellH);
+        }
+
         this._renderZones();
         this._renderAssignmentGrid();
         this._updateSizeSliderValue();
@@ -640,10 +779,28 @@ export const TrombinoscopeManager = {
 
     /**
      * Create grid silently (without notification) for instant slider feedback
+     * Also auto-assigns students to zones
+     * Preserves reference zone position when zones already exist
      */
     _createGridSilent(cols, rows) {
-        this._createGrid(cols, rows);
+        // Preserve reference position if zones already exist (user has adjusted positions)
+        const hasExistingZones = this._zones.length > 0;
+        this._createGrid(cols, rows, hasExistingZones);
+        // Auto-assign students to zones automatically
+        this._autoAssignSilent();
         this._updateLivePreviews();
+    },
+
+    /**
+     * Auto-assign students to zones silently (no notification)
+     */
+    _autoAssignSilent() {
+        const students = appState.filteredResults || [];
+        this._zones.forEach((zone, idx) => {
+            zone.studentId = students[idx]?.id || null;
+        });
+        this._renderZones();
+        this._renderAssignmentGrid();
     },
 
     _updateSizeSliderValue() {
@@ -784,10 +941,19 @@ export const TrombinoscopeManager = {
         const clickNatX = (e.clientX - rect.left) * scaleX;
         const clickNatY = (e.clientY - rect.top) * scaleY;
 
+        // Store original positions of all zones for synchronized drag
+        const originalPositions = new Map();
+        this._zones.forEach(z => {
+            originalPositions.set(z.id, { cx: z.cx, cy: z.cy });
+        });
+
         this._dragging = {
             zone,
             offsetX: clickNatX - zone.cx,
-            offsetY: clickNatY - zone.cy
+            offsetY: clickNatY - zone.cy,
+            startCx: zone.cx,
+            startCy: zone.cy,
+            originalPositions
         };
 
         el.classList.add('dragging');
@@ -803,14 +969,28 @@ export const TrombinoscopeManager = {
         const scaleX = this._imageNaturalWidth / rect.width;
         const scaleY = this._imageNaturalHeight / rect.height;
 
-        const { zone, offsetX, offsetY } = this._dragging;
+        const { zone, offsetX, offsetY, startCx, startCy } = this._dragging;
         const newCx = (e.clientX - rect.left) * scaleX - offsetX;
         const newCy = (e.clientY - rect.top) * scaleY - offsetY;
 
-        // Clamp to image bounds
-        const r = this._globalRadius;
-        zone.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, newCx));
-        zone.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, newCy));
+        if (this._groupedDrag) {
+            // Grouped mode: move ALL zones by the same delta
+            const deltaX = newCx - startCx;
+            const deltaY = newCy - startCy;
+
+            this._zones.forEach(z => {
+                const originalPos = this._dragging.originalPositions.get(z.id);
+                if (originalPos) {
+                    z.cx = originalPos.cx + deltaX;
+                    z.cy = originalPos.cy + deltaY;
+                }
+            });
+        } else {
+            // Individual mode: move only this zone
+            const r = this._globalRadius;
+            zone.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, newCx));
+            zone.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, newCy));
+        }
 
         this._renderZones();
         this._updateLivePreviews();
@@ -884,7 +1064,7 @@ export const TrombinoscopeManager = {
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
                                     data-student-id="${student.id}" 
-                                    width="40" height="40"></canvas>
+                                    width="80" height="80"></canvas>
                         </div>
                         <div class="assignment-student">
                             <span>${student.prenom} ${student.nom}</span>
@@ -893,7 +1073,7 @@ export const TrombinoscopeManager = {
                             <option value="">—</option>
                             ${this._zones.map((z, i) => `
                                 <option value="${z.id}" ${z.studentId === student.id ? 'selected' : ''}>
-                                    Zone ${i + 1}
+                                    ${i + 1}
                                 </option>
                             `).join('')}
                         </select>
@@ -959,16 +1139,21 @@ export const TrombinoscopeManager = {
             const zone = this._zones.find(z => z.studentId === studentId);
             const ctx = canvas.getContext('2d');
 
-            ctx.clearRect(0, 0, 40, 40);
+            // Canvas buffer is 80x80, displayed at 40x40 CSS for HiDPI sharpness
+            const size = 80;
+
+            ctx.clearRect(0, 0, size, size);
 
             if (!zone) {
                 // Draw placeholder circle
+                const center = size / 2;
+                const radius = (size / 2) - 4;
                 ctx.fillStyle = 'rgba(255,255,255,0.05)';
                 ctx.beginPath();
-                ctx.arc(20, 20, 18, 0, Math.PI * 2);
+                ctx.arc(center, center, radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 2;
                 ctx.stroke();
                 return;
             }
@@ -982,20 +1167,8 @@ export const TrombinoscopeManager = {
             const sw = Math.min(diameter, this._imageNaturalWidth - sx);
             const sh = Math.min(diameter, this._imageNaturalHeight - sy);
 
-            // Draw circular clip
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(20, 20, 18, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 40, 40);
-            ctx.restore();
-
-            // Add border
-            ctx.strokeStyle = '#6c5ce7';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(20, 20, 18, 0, Math.PI * 2);
-            ctx.stroke();
+            // Draw full image - CSS handles circular shape and border
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
         });
     },
 
@@ -1030,8 +1203,9 @@ export const TrombinoscopeManager = {
 
             const previewItem = document.createElement('div');
             previewItem.className = 'preview-item';
+            // Buffer 160x160 for HiDPI, displayed at 80x80 CSS
             previewItem.innerHTML = `
-                <canvas class="preview-canvas" width="80" height="80"></canvas>
+                <canvas class="preview-canvas" width="160" height="160"></canvas>
                 <span>${student.prenom} ${student.nom}</span>
             `;
             list.appendChild(previewItem);
@@ -1052,11 +1226,15 @@ export const TrombinoscopeManager = {
             const diameter = r * 2;
 
             // Crop square from natural image
-            const sx = cx - r;
-            const sy = cy - r;
+            const sx = Math.max(0, cx - r);
+            const sy = Math.max(0, cy - r);
+            const sw = Math.min(diameter, this._imageNaturalWidth - sx);
+            const sh = Math.min(diameter, this._imageNaturalHeight - sy);
 
-            ctx.clearRect(0, 0, 80, 80);
-            ctx.drawImage(img, sx, sy, diameter, diameter, 0, 0, 80, 80);
+            // Draw at 160x160 for HiDPI sharpness
+            const size = 160;
+            ctx.clearRect(0, 0, size, size);
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
         };
 
         img.src = this._imageSrc;
