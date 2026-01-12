@@ -120,6 +120,12 @@ export const FocusPanelJournal = {
                         this.render(result);
                         this._refreshStatus();
                     }
+
+                    // CRITICAL: Threshold affects ALL students' dirty state
+                    // Emit global event to refresh entire list view
+                    window.dispatchEvent(new CustomEvent('journalThresholdChanged', {
+                        detail: { newThreshold: newValue }
+                    }));
                 });
             });
         }

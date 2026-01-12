@@ -490,12 +490,25 @@ export const ListViewManager = {
         const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
         if (!row) return false;
 
-        // Find result object in current state
-        const results = appState.filteredResults || appState.generatedResults || [];
-        const result = results.find(r => r.id === studentId);
+        // CRITICAL: Always use generatedResults as source of truth
+        // filteredResults contains shallow copies that may be stale after journal modifications
+        const result = appState.generatedResults.find(r => r.id === studentId);
 
         if (result) {
-            this._updateRowContent(row, result);
+            // Optimization: Check if only dirty indicator needs updating
+            const appreciationCell = row.querySelector('.appreciation-cell');
+            const existingDirty = appreciationCell?.querySelector('.dirty-indicator');
+            const shouldBeDirty = this._isResultDirty(result);
+            const hasDirtyIndicator = !!existingDirty;
+
+            // If only dirty state changed, use optimized update (no flash)
+            if (appreciationCell && hasDirtyIndicator !== shouldBeDirty) {
+                this._updateDirtyIndicatorOnly(appreciationCell, shouldBeDirty);
+            } else {
+                // Full update needed (appreciation changed, etc.)
+                this._updateRowContent(row, result);
+            }
+
             // Also update the global generate button state as dirty counts may have changed
             import('./ResultsUIManager.js').then(({ ResultsUIManager }) => {
                 ResultsUIManager.updateGenerateButtonState();
@@ -503,6 +516,40 @@ export const ListViewManager = {
             return true;
         }
         return false;
+    },
+
+    /**
+     * Optimized update for dirty indicator only (no flash, subtle animation)
+     * @param {HTMLElement} cell - The appreciation-cell element
+     * @param {boolean} shouldBeDirty - Whether dirty indicator should be shown
+     * @private
+     */
+    _updateDirtyIndicatorOnly(cell, shouldBeDirty) {
+        const existingIndicator = cell.querySelector('.dirty-indicator');
+
+        if (shouldBeDirty && !existingIndicator) {
+            // ADD dirty indicator with fade-in animation
+            const indicator = document.createElement('span');
+            indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';
+            indicator.setAttribute('data-tooltip', 'Données modifiées depuis la génération.\nActualisation recommandée.');
+            indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+
+            // Insert at the beginning of the cell
+            cell.insertBefore(indicator, cell.firstChild);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                indicator.classList.remove('dirty-indicator-enter');
+            });
+        } else if (!shouldBeDirty && existingIndicator) {
+            // REMOVE dirty indicator with fade-out animation
+            existingIndicator.classList.add('dirty-indicator-leave');
+
+            // Remove after animation
+            setTimeout(() => {
+                existingIndicator.remove();
+            }, 250);
+        }
     },
 
     /**

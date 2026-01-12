@@ -2680,14 +2680,33 @@
     z-index: 5;
     color: var(--warning-color);
     font-size: 14px;
-    /* Removed margin-right to prevent flow shift */
     animation: pulse-orange 2s infinite;
     cursor: help;
-    /* Indicate tooltip presence */
+    /* Premium transition for opacity/transform */
+    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dirty-indicator:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
+}
+
+/* === Premium Enter/Leave Animations for Dirty Indicator === */
+/* Enter state: Start invisible and scaled down */
+.dirty-indicator.dirty-indicator-enter {
+    opacity: 0;
+    transform: scale(0.6);
+    animation: none;
+    /* Disable pulse during enter */
+}
+
+/* Leave state: Fade out and scale down */
+.dirty-indicator.dirty-indicator-leave {
+    opacity: 0;
+    transform: scale(0.6);
+    animation: none;
+    /* Disable pulse during leave */
+    pointer-events: none;
 }
 
 /* ============================

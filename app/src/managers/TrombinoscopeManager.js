@@ -52,6 +52,12 @@ export const TrombinoscopeManager = {
     /** Drag state */
     _dragging: null, // { zone, offsetX, offsetY }
 
+    /** Last focused control for keyboard navigation: 'gaps' | 'zone' | null */
+    _lastFocusedControl: null,
+
+    /** Last focused zone ID for keyboard positioning */
+    _lastFocusedZoneId: null,
+
     // ========================================================================
     // INITIALIZATION
     // ========================================================================
@@ -107,6 +113,9 @@ export const TrombinoscopeManager = {
         // Global mouse events for drag/resize
         document.addEventListener('mousemove', e => this._handleMouseMove(e));
         document.addEventListener('mouseup', () => this._handleMouseUp());
+
+        // Keyboard navigation for gap sliders and zone positioning
+        document.addEventListener('keydown', e => this._handleKeyDown(e));
     },
 
     // ========================================================================
@@ -135,6 +144,8 @@ export const TrombinoscopeManager = {
         this._dragging = null;
         this._resizing = null;
         this._cachedImage = null;
+        this._lastFocusedControl = null;
+        this._lastFocusedZoneId = null;
 
         // Reset dropzone state
         const placeholder = document.getElementById('trombiDropPlaceholder');
@@ -149,11 +160,27 @@ export const TrombinoscopeManager = {
         dropZone?.classList.remove('has-image');
         if (sampleBtn) sampleBtn.style.display = '';
 
-        const footerInfo = document.getElementById('trombiImageInfo');
-        if (footerInfo) footerInfo.innerHTML = '';
+        document.getElementById('trombiImageInfo')?.replaceChildren();
 
         const nextBtn = document.getElementById('trombiStep1NextBtn');
         if (nextBtn) nextBtn.disabled = true;
+
+        // Reset step content & footer visibility to initial state
+        [1, 2, 3].forEach(n => {
+            const step = document.getElementById(`trombiStep${n}`);
+            const footer = document.getElementById(`trombiStep${n}Footer`);
+            if (step) {
+                step.style.cssText = '';
+                step.style.display = n === 1 ? 'block' : 'none';
+            }
+            if (footer) footer.style.display = n === 1 ? 'flex' : 'none';
+        });
+
+        // Clean up dynamically added content
+        document.querySelector('.grid-control-panel')?.remove();
+        document.getElementById('trombiImageWithZones')?.replaceChildren();
+        document.getElementById('trombiAssignmentGrid')?.replaceChildren();
+        document.getElementById('trombiPreviewGrid')?.replaceChildren();
 
         this._updateStepperUI();
     },
@@ -568,7 +595,7 @@ export const TrombinoscopeManager = {
                         <label><i class="fas fa-expand-alt"></i> Taille</label>
                         <div class="slider-group">
                             <input type="range" class="control-slider" id="sizeSlider" 
-                                   min="10" max="100" value="60">
+                                   min="5" max="100" value="60">
                             <span class="slider-value" id="sizeValue">60%</span>
                         </div>
                     </div>
@@ -617,6 +644,14 @@ export const TrombinoscopeManager = {
             this._updateSizeFromPercent(percent);
         });
 
+        // Track focus on size slider for keyboard navigation
+        sizeSlider?.addEventListener('focus', () => {
+            this._lastFocusedControl = 'size';
+        });
+        sizeSlider?.addEventListener('mousedown', () => {
+            this._lastFocusedControl = 'size';
+        });
+
         gapHSlider?.addEventListener('input', e => {
             this._gapH = parseFloat(e.target.value);
             gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
@@ -627,6 +662,21 @@ export const TrombinoscopeManager = {
             this._gapV = parseFloat(e.target.value);
             gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
             this._applyGaps();
+        });
+
+        // Track focus on gap sliders for keyboard navigation
+        gapHSlider?.addEventListener('focus', () => {
+            this._lastFocusedControl = 'gaps';
+        });
+        gapVSlider?.addEventListener('focus', () => {
+            this._lastFocusedControl = 'gaps';
+        });
+        // Also track mousedown for touch-like interactions
+        gapHSlider?.addEventListener('mousedown', () => {
+            this._lastFocusedControl = 'gaps';
+        });
+        gapVSlider?.addEventListener('mousedown', () => {
+            this._lastFocusedControl = 'gaps';
         });
 
         groupedToggle?.addEventListener('change', e => {
@@ -892,13 +942,36 @@ export const TrombinoscopeManager = {
             const student = students.find(s => s.id === zone.studentId);
             const label = student ? student.prenom : (idx + 1);
 
+            // Calculate label scale based on diameter (shrink when zone is small)
+            // Label full size at 50px+, starts shrinking below that
+            const labelScale = Math.max(0.5, Math.min(1, diameter / 50));
+            const labelFontSize = Math.max(8, Math.round(12 * labelScale));
+            const labelHeight = Math.max(16, Math.round(28 * labelScale));
+            const labelPadding = Math.max(2, Math.round(8 * labelScale));
+
+            // Scale delete button and border for small zones
+            const deleteSize = Math.max(14, Math.round(22 * labelScale));
+            const deleteFontSize = Math.max(7, Math.round(10 * labelScale));
+            const borderWidth = diameter < 40 ? 2 : 3;
+
             return `
                 <div class="trombi-zone" 
                      data-zone-id="${zone.id}"
                      style="left: ${dispCx}px; top: ${dispCy}px; 
-                            width: ${diameter}px; height: ${diameter}px;">
-                    <span class="zone-label">${label}</span>
-                    <button class="zone-delete" data-zone-id="${zone.id}">
+                            width: ${diameter}px; height: ${diameter}px;
+                            border-width: ${borderWidth}px;">
+                    <span class="zone-label" style="
+                        font-size: ${labelFontSize}px;
+                        height: ${labelHeight}px;
+                        min-width: ${labelHeight}px;
+                        padding: 0 ${labelPadding}px;
+                        border-radius: ${labelHeight / 2}px;
+                    ">${label}</span>
+                    <button class="zone-delete" data-zone-id="${zone.id}" style="
+                        width: ${deleteSize}px;
+                        height: ${deleteSize}px;
+                        font-size: ${deleteFontSize}px;
+                    ">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -956,6 +1029,10 @@ export const TrombinoscopeManager = {
             originalPositions
         };
 
+        // Track this zone for keyboard navigation
+        this._lastFocusedControl = 'zone';
+        this._lastFocusedZoneId = zoneId;
+
         el.classList.add('dragging');
     },
 
@@ -1001,6 +1078,120 @@ export const TrombinoscopeManager = {
             const el = document.querySelector(`[data-zone-id="${this._dragging.zone.id}"]`);
             el?.classList.remove('dragging');
             this._dragging = null;
+        }
+    },
+
+    /**
+     * Handle keyboard navigation for gap sliders and zone positioning
+     * - When gap sliders are focused: ←/→ adjust H gap, ↑/↓ adjust V gap
+     * - When zone select is focused: all 4 arrows move the zone position
+     */
+    _handleKeyDown(e) {
+        // Only handle arrow keys
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+
+        // Only active on Step 2 and when modal is visible
+        const modal = document.getElementById('trombiWizardModal');
+        if (!modal?.classList.contains('visible') || this._currentStep !== 2) return;
+
+        // Must have a focused control
+        if (!this._lastFocusedControl) return;
+
+        // Handle gap slider mode
+        if (this._lastFocusedControl === 'gaps') {
+            e.preventDefault();
+            const step = e.shiftKey ? 5 : 0.5; // Shift for bigger steps
+
+            const gapHSlider = document.getElementById('gapHSlider');
+            const gapVSlider = document.getElementById('gapVSlider');
+            const gapHValue = document.getElementById('gapHValue');
+            const gapVValue = document.getElementById('gapVValue');
+
+            if (e.key === 'ArrowLeft') {
+                this._gapH = Math.max(-50, this._gapH - step);
+                if (gapHSlider) gapHSlider.value = this._gapH;
+                if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
+            } else if (e.key === 'ArrowRight') {
+                this._gapH = Math.min(50, this._gapH + step);
+                if (gapHSlider) gapHSlider.value = this._gapH;
+                if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
+            } else if (e.key === 'ArrowUp') {
+                this._gapV = Math.max(-50, this._gapV - step);
+                if (gapVSlider) gapVSlider.value = this._gapV;
+                if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
+            } else if (e.key === 'ArrowDown') {
+                this._gapV = Math.min(50, this._gapV + step);
+                if (gapVSlider) gapVSlider.value = this._gapV;
+                if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
+            }
+
+            this._applyGaps();
+            return;
+        }
+
+        // Handle size slider mode
+        if (this._lastFocusedControl === 'size') {
+            // Only ↑/↓ adjust size (←/→ are ignored for size)
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const step = e.shiftKey ? 10 : 2; // Shift for bigger steps
+
+                const sizeSlider = document.getElementById('sizeSlider');
+                const sizeValue = document.getElementById('sizeValue');
+                let currentPercent = parseInt(sizeSlider?.value || 60);
+
+                if (e.key === 'ArrowUp') {
+                    currentPercent = Math.min(100, currentPercent + step);
+                } else {
+                    currentPercent = Math.max(5, currentPercent - step);
+                }
+
+                if (sizeSlider) sizeSlider.value = currentPercent;
+                if (sizeValue) sizeValue.textContent = currentPercent + '%';
+                this._updateSizeFromPercent(currentPercent);
+            }
+            return;
+        }
+
+        // Handle zone positioning mode
+        if (this._lastFocusedControl === 'zone' && this._lastFocusedZoneId !== null) {
+            e.preventDefault();
+
+            const zone = this._zones.find(z => z.id === this._lastFocusedZoneId);
+            if (!zone) return;
+
+            // Move step in natural pixels (relative to image size)
+            const baseStep = Math.min(this._imageNaturalWidth, this._imageNaturalHeight) * 0.005;
+            const step = e.shiftKey ? baseStep * 5 : baseStep; // Shift for bigger steps
+            const r = this._globalRadius;
+
+            if (this._groupedDrag) {
+                // Grouped mode: move ALL zones
+                let deltaX = 0, deltaY = 0;
+                if (e.key === 'ArrowLeft') deltaX = -step;
+                else if (e.key === 'ArrowRight') deltaX = step;
+                else if (e.key === 'ArrowUp') deltaY = -step;
+                else if (e.key === 'ArrowDown') deltaY = step;
+
+                this._zones.forEach(z => {
+                    z.cx += deltaX;
+                    z.cy += deltaY;
+                });
+            } else {
+                // Individual mode: move only this zone
+                if (e.key === 'ArrowLeft') {
+                    zone.cx = Math.max(r, zone.cx - step);
+                } else if (e.key === 'ArrowRight') {
+                    zone.cx = Math.min(this._imageNaturalWidth - r, zone.cx + step);
+                } else if (e.key === 'ArrowUp') {
+                    zone.cy = Math.max(r, zone.cy - step);
+                } else if (e.key === 'ArrowDown') {
+                    zone.cy = Math.min(this._imageNaturalHeight - r, zone.cy + step);
+                }
+            }
+
+            this._renderZones();
+            this._updateLivePreviews();
         }
     },
 
@@ -1109,6 +1300,18 @@ export const TrombinoscopeManager = {
                 this._renderZones();
                 this._renderAssignmentGrid();
             });
+
+            // Track focus/interaction for keyboard zone positioning
+            const trackZoneFocus = () => {
+                const zoneId = select.value ? parseInt(select.value) : null;
+                if (zoneId !== null) {
+                    this._lastFocusedControl = 'zone';
+                    this._lastFocusedZoneId = zoneId;
+                }
+            };
+            select.addEventListener('focus', trackZoneFocus);
+            select.addEventListener('mousedown', trackZoneFocus);
+            select.addEventListener('change', trackZoneFocus);
         });
 
         // Initial preview render

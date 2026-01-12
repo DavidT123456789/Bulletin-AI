@@ -97,7 +97,8 @@ export const FocusPanelManager = {
         FocusPanelStatus.init({
             getCurrentStudentId: () => this.currentStudentId,
             getActiveGenerations: () => this._activeGenerations,
-            onUpdateGenerateButton: (result) => this._updateGenerateButton(result)
+            onUpdateGenerateButton: (result) => this._updateGenerateButton(result),
+            onUpdateListRow: (result) => this._updateListRow(result)
         });
 
         FocusPanelNavigation.init({

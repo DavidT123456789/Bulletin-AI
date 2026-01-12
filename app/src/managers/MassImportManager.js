@@ -197,6 +197,9 @@ export const MassImportManager = {
             this.massImportAbortController = null;
 
             Am.renderResults();
+
+            // Émettre l'événement pour synchroniser l'UI (compteur, liste, stats)
+            window.dispatchEvent(new CustomEvent('studentsUpdated'));
         }
     },
 
@@ -265,6 +268,9 @@ export const MassImportManager = {
         if (ignoredCount > 0) message += ` (${ignoredCount} ignoré(s))`;
 
         UI?.showNotification(message || 'Import terminé', 'success');
+
+        // Émettre l'événement pour synchroniser l'UI (compteur, liste, stats)
+        window.dispatchEvent(new CustomEvent('studentsUpdated'));
     },
 
     /**

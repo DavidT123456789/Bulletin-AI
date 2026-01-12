@@ -12,6 +12,7 @@ import { UI } from '../UIManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
+import { ClassUIManager } from '../ClassUIManager.js';
 
 export const GlobalListeners = {
     /**
@@ -23,6 +24,59 @@ export const GlobalListeners = {
         this._setupAiFallbackListener();
         this._setupBodyClickListener();
         this._setupResizeListener();
+        this._setupStudentsUpdatedListener();
+    },
+
+    /**
+     * Écoute l'événement 'studentsUpdated' pour synchroniser l'UI
+     * après les imports en masse, imports de photos, ou modifications de données.
+     * @private
+     */
+    _setupStudentsUpdatedListener() {
+        window.addEventListener('studentsUpdated', () => {
+            // Rafraîchir le compteur d'élèves dans l'en-tête et le dropdown
+            ClassUIManager.updateStudentCount();
+            // Rafraîchir la liste des élèves
+            AppreciationsManager.renderResults();
+            // Rafraîchir les statistiques
+            UI?.updateStats?.();
+            // Rafraîchir les boutons de contrôle
+            UI?.updateControlButtons?.();
+        });
+
+        // Écoute les changements de dirty state pour mettre à jour la ligne spécifique
+        window.addEventListener('studentDirtyStateChanged', async (e) => {
+            const { studentId, result } = e.detail || {};
+            if (!studentId) return;
+
+            // Dynamically import ListViewManager to update the specific row
+            try {
+                const { ListViewManager } = await import('../ListViewManager.js');
+                if (ListViewManager?.updateStudentRow) {
+                    ListViewManager.updateStudentRow(studentId);
+                }
+            } catch (err) {
+                console.warn('[GlobalListeners] Failed to update list row:', err);
+            }
+        });
+
+        // Écoute les changements de seuil du journal (affecte TOUS les élèves)
+        window.addEventListener('journalThresholdChanged', async () => {
+            try {
+                const { ListViewManager } = await import('../ListViewManager.js');
+                if (!ListViewManager?.updateStudentRow) return;
+
+                // Update all rows with generated appreciations
+                const results = appState.generatedResults || [];
+                for (const result of results) {
+                    if (result.wasGenerated && result.generationSnapshot) {
+                        ListViewManager.updateStudentRow(result.id);
+                    }
+                }
+            } catch (err) {
+                console.warn('[GlobalListeners] Failed to update rows on threshold change:', err);
+            }
+        });
     },
 
     _setupKeyboardListeners() {

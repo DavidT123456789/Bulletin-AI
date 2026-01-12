@@ -93,49 +93,54 @@ export const FocusPanelStatus = {
 
         if (currentContext !== snapshotContext) return true;
 
-        // 3. Compare Journal Count
-        const currentJournalCount = current.journalCount || 0;
-        // Handle various snapshot formats for journal
-        const snapshotJournalCount = snapshot.journal ? snapshot.journal.length : (snapshot.journalCount ?? 0);
-
-        // Note: For strict correctness regarding thresholds, we might need deeper check, 
-        // but count is sufficient for general "something changed" warning.
-        // If needed, we can add the threshold logic here later.
+        // 3. Compare Journal (Only tags/notes that meet threshold matter for AI)
         const currentJournal = current.journal || [];
-        // Legacy snapshot fallback (count only)
-        if (!snapshot.journal && snapshot.journalCount !== undefined) {
-            const cCount = currentJournal.length;
-            const cCountVal = (current.journalCount !== undefined) ? current.journalCount : cCount;
-            if (cCountVal !== snapshot.journalCount) return true;
-        } else if (snapshot.journal) {
-            // Full snapshot available (New Data)
+        const currentThreshold = JournalManager.getThreshold();
+
+        // Helper to get tags that meet threshold
+        const getActiveTags = (entries, thresh) => {
+            const counts = {};
+            entries.forEach(e => {
+                if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+            });
+            return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
+        };
+
+        // Helper to get relevant notes (only from entries with active tags)
+        const getRelevantNotes = (entries, thresh) => {
+            const tagCounts = {};
+            entries.forEach(e => {
+                if (e.tags) e.tags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
+            });
+            const activeTags = new Set(Object.keys(tagCounts).filter(t => tagCounts[t] >= thresh));
+            return entries
+                .filter(e => e.note && e.note.trim() && e.tags && e.tags.some(t => activeTags.has(t)))
+                .map(e => e.note.trim())
+                .sort()
+                .join('||');
+        };
+
+        // Get current active tags
+        const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
+
+        if (snapshot.journal) {
+            // Full snapshot available (New Data) - compare active tags and notes
             const snapshotJournal = snapshot.journal;
-            // Use class-specific threshold if possible, otherwise global fallback
-            const currentThreshold = JournalManager.getThreshold();
             const snapshotThreshold = snapshot.threshold ?? currentThreshold;
-            const getActiveTags = (entries, thresh) => {
-                const counts = {};
-                entries.forEach(e => {
-                    if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
-                });
-                return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
-            };
-            const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
             const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
+
             if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) return true;
-            const getRelevantNotes = (entries, thresh) => {
-                const tagCounts = {};
-                entries.forEach(e => {
-                    if (e.tags) e.tags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
-                });
-                const activeTags = new Set(Object.keys(tagCounts).filter(t => tagCounts[t] >= thresh));
-                return entries
-                    .filter(e => e.note && e.note.trim() && e.tags && e.tags.some(t => activeTags.has(t)))
-                    .map(e => e.note.trim())
-                    .sort()
-                    .join('||');
-            };
             if (getRelevantNotes(currentJournal, currentThreshold) !== getRelevantNotes(snapshotJournal, snapshotThreshold)) return true;
+        } else if (snapshot.journalCount !== undefined) {
+            // Legacy snapshot (count only) - only trigger dirty if we NOW have active tags
+            // that weren't there before (assume old generation had no active tags if count was 0)
+            const snapshotHadActiveTags = snapshot.journalCount > 0;
+            const currentHasActiveTags = currentActiveTags.length > 0;
+
+            // Only dirty if we went from no active tags to having some
+            if (!snapshotHadActiveTags && currentHasActiveTags) return true;
+            // Or if we had some and lost them (regeneration needed to remove content)
+            if (snapshotHadActiveTags && !currentHasActiveTags) return true;
         }
         // If snapshot.journal AND snapshot.journalCount are undefined (Very Old Data)
         // We skip journal comparison to avoid false positives (Assume sync)
@@ -314,6 +319,13 @@ export const FocusPanelStatus = {
             this.updateAppreciationStatus(result);
             // Also update generate button to reflect dirty state
             this._callbacks?.onUpdateGenerateButton?.(result);
+            // CRITICAL: Also update the List View row to show/hide dirty indicator
+            this._callbacks?.onUpdateListRow?.(result);
+
+            // FALLBACK: Emit event for decoupled sync (works even if callbacks not set)
+            window.dispatchEvent(new CustomEvent('studentDirtyStateChanged', {
+                detail: { studentId: currentStudentId, result }
+            }));
         }
     },
 
