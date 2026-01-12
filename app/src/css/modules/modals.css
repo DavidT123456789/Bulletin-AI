@@ -327,6 +327,13 @@
     box-sizing: border-box;
 }
 
+/* Dark mode: Code blocks inside cards should be darker than cards */
+[data-theme="dark"] .help-code-block,
+[data-theme="dark"] .prompt-preview-block {
+    background: var(--bg-color);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
 /* Inspecteur de Prompt - Hauteur adaptative sans barre de défilement interne */
 #settingsPreviewPrompt {
     max-height: none;

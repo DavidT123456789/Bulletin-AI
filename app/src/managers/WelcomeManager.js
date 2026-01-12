@@ -76,14 +76,17 @@ export const WelcomeManager = {
             }
 
             if (validateBtn) {
+                // Reset all button state classes
+                validateBtn.classList.remove('ready', 'validated');
+
                 if (existingKey) {
                     validateBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
-                    validateBtn.classList.add('btn-success');
+                    validateBtn.classList.add('validated');
                     validateBtn.disabled = true;
                     DOM.welcomeNextBtn.disabled = false;
                 } else {
-                    validateBtn.innerHTML = '<i class="fas fa-key"></i> Valider';
-                    validateBtn.classList.remove('btn-success');
+                    validateBtn.innerHTML = 'Valider';
+                    // Default state (grey) - no class needed
                     validateBtn.disabled = false;
                     // Only disable next if no key for any provider and not in demo mode
                     DOM.welcomeNextBtn.disabled = !appState.isDemoMode;
@@ -243,7 +246,8 @@ export const WelcomeManager = {
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.add('btn-success');
+                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
+                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
                 }
                 DOM.welcomeNextBtn.disabled = false;
@@ -255,7 +259,8 @@ export const WelcomeManager = {
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.add('btn-success');
+                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
+                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
                 }
                 DOM.welcomeNextBtn.disabled = false;
@@ -279,6 +284,25 @@ export const WelcomeManager = {
         };
 
         initFirstStep();
+
+        // Toggle button style based on input content (grey when empty, orange when key is present)
+        if (DOM.welcomeApiKeyInput) {
+            DOM.welcomeApiKeyInput.addEventListener('input', (e) => {
+                const validateBtn = DOM.welcomeValidateApiKeyBtn;
+                if (!validateBtn) return;
+
+                const hasValue = e.target.value.trim().length > 0;
+
+                // Don't change if already validated
+                if (validateBtn.classList.contains('validated')) return;
+
+                if (hasValue) {
+                    validateBtn.classList.add('ready');
+                } else {
+                    validateBtn.classList.remove('ready');
+                }
+            }, { signal });
+        }
 
         addClickListener(DOM.welcomeNextBtn, () => {
             if (currentWelcomeStep < totalWelcomeSteps) {

@@ -624,26 +624,30 @@ select optgroup {
 }
 
 
-/* --- Hover State: Subtle gradient border hint --- */
+/* --- Hover State: Subtle primary tint + gradient border (consistent with list hover) --- */
 input:not([type="range"]):hover:not(:disabled):not(:focus),
 textarea:hover:not(:disabled):not(:focus) {
     border: 1.5px solid transparent !important;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+    /* Subtle primary tint like list row hover + gradient border */
+    background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
+        linear-gradient(var(--bg-color), var(--bg-color)),
         linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
+    background-origin: padding-box, padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
 }
 
 select:hover:not(:disabled):not(:focus) {
     border: 1.5px solid transparent !important;
+    /* Subtle primary tint + gradient border (consistent with list hover) */
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"),
+        linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
         linear-gradient(var(--bg-color), var(--bg-color)),
         linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: border-box, padding-box, border-box;
+    background-origin: padding-box, padding-box, padding-box, border-box;
+    background-clip: border-box, padding-box, padding-box, border-box;
     background-repeat: no-repeat;
-    background-position: right 12px center, center, center;
-    background-size: 1.2em 1.2em, auto, auto;
+    background-position: right 12px center, center, center, center;
+    background-size: 1.2em 1.2em, auto, auto, auto;
 }
 
 /* --- Focus State: Dynamic rotating gradient (signature effect) --- */
@@ -651,6 +655,7 @@ input:not([type="range"]):focus,
 textarea:focus {
     outline: none;
     border: 1.5px solid transparent !important;
+    /* Use original bg-color for focus - the animated border is the main feedback */
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
@@ -674,6 +679,7 @@ textarea:focus {
 select:focus {
     outline: none;
     border: 1.5px solid transparent !important;
+    /* Use original bg-color for focus - the animated border is the main feedback */
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"),
         linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),

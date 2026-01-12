@@ -6,6 +6,7 @@ import { StorageManager } from './StorageManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
 
 let Am; // AppreciationsManager reference
@@ -237,7 +238,9 @@ export const ResultsUIManager = {
     },
 
     /**
-     * Updates the Generate/Regenerate button state based on list content
+     * Updates the Generate and Update button states based on list content
+     * - Generate button: only for pending (empty) appreciations
+     * - Update button: for dirty (modified data) OR error appreciations
      * @param {Array} results - The results to analyze
      */
     updateGenerateButtonState(results = appState.filteredResults || appState.generatedResults) {
@@ -263,50 +266,60 @@ export const ResultsUIManager = {
                 textOnly.startsWith('remplissez');
         }).length;
 
+        // Count needs update (dirty OR error)
+        const needsUpdateCount = results.filter(r => {
+            // Error in current period
+            const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            if (hasError) return true;
+
+            // Dirty state (data modified since generation)
+            const isDirty = r.wasGenerated && FocusPanelStatus.checkDirtyState(r);
+            return isDirty;
+        }).length;
+
+        // === GENERATE BUTTON ===
         if (DOM.generateAllPendingBtn) {
             const btn = DOM.generateAllPendingBtn;
-            let mode = 'disabled';
+            const hasContent = pendingCount > 0;
 
-            if (pendingCount > 0) {
-                mode = 'generate';
-            } else if (results.length > 0) {
-                mode = 'regenerate';
-            }
+            btn.dataset.mode = hasContent ? 'generate' : 'disabled';
+            btn.disabled = !hasContent;
 
-            btn.dataset.mode = mode;
-            btn.disabled = (mode === 'disabled');
-
-            // Reset base classes to ensure clean state
-            btn.classList.remove('btn-primary', 'btn-neutral');
+            // Always use btn-primary for generate button
+            btn.classList.remove('btn-neutral');
+            btn.classList.add('btn-primary');
 
             const icon = btn.querySelector('i');
             const label = btn.querySelector('span:not(.pending-badge)');
             const badge = btn.querySelector('.pending-badge');
 
-            if (mode === 'generate') {
-                btn.classList.add('btn-primary');
-                // Ensure btn-neutral is gone (handled by remove above)
-                if (icon) icon.className = 'fas fa-wand-magic-sparkles';
-                if (label) label.textContent = 'Générer';
-                if (badge) {
-                    badge.style.display = 'inline-flex';
-                    badge.textContent = pendingCount;
-                }
-                btn.dataset.tooltip = "Générer les appréciations pour tous les élèves en attente";
-            } else if (mode === 'regenerate') {
-                btn.classList.add('btn-neutral'); // Use generic neutral style
-                if (icon) icon.className = 'fas fa-sync-alt';
-                if (label) label.textContent = 'Régénérer';
-                if (badge) badge.style.display = 'none';
-                btn.dataset.tooltip = "Régénérer les appréciations visibles";
+            if (icon) icon.className = 'fas fa-wand-magic-sparkles';
+            if (label) label.textContent = 'Générer';
+            if (badge) {
+                badge.style.display = hasContent ? 'inline-flex' : 'none';
+                badge.textContent = pendingCount;
             }
+            btn.dataset.tooltip = hasContent
+                ? `Générer les ${pendingCount} appréciations en attente`
+                : "Aucune appréciation en attente";
         }
 
-        if (DOM.pendingCountBadge && pendingCount > 0) {
-            DOM.pendingCountBadge.textContent = pendingCount;
+        // === UPDATE BUTTON (dirty + errors) ===
+        if (DOM.updateDirtyBtn) {
+            const btn = DOM.updateDirtyBtn;
+            const hasUpdates = needsUpdateCount > 0;
+
+            btn.style.display = hasUpdates ? 'inline-flex' : 'none';
+            btn.disabled = !hasUpdates;
+
+            const badge = btn.querySelector('.pending-badge');
+            if (badge) {
+                badge.textContent = needsUpdateCount;
+            }
+            btn.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} (modifiée${needsUpdateCount > 1 ? 's' : ''} ou en erreur)`;
         }
 
-        // Bouton Analyser : disabled si aucun élève
+        // === ANALYZE BUTTON ===
         if (DOM.analyzeClassBtn) {
             DOM.analyzeClassBtn.disabled = results.length === 0;
         }
@@ -453,6 +466,127 @@ export const ResultsUIManager = {
             StorageManager.saveAppState();
 
             // Pas besoin de re-render complet, les lignes sont mises à jour individuellement
+            UI.updateStats();
+            UI.updateControlButtons();
+        });
+    },
+
+    /**
+     * Regenerates appreciations that are dirty (data modified) or have errors
+     * Used by the "Actualiser" button
+     */
+    async regenerateDirty() {
+        const currentPeriod = appState.currentPeriod;
+
+        // Find all results that need updating (dirty OR error)
+        const toRegen = appState.filteredResults.filter(r => {
+            const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            if (hasError) return true;
+
+            const isDirty = r.wasGenerated && FocusPanelStatus.checkDirtyState(r);
+            return isDirty;
+        });
+
+        if (toRegen.length === 0) {
+            UI.showNotification("Aucune appréciation à actualiser.", "warning");
+            return;
+        }
+
+        const errorCount = toRegen.filter(r => r.errorMessage).length;
+        const dirtyCount = toRegen.length - errorCount;
+
+        let message = `Actualiser ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
+        if (errorCount > 0 && dirtyCount > 0) {
+            message = `Actualiser ${dirtyCount} appréciation${dirtyCount > 1 ? 's' : ''} modifiée${dirtyCount > 1 ? 's' : ''} et ${errorCount} en erreur ?`;
+        } else if (errorCount > 0) {
+            message = `Régénérer ${errorCount} appréciation${errorCount > 1 ? 's' : ''} en erreur ?`;
+        } else {
+            message = `Actualiser ${dirtyCount} appréciation${dirtyCount > 1 ? 's' : ''} modifiée${dirtyCount > 1 ? 's' : ''} ?`;
+        }
+
+        UI.showCustomConfirm(message, async () => {
+            const { MassImportManager } = await import('./MassImportManager.js');
+
+            MassImportManager.massImportAbortController = new AbortController();
+            const signal = MassImportManager.massImportAbortController.signal;
+
+            let successCount = 0;
+            let newErrorCount = 0;
+            let wasAborted = false;
+            const total = toRegen.length;
+
+            // Afficher "En file" sur toutes les lignes concernées
+            toRegen.forEach(resultToRegen => {
+                ListViewManager.setRowStatus(resultToRegen.id, 'pending-skeleton');
+            });
+
+            for (let i = 0; i < toRegen.length; i++) {
+                if (signal.aborted) {
+                    wasAborted = true;
+                    break;
+                }
+
+                const resultToRegen = toRegen[i];
+                const studentName = `${resultToRegen.prenom || ''} ${resultToRegen.nom || ''}`.trim();
+
+                UI.showHeaderProgress(i + 1, total, studentName);
+
+                try {
+                    ListViewManager.setRowStatus(resultToRegen.id, 'generating');
+
+                    const updatedStudentData = JSON.parse(JSON.stringify(resultToRegen.studentData));
+                    updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
+                    updatedStudentData.currentAIModel = appState.currentAIModel;
+
+                    const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
+                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
+                    if (resultIndex > -1) {
+                        newResult.id = resultToRegen.id;
+                        appState.generatedResults[resultIndex] = newResult;
+                        successCount++;
+
+                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
+                        if (filteredIndex > -1) {
+                            appState.filteredResults[filteredIndex] = newResult;
+                        }
+
+                        await ListViewManager.updateRow(newResult.id, newResult, true);
+                    }
+                } catch (e) {
+                    if (e.name === 'AbortError' || signal.aborted) {
+                        wasAborted = true;
+                        break;
+                    }
+
+                    newErrorCount++;
+                    const msg = Utils.translateErrorMessage(e.message);
+                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
+                    const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
+                    if (resultIndex > -1) {
+                        errorResult.id = resultToRegen.id;
+                        appState.generatedResults[resultIndex] = errorResult;
+
+                        const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
+                        if (filteredIndex > -1) {
+                            appState.filteredResults[filteredIndex] = errorResult;
+                        }
+
+                        ListViewManager.updateRow(errorResult.id, errorResult, false);
+                    }
+                }
+            }
+
+            MassImportManager.massImportAbortController = null;
+            UI.hideHeaderProgress(newErrorCount > 0, newErrorCount);
+
+            if (wasAborted) {
+                UI.showNotification("Actualisation annulée.", "warning");
+                this.renderResults();
+            } else {
+                UI.showNotification(`${successCount}/${total} actualisée(s) avec succès.`, "success");
+            }
+
+            StorageManager.saveAppState();
             UI.updateStats();
             UI.updateControlButtons();
         });

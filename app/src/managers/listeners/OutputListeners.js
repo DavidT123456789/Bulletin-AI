@@ -44,11 +44,8 @@ export const OutputListeners = {
         // Note: Le menu d'actions global est maintenant dans le header du tableau
         // et ses listeners sont attachés par ListViewManager._attachGlobalActionsListeners()
 
-        // Generation Status Chip listeners
-        const headerErrorAction = document.getElementById('headerErrorAction');
-        if (headerErrorAction) {
-            addClickListener(headerErrorAction, EventHandlersManager.handleRegenerateErrorsClick);
-        }
+        // Header error badge is now informational only - errors are handled by the "Actualiser" button
+        // Cancel button still works to abort generation in progress
 
         const headerCancelBtn = document.getElementById('headerCancelBtn');
         if (headerCancelBtn) {
@@ -58,18 +55,20 @@ export const OutputListeners = {
             });
         }
 
-        // Bouton "Générer/Régénérer" : Action contextuelle (Option C)
+        // Bouton "Générer" : Only generates pending appreciations (no more regenerate mode)
         addClickListener(DOM.generateAllPendingBtn, async () => {
-            const mode = DOM.generateAllPendingBtn.dataset.mode || 'generate';
-
-            if (mode === 'regenerate') {
-                const { ResultsUIManager } = await import('../ResultsUIManager.js');
-                ResultsUIManager.regenerateVisible();
-            } else {
-                const { MassImportManager } = await import('../MassImportManager.js');
-                await MassImportManager.generateAllPending();
-            }
+            const { MassImportManager } = await import('../MassImportManager.js');
+            await MassImportManager.generateAllPending();
         });
+
+        // Bouton "Actualiser" : Regenerates dirty and error appreciations
+        const updateDirtyBtn = document.getElementById('updateDirtyBtn');
+        if (updateDirtyBtn) {
+            addClickListener(updateDirtyBtn, async () => {
+                const { ResultsUIManager } = await import('../ResultsUIManager.js');
+                await ResultsUIManager.regenerateDirty();
+            });
+        }
 
         // Bouton Analyse de classe -> Ouvre le nouveau Dashboard
         const analyzeBtn = document.getElementById('analyzeClassBtn');

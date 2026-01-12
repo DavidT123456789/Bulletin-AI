@@ -234,8 +234,8 @@
 /* Accordion spécifique à l'aide */
 .help-accordion {
     margin-top: 24px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    background: var(--card-glass-bg);
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
 }
@@ -262,13 +262,25 @@
 }
 
 .help-accordion .details-content {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    background: var(--card-glass-bg);
+    border: 1px solid var(--card-glass-border);
     border-top: none;
     border-bottom-left-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-lg);
     padding: 0;
     /* Le padding est géré par .details-content-inner */
+}
+
+/* Help modal action buttons - More visible style */
+.help-action-button.btn-secondary {
+    background: var(--surface-color);
+    border: 1px solid var(--card-glass-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.help-action-button.btn-secondary:hover:not(:disabled) {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 /* Adaptation Mobile */

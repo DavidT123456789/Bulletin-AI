@@ -18,6 +18,8 @@
     /* Stone 200 (Inputs/Panels) */
     --bg-tertiary: #d6d3d1;
     /* Stone 300 */
+    --bg-hover: #d6d3d1;
+    /* Stone 300 - Hover state for list items */
 
     --surface-color: #ffffff;
     --surface-color-rgb: 255, 255, 255;
@@ -71,6 +73,8 @@
     /* Thicker for animated gradient focus */
     --input-focus-bg: var(--bg-color);
     /* Single source of truth for input focus background */
+    --input-fill-bg: var(--bg-secondary);
+    /* Background used inside input gradient borders (hover/focus) */
     --card-input-padding: 12px 16px;
     /* Single source of truth for card inputs */
 
@@ -199,6 +203,8 @@
     --bg-tertiary: #374151;
     --surface-color: #111827;
     --surface-color-rgb: 17, 24, 39;
+    --bg-hover: #374151;
+    /* Gray 700 - Hover state for list items */
     --border-color: rgba(255, 255, 255, 0.08);
 
     --text-primary: #f9fafb;

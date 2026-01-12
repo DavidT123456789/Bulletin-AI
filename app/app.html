@@ -266,6 +266,13 @@
                                     <span>Générer</span>
                                     <span class="pending-badge" id="pendingCountBadge">0</span>
                                 </button>
+                                <button type="button" class="btn btn-update tooltip" id="updateDirtyBtn"
+                                    style="display: none;"
+                                    data-tooltip="Régénérer les appréciations modifiées ou en erreur">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Actualiser</span>
+                                    <span class="pending-badge" id="dirtyCountBadge">0</span>
+                                </button>
                                 <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
                                     data-tooltip="Analyse IA de la classe">
                                     <i class="fas fa-chart-pie"></i> Analyser
@@ -1902,7 +1909,7 @@
                             </ul>
 
                             <div
-                                style="background: var(--bg-secondary); padding: 15px; border-radius: var(--radius-lg);">
+                                style="background: var(--card-glass-bg); padding: 15px; border-radius: var(--radius-lg); border: 1px solid var(--card-glass-border);">
                                 <p style="font-weight: 600; font-size: 0.9em; margin-top: 0;">Structure idéale pour
                                     l'import :</p>
                                 <div class="help-code-block" id="helpFormatStructure" style="margin-bottom: 15px;">
@@ -2094,7 +2101,7 @@
                             <div class="welcome-api-key-group">
                                 <input type="password" id="welcomeApiKeyInput"
                                     placeholder="Collez votre clé API Google ici...">
-                                <button class="btn btn-ai btn-small" id="welcomeValidateApiKeyBtn">Valider</button>
+                                <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                             </div>
                             <div class="error-message" id="welcomeApiKeyError"
                                 style="display: none; justify-content: flex-start; margin-bottom: 10px; font-size: 0.9em;">

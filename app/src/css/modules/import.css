@@ -389,55 +389,31 @@
     max-width: 480px;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    border: 1.5px solid var(--border-color);
+    border: none;
     transition: all var(--transition-fast);
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm);
+    /* No background - let the modal background show through */
+    background: transparent;
+    box-shadow: none;
     position: relative;
 }
 
-/* État hover - bordure dégradée dynamique */
-.welcome-api-key-group:hover:not(:focus-within) {
-    border-color: transparent;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-}
-
-/* État focus - bordure animée rotative (harmonisé avec .search-input) */
+/* État hover/focus - pas d'effet spécial pour un look clean */
+.welcome-api-key-group:hover:not(:focus-within),
 .welcome-api-key-group:focus-within {
-    border-color: transparent;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
-    z-index: 5;
+    /* Intentionally no visual changes - keep it simple */
 }
 
-/* Input interne - suppression des styles par défaut */
+/* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input,
 .welcome-api-key-group input:focus,
 .welcome-api-key-group input:active {
     border: none !important;
-    border-radius: 0 !important;
+    /* Arrondi à gauche seulement pour se connecter au bouton */
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important;
     outline: none !important;
     box-shadow: none !important;
-    background: transparent !important;
+    /* Fond visible surface color */
+    background: var(--surface-color) !important;
     padding: 14px 20px;
     flex: 1;
     font-size: 0.95em;
@@ -451,28 +427,59 @@
     opacity: 0.7;
 }
 
-/* Bouton de validation - neutre aux effets hover globaux */
-.welcome-api-key-group button {
-    border-radius: 0;
+/* Bouton de validation API - Style unique avec états de couleur */
+.welcome-api-key-group .btn-validate-key {
+    /* Forme : plat à gauche, arrondi à droite */
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0 !important;
     margin: 0;
-    padding: 0 24px;
+    /* Padding compact pour un bouton intégré */
+    padding: 14px 18px;
     border: none;
     font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    height: auto;
-    z-index: 2;
-    transition: filter var(--transition-fast);
-    /* Empêcher le décollement au hover */
+    gap: 5px;
+    white-space: nowrap;
+    /* Largeur minimale pour éviter le redimensionnement entre états */
+    min-width: 100px;
+    justify-content: center;
+
+    /* État par défaut : gris/neutre */
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+
+    /* Transition douce pour le changement de couleur */
+    transition: background 0.25s ease, color 0.25s ease;
+
+    /* Désactiver les effets de .btn qui peuvent interférer */
     transform: none !important;
     box-shadow: none !important;
 }
 
-.welcome-api-key-group button:hover {
-    filter: brightness(1.1);
-    transform: none !important;
-    box-shadow: none !important;
+.welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
+    /* Hover style aligné sur btn-secondary : teinte primaire légère */
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
+}
+
+/* État "prêt" : clé saisie, prête à valider */
+.welcome-api-key-group .btn-validate-key.ready {
+    background: var(--primary-color);
+    color: white;
+}
+
+.welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
+    /* Hover style aligné sur btn : couleur légèrement plus foncée */
+    background: var(--primary-hover);
+}
+
+/* État "validé" : clé confirmée */
+.welcome-api-key-group .btn-validate-key.validated {
+    background: var(--success-color);
+    color: white;
+    cursor: default;
 }
 
 .welcome-divider {

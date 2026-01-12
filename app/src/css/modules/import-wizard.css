@@ -581,7 +581,8 @@
     box-shadow: none;
     /* Shadow handled by hover/focus only if needed, or remove inset */
     border-radius: var(--radius-lg);
-    background: var(--bg-color);
+    /* Use --surface-color to match search bar (consistent interactive element styling) */
+    background: var(--surface-color);
     /* OPTIMIZED: Hardware acceleration to prevent painting flashes */
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -612,7 +613,8 @@
 .import-input-container:has(.import-textarea:focus) {
     /* Use STRICT single source of truth for focus width */
     border: var(--input-border-width-focus) solid transparent;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+    /* Match base background of textarea container */
+    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
             rgba(var(--primary-color-rgb), 0.5) 18%,
@@ -707,7 +709,8 @@
     align-items: center;
     gap: 8px;
     padding: 4px 10px;
-    background: rgba(var(--bg-secondary-rgb), 0.5);
+    /* Use --surface-color for consistency with search bar and other interactive elements */
+    background: var(--surface-color);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
 }
@@ -736,7 +739,8 @@
     padding: 6px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: transparent;
+    /* Use --surface-color for consistency with search bar */
+    background: var(--surface-color);
     color: var(--text-primary);
     font-size: 0.85rem;
     cursor: pointer;
@@ -1132,10 +1136,12 @@
 
 .custom-select-trigger:hover {
     border-color: transparent;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+    /* Subtle primary tint + gradient border (consistent with inputs) */
+    background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
+        linear-gradient(var(--bg-color), var(--bg-color)),
         linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
+    background-origin: padding-box, padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
     /* Copied from dropdown.css hover effect for consistency */
 }
 
