@@ -140,11 +140,31 @@ export const ClassManager = {
             }
         }
 
-        // Sauvegarder
+        // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        // Synchroniser immédiatement vers le cloud pour propager la suppression
+        this._triggerCloudSync();
 
         UI?.showNotification(`Classe "${deletedClass.name}" supprimée`, 'success');
         return true;
+    },
+
+    /**
+     * Trigger cloud sync if connected (non-blocking)
+     * @private
+     */
+    _triggerCloudSync() {
+        // Use dynamic import to avoid circular dependencies
+        import('../services/SyncService.js').then(({ SyncService }) => {
+            if (SyncService.isConnected()) {
+                SyncService.sync().catch(e =>
+                    console.warn('[ClassManager] Cloud sync after deletion failed:', e.message)
+                );
+            }
+        }).catch(() => {
+            // SyncService not available, ignore
+        });
     },
 
     /**
