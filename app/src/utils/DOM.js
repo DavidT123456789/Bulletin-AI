@@ -69,7 +69,7 @@ export function initDOM() {
     // AI model chip
     DOM.headerAiModelChip = document.getElementById('headerAiModelChip');
     DOM.headerAiModelName = document.getElementById('headerAiModelName');
-    DOM.headerSessionCost = document.getElementById('headerSessionCost');
+
     // Generation Status Chip (unified progress + errors)
     DOM.headerGenerationStatus = document.getElementById('headerGenerationStatus');
     DOM.headerProgressFill = document.getElementById('headerProgressFill');

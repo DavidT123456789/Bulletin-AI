@@ -64,8 +64,8 @@
     height: 36px;
     border-radius: 50%;
     border: none;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    background: var(--close-btn-bg);
+    color: var(--close-btn-color);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -75,8 +75,8 @@
 }
 
 .import-panel-close-btn:hover {
-    background: var(--error-light);
-    color: var(--error-color);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
 }
 
 .import-panel-title {

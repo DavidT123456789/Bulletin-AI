@@ -272,25 +272,40 @@
     transition: all var(--transition-base);
 }
 
-/* Badge spécifique pour le tableau - plus compact */
+/* Badge spécifique pour le tableau - style minimaliste */
 #avgWordsChip {
-    height: 22px;
+    /* Positionnement absolu à droite du header (hérite de .appreciation-header>.detail-chip) */
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Style minimaliste */
+    height: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    padding: 0 8px;
-    border-radius: var(--radius-pill);
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    padding: 0;
+    border-radius: 0;
     vertical-align: middle;
-    margin-left: 8px;
+    margin-left: 0;
     box-shadow: none;
-    transition: all var(--transition-base);
+    transition: color var(--transition-fast), opacity var(--transition-fast);
     font-variant-numeric: tabular-nums;
     text-transform: none;
+    opacity: 0.8;
+    /* Garantir que le survol fonctionne au-dessus du pseudo-élément ::after */
+    z-index: 2;
+    cursor: default;
+}
+
+#avgWordsChip:hover {
+    color: var(--text-secondary);
+    opacity: 1;
 }
 
 .output-header .detail-chip:hover {
@@ -475,8 +490,8 @@
     font-weight: 600;
     font-size: 13px;
     white-space: nowrap;
-    /* Soft warning color - not aggressive */
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    /* Soft warning color - uses design token */
+    background: var(--gradient-warning);
     color: white !important;
     border: none;
     transition: all var(--transition-fast);
@@ -484,7 +499,7 @@
 }
 
 .btn-update:hover:not(:disabled) {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
     box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
 }
 

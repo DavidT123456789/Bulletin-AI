@@ -543,28 +543,6 @@ export const SettingsUIManager = {
             }
         }
 
-        // Mettre à jour le coût de session si visible
-        if (DOM.headerSessionCost) {
-            const cost = appState.sessionCost || 0;
-
-            // Vérifier si le modèle actuel est gratuit
-            const isFreeModel = model.endsWith('-free') ||
-                model.startsWith('gemini') ||
-                model.startsWith('ollama');
-
-            // Ne pas afficher le coût si :
-            // - Le coût est négligeable (< 0.001$)
-            // - Le modèle actuel est gratuit (même si un coût antérieur existe)
-            if (cost >= 0.001 && !isFreeModel) {
-                DOM.headerSessionCost.textContent = `${cost.toFixed(3)}$`;
-                DOM.headerSessionCost.style.display = 'inline-block';
-                DOM.headerSessionCost.classList.add('has-cost');
-            } else {
-                DOM.headerSessionCost.style.display = 'none';
-                DOM.headerSessionCost.classList.remove('has-cost');
-            }
-        }
-
         // Mettre à jour l'ordre de secours dynamique
         this.updateFallbackOrderHint();
     },

@@ -195,15 +195,18 @@ export const ResultsUIManager = {
             if (DOM.outputHeader) DOM.outputHeader.style.display = 'none';
         }
         else if (filteredAndSorted.length === 0) {
-            // Clear for no results message
-            DOM.resultsDiv.innerHTML = '';
-
+            // CRITICAL FIX: Preserve table structure (and search bar) when filter returns no results
+            // Instead of clearing DOM, call ListViewManager with empty array to show "Aucun élève trouvé"
+            // This keeps the search bar accessible so user can clear their search
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
-            if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'block';
+            if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
             // Réafficher les statistiques si masquées précédemment
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
+
+            // Let ListViewManager handle the empty state - it preserves the table header with search bar
+            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
         }
         else {
             // DON'T clear DOM here - let ListViewManager handle animation

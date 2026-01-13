@@ -389,7 +389,7 @@
     display: none;
     font-size: 10px;
     padding: 2px 6px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: var(--gradient-warning);
     color: white;
     border-radius: var(--radius-pill);
     margin-left: 6px;
@@ -419,21 +419,6 @@
 .ai-model-chip .model-text-container {
     display: flex;
     align-items: center;
-}
-
-/* Badge coût de session */
-.session-cost-badge {
-    background: var(--success-color);
-    color: white;
-    font-size: var(--font-xs);
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: var(--radius-pill);
-    margin-left: 4px;
-}
-
-.session-cost-badge.has-cost {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
 /* Badge d'erreur dans le header - MOVED to modules/generation-status.css */

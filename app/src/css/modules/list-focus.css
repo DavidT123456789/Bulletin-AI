@@ -417,7 +417,7 @@
     font-weight: 600;
     font-size: 12px;
     white-space: nowrap;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background: var(--gradient-warning);
     color: white !important;
     border: none;
     cursor: pointer;
@@ -430,7 +430,7 @@
 }
 
 .btn-update-inline:hover {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
     box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
     transform: translateY(-50%) scale(1.05);
 }
@@ -493,19 +493,41 @@
     font-weight: 600;
     font-size: 12px;
     white-space: nowrap;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark, #5a4bd1) 100%);
+    background: var(--gradient-ai);
     color: white !important;
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
     box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
     pointer-events: auto;
+    /* Shine sweep effect - harmonized with btn-primary/btn-ai */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shine sweep pseudo-element (Single Source of Truth: @keyframes shine-sweep in components.css) */
+.btn-generate-inline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+    pointer-events: none;
 }
 
 .btn-generate-inline:hover {
-    background: linear-gradient(135deg, var(--primary-dark, #5a4bd1) 0%, var(--primary-darker, #4a3dc1) 100%);
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
     box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
     transform: scale(1.05);
+}
+
+.btn-generate-inline:hover::before {
+    animation: shine-sweep 1.5s ease-in-out infinite;
 }
 
 .btn-generate-inline:active {
@@ -1302,15 +1324,14 @@
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Close button specific styling */
-/* Close button specific styling */
+/* Close button specific styling - Harmonized with design tokens */
 .focus-nav-btn.focus-close-btn {
-    color: var(--text-secondary);
+    color: var(--close-btn-color);
 }
 
 .focus-nav-btn.focus-close-btn:hover {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
-    color: var(--error-color);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
     transform: scale(1.1);
 }
 
