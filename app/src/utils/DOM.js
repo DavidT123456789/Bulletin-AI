@@ -253,8 +253,10 @@ export function initDOM() {
     DOM.importBackupInput = document.getElementById('importBackupInput');
     // Cloud sync elements
     DOM.connectGoogleBtn = document.getElementById('connectGoogleBtn');
+    DOM.disconnectGoogleBtn = document.getElementById('disconnectGoogleBtn');
     DOM.connectDropboxBtn = document.getElementById('connectDropboxBtn');
     DOM.googleSyncStatus = document.getElementById('googleSyncStatus');
+    DOM.googleSyncEmail = document.getElementById('googleSyncEmail');
     DOM.dropboxSyncStatus = document.getElementById('dropboxSyncStatus');
     DOM.syncStatusBar = document.getElementById('syncStatusBar');
     DOM.syncRgpdWarning = document.getElementById('syncRgpdWarning');

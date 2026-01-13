@@ -783,8 +783,13 @@ export const SettingsModalListeners = {
                             UI.showNotification('Google Drive connecté !', 'success');
                         }
 
+                        // Update UI to show connected state with disconnect button
                         DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
                         DOM.connectGoogleBtn.classList.add('btn-success');
+                        DOM.connectGoogleBtn.style.display = 'none';
+                        if (DOM.disconnectGoogleBtn) {
+                            DOM.disconnectGoogleBtn.style.display = 'inline-flex';
+                        }
                     } else {
                         DOM.connectGoogleBtn.innerHTML = 'Connecter';
                         DOM.connectGoogleBtn.disabled = false;
@@ -795,6 +800,48 @@ export const SettingsModalListeners = {
                     DOM.connectGoogleBtn.innerHTML = 'Connecter';
                     DOM.connectGoogleBtn.disabled = false;
                     UI.showNotification('Erreur de connexion : ' + error.message, 'error');
+                }
+            });
+        }
+
+        // Cloud sync - Google Drive DISCONNECTION
+        if (DOM.disconnectGoogleBtn) {
+            DOM.disconnectGoogleBtn.addEventListener('click', async () => {
+                try {
+                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    DOM.disconnectGoogleBtn.disabled = true;
+
+                    const { SyncService } = await import('../../services/SyncService.js');
+                    await SyncService.disconnect();
+
+                    // Reset UI to disconnected state
+                    DOM.googleSyncStatus.textContent = 'Non connecté';
+                    DOM.googleSyncStatus.classList.remove('connected');
+                    if (DOM.googleSyncEmail) {
+                        DOM.googleSyncEmail.textContent = '';
+                        DOM.googleSyncEmail.style.display = 'none';
+                    }
+                    DOM.connectGoogleBtn.innerHTML = 'Connecter';
+                    DOM.connectGoogleBtn.classList.remove('btn-success');
+                    DOM.connectGoogleBtn.disabled = false;
+                    DOM.connectGoogleBtn.style.display = 'inline-flex';
+                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    DOM.disconnectGoogleBtn.disabled = false;
+                    DOM.disconnectGoogleBtn.style.display = 'none';
+
+                    const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
+                    if (card) card.classList.remove('connected');
+
+                    if (DOM.syncRgpdWarning) {
+                        DOM.syncRgpdWarning.style.display = 'none';
+                    }
+
+                    UI.showNotification('Déconnecté de Google Drive.', 'info');
+                } catch (error) {
+                    console.error('Google sync disconnection error:', error);
+                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    DOM.disconnectGoogleBtn.disabled = false;
+                    UI.showNotification('Erreur de déconnexion : ' + error.message, 'error');
                 }
             });
         }

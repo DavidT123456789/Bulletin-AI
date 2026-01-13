@@ -108,6 +108,7 @@ export const SyncService = {
             if (providerName === 'google') {
                 const statusEl = document.getElementById('googleSyncStatus');
                 const connectBtn = document.getElementById('connectGoogleBtn');
+                const disconnectBtn = document.getElementById('disconnectGoogleBtn');
                 const card = connectBtn?.closest('.sync-provider-card');
 
                 if (statusEl) {
@@ -117,7 +118,10 @@ export const SyncService = {
                 if (connectBtn) {
                     connectBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
                     connectBtn.classList.add('btn-success');
-                    connectBtn.disabled = true;
+                    connectBtn.style.display = 'none';
+                }
+                if (disconnectBtn) {
+                    disconnectBtn.style.display = 'inline-flex';
                 }
                 if (card) {
                     card.classList.add('connected');

@@ -1581,10 +1581,18 @@
                                         <div class="provider-info">
                                             <span class="provider-name">Google Drive</span>
                                             <span class="provider-status" id="googleSyncStatus">Non connecté</span>
+                                            <span class="provider-email" id="googleSyncEmail"
+                                                style="display: none; font-size: 0.8em; color: var(--text-secondary);"></span>
                                         </div>
-                                        <button class="btn btn-secondary btn-small" id="connectGoogleBtn">
-                                            Connecter
-                                        </button>
+                                        <div class="provider-actions" style="display: flex; gap: 8px;">
+                                            <button class="btn btn-secondary btn-small" id="connectGoogleBtn">
+                                                Connecter
+                                            </button>
+                                            <button class="btn btn-danger btn-small" id="disconnectGoogleBtn"
+                                                style="display: none;">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="sync-provider-card" data-provider="dropbox"
                                         style="opacity: 0.5; pointer-events: none;">
