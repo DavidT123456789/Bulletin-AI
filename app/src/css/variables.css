@@ -98,6 +98,12 @@
     --error-rgb: 239, 68, 68;
     --error-light: rgba(239, 68, 68, 0.15);
 
+    /* Close Button Design Tokens (Single Source of Truth) */
+    --close-btn-bg: transparent;
+    --close-btn-color: var(--text-secondary);
+    --close-btn-hover-bg: var(--error-light);
+    --close-btn-hover-color: var(--error-color);
+
     --purple-color: #8b5cf6;
     --purple-rgb: 139, 92, 246;
     --purple-light: rgba(139, 92, 246, 0.15);

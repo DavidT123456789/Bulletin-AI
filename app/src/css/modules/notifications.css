@@ -20,7 +20,7 @@
 /* Base Notification - Pastel Design */
 .notification {
     padding: 14px 18px;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     font-weight: 500;
     transform: translateX(400px);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);

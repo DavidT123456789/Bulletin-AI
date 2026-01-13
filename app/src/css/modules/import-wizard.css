@@ -197,7 +197,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     flex-shrink: 0;
 }
 
@@ -745,7 +745,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     min-width: 130px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .import-wizard-modal .import-separator-select:focus {
@@ -998,7 +998,7 @@
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1118,7 +1118,7 @@
     /* Match standard border thickness */
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     user-select: none;
     min-height: 42px;
     /* Match standard height */
@@ -1231,7 +1231,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -1498,7 +1498,7 @@
     border: 1.5px solid var(--border-color);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     gap: 14px;
@@ -1529,7 +1529,7 @@
     justify-content: center;
     font-size: 1.2rem;
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     flex-shrink: 0;
 }
 
@@ -1681,7 +1681,7 @@
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1881,7 +1881,7 @@
     font-size: 0.8rem;
     font-weight: 600;
     border: 1px solid;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     cursor: default;
 }
 
@@ -2279,7 +2279,7 @@
     border: 1.5px solid var(--border-color);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .import-strategy-radio input[type="radio"] {
@@ -2300,7 +2300,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     margin-top: 2px;
 }
 

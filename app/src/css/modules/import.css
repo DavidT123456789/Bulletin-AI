@@ -514,7 +514,7 @@
     border: 1px solid var(--border-color);
     color: var(--text-color);
     box-shadow: none;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .btn-demo-outline:hover {
@@ -537,7 +537,7 @@
     background: rgba(var(--primary-color-rgb), 0.08);
     border-radius: var(--radius-pill);
     margin-top: 8px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .get-key-link:hover {
@@ -622,7 +622,7 @@
     flex: 1;
     background: var(--surface-color);
     border-radius: var(--radius-lg);
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     box-shadow: var(--shadow-sm);
     border: 1px solid transparent;
     /* Prepare for border transition */
@@ -1088,7 +1088,7 @@
     /* Slightly larger */
     cursor: pointer;
     padding: 6px 0;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     text-align: left;
     display: inline-flex;
     align-items: center;
@@ -1491,7 +1491,7 @@
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .mapping-pill.type-name {
@@ -1690,7 +1690,7 @@
     border: none;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .btn-sample-data:hover {

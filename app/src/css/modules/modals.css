@@ -155,9 +155,9 @@
 }
 
 .close-button:hover {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    transform: scale(1.05);
+    background-color: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
+    transform: scale(1.08);
 }
 
 .close-button:active {
@@ -302,8 +302,9 @@
 .modal-nav-pill+.close-button:hover,
 .modal-header-actions .close-button:hover {
     transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-    background: var(--surface-color);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
 }
 
 /* Redundant definition of close-button was at 711 but identical functionality, keeping standard one above */
@@ -1421,7 +1422,7 @@
     font-size: 0.95rem;
     border-radius: var(--radius-md);
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .modal-compact-actions .btn-secondary {

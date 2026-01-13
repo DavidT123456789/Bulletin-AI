@@ -855,7 +855,7 @@
     background: transparent;
     color: var(--text-tertiary);
     border: 1px solid transparent;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     box-shadow: none;
 }
 
@@ -948,12 +948,12 @@
     /* This wrapper will be centered by the td's text-align: center */
 }
 
-/* Evolution column in tables - separate narrow column */
+/* Evolution column in tables - triable column */
 .student-list-table .evolution-header,
 .student-list-table .evolution-cell {
-    width: 24px;
-    min-width: 24px;
-    max-width: 24px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 38px;
     padding: 0 4px !important;
     text-align: center;
 }

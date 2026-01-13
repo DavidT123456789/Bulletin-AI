@@ -72,14 +72,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     z-index: 10;
 }
 
 .import-hub-close:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    transform: rotate(90deg);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
+    transform: scale(1.08);
 }
 
 /* === HEADER === */

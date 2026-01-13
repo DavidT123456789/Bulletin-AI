@@ -1,0 +1,62 @@
+/* ====================================================================
+   MODULE: Close Button - Single Source of Truth
+   iOS 2025 Premium Design - Pastel red hover effect
+   ==================================================================== */
+
+/* Base close button styling */
+.close-btn {
+    background: var(--close-btn-bg, transparent);
+    border: none;
+    color: var(--close-btn-color, var(--text-secondary));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    /* Default size */
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.close-btn:hover {
+    background: var(--close-btn-hover-bg, var(--error-light));
+    color: var(--close-btn-hover-color, var(--error-color));
+    transform: scale(1.08);
+}
+
+.close-btn:active {
+    transform: scale(0.95);
+}
+
+/* Size variants */
+.close-btn--sm {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    font-size: 11px;
+}
+
+.close-btn--lg {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1rem;
+}
+
+/* Elevated variant (with shadow) */
+.close-btn--elevated {
+    background: var(--surface-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.close-btn--elevated:hover {
+    background: var(--close-btn-hover-bg, var(--error-light));
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+}

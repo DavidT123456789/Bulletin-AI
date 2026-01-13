@@ -89,14 +89,23 @@
 }
 
 .sortable-header.active-sort,
-.sortable-header.active-sort:hover,
 .sortable-header.active-sort:focus {
     color: var(--primary-color);
     background-color: transparent !important;
     outline: none;
 }
 
-/* Pas d'effet de survol sur la colonne triée active */
+/* Léger effet de survol sur la colonne triée active (indique que c'est toujours cliquable) */
+.sortable-header.active-sort:hover {
+    color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.04) !important;
+}
+
+[data-theme="dark"] .sortable-header.active-sort:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Disable pseudo-element on active-sort (we use direct background instead) */
 .sortable-header.active-sort::after,
 .sortable-header.active-sort:hover::after {
     opacity: 0 !important;
@@ -301,21 +310,30 @@
     color: var(--text-tertiary);
 }
 
-/* Evolution column - enlarged to fit sort icon */
-.evolution-header {
-    width: 80px;
-    min-width: 80px;
+/* Grade header - compact width for T1/T2/T3 labels */
+.grade-header {
+    width: 70px;
+    min-width: 70px;
     max-width: 80px;
-    padding: 0 !important;
+    padding: 14px 8px !important;
 }
 
-/* Sort icon re-enabled by removing display:none rule */
+/* Evolution header - direct hover effect (pseudo-element doesn't work with border-collapse) */
+.evolution-header:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.06) !important;
+}
 
+[data-theme="dark"] .evolution-header:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Disable pseudo-element on evolution-header */
+.evolution-header::after {
+    display: none;
+}
+
+/* Evolution cell styling */
 .evolution-cell {
-    width: 80px;
-    min-width: 80px;
-    max-width: 80px;
-    padding: 0 !important;
     text-align: center;
     vertical-align: middle;
 }
@@ -575,7 +593,7 @@
     background: rgba(0, 0, 0, 0.03);
     padding: 12px 16px;
     /* Equal horizontal padding for centered text in card */
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     line-height: 1.6;
     margin: 4px 0;
     border: 1px solid rgba(0, 0, 0, 0.02);
@@ -1918,7 +1936,7 @@
 /* [NEW] Interactive Word Count Badge */
 #focusWordCount {
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     border-radius: 6px;
     padding: 2px 6px;
     margin: -2px -6px;
@@ -1946,7 +1964,7 @@
     overflow-y: auto;
     white-space: pre-wrap;
     position: relative;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     background: transparent;
     border: none;
     border-radius: 0;
@@ -2194,7 +2212,7 @@
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .history-indicator:hover {
@@ -2416,7 +2434,7 @@
     padding: 3px 10px;
     border-radius: var(--radius-pill);
     font-variant-numeric: tabular-nums;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
     text-transform: none;
@@ -2479,7 +2497,7 @@
     border-radius: 8px;
     font-size: 1rem;
     cursor: help;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     color: rgba(251, 191, 36, 0.8);
 }
 
@@ -3447,7 +3465,7 @@
 /* Individual Analysis Card */
 .analysis-card {
     background: var(--surface-color);
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     border: 1px solid rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease;
     /* box-shadow removed */
@@ -4139,7 +4157,7 @@
     border: none;
     font-size: 11px;
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     user-select: none;
 }
 
@@ -4165,7 +4183,7 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: none;
     height: 28px;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 /* Hover: subtle lift only */

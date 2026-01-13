@@ -11,6 +11,7 @@
 
 /* Modules refactorisés */
 @import './modules/modals.css';
+@import './modules/close-button.css';
 @import './modules/stats.css';
 @import './modules/cards.css';
 @import './modules/settings.css';

@@ -609,7 +609,7 @@
     color: var(--text-tertiary);
     font-size: 12px;
     opacity: 0;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     cursor: help;
     z-index: 5;
 }
@@ -640,7 +640,7 @@
     justify-content: center;
     font-size: 12px;
     opacity: 0;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     z-index: 5;
 }
 

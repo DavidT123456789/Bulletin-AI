@@ -30,7 +30,7 @@
     height: 680px;
     max-height: 90vh;
     background: var(--bg-color);
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -203,9 +203,9 @@
 
 .trombi-close-btn:hover {
     transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-    background: var(--surface-color);
-    color: var(--text-primary);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
 }
 
 /* Body - Flex pour permettre au contenu de croître et au footer de rester ancré */
@@ -352,7 +352,7 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .trombi-floating-sample-btn:hover {
@@ -433,7 +433,7 @@
 
 .trombi-image-container {
     position: relative;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background: var(--bg-secondary);
     overflow: hidden;
     /* Clip l'image aux coins arrondis, pas de scroll */
@@ -621,7 +621,7 @@
 
 .trombi-image-panel {
     background: var(--bg-secondary);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 0;
     overflow: hidden;
 }
@@ -819,7 +819,7 @@
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     flex-shrink: 0;
 }
 
@@ -982,7 +982,7 @@
     gap: 12px;
     padding: 16px;
     background: rgba(0, 184, 148, 0.1);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     color: var(--success-color);
     font-size: 15px;
 }
@@ -1071,7 +1071,7 @@
     margin-top: 16px;
     padding: 12px 16px;
     background: var(--bg-secondary);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     align-items: center;
     flex-wrap: wrap;
 }
