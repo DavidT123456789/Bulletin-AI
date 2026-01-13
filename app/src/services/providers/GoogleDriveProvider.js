@@ -101,15 +101,20 @@ export const GoogleDriveProvider = {
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         return true;
                     }
-                    // Token expired - will try to refresh below
-                    console.log('[GoogleDrive] Token expired, attempting refresh...');
+                    // Token expired - mark for reconnection but don't try OAuth refresh
+                    console.log('[GoogleDrive] Token expired');
+                    this._needsReconnect = true;
+                    if (options.silent) {
+                        // In silent mode, just fail - don't trigger OAuth popup
+                        return false;
+                    }
                 } catch (e) {
                     localStorage.removeItem('bulletin_google_token');
                 }
             }
 
-            // If strict silent mode and no valid token, fail silently
-            if (options.silent && !savedToken) {
+            // If silent mode, never try to open OAuth popup (will be blocked by browser)
+            if (options.silent) {
                 return false;
             }
 
