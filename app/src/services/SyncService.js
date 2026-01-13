@@ -66,6 +66,8 @@ export const SyncService = {
                 // If connected, perform initial sync to get cloud data
                 if (connected) {
                     await this.sync();
+                    // Update UI to show connected status
+                    this._updateUIConnected(savedProvider);
                 } else if (this._provider?.needsReconnect?.()) {
                     // Token expired but user had a valid connection before
                     // Show notification to prompt reconnection
@@ -93,6 +95,36 @@ export const SyncService = {
                 );
             }
         }, 2000);
+    },
+
+    /**
+     * Update UI to show connected status after successful auto-reconnection.
+     * @private
+     * @param {string} providerName - 'google' or 'dropbox'
+     */
+    _updateUIConnected(providerName) {
+        // Delay to ensure DOM is ready
+        setTimeout(() => {
+            if (providerName === 'google') {
+                const statusEl = document.getElementById('googleSyncStatus');
+                const connectBtn = document.getElementById('connectGoogleBtn');
+                const card = connectBtn?.closest('.sync-provider-card');
+
+                if (statusEl) {
+                    statusEl.textContent = 'Connecté';
+                    statusEl.classList.add('connected');
+                }
+                if (connectBtn) {
+                    connectBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
+                    connectBtn.classList.add('btn-success');
+                    connectBtn.disabled = true;
+                }
+                if (card) {
+                    card.classList.add('connected');
+                }
+            }
+            // Add similar handling for dropbox if needed
+        }, 500);
     },
 
     /**
