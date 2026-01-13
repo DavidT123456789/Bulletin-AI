@@ -13,15 +13,16 @@
     -webkit-backdrop-filter: blur(0px);
     align-items: center;
     justify-content: center;
-    transition: background 0.3s ease, backdrop-filter 0.3s ease;
+    transition: background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        backdrop-filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     /* GPU optimization for backdrop-filter */
     will-change: backdrop-filter;
 }
 
 .modal.modal-visible {
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .modal-content {
@@ -36,27 +37,33 @@
     display: flex;
     flex-direction: column;
     background: var(--surface-color);
-    /* Animation Apple style */
+    /* iOS 2025 Spring Animation with blur */
     opacity: 0;
-    transform: scale(0.5);
-    transition: opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transform: scale(0.92) translateY(16px);
+    filter: blur(4px);
+    transition: opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     /* GPU optimization - promote to own layer */
-    will-change: transform, opacity;
+    will-change: transform, opacity, filter;
     transform-style: preserve-3d;
     backface-visibility: hidden;
 }
 
 .modal.modal-visible .modal-content {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
+    filter: blur(0);
 }
 
 /* Animation de fermeture - Spécificité augmentée pour avoir priorité sur modal-visible */
 .modal.modal-visible.modal-closing .modal-content {
     opacity: 0 !important;
-    transform: scale(0.9) !important;
-    transition: opacity 0.25s ease-out, transform 0.25s ease-out !important;
+    transform: scale(0.95) translateY(8px) !important;
+    filter: blur(2px) !important;
+    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.2s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
 /* Backdrop fade out during closing */

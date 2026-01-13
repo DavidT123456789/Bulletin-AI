@@ -38,6 +38,8 @@ export const App = {
         try {
             const { SyncService } = await import('../services/SyncService.js');
             await SyncService.init();
+            // Expose for reconnection from notification link
+            window.SyncService = SyncService;
         } catch (e) {
             console.warn('[App] Cloud sync init failed:', e.message);
         }

@@ -66,12 +66,57 @@ export const SyncService = {
                 // If connected, perform initial sync to get cloud data
                 if (connected) {
                     await this.sync();
+                } else if (this._provider?.needsReconnect?.()) {
+                    // Token expired but user had a valid connection before
+                    // Show notification to prompt reconnection
+                    this._showReconnectNotification();
                 }
             } catch (e) {
                 console.warn('[SyncService] Could not restore provider:', e.message);
             }
         }
     },
+
+    /**
+     * Show a notification prompting user to reconnect to cloud sync.
+     * @private
+     */
+    _showReconnectNotification() {
+        // Delay to ensure UI is ready
+        setTimeout(() => {
+            const UI = window.UI;
+            if (UI?.showNotification) {
+                UI.showNotification(
+                    'Session Google Drive expirée. <a href="#" onclick="window.SyncService?.reconnect(); return false;">Reconnecter</a>',
+                    'warning',
+                    8000
+                );
+            }
+        }, 2000);
+    },
+
+    /**
+     * Attempt to reconnect with user interaction (shows popup).
+     */
+    async reconnect() {
+        if (!this.currentProviderName) return false;
+
+        try {
+            this._setStatus('syncing');
+            const authorized = await this._provider?.authorize?.({ silent: false });
+            if (authorized) {
+                await this.sync();
+                window.UI?.showNotification('Reconnecté à Google Drive', 'success');
+                this._setStatus('idle');
+                return true;
+            }
+        } catch (e) {
+            console.error('[SyncService] Reconnection failed:', e);
+        }
+        this._setStatus('error');
+        return false;
+    },
+
 
     // =========================================================================
     // PROVIDER MANAGEMENT

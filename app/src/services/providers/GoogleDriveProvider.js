@@ -83,7 +83,7 @@ export const GoogleDriveProvider = {
 
     /**
      * Authorize with Google.
-     * @param {Object} options - { silent: boolean }
+     * @param {Object} options - { silent: boolean, forcePrompt: boolean }
      * @returns {Promise<boolean>} Success
      */
     async authorize(options = {}) {
@@ -96,29 +96,39 @@ export const GoogleDriveProvider = {
             if (savedToken) {
                 try {
                     this._token = JSON.parse(savedToken);
-                    // Validate token
+                    // Validate token - still valid
                     if (this._token.expiry && Date.now() < this._token.expiry) {
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         return true;
                     }
+                    // Token expired - will try to refresh below
+                    console.log('[GoogleDrive] Token expired, attempting refresh...');
                 } catch (e) {
                     localStorage.removeItem('bulletin_google_token');
                 }
             }
 
-            // If silent mode and no valid token, fail silently
-            if (options.silent) {
+            // If strict silent mode and no valid token, fail silently
+            if (options.silent && !savedToken) {
                 return false;
             }
 
-            // Request new authorization
+            // Request new authorization (or refresh expired token)
+            // Use 'none' prompt first to try silent refresh, fallback to 'consent' if needed
             return new Promise((resolve) => {
                 const tokenClient = window.google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: GOOGLE_SCOPES,
                     callback: (tokenResponse) => {
                         if (tokenResponse.error) {
-                            console.error('[GoogleDrive] Auth error:', tokenResponse.error);
+                            // If silent refresh failed and we had a saved token, try with consent
+                            if (options.silent && savedToken && tokenResponse.error === 'interaction_required') {
+                                console.log('[GoogleDrive] Silent refresh failed, user interaction required');
+                                // Mark that reconnection is needed
+                                this._needsReconnect = true;
+                            } else {
+                                console.error('[GoogleDrive] Auth error:', tokenResponse.error);
+                            }
                             resolve(false);
                             return;
                         }
@@ -130,17 +140,29 @@ export const GoogleDriveProvider = {
 
                         localStorage.setItem('bulletin_google_token', JSON.stringify(this._token));
                         window.gapi.client.setToken({ access_token: this._token.access_token });
+                        this._needsReconnect = false;
                         resolve(true);
                     },
                 });
 
-                tokenClient.requestAccessToken({ prompt: 'consent' });
+                // If we have an expired token, try silent refresh first
+                // Otherwise, or if forcePrompt, ask for consent
+                const prompt = (savedToken && options.silent) ? 'none' : 'consent';
+                tokenClient.requestAccessToken({ prompt });
             });
 
         } catch (error) {
             console.error('[GoogleDrive] Authorization failed:', error);
             return false;
         }
+    },
+
+    /**
+     * Check if reconnection is needed (token expired).
+     * @returns {boolean}
+     */
+    needsReconnect() {
+        return this._needsReconnect === true;
     },
 
     /**

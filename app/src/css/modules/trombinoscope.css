@@ -1,5 +1,6 @@
 /* ====================================================================
    MODULE: Trombinoscope Wizard - Photo import from class photo
+   iOS 2025 Premium Design - Unified modal animations
    ==================================================================== */
 
 /* Modal Container */
@@ -16,13 +17,24 @@
     display: flex;
 }
 
+/* Backdrop with fade-in animation */
 .trombi-wizard-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    transition: background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        backdrop-filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.trombi-wizard-modal.visible .trombi-wizard-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Content with iOS 2025 spring animation */
 .trombi-wizard-content {
     position: relative;
     width: 90%;
@@ -36,6 +48,20 @@
     flex-direction: column;
     overflow: hidden;
     z-index: 1;
+    /* Initial state for animation */
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+    filter: blur(4px);
+    transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform, opacity, filter;
+}
+
+.trombi-wizard-modal.visible .trombi-wizard-content {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
 }
 
 /* Header - Harmonized with import-wizard style */

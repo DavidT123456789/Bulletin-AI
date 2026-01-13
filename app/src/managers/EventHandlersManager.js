@@ -233,7 +233,6 @@ export const EventHandlersManager = {
     handleStatFilterClick(element) {
         if (!element) {
             appState.activeStatFilter = null;
-            UI.showNotification("Filtre retiré.", "info");
             document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
             UI.updateActiveFilterInfo();
             // FLIP animation is handled in ListViewManager
@@ -250,17 +249,10 @@ export const EventHandlersManager = {
         if (isCurrentlyActive) {
             // DE-ACTIVATE
             appState.activeStatFilter = null;
-            UI.showNotification("Filtre retiré.", "info");
         } else {
             // ACTIVATE
             appState.activeStatFilter = statId;
             element.classList.add('active-filter');
-
-            // Get label for notification
-            const label = element.querySelector('.stat-label, .legend-label, .detail-label, .hist-label')?.textContent ||
-                element.dataset.tooltip ||
-                'Filtre';
-            UI.showNotification(`Filtre activé : ${label}`, "info");
         }
 
         UI.updateActiveFilterInfo();

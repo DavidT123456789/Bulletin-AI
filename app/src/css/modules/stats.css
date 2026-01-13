@@ -1251,15 +1251,14 @@
 
 .hist-bar-group .filter-close-btn {
     top: -4px;
-    right: 50%;
-    transform: translateX(50%);
+    right: -4px;
     width: 16px;
     height: 16px;
     font-size: 0.5rem;
 }
 
 .hist-bar-group .filter-close-btn:hover {
-    transform: translateX(50%) scale(1.15);
+    transform: scale(1.15);
 }
 
 /* Dark mode adjustments */
