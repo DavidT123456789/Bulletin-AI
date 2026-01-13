@@ -234,6 +234,7 @@ export const SyncService = {
 
     /**
      * Perform a full sync (bidirectional).
+     * Simple approach: compare global timestamp, newest wins entirely.
      * @returns {Promise<{success: boolean, stats: Object}>}
      */
     async sync() {
@@ -244,82 +245,70 @@ export const SyncService = {
         try {
             this._setStatus('syncing');
 
-            // 1. Get local data with timestamp
+            // 1. Get local and remote data
             const localData = await this._getLocalData();
-
-            // 2. Get remote data
             const remoteData = await this._provider.read();
 
-            // 3. Merge data (last-write-wins)
-            const { merged, stats } = this._mergeData(localData, remoteData);
+            const localTimestamp = this.lastSyncTime || 0;
+            const remoteTimestamp = remoteData?._meta?.lastSyncTimestamp || 0;
 
-            // 4. Save merged data locally
-            if (stats.updated > 0 || stats.imported > 0 || stats.classesImported > 0) {
-                // Restore generated results
-                runtimeState.data.generatedResults = merged.generatedResults;
+            const stats = { updated: 0, imported: 0, classesImported: 0, direction: 'none' };
 
-                // Sync classes bidirectionally with deletion support
-                if (remoteData?.classes !== undefined) {
-                    const remoteTimestamp = remoteData._meta?.lastSyncTimestamp || 0;
-                    const localTimestamp = localData._meta?.lastSyncTimestamp || 0;
+            // 2. Simple last-write-wins: compare global timestamps
+            if (remoteData && remoteTimestamp > localTimestamp) {
+                // REMOTE IS NEWER - Pull everything from remote
+                console.log('[SyncService] Remote is newer, pulling data...');
+                stats.direction = 'pull';
 
-                    // If remote is newer, replace local classes with remote
-                    if (remoteTimestamp > localTimestamp && remoteData.classes) {
-                        userSettings.academic.classes = [...remoteData.classes];
-                        stats.classesImported = remoteData.classes.length;
-                        stats.classesSynced = true;
-                    } else if (remoteData.classes?.length > 0) {
-                        // Remote is older or same, just add new classes (additive for safety)
-                        const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
-                        remoteData.classes.forEach(remoteClass => {
-                            if (!existingIds.has(remoteClass.id)) {
-                                userSettings.academic.classes.push(remoteClass);
-                                stats.classesImported = (stats.classesImported || 0) + 1;
-                            }
-                        });
-                    }
-
-                    // Sync currentClassId - prefer remote if local class no longer exists
-                    if (remoteData.currentClassId) {
-                        const localClassIds = new Set((userSettings.academic.classes || []).map(c => c.id));
-                        if (!userSettings.academic.currentClassId || !localClassIds.has(userSettings.academic.currentClassId)) {
-                            userSettings.academic.currentClassId = remoteData.currentClassId;
-                        }
-                    }
+                // Replace classes entirely
+                if (remoteData.classes) {
+                    userSettings.academic.classes = [...remoteData.classes];
+                    stats.classesImported = remoteData.classes.length;
                 }
 
-                // Restore settings if present in remote and not set locally
-                if (remoteData?.settings) {
-                    if (!userSettings.ui.theme && remoteData.settings.theme) {
-                        userSettings.ui.theme = remoteData.settings.theme;
-                    }
-                    if (!userSettings.academic.periodSystem && remoteData.settings.periodSystem) {
-                        userSettings.academic.periodSystem = remoteData.settings.periodSystem;
-                    }
-                    if (!userSettings.academic.subjects?.length && remoteData.settings.subjects?.length) {
-                        userSettings.academic.subjects = remoteData.settings.subjects;
-                    }
+                // Replace currentClassId
+                if (remoteData.currentClassId !== undefined) {
+                    userSettings.academic.currentClassId = remoteData.currentClassId;
+                }
+
+                // Merge generated results (keep local changes to avoid data loss)
+                if (remoteData.generatedResults?.length > 0) {
+                    const { merged } = this._mergeData(localData, remoteData);
+                    runtimeState.data.generatedResults = merged.generatedResults;
+                    stats.imported = merged.generatedResults.length;
+                }
+
+                // Merge settings
+                if (remoteData.settings) {
+                    if (remoteData.settings.theme) userSettings.ui.theme = remoteData.settings.theme;
+                    if (remoteData.settings.periodSystem) userSettings.academic.periodSystem = remoteData.settings.periodSystem;
+                    if (remoteData.settings.subjects) userSettings.academic.subjects = remoteData.settings.subjects;
                 }
 
                 await StorageManager.saveAppState();
 
-                // Refresh UI if classes were imported
-                if (stats.classesImported > 0 && window.App?.updateUIOnLoad) {
+                // Refresh UI
+                if (window.App?.updateUIOnLoad) {
                     window.App.updateUIOnLoad();
                 }
+            } else {
+                // LOCAL IS NEWER OR SAME - Push to remote
+                console.log('[SyncService] Local is newer or same, pushing data...');
+                stats.direction = 'push';
             }
 
-            // 5. Push merged data to cloud
-            merged._meta = {
-                ...merged._meta,
+            // 3. Always push current state to cloud (ensures both are in sync)
+            const dataToUpload = await this._getLocalData();
+            dataToUpload._meta = {
+                ...dataToUpload._meta,
                 lastSyncAt: new Date().toISOString(),
                 lastSyncTimestamp: Date.now(),
                 deviceId: StorageManager.getDeviceId()
             };
-            await this._provider.write(merged);
+            await this._provider.write(dataToUpload);
 
-            // 6. Update sync time
-            this.lastSyncTime = Date.now();
+            // 4. Update local sync time
+            this.lastSyncTime = dataToUpload._meta.lastSyncTimestamp;
             localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
 
             this._setStatus('idle');
