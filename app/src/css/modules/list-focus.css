@@ -382,6 +382,152 @@
     transform: translateY(-50%);
 }
 
+/* ====================================================================
+   UPDATE BUTTON INLINE - Bouton Actualiser dans le header du tableau
+   ==================================================================== */
+.btn-update-inline {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white !important;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);
+    /* CRITICAL: High z-index to be above header overlay and content */
+    z-index: 10;
+    /* Ensure button captures pointer events */
+    pointer-events: auto;
+}
+
+.btn-update-inline:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.btn-update-inline:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+.btn-update-inline .update-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Animation d'apparition */
+@keyframes update-btn-appear {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+}
+
+.btn-update-inline.animate-in {
+    animation: update-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ====================================================================
+   APPRECIATION HEADER ACTIONS CONTAINER
+   ==================================================================== */
+.appreciation-header-actions {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+/* ====================================================================
+   GENERATE BUTTON INLINE - Bouton Générer dans le header du tableau
+   ==================================================================== */
+.btn-generate-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark, #5a4bd1) 100%);
+    color: white !important;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
+    pointer-events: auto;
+}
+
+.btn-generate-inline:hover {
+    background: linear-gradient(135deg, var(--primary-dark, #5a4bd1) 0%, var(--primary-darker, #4a3dc1) 100%);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    transform: scale(1.05);
+}
+
+.btn-generate-inline:active {
+    transform: scale(0.98);
+}
+
+.btn-generate-inline i {
+    font-size: 11px;
+}
+
+.btn-generate-inline .generate-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Animation d'apparition pour le bouton générer */
+.btn-generate-inline.animate-in {
+    animation: update-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Remove absolute positioning from btn-update-inline when in container */
+.appreciation-header-actions .btn-update-inline {
+    position: static;
+    transform: none;
+}
+
+.appreciation-header-actions .btn-update-inline:hover {
+    transform: scale(1.05);
+}
+
+/* Ensure the hover overlay on appreciation header doesn't block the button */
+.appreciation-header::after {
+    pointer-events: none;
+}
+
 /* === Appreciation Column Toggle (Expand/Collapse Content) === */
 /* Note: Uses .sortable-header hover effect for consistency */
 .appreciation-toggle-header .header-content-wrapper {
@@ -2460,9 +2606,7 @@
 .btn-ai-outline:hover {
     background: var(--surface-color);
     color: var(--primary-color);
-    /* Texte devient coloré au survol */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
 }
 
 .btn-ai-outline:hover i {
@@ -2489,7 +2633,6 @@
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
     box-shadow: none;
-    transform: translateY(-1px);
 }
 
 .btn-ai-outline.active {
@@ -2582,12 +2725,11 @@
 }
 
 #focusGenerateBtn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 14px 30px -8px rgba(var(--primary-color-rgb), 0.5);
+    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.3);
 }
 
 #focusGenerateBtn:active {
-    transform: translateY(-1px) scale(0.98);
+    transform: scale(0.98);
 }
 
 /* Régénérer state - Override gradient with outline style */
@@ -2600,8 +2742,7 @@
 
 #focusGenerateBtn.btn-ai-outline:hover {
     background: rgba(var(--primary-color-rgb), 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px -6px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.2);
 }
 
 #focusGenerateBtn.btn-ai-outline i {
@@ -2654,8 +2795,7 @@
 .btn.btn-neutral:hover {
     background: var(--surface-color);
     color: var(--text-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 #focusGenerateBtn.btn-neutral:hover i,
@@ -2665,7 +2805,7 @@
 
 #focusGenerateBtn.btn-neutral:active,
 .btn.btn-neutral:active {
-    transform: translateY(0);
+    transform: scale(0.98);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 

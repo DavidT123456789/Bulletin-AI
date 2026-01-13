@@ -77,6 +77,9 @@ export function initDOM() {
     DOM.headerErrorAction = document.getElementById('headerErrorAction');
     DOM.headerErrorCount = document.getElementById('headerErrorCount');
     DOM.headerCancelBtn = document.getElementById('headerCancelBtn');
+    // Header Generate Button (idle-pending state)
+    DOM.headerGenerateBtn = document.getElementById('headerGenerateBtn');
+    DOM.headerPendingCount = document.getElementById('headerPendingCount');
 
     DOM.inputSection = document.getElementById('inputSection');
     DOM.massImportTab = document.getElementById('massImportTab');

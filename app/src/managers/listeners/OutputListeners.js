@@ -61,6 +61,15 @@ export const OutputListeners = {
             await MassImportManager.generateAllPending();
         });
 
+        // Header Generate Button (in header chip - idle-pending state)
+        const headerGenerateBtn = document.getElementById('headerGenerateBtn');
+        if (headerGenerateBtn) {
+            addClickListener(headerGenerateBtn, async () => {
+                const { MassImportManager } = await import('../MassImportManager.js');
+                await MassImportManager.generateAllPending();
+            });
+        }
+
         // Bouton "Actualiser" : Regenerates dirty and error appreciations
         const updateDirtyBtn = document.getElementById('updateDirtyBtn');
         if (updateDirtyBtn) {

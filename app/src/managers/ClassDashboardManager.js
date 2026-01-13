@@ -243,17 +243,30 @@ export const ClassDashboardManager = {
             studentCount.innerHTML = `<i class="fas fa-users"></i> <strong>${stats.count}</strong> élèves analysés`;
         }
 
-        // Update KPI Cards
-        this.updateKPICards(stats);
-
-        // Update Distribution Chart
-        this.updateDistributionChart(stats);
+        // Update Spread stat (unique to this modal - not shown on main page)
+        this.updateSpreadStat(stats);
 
         // Update Highlights
         this.updateHighlights(stats);
 
         // Restore cached AI synthesis if it matches current class/period, otherwise reset
         this.restoreOrResetAISection();
+    },
+
+    /**
+     * Update the compact spread stat display
+     * @param {Object} stats
+     */
+    updateSpreadStat(stats) {
+        const spreadValue = this.modal.querySelector('#kpiSpread');
+        const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
+
+        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1);
+        if (spreadLabel) {
+            if (stats.stdDev < 2) spreadLabel.textContent = 'Classe homogène';
+            else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
+            else spreadLabel.textContent = 'Classe hétérogène';
+        }
     },
 
     /**

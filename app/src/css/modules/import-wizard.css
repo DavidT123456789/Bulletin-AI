@@ -2110,37 +2110,15 @@
     padding: 0;
 }
 
-/* Import Confirm Button - Premium Style */
+/* Import Confirm Button - Extends .btn-organic */
+/* NOTE: Ajouter la classe .btn-organic dans le HTML pour hériter de l'animation */
 .btn-import-confirm {
+    /* Sizing spécifique pour ce contexte */
     display: inline-flex;
     align-items: center;
     gap: 10px;
     padding: 10px 24px;
-    /* Standardized sizing */
     font-size: 0.95rem;
-    font-weight: 600;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    border: none;
-    border-radius: var(--radius-pill);
-    color: white;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.25);
-}
-
-.btn-import-confirm:hover:not(:disabled) {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.35);
-}
-
-.btn-import-confirm:active:not(:disabled) {
-    transform: translateY(0) scale(0.98);
-}
-
-.btn-import-confirm:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
 }
 
 .btn-import-confirm i {
@@ -2438,23 +2416,7 @@
     gap: 8px;
 }
 
-/* Ghost button style */
-.btn-ghost {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    padding: 10px 20px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: var(--radius-md);
-    transition: all 0.2s ease;
-}
-
-.btn-ghost:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
+/* Ghost button - hérite de components.css */
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {

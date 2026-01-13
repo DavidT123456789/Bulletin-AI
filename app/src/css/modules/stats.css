@@ -330,7 +330,7 @@
     grid-area: stats;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: var(--space-5);
     margin-bottom: var(--space-6);
 }
 

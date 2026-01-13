@@ -51,12 +51,13 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    margin-bottom: var(--space-6);
+    margin-bottom: 0;
     gap: 12px;
 }
 
 .output-toolbar {
-    display: flex;
+    /* DEPRECATED: Toolbar hidden - search now in table header, Generate in header chip */
+    display: none !important;
     gap: 12px;
     align-items: center;
     flex-grow: 1;
@@ -85,7 +86,7 @@
 .output-toolbar .custom-dropdown-trigger,
 .output-toolbar .btn-icon {
     height: 40px !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--radius-lg) !important;
     font-size: 14px;
     background-color: var(--surface-color);
     border: 1px solid var(--card-glass-border);
@@ -94,22 +95,12 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-/* Generate button - height/radius only, colors from btn-primary */
-.btn-generate-all {
+/* Generate button - height/radius only, colors from btn-primary in components.css */
+.btn-generate-all,
+.toolbar-actions .btn-ai {
     height: 40px !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--radius-lg) !important;
     font-size: 14px;
-    transition: all var(--transition-fast);
-}
-
-/* Bouton Analyser - préserve le texte blanc sur fond gradient */
-.btn-ai {
-    height: 40px !important;
-    border-radius: var(--radius-md) !important;
-    font-size: 14px;
-    color: white !important;
-    transition: all var(--transition-fast);
-    box-shadow: var(--shadow-sm);
 }
 
 /* Search input - iOS 2025 premium style (harmonized with stat-cards) */
@@ -411,19 +402,17 @@
 }
 
 /* ====================================================================
-   GENERATE ALL PENDING BUTTON - Bouton pour générer les appréciations
+   GENERATE ALL PENDING BUTTON - Styles spécifiques (sizing + badge)
+   Couleurs et hover héritent de .btn-primary dans components.css
    ==================================================================== */
 .btn-generate-all {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 0 16px;
-    /* height: 48px; treated in general rule */
-    border-radius: var(--radius-md);
     font-weight: 600;
     font-size: 13px;
     white-space: nowrap;
-    animation: subtle-pulse 2s ease-in-out infinite;
 }
 
 .btn-generate-all .pending-badge {
@@ -482,7 +471,7 @@
     gap: 8px;
     padding: 0 16px;
     height: 40px !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--radius-lg) !important;
     font-weight: 600;
     font-size: 13px;
     white-space: nowrap;
@@ -496,12 +485,11 @@
 
 .btn-update:hover:not(:disabled) {
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(217, 119, 6, 0.2);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
 }
 
 .btn-update:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.98);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 

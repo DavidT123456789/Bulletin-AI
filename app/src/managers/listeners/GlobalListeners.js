@@ -49,21 +49,35 @@ export const GlobalListeners = {
             const { studentId, result } = e.detail || {};
             if (!studentId) return;
 
-            // Dynamically import ListViewManager to update the specific row
+            // Dynamically import managers to update UI
             try {
-                const { ListViewManager } = await import('../ListViewManager.js');
+                const [{ ListViewManager }, { ResultsUIManager }] = await Promise.all([
+                    import('../ListViewManager.js'),
+                    import('../ResultsUIManager.js')
+                ]);
+
+                // Update the specific row dirty indicator
                 if (ListViewManager?.updateStudentRow) {
                     ListViewManager.updateStudentRow(studentId);
                 }
+
+                // CRITICAL: Also update the "Actualiser" button badge count
+                if (ResultsUIManager?.updateGenerateButtonState) {
+                    ResultsUIManager.updateGenerateButtonState();
+                }
             } catch (err) {
-                console.warn('[GlobalListeners] Failed to update list row:', err);
+                console.warn('[GlobalListeners] Failed to update UI on dirty state change:', err);
             }
         });
 
         // Écoute les changements de seuil du journal (affecte TOUS les élèves)
         window.addEventListener('journalThresholdChanged', async () => {
             try {
-                const { ListViewManager } = await import('../ListViewManager.js');
+                const [{ ListViewManager }, { ResultsUIManager }] = await Promise.all([
+                    import('../ListViewManager.js'),
+                    import('../ResultsUIManager.js')
+                ]);
+
                 if (!ListViewManager?.updateStudentRow) return;
 
                 // Update all rows with generated appreciations
@@ -72,6 +86,11 @@ export const GlobalListeners = {
                     if (result.wasGenerated && result.generationSnapshot) {
                         ListViewManager.updateStudentRow(result.id);
                     }
+                }
+
+                // Update the "Actualiser" button to reflect new dirty counts
+                if (ResultsUIManager?.updateGenerateButtonState) {
+                    ResultsUIManager.updateGenerateButtonState();
                 }
             } catch (err) {
                 console.warn('[GlobalListeners] Failed to update rows on threshold change:', err);

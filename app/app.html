@@ -94,9 +94,16 @@
                         <span id="headerAiModelName">Gemini 2.5 Flash</span>
                         <span id="headerSessionCost" class="session-cost-badge" style="display: none;">0.00$</span>
                     </div>
-                    <!-- Generation Status Chip: Progress + Errors unified -->
+                    <!-- Generation Status Chip: Progress + Errors + Generate (idle) unified -->
                     <div id="headerGenerationStatus" class="generation-status-chip" role="status" aria-live="polite"
                         aria-label="Statut de génération">
+                        <!-- Idle state: Generate button -->
+                        <button class="generation-idle-btn tooltip" id="headerGenerateBtn"
+                            data-tooltip="Générer les appréciations en attente">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span class="pending-count" id="headerPendingCount">0</span>
+                        </button>
+                        <!-- Generating state: Progress bar + text -->
                         <div class="generation-progress-bar">
                             <div class="generation-progress-fill" id="headerProgressFill" style="width: 0%"></div>
                         </div>
@@ -259,20 +266,6 @@
                             <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
                             <!-- Actions à droite - ordre stable -->
                             <div class="toolbar-actions">
-                                <button type="button" class="btn btn-primary btn-generate-all tooltip"
-                                    id="generateAllPendingBtn" disabled
-                                    data-tooltip="Générer les appréciations pour tous les élèves en attente">
-                                    <i class="fas fa-wand-magic-sparkles"></i>
-                                    <span>Générer</span>
-                                    <span class="pending-badge" id="pendingCountBadge">0</span>
-                                </button>
-                                <button type="button" class="btn btn-update tooltip" id="updateDirtyBtn"
-                                    style="display: none;"
-                                    data-tooltip="Régénérer les appréciations modifiées ou en erreur">
-                                    <i class="fas fa-sync-alt"></i>
-                                    <span>Actualiser</span>
-                                    <span class="pending-badge" id="dirtyCountBadge">0</span>
-                                </button>
                                 <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
                                     data-tooltip="Analyse IA de la classe">
                                     <i class="fas fa-chart-pie"></i> Analyser
@@ -797,7 +790,7 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Action irréversible</span>
                 </div>
-                <button class="btn btn-primary btn-import-confirm" id="wizardImportOnlyBtn">
+                <button class="btn btn-organic btn-import-confirm" id="wizardImportOnlyBtn">
                     <i class="fas fa-check"></i> Importer <span id="wizardImportCount">0</span> élèves
                 </button>
             </div>
@@ -2069,35 +2062,43 @@
                                 <h3>Activez votre Assistant</h3>
                             </div>
                             <p class="welcome-subtitle-left">
-                                Connectez une IA pour générer vos appréciations.<br>
-                                C'est gratuit, sécurisé et immédiat.
+                                L'application a besoin d'une connexion IA.<br>
+                                Chaque option propose un accès gratuit.
                             </p>
 
                             <div class="security-note-left">
                                 <i class="fas fa-shield-alt"></i>
-                                <span>Vos données restent strictement privées et ne sont jamais
-                                    utilisées pour
-                                    l'entraînement.</span>
+                                <span>Noms anonymisés • Stockage local</span>
                             </div>
                         </div>
 
                         <!-- Right Column: Actions -->
                         <div class="welcome-split-action">
 
-                            <div class="provider-row">
-                                <div class="provider-pills">
-                                    <button class="provider-pill active" data-provider="google">
-                                        <i class="fab fa-google"></i> Google
-                                    </button>
-                                    <button class="provider-pill" data-provider="openrouter">
-                                        <i class="fas fa-bolt"></i> OpenRouter
-                                    </button>
+                            <!-- Provider Selector - Centré -->
+                            <div class="provider-selector-row">
+                                <div class="provider-selector-compact" id="welcomeProviderSelector">
+                                    <input type="radio" id="providerGoogle" name="welcomeProvider" value="google"
+                                        checked>
+                                    <label for="providerGoogle">
+                                        <i class="fab fa-google"></i>
+                                        <span>Google</span>
+                                    </label>
+                                    <input type="radio" id="providerOpenRouter" name="welcomeProvider"
+                                        value="openrouter">
+                                    <label for="providerOpenRouter">
+                                        <i class="fas fa-bolt"></i>
+                                        <span>OpenRouter</span>
+                                    </label>
+                                    <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
+                                    <label for="providerMistral">
+                                        <i class="fas fa-cat"></i>
+                                        <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                    </label>
                                 </div>
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                    rel="noopener noreferrer" class="get-key-link-mini"><i
-                                        class="fas fa-external-link-alt"></i> Obtenir ma clé</a>
                             </div>
 
+                            <!-- API Key Input -->
                             <div class="welcome-api-key-group">
                                 <input type="password" id="welcomeApiKeyInput"
                                     placeholder="Collez votre clé API Google ici...">
@@ -2107,9 +2108,14 @@
                                 style="display: none; justify-content: flex-start; margin-bottom: 10px; font-size: 0.9em;">
                             </div>
 
-                            <div class="action-footer">
-                                <button class="btn-text-link-left" id="welcomeSkipApiKeyBtn">
-                                    Pas de clé ? <strong>Continuer sans clé</strong>
+                            <!-- Action Links Row -->
+                            <div class="welcome-action-links">
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                                    rel="noopener noreferrer" class="get-key-link-mini" id="welcomeGetKeyLink"><i
+                                        class="fab fa-google"></i> Obtenir ma clé</a>
+                                <span class="action-separator">•</span>
+                                <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
+                                    Continuer sans clé
                                 </button>
                             </div>
                         </div>
@@ -2173,7 +2179,7 @@
                     <p class="welcome-subtitle">Tout est configuré. Voyez l'IA en action sur des données
                         d'exemple.</p>
 
-                    <button class="btn btn-cta-full" id="welcomeLoadSampleBtn">
+                    <button class="btn btn-organic btn-organic--rounded btn-cta-full" id="welcomeLoadSampleBtn">
                         <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
                         Charger et Générer un exemple
                     </button>
@@ -2333,7 +2339,7 @@
             </div>
             <div class="modal-footer modal-footer-buttons">
                 <button class="btn btn-secondary" id="cancelCreateClassBtn">Annuler</button>
-                <button class="btn btn-primary btn-gradient" id="confirmCreateClassBtn" disabled>
+                <button class="btn btn-organic" id="confirmCreateClassBtn" disabled>
                     <i class="fas fa-check"></i> Créer
                 </button>
             </div>
@@ -2362,56 +2368,15 @@
             </div>
 
             <div class="modal-body">
-                <!-- KPI Cards Row -->
-                <div class="dashboard-grid">
-                    <!-- Average KPI -->
-                    <div class="dashboard-kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Moyenne</span>
-                            <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
-                        </div>
-                        <div class="kpi-value-row">
-                            <span class="kpi-value" id="kpiAverage">--</span>
-                            <span class="kpi-unit">/20</span>
-                        </div>
-                        <span class="kpi-evolution neutral" id="kpiAverageEvolution" style="display: none;">--</span>
+                <!-- Compact Spread Stat (unique to this modal) -->
+                <div class="dashboard-spread-inline">
+                    <div class="spread-inline-icon"><i class="fas fa-ruler-horizontal"></i></div>
+                    <div class="spread-inline-content">
+                        <span class="spread-inline-label">Écart-type</span>
+                        <span class="spread-inline-value" id="kpiSpread">--</span>
+                        <span class="spread-inline-unit">pts</span>
                     </div>
-
-                    <!-- Median KPI -->
-                    <div class="dashboard-kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Médiane</span>
-                            <div class="kpi-icon purple"><i class="fas fa-arrows-alt-h"></i></div>
-                        </div>
-                        <div class="kpi-value-row">
-                            <span class="kpi-value" id="kpiMedian">--</span>
-                            <span class="kpi-unit">/20</span>
-                        </div>
-                        <span class="kpi-subtitle">50% au-dessus, 50% en-dessous</span>
-                    </div>
-
-                    <!-- Spread KPI -->
-                    <div class="dashboard-kpi-card">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Écart-type</span>
-                            <div class="kpi-icon info"><i class="fas fa-ruler-horizontal"></i></div>
-                        </div>
-                        <div class="kpi-value-row">
-                            <span class="kpi-value" id="kpiSpread">--</span>
-                            <span class="kpi-unit">pts</span>
-                        </div>
-                        <span class="kpi-subtitle" id="kpiSpreadLabel">--</span>
-                    </div>
-                </div>
-
-                <!-- Distribution Chart -->
-                <div class="dashboard-distribution-section">
-                    <div class="dashboard-section-header">
-                        <h3 class="dashboard-section-title"><i class="fas fa-chart-bar"></i> Répartition des notes</h3>
-                    </div>
-                    <div class="distribution-bars" id="distributionBars">
-                        <!-- Generated by JS -->
-                    </div>
+                    <span class="spread-inline-badge" id="kpiSpreadLabel">--</span>
                 </div>
 
                 <!-- Highlights: Progressions & At Risk -->

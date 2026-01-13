@@ -769,7 +769,7 @@ export const UI = {
         const chip = DOM.headerGenerationStatus;
         if (!chip) return;
 
-        chip.classList.remove('visible', 'generating', 'has-errors', 'success', 'fade-out');
+        chip.classList.remove('visible', 'generating', 'has-errors', 'success', 'fade-out', 'idle-pending');
 
         if (DOM.headerProgressFill) {
             DOM.headerProgressFill.style.width = '0%';
@@ -779,6 +779,34 @@ export const UI = {
         }
         if (DOM.headerErrorAction) {
             DOM.headerErrorAction.classList.remove('visible');
+        }
+    },
+
+    /**
+     * Updates the header chip to show pending generation count (idle state)
+     * NOTE: idle-pending state is now handled by inline buttons in table header
+     * This chip only shows during generation (progress) or for errors
+     * @param {number} pendingCount - Number of students awaiting generation
+     */
+    updateGenerateChipState(pendingCount) {
+        const chip = DOM.headerGenerationStatus;
+        if (!chip) return;
+
+        // Don't update if currently generating
+        if (chip.classList.contains('generating')) return;
+
+        // Update pending count (kept for reference but not displayed in header)
+        if (DOM.headerPendingCount) {
+            DOM.headerPendingCount.textContent = pendingCount;
+        }
+
+        // DISABLED: idle-pending state is now shown via inline buttons in table header
+        // Only show chip for errors (has-errors state is managed by hideHeaderProgress)
+        chip.classList.remove('idle-pending', 'visible', 'success', 'fade-out');
+
+        // Keep visible only if there are errors to display
+        if (chip.classList.contains('has-errors')) {
+            chip.classList.add('visible');
         }
     },
 
@@ -889,7 +917,7 @@ export const UI = {
 
         // Exclude welcome modal selectors - they use standard CSS :checked/:active styles
         // This avoids the "popping" effect when navigating between steps
-        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .generation-mode-selector:not(#welcomeModal .generation-mode-selector)');
+        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .generation-mode-selector:not(#welcomeModal .generation-mode-selector), .provider-selector-compact');
         containers.forEach(container => {
             // Création du Glider s'il n'existe pas
             let glider = container.querySelector('.selector-glider');
@@ -913,7 +941,8 @@ export const UI = {
 
             // Écouteurs pour les Radios (changement automatique)
             // Use a data attribute to avoid adding listeners multiple times
-            if (container.classList.contains('generation-mode-selector') && !container.dataset.gliderListenersAttached) {
+            const isRadioSelector = container.classList.contains('generation-mode-selector') || container.classList.contains('provider-selector-compact');
+            if (isRadioSelector && !container.dataset.gliderListenersAttached) {
                 container.querySelectorAll('input[type="radio"]').forEach(input => {
                     input.addEventListener('change', () => this.updateGlider(container));
                 });
@@ -954,7 +983,7 @@ export const UI = {
 
         let activeEl;
         // Détection de l'élément actif selon le type
-        if (container.classList.contains('generation-mode-selector')) {
+        if (container.classList.contains('generation-mode-selector') || container.classList.contains('provider-selector-compact')) {
             const checked = container.querySelector('input:checked');
             if (checked) {
                 // Le label est souvent adjacent ou lié par 'for'

@@ -505,23 +505,7 @@
     border-radius: var(--radius-lg);
 }
 
-.btn-gradient {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color, var(--primary-color)));
-    border: none;
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
-    transition: all 0.2s ease;
-}
 
-.btn-gradient:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.4);
-}
-
-.btn-gradient:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
 
 /* ====================================================================
    INLINE DELETE CONFIRMATION ANIMATIONS

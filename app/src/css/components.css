@@ -9,7 +9,7 @@
     color: white;
     border: none;
     padding: 11px 22px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
@@ -29,12 +29,11 @@
 
 .btn:hover:not(:disabled) {
     background: var(--primary-hover);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .btn:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.98);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -55,7 +54,6 @@
     border-color: rgba(var(--primary-color-rgb), 0.3);
     color: var(--primary-color);
     box-shadow: none;
-    transform: translateY(-1px);
 }
 
 .btn-danger {
@@ -73,8 +71,6 @@
 
 .btn-success:hover:not(:disabled) {
     background-color: #059669;
-    /* Darker green */
-    transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
 }
 
@@ -163,44 +159,127 @@
     }
 }
 
-/* Boutons IA "magiques" - Effet shine qui traverse au hover */
-.btn-ai {
-    background: var(--gradient-ai);
+
+
+/* ====================================================================
+   BTN-PRIMARY - Source de vérité unique pour les boutons d'action
+   Animation organique iOS 2025 (Gradient Flow + Shine Sweep)
+   ==================================================================== */
+.btn-primary,
+.btn-ai,
+.btn-organic {
+    /* Couleur et apparence */
+    background: linear-gradient(135deg,
+            var(--primary-color) 0%,
+            var(--primary-hover) 50%,
+            var(--primary-color) 100%);
+    background-size: 200% auto;
     color: white;
     border: none;
+    border-radius: var(--radius-lg);
+    /* Coins arrondis uniformes */
+    font-weight: 600;
+
+    /* Positionnement pour l'effet shine */
     position: relative;
     overflow: hidden;
-    transition: all var(--transition-fast);
-    font-weight: 600;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-md);
+
+    /* Ombre premium */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.2);
+
+    /* Transition iOS Spring */
+    transition:
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background-position 0.6s ease;
 }
 
-/* Effet de brillance qui traverse le bouton au hover */
-.btn-ai::before {
+/* Effet Shine Sweep au hover - Animation continue premium */
+.btn-primary::before,
+.btn-ai::before,
+.btn-organic::before {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+    pointer-events: none;
 }
 
-.btn-ai:hover:not(:disabled)::before {
-    left: 100%;
+.btn-primary:hover:not(:disabled)::before,
+.btn-ai:hover:not(:disabled)::before,
+.btn-organic:hover:not(:disabled)::before {
+    animation: shine-sweep 1.5s ease-in-out infinite;
 }
 
-.btn-ai:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Hover : gradient glisse + shine traverse (pas d'élévation, plus élégant) */
+.btn-primary:hover:not(:disabled),
+.btn-ai:hover:not(:disabled),
+.btn-organic:hover:not(:disabled) {
+    background-position: right center;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 4px 12px rgba(var(--primary-color-rgb), 0.25);
 }
 
-.btn-ai:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+/* Animation Shine Sweep - Source unique */
+@keyframes shine-sweep {
+    0% {
+        left: -100%;
+    }
+
+    50%,
+    100% {
+        left: 100%;
+    }
+}
+
+/* Active : feedback de pression subtil */
+.btn-primary:active:not(:disabled),
+.btn-ai:active:not(:disabled),
+.btn-organic:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        0 2px 6px rgba(var(--primary-color-rgb), 0.15);
+}
+
+/* Disabled */
+.btn-primary:disabled,
+.btn-ai:disabled,
+.btn-organic:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ====================================================================
+   BTN-GHOST - Boutons tertiaires (Précédent, Fermer)
+   ==================================================================== */
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border-color);
+    box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.25);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+.btn-ghost:active:not(:disabled) {
+    transform: scale(0.98);
+    background: rgba(var(--primary-color-rgb), 0.12);
 }
 
 /* Indicateur de raccourci clavier sur les boutons */

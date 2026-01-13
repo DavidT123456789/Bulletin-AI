@@ -21,12 +21,21 @@ export const ListViewManager = {
     _activeDocClickListener: null,
     _activeKeydownListener: null,
     _lastRenderedClassId: null, // Track class changes to force fresh render
+    _lastRenderedPeriod: null,  // Track period changes to force fresh render (header column count changes)
+    _activeFilterTimeout: null, // Track filter animation timeout to prevent race conditions
+
     /**
      * Rend la liste des élèves en format tableau
      * @param {Array} results - Tableau des résultats à afficher
      * @param {HTMLElement} container - Conteneur DOM
      */
     render(results, container) {
+        // Cancel any pending filter animation to prevent race conditions
+        if (this._activeFilterTimeout) {
+            clearTimeout(this._activeFilterTimeout);
+            this._activeFilterTimeout = null;
+        }
+
         // Cleanup previous document listener if exists
         if (this._activeDocClickListener) {
             document.removeEventListener('click', this._activeDocClickListener, true);
@@ -35,38 +44,71 @@ export const ListViewManager = {
 
         if (!container) return;
 
+        const existingTable = container.querySelector('.student-list-table');
+        const tbody = existingTable ? existingTable.querySelector('tbody') : null;
+
         // Handle empty results
         if (results.length === 0) {
-            // Animate out existing rows if any
-            const existingRows = container.querySelectorAll('.student-row');
-            if (existingRows.length > 0) {
-                this._animateRowsOut(existingRows, () => {
-                    container.innerHTML = '';
-                });
+            if (existingTable && tbody) {
+                // If table exists, just clear rows but KEEP structure (and search bar!)
+                const existingRows = tbody.querySelectorAll('.student-row');
+                if (existingRows.length > 0) {
+                    this._animateRowsOut(existingRows, () => {
+                        tbody.innerHTML = `
+                            <tr class="empty-state-row">
+                                <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
+                                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                                        <i class="fas fa-search" style="font-size:24px; opacity:0.5;"></i>
+                                        <span>Aucun élève trouvé</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else if (!tbody.querySelector('.empty-state-row')) {
+                    tbody.innerHTML = `
+                        <tr class="empty-state-row">
+                            <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                                    <i class="fas fa-search" style="font-size:24px; opacity:0.5;"></i>
+                                    <span>Aucun élève trouvé</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                return;
             } else {
-                container.innerHTML = '';
+                // No table yet, render empty state (will create table structure in _renderFresh if needed, or we can handle it here)
+                // For consistency, we might need a table structure even for empty state to show search bar
+                // But if it's the very first render and empty, maybe we don't need search bar? 
+                // Actually, if we want search bar to be available, we should probably render the full structure even if empty.
+                // For now, let's fall through to _renderFresh which creates the table.
             }
-            return;
         }
 
         const currentPeriod = appState.currentPeriod;
         const periods = Utils.getPeriods() || ['T1', 'T2', 'T3'];
         const currentPeriodIndex = Math.max(0, periods.indexOf(currentPeriod));
 
-        // CRITICAL FIX: Force fresh render when class changes
-        // This ensures event listeners are properly attached after class switch
+        // CRITICAL FIX: Force fresh render when class or period changes
+        // Class change: ensures event listeners are properly attached
+        // Period change: ensures header columns match data cells (T1/T2/T3 column count varies)
         const currentClassId = appState.currentClassId;
         const classChanged = this._lastRenderedClassId !== null && this._lastRenderedClassId !== currentClassId;
-        this._lastRenderedClassId = currentClassId;
+        const periodChanged = this._lastRenderedPeriod !== null && this._lastRenderedPeriod !== currentPeriod;
 
-        if (classChanged) {
-            // Class changed - force fresh render to reattach all event listeners
+        this._lastRenderedClassId = currentClassId;
+        this._lastRenderedPeriod = currentPeriod;
+
+        if (classChanged || periodChanged) {
+            // Class or period changed - force fresh render to ensure header/cell alignment
             this._renderFresh(container, results, periods, currentPeriodIndex);
             return;
         }
 
         // Check if this is a filter/sort transition (table already exists)
-        const existingTable = container.querySelector('.student-list-table');
+        // existingTable is already defined above
         const existingRows = existingTable ? Array.from(existingTable.querySelectorAll('.student-row')) : [];
 
         // Clean up any stuck animation classes from previous animations
@@ -76,7 +118,7 @@ export const ListViewManager = {
             row.style.transition = '';
         });
 
-        if (existingRows.length > 0) {
+        if (existingTable) {
             const existingIds = existingRows.map(r => r.dataset.studentId);
             const newIds = results.map(r => r.id);
 
@@ -89,11 +131,19 @@ export const ListViewManager = {
                 existingIds.some((id, i) => id !== newIds[i]);
 
             if (hasIdChange) {
+                // Remove empty state row if present (important for 0 -> N transition)
+                const emptyRow = container.querySelector('.empty-state-row');
+                if (emptyRow) emptyRow.remove();
+
                 // Filter change: use FLIP animation
                 this._animateFilterTransition(container, existingRows, results, periods, currentPeriodIndex);
                 return;
             } else if (hasOrderChange) {
                 // Sort change: use simple reorder
+                this._animateSortTransition(container, existingRows, results, periods, currentPeriodIndex);
+                return;
+            } else {
+                // Data updated but same IDs and order - Perform soft update to preserve DOM
                 this._animateSortTransition(container, existingRows, results, periods, currentPeriodIndex);
                 return;
             }
@@ -145,7 +195,9 @@ export const ListViewManager = {
 
         // Step 2: After exit animation, reorganize and animate movement
         const exitDuration = toExit.length > 0 ? 250 : 0;
-        setTimeout(() => {
+        this._activeFilterTimeout = setTimeout(() => {
+            this._activeFilterTimeout = null;
+
             // Remove exited rows from DOM
             toExit.forEach(row => row.remove());
 
@@ -574,9 +626,20 @@ export const ListViewManager = {
                 <table class="${tableClass}">
                     <thead>
                         <tr>
-                            <th class="sortable-header" data-sort-field="name" title="Trier par nom">
-                                <div class="header-content-wrapper">
-                                    Nom <span class="sort-icon-placeholder name-sort-icon"></span>
+                            <th class="name-header-with-search sortable-header" data-sort-field="name" title="Trier par nom">
+                                <div class="header-content-wrapper" id="nameHeaderContent">
+                                    Nom
+                                    <span class="sort-icon-placeholder name-sort-icon"></span>
+                                </div>
+                                <button type="button" class="inline-search-trigger-btn" id="inlineSearchTrigger" title="Rechercher (Ctrl+F)">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <div class="inline-search-container" id="inlineSearchContainer">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher...">
+                                    <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </th>
                             <th class="sortable-header" data-sort-field="status" title="Trier par statut" style="width: 120px;">
@@ -587,6 +650,16 @@ export const ListViewManager = {
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
                             <th class="${headerClass}" title="${title}">
                                 <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
+                                <div class="appreciation-header-actions" id="appreciationHeaderActions">
+                                    <button type="button" class="btn-generate-inline tooltip" id="generatePendingBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
+                                        <i class="fas fa-wand-magic-sparkles"></i>
+                                        <span class="generate-badge" id="pendingCountBadgeInline">0</span>
+                                    </button>
+                                    <button type="button" class="btn-update-inline tooltip" id="updateDirtyBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span class="update-badge" id="dirtyCountBadgeInline">0</span>
+                                    </button>
+                                </div>
                                 <div class="header-content-wrapper">
                                     Appréciation
                                     <i class="${iconClass}"></i>
@@ -598,6 +671,10 @@ export const ListViewManager = {
                                         <i class="fas fa-ellipsis-vertical"></i>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                                        <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
+                                            <i class="fas fa-chart-pie"></i> Analyser la classe
+                                        </button>
+                                        <div class="dropdown-divider"></div>
                                         <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les élèves</h5>
                                         <button class="action-dropdown-item" id="copyAllBtn-shortcut">
                                             <i class="fas fa-copy"></i> Copier les visibles
@@ -1066,6 +1143,26 @@ export const ListViewManager = {
 
         });
 
+        // Bouton "Actualiser" inline dans le header du tableau
+        const updateBtnInline = listContainer.querySelector('#updateDirtyBtnInline');
+        if (updateBtnInline) {
+            updateBtnInline.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const { ResultsUIManager } = await import('./ResultsUIManager.js');
+                await ResultsUIManager.regenerateDirty();
+            });
+        }
+
+        // Bouton "Générer" inline dans le header du tableau
+        const generateBtnInline = listContainer.querySelector('#generatePendingBtnInline');
+        if (generateBtnInline) {
+            generateBtnInline.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const { MassImportManager } = await import('./MassImportManager.js');
+                await MassImportManager.generateAllPending();
+            });
+        }
+
         // Close any open menus when clicking outside
         const closeAllMenus = () => {
             // Fermer les menus d'actions individuelles
@@ -1233,8 +1330,146 @@ export const ListViewManager = {
                     addAction('#exportJsonBtn', () => StorageManager.exportToJson());
                     addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
                     addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
+
+                    // Analyze class (in dropdown menu)
+                    import('./ClassDashboardManager.js').then(({ ClassDashboardManager }) => {
+                        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
+                    });
                 });
             });
+        });
+
+        // Attach inline search listeners
+        this._attachInlineSearchListeners(listContainer);
+    },
+
+    /**
+     * Attache les listeners pour la recherche inline dans l'entête du tableau
+     * @param {HTMLElement} listContainer - Conteneur de la liste
+     * @private
+     */
+    _attachInlineSearchListeners(listContainer) {
+        const nameHeader = listContainer.querySelector('.name-header-with-search');
+        const headerContent = listContainer.querySelector('#nameHeaderContent');
+        const searchContainer = listContainer.querySelector('#inlineSearchContainer');
+        const searchInput = listContainer.querySelector('#inlineSearchInput');
+        const searchClear = listContainer.querySelector('#inlineSearchClear');
+
+        if (!nameHeader || !searchContainer || !searchInput) return;
+
+        // Helper to activate search mode
+        const activateSearch = () => {
+            searchContainer.classList.add('active');
+            // Small delay to ensure transition starts and element is focusable
+            setTimeout(() => {
+                searchInput.focus();
+            }, 50);
+
+            // Sync with existing search value if any
+            const existingInput = document.getElementById('searchInput');
+            if (existingInput && existingInput.value) {
+                searchInput.value = existingInput.value;
+                searchContainer.classList.add('has-value');
+            }
+        };
+
+        // Helper to deactivate search mode
+        const deactivateSearch = () => {
+            searchContainer.classList.remove('active');
+            if (!searchInput.value) {
+                searchContainer.classList.remove('has-value');
+            }
+        };
+
+        // Click on search trigger button to activate search
+        const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
+        if (searchTrigger) {
+            searchTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                activateSearch();
+            });
+        }
+
+        // Prevent clicks inside search container from triggering sort
+        searchContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Also auto-focus the input when search container is clicked
+        searchContainer.addEventListener('mousedown', (e) => {
+            // If clicking anywhere in container, focus the input
+            if (e.target !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        // Input event - filter as user types
+        searchInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            searchContainer.classList.toggle('has-value', value.length > 0);
+
+            // Sync with the existing searchInput in toolbar (for backward compatibility)
+            const existingInput = document.getElementById('searchInput');
+            if (existingInput) {
+                existingInput.value = value;
+                existingInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
+        // Clear button
+        if (searchClear) {
+            searchClear.addEventListener('click', (e) => {
+                e.stopPropagation();
+                searchInput.value = '';
+                searchContainer.classList.remove('has-value');
+
+                // Sync clear with existing search
+                const existingInput = document.getElementById('searchInput');
+                if (existingInput) {
+                    existingInput.value = '';
+                    existingInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+        }
+
+        // Escape to close search
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                // Clear search when pressing Escape twice, or deactivate if empty
+                if (!searchInput.value) {
+                    deactivateSearch();
+                } else {
+                    searchInput.value = '';
+                    searchContainer.classList.remove('has-value');
+                    // Sync clear
+                    const existingInput = document.getElementById('searchInput');
+                    if (existingInput) {
+                        existingInput.value = '';
+                        existingInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        });
+
+        // Click outside to deactivate (if empty)
+        document.addEventListener('click', (e) => {
+            if (!nameHeader.contains(e.target) && !searchInput.value) {
+                deactivateSearch();
+            }
+        });
+
+        // Ctrl+F keyboard shortcut to activate search
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                // Only intercept if the list view is visible
+                if (listContainer.offsetParent !== null) {
+                    e.preventDefault();
+                    activateSearch();
+                }
+            }
         });
     },
 

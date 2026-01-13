@@ -35,6 +35,110 @@
     animation: chip-slide-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* ====================================================================
+   STATE: IDLE-PENDING (Has pending students to generate)
+   Single button with sparkle icon + count badge
+   ==================================================================== */
+.generation-status-chip.idle-pending {
+    padding: 0;
+    background: linear-gradient(135deg,
+            rgba(var(--primary-color-rgb), 0.15) 0%,
+            rgba(var(--primary-color-rgb), 0.08) 100%);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    cursor: pointer;
+}
+
+.generation-idle-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    border-radius: var(--radius-pill);
+}
+
+.generation-status-chip.idle-pending .generation-idle-btn {
+    display: flex;
+}
+
+.generation-idle-btn i {
+    font-size: 0.9rem;
+    animation: sparkle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sparkle-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+.generation-idle-btn .pending-count {
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+    min-width: 18px;
+    text-align: center;
+}
+
+.generation-status-chip.idle-pending:hover {
+    background: linear-gradient(135deg,
+            rgba(var(--primary-color-rgb), 0.2) 0%,
+            rgba(var(--primary-color-rgb), 0.12) 100%);
+    box-shadow: 0 0 16px rgba(var(--primary-color-rgb), 0.15);
+    transform: scale(1.02);
+}
+
+.generation-status-chip.idle-pending:active {
+    transform: scale(0.98);
+}
+
+/* Hide progress bar and other elements in idle-pending state */
+.generation-status-chip.idle-pending .generation-progress-bar,
+.generation-status-chip.idle-pending .generation-text,
+.generation-status-chip.idle-pending .generation-error-badge,
+.generation-status-chip.idle-pending .generation-cancel-btn {
+    display: none;
+}
+
+/* Hide idle button during generation and success states */
+.generation-status-chip.generating .generation-idle-btn,
+.generation-status-chip.success .generation-idle-btn {
+    display: none;
+}
+
+/* When both idle-pending AND has-errors, show both elements side by side */
+.generation-status-chip.idle-pending.has-errors {
+    padding: 0;
+    gap: 0;
+}
+
+.generation-status-chip.idle-pending.has-errors .generation-idle-btn,
+.generation-status-chip.idle-pending.has-errors .generation-error-badge {
+    display: flex;
+}
+
+.generation-status-chip.visible {
+    display: flex;
+    animation: chip-slide-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @keyframes chip-slide-in {
     from {
         opacity: 0;

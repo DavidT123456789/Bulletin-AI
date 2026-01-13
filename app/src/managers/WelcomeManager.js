@@ -62,14 +62,20 @@ export const WelcomeManager = {
             el.classList.remove('slide-in-right', 'slide-in-left', 'slide-out-left', 'slide-out-right');
         };
 
-        // Provider Selection Logic (uses CSS-only styling, no glider animation)
-        const providerPills = document.querySelectorAll('.provider-pill');
-
         // Helper to update input and button state for current provider
         const updateProviderKeyState = (provider) => {
             const input = DOM.welcomeApiKeyInput;
             const validateBtn = DOM.welcomeValidateApiKeyBtn;
-            const existingKey = provider === 'google' ? appState.googleApiKey : appState.openrouterApiKey;
+
+            // Get the correct existing key based on provider
+            let existingKey = '';
+            if (provider === 'google') {
+                existingKey = appState.googleApiKey;
+            } else if (provider === 'openrouter') {
+                existingKey = appState.openrouterApiKey;
+            } else if (provider === 'mistral') {
+                existingKey = appState.mistralApiKey;
+            }
 
             if (input) {
                 input.value = existingKey || '';
@@ -94,42 +100,53 @@ export const WelcomeManager = {
             }
         };
 
-        providerPills.forEach(pill => {
-            addClickListener(pill, (e) => {
-                const target = e.currentTarget;
-                if (target.classList.contains('disabled')) return;
+        // Provider Selection Logic (new radio-based selector)
+        const providerSelector = document.getElementById('welcomeProviderSelector');
+        const getKeyLink = document.getElementById('welcomeGetKeyLink');
 
-                // Update Pills UI
-                providerPills.forEach(p => p.classList.remove('active'));
-                target.classList.add('active');
+        // Provider configuration
+        const providerConfig = {
+            google: {
+                placeholder: "Collez votre clé API Google ici (AIzaSy...)",
+                linkUrl: "https://aistudio.google.com/app/apikey",
+                linkIcon: '<i class="fab fa-google"></i>'
+            },
+            openrouter: {
+                placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
+                linkUrl: "https://openrouter.ai/keys",
+                linkIcon: '<i class="fas fa-bolt"></i>'
+            },
+            mistral: {
+                placeholder: "Collez votre clé API Mistral ici...",
+                linkUrl: "https://console.mistral.ai/api-keys/",
+                linkIcon: '<i class="fas fa-cat"></i>'
+            }
+        };
 
-                currentProvider = target.dataset.provider;
+        if (providerSelector) {
+            providerSelector.addEventListener('change', (e) => {
+                if (e.target.type !== 'radio') return;
 
-                // Update Input & Link UI
-                const link = document.querySelector('.get-key-link-mini');
+                const provider = e.target.value;
+                currentProvider = provider;
 
-                if (currentProvider === 'google') {
-                    if (DOM.welcomeApiKeyInput) {
-                        DOM.welcomeApiKeyInput.placeholder = "Collez votre clé API Google ici (AIzaSy...)";
-                    }
-                    if (link) {
-                        link.href = "https://aistudio.google.com/app/apikey";
-                        link.innerHTML = '<i class="fab fa-google"></i> Obtenir ma clé';
-                    }
-                } else {
-                    if (DOM.welcomeApiKeyInput) {
-                        DOM.welcomeApiKeyInput.placeholder = "Collez votre clé API OpenRouter ici (sk-or-...)";
-                    }
-                    if (link) {
-                        link.href = "https://openrouter.ai/keys";
-                        link.innerHTML = '<i class="fas fa-bolt"></i> Obtenir ma clé';
-                    }
+                const config = providerConfig[provider];
+
+                // Update input placeholder
+                if (DOM.welcomeApiKeyInput) {
+                    DOM.welcomeApiKeyInput.placeholder = config.placeholder;
+                }
+
+                // Update "Get key" link
+                if (getKeyLink) {
+                    getKeyLink.href = config.linkUrl;
+                    getKeyLink.innerHTML = `${config.linkIcon} Obtenir ma clé`;
                 }
 
                 // Update input value and validation state for this provider
                 updateProviderKeyState(currentProvider);
-            });
-        });
+            }, { signal });
+        }
 
         const showWelcomeStep = (step, direction = 'next') => {
             // ... (keep existing implementation)
@@ -177,7 +194,7 @@ export const WelcomeManager = {
             // Si la clé existe, bouton next actif
             if (step === 2) {
                 // Check current provider key if available (simplified check)
-                const hasApiKey = appState.googleApiKey || appState.openRouterApiKey || appState.isDemoMode;
+                const hasApiKey = appState.googleApiKey || appState.openrouterApiKey || appState.mistralApiKey || appState.isDemoMode;
                 // Note: We don't block next button anymore based on key presence because of "Continue without key" button
                 // But for the main "Next" button in nav bar, let's keep it enabled generally to allow skipping via nav if user really wants?
                 // Actually, step 2 usually requires action. "Next" button logic:
@@ -187,6 +204,38 @@ export const WelcomeManager = {
 
                 // Reset error message
                 if (DOM.welcomeApiKeyError) DOM.welcomeApiKeyError.style.display = 'none';
+
+                // Initialize glider for provider selector IMMEDIATELY (before slide-in animation completes)
+                // This prevents the "popping" effect where the glider appears with a delay
+                const providerSelectorEl = document.getElementById('welcomeProviderSelector');
+                if (providerSelectorEl) {
+                    // First, ensure the glider element exists
+                    let glider = providerSelectorEl.querySelector('.selector-glider');
+                    if (!glider) {
+                        glider = document.createElement('div');
+                        glider.className = 'selector-glider';
+                        glider.style.transition = 'none'; // No animation on first appearance
+                        providerSelectorEl.prepend(glider);
+                        providerSelectorEl.classList.add('has-glider');
+                    }
+
+                    // Position it immediately on the checked radio
+                    const checked = providerSelectorEl.querySelector('input:checked');
+                    if (checked) {
+                        const label = providerSelectorEl.querySelector(`label[for="${checked.id}"]`);
+                        if (label) {
+                            // Use requestAnimationFrame to ensure DOM is ready
+                            requestAnimationFrame(() => {
+                                glider.style.width = `${label.offsetWidth}px`;
+                                glider.style.left = `${label.offsetLeft}px`;
+                                // Re-enable transitions after initial positioning
+                                requestAnimationFrame(() => {
+                                    glider.style.transition = 'left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
+                                });
+                            });
+                        }
+                    }
+                }
             } else {
                 DOM.welcomeNextBtn.disabled = false;
             }
@@ -239,6 +288,16 @@ export const WelcomeManager = {
         // Pré-remplir le champ API key et montrer l'état validé si une clé existe
         const existingGoogleKey = appState.googleApiKey;
         const existingOpenRouterKey = appState.openrouterApiKey;
+        const existingMistralKey = appState.mistralApiKey;
+
+        // Helper to select a provider and update UI
+        const selectProvider = (providerId) => {
+            const radio = document.getElementById(providerId);
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        };
 
         if (DOM.welcomeApiKeyInput) {
             if (existingGoogleKey) {
@@ -253,9 +312,22 @@ export const WelcomeManager = {
                 DOM.welcomeNextBtn.disabled = false;
             } else if (existingOpenRouterKey) {
                 // Switch to OpenRouter provider
-                const openRouterPill = document.querySelector('.provider-pill[data-provider="openrouter"]');
-                if (openRouterPill) openRouterPill.click();
+                selectProvider('providerOpenRouter');
+                currentProvider = 'openrouter';
                 DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
+                // Mark as validated
+                if (DOM.welcomeValidateApiKeyBtn) {
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
+                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
+                    DOM.welcomeValidateApiKeyBtn.disabled = true;
+                }
+                DOM.welcomeNextBtn.disabled = false;
+            } else if (existingMistralKey) {
+                // Switch to Mistral provider
+                selectProvider('providerMistral');
+                currentProvider = 'mistral';
+                DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';

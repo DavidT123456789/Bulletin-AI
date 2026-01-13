@@ -241,13 +241,24 @@ export const ResultsUIManager = {
      * Updates the Generate and Update button states based on list content
      * - Generate button: only for pending (empty) appreciations
      * - Update button: for dirty (modified data) OR error appreciations
-     * @param {Array} results - The results to analyze
+     * @param {Array} results - The results to analyze (hint only, always uses generatedResults for dirty check)
      */
-    updateGenerateButtonState(results = appState.filteredResults || appState.generatedResults) {
+    updateGenerateButtonState(results) {
         const currentPeriod = appState.currentPeriod;
+        const currentClassId = appState.currentClassId;
+
+        // CRITICAL FIX: Always use generatedResults as source of truth
+        // filteredResults contains shallow copies that may be stale after data modifications
+        // This mirrors the fix applied to ListViewManager.updateStudentRow
+        let sourceResults = appState.generatedResults || [];
+
+        // Filter by current class if applicable
+        if (currentClassId) {
+            sourceResults = sourceResults.filter(r => r.classId === currentClassId);
+        }
 
         // Count pending (empty/placeholder)
-        const pendingCount = results.filter(r => {
+        const pendingCount = sourceResults.filter(r => {
             const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
             const appCurrent = (r.studentData?.currentPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
@@ -267,7 +278,7 @@ export const ResultsUIManager = {
         }).length;
 
         // Count needs update (dirty OR error)
-        const needsUpdateCount = results.filter(r => {
+        const needsUpdateCount = sourceResults.filter(r => {
             // Error in current period
             const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
             if (hasError) return true;
@@ -319,10 +330,63 @@ export const ResultsUIManager = {
             btn.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} (modifiée${needsUpdateCount > 1 ? 's' : ''} ou en erreur)`;
         }
 
+        // === UPDATE BUTTON INLINE (in table header) ===
+        const updateBtnInline = document.getElementById('updateDirtyBtnInline');
+        if (updateBtnInline) {
+            const hasUpdates = needsUpdateCount > 0;
+            const wasHidden = updateBtnInline.style.display === 'none';
+
+            updateBtnInline.style.display = hasUpdates ? 'inline-flex' : 'none';
+
+            const badge = updateBtnInline.querySelector('.update-badge');
+            if (badge) {
+                badge.textContent = needsUpdateCount;
+            }
+            updateBtnInline.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} (modifiée${needsUpdateCount > 1 ? 's' : ''} ou en erreur)`;
+
+            // Animate in if newly visible
+            if (hasUpdates && wasHidden) {
+                updateBtnInline.classList.add('animate-in');
+                setTimeout(() => updateBtnInline.classList.remove('animate-in'), 350);
+            }
+        }
+
+        // === GENERATE BUTTON INLINE (in table header) ===
+        const generateBtnInline = document.getElementById('generatePendingBtnInline');
+        if (generateBtnInline) {
+            const hasPending = pendingCount > 0;
+            const wasHidden = generateBtnInline.style.display === 'none';
+
+            generateBtnInline.style.display = hasPending ? 'inline-flex' : 'none';
+
+            const badge = generateBtnInline.querySelector('.generate-badge');
+            if (badge) {
+                badge.textContent = pendingCount;
+            }
+            generateBtnInline.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
+
+            // Animate in if newly visible
+            if (hasPending && wasHidden) {
+                generateBtnInline.classList.add('animate-in');
+                setTimeout(() => generateBtnInline.classList.remove('animate-in'), 350);
+            }
+        }
+
         // === ANALYZE BUTTON ===
         if (DOM.analyzeClassBtn) {
-            DOM.analyzeClassBtn.disabled = results.length === 0;
+            DOM.analyzeClassBtn.disabled = sourceResults.length === 0;
         }
+
+        // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
+        import('./UIManager.js').then(({ UI }) => {
+            if (UI?.updateGenerateChipState) {
+                UI.updateGenerateChipState(pendingCount);
+            }
+            // Reinitialize tooltips to pick up updated data-tooltip on the update button
+            if (UI?.initTooltips) {
+                UI.initTooltips();
+            }
+        });
     },
 
     /**
@@ -477,9 +541,16 @@ export const ResultsUIManager = {
      */
     async regenerateDirty() {
         const currentPeriod = appState.currentPeriod;
+        const currentClassId = appState.currentClassId;
+
+        // CRITICAL FIX: Use generatedResults as source of truth (not filteredResults which may be stale)
+        let sourceResults = appState.generatedResults || [];
+        if (currentClassId) {
+            sourceResults = sourceResults.filter(r => r.classId === currentClassId);
+        }
 
         // Find all results that need updating (dirty OR error)
-        const toRegen = appState.filteredResults.filter(r => {
+        const toRegen = sourceResults.filter(r => {
             const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
             if (hasError) return true;
 
@@ -589,6 +660,10 @@ export const ResultsUIManager = {
             StorageManager.saveAppState();
             UI.updateStats();
             UI.updateControlButtons();
+
+            // CRITICAL FIX: Update button state after regeneration completes
+            // This ensures the "Actualiser" button disappears when no more dirty appreciations exist
+            this.updateGenerateButtonState();
         });
     },
 

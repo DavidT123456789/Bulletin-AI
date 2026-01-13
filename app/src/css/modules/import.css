@@ -732,6 +732,109 @@
     cursor: not-allowed;
 }
 
+/* === PROVIDER SELECTOR COMPACT (iOS 2025 Style) === */
+/* Inspiré du sélecteur de trimestre .generation-mode-selector.header-style */
+
+.provider-selector-compact {
+    display: inline-flex;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    gap: 0;
+    position: relative;
+    border: 1px solid var(--border-color);
+    z-index: 0;
+}
+
+/* Glider animé pour provider-selector-compact */
+.provider-selector-compact .selector-glider {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    background: var(--surface-color);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: left 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+        width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.provider-selector-compact input[type="radio"] {
+    display: none;
+}
+
+.provider-selector-compact label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.88em;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.25s ease, font-weight 0.25s ease;
+    position: relative;
+    z-index: 2;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    margin: 0;
+}
+
+.provider-selector-compact label i {
+    font-size: 0.95em;
+    transition: color 0.25s ease;
+}
+
+.provider-selector-compact label:hover {
+    color: var(--text-primary);
+}
+
+/* État sélectionné : le glider gère le fond */
+.provider-selector-compact.has-glider input[type="radio"]:checked+label {
+    background: transparent;
+    color: var(--primary-color);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+/* Fallback sans glider */
+.provider-selector-compact:not(.has-glider) input[type="radio"]:checked+label {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.provider-selector-compact input[type="radio"]:checked+label i {
+    color: var(--primary-color);
+}
+
+/* Provider-specific icon colors when selected */
+.provider-selector-compact input[type="radio"]#providerGoogle:checked+label i {
+    color: #4285f4;
+    /* Google Blue */
+}
+
+.provider-selector-compact input[type="radio"]#providerOpenRouter:checked+label i {
+    color: var(--primary-color);
+    /* Accent orange */
+}
+
+.provider-selector-compact input[type="radio"]#providerMistral:checked+label i {
+    color: #ff7000;
+    /* Mistral Orange */
+}
+
+/* Provider tag (e.g., French flag for Mistral) */
+.provider-tag {
+    font-size: 0.75em;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+
 .get-key-link-subtle {
     font-size: 0.9em;
     color: var(--primary-color);
@@ -885,12 +988,81 @@
     gap: 12px;
 }
 
+/* Provider Selector Row - Centrer le sélecteur */
+.provider-selector-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+/* Legacy - keep for backward compat */
 .provider-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+/* Action Links Row - Below the input field */
+.welcome-action-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+.welcome-action-links .action-separator {
+    color: var(--text-tertiary);
+    opacity: 0.4;
+    font-size: 0.8em;
+}
+
+/* Unified style for both links in welcome-action-links */
+.welcome-action-links a,
+.welcome-action-links button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.2s ease;
+    font-size: inherit;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.welcome-action-links a:hover,
+.welcome-action-links button:hover {
+    color: var(--primary-color);
+}
+
+/* Icon styling in welcome-action-links */
+.welcome-action-links a i,
+.welcome-action-links button i {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.btn-text-link-compact {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.2s ease;
+    font-size: inherit;
+    font-weight: 500;
+}
+
+.btn-text-link-compact:hover {
+    color: var(--primary-color);
 }
 
 .get-key-link-mini {
@@ -1098,8 +1270,10 @@
     margin-bottom: 8px;
 }
 
-/* Full-width CTA Button */
+/* Full-width CTA Button - Extends .btn-organic via HTML class */
+/* NOTE: Ajouter les classes .btn-organic .btn-organic--rounded dans le HTML */
 .btn-cta-full {
+    /* Sizing spécifique pour ce contexte */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1109,42 +1283,6 @@
     margin: 28px auto 0 auto;
     padding: 16px 28px;
     font-size: 1.05em;
-    font-weight: 600;
-    background: var(--gradient-ai);
-    color: white;
-    border: none;
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-    box-shadow: 0 4px 16px rgba(var(--primary-color-rgb), 0.25);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Effet de brillance qui traverse le bouton au hover */
-.btn-cta-full::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    transition: left 0.5s ease;
-    pointer-events: none;
-}
-
-.btn-cta-full:hover::before {
-    left: 100%;
-}
-
-.btn-cta-full:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.35);
-}
-
-.btn-cta-full:active {
-    transform: translateY(0);
 }
 
 /* ====================================================================
