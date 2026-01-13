@@ -480,6 +480,7 @@ export const SyncService = {
             _meta: {
                 appVersion: '0.1.0', // Will be replaced with actual version
                 exportedAt: new Date().toISOString(),
+                lastSyncTimestamp: this.lastSyncTime || 0,
                 deviceId: StorageManager.getDeviceId()
             },
             settings: {

@@ -750,6 +750,7 @@ export const ClassUIManager = {
                     setTimeout(async () => {
                         await this.handleDeleteClass(classId);
                         this.updateHeaderDisplay();
+                        this.renderClassList(); // Also refresh the dropdown
 
                         // Juste retirer la ligne, pas besoin de fermer/rouvrir
                         row.remove();
