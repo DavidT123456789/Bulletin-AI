@@ -69,8 +69,11 @@ export const ClassManager = {
         }
         userSettings.academic.classes.push(newClass);
 
-        // Sauvegarder
+        // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        // Synchroniser vers le cloud
+        this._triggerCloudSync();
 
         // Notifier
         UI?.showNotification(`Classe "${newClass.name}" créée !`, 'success');
@@ -97,8 +100,11 @@ export const ClassManager = {
         const classToUpdate = classes[classIndex];
         Object.assign(classToUpdate, updates, { updatedAt: Date.now() });
 
-        // Sauvegarder
+        // Sauvegarder localement
         StorageManager?.saveAppState();
+
+        // Synchroniser vers le cloud
+        this._triggerCloudSync();
 
         return classToUpdate;
     },
