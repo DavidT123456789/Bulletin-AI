@@ -258,19 +258,33 @@ export const SyncService = {
                 // Restore generated results
                 runtimeState.data.generatedResults = merged.generatedResults;
 
-                // Restore classes if present in remote
-                if (remoteData?.classes?.length > 0) {
-                    const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
-                    remoteData.classes.forEach(remoteClass => {
-                        if (!existingIds.has(remoteClass.id)) {
-                            userSettings.academic.classes.push(remoteClass);
-                            stats.classesImported = (stats.classesImported || 0) + 1;
-                        }
-                    });
+                // Sync classes bidirectionally with deletion support
+                if (remoteData?.classes !== undefined) {
+                    const remoteTimestamp = remoteData._meta?.lastSyncTimestamp || 0;
+                    const localTimestamp = localData._meta?.lastSyncTimestamp || 0;
 
-                    // Restore currentClassId if not set locally
-                    if (!userSettings.academic.currentClassId && remoteData.currentClassId) {
-                        userSettings.academic.currentClassId = remoteData.currentClassId;
+                    // If remote is newer, replace local classes with remote
+                    if (remoteTimestamp > localTimestamp && remoteData.classes) {
+                        userSettings.academic.classes = [...remoteData.classes];
+                        stats.classesImported = remoteData.classes.length;
+                        stats.classesSynced = true;
+                    } else if (remoteData.classes?.length > 0) {
+                        // Remote is older or same, just add new classes (additive for safety)
+                        const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
+                        remoteData.classes.forEach(remoteClass => {
+                            if (!existingIds.has(remoteClass.id)) {
+                                userSettings.academic.classes.push(remoteClass);
+                                stats.classesImported = (stats.classesImported || 0) + 1;
+                            }
+                        });
+                    }
+
+                    // Sync currentClassId - prefer remote if local class no longer exists
+                    if (remoteData.currentClassId) {
+                        const localClassIds = new Set((userSettings.academic.classes || []).map(c => c.id));
+                        if (!userSettings.academic.currentClassId || !localClassIds.has(userSettings.academic.currentClassId)) {
+                            userSettings.academic.currentClassId = remoteData.currentClassId;
+                        }
                     }
                 }
 
