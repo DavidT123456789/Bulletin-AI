@@ -188,8 +188,7 @@ export const ClassUIManager = {
                 input.disabled = true;
                 await this._createAndSwitchClass(className);
                 removeForm();
-                // Re-render list avec nouvelle classe
-                setTimeout(() => this.renderClassList(), 200);
+                // Note: renderClassList() is already called in _createAndSwitchClass()
             }
         };
     },
