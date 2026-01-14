@@ -501,6 +501,113 @@
 }
 
 /* ====================================================================
+   Cloud Sync Indicator - États de connexion Google Drive
+   ==================================================================== */
+.cloud-sync-indicator {
+    position: relative;
+}
+
+/* Annuler le scale sur l'icône pour éviter que le badge bouge */
+.cloud-sync-indicator:hover i.fa-cloud {
+    transform: none;
+}
+
+/* Badge de statut (coche ou exclamation) */
+.cloud-status-badge {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-size: 7px;
+    line-height: 1;
+}
+
+.cloud-status-badge i {
+    font-size: 7px;
+}
+
+/* État connecté - Icône verte avec coche */
+.cloud-sync-indicator.connected {
+    color: var(--success-color);
+}
+
+.cloud-sync-indicator.connected .cloud-status-badge {
+    background: var(--bg-secondary);
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.cloud-sync-indicator.connected:hover {
+    color: var(--success-color);
+    background-color: rgba(16, 185, 129, 0.15);
+}
+
+/* État expiré - Orange avec animation pulse */
+.cloud-sync-indicator.expired {
+    color: #f59e0b;
+    animation: cloud-pulse 2s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.cloud-sync-indicator.expired .cloud-status-badge {
+    background: #f59e0b;
+    color: white;
+}
+
+.cloud-sync-indicator.expired:hover {
+    color: #d97706;
+    background-color: rgba(245, 158, 11, 0.15);
+    animation: none;
+}
+
+@keyframes cloud-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* État synchronisation en cours - Rotation */
+.cloud-sync-indicator.syncing {
+    color: var(--primary-color);
+}
+
+.cloud-sync-indicator.syncing>i.fa-cloud {
+    animation: cloud-sync-spin 1.5s linear infinite;
+}
+
+.cloud-sync-indicator.syncing .cloud-status-badge {
+    display: none;
+}
+
+@keyframes cloud-sync-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* État déconnecté - Masqué */
+.cloud-sync-indicator.disconnected {
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
+/* ====================================================================
    sidebar internals
    ==================================================================== */
 .sidebar-header {

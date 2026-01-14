@@ -260,6 +260,8 @@ export function initDOM() {
     DOM.dropboxSyncStatus = document.getElementById('dropboxSyncStatus');
     DOM.syncStatusBar = document.getElementById('syncStatusBar');
     DOM.syncRgpdWarning = document.getElementById('syncRgpdWarning');
+    // Cloud sync header indicator
+    DOM.cloudSyncIndicator = document.getElementById('cloudSyncIndicator');
     DOM.welcomeModal = document.getElementById('welcomeModal');
     DOM.welcomeNextStepInfo = document.getElementById('welcome-next-step-info');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');

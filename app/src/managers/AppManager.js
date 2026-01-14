@@ -37,7 +37,7 @@ export const App = {
         // Initialize cloud sync service (reconnects to saved provider)
         try {
             const { SyncService } = await import('../services/SyncService.js');
-            await SyncService.init();
+            SyncService.init();
             // Expose for reconnection from notification link
             window.SyncService = SyncService;
         } catch (e) {

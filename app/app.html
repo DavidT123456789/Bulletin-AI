@@ -38,6 +38,28 @@
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
     <link rel="stylesheet" href="src/css/main.css">
+    <script>
+        // Immediate Theme Application (Prevents White Flash)
+        try {
+            const savedState = localStorage.getItem('bulletin_app_state');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                // Check flattened settings (legacy/flat structure)
+                let theme = 'light';
+                if (state.settings && state.settings.theme) {
+                    theme = state.settings.theme;
+                } else if (state.theme) {
+                    theme = state.theme;
+                }
+
+                if (theme === 'dark') {
+                    document.documentElement.dataset.theme = 'dark';
+                }
+            }
+        } catch (e) {
+            console.error('Theme init error:', e);
+        }
+    </script>
 </head>
 
 <body>
@@ -117,6 +139,12 @@
                         </button>
                     </div>
                     <div class="header-actions-pill">
+                        <button id="cloudSyncIndicator" class="pill-segment cloud-sync-indicator tooltip"
+                            data-tooltip="Synchronisation Cloud" aria-label="État de la synchronisation cloud"
+                            style="display: none;">
+                            <i class="fas fa-cloud"></i>
+                            <span class="cloud-status-badge"></span>
+                        </button>
                         <button id="installPwaBtn" class="pill-segment tooltip pwa-install-btn"
                             data-tooltip="Installer l'application" aria-label="Installer l'application"
                             style="display: none;">
@@ -2460,29 +2488,29 @@
             if (target) {
                 target.classList.add('active');
             }
-        };
+
     </script>
 
     <!-- Page Entrance Transition from Landing Page -->
     <script>
-        (function initPageEntrance() {
-            // Check if user is coming from landing page (within last 2 seconds)
-            const transitionTimestamp = sessionStorage.getItem('landingTransition');
-            const now = Date.now();
+            (function initPageEntrance() {
+                // Check if user is coming from landing page (within last 2 seconds)
+                const transitionTimestamp = sessionStorage.getItem('landingTransition');
+                const now = Date.now();
 
-            if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
-                // Clear the flag
-                sessionStorage.removeItem('landingTransition');
+                if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
+                    // Clear the flag
+                    sessionStorage.removeItem('landingTransition');
 
-                // Apply entrance animation class
-                document.body.classList.add('is-transitioning-in');
+                    // Apply entrance animation class
+                    document.body.classList.add('is-transitioning-in');
 
-                // Remove the class after animation completes
-                setTimeout(() => {
-                    document.body.classList.remove('is-transitioning-in');
-                }, 800); // Slightly longer than animation duration
+                    // Remove the class after animation completes
+                    setTimeout(() => {
+                        document.body.classList.remove('is-transitioning-in');
+                    }, 800); // Slightly longer than animation duration
+                }
             }
-        })();
     </script>
 </body>
 

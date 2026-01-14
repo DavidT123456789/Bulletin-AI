@@ -65,17 +65,27 @@ export const SyncService = {
 
                 // If connected, perform initial sync to get cloud data
                 if (connected) {
+                    this._updateCloudIndicator('syncing');
                     await this.sync();
                     // Update UI to show connected status
                     this._updateUIConnected(savedProvider);
+                    this._updateCloudIndicator('connected');
                 } else if (this._provider?.needsReconnect?.()) {
                     // Token expired but user had a valid connection before
-                    // Show notification to prompt reconnection
+                    // Show notification AND update indicator to prompt reconnection
+                    this._updateCloudIndicator('expired');
                     this._showReconnectNotification();
+                } else {
+                    // Provider exists but connection failed for other reason
+                    this._updateCloudIndicator('disconnected');
                 }
             } catch (e) {
                 console.warn('[SyncService] Could not restore provider:', e.message);
+                this._updateCloudIndicator('expired');
             }
+        } else {
+            // No saved provider - hide indicator
+            this._updateCloudIndicator('disconnected');
         }
     },
 
@@ -95,6 +105,61 @@ export const SyncService = {
                 );
             }
         }, 2000);
+    },
+
+    /**
+     * Update the cloud sync indicator in the header.
+     * @param {'connected'|'expired'|'syncing'|'disconnected'} state
+     * @private
+     */
+    _updateCloudIndicator(state) {
+        // Delay to ensure DOM is ready
+        setTimeout(() => {
+            const indicator = document.getElementById('cloudSyncIndicator');
+            if (!indicator) return;
+
+            // Remove all state classes
+            indicator.classList.remove('connected', 'expired', 'syncing', 'disconnected');
+
+            if (state === 'disconnected') {
+                // Hide indicator when not configured
+                indicator.style.display = 'none';
+                return;
+            }
+
+            // Show indicator and apply state class
+            indicator.style.display = 'flex';
+            indicator.classList.add(state);
+
+            // Update badge icon
+            const badge = indicator.querySelector('.cloud-status-badge');
+            if (badge) {
+                const icons = {
+                    connected: '<i class="fas fa-check"></i>',
+                    expired: '<i class="fas fa-exclamation"></i>',
+                    syncing: ''
+                };
+                badge.innerHTML = icons[state] || '';
+            }
+
+            // Update tooltip
+            const tooltips = {
+                connected: 'Google Drive connecté',
+                expired: 'Session expirée — Cliquer pour reconnecter',
+                syncing: 'Synchronisation en cours...'
+            };
+            indicator.setAttribute('data-tooltip', tooltips[state] || 'Synchronisation Cloud');
+
+            // Setup click handler for expired state
+            if (state === 'expired' && !indicator._hasClickHandler) {
+                indicator._hasClickHandler = true;
+                indicator.addEventListener('click', () => {
+                    if (indicator.classList.contains('expired')) {
+                        this.reconnect();
+                    }
+                });
+            }
+        }, 100);
     },
 
     /**
@@ -139,17 +204,21 @@ export const SyncService = {
 
         try {
             this._setStatus('syncing');
+            this._updateCloudIndicator('syncing');
             const authorized = await this._provider?.authorize?.({ silent: false });
             if (authorized) {
                 await this.sync();
                 window.UI?.showNotification('Reconnecté à Google Drive', 'success');
                 this._setStatus('idle');
+                this._updateCloudIndicator('connected');
+                this._updateUIConnected(this.currentProviderName);
                 return true;
             }
         } catch (e) {
             console.error('[SyncService] Reconnection failed:', e);
         }
         this._setStatus('error');
+        this._updateCloudIndicator('expired');
         return false;
     },
 
@@ -209,6 +278,7 @@ export const SyncService = {
         this.currentProviderName = null;
         localStorage.removeItem('bulletin_sync_provider');
         this._setStatus('idle');
+        this._updateCloudIndicator('disconnected');
     },
 
     /**
