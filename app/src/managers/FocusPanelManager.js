@@ -108,7 +108,8 @@ export const FocusPanelManager = {
             setCurrentIndex: (idx) => { this.currentIndex = idx; },
             saveContext: () => this._saveContext(),
             renderContent: (r) => this._renderContent(r),
-            updateAppreciationStatus: (s, opts) => FocusPanelStatus.updateAppreciationStatus(s, opts)
+            updateAppreciationStatus: (s, opts) => FocusPanelStatus.updateAppreciationStatus(s, opts),
+            onUpdateActiveRow: (id) => this._updateActiveRow(id)
         });
 
         this._setupEventListeners();
@@ -442,6 +443,9 @@ export const FocusPanelManager = {
         if (panel) panel.classList.add('open');
         if (backdrop) backdrop.classList.add('visible');
 
+        // Mark active row in list view for visual feedback
+        this._updateActiveRow(studentId);
+
         // Focus the panel for accessibility
         panel?.focus();
 
@@ -533,6 +537,9 @@ export const FocusPanelManager = {
 
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
+
+        // Clear active row highlight
+        this._clearActiveRow();
 
         // Reset state
         this.currentStudentId = null;
@@ -656,6 +663,38 @@ export const FocusPanelManager = {
      * Navigue vers l'élève précédent avec animation
      */
     // Navigation Logic delegated to FocusPanelNavigation module
+
+    /**
+     * Update active row highlight in list view
+     * @param {string} studentId - ID of student to mark as active
+     * @private
+     */
+    _updateActiveRow(studentId) {
+        // Clear previous active
+        this._clearActiveRow();
+
+        // Mark new active row
+        if (studentId) {
+            const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+            if (row) {
+                row.classList.add('focus-active');
+            }
+        }
+    },
+
+    /**
+     * Clear active row highlight from all rows
+     * @private
+     */
+    _clearActiveRow() {
+        document.querySelectorAll('.student-row.focus-active').forEach(row => {
+            row.classList.remove('focus-active');
+        });
+        // Also blur any focused rows to remove keyboard focus outline
+        document.querySelectorAll('.student-row:focus').forEach(row => {
+            row.blur();
+        });
+    },
 
     /**
      * Cancel any pending generation for a specific student (restart behavior)

@@ -87,6 +87,39 @@
     color: var(--text-secondary);
 }
 
+/* Clickable title button - Opens management modal */
+.class-dropdown-title-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 6px 10px;
+    margin: -6px -10px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.class-dropdown-title-btn i {
+    font-size: 0.85em;
+    opacity: 0.6;
+    transition: all var(--transition-fast);
+}
+
+.class-dropdown-title-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.class-dropdown-title-btn:hover i {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
 .class-dropdown-header .btn-icon-small {
     width: 28px;
     height: 28px;
@@ -186,6 +219,105 @@
 .class-dropdown-item:hover .class-student-count {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
+}
+
+/* ====================================================================
+   PROGRESS BADGE (Class dropdown indicators) - Minimaliste
+   ==================================================================== */
+
+.class-progress-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    cursor: default;
+}
+
+.class-progress-badge .progress-loader {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Base count - Neutral, minimal */
+.progress-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 24px;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.progress-count i {
+    font-size: 0.65rem;
+}
+
+/* Complete state - Green accent */
+.progress-count.is-complete {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+[data-theme="dark"] .progress-count.is-complete {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+/* Alert/Error state - Red accent */
+.progress-count.has-alert {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+[data-theme="dark"] .progress-count.has-alert {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+/* Hover effect on badge - shows tooltip hint */
+.class-progress-badge:hover .progress-count {
+    transform: scale(1.05);
+}
+
+/* Active class item adjustments */
+.class-dropdown-item.active .progress-count {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+}
+
+.class-dropdown-item.active .progress-count.is-complete {
+    background: rgba(34, 197, 94, 0.2);
+    color: #16a34a;
+}
+
+[data-theme="dark"] .class-dropdown-item.active .progress-count.is-complete {
+    color: #4ade80;
+}
+
+.class-dropdown-item.active .progress-count.has-alert {
+    background: rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
+
+[data-theme="dark"] .class-dropdown-item.active .progress-count.has-alert {
+    color: #f87171;
 }
 
 /* Class actions container */
@@ -547,6 +679,83 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
+}
+
+.class-management-item:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.03);
+}
+
+/* Class info section */
+.class-management-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.class-management-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.class-management-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+}
+
+.class-management-meta .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+}
+
+.class-management-meta .meta-item i {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+.class-management-meta .meta-separator {
+    color: var(--text-tertiary);
+    font-size: 0.7em;
+}
+
+/* Status colors for progress */
+.class-management-meta .status-complete {
+    color: #16a34a;
+}
+
+[data-theme="dark"] .class-management-meta .status-complete {
+    color: #4ade80;
+}
+
+.class-management-meta .status-error {
+    color: #dc2626;
+}
+
+[data-theme="dark"] .class-management-meta .status-error {
+    color: #f87171;
+}
+
+.class-management-meta .status-partial {
+    color: var(--primary-color);
+}
+
+.class-management-meta .status-pending {
+    color: var(--text-tertiary);
+}
+
+/* Actions section */
+.class-management-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 12px;
 }
 
 /* ====================================================================

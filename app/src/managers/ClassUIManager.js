@@ -246,7 +246,9 @@ export const ClassUIManager = {
                         <i class="fas fa-calendar"></i> ${cls.year || 'Non définie'}
                     </span>
                 </div>
-                <span class="class-student-count" data-class-id="${cls.id}">—</span>
+                <div class="class-progress-badge" data-class-id="${cls.id}">
+                    <span class="progress-loader"></span>
+                </div>
             </div>
         `).join('');
 
@@ -258,8 +260,8 @@ export const ClassUIManager = {
             });
         });
 
-        // Update student counts asynchronously
-        this._updateClassStudentCounts(classes);
+        // Update progress indicators asynchronously
+        this._updateClassProgressIndicators(classes);
     },
 
     /**
@@ -371,11 +373,97 @@ export const ClassUIManager = {
     },
 
     /**
-     * Met à jour les compteurs d'élèves dans le dropdown
+     * Met à jour les indicateurs de progression dans le dropdown
+     * Approche minimaliste : nombre seul + icône si état notable
      * @private
      */
+    _updateClassProgressIndicators(classes) {
+        const allResults = appState.generatedResults || [];
+        const currentPeriod = appState.currentPeriod;
+
+        for (const cls of classes) {
+            const badge = DOM.classDropdownList?.querySelector(
+                `.class-progress-badge[data-class-id="${cls.id}"]`
+            );
+            if (!badge) continue;
+
+            // Get students for this class
+            const classResults = allResults.filter(r => r.classId === cls.id);
+            const totalStudents = classResults.length;
+
+            if (totalStudents === 0) {
+                badge.innerHTML = `<span class="progress-count">0</span>`;
+                badge.title = 'Aucun élève';
+                badge.dataset.status = 'empty';
+                continue;
+            }
+
+            // Count appreciations status
+            let completedCount = 0;
+            let errorCount = 0;
+
+            classResults.forEach(result => {
+                // Check if has error
+                if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
+                    errorCount++;
+                    return;
+                }
+
+                // Check appreciation for current period
+                const periodData = result.studentData?.periods?.[currentPeriod];
+                const appreciation = periodData?.appreciation || result.appreciation;
+
+                if (appreciation && typeof appreciation === 'string') {
+                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+                    const isPlaceholder = textOnly === '' ||
+                        textOnly.includes('en attente') ||
+                        textOnly.includes('aucune appréciation') ||
+                        textOnly.includes('cliquez sur') ||
+                        textOnly.startsWith('remplissez');
+
+                    if (!isPlaceholder) {
+                        completedCount++;
+                    }
+                }
+            });
+
+            // Render badge - Minimaliste : nombre + icône seulement si notable
+            if (errorCount > 0) {
+                // Erreurs → Badge rouge avec icône warning
+                badge.innerHTML = `
+                    <span class="progress-count has-alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${totalStudents}
+                    </span>
+                `;
+                badge.title = `${errorCount} erreur(s) sur ${totalStudents} élèves`;
+                badge.dataset.status = 'error';
+            } else if (completedCount === totalStudents) {
+                // Tout terminé → Badge vert avec check
+                badge.innerHTML = `
+                    <span class="progress-count is-complete">
+                        <i class="fas fa-check"></i>
+                        ${totalStudents}
+                    </span>
+                `;
+                badge.title = `✓ Toutes les appréciations générées`;
+                badge.dataset.status = 'complete';
+            } else {
+                // En cours ou en attente → Juste le nombre (minimaliste)
+                badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
+                if (completedCount > 0) {
+                    badge.title = `${completedCount}/${totalStudents} appréciations générées`;
+                    badge.dataset.status = 'partial';
+                } else {
+                    badge.title = `${totalStudents} élève(s) – aucune appréciation`;
+                    badge.dataset.status = 'pending';
+                }
+            }
+        }
+    },
+
     /**
-     * Met à jour les compteurs d'élèves dans le dropdown
+     * Met à jour les compteurs d'élèves dans le dropdown (legacy)
      * @private
      */
     _updateClassStudentCounts(classes) {
@@ -392,6 +480,64 @@ export const ClassUIManager = {
                 countBadge.textContent = classStudentCount;
             }
         }
+    },
+
+    /**
+     * Calcule les statistiques d'une classe (élèves, progression)
+     * @param {string} classId 
+     * @returns {{total: number, completed: number, errors: number, icon: string, statusClass: string}}
+     * @private
+     */
+    _getClassStats(classId) {
+        const allResults = appState.generatedResults || [];
+        const currentPeriod = appState.currentPeriod;
+        const classResults = allResults.filter(r => r.classId === classId);
+
+        const total = classResults.length;
+        let completed = 0;
+        let errors = 0;
+
+        classResults.forEach(result => {
+            // Check errors
+            if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
+                errors++;
+                return;
+            }
+
+            // Check appreciation
+            const periodData = result.studentData?.periods?.[currentPeriod];
+            const appreciation = periodData?.appreciation || result.appreciation;
+
+            if (appreciation && typeof appreciation === 'string') {
+                const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+                const isPlaceholder = textOnly === '' ||
+                    textOnly.includes('en attente') ||
+                    textOnly.includes('aucune appréciation') ||
+                    textOnly.includes('cliquez sur') ||
+                    textOnly.startsWith('remplissez');
+
+                if (!isPlaceholder) {
+                    completed++;
+                }
+            }
+        });
+
+        // Determine icon and status class
+        let icon = 'fa-clock';
+        let statusClass = 'status-pending';
+
+        if (errors > 0) {
+            icon = 'fa-exclamation-triangle';
+            statusClass = 'status-error';
+        } else if (total > 0 && completed === total) {
+            icon = 'fa-check';
+            statusClass = 'status-complete';
+        } else if (completed > 0) {
+            icon = 'fa-spinner';
+            statusClass = 'status-partial';
+        }
+
+        return { total, completed, errors, icon, statusClass };
     },
 
     /**
@@ -431,7 +577,7 @@ export const ClassUIManager = {
     showManageClassesModal() {
         const classes = ClassManager.getAllClasses();
 
-        // Créer le contenu de la modale
+        // Créer le contenu de la modale avec infos enrichies
         const modalContent = `
             <div class="class-management-content">
                 ${classes.length === 0 ? `
@@ -440,15 +586,30 @@ export const ClassUIManager = {
                     </p>
                 ` : `
                     <div class="class-management-list" style="display: flex; flex-direction: column; gap: 8px;">
-                        ${classes.map(cls => `
+                        ${classes.map(cls => {
+            const stats = this._getClassStats(cls.id);
+            return `
                             <div class="class-management-item" data-class-id="${cls.id}">
-                                <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-weight: 500;">${this._escapeHtml(cls.name)}</span>
-                                    <span style="font-size: 0.8em; color: var(--text-secondary);">
-                                        ${cls.year || 'Année non définie'}
-                                    </span>
+                                <div class="class-management-info">
+                                    <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
+                                    <div class="class-management-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-calendar"></i>
+                                            ${cls.year || 'Non définie'}
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-users"></i>
+                                            ${stats.total} élève${stats.total > 1 ? 's' : ''}
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item ${stats.statusClass}">
+                                            <i class="fas ${stats.icon}"></i>
+                                            ${stats.completed}/${stats.total}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div style="display: flex; gap: 8px;">
+                                <div class="class-management-actions">
                                     <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
                                             title="Renommer">
                                         <i class="fas fa-pencil"></i>
@@ -459,7 +620,7 @@ export const ClassUIManager = {
                                     </button>
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 `}
             </div>

@@ -13,14 +13,12 @@
     flex-shrink: 0;
     position: relative;
     cursor: pointer;
-    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.student-avatar:hover {
-    transform: scale(1.08);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
+/* Hover disabled here - triggered by row hover in list view instead
+   See: .student-list-table tbody tr:hover .student-avatar */
 
 /* Size Variants */
 .student-avatar--sm {
@@ -142,6 +140,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    /* Allow avatar zoom to overflow */
+    overflow: visible;
     /* Smooth transition for expand/collapse layout change */
     transition: flex-direction 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         align-items 0.4s cubic-bezier(0.32, 0.72, 0, 1),
@@ -150,11 +150,19 @@
 
 /* Avatar size transition for expand/collapse */
 .student-identity-wrapper .student-avatar {
-    transition: width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        font-size 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.2s var(--ease-spring),
-        box-shadow 0.2s ease;
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        font-size 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.25s ease;
+}
+
+/* Hover zoom triggered by entire row hover - better UX ergonomics */
+/* Also maintain zoom when student is focused (panel open) */
+.student-list-table tbody tr:hover .student-avatar,
+.student-list-table tbody tr.focus-active .student-avatar {
+    transform: scale(1.18);
+    z-index: 10;
 }
 
 /* === EXPANDED VIEW: Avatar Above Name === */
@@ -165,7 +173,7 @@
     text-align: center;
     gap: 8px;
     /* Blur-to-sharp animation masks the instant flex-direction change */
-    animation: identity-expand-reveal 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: identity-expand-reveal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Larger avatar in expanded view */
@@ -173,8 +181,21 @@
     width: 48px;
     height: 48px;
     font-size: 16px;
-    /* Sync with wrapper animation */
-    animation: avatar-expand 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    /* Opacity-only animation to avoid transform conflicts with hover */
+    animation: avatar-expand-fade 0.4s ease-out forwards;
+    /* GPU acceleration + smooth hover transition */
+    will-change: transform;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+/* Hover zoom in expanded view - triggered by row hover or focus state */
+.appreciation-full-view tbody tr:hover .student-avatar,
+.appreciation-full-view tbody tr.focus-active .student-avatar {
+    transform: scale(1.18) !important;
+    z-index: 10;
+    /* Force smooth transition despite animation conflict */
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    will-change: transform;
 }
 
 /* Keyframe: subtle blur-to-sharp masks layout change */
@@ -190,19 +211,13 @@
     }
 }
 
-/* Keyframe: avatar grows with slight scale overshoot for iOS feel */
-@keyframes avatar-expand {
+/* Keyframe: opacity-only fade (no transform to avoid hover conflicts) */
+@keyframes avatar-expand-fade {
     0% {
-        transform: scale(0.8);
-        opacity: 0.6;
-    }
-
-    70% {
-        transform: scale(1.05);
+        opacity: 0.5;
     }
 
     100% {
-        transform: scale(1);
         opacity: 1;
     }
 }
@@ -256,6 +271,4 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .student-avatar:hover {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-}
+/* Dark mode: no shadow needed in flat design */

@@ -22,7 +22,8 @@ export const FocusPanelNavigation = {
         setCurrentIndex: null,
         saveContext: null,
         renderContent: null,
-        updateAppreciationStatus: null
+        updateAppreciationStatus: null,
+        onUpdateActiveRow: null
     },
 
     /**
@@ -171,6 +172,11 @@ export const FocusPanelNavigation = {
     _switchToStudent(targetResult, targetIndex) {
         this.callbacks.setCurrentStudentId(targetResult.id);
         this.callbacks.setCurrentIndex(targetIndex);
+
+        // Update active row highlight in list view
+        if (this.callbacks.onUpdateActiveRow) {
+            this.callbacks.onUpdateActiveRow(targetResult.id);
+        }
 
         // FIX: Load period-specific history, not global history
         const currentPeriod = appState.currentPeriod;

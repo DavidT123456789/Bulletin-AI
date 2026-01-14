@@ -636,7 +636,7 @@ export const ListViewManager = {
                                 </button>
                                 <div class="inline-search-container" id="inlineSearchContainer">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher...">
+                                    <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                                     <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
                                         <i class="fas fa-times"></i>
                                     </button>

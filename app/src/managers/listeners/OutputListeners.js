@@ -1,14 +1,10 @@
-/**
- * @fileoverview Listeners de la section de sortie (recherche, tri, exports)
- * @module managers/listeners/OutputListeners
- */
-
 import { CONFIG } from '../../config/Config.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
 // AppreciationsManager et StorageManager déplacés vers ListViewManager._attachGlobalActionsListeners()
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
+import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 
 export const OutputListeners = {
     /**
@@ -25,6 +21,11 @@ export const OutputListeners = {
             searchContainer?.classList.toggle('has-value', e.target.value.length > 0);
             // Appeler le handler avec debounce
             Utils.debounce(EventHandlersManager.handleSearchInput, CONFIG.DEBOUNCE_TIME_MS)();
+
+            // Cross-class search (affichage des résultats d'autres classes)
+            Utils.debounce(() => {
+                CrossClassSearchManager.updateCrossClassResults(e.target.value);
+            }, CONFIG.DEBOUNCE_TIME_MS + 100)();
         });
 
         // Bouton clear de recherche
@@ -35,6 +36,7 @@ export const OutputListeners = {
                     searchContainer?.classList.remove('has-value');
                     DOM.searchInput.focus();
                     EventHandlersManager.handleSearchInput();
+                    CrossClassSearchManager.reset();
                 }
             });
         }

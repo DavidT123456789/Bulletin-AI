@@ -1,0 +1,323 @@
+/**
+ * Cross-Class Search Results
+ * Affiche les résultats de recherche des autres classes sous le tableau principal
+ * Design premium iOS 2026
+ */
+
+/* ========================================
+   Container principal
+   ======================================== */
+.cross-class-results {
+    margin: 0 var(--space-4);
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition:
+        max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.3s ease-out,
+        transform 0.3s ease-out,
+        margin 0.3s ease-out;
+}
+
+.cross-class-results.visible {
+    max-height: 600px;
+    opacity: 1;
+    transform: translateY(0);
+    margin-top: var(--space-8);
+    margin-left: var(--space-4);
+    margin-right: var(--space-4);
+    margin-bottom: var(--space-5);
+    padding: var(--space-4) 0;
+}
+
+/* ========================================
+   Header / Divider - Style Premium
+   ======================================== */
+.cross-class-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: 0 var(--space-2);
+}
+
+.cross-class-divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            var(--border-color) 20%,
+            var(--border-color) 80%,
+            transparent 100%);
+}
+
+.cross-class-divider-text {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+}
+
+.cross-class-divider-text i {
+    font-size: 0.6rem;
+    color: var(--primary-color);
+    opacity: 0.9;
+}
+
+/* ========================================
+   Liste des résultats
+   ======================================== */
+.cross-class-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Groupe par classe - Card container style */
+.cross-class-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--card-glass-bg);
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Badge de classe - Style Pill Premium */
+.cross-class-group-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: var(--primary-color);
+    padding: var(--space-1) var(--space-3);
+    margin-bottom: var(--space-2);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+    border-radius: var(--radius-pill);
+    width: fit-content;
+}
+
+.cross-class-group-badge i {
+    font-size: 0.6rem;
+    opacity: 0.9;
+}
+
+/* ========================================
+   Ligne de résultat - Card interactive
+   ======================================== */
+.cross-class-result {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-color);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow var(--transition-fast);
+}
+
+.cross-class-result:hover {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+    transform: translateX(4px);
+}
+
+.cross-class-result:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.cross-class-result:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+/* Réutiliser le style d'avatar existant */
+.cross-class-result .student-avatar {
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+/* Nom de l'élève */
+.cross-class-name {
+    flex: 1;
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 1;
+    transition: opacity var(--transition-fast);
+}
+
+.cross-class-prenom {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   Overlay "Voir dans [classe]"
+   ======================================== */
+.cross-class-overlay {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) 0 var(--space-6);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--primary-color);
+    opacity: 0;
+    transform: translateX(8px);
+    transition:
+        opacity 0.2s ease-out,
+        transform 0.2s ease-out;
+    pointer-events: none;
+}
+
+.cross-class-overlay i {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+}
+
+.cross-class-result:hover .cross-class-overlay {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.cross-class-result:hover .cross-class-overlay i {
+    transform: translateX(3px);
+}
+
+/* ========================================
+   Animation d'entrée des résultats
+   ======================================== */
+.cross-class-results.visible .cross-class-group {
+    animation: crossClassGroupIn 0.4s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+
+.cross-class-results.visible .cross-class-group:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.cross-class-results.visible .cross-class-group:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.cross-class-results.visible .cross-class-result {
+    animation: crossClassSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+
+.cross-class-results.visible .cross-class-group:nth-child(1) .cross-class-result:nth-child(2) {
+    animation-delay: 0.05s;
+}
+
+.cross-class-results.visible .cross-class-group:nth-child(1) .cross-class-result:nth-child(3) {
+    animation-delay: 0.1s;
+}
+
+.cross-class-results.visible .cross-class-group:nth-child(2) .cross-class-result:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+@keyframes crossClassGroupIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes crossClassSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+    }
+}
+
+/* ========================================
+   Dark Mode
+   ======================================== */
+[data-theme="dark"] .cross-class-group {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .cross-class-result {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .cross-class-result:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .cross-class-group-badge {
+    background: rgba(var(--primary-color-rgb), 0.18);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .cross-class-divider-text {
+    background: var(--bg-tertiary);
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+@media (max-width: 768px) {
+    .cross-class-results {
+        margin: 0 var(--space-2);
+    }
+
+    .cross-class-results.visible {
+        margin: var(--space-5) var(--space-2);
+    }
+
+    .cross-class-result {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .cross-class-name {
+        font-size: var(--font-sm);
+    }
+
+    /* Sur mobile, overlay toujours visible mais discret */
+    .cross-class-overlay {
+        opacity: 0.7;
+        transform: translateX(0);
+    }
+}

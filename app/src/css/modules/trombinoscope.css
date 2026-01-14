@@ -64,6 +64,24 @@
     filter: blur(0);
 }
 
+/* Closing animation - matches standard modal pattern (single source of truth) */
+.trombi-wizard-modal.visible.closing .trombi-wizard-content {
+    opacity: 0 !important;
+    transform: scale(0.95) translateY(8px) !important;
+    filter: blur(2px) !important;
+    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.2s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+/* Backdrop fade out during closing */
+.trombi-wizard-modal.closing .trombi-wizard-backdrop {
+    background: rgba(0, 0, 0, 0) !important;
+    backdrop-filter: blur(0px) !important;
+    -webkit-backdrop-filter: blur(0px) !important;
+    transition: background 0.25s ease-out, backdrop-filter 0.25s ease-out !important;
+}
+
 /* Header - Harmonized with import-wizard style */
 .trombi-wizard-header {
     display: flex;
@@ -667,11 +685,11 @@
 .grid-control-panel {
     background: var(--bg-secondary);
     border-radius: 8px;
-    padding: 10px 12px;
-    margin: 8px 12px 12px 12px;
+    padding: 6px 10px;
+    margin: 4px 6px 6px 6px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 /* Two-column layout for compact display */
@@ -695,11 +713,11 @@
 .control-row label {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     font-size: 11px;
     font-weight: 500;
     color: var(--text-secondary);
-    min-width: 70px;
+    min-width: 60px;
     white-space: nowrap;
 }
 
@@ -714,19 +732,40 @@
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+/* Slider track wrapper - clips overflow to eliminate visual dead zones */
+.slider-track {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--border-color);
+    height: 20px;
+    display: flex;
+    align-items: center;
 }
 
 .control-slider {
     flex: 1;
-    height: 5px;
+    height: 4px;
     -webkit-appearance: none;
     appearance: none;
+    background: transparent;
+    cursor: pointer;
+    /* Extend slider beyond visible bounds to eliminate dead zone */
+    margin: 0 -7px;
+    width: calc(100% + 14px);
+}
+
+/* Custom slider track */
+.control-slider::-webkit-slider-runnable-track {
+    height: 4px;
     background: linear-gradient(to right,
             var(--primary-color) 0%,
             var(--border-color) 0%);
-    border-radius: 3px;
-    cursor: pointer;
+    border-radius: 2px;
 }
 
 .control-slider::-webkit-slider-thumb {
@@ -735,15 +774,22 @@
     height: 14px;
     border-radius: 50%;
     background: white;
-    cursor: pointer;
+    cursor: grab;
     border: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(var(--primary-color-rgb), 0.3);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    margin-top: -5px;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .control-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.control-slider::-moz-range-track {
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
 }
 
 .control-slider::-moz-range-thumb {
@@ -751,20 +797,20 @@
     height: 14px;
     border-radius: 50%;
     background: white;
-    cursor: pointer;
+    cursor: grab;
     border: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* Slider value - More visible box design */
 .slider-value {
-    min-width: 32px;
+    min-width: 28px;
     text-align: center;
     font-size: 11px;
     font-weight: 600;
     color: var(--primary-color);
     background: var(--bg-color);
-    padding: 4px 6px;
+    padding: 3px 5px;
     border-radius: 6px;
     border: 1px solid var(--border-color);
 }
@@ -779,6 +825,7 @@
     font-weight: 500;
     color: var(--text-secondary);
     user-select: none;
+    margin-top: 4px;
 }
 
 .toggle-text {

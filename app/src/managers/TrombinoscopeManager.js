@@ -130,8 +130,16 @@ export const TrombinoscopeManager = {
 
     close() {
         const modal = document.getElementById('trombiWizardModal');
-        if (modal) modal.classList.remove('visible');
-        this._reset();
+        if (!modal || !modal.classList.contains('visible')) return;
+
+        // Add closing animation
+        modal.classList.add('closing');
+
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            modal.classList.remove('visible', 'closing');
+            this._reset();
+        }, 250); // Match CSS transition duration
     },
 
     _reset() {
@@ -558,16 +566,20 @@ export const TrombinoscopeManager = {
                     <div class="control-row">
                         <label><i class="fas fa-columns"></i> Colonnes</label>
                         <div class="slider-group">
-                            <input type="range" class="control-slider" id="colsSlider" 
-                                   min="1" max="8" value="${this._gridCols}">
+                            <div class="slider-track">
+                                <input type="range" class="control-slider" id="colsSlider" 
+                                       min="1" max="8" value="${this._gridCols}">
+                            </div>
                             <span class="slider-value" id="colsValue">${this._gridCols}</span>
                         </div>
                     </div>
                     <div class="control-row">
                         <label><i class="fas fa-bars"></i> Lignes</label>
                         <div class="slider-group">
-                            <input type="range" class="control-slider" id="rowsSlider" 
-                                   min="1" max="10" value="${this._gridRows}">
+                            <div class="slider-track">
+                                <input type="range" class="control-slider" id="rowsSlider" 
+                                       min="1" max="10" value="${this._gridRows}">
+                            </div>
                             <span class="slider-value" id="rowsValue">${this._gridRows}</span>
                         </div>
                     </div>
@@ -576,16 +588,20 @@ export const TrombinoscopeManager = {
                     <div class="control-row">
                         <label><i class="fas fa-arrows-left-right-to-line"></i> Écart H</label>
                         <div class="slider-group">
-                            <input type="range" class="control-slider" id="gapHSlider" 
-                                   min="-50" max="50" step="0.5" value="0">
+                            <div class="slider-track">
+                                <input type="range" class="control-slider" id="gapHSlider" 
+                                       min="-50" max="50" step="0.5" value="0">
+                            </div>
                             <span class="slider-value" id="gapHValue">0</span>
                         </div>
                     </div>
                     <div class="control-row">
                         <label><i class="fas fa-arrows-up-down-left-right"></i> Écart V</label>
                         <div class="slider-group">
-                            <input type="range" class="control-slider" id="gapVSlider" 
-                                   min="-50" max="50" step="0.5" value="0">
+                            <div class="slider-track">
+                                <input type="range" class="control-slider" id="gapVSlider" 
+                                       min="-50" max="50" step="0.5" value="0">
+                            </div>
                             <span class="slider-value" id="gapVValue">0</span>
                         </div>
                     </div>
@@ -594,8 +610,10 @@ export const TrombinoscopeManager = {
                     <div class="control-row">
                         <label><i class="fas fa-expand-alt"></i> Taille</label>
                         <div class="slider-group">
-                            <input type="range" class="control-slider" id="sizeSlider" 
-                                   min="5" max="100" value="60">
+                            <div class="slider-track">
+                                <input type="range" class="control-slider" id="sizeSlider" 
+                                       min="5" max="100" value="60">
+                            </div>
                             <span class="slider-value" id="sizeValue">60%</span>
                         </div>
                     </div>

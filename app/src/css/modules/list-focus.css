@@ -161,6 +161,11 @@
     background: rgba(var(--primary-color-rgb), 0.04);
 }
 
+/* Active row when focus panel is open - maintains visual link */
+.student-list-table tbody tr.focus-active {
+    background: rgba(var(--primary-color-rgb), 0.06);
+}
+
 .student-list-table tbody tr:last-child td {
     border-bottom: none;
 }
@@ -288,6 +293,9 @@
     min-width: 140px;
     padding-right: 8px !important;
     transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    /* Allow avatar zoom to overflow */
+    overflow: visible;
+    position: relative;
 }
 
 .student-name-cell .student-prenom {
