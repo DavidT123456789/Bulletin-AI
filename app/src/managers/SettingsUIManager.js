@@ -523,23 +523,23 @@ export const SettingsUIManager = {
      * Affiche un nom court du modèle et le coût de session si > 0.
      */
     updateHeaderAiModelDisplay() {
-        if (!DOM.headerAiModelName) return;
-
         const model = appState.currentAIModel;
 
-        // 1. Affiche le nom court depuis la config centralisée
-        DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
+        if (DOM.headerAiModelName) {
+            // 1. Affiche le nom court depuis la config centralisée
+            DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
 
-        // 2. Met à jour le tooltip avec le nom COMPLET et l'ID technique
-        if (DOM.headerAiModelChip) {
-            // Simplification : on n'affiche que l'ID technique car le nom est déjà sur le bouton
-            // Utilisation de HTML pour le style (supporté par Tippy.js via allowHTML: true)
-            const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour changer</i>`;
-            DOM.headerAiModelChip.setAttribute('data-tooltip', tooltipContent);
+            // 2. Met à jour le tooltip avec le nom COMPLET et l'ID technique
+            if (DOM.headerAiChip) {
+                // Simplification : on n'affiche que l'ID technique car le nom est déjà sur le bouton
+                // Utilisation de HTML pour le style (supporté par Tippy.js via allowHTML: true)
+                const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour changer</i>`;
+                DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
 
-            // Re-init tooltip content if needed
-            if (DOM.headerAiModelChip._tippy) {
-                DOM.headerAiModelChip._tippy.setContent(tooltipContent);
+                // Re-init tooltip content if needed
+                if (DOM.headerAiChip._tippy) {
+                    DOM.headerAiChip._tippy.setContent(tooltipContent);
+                }
             }
         }
 
@@ -586,8 +586,15 @@ export const SettingsUIManager = {
         const queue = rawQueue.filter(m => this._isModelAvailable(m));
 
         // Affichage court : 2 premiers, badge séparé pour les autres
-        const displayQueue = queue.slice(0, 2).map(m => MODEL_SHORT_NAMES[m] || m);
-        fallbackOrderText.textContent = displayQueue.join(' → ');
+        // Affichage court : 2 premiers, badge séparé pour les autres
+        const displayQueue = queue.slice(0, 2).map((m, index) => {
+            const name = MODEL_SHORT_NAMES[m] || m;
+            // Premier modèle en gras (primary), les suivants en normal/gris
+            if (index === 0) return `<span style="font-weight:600; color:var(--text-primary)">${name}</span>`;
+            return `<span style="opacity:0.8">${name}</span>`;
+        });
+
+        fallbackOrderText.innerHTML = displayQueue.join(' <i class="fas fa-chevron-right" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></i> ');
 
         // Badge "+X" avec tooltip pour voir le reste
         const moreBadge = document.getElementById('fallbackOrderMore');

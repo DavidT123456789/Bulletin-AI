@@ -199,16 +199,7 @@ export const EventHandlersManager = {
         DOM.actionsDropdown.classList.toggle('show');
     },
 
-    /**
-     * Gère le clic sur les onglets des paramètres.
-     * @param {Event} e - L'événement click
-     */
-    handleSettingsTabClick(e) {
-        // Use closest() to handle clicks on icons inside the tab button
-        const tab = e.target.closest('.settings-tab');
-        const tabName = tab?.dataset.tab;
-        if (tabName) UI.showSettingsTab(tabName);
-    },
+
 
     /**
      * Gère le changement de système de période (Trimestre/Semestre).

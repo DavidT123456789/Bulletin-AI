@@ -28,7 +28,6 @@ export const SettingsModalListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
-        DOM.settingsTabs.forEach(tab => tab.addEventListener('click', EventHandlersManager.handleSettingsTabClick));
         DOM.periodSystemRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 EventHandlersManager.handlePeriodSystemChange(e);
@@ -78,9 +77,6 @@ export const SettingsModalListeners = {
 
         // Configuration Ollama (IA locale)
         this._setupOllamaListeners(addClickListener);
-
-        // Gestion des matières
-        this._setupSubjectListeners(addClickListener);
 
         // Listeners pour les sliders IA
         this._setupIASliders();
@@ -170,11 +166,7 @@ export const SettingsModalListeners = {
         }
     },
 
-    _setupSubjectListeners(addClickListener) {
-        // Note: Les listeners pour le dropdown de matières et les boutons add/delete/reset
-        // ont été supprimés avec la simplification vers un profil unique "MonStyle".
-        // Le toggle de personnalisation est géré par le listener existant sur personalizationToggle.
-    },
+
 
     _setupIASliders() {
         if (DOM.iaLengthSlider) {

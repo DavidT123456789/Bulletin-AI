@@ -130,15 +130,17 @@ export const FormUI = {
      */
     _updateApiStatusDisplay() {
         const providers = [
-            { id: 'google', key: appState.googleApiKey, inputId: 'googleApiKey' },
-            { id: 'openai', key: appState.openaiApiKey, inputId: 'openaiApiKey' },
-            { id: 'openrouter', key: appState.openrouterApiKey, inputId: 'openrouterApiKey' },
-            { id: 'anthropic', key: appState.anthropicApiKey, inputId: 'anthropicApiKey' },
-            { id: 'mistral', key: appState.mistralApiKey, inputId: 'mistralApiKey' },
+            { id: 'google', key: appState.googleApiKey, inputId: 'googleApiKey', btnId: 'validateGoogleApiKeyBtn' },
+            { id: 'openai', key: appState.openaiApiKey, inputId: 'openaiApiKey', btnId: 'validateOpenaiApiKeyBtn' },
+            { id: 'openrouter', key: appState.openrouterApiKey, inputId: 'openrouterApiKey', btnId: 'validateOpenrouterApiKeyBtn' },
+            { id: 'anthropic', key: appState.anthropicApiKey, inputId: 'anthropicApiKey', btnId: 'validateAnthropicApiKeyBtn' },
+            { id: 'mistral', key: appState.mistralApiKey, inputId: 'mistralApiKey', btnId: 'validateMistralApiKeyBtn' },
         ];
 
-        providers.forEach(({ id, key, inputId }) => {
+        providers.forEach(({ id, key, inputId, btnId }) => {
             const el = document.getElementById(`${id}ApiStatus`);
+            const btn = document.getElementById(btnId);
+
             if (!el) return;
 
             const hasKey = !!key && key.length > 5;
@@ -146,7 +148,14 @@ export const FormUI = {
 
             // Vérifier l'état de validation via les classes CSS de l'input
             let status = 'none'; // none, pending, quota, valid
-            if (hasKey) {
+
+            // Check persisted validation state first
+            if (appState.validatedApiKeys && appState.validatedApiKeys[id]) {
+                status = 'valid';
+                if (appState.apiKeyStatus && appState.apiKeyStatus[id] === 'quota-warning') {
+                    status = 'quota';
+                }
+            } else if (hasKey) {
                 if (inputEl?.classList.contains('input-success')) {
                     status = 'valid';
                 } else if (inputEl?.classList.contains('input-warning')) {
@@ -156,7 +165,7 @@ export const FormUI = {
                 }
             }
 
-            // Mettre à jour les classes
+            // Mettre à jour les classes du pill
             el.classList.remove('active', 'inactive', 'warning');
             const badge = el.querySelector('.api-status-badge');
 
@@ -172,6 +181,24 @@ export const FormUI = {
             } else {
                 el.classList.add('inactive');
                 if (badge) badge.textContent = 'Non configurée';
+            }
+
+            // Mettre à jour l'état du bouton
+            if (btn) {
+                if (status === 'valid' || status === 'quota') {
+                    btn.classList.add('btn-validated');
+                    btn.classList.remove('btn-needs-validation');
+                    btn.innerHTML = '<i class="fas fa-check"></i> OK';
+                } else {
+                    btn.classList.remove('btn-validated');
+                    // btn-needs-validation is handled by input listener, 
+                    // but we can ensure it's clean here
+                    if (hasKey && status === 'pending') {
+                        btn.innerHTML = 'Vérifier';
+                    } else {
+                        btn.innerHTML = 'Vérifier';
+                    }
+                }
             }
         });
     },

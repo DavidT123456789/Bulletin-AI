@@ -1,0 +1,445 @@
+/* ====================================================================
+   MODULE: Generation Dashboard
+   Compact status indicator showing validated/error/pending counts
+   iOS 2025 Premium Style
+   ==================================================================== */
+
+/* ====================================================================
+   BASE CONTAINER
+   ==================================================================== */
+.header-gen-dashboard {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: linear-gradient(135deg,
+            rgba(var(--surface-color-rgb, 30, 30, 40), 0.85),
+            rgba(var(--surface-color-rgb, 30, 30, 40), 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ====================================================================
+   MODEL LABEL - Premium minimalist (no border, integrated)
+   ==================================================================== */
+.dash-model-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 10px;
+    line-height: 1;
+    border-radius: var(--radius-pill);
+    /* Transparent by default - background appears only during generation */
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    /* iOS spring transition */
+    transition:
+        transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.25s ease;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Provider icon styling */
+.dash-model-label i,
+.dash-model-label svg {
+    font-size: 14px;
+    opacity: 0.85;
+    transition:
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover: subtle highlight */
+.dash-model-label:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.dash-model-label:hover i,
+.dash-model-label:hover svg {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Active press state */
+.dash-model-label:active {
+    transform: scale(0.96);
+    transition-duration: 0.1s;
+}
+
+/* Model name carousel animation */
+#dashModelName {
+    display: inline-block;
+    position: relative;
+}
+
+#dashModelName.model-name-transition {
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#dashModelName.exit-up {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+#dashModelName.exit-down {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+#dashModelName.enter-from-down {
+    transform: translateY(100%);
+    opacity: 0;
+    transition: none;
+}
+
+#dashModelName.enter-from-up {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: none;
+}
+
+/* Fallback active state - orange warning color */
+.header-gen-dashboard.fallback-active {
+    border-color: rgba(251, 146, 60, 0.5);
+    box-shadow: 0 0 12px rgba(251, 146, 60, 0.25);
+}
+
+.header-gen-dashboard.fallback-active .dash-model-label {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+}
+
+.header-gen-dashboard.fallback-active .dash-model-label i {
+    color: #fb923c;
+}
+
+/* Divider */
+.dash-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 2px;
+}
+
+/* ====================================================================
+   BADGE BASE
+   ==================================================================== */
+.dash-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    white-space: nowrap;
+}
+
+.dash-badge i {
+    font-size: 11px;
+}
+
+.dash-badge:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+}
+
+.dash-badge:active {
+    transform: scale(0.95);
+}
+
+/* ====================================================================
+   VALIDATED BADGE - Hidden for ultra-minimalist look
+   ==================================================================== */
+.dash-validated,
+.dash-divider:first-of-type {
+    display: none !important;
+}
+
+/* ====================================================================
+   ERROR BADGE (Red) - Hidden when count is 0
+   ==================================================================== */
+.dash-errors {
+    color: #f87171;
+    display: none;
+}
+
+.dash-errors.visible {
+    display: flex;
+    animation: badge-appear 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dash-errors:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.dash-errors i {
+    color: #ef4444;
+    animation: icon-pulse 2s ease-in-out infinite;
+}
+
+.dash-errors:hover i {
+    animation: none;
+}
+
+@keyframes badge-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes icon-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* ====================================================================
+   PENDING BADGE - Hidden for ultra-minimalist look
+   (pending count shown in Generate button instead)
+   ==================================================================== */
+.dash-pending,
+.dash-divider:last-of-type {
+    display: none !important;
+}
+
+/* ====================================================================
+   GENERATING STATE - Smooth expansion/contraction
+   ==================================================================== */
+.dash-generating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px 4px 8px;
+    /* Hidden by default with smooth transition */
+    opacity: 0;
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+    transition:
+        opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        max-width 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.header-gen-dashboard.generating .dash-generating {
+    opacity: 1;
+    max-width: 150px;
+    padding: 4px 6px 4px 8px;
+}
+
+/* Badges fade out smoothly during generation */
+.dash-badge,
+.dash-divider {
+    transition:
+        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.header-gen-dashboard.generating .dash-badge,
+.header-gen-dashboard.generating .dash-divider:last-of-type {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+    max-width: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Subtle generating state - border glow */
+.header-gen-dashboard.generating {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+    animation: generating-glow 2.5s ease-in-out infinite;
+    gap: 0;
+}
+
+/* Shimmer sweep overlay for organic feel */
+.header-gen-dashboard.generating::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(var(--primary-color-rgb), 0.08) 50%,
+            transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer-sweep 2s ease-in-out infinite;
+    border-radius: inherit;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes shimmer-sweep {
+    0% {
+        background-position: -100% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* Model badge with background during generation */
+.header-gen-dashboard.generating .dash-model-label {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    animation: model-breathe 2s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes model-breathe {
+
+    0%,
+    100% {
+        opacity: 0.85;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes generating-glow {
+
+    0%,
+    100% {
+        border-color: rgba(var(--primary-color-rgb), 0.25);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    50% {
+        border-color: rgba(var(--primary-color-rgb), 0.5);
+        box-shadow: 0 2px 12px rgba(var(--primary-color-rgb), 0.2);
+    }
+}
+
+/* Progress bar */
+.dash-progress-bar {
+    width: 56px;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.dash-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg,
+            var(--primary-color) 0%,
+            var(--glow-highlight, var(--primary-color)) 50%,
+            var(--primary-color) 100%);
+    background-size: 300% 100%;
+    border-radius: 2px;
+    transition: width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    animation: progress-liquid 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-liquid {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+/* Progress text */
+.dash-progress-text {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Cancel button */
+.dash-cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    margin-left: 0;
+}
+
+.dash-cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    transform: scale(1.1);
+}
+
+
+/* ====================================================================
+   DARK MODE
+   ==================================================================== */
+[data-theme="dark"] .header-gen-dashboard {
+    background: linear-gradient(135deg,
+            rgba(20, 20, 30, 0.9),
+            rgba(30, 30, 45, 0.95));
+}
+
+[data-theme="dark"] .dash-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .dash-cancel-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* ====================================================================
+   RESPONSIVE
+   ==================================================================== */
+@media (max-width: 480px) {
+    .header-gen-dashboard {
+        padding: 3px;
+    }
+
+    .dash-badge {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+
+    .dash-progress-bar {
+        width: 32px;
+    }
+}

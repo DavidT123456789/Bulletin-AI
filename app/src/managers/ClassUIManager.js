@@ -427,7 +427,7 @@ export const ClassUIManager = {
                 }
             });
 
-            // Render badge - Minimaliste : nombre + icône seulement si notable
+            // Render badge - SIMPLIFIED: just nombre, icône seulement si ERREURS
             if (errorCount > 0) {
                 // Erreurs → Badge rouge avec icône warning
                 badge.innerHTML = `
@@ -438,24 +438,17 @@ export const ClassUIManager = {
                 `;
                 badge.title = `${errorCount} erreur(s) sur ${totalStudents} élèves`;
                 badge.dataset.status = 'error';
-            } else if (completedCount === totalStudents) {
-                // Tout terminé → Badge vert avec check
-                badge.innerHTML = `
-                    <span class="progress-count is-complete">
-                        <i class="fas fa-check"></i>
-                        ${totalStudents}
-                    </span>
-                `;
-                badge.title = `✓ Toutes les appréciations générées`;
-                badge.dataset.status = 'complete';
             } else {
-                // En cours ou en attente → Juste le nombre (minimaliste)
+                // Default: juste le nombre d'élèves (neutre, pas confus)
                 badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
-                if (completedCount > 0) {
+                if (completedCount === totalStudents && totalStudents > 0) {
+                    badge.title = `${totalStudents} élève(s) – appréciations OK`;
+                    badge.dataset.status = 'complete';
+                } else if (completedCount > 0) {
                     badge.title = `${completedCount}/${totalStudents} appréciations générées`;
                     badge.dataset.status = 'partial';
                 } else {
-                    badge.title = `${totalStudents} élève(s) – aucune appréciation`;
+                    badge.title = `${totalStudents} élève(s)`;
                     badge.dataset.status = 'pending';
                 }
             }

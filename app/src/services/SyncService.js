@@ -46,6 +46,15 @@ export const SyncService = {
     /** @type {Function[]} Listeners for status changes */
     _statusListeners: [],
 
+    /** @type {number|null} Token check interval ID */
+    _tokenCheckInterval: null,
+
+    /** @type {boolean} Current network connectivity state */
+    _isOnline: true,
+
+    /** @type {boolean} Whether a cloud provider was previously configured */
+    _wasConfigured: false,
+
     // =========================================================================
     // INITIALIZATION
     // =========================================================================
@@ -58,6 +67,11 @@ export const SyncService = {
         const savedProvider = localStorage.getItem('bulletin_sync_provider');
         this.autoSyncEnabled = localStorage.getItem('bulletin_sync_auto') === 'true';
         this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync')) || null;
+        this._isOnline = navigator.onLine;
+        this._wasConfigured = !!savedProvider;
+
+        // Start network and token monitoring
+        this._startMonitoring();
 
         if (savedProvider && PROVIDERS[savedProvider]) {
             try {
@@ -77,15 +91,85 @@ export const SyncService = {
                     this._showReconnectNotification();
                 } else {
                     // Provider exists but connection failed for other reason
-                    this._updateCloudIndicator('disconnected');
+                    // Show local mode if offline, expired if was configured
+                    this._updateCloudIndicator(this._isOnline ? 'expired' : 'local');
                 }
             } catch (e) {
                 console.warn('[SyncService] Could not restore provider:', e.message);
                 this._updateCloudIndicator('expired');
             }
         } else {
-            // No saved provider - hide indicator
-            this._updateCloudIndicator('disconnected');
+            // No saved provider - show local mode icon
+            this._updateCloudIndicator('local');
+        }
+    },
+
+    /**
+     * Start monitoring network connectivity and token validity.
+     * @private
+     */
+    _startMonitoring() {
+        // Listen for online/offline events
+        window.addEventListener('online', () => this._handleNetworkChange(true));
+        window.addEventListener('offline', () => this._handleNetworkChange(false));
+
+        // Check token validity every 5 minutes
+        this._tokenCheckInterval = setInterval(() => this._checkTokenValidity(), 5 * 60 * 1000);
+    },
+
+    /**
+     * Handle network connectivity changes.
+     * @param {boolean} isOnline - Whether the browser is online
+     * @private
+     */
+    _handleNetworkChange(isOnline) {
+        const wasOnline = this._isOnline;
+        this._isOnline = isOnline;
+
+        console.log(`[SyncService] Network ${isOnline ? 'restored' : 'lost'}`);
+
+        if (!isOnline) {
+            // Went offline - show local mode if we have a provider configured
+            if (this._wasConfigured || this.currentProviderName) {
+                this._updateCloudIndicator('local');
+            }
+        } else if (!wasOnline && isOnline) {
+            // Came back online - try to restore connection
+            if (this.currentProviderName && this._provider) {
+                this._checkTokenValidity();
+            } else if (this._wasConfigured) {
+                // Try to reconnect silently
+                const savedProvider = localStorage.getItem('bulletin_sync_provider');
+                if (savedProvider) {
+                    this.connect(savedProvider, { silent: true }).then(connected => {
+                        if (connected) {
+                            this._updateCloudIndicator('connected');
+                            this.sync().catch(() => { });
+                        } else {
+                            this._updateCloudIndicator('expired');
+                        }
+                    }).catch(() => {
+                        this._updateCloudIndicator('expired');
+                    });
+                }
+            }
+        }
+    },
+
+    /**
+     * Check if the current token is still valid.
+     * @private
+     */
+    _checkTokenValidity() {
+        if (!this._provider || !this._isOnline) return;
+
+        // Check if provider has isConnected method
+        if (typeof this._provider.isConnected === 'function') {
+            const isValid = this._provider.isConnected();
+            if (!isValid) {
+                console.log('[SyncService] Token expired or invalid');
+                this._updateCloudIndicator('expired');
+            }
         }
     },
 
@@ -109,7 +193,7 @@ export const SyncService = {
 
     /**
      * Update the cloud sync indicator in the header.
-     * @param {'connected'|'expired'|'syncing'|'disconnected'} state
+     * @param {'connected'|'expired'|'syncing'|'local'|'disconnected'} state
      * @private
      */
     _updateCloudIndicator(state) {
@@ -119,46 +203,127 @@ export const SyncService = {
             if (!indicator) return;
 
             // Remove all state classes
-            indicator.classList.remove('connected', 'expired', 'syncing', 'disconnected');
+            indicator.classList.remove('connected', 'expired', 'syncing', 'local', 'disconnected');
 
-            if (state === 'disconnected') {
-                // Hide indicator when not configured
-                indicator.style.display = 'none';
-                return;
-            }
-
-            // Show indicator and apply state class
+            // Always show indicator - even in local mode
             indicator.style.display = 'flex';
             indicator.classList.add(state);
+
+            // Update main icon based on state
+            const mainIcon = indicator.querySelector('i.fa-cloud, i.fa-hard-drive');
+            if (mainIcon) {
+                if (state === 'local') {
+                    mainIcon.classList.remove('fa-cloud');
+                    mainIcon.classList.add('fa-hard-drive');
+                } else {
+                    mainIcon.classList.remove('fa-hard-drive');
+                    mainIcon.classList.add('fa-cloud');
+                }
+            }
 
             // Update badge icon
             const badge = indicator.querySelector('.cloud-status-badge');
             if (badge) {
                 const icons = {
-                    connected: '<i class="fas fa-check"></i>',
-                    expired: '<i class="fas fa-exclamation"></i>',
-                    syncing: ''
+                    connected: '',
+                    expired: '',
+                    syncing: '',
+                    local: ''
                 };
-                badge.innerHTML = icons[state] || '';
+                badge.innerHTML = '';
             }
 
-            // Update tooltip
+            // Update tooltip text
             const tooltips = {
-                connected: 'Google Drive connecté',
-                expired: 'Session expirée — Cliquer pour reconnecter',
-                syncing: 'Synchronisation en cours...'
+                connected: 'Google Drive connecté<br><span class="kbd-hint">Cliquer pour ouvrir les paramètres</span>',
+                expired: 'Session expirée<br><span class="kbd-hint">Cliquer pour reconnecter</span>',
+                syncing: 'Synchronisation en cours...',
+                local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Cliquer pour configurer le cloud</span>'
             };
-            indicator.setAttribute('data-tooltip', tooltips[state] || 'Synchronisation Cloud');
+            const tooltipText = tooltips[state] || 'Synchronisation Cloud';
 
-            // Setup click handler for expired state
-            if (state === 'expired' && !indicator._hasClickHandler) {
-                indicator._hasClickHandler = true;
-                indicator.addEventListener('click', () => {
-                    if (indicator.classList.contains('expired')) {
-                        this.reconnect();
-                    }
-                });
+            // Update attribute for CSS/HTML fallback
+            indicator.setAttribute('data-tooltip', tooltipText);
+
+            // Update Tippy instance if it exists (critical for dynamic updates)
+            if (indicator._tippy) {
+                indicator._tippy.setContent(tooltipText);
             }
+
+            // Force update click handler
+            indicator.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                console.log('[SyncService] Cloud indicator clicked. State:', state);
+
+                // Don't allow click during sync
+                if (indicator.classList.contains('syncing')) return;
+
+                // If expired, try reconnecting first -> User prefers opening settings to see what's wrong
+                // if (indicator.classList.contains('expired')) {
+                //    this.reconnect();
+                //    return;
+                // }
+
+                // Always open settings to sync tab (user can reconnect from there)
+                this._openSyncSettings();
+            };
+        }, 100);
+    },
+
+    /**
+     * Open settings modal on the sync tab.
+     * @private
+     */
+    _openSyncSettings() {
+        console.log('[SyncService] Opening sync settings...');
+
+        // Try multiple ways to get the modal and UI
+        const settingsModal = document.getElementById('appSettingsModal') || window.DOM?.settingsModal;
+        const uiManager = window.UI;
+
+        if (!settingsModal) {
+            console.error('[SyncService] Settings modal not found (ID: appSettingsModal)');
+            return;
+        }
+
+        if (!uiManager) {
+            console.error('[SyncService] UI Manager not found in window.UI');
+            // Try to import dynamically if missing? No, user interactions should happen after init.
+            return;
+        }
+
+        console.log('[SyncService] Modal and UI found, opening...');
+        uiManager.openModal(settingsModal);
+
+        // Wait for modal animation to start/finish before switching tabs and focusing
+        setTimeout(() => {
+            // Switch to the 'advanced' tab which contains the sync settings
+            if (uiManager.showSettingsTab) {
+                console.log('[SyncService] Switching to advanced tab (Application)...');
+                uiManager.showSettingsTab('advanced');
+            }
+
+            // Scroll to the specific section and focus button
+            setTimeout(() => {
+                // Scroll to sync section
+                const syncSection = document.getElementById('cloudSyncSection');
+                if (syncSection) {
+                    syncSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // Focus the Connect button (or disconnect) for better accessibility
+                const connectBtn = document.getElementById('connectGoogleBtn');
+                const disconnectBtn = document.getElementById('disconnectGoogleBtn');
+
+                // Focus visible button
+                if (disconnectBtn && disconnectBtn.offsetParent !== null) {
+                    disconnectBtn.focus();
+                } else if (connectBtn && connectBtn.offsetParent !== null) {
+                    connectBtn.focus();
+                }
+            }, 400); // Wait for tab transition (approx 350ms)
         }, 100);
     },
 
@@ -258,6 +423,8 @@ export const SyncService = {
             // Save preference
             localStorage.setItem('bulletin_sync_provider', providerName);
             this._setStatus('idle');
+            // FIX: Ensure UI is updated immediately after connection
+            this._updateCloudIndicator('connected');
             return true;
 
         } catch (error) {
@@ -318,6 +485,8 @@ export const SyncService = {
 
         try {
             this._setStatus('syncing');
+            // FIX: Show syncing state in UI
+            this._updateCloudIndicator('syncing');
 
             // 1. Get local and remote data
             const localData = await this._getLocalData();
@@ -386,11 +555,15 @@ export const SyncService = {
             localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
 
             this._setStatus('idle');
+            // FIX: Return to connected state in UI
+            this._updateCloudIndicator('connected');
+
             return { success: true, stats };
 
         } catch (error) {
             console.error('[SyncService] Sync error:', error);
             this._setStatus('error');
+            // Optional: visual feedback for error, but usually we just keep existing state or toast
             return { success: false, stats: {}, error: error.message };
         }
     },

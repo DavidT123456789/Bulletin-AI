@@ -58,6 +58,8 @@ export function initDOM() {
     DOM.settingsButton = document.getElementById('settingsButton');
     DOM.helpButton = document.getElementById('helpButton');
     DOM.mainPeriodSelector = document.getElementById('mainPeriodSelector');
+    DOM.headerMenuBtn = document.getElementById('headerMenuBtn');
+    DOM.headerMenuDropdown = document.getElementById('headerMenuDropdown');
     // Class selector elements
     DOM.headerClassChip = document.getElementById('headerClassChip');
     DOM.headerClassName = document.getElementById('headerClassName');
@@ -66,20 +68,20 @@ export function initDOM() {
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');
-    // AI model chip
-    DOM.headerAiModelChip = document.getElementById('headerAiModelChip');
-    DOM.headerAiModelName = document.getElementById('headerAiModelName');
-
-    // Generation Status Chip (unified progress + errors)
-    DOM.headerGenerationStatus = document.getElementById('headerGenerationStatus');
-    DOM.headerProgressFill = document.getElementById('headerProgressFill');
-    DOM.headerProgressText = document.getElementById('headerProgressText');
-    DOM.headerErrorAction = document.getElementById('headerErrorAction');
-    DOM.headerErrorCount = document.getElementById('headerErrorCount');
-    DOM.headerCancelBtn = document.getElementById('headerCancelBtn');
-    // Header Generate Button (idle-pending state)
-    DOM.headerGenerateBtn = document.getElementById('headerGenerateBtn');
-    DOM.headerPendingCount = document.getElementById('headerPendingCount');
+    // Generation Dashboard
+    DOM.headerGenDashboard = document.getElementById('headerGenDashboard');
+    DOM.dashModelLabel = document.getElementById('dashModelLabel');
+    DOM.dashModelName = document.getElementById('dashModelName');
+    DOM.dashValidated = document.getElementById('dashValidated');
+    DOM.dashValidatedCount = document.getElementById('dashValidatedCount');
+    DOM.dashErrors = document.getElementById('dashErrors');
+    DOM.dashErrorCount = document.getElementById('dashErrorCount');
+    DOM.dashPending = document.getElementById('dashPending');
+    DOM.dashPendingCount = document.getElementById('dashPendingCount');
+    DOM.dashGenerating = document.getElementById('dashGenerating');
+    DOM.dashProgressFill = document.getElementById('dashProgressFill');
+    DOM.dashProgressText = document.getElementById('dashProgressText');
+    DOM.dashCancelBtn = document.getElementById('dashCancelBtn');
 
     DOM.inputSection = document.getElementById('inputSection');
     DOM.massImportTab = document.getElementById('massImportTab');
@@ -141,6 +143,12 @@ export function initDOM() {
     DOM.sortSelect = document.getElementById('sortSelect');
     DOM.fileInput = document.getElementById('fileInput');
     DOM.settingsModal = document.getElementById('appSettingsModal');
+    DOM.settingsModal = document.getElementById('appSettingsModal');
+    DOM.personalizationModal = document.getElementById('personalizationModal');
+    DOM.personalizationBtn = document.getElementById('personalizationBtn');
+    DOM.closePersonalizationModalBtn = document.getElementById('closePersonalizationModalBtn');
+    DOM.cancelPersonalizationBtn = document.getElementById('cancelPersonalizationBtn');
+    DOM.savePersonalizationBtn = document.getElementById('savePersonalizationBtn');
     DOM.closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');
     DOM.periodSystemRadios = document.querySelectorAll('input[name="periodSystemRadio"]');
     DOM.settingsEvolutionThresholdPositive = document.getElementById('evolutionThresholdPositive');
@@ -149,11 +157,8 @@ export function initDOM() {
     DOM.resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
     DOM.saveSettingsBtn = document.getElementById('saveSettingsBtn');
     DOM.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-    DOM.settingsTabs = document.querySelectorAll('.settings-tab');
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.enableApiFallbackToggle = document.getElementById('enableApiFallbackToggle');
-    DOM.templatesTabContent = document.getElementById('templatesTabContent');
-    DOM.optionsTabContent = document.getElementById('optionsTabContent');
     DOM.advancedTabContent = document.getElementById('advancedTabContent');
     DOM.aiModelSelect = document.getElementById('aiModelSelect');
     DOM.openaiApiKey = document.getElementById('openaiApiKey');

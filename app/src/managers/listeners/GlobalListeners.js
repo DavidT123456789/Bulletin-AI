@@ -157,6 +157,7 @@ export const GlobalListeners = {
     _aiFallbackListenerAttached: false,
     _lastFallbackNotificationTime: 0,
     _fallbackNotificationDebounceMs: 3000,
+    _modelHistory: [], // Track model usage history
 
     _setupAiFallbackListener() {
         // Guard: avoid adding listener multiple times
@@ -173,111 +174,126 @@ export const GlobalListeners = {
             const shortOriginal = MODEL_SHORT_NAMES[originalModel] || originalModel;
             const shortUsed = MODEL_SHORT_NAMES[usedModel] || usedModel;
 
+            // Track model history
+            this._modelHistory.push({ from: shortOriginal, to: shortUsed, reason, timestamp: Date.now() });
+            if (this._modelHistory.length > 5) this._modelHistory.shift(); // Keep last 5
+
             // Déduplication : évite les notifications en double pour les appels parallèles
             const now = Date.now();
             if (now - this._lastFallbackNotificationTime > this._fallbackNotificationDebounceMs) {
                 this._lastFallbackNotificationTime = now;
 
-                // Notification toast améliorée avec séparateurs clairs et typographie française
-                // Formater la raison pour la rendre plus courte si possible
+                // Notification toast
                 let shortReason = reason || 'Erreur API';
-                // Tronquer les messages d'erreur trop longs
-                if (shortReason.length > 60) {
-                    shortReason = shortReason.substring(0, 60) + '…';
-                }
+                if (shortReason.length > 60) shortReason = shortReason.substring(0, 60) + '…';
 
-                // Format: "Fallback : Modèle A → Modèle B" sur une ligne
-                // puis "Raison : message d'erreur" sur la ligne suivante
                 UI.showNotification(
                     `⚡ <strong>Fallback</strong> • ${shortOriginal} → ${shortUsed}<br>📋 <strong>Raison</strong> • ${shortReason}`,
                     'warning'
                 );
             }
 
-            // Animation de la pillule du modèle IA
-            if (DOM.headerAiModelChip) {
-                const nameEl = DOM.headerAiModelChip.querySelector('#headerAiModelName');
+            // Animation de la pillule du modèle IA (migré vers dashModelLabel)
+            if (DOM.headerGenDashboard && DOM.dashModelName) {
+                const nameEl = DOM.dashModelName;
+                const targetName = shortUsed.split(' ')[0]; // Keep first word only
+                const currentDisplayedName = nameEl.textContent.trim();
 
                 // 1. Activer l'état fallback (animation flash + couleur orange)
-                DOM.headerAiModelChip.classList.remove('generating');
-                DOM.headerAiModelChip.classList.add('fallback-active');
+                DOM.headerGenDashboard.classList.add('fallback-active');
 
-                // 2. Animer le changement de nom du modèle (Effet Slot Machine / Glissement vers le haut)
-                if (nameEl) {
-                    // Étape A : L'ancien texte monte et disparait
+                // 2. Animer le changement de nom SEULEMENT si le texte change réellement
+                if (currentDisplayedName !== targetName) {
                     nameEl.classList.add('model-name-transition', 'exit-up');
 
                     setTimeout(() => {
-                        // Étape B : On coupe les transitions pour téléporter le texte en bas discrètement
                         nameEl.classList.remove('model-name-transition', 'exit-up');
                         nameEl.classList.add('enter-from-down');
+                        nameEl.textContent = targetName;
 
-                        // Changement effectif du texte
-                        nameEl.textContent = shortUsed;
+                        void nameEl.offsetHeight; // Force reflow
 
-                        // Force Reflow (obligatoire pour que le navigateur prenne en compte la position basse avant de réanimer)
-                        void nameEl.offsetHeight;
-
-                        // Étape C : On rétablit la transition et on fait monter le texte à sa place (0px)
                         nameEl.classList.add('model-name-transition');
                         nameEl.classList.remove('enter-from-down');
                     }, 200);
                 }
 
-                // 3. Tooltip avec détails du fallback (typographie française, sans HTML)
-                DOM.headerAiModelChip.setAttribute('data-tooltip',
-                    `⚡ Fallback • ${shortOriginal} → ${shortUsed}\n📋 Raison • ${reason || 'Erreur API'}`
-                );
+                // 3. Tooltip avec historique des modèles
+                const historyLines = this._modelHistory.map(h => `${h.from} → ${h.to}`).join('<br>');
+                const tooltipText = `⚡ Fallback actif<br>${historyLines}`;
 
-                // 4. Retour à l'état normal après quelques secondes
+                import('../TooltipsManager.js').then(({ TooltipsUI }) => {
+                    if (TooltipsUI?.updateTooltip) {
+                        TooltipsUI.updateTooltip(DOM.dashModelLabel, tooltipText);
+                    }
+                }).catch(() => {
+                    DOM.dashModelLabel?.setAttribute('data-tooltip', tooltipText);
+                });
+
+                // 4. Retour à l'état normal après 8 secondes
                 setTimeout(() => {
                     const defaultModelName = MODEL_SHORT_NAMES[appState.currentAIModel] || appState.currentAIModel;
+                    const shortDefault = defaultModelName.split(' ')[0];
 
                     if (nameEl) {
-                        // Animation de sortie vers le bas (Inverse)
-                        nameEl.classList.add('model-name-transition', 'exit-down');
+                        const currentText = nameEl.textContent.trim();
 
-                        setTimeout(() => {
-                            // Au milieu de l'animation (texte invisible) :
-                            // 1. On change la couleur du badge (retour au bleu/gris)
-                            DOM.headerAiModelChip.classList.remove('fallback-active');
+                        // Animer le retour SEULEMENT si le texte change réellement
+                        if (currentText !== shortDefault) {
+                            nameEl.classList.add('model-name-transition', 'exit-down');
 
-                            // 2. On prépare le nouveau texte en HAUT
-                            nameEl.classList.remove('model-name-transition', 'exit-down');
-                            nameEl.classList.add('enter-from-up');
-                            nameEl.textContent = defaultModelName;
+                            setTimeout(() => {
+                                DOM.headerGenDashboard.classList.remove('fallback-active');
+                                nameEl.classList.remove('model-name-transition', 'exit-down');
+                                nameEl.classList.add('enter-from-up');
+                                nameEl.textContent = shortDefault;
 
-                            // Force Reflow
-                            void nameEl.offsetHeight;
+                                void nameEl.offsetHeight;
 
-                            // 3. Animation d'entrée depuis le haut
-                            nameEl.classList.add('model-name-transition');
-                            nameEl.classList.remove('enter-from-up');
-                        }, 200);
+                                nameEl.classList.add('model-name-transition');
+                                nameEl.classList.remove('enter-from-up');
+                            }, 200);
+                        } else {
+                            // Pas d'animation nécessaire, juste retirer l'état fallback
+                            DOM.headerGenDashboard.classList.remove('fallback-active');
+                        }
                     } else {
-                        DOM.headerAiModelChip.classList.remove('fallback-active');
+                        DOM.headerGenDashboard.classList.remove('fallback-active');
                     }
 
-                    // Restaurer le nom du modèle configuré dans le tooltip (standardisé)
-                    DOM.headerAiModelChip.setAttribute('data-tooltip',
-                        `⚙️ Configuré • ${MODEL_SHORT_NAMES[appState.currentAIModel] || appState.currentAIModel}\n✅ Utilisé • ${shortUsed}`
-                    );
-                }, 5000);
+                    // Restaurer le tooltip standard avec historique
+                    const configuredModel = MODEL_SHORT_NAMES[appState.currentAIModel] || appState.currentAIModel;
+                    const lastUsed = this._modelHistory.length > 0
+                        ? this._modelHistory[this._modelHistory.length - 1].to
+                        : configuredModel;
+
+                    const finalTooltip = `⚙️ ${configuredModel}<br>✅ Dernier : ${lastUsed}`;
+
+                    import('../TooltipsManager.js').then(({ TooltipsUI }) => {
+                        if (TooltipsUI?.updateTooltip) {
+                            TooltipsUI.updateTooltip(DOM.dashModelLabel, finalTooltip);
+                        }
+                    }).catch(() => {
+                        DOM.dashModelLabel?.setAttribute('data-tooltip', finalTooltip);
+                    });
+                }, 8000);
             }
         });
 
         // Listener pour démarrer/arrêter l'animation de génération
         window.addEventListener('ai-generation-start', () => {
-            if (DOM.headerAiModelChip) {
-                DOM.headerAiModelChip.classList.add('generating');
-                DOM.headerAiModelChip.classList.remove('fallback-active');
+            if (DOM.headerGenDashboard) {
+                DOM.headerGenDashboard.classList.add('generating');
+                DOM.headerGenDashboard.classList.remove('fallback-active');
             }
         });
 
+        // NOTE: On n'enlève PAS la classe 'generating' ici car cet événement est émis
+        // pour CHAQUE génération individuelle, pas pour la génération en masse complète.
+        // Le hideHeaderProgress() du UIManager s'en charge à la fin de la génération complète.
         window.addEventListener('ai-generation-end', () => {
-            if (DOM.headerAiModelChip) {
-                DOM.headerAiModelChip.classList.remove('generating');
-            }
+            // Ne rien faire ici - évite les oscillations contraction/dilatation
+            // pendant les générations en masse
         });
     },
 

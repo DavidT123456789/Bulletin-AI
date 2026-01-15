@@ -13,6 +13,7 @@
  */
 
 import { appState } from '../state/State.js';
+import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
@@ -24,6 +25,7 @@ import { ImportUI } from './ImportUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { ThemeManager } from './ThemeManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -55,7 +57,9 @@ export const UI = {
         App = appInstance;
         // Initialize sub-managers
         FormUI.init(appInstance);
+
         ImportUI.init(this, appInstance);
+        ThemeManager.init();
         // Initialize stats view toggle
         StatsUI.initViewToggle();
         // Initialize tooltips at startup
@@ -225,21 +229,20 @@ export const UI = {
     //  THÈME ET DARK MODE
     // ====================================================================
 
+    // ====================================================================
+    //  THÈME ET DARK MODE
+    // ====================================================================
+
     applyTheme() {
-        document.documentElement.dataset.theme = appState.theme === 'light' ? '' : 'dark';
-        this.updateDarkModeButtonIcon();
+        ThemeManager.applyTheme();
     },
     toggleDarkMode() {
-        appState.theme = (appState.theme === 'dark') ? 'light' : 'dark';
-        UI.applyTheme();
-        StorageManager.saveAppState();
+        // Legacy support: toggle between light and dark (ignoring system for simple toggle)
+        const newTheme = appState.theme === 'dark' ? 'light' : 'dark';
+        ThemeManager.setTheme(newTheme);
     },
     updateDarkModeButtonIcon() {
-        if (DOM.darkModeToggle) {
-            const isDark = appState.theme === 'dark';
-            DOM.darkModeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-            DOM.darkModeToggle.setAttribute('data-tooltip', isDark ? 'Mode clair' : 'Mode sombre');
-        }
+        ThemeManager.updateUI();
     },
 
     // ====================================================================
@@ -642,172 +645,196 @@ export const UI = {
     // ====================================================================
 
     /**
-     * Shows the generation status chip with progress
+     * Shows the generation status on the dashboard
      * @param {number} current - Current count
      * @param {number} total - Total count
      * @param {string} [studentName] - Current student name
      */
     showHeaderProgress(current, total, studentName = '') {
-        const chip = DOM.headerGenerationStatus;
-        if (!chip) return;
+        const dashboard = DOM.headerGenDashboard;
+        if (!dashboard) return;
 
-        // Show chip with generating state
-        chip.classList.add('visible', 'generating');
-        chip.classList.remove('has-errors', 'success', 'fade-out');
+        // Show generating state
+        dashboard.classList.add('generating');
 
         // Update progress bar
         const percent = total > 0 ? (current / total) * 100 : 0;
-        if (DOM.headerProgressFill) {
-            DOM.headerProgressFill.style.width = `${percent}%`;
+        if (DOM.dashProgressFill) {
+            DOM.dashProgressFill.style.width = `${percent}%`;
         }
 
         // Update text
-        if (DOM.headerProgressText) {
-            const shortName = studentName ? ` ${studentName.split(' ')[0]}` : '';
-            DOM.headerProgressText.innerHTML = `<span>${current}/${total}</span><span class="student-name">${shortName}</span>`;
-        }
-
-        // Hide error badge during generation
-        if (DOM.headerErrorAction) {
-            DOM.headerErrorAction.classList.remove('visible');
+        if (DOM.dashProgressText) {
+            DOM.dashProgressText.textContent = `${current}/${total}`;
         }
     },
 
     /**
-     * Hides the generation status chip (or shows errors if any)
+     * Hides the generating state and refreshes dashboard counts
      * @param {boolean} [hasErrors=false] - Whether there are errors to show
      * @param {number} [errorCount=0] - Number of errors
      */
     hideHeaderProgress(hasErrors = false, errorCount = 0) {
-        const chip = DOM.headerGenerationStatus;
-        if (!chip) return;
+        const dashboard = DOM.headerGenDashboard;
+        if (!dashboard) return;
 
-        chip.classList.remove('generating');
+        dashboard.classList.remove('generating');
 
-        if (hasErrors && errorCount > 0) {
-            // Show error state
-            chip.classList.add('visible', 'has-errors');
-            chip.classList.remove('success');
+        // Reset progress
+        if (DOM.dashProgressFill) {
+            DOM.dashProgressFill.style.width = '0%';
+        }
 
-            if (DOM.headerProgressText) {
-                DOM.headerProgressText.textContent = 'Terminé';
-            }
+        // Refresh the dashboard counts
+        this.updateDashboardCounts();
 
-            if (DOM.headerErrorAction) {
-                DOM.headerErrorAction.classList.add('visible');
-                DOM.headerErrorAction.setAttribute('data-tooltip',
-                    `${errorCount} Erreur${errorCount > 1 ? 's' : ''} - Cliquer pour régénérer`);
-            }
-
-            if (DOM.headerErrorCount) {
-                DOM.headerErrorCount.textContent = errorCount;
-            }
-        } else {
-            // Success state - show briefly then hide
-            chip.classList.add('success');
-            chip.classList.remove('has-errors');
-
-            if (DOM.headerProgressText) {
-                DOM.headerProgressText.textContent = 'Terminé';
-            }
-
-            // Fade out after success
+        // Brief success flash if no errors
+        if (!hasErrors) {
+            dashboard.classList.add('all-complete');
             setTimeout(() => {
-                chip.classList.add('fade-out');
-                setTimeout(() => {
-                    chip.classList.remove('visible', 'success', 'fade-out');
-                }, 400);
+                dashboard.classList.remove('all-complete');
             }, 1500);
         }
     },
 
     /**
-     * Updates the error count in the header chip
-     * @param {number} count - Number of errors
+     * Updates the dashboard with current class statistics
+     * Called after any generation, import, or data change
      */
-    updateHeaderErrors(count) {
-        const chip = DOM.headerGenerationStatus;
-        if (!chip) return;
+    updateDashboardCounts() {
+        const results = appState.filteredResults || appState.generatedResults || [];
+        const currentPeriod = appState.currentPeriod;
 
-        if (count > 0) {
-            chip.classList.add('visible', 'has-errors');
-            chip.classList.remove('generating', 'success');
-
-            if (DOM.headerProgressText) {
-                DOM.headerProgressText.textContent = '';
-            }
-
-            if (DOM.headerErrorAction) {
-                DOM.headerErrorAction.classList.add('visible');
-                DOM.headerErrorAction.setAttribute('data-tooltip',
-                    `${count} Erreur${count > 1 ? 's' : ''} - Cliquer pour régénérer`);
-            }
-
-            if (DOM.headerErrorCount) {
-                DOM.headerErrorCount.textContent = count;
-            }
-
-            // Hide progress bar in error-only state
-            if (DOM.headerProgressFill) {
-                DOM.headerProgressFill.style.width = '0%';
-            }
-        } else {
-            // No errors - hide the chip if not generating
-            if (!chip.classList.contains('generating')) {
-                chip.classList.remove('visible', 'has-errors');
-                if (DOM.headerErrorAction) {
-                    DOM.headerErrorAction.classList.remove('visible');
+        let validated = 0;
+        let errors = 0;
+        let pending = 0;
+        // Collect error messages for tooltip
+        const errorMessages = [];
+        for (const result of results) {
+            // Check for errors first
+            if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
+                errors++;
+                // Collect unique error types for tooltip
+                const shortError = result.errorMessage.length > 50
+                    ? result.errorMessage.substring(0, 50) + '…'
+                    : result.errorMessage;
+                if (!errorMessages.includes(shortError)) {
+                    errorMessages.push(shortError);
                 }
+                continue;
             }
+
+            // Check if has valid appreciation for current period
+            const periodData = result.studentData?.periods?.[currentPeriod];
+            const appreciation = periodData?.appreciation || result.appreciation;
+
+            if (appreciation && typeof appreciation === 'string') {
+                const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+                const isPlaceholder = textOnly === '' ||
+                    textOnly.includes('en attente') ||
+                    textOnly.includes('aucune appréciation') ||
+                    textOnly.includes('cliquez sur') ||
+                    textOnly.startsWith('remplissez');
+
+                if (!isPlaceholder) {
+                    validated++;
+                } else {
+                    pending++;
+                }
+            } else {
+                pending++;
+            }
+        }
+
+        // Update validated count
+        if (DOM.dashValidatedCount) {
+            DOM.dashValidatedCount.textContent = validated;
+        }
+
+        // Update error count (show/hide badge) with tooltip
+        if (DOM.dashErrors && DOM.dashErrorCount) {
+            DOM.dashErrorCount.textContent = errors;
+            DOM.dashErrors.classList.toggle('visible', errors > 0);
+
+            // Update tooltip with error details (avoid redundant text)
+            if (errors > 0 && errorMessages.length > 0) {
+                const errorList = errorMessages.slice(0, 3).join('<br>');
+                const moreText = errorMessages.length > 3 ? `<br>(+${errorMessages.length - 3} autre(s))` : '';
+                const tooltipText = `${errorList}${moreText}<br><span style="font-style:italic; opacity:0.8; font-size:0.9em">Cliquer pour régénérer</span>`;
+                DOM.dashErrors.setAttribute('data-tooltip', tooltipText);
+            }
+        }
+
+        // Pending badge hidden in ultra-minimalist mode (count shown in Generate button)
+
+        // Update model name display
+        const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
+        // Extract just the first word for compact display (e.g., "Gemini 2.5 Flash" -> "Gemini")
+        const shortModelName = modelName.split(' ')[0];
+
+        // Update model name TEXT
+        if (DOM.dashModelName) {
+            DOM.dashModelName.textContent = shortModelName;
+        }
+
+        // Use consistent icon for all providers (model NAME provides differentiation)
+        const providerIcon = 'fas fa-microchip';
+
+        // Update icon in DOM
+        if (DOM.dashModelLabel) {
+            const iconEl = DOM.dashModelLabel.querySelector('i');
+            if (iconEl) iconEl.className = providerIcon;
+        }
+
+        if (DOM.dashModelLabel) {
+            // Richer HTML tooltip with italics on second line
+            // Tippy.js configured with allowHTML: true
+            const tooltip = `<strong>${modelName}</strong><br><span style="font-style:italic; opacity:0.8; font-size:0.9em">Cliquer pour changer</span>`;
+
+            // Use TooltipsManager to update if possible, otherwise attributes
+            import('./TooltipsManager.js').then(({ TooltipsUI }) => {
+                if (TooltipsUI && TooltipsUI.updateTooltip) {
+                    TooltipsUI.updateTooltip(DOM.dashModelLabel, tooltip);
+                } else {
+                    DOM.dashModelLabel.setAttribute('data-tooltip', tooltip);
+                }
+            }).catch(() => {
+                DOM.dashModelLabel.setAttribute('data-tooltip', tooltip);
+            });
+        }
+
+        // Add all-complete state if everything is done
+        if (DOM.headerGenDashboard) {
+            const allDone = validated > 0 && pending === 0 && errors === 0;
+            DOM.headerGenDashboard.classList.toggle('all-complete', allDone);
         }
     },
 
     /**
-     * Resets the header generation status chip
+     * Resets the dashboard state
      */
     resetHeaderProgress() {
-        const chip = DOM.headerGenerationStatus;
-        if (!chip) return;
+        const dashboard = DOM.headerGenDashboard;
+        if (!dashboard) return;
 
-        chip.classList.remove('visible', 'generating', 'has-errors', 'success', 'fade-out', 'idle-pending');
+        dashboard.classList.remove('generating', 'all-complete');
 
-        if (DOM.headerProgressFill) {
-            DOM.headerProgressFill.style.width = '0%';
+        if (DOM.dashProgressFill) {
+            DOM.dashProgressFill.style.width = '0%';
         }
-        if (DOM.headerProgressText) {
-            DOM.headerProgressText.textContent = '0/0';
+        if (DOM.dashProgressText) {
+            DOM.dashProgressText.textContent = '0/0';
         }
-        if (DOM.headerErrorAction) {
-            DOM.headerErrorAction.classList.remove('visible');
-        }
+
+        this.updateDashboardCounts();
     },
 
     /**
-     * Updates the header chip to show pending generation count (idle state)
-     * NOTE: idle-pending state is now handled by inline buttons in table header
-     * This chip only shows during generation (progress) or for errors
-     * @param {number} pendingCount - Number of students awaiting generation
+     * Legacy method - now calls updateDashboardCounts
+     * @deprecated Use updateDashboardCounts instead
      */
     updateGenerateChipState(pendingCount) {
-        const chip = DOM.headerGenerationStatus;
-        if (!chip) return;
-
-        // Don't update if currently generating
-        if (chip.classList.contains('generating')) return;
-
-        // Update pending count (kept for reference but not displayed in header)
-        if (DOM.headerPendingCount) {
-            DOM.headerPendingCount.textContent = pendingCount;
-        }
-
-        // DISABLED: idle-pending state is now shown via inline buttons in table header
-        // Only show chip for errors (has-errors state is managed by hideHeaderProgress)
-        chip.classList.remove('idle-pending', 'visible', 'success', 'fade-out');
-
-        // Keep visible only if there are errors to display
-        if (chip.classList.contains('has-errors')) {
-            chip.classList.add('visible');
-        }
+        this.updateDashboardCounts();
     },
 
     // Legacy delegations - now redirect to header chip
@@ -1048,8 +1075,8 @@ export const UI = {
             regenErrorsBtnShortcut.style.display = errorCount > 0 ? 'inline-flex' : 'none';
         }
 
-        // Update unified header generation status chip with error count
-        this.updateHeaderErrors(errorCount);
+        // Update generation dashboard with current counts
+        this.updateDashboardCounts();
     },
     updateCopyAllButton() {
         const total = appState.generatedResults.length, filtered = appState.filteredResults.length;

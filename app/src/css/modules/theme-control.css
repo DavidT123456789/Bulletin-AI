@@ -1,0 +1,146 @@
+/* ==========================================================================
+   MODULE: Theme Control (Segmented)
+   ========================================================================== */
+
+/* Container wrapper to ensure proper spacing in menu */
+.theme-control-wrapper {
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+}
+
+/* The main container for the segmented control */
+.theme-segmented-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: var(--surface-hover);
+    /* Slightly lighter/darker than bg */
+    border-radius: 999px;
+    /* Pill shape */
+    padding: 4px;
+    width: 100%;
+    height: 40px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Subtle inner shadow */
+    isolation: isolate;
+    /* Create stacking context */
+}
+
+/* Individual segments (buttons) */
+.theme-segment {
+    flex: 1;
+    position: relative;
+    z-index: 2;
+    /* Above the glider */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    height: 100%;
+    border-radius: 999px;
+    outline: none;
+    /* Focus handled by :focus-visible */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Icon inside the segment */
+.theme-segment i {
+    pointer-events: none;
+    /* Pass clicks to button */
+}
+
+/* Hover state for non-active segments */
+.theme-segment:hover {
+    color: var(--text-primary);
+}
+
+/* Active state (text color) */
+.theme-segment.active {
+    color: var(--primary-color);
+}
+
+/* The Glider (Sliding Background) */
+.theme-glider {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 3);
+    /* 3 segments, minus padding */
+    background-color: var(--surface);
+    border-radius: 999px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    z-index: 1;
+    /* Behind text/icon */
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* Spring-like easing */
+    pointer-events: none;
+}
+
+/* Glider Positioning Logic */
+/* We can use data attributes on the parent to drive the glider position 
+   managed by JS, but simpler is to use classes or just explicit transform via JS.
+   
+   However, we can do it with pure CSS if we use :has() or similar, 
+   but for broad compatibility and simplicity, let's use a class or attribute on the container.
+*/
+
+/* Default (Light) - Position 0 */
+.theme-segmented-control[data-active="light"] .theme-glider {
+    transform: translateX(0%);
+}
+
+/* System - Position 1 */
+.theme-segmented-control[data-active="system"] .theme-glider {
+    transform: translateX(100%);
+}
+
+/* Dark - Position 2 */
+.theme-segmented-control[data-active="dark"] .theme-glider {
+    transform: translateX(200%);
+}
+
+/* High Contrast Focus Rings */
+.theme-segment:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .theme-segmented-control {
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Darker track for depth */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Subtle border definition */
+}
+
+[data-theme="dark"] .theme-glider {
+    background-color: rgba(255, 255, 255, 0.15);
+    /* Lighter, translucent glider */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    /* Glassmorphism effect */
+}
+
+[data-theme="dark"] .theme-segment {
+    color: rgba(255, 255, 255, 0.4);
+    /* Dimmed inactive state */
+}
+
+[data-theme="dark"] .theme-segment:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="dark"] .theme-segment.active {
+    color: #ffffff;
+    /* Bright white active state */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    /* Subtle glow */
+}

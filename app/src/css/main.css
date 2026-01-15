@@ -20,6 +20,7 @@
 @import './modules/import-hub.css';
 @import './modules/notifications.css';
 @import './modules/generation-status.css';
+@import './modules/gen-dashboard.css';
 @import './modules/animations.css';
 @import './modules/refinement.css';
 @import './modules/student-details.css';
@@ -35,5 +36,6 @@
 @import './modules/journal.css';
 @import './modules/list-focus.css';
 @import './modules/responsive.css';
+@import './modules/theme-control.css';
 @import './utilities.css';
 @import './accessibility.css';

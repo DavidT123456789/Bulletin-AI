@@ -121,6 +121,37 @@ export const ResultsUIManager = {
                     return grade >= min && grade < max;
                 }
 
+                // Dashboard badge filters
+                if (filter === 'generated') {
+                    // Has valid appreciation for current period (not placeholder)
+                    const appreciation = r.studentData?.periods?.[activePeriod]?.appreciation || r.appreciation;
+                    if (!appreciation) return false;
+                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+                    const isPlaceholder = textOnly === '' ||
+                        textOnly.includes('en attente') ||
+                        textOnly.includes('aucune appréciation') ||
+                        textOnly.includes('cliquez sur') ||
+                        textOnly.startsWith('remplissez');
+                    return !isPlaceholder && !r.errorMessage;
+                }
+
+                if (filter === 'error') {
+                    return !!(r.errorMessage && r.studentData?.currentPeriod === activePeriod);
+                }
+
+                if (filter === 'pending') {
+                    // No valid appreciation for current period
+                    if (r.errorMessage && r.studentData?.currentPeriod === activePeriod) return false;
+                    const appreciation = r.studentData?.periods?.[activePeriod]?.appreciation || r.appreciation;
+                    if (!appreciation) return true;
+                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+                    return textOnly === '' ||
+                        textOnly.includes('en attente') ||
+                        textOnly.includes('aucune appréciation') ||
+                        textOnly.includes('cliquez sur') ||
+                        textOnly.startsWith('remplissez');
+                }
+
                 return false;
             })
             .sort((a, b) => {

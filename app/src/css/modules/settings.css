@@ -362,7 +362,8 @@
     right: 4px;
     height: 4px;
     /* refined thickness */
-    background: var(--border-color);
+    background: var(--text-tertiary);
+    opacity: 0.3;
     /* Plus sombre pour être visible */
     border-radius: var(--radius-xs);
     z-index: 0;

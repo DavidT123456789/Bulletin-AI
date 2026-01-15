@@ -341,7 +341,7 @@ img {
     left: 0;
     right: 0;
     z-index: 1000;
-    padding: 16px 0;
+    padding: 8px 0;
     transition: all var(--lp-duration-fast) var(--lp-ease-material);
 }
 
@@ -372,7 +372,7 @@ img {
 }
 
 .lp-nav__logo {
-    height: 40px;
+    height: 56px;
     width: auto;
 }
 
@@ -2443,7 +2443,7 @@ img {
 
 /* Footer Wide Variant - Horizontal Layout */
 .lp-footer--wide {
-    padding: 24px 0;
+    padding: 12px 0;
 }
 
 .lp-footer__wide {
@@ -2465,8 +2465,8 @@ img {
 }
 
 .lp-footer__logo-sm {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--lp-radius-sm);
 }
 

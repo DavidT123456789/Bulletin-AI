@@ -31,7 +31,8 @@
     <meta name="twitter:image" content="./assets/icon-512.png">
     <!-- CSP removed for GitHub Pages compatibility -->
     <title>Bulletin AI | Votre assistant de rédaction</title>
-    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/svg+xml" href="assets/icon-dark-mode.svg" media="(prefers-color-scheme: dark)">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
@@ -109,53 +110,93 @@
                 </div>
 
                 <div class="header-actions">
-                    <div id="headerAiModelChip" class="header-context-chip ai-model-chip tooltip" role="button"
-                        tabindex="0" data-tooltip="Cliquer pour changer de modèle">
-                        <span class="icon"><i class="fas fa-microchip"></i></span>
-                        <span id="headerAiModelName">Gemini 2.5 Flash</span>
-                    </div>
-                    <!-- Generation Status Chip: Progress + Errors + Generate (idle) unified -->
-                    <div id="headerGenerationStatus" class="generation-status-chip" role="status" aria-live="polite"
+                    <!-- Generation Dashboard: Always shows class status -->
+                    <div id="headerGenDashboard" class="header-gen-dashboard" role="status" aria-live="polite"
                         aria-label="Statut de génération">
-                        <!-- Idle state: Generate button -->
-                        <button class="generation-idle-btn tooltip" id="headerGenerateBtn"
-                            data-tooltip="Générer les appréciations en attente">
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                            <span class="pending-count" id="headerPendingCount">0</span>
+                        <!-- Model indicator (subtle, clickable) -->
+                        <button class="dash-model-label tooltip" id="dashModelLabel"
+                            data-tooltip="Cliquer pour changer de modèle">
+                            <i class="fas fa-microchip"></i>
+                            <span id="dashModelName">Gemini</span>
                         </button>
-                        <!-- Generating state: Progress bar + text -->
-                        <div class="generation-progress-bar">
-                            <div class="generation-progress-fill" id="headerProgressFill" style="width: 0%"></div>
-                        </div>
-                        <span class="generation-text" id="headerProgressText">0/0</span>
-                        <button class="generation-error-badge" id="headerErrorAction"
-                            data-tooltip="Cliquer pour régénérer">
+                        <div class="dash-divider"></div>
+                        <!-- Validated count -->
+                        <button class="dash-badge dash-validated" id="dashValidated"
+                            data-tooltip="Appréciations validées – Cliquer pour filtrer">
+                            <i class="fas fa-check"></i>
+                            <span class="dash-count" id="dashValidatedCount">0</span>
+                        </button>
+                        <!-- Error count (hidden if 0) -->
+                        <button class="dash-badge dash-errors" id="dashErrors"
+                            data-tooltip="Erreurs – Cliquer pour régénérer">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <span id="headerErrorCount">0</span>
+                            <span class="dash-count" id="dashErrorCount">0</span>
                         </button>
-                        <button class="generation-cancel-btn tooltip" id="headerCancelBtn"
-                            data-tooltip="Annuler la génération" aria-label="Annuler">
-                            <i class="fas fa-xmark"></i>
+                        <!-- Pending count -->
+                        <button class="dash-badge dash-pending" id="dashPending"
+                            data-tooltip="En attente – Cliquer pour générer">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span class="dash-count" id="dashPendingCount">0</span>
                         </button>
+                        <!-- Generating state overlay -->
+                        <div class="dash-generating" id="dashGenerating">
+                            <div class="dash-progress-bar">
+                                <div class="dash-progress-fill" id="dashProgressFill"></div>
+                            </div>
+                            <span class="dash-progress-text" id="dashProgressText">0/0</span>
+                            <button class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="header-actions-pill">
-                        <button id="cloudSyncIndicator" class="pill-segment cloud-sync-indicator tooltip"
+                        <button id="cloudSyncIndicator" class="pill-segment cloud-sync-indicator minimal-cloud tooltip"
                             data-tooltip="Synchronisation Cloud" aria-label="État de la synchronisation cloud"
                             style="display: none;">
                             <i class="fas fa-cloud"></i>
                             <span class="cloud-status-badge"></span>
                         </button>
-                        <button id="installPwaBtn" class="pill-segment tooltip pwa-install-btn"
-                            data-tooltip="Installer l'application" aria-label="Installer l'application"
-                            style="display: none;">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button id="helpButton" class="pill-segment tooltip" data-tooltip="Aide"
-                            aria-label="Ouvrir l'aide"><i class="fas fa-circle-question"></i></button>
-                        <button id="darkModeToggle" class="pill-segment tooltip" data-tooltip="Thème"
-                            aria-label="Changer le thème"><i class="fas fa-moon"></i></button>
-                        <button id="settingsButton" class="pill-segment tooltip" data-tooltip="Paramètres"
-                            aria-label="Ouvrir les paramètres"><i class="fas fa-cog"></i></button>
+
+                        <div class="pill-divider"></div>
+
+                        <div class="dropdown-wrapper">
+                            <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu">
+                                <i class="fas fa-ellipsis-vertical"></i>
+                            </button>
+
+                            <div id="headerMenuDropdown" class="header-dropdown-menu">
+                                <div class="theme-control-wrapper">
+                                    <div class="theme-segmented-control" id="themeSegmentedControl" data-active="light">
+                                        <button class="theme-segment" data-value="light" aria-label="Mode clair"
+                                            title="Mode clair">
+                                            <i class="fas fa-sun"></i>
+                                        </button>
+                                        <button class="theme-segment" data-value="system" aria-label="Mode système"
+                                            title="Mode système">
+                                            <i class="fas fa-desktop"></i>
+                                        </button>
+                                        <button class="theme-segment" data-value="dark" aria-label="Mode sombre"
+                                            title="Mode sombre">
+                                            <i class="fas fa-moon"></i>
+                                        </button>
+                                        <div class="theme-glider"></div>
+                                    </div>
+                                </div>
+                                <div class="menu-separator"></div>
+                                <button id="personalizationBtn" class="menu-item">
+                                    <i class="fas fa-wand-magic-sparkles"></i> Personnalisation
+                                </button>
+                                <button id="settingsButton" class="menu-item">
+                                    <i class="fas fa-cog"></i> Paramètres
+                                </button>
+                                <button id="helpButton" class="menu-item">
+                                    <i class="fas fa-circle-question"></i> Aide
+                                </button>
+                                <button id="installPwaBtn" class="menu-item" style="display: none;">
+                                    <i class="fas fa-download"></i> Installer
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -986,6 +1027,173 @@
     </div>
 
     <!-- MODALES -->
+    <div id="personalizationModal" class="modal" role="dialog" aria-modal="true"
+        aria-labelledby="personalizationModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="personalizationModalTitle"><i class="fas fa-wand-magic-sparkles"></i>
+                    Personnalisation</h2>
+                <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer"><i
+                        class="fas fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-layout-grid">
+                    <!-- CARTE 2: RÉGLAGES DE STYLE IA -->
+                    <div class="settings-controls-column">
+                        <div class="settings-card settings-card-full-height" id="settings-controls-panel">
+                            <div class="settings-card-header-row">
+                                <h3 class="settings-card-title" id="iaStyleHeader">
+                                    <i class="fas fa-sliders-h"></i> Style de Rédaction
+                                </h3>
+                                <div class="toggle-switch-container tooltip"
+                                    data-tooltip="Activer pour personnaliser le style de rédaction (Ton, Longueur, Voix, etc.)">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="personalizationToggle">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <p id="genericSubjectInfo" class="generic-info-card"
+                                style="margin-top: 0; margin-bottom: 20px;">
+                                <i class="fas fa-info-circle"></i>
+                                Activez "Mon Style" pour modifier ces paramètres. Sinon, les réglages par défaut
+                                s'appliquent.
+                            </p>
+
+                            <div class="settings-card-content">
+
+                                <div class="form-group">
+                                    <div class="slider-header-row">
+                                        <label for="iaLengthSlider">Cible de Mots</label>
+                                        <span id="iaLengthSliderValue" class="slider-value-display">~ 60 mots</span>
+                                    </div>
+                                    <div class="length-slider-container slider-container">
+                                        <input type="range" id="iaLengthSlider" min="10" max="100" value="60" step="5">
+                                        <div class="slider-labels">
+                                            <span>Court</span><span>Moyen</span><span>Long</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="slider-header-row">
+                                        <label for="iaToneSlider">Ton de l'appréciation</label>
+                                        <span id="iaToneSliderValue" class="slider-value-display">Équilibré, factuel
+                                            et
+                                            neutre</span>
+                                    </div>
+                                    <div class="slider-container">
+                                        <input type="range" id="iaToneSlider" min="1" max="5" value="3">
+                                        <div class="slider-ticks">
+                                            <span class="tick"></span>
+                                            <span class="tick"></span>
+                                            <span class="tick"></span>
+                                            <span class="tick"></span>
+                                            <span class="tick"></span>
+                                        </div>
+                                        <div class="slider-labels">
+                                            <span>Positif</span><span>Équilibré</span><span>Strict</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Voix du rédacteur</label>
+                                    <div class="generation-mode-selector selector-compact" id="iaVoiceSelector">
+                                        <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
+                                            checked>
+                                        <label for="voiceDefault" class="tooltip"
+                                            data-tooltip="Laisse l'IA choisir le pronom (Je, Nous, impersonnel...).">Défaut</label>
+                                        <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
+                                        <label for="voiceJe" class="tooltip"
+                                            data-tooltip="Force l'IA à utiliser la première personne du singulier ('Je').">Je</label>
+                                        <input type="radio" id="voiceNous" name="iaVoiceRadio" value="nous">
+                                        <label for="voiceNous" class="tooltip"
+                                            data-tooltip="Force l'IA à utiliser la première personne du pluriel ('Nous'), plus formel.">Nous</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="iaStyleInstructions">Ma "Patte" (Optionnel)</label>
+                                    <textarea id="iaStyleInstructions"
+                                        placeholder="Exemples : Mettre l'accent sur l'expression orale • Mentionner la rigueur du raisonnement • Ne jamais utiliser le mot performance • Toujours encourager la participation..."
+                                        class="style-instructions-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARTE 3: LABORATOIRE D'APERÇU -->
+                    <div class="settings-preview-column">
+                        <div class="settings-card settings-card-full-height">
+                            <h3 class="settings-card-title"><i class="fas fa-vial"></i> Aperçu</h3>
+                            <div class="settings-card-content">
+                                <!-- Unified Data Card -->
+                                <div class="preview-unified-card">
+                                    <!-- Header: Student Selector -->
+                                    <div class="preview-card-header">
+                                        <div style="display:none!important;" aria-hidden="true">
+                                            <select id="previewStudentSelect"></select>
+                                        </div>
+                                        <button type="button" class="nav-arrow-custom" id="previewPrevStudentBtn"
+                                            aria-label="Élève précédent">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <div class="header-student-name" id="previewStudentNameDisplay">
+                                            Chargement...</div>
+                                        <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
+                                            aria-label="Élève suivant">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Body: Context + Table -->
+                                    <div id="settingsPreviewStudentData" class="preview-card-body">
+                                    </div>
+                                </div>
+
+                                <p id="previewStatus" class="preview-status" style="display: none;"></p>
+
+                                <!-- Section Aperçu avec bouton de génération -->
+                                <div class="preview-result-header">
+                                    <div class="result-ia-title">
+                                        <i class="fas fa-magic"></i> Appréciation
+                                    </div>
+                                    <button id="refreshPreviewBtn" class="btn btn-primary btn-small tooltip"
+                                        data-tooltip="Générer une appréciation avec l'IA"><i class="fas fa-play"
+                                            aria-hidden="true"></i> Générer</button>
+                                </div>
+                                <div class="refinement-box placeholder" id="settingsPreviewResult">Cliquez sur
+                                    "Générer" pour voir l'impact de vos réglages en direct.</div>
+                                <div class="preview-meta-container" id="previewMetaContainer" style="display: none;">
+                                    <div class="word-count" id="settingsPreviewTokenCount"></div>
+                                    <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARTE 4: INSPECTEUR DE PROMPT -->
+                <div class="settings-card settings-card-full-width" style="margin-top: 16px;">
+                    <h3 class="settings-card-title"><i class="fas fa-terminal"></i> Inspecteur de Prompt</h3>
+                    <div class="settings-card-content">
+                        <div id="settingsPreviewPrompt" class="help-code-block prompt-preview-block">
+                            Le prompt s'affichera ici après avoir rafraîchi l'aperçu.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelPersonalizationBtn">Fermer</button>
+                <button class="btn btn-primary" id="savePersonalizationBtn"><i class="fas fa-check"></i>
+                    Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
     <div id="appSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
         <div class="modal-content">
             <div class="modal-header">
@@ -995,171 +1203,14 @@
                         class="fas fa-xmark"></i></button>
             </div>
 
-            <div class="settings-tab-container" role="tablist">
-                <button class="settings-tab active" data-tab="templates" role="tab" aria-selected="true"
-                    aria-controls="templatesTabContent" tabindex="0"><i class="fas fa-pen-nib"></i> Rédaction</button>
-                <button class="settings-tab" data-tab="advanced" role="tab" aria-selected="false"
-                    aria-controls="advancedTabContent" tabindex="0"><i class="fas fa-cog"></i> Application</button>
-            </div>
+
 
             <div class="modal-body">
 
-                <div id="templatesTabContent" class="tab-content active" role="tabpanel">
-                    <!-- GRILLE: RÉGLAGES IA + APERÇU -->
-                    <div class="settings-layout-grid">
-                        <!-- CARTE 2: RÉGLAGES DE STYLE IA -->
-                        <div class="settings-controls-column">
-                            <div class="settings-card settings-card-full-height" id="settings-controls-panel">
-                                <div class="settings-card-header-row">
-                                    <h3 class="settings-card-title" id="iaStyleHeader">
-                                        <i class="fas fa-sliders-h"></i> Style de Rédaction
-                                    </h3>
-                                    <div class="toggle-switch-container tooltip"
-                                        data-tooltip="Activer pour personnaliser le style de rédaction (Ton, Longueur, Voix, etc.)">
-                                        <label class="toggle-switch">
-                                            <input type="checkbox" id="personalizationToggle">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <p id="genericSubjectInfo" class="generic-info-card"
-                                    style="margin-top: 0; margin-bottom: 20px;">
-                                    <i class="fas fa-info-circle"></i>
-                                    Activez "Mon Style" pour modifier ces paramètres. Sinon, les réglages par défaut
-                                    s'appliquent.
-                                </p>
-
-                                <div class="settings-card-content">
-
-                                    <div class="form-group">
-                                        <div class="slider-header-row">
-                                            <label for="iaLengthSlider">Cible de Mots</label>
-                                            <span id="iaLengthSliderValue" class="slider-value-display">~ 60 mots</span>
-                                        </div>
-                                        <div class="length-slider-container slider-container">
-                                            <input type="range" id="iaLengthSlider" min="10" max="100" value="60"
-                                                step="5">
-                                            <div class="slider-labels">
-                                                <span>Court</span><span>Moyen</span><span>Long</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <div class="slider-header-row">
-                                            <label for="iaToneSlider">Ton de l'appréciation</label>
-                                            <span id="iaToneSliderValue" class="slider-value-display">Équilibré, factuel
-                                                et
-                                                neutre</span>
-                                        </div>
-                                        <div class="slider-container">
-                                            <input type="range" id="iaToneSlider" min="1" max="5" value="3">
-                                            <div class="slider-ticks">
-                                                <span class="tick"></span>
-                                                <span class="tick"></span>
-                                                <span class="tick"></span>
-                                                <span class="tick"></span>
-                                                <span class="tick"></span>
-                                            </div>
-                                            <div class="slider-labels">
-                                                <span>Positif</span><span>Équilibré</span><span>Strict</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Voix du rédacteur</label>
-                                        <div class="generation-mode-selector selector-compact" id="iaVoiceSelector">
-                                            <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
-                                                checked>
-                                            <label for="voiceDefault" class="tooltip"
-                                                data-tooltip="Laisse l'IA choisir le pronom (Je, Nous, impersonnel...).">Défaut</label>
-                                            <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
-                                            <label for="voiceJe" class="tooltip"
-                                                data-tooltip="Force l'IA à utiliser la première personne du singulier ('Je').">Je</label>
-                                            <input type="radio" id="voiceNous" name="iaVoiceRadio" value="nous">
-                                            <label for="voiceNous" class="tooltip"
-                                                data-tooltip="Force l'IA à utiliser la première personne du pluriel ('Nous'), plus formel.">Nous</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="iaStyleInstructions">Ma "Patte" (Optionnel)</label>
-                                        <textarea id="iaStyleInstructions"
-                                            placeholder="Exemples : Mettre l'accent sur l'expression orale • Mentionner la rigueur du raisonnement • Ne jamais utiliser le mot performance • Toujours encourager la participation..."
-                                            class="style-instructions-textarea"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARTE 3: LABORATOIRE D'APERÇU -->
-                        <div class="settings-preview-column">
-                            <div class="settings-card settings-card-full-height">
-                                <h3 class="settings-card-title"><i class="fas fa-vial"></i> Aperçu</h3>
-                                <div class="settings-card-content">
-                                    <!-- Unified Data Card -->
-                                    <div class="preview-unified-card">
-                                        <!-- Header: Student Selector -->
-                                        <div class="preview-card-header">
-                                            <div style="display:none!important;" aria-hidden="true">
-                                                <select id="previewStudentSelect"></select>
-                                            </div>
-                                            <button type="button" class="nav-arrow-custom" id="previewPrevStudentBtn"
-                                                aria-label="Élève précédent">
-                                                <i class="fas fa-chevron-left"></i>
-                                            </button>
-                                            <div class="header-student-name" id="previewStudentNameDisplay">
-                                                Chargement...</div>
-                                            <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
-                                                aria-label="Élève suivant">
-                                                <i class="fas fa-chevron-right"></i>
-                                            </button>
-                                        </div>
-
-                                        <!-- Body: Context + Table -->
-                                        <div id="settingsPreviewStudentData" class="preview-card-body">
-                                        </div>
-                                    </div>
-
-                                    <p id="previewStatus" class="preview-status" style="display: none;"></p>
-
-                                    <!-- Section Aperçu avec bouton de génération -->
-                                    <div class="preview-result-header">
-                                        <div class="result-ia-title">
-                                            <i class="fas fa-magic"></i> Appréciation
-                                        </div>
-                                        <button id="refreshPreviewBtn" class="btn btn-primary btn-small tooltip"
-                                            data-tooltip="Générer une appréciation avec l'IA"><i class="fas fa-play"
-                                                aria-hidden="true"></i> Générer</button>
-                                    </div>
-                                    <div class="refinement-box placeholder" id="settingsPreviewResult">Cliquez sur
-                                        "Générer" pour voir l'impact de vos réglages en direct.</div>
-                                    <div class="preview-meta-container" id="previewMetaContainer"
-                                        style="display: none;">
-                                        <div class="word-count" id="settingsPreviewTokenCount"></div>
-                                        <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CARTE 4: INSPECTEUR DE PROMPT (Pleine largeur) -->
-                    <div class="settings-card settings-card-full-width" style="margin-top: 16px;">
-                        <h3 class="settings-card-title"><i class="fas fa-terminal"></i> Inspecteur de Prompt</h3>
-                        <div class="settings-card-content">
-                            <div id="settingsPreviewPrompt" class="help-code-block prompt-preview-block">
-                                Le prompt s'affichera ici après avoir rafraîchi l'aperçu.
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Templates moved to Personalization Modal -->
 
 
-                <div id="advancedTabContent" class="tab-content" style="display: none;" role="tabpanel">
+                <div id="advancedTabContent" class="tab-content active" role="tabpanel">
 
                     <!-- CARTE 1: MOTEUR IA -->
                     <div class="settings-card">
@@ -1267,7 +1318,7 @@
                                     </div>
                                     <div class="fallback-info">
                                         <small id="fallbackOrderHint">
-                                            <i class="fas fa-arrow-right" style="font-size: 0.8em;"></i>
+                                            <!-- Arrow removed -->
                                             <span id="fallbackOrderText">...</span>
                                             <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
                                                 style="display: none;"></span>
@@ -2488,7 +2539,7 @@
             if (target) {
                 target.classList.add('active');
             }
-
+        }
     </script>
 
     <!-- Page Entrance Transition from Landing Page -->
@@ -2510,7 +2561,7 @@
                         document.body.classList.remove('is-transitioning-in');
                     }, 800); // Slightly longer than animation duration
                 }
-            }
+            })();
     </script>
 </body>
 

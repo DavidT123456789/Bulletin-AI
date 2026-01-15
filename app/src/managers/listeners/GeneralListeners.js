@@ -4,6 +4,7 @@
  */
 
 import { DOM } from '../../utils/DOM.js';
+import { appState } from '../../state/State.js';
 import { UI } from '../UIManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
@@ -26,17 +27,68 @@ export const GeneralListeners = {
         addClickListener(DOM.resetFormBtn, App.handleClearClick);
         addClickListener(DOM.darkModeToggle, UI.toggleDarkMode);
 
+        // Header Menu Logic
+        if (DOM.headerMenuBtn && DOM.headerMenuDropdown) {
+            addClickListener(DOM.headerMenuBtn, (e) => {
+                e.stopPropagation(); // Prevent document click from closing immediately
+                DOM.headerMenuDropdown.classList.toggle('open');
+                DOM.headerMenuBtn.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (DOM.headerMenuDropdown.classList.contains('open') &&
+                    !DOM.headerMenuDropdown.contains(e.target) &&
+                    !DOM.headerMenuBtn.contains(e.target)) {
+                    DOM.headerMenuDropdown.classList.remove('open');
+                    DOM.headerMenuBtn.classList.remove('active');
+                }
+            });
+        }
+
+        if (DOM.personalizationBtn) {
+            addClickListener(DOM.personalizationBtn, () => {
+                UI.openModal(DOM.personalizationModal);
+            });
+        }
+
+        // Personalization Modal Actions
+        const closePersonalization = () => UI.closeModal(DOM.personalizationModal);
+        addClickListener(DOM.closePersonalizationModalBtn, closePersonalization);
+        addClickListener(DOM.cancelPersonalizationBtn, closePersonalization);
+        addClickListener(DOM.savePersonalizationBtn, () => {
+            SettingsUIManager.saveSettings(); // Saves all settings including style
+            closePersonalization();
+            UI.showNotification('Paramètres de personnalisation enregistrés', 'success');
+        });
+
         addClickListener(DOM.settingsButton, () => {
             UI.openModal(DOM.settingsModal);
-            FormUI.showSettingsTab('templates'); // Ensure default tab is visible
             SettingsUIManager.updateApiStatusDisplay();
         });
 
-        // Clic sur l'indicateur de modèle IA => ouvre les paramètres sur l'onglet Application
-        addClickListener(DOM.headerAiModelChip, () => {
+        // Model label click -> opens settings (API config)
+        addClickListener(DOM.dashModelLabel, () => {
             UI.openModal(DOM.settingsModal);
-            FormUI.showSettingsTab('advanced');
             SettingsUIManager.updateApiStatusDisplay();
+        });
+
+        // Generation Dashboard badge click handlers
+        // Error badge -> regenerate errors
+        addClickListener(DOM.dashErrors, () => {
+            import('../EventHandlersManager.js').then(({ EventHandlersManager }) => {
+                EventHandlersManager.handleRegenerateErrorsClick?.();
+            });
+        });
+
+        // Cancel button during generation
+        addClickListener(DOM.dashCancelBtn, () => {
+            import('../MassImportManager.js').then(({ MassImportManager }) => {
+                if (MassImportManager.massImportAbortController) {
+                    MassImportManager.massImportAbortController.abort();
+                    MassImportManager.massImportAbortController = null;
+                }
+            });
         });
 
         addClickListener(DOM.helpButton, () => {
