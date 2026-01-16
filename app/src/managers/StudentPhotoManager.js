@@ -53,6 +53,9 @@ export const StudentPhotoManager = {
                 uploadedAt: new Date().toISOString()
             };
 
+            // CRITICAL: Update timestamp for sync persistence
+            result._lastModified = Date.now();
+
             // Persist to storage
             await StorageManager.saveAppState();
 
@@ -73,6 +76,9 @@ export const StudentPhotoManager = {
         if (!result) return false;
 
         result.studentPhoto = null;
+        // CRITICAL: Update timestamp for sync persistence
+        result._lastModified = Date.now();
+
         await StorageManager.saveAppState();
         return true;
     },
@@ -211,6 +217,8 @@ export const StudentPhotoManager = {
                     source: 'trombinoscope',
                     uploadedAt: new Date().toISOString()
                 };
+                // CRITICAL: Update timestamp for sync persistence
+                result._lastModified = Date.now();
                 count++;
             }
         }
