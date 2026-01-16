@@ -809,7 +809,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--primary-color);
-    background: var(--bg-color);
+    background: var(--surface-color);
     padding: 3px 5px;
     border-radius: 6px;
     border: 1px solid var(--border-color);
@@ -1012,11 +1012,12 @@
     padding: 5px 2px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    background-color: var(--bg-color);
+    background-color: var(--surface-color);
     background-image: none !important;
     /* Remove global SVG arrow */
     color: var(--text-primary);
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -1024,20 +1025,21 @@
     text-align: center;
     text-align-last: center;
     padding-right: 2px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .assignment-select:hover {
     border-color: var(--primary-color);
-    background-image: none !important;
-    padding-right: 2px !important;
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+    transform: translateY(-1px);
 }
 
 .assignment-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
     outline: none;
-    background-image: none !important;
-    padding-right: 2px !important;
 }
 
 /* Step 3: Preview Grid */

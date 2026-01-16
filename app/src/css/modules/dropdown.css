@@ -221,6 +221,14 @@
 
 
 /* === Options individuelles === */
+/* === Divider === */
+.dropdown-divider {
+    height: 1px;
+    margin: 4px 0;
+    overflow: hidden;
+    background-color: var(--border-color);
+}
+
 /* === Options individuelles === */
 .custom-dropdown-option {
     display: flex;

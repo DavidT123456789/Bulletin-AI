@@ -958,7 +958,9 @@
 }
 
 /* === Headers sectionnels (spécifique au menu global) === */
-.global-actions-dropdown-menu .dropdown-header {
+/* === Headers sectionnels (Partagé global + individuel) === */
+.global-actions-dropdown-menu .dropdown-header,
+.action-dropdown-menu .dropdown-header {
     margin: 0;
     padding: 8px 12px 6px;
     font-size: 11px;
@@ -972,23 +974,27 @@
     border-top: 1px solid var(--border-color);
 }
 
-.global-actions-dropdown-menu .dropdown-header:first-of-type {
+.global-actions-dropdown-menu .dropdown-header:first-of-type,
+.action-dropdown-menu .dropdown-header:first-of-type {
     border-top: none;
     padding-top: 4px;
 }
 
-.global-actions-dropdown-menu .dropdown-header i {
+.global-actions-dropdown-menu .dropdown-header i,
+.action-dropdown-menu .dropdown-header i {
     font-size: 10px;
     opacity: 0.6;
 }
 
 /* Divider danger (spécifique au menu global) */
-.global-actions-dropdown-menu .dropdown-divider.danger-divider {
+.global-actions-dropdown-menu .dropdown-divider.danger-divider,
+.action-dropdown-menu .dropdown-divider {
     border-top: 1px solid rgba(var(--error-rgb), 0.2);
     margin: 4px 8px;
 }
 
-[data-theme="dark"] .global-actions-dropdown-menu {
+[data-theme="dark"] .global-actions-dropdown-menu,
+[data-theme="dark"] .action-dropdown-menu {
     background: rgba(17, 24, 39, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
 }
