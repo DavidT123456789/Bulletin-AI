@@ -106,7 +106,8 @@
     scroll-behavior: smooth;
 
     /* Ajustement des marges internes pour éviter l'effet "collé" */
-    padding: var(--space-6) var(--space-8) var(--space-12);
+    /* Padding-top increased to account for absolute header (64px + 24px) */
+    padding: calc(64px + var(--space-6)) var(--space-8) var(--space-12);
     /* MAX-WIDTH RETIRÉ : Pleine largeur disponible */
     max-width: none;
     width: 100%;
@@ -147,17 +148,20 @@
 .header {
     flex-shrink: 0;
     height: 64px;
-    /* Transparence prononcée */
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    /* Transparence "légère" et effet dépoli (Frosted Glass) */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--space-8);
-    /* Position sticky removed - layout is now flex column */
-    position: relative;
+    /* Position absolute to allow content to scroll BEHIND it (Glassmorphism) */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     z-index: var(--z-header);
 }
 
@@ -176,8 +180,8 @@
 
 /* Header en mode sombre */
 [data-theme="dark"] .header {
-    background: rgba(17, 24, 39, 0.72);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(17, 24, 39, 0.65);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .header-center {
@@ -238,13 +242,17 @@
     border-color: transparent;
     background-color: var(--surface-color);
     /* Restore background on hover */
-    /* Sharp pixel-perfect shadow (elevation) */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
-        0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Sharp pixel-perfect shadow (matched with Theme Selector) */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
     /* Slight lift */
     color: var(--text-primary);
     /* Keep text primary on hover, simpler */
+}
+
+[data-theme="dark"] .header-context-chip:hover,
+[data-theme="dark"] .header-context-chip.active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .header-context-chip:active {
@@ -272,6 +280,8 @@
     border: 1px solid rgba(var(--primary-color-rgb), 0.2);
     position: relative;
     overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: none;
 }
 
 .ai-model-chip .icon {
@@ -281,6 +291,12 @@
 .ai-model-chip:hover {
     background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.25));
     border-color: var(--primary-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .ai-model-chip:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
@@ -303,8 +319,15 @@
     background-origin: padding-box, border-box;
     background-clip: padding-box, border-box;
     animation: rotate-gradient 8s linear infinite;
+    /* Metamorph shadow + Focus ring, replacing diffuse glow */
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        0 2px 12px rgba(var(--primary-color-rgb), 0.15);
+        0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .ai-model-chip.generating {
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Le pseudo-élément ::before n'est plus nécessaire pour l'effet fluide */
@@ -495,11 +518,16 @@
 
 .cloud-sync-indicator.minimal-cloud:hover {
     color: var(--text-primary);
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: var(--surface-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
 }
 
 [data-theme="dark"] .cloud-sync-indicator.minimal-cloud:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--surface-color);
+    /* Ensure contrast in dark mode too */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    /* Stronger shadow in dark mode */
 }
 
 .cloud-sync-indicator.minimal-cloud i.fa-cloud,
@@ -536,8 +564,11 @@
 }
 
 .cloud-sync-indicator.connected:hover {
-    color: var(--text-primary);
-    background-color: var(--neutral-light);
+    color: var(--primary-color);
+    /* Keep primary on hover */
+    background-color: var(--surface-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    /* Consistent relief */
 }
 
 .cloud-sync-indicator.connected .cloud-status-badge {
@@ -556,6 +587,12 @@
     color: var(--text-secondary);
     cursor: pointer;
     background-color: transparent;
+}
+
+.cloud-sync-indicator.expired:hover {
+    background-color: var(--surface-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
 }
 
 .cloud-sync-indicator.expired .cloud-status-badge {
@@ -632,8 +669,16 @@
 
 .menu-btn:hover,
 .menu-btn.active {
-    background-color: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background-color: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .menu-btn:hover,
+[data-theme="dark"] .menu-btn.active {
+    background-color: var(--surface-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* 3. Dropdown Menu Container */
@@ -688,7 +733,7 @@
     width: 100%;
     padding: 8px 12px;
     font-size: 14px;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     background: transparent;
     border: none;
     border-radius: var(--radius-sm);
@@ -707,7 +752,13 @@
 /* Hover effects for clickable items */
 .menu-item:hover,
 .menu-item-row:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--text-primary);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .menu-item:hover,
+[data-theme="dark"] .menu-item-row:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .menu-item i {
@@ -718,7 +769,7 @@
 }
 
 .menu-item:hover i {
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 /* Specific Toggle Button inside Menu (Dark Mode) */
