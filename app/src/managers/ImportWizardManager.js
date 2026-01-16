@@ -7,7 +7,8 @@
 
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
-import { detectSeparator, parseLine } from '../utils/ImportUtils.js';
+import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular } from '../utils/ImportUtils.js';
+import { autoConvertPdf } from '../utils/PdfParsers.js';
 import { UI } from './UIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassManager } from './ClassManager.js';
@@ -182,7 +183,11 @@ export const ImportWizardManager = {
         }
 
         document.getElementById('wizardFileInput')?.addEventListener('change', e => {
-            if (e.target.files.length > 0) this._handleFile(e.target.files[0]);
+            if (e.target.files.length > 0) {
+                this._handleFile(e.target.files[0]);
+                // Reset input to allow re-selecting the same file
+                e.target.value = '';
+            }
         });
 
         // Step 1: Textarea
@@ -410,7 +415,26 @@ export const ImportWizardManager = {
     /**
      * Handle file drop/select
      */
-    _handleFile(file) {
+    async _handleFile(file) {
+        // Gestion des PDFs avec extraction de texte
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            try {
+                UI.showNotification('Extraction du texte PDF...', 'info');
+
+                const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
+                const textContent = await extractTextFromPdf(file);
+
+                document.getElementById('wizardDataTextarea').value = textContent;
+                this._processData();
+                UI.showNotification('PDF importé', 'success');
+            } catch (error) {
+                console.error('Erreur extraction PDF:', error);
+                UI.showNotification('Erreur PDF: ' + error.message, 'error');
+            }
+            return;
+        }
+
+        // Fichiers texte standard
         const reader = new FileReader();
         reader.onload = e => {
             document.getElementById('wizardDataTextarea').value = e.target.result;
@@ -434,7 +458,24 @@ export const ImportWizardManager = {
      * Process data from textarea
      */
     _processData() {
-        const text = document.getElementById('wizardDataTextarea')?.value?.trim() || '';
+        let text = document.getElementById('wizardDataTextarea')?.value?.trim() || '';
+
+        // Auto-détection et conversion des formats PDF (architecture modulaire)
+        const pdfResult = text ? autoConvertPdf(text) : null;
+        if (pdfResult) {
+            text = pdfResult.data;
+            const textarea = document.getElementById('wizardDataTextarea');
+            if (textarea) textarea.value = text;
+            UI.showNotification(`Format "${pdfResult.description}" détecté et converti`, 'info');
+        }
+        // Auto-détection et conversion du format vertical multi-lignes
+        else if (text && detectVerticalFormat(text)) {
+            text = convertVerticalToTabular(text);
+            const textarea = document.getElementById('wizardDataTextarea');
+            if (textarea) textarea.value = text;
+            UI.showNotification('Format vertical détecté et converti', 'info');
+        }
+
         this.state.rawData = text;
 
         const step1NextBtn = document.getElementById('wizardStep1NextBtn');

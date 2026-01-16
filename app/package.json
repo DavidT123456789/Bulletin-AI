@@ -22,5 +22,8 @@
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^1.0.0",
     "workbox-window": "^7.0.0"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^5.4.530"
   }
 }

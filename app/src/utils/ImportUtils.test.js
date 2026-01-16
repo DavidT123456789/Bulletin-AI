@@ -2,7 +2,7 @@
  * @fileoverview Tests for ImportUtils
  */
 import { describe, it, expect } from 'vitest';
-import { detectSeparator, parseLine } from './ImportUtils.js';
+import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular } from './ImportUtils.js';
 
 describe('ImportUtils', () => {
     describe('detectSeparator()', () => {
@@ -137,4 +137,87 @@ Dupont\tMarie\t18`;
             expect(result).toEqual(['Nom', 'Prénom', 'Note']);
         });
     });
+
+    describe('detectVerticalFormat()', () => {
+        it('should detect valid vertical format with 2+ students', () => {
+            const data = `AGNES Charly
+2
+7,3
+Charly AGNES - Premier semestre - TECHNOLOGIE
+ALEXANDRE Jérémy
+2
+9,3
+Jérémy ALEXANDRE - Premier semestre - TECHNOLOGIE`;
+
+            expect(detectVerticalFormat(data)).toBe(true);
+        });
+
+        it('should return false for tabular data', () => {
+            const data = `Nom\tPrénom\tNote
+Martin\tLucas\t15
+Dupont\tMarie\t18`;
+
+            expect(detectVerticalFormat(data)).toBe(false);
+        });
+
+        it('should return false for insufficient data (less than 8 lines)', () => {
+            const data = `AGNES Charly
+2
+7,3
+Charly AGNES - Premier semestre - TECHNOLOGIE`;
+
+            expect(detectVerticalFormat(data)).toBe(false);
+        });
+
+        it('should return false when pattern is broken', () => {
+            const data = `AGNES Charly
+not a number
+7,3
+Charly AGNES - Premier semestre - TECHNOLOGIE
+ALEXANDRE Jérémy
+2
+9,3
+Jérémy ALEXANDRE - Premier semestre - TECHNOLOGIE`;
+
+            expect(detectVerticalFormat(data)).toBe(false);
+        });
+    });
+
+    describe('convertVerticalToTabular()', () => {
+        it('should convert vertical format to tabular', () => {
+            const data = `AGNES Charly
+2
+7,3
+Charly AGNES - Premier semestre - TECHNOLOGIE
+ALEXANDRE Jérémy
+2
+9,3
+Jérémy ALEXANDRE - Premier semestre - TECHNOLOGIE`;
+
+            const result = convertVerticalToTabular(data);
+            const lines = result.split('\n');
+
+            expect(lines.length).toBe(2);
+            expect(lines[0]).toContain('AGNES Charly');
+            expect(lines[0]).toContain('7.3'); // Virgule convertie en point
+            expect(lines[0]).toContain('Premier semestre - TECHNOLOGIE');
+        });
+
+        it('should normalize comma to dot in grades', () => {
+            const data = `TEST Élève
+1
+15,5
+Élève TEST - T1 - Maths
+AUTRE Élève
+1
+18,0
+Élève AUTRE - T1 - Maths`;
+
+            const result = convertVerticalToTabular(data);
+
+            expect(result).toContain('15.5');
+            expect(result).toContain('18.0');
+        });
+    });
 });
+

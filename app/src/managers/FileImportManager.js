@@ -61,8 +61,31 @@ export const FileImportManager = {
      * Gère l'import d'un fichier
      * @param {File} file - Le fichier à importer
      */
-    handleFileImport(file) {
+    async handleFileImport(file) {
         if (!file) return;
+
+        // Gestion des PDFs avec extraction de texte
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            try {
+                UI.showNotification('Extraction du texte PDF en cours...', 'info');
+
+                // Import dynamique pour lazy loading
+                const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
+                const textContent = await extractTextFromPdf(file);
+
+                // Ouvre l'assistant d'import avec le texte extrait
+                const { ImportWizardManager } = await import('./ImportWizardManager.js');
+                ImportWizardManager.openWithData(textContent);
+
+                UI.showNotification('PDF importé avec succès', 'success');
+            } catch (error) {
+                console.error('Erreur extraction PDF:', error);
+                UI.showNotification('Erreur lors de l\'extraction du PDF: ' + error.message, 'error');
+            }
+            return;
+        }
+
+        // Gestion des autres fichiers (texte, CSV, JSON)
         const reader = new FileReader();
         reader.onload = async (e) => {
             const content = e.target.result;
@@ -83,7 +106,7 @@ export const FileImportManager = {
     handleImportFileBtnClick() {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.csv,.txt,.tsv,.json';
+        input.accept = '.csv,.txt,.tsv,.json,.pdf';
         input.onchange = (e) => this.handleFileImport(e.target.files[0]);
         input.click();
     },

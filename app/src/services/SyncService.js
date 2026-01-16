@@ -685,7 +685,16 @@ export const SyncService = {
 
                 if (remoteTime > localTime) {
                     // Remote is newer - update local
+                    // CRITICAL FIX: Preserve local photo if remote has null
+                    // (prevents photo loss when syncing from a device without photos)
+                    const localPhoto = localItem.studentPhoto;
                     Object.assign(localItem, remoteItem);
+
+                    // Restore local photo if remote didn't have one
+                    if (!remoteItem.studentPhoto && localPhoto?.data) {
+                        localItem.studentPhoto = localPhoto;
+                    }
+
                     stats.updated++;
                     stats.conflicts++;
                 } else if (remoteTime < localTime) {
