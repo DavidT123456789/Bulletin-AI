@@ -427,30 +427,23 @@ export const ClassUIManager = {
                 }
             });
 
-            // Render badge - SIMPLIFIED: just nombre, icône seulement si ERREURS
+            // Render badge - NEUTRAL: juste le nombre d'élèves, pas d'icône d'état
+            // (Decision: afficher SEULEMENT les erreurs sans les autres états est incohérent)
+            badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
+
+            // Set tooltip and status for potential CSS styling
             if (errorCount > 0) {
-                // Erreurs → Badge rouge avec icône warning
-                badge.innerHTML = `
-                    <span class="progress-count has-alert">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        ${totalStudents}
-                    </span>
-                `;
-                badge.title = `${errorCount} erreur(s) sur ${totalStudents} élèves`;
+                badge.title = `${totalStudents} élève(s) – ${errorCount} erreur(s)`;
                 badge.dataset.status = 'error';
+            } else if (completedCount === totalStudents && totalStudents > 0) {
+                badge.title = `${totalStudents} élève(s) – appréciations OK`;
+                badge.dataset.status = 'complete';
+            } else if (completedCount > 0) {
+                badge.title = `${completedCount}/${totalStudents} appréciations générées`;
+                badge.dataset.status = 'partial';
             } else {
-                // Default: juste le nombre d'élèves (neutre, pas confus)
-                badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
-                if (completedCount === totalStudents && totalStudents > 0) {
-                    badge.title = `${totalStudents} élève(s) – appréciations OK`;
-                    badge.dataset.status = 'complete';
-                } else if (completedCount > 0) {
-                    badge.title = `${completedCount}/${totalStudents} appréciations générées`;
-                    badge.dataset.status = 'partial';
-                } else {
-                    badge.title = `${totalStudents} élève(s)`;
-                    badge.dataset.status = 'pending';
-                }
+                badge.title = `${totalStudents} élève(s)`;
+                badge.dataset.status = 'pending';
             }
         }
     },

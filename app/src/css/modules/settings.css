@@ -320,28 +320,35 @@
     width: 20px;
     background: var(--primary-color);
     border-radius: 50%;
-    border: 3px solid var(--surface-color);
     box-shadow: var(--shadow-sm);
     /* Ajustement précis pour centrer le thumb sur la track de 4px */
     margin-top: -8px;
     pointer-events: auto;
     cursor: grab;
     border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .slider-container input[type="range"]::-moz-range-thumb {
-    height: 14px;
-    width: 14px;
+    height: 20px;
+    width: 20px;
     background: var(--primary-color);
     border-radius: 50%;
-    border: 3px solid var(--surface-color);
     box-shadow: var(--shadow-sm);
     pointer-events: auto;
-    /* CORRECTION CLÉ : Rétablit l'interaction pour la poignée */
     cursor: grab;
-    /* CORRECTION CLÉ : Améliore l'UX */
     border: none;
-    /* Thumb border handled above but just in case for input borders */
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.slider-container input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .slider-container input[type="range"]:active::-webkit-slider-thumb {

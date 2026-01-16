@@ -13,7 +13,7 @@ import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 
-import { DEMO_STUDENT_PROFILES } from '../../config/Config.js';
+import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
 
 let App = null;
 
@@ -37,9 +37,12 @@ export const SettingsModalListeners = {
             });
         });
 
-        DOM.personalizationToggle.addEventListener('change', (e) => {
+        DOM.personalizationToggle.addEventListener('change', async (e) => {
             appState.useSubjectPersonalization = e.target.checked;
             SettingsUIManager.updatePersonalizationState();
+            // Rafraîchir les valeurs affichées (sliders) pour refléter les nouvelles valeurs
+            const { FormUI } = await import('../FormUIManager.js');
+            FormUI.updateSettingsFields();
         });
 
         // Toggle pour le basculement automatique entre APIs
@@ -477,7 +480,7 @@ export const SettingsModalListeners = {
 
         // Display prompt preview (no AI call)
         const currentSettings = {
-            length: parseInt(DOM.iaLengthSlider?.value || 60),
+            length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
             tone: parseInt(DOM.iaToneSlider?.value || 3),
             styleInstructions: DOM.iaStyleInstructions?.value || '',
             voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default'
@@ -568,7 +571,7 @@ export const SettingsModalListeners = {
 
         try {
             const currentSettings = {
-                length: parseInt(DOM.iaLengthSlider?.value || 60),
+                length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
                 tone: parseInt(DOM.iaToneSlider?.value || 3),
                 styleInstructions: DOM.iaStyleInstructions?.value || '',
                 voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default'
