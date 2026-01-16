@@ -49,6 +49,14 @@ export const AppreciationsManager = {
         return ResultsUIManager.clearAllResults();
     },
 
+    clearVisibleAppreciations() {
+        return ResultsUIManager.clearVisibleAppreciations();
+    },
+
+    clearVisibleJournals() {
+        return ResultsUIManager.clearVisibleJournals();
+    },
+
     // ... existing code ...
 
     saveFormState() {
@@ -214,7 +222,7 @@ export const AppreciationsManager = {
 
 
 
-    async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null) {
+    async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
 
         if (!UI.checkAPIKeyPresence()) {
@@ -228,7 +236,7 @@ export const AppreciationsManager = {
         }
 
         prompts = this.getAllPrompts({ ...studentData, generatedAppreciation: '' }, overrideConfig);
-        const aiResp = await AIService.callAIWithFallback(prompts.appreciation, { signal });
+        const aiResp = await AIService.callAIWithFallback(prompts.appreciation, { signal, context, studentName: studentData.prenom });
 
         // Désanonymisation : remplacer [PRÉNOM] par le vrai prénom
         appreciation = this._deanonymizeText(aiResp.text, studentData.prenom);
@@ -372,7 +380,7 @@ export const AppreciationsManager = {
         try {
             const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.sw = prompts.sw;
-            const resp = await AIService.callAIWithFallback(prompts.sw);
+            const resp = await AIService.callAIWithFallback(prompts.sw, { context: 'single-student', studentName: result.prenom });
             result.strengthsWeaknesses = resp.text;
             // Ensure tokenUsage exists before setting properties
             if (!result.tokenUsage) result.tokenUsage = {};
@@ -392,7 +400,7 @@ export const AppreciationsManager = {
         try {
             const prompts = this.getAllPrompts({ ...result.studentData, id: result.id });
             result.studentData.prompts.ns = prompts.ns;
-            const resp = await AIService.callAIWithFallback(prompts.ns);
+            const resp = await AIService.callAIWithFallback(prompts.ns, { context: 'single-student', studentName: result.prenom });
 
             const steps = [];
             const lines = resp.text.split('\n').filter(l => l.trim() !== '');
@@ -437,12 +445,13 @@ export const AppreciationsManager = {
             // Sauvegarder l'ancienne version dans l'historique AVANT régénération
             this.pushToHistory(originalResult, 'regenerate');
 
-            const updatedStudentData = JSON.parse(JSON.stringify(originalResult.studentData));
+            // Mise à jour de certaines données si nécessaire
+            const updatedStudentData = { ...originalResult.studentData };
             updatedStudentData.id = id; // Include ID for journal lookup
             updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
             updatedStudentData.currentAIModel = appState.currentAIModel;
 
-            const newResult = await this.generateAppreciation(updatedStudentData);
+            const newResult = await this.generateAppreciation(updatedStudentData, false, null, null, 'single-student');
             newResult.id = id;
             // Transférer l'historique vers le nouveau résultat
             newResult.history = originalResult.history || [];

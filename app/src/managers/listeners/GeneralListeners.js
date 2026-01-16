@@ -57,7 +57,7 @@ export const GeneralListeners = {
         addClickListener(DOM.closePersonalizationModalBtn, closePersonalization);
         addClickListener(DOM.cancelPersonalizationBtn, closePersonalization);
         addClickListener(DOM.savePersonalizationBtn, () => {
-            SettingsUIManager.saveSettings(); // Saves all settings including style
+            SettingsUIManager.saveSettings(false); // Saves all settings including style
             closePersonalization();
             UI.showNotification('Paramètres de personnalisation enregistrés', 'success');
         });

@@ -144,7 +144,7 @@ export const SingleStudentManager = {
         }
 
         try {
-            const newResult = await AppreciationsManager.generateAppreciation(data);
+            const newResult = await AppreciationsManager.generateAppreciation(data, false, null, null, 'single-student');
 
             if (existingStudentIndex > -1) {
                 const existingResult = appState.generatedResults[existingStudentIndex];
@@ -175,6 +175,7 @@ export const SingleStudentManager = {
             UI.showNotification(`Erreur : ${msg}`, 'error');
         } finally {
             UI.hideInlineSpinner(loadingBtn);
+            UI.hideHeaderProgress();
         }
     },
 
@@ -195,7 +196,7 @@ export const SingleStudentManager = {
         data.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
 
         try {
-            const newResult = await AppreciationsManager.generateAppreciation(data);
+            const newResult = await AppreciationsManager.generateAppreciation(data, false, null, null, 'single-student');
             const studentIndex = appState.generatedResults.findIndex(r => r.id === appState.currentEditingId);
 
             if (studentIndex > -1) {
@@ -233,6 +234,7 @@ export const SingleStudentManager = {
             UI.showNotification(`Erreur : ${msg}`, 'error');
         } finally {
             UI.hideInlineSpinner(loadingBtn);
+            UI.hideHeaderProgress();
         }
     },
 

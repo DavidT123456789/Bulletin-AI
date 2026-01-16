@@ -776,7 +776,7 @@ export const FocusPanelManager = {
                 currentPeriod: generatingForPeriod
             };
 
-            const newResult = await AppreciationsManager.generateAppreciation(studentData, false, null, null);
+            const newResult = await AppreciationsManager.generateAppreciation(studentData, false, null, signal, 'single-student');
 
             // Check if signal was aborted
             if (signal.aborted) {

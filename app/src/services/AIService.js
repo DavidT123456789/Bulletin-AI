@@ -17,6 +17,7 @@ import { DOM } from '../utils/DOM.js';
  * @property {string} [validationProvider='openai'] - Provider pour validation
  * @property {string|null} [modelOverride=null] - Forcer un modèle spécifique
  * @property {AbortSignal} [signal] - Signal d'annulation externe
+ * @property {string} [context=null] - Contexte de l'appel (ex: 'single-student', 'mass-import')
  */
 
 /**
@@ -540,7 +541,12 @@ export const AIService = {
      */
     async callAIWithFallback(prompt, options = {}) {
         // Émettre l'événement de début de génération (pour l'animation de la pillule)
-        window.dispatchEvent(new CustomEvent('ai-generation-start'));
+        window.dispatchEvent(new CustomEvent('ai-generation-start', {
+            detail: {
+                context: options.context || null,
+                studentName: options.studentName || ''
+            }
+        }));
 
         // Si le fallback est désactivé, utiliser uniquement le modèle actuel
         const fallbackEnabled = appState.enableApiFallback !== false;
@@ -663,7 +669,12 @@ export const AIService = {
             throw new Error(errorMessage);
         } finally {
             // Émettre l'événement de fin de génération (pour arrêter l'animation)
-            window.dispatchEvent(new CustomEvent('ai-generation-end'));
+            window.dispatchEvent(new CustomEvent('ai-generation-end', {
+                detail: {
+                    context: options.context || null, // Pass context for Single Source of Truth
+                    studentName: options.studentName || ''
+                }
+            }));
         }
     },
 

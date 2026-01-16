@@ -45,7 +45,7 @@ export const SettingsUIManager = {
     /**
      * Sauvegarde tous les paramètres de l'application.
      */
-    saveSettings() {
+    saveSettings(showNotification = true) {
         this._savePersonalStyleChanges();
 
         if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
@@ -81,7 +81,9 @@ export const SettingsUIManager = {
         // Effectuer les mises à jour UI après l'animation de fermeture (260ms)
         setTimeout(() => {
             this.updateApiStatusDisplay();
-            UI.showNotification('Paramètres enregistrés.', 'success');
+            if (showNotification !== false) {
+                UI.showNotification('Paramètres enregistrés.', 'success');
+            }
             AppreciationsManager.renderResults();
         }, 260);
     },

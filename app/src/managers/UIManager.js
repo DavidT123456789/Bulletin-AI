@@ -661,6 +661,17 @@ export const UI = {
         const percent = total > 0 ? (current / total) * 100 : 0;
         if (DOM.dashProgressFill) {
             DOM.dashProgressFill.style.width = `${percent}%`;
+
+            // Indeterminate state for single generation (active but 0%)
+            // This allows the "shine" animation to be visible even at 0% width if managed by CSS
+            // or forces a visual width for the effect
+            if (total === 1 && current === 0) {
+                DOM.dashProgressFill.classList.add('indeterminate');
+                // Force a visible width for the shine effect
+                DOM.dashProgressFill.style.width = '100%';
+            } else {
+                DOM.dashProgressFill.classList.remove('indeterminate');
+            }
         }
 
         // Update text

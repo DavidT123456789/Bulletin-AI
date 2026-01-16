@@ -55,15 +55,22 @@ export const ExportManager = {
 
             if (buttonEl) {
                 const originalIcon = buttonEl.innerHTML;
-                buttonEl.innerHTML = '<i class="fas fa-check"></i>';
+                const hasText = buttonEl.textContent.trim().length > 0;
+
+                // Si le bouton contient du texte (ex: menu contextuel), on affiche "Copié !"
+                // Sinon (ex: icône seule), on change juste l'icône
+                buttonEl.innerHTML = hasText
+                    ? '<i class="fas fa-check"></i> Copié !'
+                    : '<i class="fas fa-check"></i>';
+
                 buttonEl.classList.add('copied', 'copy-success');
                 setTimeout(() => {
                     buttonEl.classList.remove('copied', 'copy-success');
                     if (appState.generatedResults[resultIndex]?.copied) {
                         buttonEl.classList.add('was-copied');
-                    } else {
-                        buttonEl.innerHTML = originalIcon;
                     }
+                    // Restore original content
+                    buttonEl.innerHTML = originalIcon;
                 }, 1500);
             }
             UI.showNotification('Copiée !', 'success');

@@ -459,25 +459,48 @@ export const ListViewManager = {
             <td class="status-cell">${this._getStudentStatusCellContent(result)}</td>
             ${this._renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
             <td class="appreciation-cell">${appreciationCell}</td>
-            <td class="action-cell">
+             <td class="action-cell">
                 <div class="action-dropdown">
                     <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
                         <i class="fas fa-ellipsis-vertical"></i>
                     </button>
-                    <div class="action-dropdown-menu">
-                        <button class="action-dropdown-item" data-action="move-student">
-                            <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
-                        </button>
-                        <button class="action-dropdown-item danger" data-action="delete-student">
-                            <i class="fas fa-trash"></i> Supprimer
-                        </button>
-                    </div>
+                    ${this._generateActionMenuHTML(result.id)}
                 </div>
             </td>
         `;
 
         return tr;
     },
+
+    /**
+     * Génère le HTML du menu d'actions pour une ligne élève
+     * @param {string} studentId - ID de l'élève
+     * @returns {string} HTML du menu
+     * @private
+     */
+    _generateActionMenuHTML(studentId) {
+        return `
+            <div class="action-dropdown-menu">
+                <h5 class="dropdown-header"><i class="fas fa-magic"></i> APPRÉCIATION</h5>
+                <button class="action-dropdown-item" data-action="regenerate-student">
+                    <i class="fas fa-sync-alt"></i> Régénérer
+                </button>
+                <button class="action-dropdown-item danger" data-action="clear-appreciation">
+                    <i class="fas fa-eraser"></i> Effacer
+                </button>
+                
+                <h5 class="dropdown-header"><i class="fas fa-user-graduate"></i> ÉLÈVE</h5>
+                <button class="action-dropdown-item" data-action="move-student">
+                    <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
+                </button>
+                <button class="action-dropdown-item danger" data-action="delete-student">
+                    <i class="fas fa-trash"></i> Supprimer
+                </button>
+            </div>
+        `;
+    },
+
+
 
     /**
      * Met à jour le contenu d'une ligne existante
@@ -674,8 +697,7 @@ export const ListViewManager = {
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
                                             <i class="fas fa-chart-pie"></i> Analyser la classe
                                         </button>
-                                        <div class="dropdown-divider"></div>
-                                        <h5 class="dropdown-header"><i class="fas fa-users"></i> Actions sur les élèves</h5>
+                                        <h5 class="dropdown-header"><i class="fas fa-magic"></i> APPRÉCIATIONS</h5>
                                         <button class="action-dropdown-item" id="copyAllBtn-shortcut">
                                             <i class="fas fa-copy"></i> Copier les visibles
                                         </button>
@@ -684,6 +706,9 @@ export const ListViewManager = {
                                         </button>
                                         <button class="action-dropdown-item" id="regenerateErrorsBtn-shortcut" style="display:none;">
                                             <i class="fas fa-exclamation-triangle"></i> Régénérer les erreurs
+                                        </button>
+                                        <button class="action-dropdown-item danger" id="clearAppreciationsBtn-shortcut">
+                                            <i class="fas fa-eraser"></i> Effacer les appréciations
                                         </button>
                                         <h5 class="dropdown-header"><i class="fas fa-download"></i> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
@@ -695,9 +720,12 @@ export const ListViewManager = {
                                         <button class="action-dropdown-item" id="exportPdfBtn">
                                             <i class="fas fa-file-pdf"></i> Imprimer / PDF
                                         </button>
-                                        <div class="dropdown-divider danger-divider"></div>
+                                        <h5 class="dropdown-header"><i class="fas fa-triangle-exclamation"></i> SUPPRIMER</h5>
+                                        <button class="action-dropdown-item danger" id="clearJournalsBtn-shortcut">
+                                            <i class="fas fa-book"></i> Journaux (Contexte IA)
+                                        </button>
                                         <button class="action-dropdown-item danger" id="clearAllResultsBtn-shortcut">
-                                            <i class="fas fa-trash-alt"></i> Effacer les visibles
+                                            <i class="fas fa-user-times"></i> Élèves affichés
                                         </button>
                                     </div>
                                 </div>
@@ -737,14 +765,7 @@ export const ListViewManager = {
                                 <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
                                     <i class="fas fa-ellipsis-vertical"></i>
                                 </button>
-                                <div class="action-dropdown-menu">
-                                    <button class="action-dropdown-item" data-action="move-student">
-                                        <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
-                                    </button>
-                                    <button class="action-dropdown-item danger" data-action="delete-student">
-                                        <i class="fas fa-trash"></i> Supprimer
-                                    </button>
-                                </div>
+                                ${this._generateActionMenuHTML(result.id)}
                             </div>
                         </td>
                     </tr>
@@ -1240,6 +1261,34 @@ export const ListViewManager = {
                 return;
             }
 
+            // Clear Appreciation Action (effacer uniquement le texte sans supprimer l'élève)
+            const clearAppBtn = target.closest('[data-action="clear-appreciation"]');
+            if (clearAppBtn) {
+                e.stopPropagation();
+                closeAllMenus();
+                const row = target.closest('.student-row');
+                const studentId = row?.dataset.studentId;
+                if (studentId) {
+                    this._clearAppreciation(studentId, row);
+                }
+                return;
+            }
+
+            // Regenerate Student Action
+            const regenBtn = target.closest('[data-action="regenerate-student"]');
+            if (regenBtn) {
+                e.stopPropagation();
+                closeAllMenus();
+                const row = target.closest('.student-row');
+                const studentId = row?.dataset.studentId;
+                if (studentId) {
+                    import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
+                        AppreciationsManager.regenerateFailedAppreciation(studentId, regenBtn);
+                    });
+                }
+                return;
+            }
+
             // Delete Student action
             const deleteBtn = target.closest('[data-action="delete-student"]');
             if (deleteBtn) {
@@ -1324,6 +1373,10 @@ export const ListViewManager = {
                     addAction('#copyAllBtn-shortcut', AppreciationsManager.copyAllResults);
                     addAction('#regenerateAllBtn', EventHandlersManager.handleRegenerateAllClick);
                     addAction('#regenerateErrorsBtn-shortcut', EventHandlersManager.handleRegenerateErrorsClick);
+                    addAction('#clearAppreciationsBtn-shortcut', () => AppreciationsManager.clearVisibleAppreciations());
+
+                    // Zone Danger
+                    addAction('#clearJournalsBtn-shortcut', () => AppreciationsManager.clearVisibleJournals());
                     addAction('#clearAllResultsBtn-shortcut', () => AppreciationsManager.clearAllResults());
 
                     // Export
@@ -1533,6 +1586,80 @@ export const ListViewManager = {
             // Notify user
             UI?.showNotification(`${studentName} supprimÃ©`, 'success');
         }, 300);
+    },
+
+    /**
+     * Efface l'appréciation d'un élève sans supprimer l'élève
+     * @param {string} studentId - ID de l'élève
+     * @param {HTMLElement} row - Ligne DOM de l'élève
+     * @private
+     */
+    async _clearAppreciation(studentId, row) {
+        const student = appState.generatedResults.find(r => r.id === studentId);
+        if (!student) return;
+
+        const studentName = `${student.prenom} ${student.nom}`;
+        const currentPeriod = appState.currentPeriod;
+
+        // Vérifier s'il y a une appréciation à effacer
+        const currentAppreciation = student.studentData?.periods?.[currentPeriod]?.appreciation || student.appreciation;
+        if (!currentAppreciation) {
+            const { UI } = await import('./UIManager.js');
+            UI?.showNotification(`Aucune appréciation à effacer pour ${studentName}`, 'info');
+            return;
+        }
+
+        // Confirmation via modale personnalisée
+        const { ModalUI } = await import('./ModalUIManager.js');
+        const confirmed = await ModalUI.showCustomConfirm(
+            `Effacer l'appréciation de <strong>${studentName}</strong> ?<br>L'élève sera conservé mais passera en statut "En attente".`,
+            null,
+            null,
+            {
+                title: 'Effacer l\'appréciation ?',
+                confirmText: 'Effacer',
+                cancelText: 'Annuler',
+                isDanger: true
+            }
+        );
+
+        if (!confirmed) return;
+
+        // Effacer l'appréciation
+        student.appreciation = '';
+        if (student.studentData?.periods?.[currentPeriod]) {
+            student.studentData.periods[currentPeriod].appreciation = '';
+        }
+        student.copied = false; // Reset copied state
+
+        // Animation de mise à jour
+        const appreciationCell = row.querySelector('.appreciation-cell');
+        if (appreciationCell) {
+            appreciationCell.style.transition = 'opacity 0.2s ease-out';
+            appreciationCell.style.opacity = '0.5';
+
+            setTimeout(() => {
+                // Update the cell content
+                const status = this._getStatus(student);
+                appreciationCell.innerHTML = this._getAppreciationCell(student, status);
+                appreciationCell.style.opacity = '1';
+            }, 200);
+        }
+
+        // Persist to storage
+        const { StorageManager } = await import('./StorageManager.js');
+        await StorageManager.saveAppState();
+
+        // Update UI elements
+        const { UI } = await import('./UIManager.js');
+        UI?.updateStats();
+
+        // Update generate button state (now has pending appreciation)
+        const { ResultsUIManager } = await import('./ResultsUIManager.js');
+        ResultsUIManager.updateGenerateButtonState();
+
+        // Notify user
+        UI?.showNotification(`Appréciation de ${studentName} effacée`, 'success');
     },
 
     /**

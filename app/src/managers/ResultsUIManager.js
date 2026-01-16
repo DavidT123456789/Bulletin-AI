@@ -710,12 +710,113 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(`Voulez-vous vraiment effacer les ${count} appréciations actuellement visibles ?`, () => {
+        UI.showCustomConfirm(`
+            <div style="text-align:left;">
+                <p><strong>Attention : Action destructrice !</strong></p>
+                <p>Vous êtes sur le point de supprimer définitivement <strong>${count} élèves</strong> de la liste.</p>
+                <p>Cette action supprimera :</p>
+                <ul style="margin-left:20px; margin-bottom:10px;">
+                    <li>Les données de scolarité (notes, absences...)</li>
+                    <li>Les appréciations générées</li>
+                    <li>L'historique des modifications</li>
+                </ul>
+                <p>Si vous souhaitez uniquement effacer les textes générés, utilisez l'option "Effacer les appréciations".</p>
+            </div>
+        `, () => {
             appState.generatedResults = appState.generatedResults.filter(r => !visibleIds.has(r.id));
 
             this.renderResults();
             StorageManager.saveAppState();
-            UI.showNotification(`${count} appréciations ont été effacées.`, 'success');
-        });
+            UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
+        }, null, { title: 'Supprimer définitivement les élèves ?', confirmText: 'Tout supprimer', isDanger: true });
+    },
+
+    /**
+     * Clears only the appreciation text for visible students
+     */
+    clearVisibleAppreciations() {
+        const visibleIds = new Set(appState.filteredResults.map(r => r.id));
+        const count = visibleIds.size;
+        const currentPeriod = appState.currentPeriod;
+
+        if (count === 0) {
+            UI.showNotification("Aucun résultat visible à effacer.", "warning");
+            return;
+        }
+
+        UI.showCustomConfirm(`Voulez-vous effacer le texte des ${count} appréciations visibles ?<br><span style="font-size:0.9em; opacity:0.8;">Les notes et les données élèves seront conservées.</span>`, () => {
+            let clearedCount = 0;
+            appState.generatedResults.forEach(r => {
+                if (visibleIds.has(r.id)) {
+                    // Clear global appreciation
+                    r.appreciation = '';
+
+                    // Clear period-specific appreciation
+                    if (r.studentData && r.studentData.periods && r.studentData.periods[currentPeriod]) {
+                        r.studentData.periods[currentPeriod].appreciation = '';
+                    }
+
+                    r.copied = false;
+                    // We don't clear history by default to allow undo/reference, but we could if requested.
+                    // The user asked "Supprimer les journaux de bord", which implies a separate action.
+
+                    clearedCount++;
+                }
+            });
+
+            this.renderResults();
+            StorageManager.saveAppState();
+            UI.showNotification(`${clearedCount} appréciations effacées.`, 'success');
+        }, null, { title: 'Effacer les appréciations ?', confirmText: 'Effacer le texte', isDanger: true });
+    },
+    /**
+     * Clears journal entries for visible students (Reset AI Context)
+     */
+    clearVisibleJournals() {
+        const visibleIds = new Set(appState.filteredResults.map(r => r.id));
+        const count = visibleIds.size;
+
+        if (count === 0) {
+            UI.showNotification("Aucun résultat visible.", "warning");
+            return;
+        }
+
+        UI.showCustomConfirm(`
+            <div style="text-align:left;">
+                <p><strong>Réinitialiser le contexte IA ?</strong></p>
+                <p>Vous allez supprimer tous les <strong>journaux de bord</strong> des ${count} élèves affichés.</p>
+                <p>Cela effacera :</p>
+                <ul style="margin-left:20px; margin-bottom:10px;">
+                    <li>Les observations manuelles</li>
+                    <li>L'historique des interactions pour ces élèves</li>
+                </ul>
+                <p style="font-size:0.9em; opacity:0.8;">Les appréciations déjà générées et les notes ne seront PAS modifiées.</p>
+            </div>
+        `, () => {
+            let clearedCount = 0;
+            appState.generatedResults.forEach(r => {
+                if (visibleIds.has(r.id)) {
+                    if (r.journal && r.journal.length > 0) {
+                        r.journal = [];
+                        clearedCount++;
+                    }
+                }
+            });
+
+            this.renderResults();
+            StorageManager.saveAppState();
+            // Force refresh of focus panel if open, as it might show the journal
+            const focusPanel = document.getElementById('focusPanel');
+            if (focusPanel && focusPanel.classList.contains('open')) {
+                // Trigger a refresh event or similar if needed, 
+                // but re-rendering the list might be enough as interactions usually reload the panel data
+                // However, FocusPanelJournal listens to 'journalThresholdChanged' but not necessarily generic updates
+                // We'll rely on global UI refresh if possible, or user re-opening.
+                // Actually ListViewManager.openFocusPanel re-renders. 
+                // If the panel is open for a student whose journal was just cleared, it might be stale.
+                // But this is a bulk action, usually done from the list view.
+            }
+            UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
+        }, null, { title: 'Effacer les journaux ?', confirmText: 'Effacer Journaux', isDanger: true });
     }
 };

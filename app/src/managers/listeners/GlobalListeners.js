@@ -281,19 +281,31 @@ export const GlobalListeners = {
         });
 
         // Listener pour démarrer/arrêter l'animation de génération
-        window.addEventListener('ai-generation-start', () => {
+        window.addEventListener('ai-generation-start', async (e) => {
             if (DOM.headerGenDashboard) {
                 DOM.headerGenDashboard.classList.add('generating');
                 DOM.headerGenDashboard.classList.remove('fallback-active');
+            }
+
+            // Gestion "Single Source of Truth": Si context = single-student, on initialise la pilule
+            if (e.detail && e.detail.context === 'single-student') {
+                const { UI } = await import('../UIManager.js');
+                UI.showHeaderProgress(0, 1, e.detail.studentName || '');
             }
         });
 
         // NOTE: On n'enlève PAS la classe 'generating' ici car cet événement est émis
         // pour CHAQUE génération individuelle, pas pour la génération en masse complète.
         // Le hideHeaderProgress() du UIManager s'en charge à la fin de la génération complète.
-        window.addEventListener('ai-generation-end', () => {
+        window.addEventListener('ai-generation-end', (e) => {
             // Ne rien faire ici - évite les oscillations contraction/dilatation
             // pendant les générations en masse
+            // MAIS: Si c'est un single-student, on doit fermer car personne ne le fera sinon
+            if (e.detail && e.detail.context === 'single-student') {
+                import('../UIManager.js').then(({ UI }) => {
+                    UI.hideHeaderProgress();
+                });
+            }
         });
     },
 
