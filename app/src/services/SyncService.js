@@ -982,9 +982,43 @@ export const SyncService = {
             }
         }
 
-        // === Restore journal (local-only data) ===
-        if (preserved.journal && (!remoteItem.journal || preserved.journal.length > 0)) {
-            localItem.journal = preserved.journal;
+        // === Merge journal entries (additive) ===
+        // Combine local and remote entries, deduplicating by ID
+        const localJournal = preserved.journal || [];
+        const remoteJournal = remoteItem.journal || [];
+
+        if (localJournal.length > 0 || remoteJournal.length > 0) {
+            const journalMap = new Map();
+
+            // Add all local entries first
+            localJournal.forEach(entry => {
+                journalMap.set(entry.id, entry);
+            });
+
+            // Merge remote entries
+            remoteJournal.forEach(remoteEntry => {
+                const localEntry = journalMap.get(remoteEntry.id);
+
+                if (!localEntry) {
+                    // New entry from remote
+                    journalMap.set(remoteEntry.id, remoteEntry);
+                } else {
+                    // Entry exists in both - use per-entry timestamp
+                    const localTime = localEntry._lastModified || new Date(localEntry.date).getTime();
+                    const remoteTime = remoteEntry._lastModified || new Date(remoteEntry.date).getTime();
+
+                    if (remoteTime > localTime) {
+                        journalMap.set(remoteEntry.id, remoteEntry);
+                    }
+                    // If local is newer, keep local (already in map)
+                }
+            });
+
+            // Convert back to array, sorted by date (newest first)
+            localItem.journal = Array.from(journalMap.values())
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+        } else {
+            localItem.journal = [];
         }
 
         // === Restore history (cumulative) ===

@@ -108,12 +108,14 @@ export const JournalManager = {
         }
 
         // Create entry
+        const now = Date.now();
         const entry = {
             id: this._generateId(),
             date: new Date().toISOString(),
             tags: tags,
             note: note.trim().slice(0, 280), // Max 280 chars
-            period: appState.currentPeriod || 'T1'
+            period: appState.currentPeriod || 'T1',
+            _lastModified: now // For sync conflict resolution
         };
 
         // Initialize journal array if doesn't exist
@@ -189,6 +191,7 @@ export const JournalManager = {
         // Apply updates
         if (tags) entry.tags = tags;
         if (note !== undefined) entry.note = note.trim().slice(0, 280);
+        entry._lastModified = Date.now(); // Update timestamp for sync
 
         StorageManager.saveAppState();
         return entry;
