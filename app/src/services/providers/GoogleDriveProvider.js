@@ -148,6 +148,11 @@ export const GoogleDriveProvider = {
                         this._needsReconnect = false;
                         resolve(true);
                     },
+                    error_callback: (error) => {
+                        // Called when user closes popup OR access is denied
+                        console.log('[GoogleDrive] Auth cancelled or popup closed:', error?.type || error);
+                        resolve(false);
+                    },
                 });
 
                 // If we have an expired token, try silent refresh first
@@ -176,6 +181,78 @@ export const GoogleDriveProvider = {
      */
     isConnected() {
         return this._token !== null && Date.now() < (this._token.expiry || 0);
+    },
+
+    /**
+     * Get remaining time before token expires.
+     * @returns {number} Milliseconds until expiry (0 if expired or no token)
+     */
+    getTokenExpiryTime() {
+        if (!this._token?.expiry) return 0;
+        return Math.max(0, this._token.expiry - Date.now());
+    },
+
+    /**
+     * Check if token expires within threshold.
+     * @param {number} thresholdMs - Threshold in ms (default 10 min)
+     * @returns {boolean}
+     */
+    isExpiringSoon(thresholdMs = 10 * 60 * 1000) {
+        if (!this._token) return true;
+        return this.getTokenExpiryTime() < thresholdMs;
+    },
+
+    /**
+     * Attempt silent token refresh using existing Google session.
+     * Uses prompt: 'none' which succeeds if user has active Google session.
+     * @returns {Promise<boolean>} True if refresh succeeded, false if user interaction required
+     */
+    async silentRefresh() {
+        try {
+            await this._ensureGapiLoaded();
+            await this._loadGapiClient();
+
+            return new Promise((resolve) => {
+                const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: GOOGLE_SCOPES,
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.log('[GoogleDrive] Silent refresh failed:', tokenResponse.error);
+                            // Mark that user interaction is needed
+                            this._needsReconnect = true;
+                            resolve(false);
+                            return;
+                        }
+
+                        // Success - update token
+                        this._token = {
+                            access_token: tokenResponse.access_token,
+                            expiry: Date.now() + (tokenResponse.expires_in * 1000)
+                        };
+
+                        localStorage.setItem('bulletin_google_token', JSON.stringify(this._token));
+                        window.gapi.client.setToken({ access_token: this._token.access_token });
+                        this._needsReconnect = false;
+                        console.log('[GoogleDrive] Silent refresh successful, new expiry:', new Date(this._token.expiry).toLocaleTimeString());
+                        resolve(true);
+                    },
+                    error_callback: (error) => {
+                        // Called when popup closes or access denied (shouldn't happen in silent mode, but be safe)
+                        console.log('[GoogleDrive] Silent refresh error_callback:', error?.type || error);
+                        this._needsReconnect = true;
+                        resolve(false);
+                    },
+                });
+
+                // Use prompt: 'none' for invisible refresh
+                tokenClient.requestAccessToken({ prompt: 'none' });
+            });
+
+        } catch (error) {
+            console.error('[GoogleDrive] Silent refresh error:', error);
+            return false;
+        }
     },
 
     /**

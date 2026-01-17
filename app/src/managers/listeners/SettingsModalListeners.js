@@ -744,11 +744,6 @@ export const SettingsModalListeners = {
         if (DOM.connectGoogleBtn) {
             DOM.connectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    // Show RGPD warning first
-                    if (DOM.syncRgpdWarning) {
-                        DOM.syncRgpdWarning.style.display = 'flex';
-                    }
-
                     DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
                     DOM.connectGoogleBtn.disabled = true;
 
@@ -826,10 +821,6 @@ export const SettingsModalListeners = {
 
                     const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
                     if (card) card.classList.remove('connected');
-
-                    if (DOM.syncRgpdWarning) {
-                        DOM.syncRgpdWarning.style.display = 'none';
-                    }
 
                     UI.showNotification('Déconnecté de Google Drive.', 'info');
                 } catch (error) {

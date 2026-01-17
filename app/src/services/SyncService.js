@@ -157,20 +157,53 @@ export const SyncService = {
     },
 
     /**
-     * Check if the current token is still valid.
+     * Check if the current token is still valid and proactively refresh if expiring soon.
      * @private
      */
-    _checkTokenValidity() {
+    async _checkTokenValidity() {
         if (!this._provider || !this._isOnline) return;
 
-        // Check if provider has isConnected method
-        if (typeof this._provider.isConnected === 'function') {
-            const isValid = this._provider.isConnected();
-            if (!isValid) {
-                console.log('[SyncService] Token expired or invalid');
+        // Check if provider has the required methods
+        if (typeof this._provider.isConnected !== 'function') return;
+
+        const isValid = this._provider.isConnected();
+
+        if (!isValid) {
+            // Token already expired - try silent refresh
+            console.log('[SyncService] Token expired, attempting silent refresh...');
+            const refreshed = await this._trySilentRefresh();
+            if (!refreshed) {
                 this._updateCloudIndicator('expired');
+                this._showReconnectNotification();
             }
+        } else if (typeof this._provider.isExpiringSoon === 'function' && this._provider.isExpiringSoon()) {
+            // Token valid but expiring soon (within 10 min) - proactive refresh
+            console.log('[SyncService] Token expiring soon, proactive silent refresh...');
+            await this._trySilentRefresh();
         }
+    },
+
+    /**
+     * Attempt silent token refresh.
+     * @returns {Promise<boolean>} True if refresh succeeded
+     * @private
+     */
+    async _trySilentRefresh() {
+        if (!this._provider || typeof this._provider.silentRefresh !== 'function') {
+            return false;
+        }
+
+        try {
+            const refreshed = await this._provider.silentRefresh();
+            if (refreshed) {
+                console.log('[SyncService] Silent refresh successful');
+                this._updateCloudIndicator('connected');
+                return true;
+            }
+        } catch (e) {
+            console.warn('[SyncService] Silent refresh failed:', e.message);
+        }
+        return false;
     },
 
     /**
@@ -235,10 +268,10 @@ export const SyncService = {
 
             // Update tooltip text
             const tooltips = {
-                connected: 'Google Drive connecté<br><span class="kbd-hint">Cliquer pour ouvrir les paramètres</span>',
-                expired: 'Session expirée<br><span class="kbd-hint">Cliquer pour reconnecter</span>',
+                connected: 'Google Drive connecté<br><span class="kbd-hint">Ouvrir les paramètres</span>',
+                expired: 'Session expirée<br><span class="kbd-hint">Reconnecter</span>',
                 syncing: 'Synchronisation en cours...',
-                local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Cliquer pour configurer le cloud</span>'
+                local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Configurer le cloud</span>'
             };
             const tooltipText = tooltips[state] || 'Synchronisation Cloud';
 
@@ -628,10 +661,16 @@ export const SyncService = {
 
     /**
      * Trigger auto-sync with debounce (called after data changes).
+     * Ensures valid token before syncing to avoid false sync indicators.
      * @param {number} delayMs - Debounce delay (default 5000ms)
      */
     triggerAutoSync(delayMs = 5000) {
-        if (!this.autoSyncEnabled || !this.isConnected()) return;
+        // Early exit if auto-sync disabled or no provider configured
+        if (!this.autoSyncEnabled) return;
+
+        // Check if we have a provider configured (even if token might be expired)
+        const savedProvider = localStorage.getItem('bulletin_sync_provider');
+        if (!savedProvider && !this.isConnected()) return;
 
         // Clear existing timer
         if (this._syncDebounceTimer) {
@@ -641,11 +680,49 @@ export const SyncService = {
         // Set new timer
         this._syncDebounceTimer = setTimeout(async () => {
             try {
-                await this.sync();
+                // Ensure we have a valid token before syncing
+                const tokenValid = await this._ensureValidToken();
+
+                if (tokenValid) {
+                    await this.sync();
+                } else {
+                    // Token invalid and couldn't refresh - user will see expired indicator
+                    console.log('[SyncService] Auto-sync skipped: token invalid, user needs to reconnect');
+                }
             } catch (e) {
                 console.warn('[SyncService] Auto-sync failed:', e.message);
             }
         }, delayMs);
+    },
+
+    /**
+     * Ensure we have a valid token, attempting silent refresh if needed.
+     * @returns {Promise<boolean>} True if token is valid (or was refreshed)
+     * @private
+     */
+    async _ensureValidToken() {
+        if (!this._provider) return false;
+
+        // Check if currently valid
+        if (typeof this._provider.isConnected === 'function' && this._provider.isConnected()) {
+            return true;
+        }
+
+        // Try silent refresh
+        const refreshed = await this._trySilentRefresh();
+        if (refreshed) {
+            return true;
+        }
+
+        // Silent refresh failed - show notification once
+        if (!this._reconnectNotificationShown) {
+            this._showReconnectNotification();
+            this._reconnectNotificationShown = true;
+            // Reset flag after 5 minutes to allow re-showing
+            setTimeout(() => { this._reconnectNotificationShown = false; }, 5 * 60 * 1000);
+        }
+
+        return false;
     },
 
     // =========================================================================
