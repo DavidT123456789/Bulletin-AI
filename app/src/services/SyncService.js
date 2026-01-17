@@ -816,6 +816,7 @@ export const SyncService = {
 
     /**
      * Merge local and remote data using last-write-wins strategy.
+     * Deep-merges studentData.periods and preserves AI generation metadata.
      * @private
      */
     _mergeData(local, remote) {
@@ -846,35 +847,13 @@ export const SyncService = {
                 const localTime = localItem._lastModified || 0;
 
                 if (remoteTime > localTime) {
-                    // Remote is newer - update local
-                    // CRITICAL FIX: Preserve local-only data that remote might not have
-                    const localPhoto = localItem.studentPhoto;
-                    const localManualEdits = localItem._manualEdits;
-
-                    Object.assign(localItem, remoteItem);
-
-                    // Restore local photo if remote didn't have one or has older photo
-                    if (localPhoto?.data) {
-                        const remotePhotoTime = remoteItem.studentPhoto?.uploadedAt
-                            ? new Date(remoteItem.studentPhoto.uploadedAt).getTime() : 0;
-                        const localPhotoTime = localPhoto.uploadedAt
-                            ? new Date(localPhoto.uploadedAt).getTime() : 0;
-
-                        if (!remoteItem.studentPhoto || localPhotoTime > remotePhotoTime) {
-                            localItem.studentPhoto = localPhoto;
-                            console.log(`[SyncService] Preserved local photo for ${localItem.prenom} ${localItem.nom}`);
-                        }
-                    }
-
-                    // Preserve manual edits if remote doesn't have them
-                    if (localManualEdits && !remoteItem._manualEdits) {
-                        localItem._manualEdits = localManualEdits;
-                    }
-
+                    // Remote is newer - deep merge to preserve local data
+                    this._deepMergeResult(localItem, remoteItem);
                     stats.updated++;
                     stats.conflicts++;
                 } else if (remoteTime < localTime) {
-                    // Local is newer - keep local
+                    // Local is newer - but still merge any missing data from remote
+                    this._deepMergeResult(localItem, remoteItem, true);
                     stats.skipped++;
                     stats.conflicts++;
                 }
@@ -886,6 +865,167 @@ export const SyncService = {
             merged: { ...local, generatedResults: mergedResults },
             stats
         };
+    },
+
+    /**
+     * Deep merge a remote result into a local result.
+     * Preserves local-only data and deep-merges studentData.periods.
+     * @param {Object} localItem - The local result to update
+     * @param {Object} remoteItem - The remote result to merge from
+     * @param {boolean} localIsNewer - If true, only fill in missing data from remote
+     * @private
+     */
+    _deepMergeResult(localItem, remoteItem, localIsNewer = false) {
+        // Preserve local-only data that should never be overwritten blindly
+        const preserved = {
+            id: localItem.id,
+            studentPhoto: localItem.studentPhoto,
+            journal: localItem.journal,
+            history: localItem.history,
+            _manualEdits: localItem._manualEdits,
+            // Root-level appreciation (cache for current period)
+            appreciation: localItem.appreciation,
+            // AI generation metadata
+            wasGenerated: localItem.wasGenerated,
+            generationSnapshot: localItem.generationSnapshot,
+            generationSnapshotJournal: localItem.generationSnapshotJournal,
+            generationSnapshotJournalCount: localItem.generationSnapshotJournalCount,
+            generationThreshold: localItem.generationThreshold,
+            generationPeriod: localItem.generationPeriod,
+            // Local periods data for deep merge
+            localPeriods: localItem.studentData?.periods ? { ...localItem.studentData.periods } : {}
+        };
+
+        if (!localIsNewer) {
+            // Remote is newer - take remote as base
+            Object.assign(localItem, remoteItem);
+        }
+
+        // === Deep merge studentData.periods ===
+        // Combine local and remote periods, keeping data from both
+        if (localItem.studentData && preserved.localPeriods) {
+            const remotePeriods = remoteItem.studentData?.periods || {};
+            const mergedPeriods = { ...preserved.localPeriods };
+
+            // Merge each period from remote
+            for (const period in remotePeriods) {
+                const remotePeriodData = remotePeriods[period];
+                const localPeriodData = preserved.localPeriods[period] || {};
+
+                if (!mergedPeriods[period]) {
+                    // Period only exists in remote
+                    mergedPeriods[period] = { ...remotePeriodData };
+                } else {
+                    // Period exists in both - merge intelligently
+                    const merged = { ...localPeriodData };
+
+                    // Grade: prefer non-null value, or newer if both exist
+                    if (remotePeriodData.grade !== undefined && remotePeriodData.grade !== null) {
+                        if (merged.grade === undefined || merged.grade === null) {
+                            merged.grade = remotePeriodData.grade;
+                        } else if (!localIsNewer) {
+                            merged.grade = remotePeriodData.grade;
+                        }
+                    }
+
+                    // Appreciation: prefer non-empty value
+                    const remoteApp = remotePeriodData.appreciation?.trim() || '';
+                    const localApp = localPeriodData.appreciation?.trim() || '';
+
+                    if (remoteApp && !localApp) {
+                        merged.appreciation = remotePeriodData.appreciation;
+                    } else if (remoteApp && localApp) {
+                        // Both have appreciation - use remote if remote is newer
+                        if (!localIsNewer) {
+                            merged.appreciation = remotePeriodData.appreciation;
+                        }
+                    }
+                    // If only local has appreciation, keep it (already in merged)
+
+                    mergedPeriods[period] = merged;
+                }
+            }
+
+            localItem.studentData.periods = mergedPeriods;
+        }
+
+        // === Restore preserved ID (never change) ===
+        localItem.id = preserved.id;
+
+        // === Restore local photo with timestamp comparison ===
+        if (preserved.studentPhoto?.data) {
+            const remotePhotoTime = remoteItem.studentPhoto?.uploadedAt
+                ? new Date(remoteItem.studentPhoto.uploadedAt).getTime() : 0;
+            const localPhotoTime = preserved.studentPhoto.uploadedAt
+                ? new Date(preserved.studentPhoto.uploadedAt).getTime() : 0;
+
+            if (!remoteItem.studentPhoto || localPhotoTime > remotePhotoTime) {
+                localItem.studentPhoto = preserved.studentPhoto;
+            }
+        }
+
+        // === Restore journal (local-only data) ===
+        if (preserved.journal && (!remoteItem.journal || preserved.journal.length > 0)) {
+            localItem.journal = preserved.journal;
+        }
+
+        // === Restore history (cumulative) ===
+        if (preserved.history) {
+            localItem.history = preserved.history;
+        }
+
+        // === Restore root-level appreciation if local has one and remote doesn't ===
+        const localAppTrimmed = preserved.appreciation?.trim() || '';
+        const remoteAppTrimmed = remoteItem.appreciation?.trim() || '';
+        if (localAppTrimmed && !remoteAppTrimmed) {
+            localItem.appreciation = preserved.appreciation;
+        }
+
+        // === Restore manual edits ===
+        if (preserved._manualEdits && !remoteItem._manualEdits) {
+            localItem._manualEdits = preserved._manualEdits;
+        }
+
+        // === Restore AI generation metadata ===
+        // Prefer local wasGenerated if it's true and remote doesn't have it
+        if (preserved.wasGenerated === true && remoteItem.wasGenerated !== true) {
+            localItem.wasGenerated = true;
+            // Also restore related generation metadata
+            if (preserved.generationSnapshot) {
+                localItem.generationSnapshot = preserved.generationSnapshot;
+            }
+            if (preserved.generationSnapshotJournal) {
+                localItem.generationSnapshotJournal = preserved.generationSnapshotJournal;
+            }
+            if (preserved.generationSnapshotJournalCount !== undefined) {
+                localItem.generationSnapshotJournalCount = preserved.generationSnapshotJournalCount;
+            }
+            if (preserved.generationThreshold !== undefined) {
+                localItem.generationThreshold = preserved.generationThreshold;
+            }
+            if (preserved.generationPeriod) {
+                localItem.generationPeriod = preserved.generationPeriod;
+            }
+        }
+
+        // If remote has wasGenerated = true, ensure we have the generation metadata
+        if (remoteItem.wasGenerated === true && !localItem.generationSnapshot) {
+            if (remoteItem.generationSnapshot) {
+                localItem.generationSnapshot = remoteItem.generationSnapshot;
+            }
+            if (remoteItem.generationSnapshotJournal) {
+                localItem.generationSnapshotJournal = remoteItem.generationSnapshotJournal;
+            }
+            if (remoteItem.generationSnapshotJournalCount !== undefined) {
+                localItem.generationSnapshotJournalCount = remoteItem.generationSnapshotJournalCount;
+            }
+            if (remoteItem.generationThreshold !== undefined) {
+                localItem.generationThreshold = remoteItem.generationThreshold;
+            }
+            if (remoteItem.generationPeriod) {
+                localItem.generationPeriod = remoteItem.generationPeriod;
+            }
+        }
     },
 
     // =========================================================================
