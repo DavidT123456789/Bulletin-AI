@@ -591,35 +591,47 @@ export const SyncService = {
             const localData = await this._getLocalData();
             const remoteData = await this._provider.read();
 
-            const localTimestamp = this.lastSyncTime || 0;
-            const remoteTimestamp = remoteData?._meta?.lastSyncTimestamp || 0;
-
             const stats = { updated: 0, imported: 0, classesImported: 0, direction: 'none' };
 
-            // 2. Simple last-write-wins: compare global timestamps
-            if (remoteData && remoteTimestamp > localTimestamp) {
-                // REMOTE IS NEWER - Pull everything from remote
-                console.log('[SyncService] Remote is newer, pulling data...');
-                stats.direction = 'pull';
+            // 2. ALWAYS merge if remote has data (bidirectional sync)
+            // Don't rely on lastSyncTime - it's the time of sync operation, not data modification
+            // The _mergeData function uses per-result and per-period timestamps for conflict resolution
+            if (remoteData) {
+                console.log('[SyncService] Performing bidirectional sync...');
+                stats.direction = 'bidirectional';
 
-                // Replace classes entirely
-                if (remoteData.classes) {
-                    userSettings.academic.classes = [...remoteData.classes];
-                    stats.classesImported = remoteData.classes.length;
+                // Merge classes: combine local and remote, prefer newer timestamps
+                if (remoteData.classes && Array.isArray(remoteData.classes)) {
+                    const localClasses = userSettings.academic.classes || [];
+                    const classMap = new Map();
+
+                    // Add local classes first
+                    localClasses.forEach(c => classMap.set(c.id, c));
+
+                    // Merge remote classes (remote wins if same ID and has more recent data)
+                    remoteData.classes.forEach(remoteClass => {
+                        const localClass = classMap.get(remoteClass.id);
+                        if (!localClass) {
+                            classMap.set(remoteClass.id, remoteClass);
+                            stats.classesImported++;
+                        }
+                        // If both exist, keep local (could add per-class timestamps later)
+                    });
+
+                    userSettings.academic.classes = Array.from(classMap.values());
                 }
 
-                // Replace currentClassId
-                if (remoteData.currentClassId !== undefined) {
+                // Merge currentClassId only if local doesn't have one
+                if (remoteData.currentClassId !== undefined && !userSettings.academic.currentClassId) {
                     userSettings.academic.currentClassId = remoteData.currentClassId;
                 }
 
-                // Merge generated results (keep local changes to avoid data loss)
-                if (remoteData.generatedResults?.length > 0) {
+                // Merge generated results using deep merge with per-period timestamps
+                if (remoteData.generatedResults?.length > 0 || localData.generatedResults?.length > 0) {
                     const localCountBefore = localData.generatedResults?.length || 0;
                     const { merged, stats: mergeStats } = this._mergeData(localData, remoteData);
 
                     // FIX: Keep ALL students, only warn about orphans instead of deleting
-                    // This prevents data loss when classes sync out of order
                     const validClassIds = new Set(
                         (userSettings.academic.classes || []).map(c => c.id)
                     );
@@ -653,8 +665,8 @@ export const SyncService = {
                     window.App.updateUIOnLoad();
                 }
             } else {
-                // LOCAL IS NEWER OR SAME - Push to remote
-                console.log('[SyncService] Local is newer or same, pushing data...');
+                // NO REMOTE DATA - Push local to initialize cloud
+                console.log('[SyncService] No remote data, pushing local to cloud...');
                 stats.direction = 'push';
             }
 
