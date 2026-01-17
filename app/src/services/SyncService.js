@@ -916,31 +916,49 @@ export const SyncService = {
                     // Period only exists in remote
                     mergedPeriods[period] = { ...remotePeriodData };
                 } else {
-                    // Period exists in both - merge intelligently
+                    // Period exists in both - merge using per-period timestamps
                     const merged = { ...localPeriodData };
 
-                    // Grade: prefer non-null value, or newer if both exist
+                    // Get per-period timestamps (new system) or fall back to global comparison
+                    const localPeriodTime = localPeriodData._lastModified || 0;
+                    const remotePeriodTime = remotePeriodData._lastModified || 0;
+
+                    // Determine which period data is newer
+                    const periodRemoteIsNewer = remotePeriodTime > localPeriodTime;
+                    const periodLocalIsNewer = localPeriodTime > remotePeriodTime;
+                    const noTimestamps = !localPeriodTime && !remotePeriodTime;
+
+                    // Grade: use newer, or non-null if one is missing
                     if (remotePeriodData.grade !== undefined && remotePeriodData.grade !== null) {
                         if (merged.grade === undefined || merged.grade === null) {
                             merged.grade = remotePeriodData.grade;
-                        } else if (!localIsNewer) {
+                        } else if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
                             merged.grade = remotePeriodData.grade;
                         }
                     }
 
-                    // Appreciation: prefer non-empty value
+                    // Appreciation: use per-period timestamps for precise conflict resolution
                     const remoteApp = remotePeriodData.appreciation?.trim() || '';
                     const localApp = localPeriodData.appreciation?.trim() || '';
 
                     if (remoteApp && !localApp) {
+                        // Remote has content, local is empty → take remote
                         merged.appreciation = remotePeriodData.appreciation;
+                        merged._lastModified = remotePeriodTime || Date.now();
+                    } else if (!remoteApp && localApp) {
+                        // Local has content, remote is empty → keep local (already in merged)
                     } else if (remoteApp && localApp) {
-                        // Both have appreciation - use remote if remote is newer
-                        if (!localIsNewer) {
+                        // Both have content → use per-period timestamp
+                        if (periodRemoteIsNewer) {
+                            merged.appreciation = remotePeriodData.appreciation;
+                            merged._lastModified = remotePeriodTime;
+                        } else if (periodLocalIsNewer) {
+                            // Keep local (already in merged)
+                        } else if (noTimestamps && !localIsNewer) {
+                            // No per-period timestamps, fall back to global result timestamp
                             merged.appreciation = remotePeriodData.appreciation;
                         }
                     }
-                    // If only local has appreciation, keep it (already in merged)
 
                     mergedPeriods[period] = merged;
                 }
