@@ -74,20 +74,24 @@ export function parseLine(line, separator) {
 
 /**
  * Détecte si les données sont au format vertical multi-lignes
- * Format attendu : 4 lignes par élève
- *   1. NOM Prénom
- *   2. Nombre de notes (entier)
- *   3. Moyenne (décimal avec virgule ou point)
- *   4. Prénom NOM - Période - Matière
+ * Format attendu : 2-4 lignes par élève (variable selon si l'élève a une note)
+ *   - Avec note (4 lignes):
+ *     1. NOM Prénom
+ *     2. Nombre de notes (entier) - peut être "Saisir un commentaire" à ignorer
+ *     3. Moyenne (décimal avec virgule ou point)
+ *     4. Prénom NOM - Période - Matière (contexte avec " - ")
+ *   - Sans note (2 lignes):
+ *     1. NOM Prénom
+ *     2. Prénom NOM - Période - Matière (contexte avec " - ")
  * 
  * @param {string} rawData - Les données brutes
  * @returns {boolean} True si le format vertical est détecté
  */
 export function detectVerticalFormat(rawData) {
-    const lines = rawData.split('\n').map(l => l.trim()).filter(l => l !== '');
+    const lines = rawData.split('\n').map(l => l.trim()).filter(l => l !== '' && !l.startsWith('Saisir un commentaire'));
 
-    // Besoin d'au moins 8 lignes (2 élèves) pour confirmer le pattern
-    if (lines.length < 8) return false;
+    // Besoin d'au moins 4 lignes (2 élèves sans notes) pour confirmer le pattern
+    if (lines.length < 4) return false;
 
     // Vérifie si aucune ligne ne contient les séparateurs classiques
     const hasTabularSeparator = lines.some(l =>
@@ -95,72 +99,103 @@ export function detectVerticalFormat(rawData) {
     );
     if (hasTabularSeparator) return false;
 
-    // Pattern de validation pour les blocs de 4 lignes
-    const isValidBlock = (startIdx) => {
-        if (startIdx + 3 >= lines.length) return false;
+    // Détecte le pattern : cherche des lignes contexte contenant " - "
+    // qui suivent soit un nom (sans note) soit une moyenne (avec note)
+    let contextLines = 0;
+    let nameLines = 0;
 
-        const line1 = lines[startIdx];     // NOM Prénom
-        const line2 = lines[startIdx + 1]; // Nombre de notes
-        const line3 = lines[startIdx + 2]; // Moyenne
-        const line4 = lines[startIdx + 3]; // Contexte avec " - "
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
 
-        // Ligne 1: Doit contenir au moins 2 mots (nom + prénom)
-        const words = line1.split(/\s+/).filter(w => w.length > 0);
-        if (words.length < 2) return false;
-
-        // Ligne 2: Doit être un entier (nombre de notes)
-        if (!/^\d+$/.test(line2)) return false;
-
-        // Ligne 3: Doit être un nombre décimal (moyenne) - virgule ou point
-        if (!/^\d+([.,]\d+)?$/.test(line3)) return false;
-
-        // Ligne 4: Doit contenir " - " (séparateur de contexte)
-        if (!line4.includes(' - ')) return false;
-
-        return true;
-    };
-
-    // Vérifie au moins 2 blocs consécutifs valides
-    let validBlocks = 0;
-    for (let i = 0; i + 3 < lines.length; i += 4) {
-        if (isValidBlock(i)) {
-            validBlocks++;
-            if (validBlocks >= 2) return true;
-        } else {
-            break; // Pattern cassé, arrête la vérification
+        // Ligne contexte : contient " - " (ex: "Prénom NOM - Période - Matière")
+        if (line.includes(' - ')) {
+            contextLines++;
+        }
+        // Ligne nom : au moins 2 mots, tout en majuscules pour le nom de famille
+        else if (/^[A-ZÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ\s-]+\s+[A-Za-zéèêëàâäùûüôöîïç]+/.test(line)) {
+            nameLines++;
         }
     }
 
-    return false;
+    // Le format est valide si on a au moins 2 élèves (2 contextes et 2 noms)
+    return contextLines >= 2 && nameLines >= 2;
 }
+
+// ========== HELPERS pour le parsing vertical ==========
+
+/** Vérifie si une ligne est un nom d'élève (NOM Prénom) */
+const isStudentName = (line) =>
+    /^[A-ZÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ][A-ZÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ\s-]*\s+[A-Za-zéèêëàâäùûüôöîïç]/.test(line)
+    && !line.includes(' - ');
+
+/** Vérifie si une ligne est un contexte (contient " - ") */
+const isContextLine = (line) => line.includes(' - ');
+
+/** Vérifie si une ligne est un nombre (entier ou décimal) */
+const isNumber = (line) => /^\d+([.,]\d+)?$/.test(line);
+
+/** Vérifie si c'est un petit entier (compte de notes: 1-9) */
+const isSmallInt = (line) => /^[1-9]$/.test(line);
+
+/** Extrait la moyenne depuis une ligne (normalise virgule → point) */
+const parseAverage = (line) => isNumber(line) ? line.replace(',', '.') : '';
+
+/** Extrait le contexte (partie après le premier " - ") */
+const parseContext = (line) => line.split(' - ').slice(1).join(' - ');
 
 /**
  * Convertit le format vertical multi-lignes en format tabulaire
+ * Gère les élèves avec ou sans notes de manière dynamique
  * 
  * @param {string} rawData - Les données au format vertical
  * @returns {string} Les données converties au format tabulaire (tab-separated)
  */
 export function convertVerticalToTabular(rawData) {
-    const lines = rawData.split('\n').map(l => l.trim()).filter(l => l !== '');
+    const lines = rawData.split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.startsWith('Saisir un commentaire'));
+
     const students = [];
+    let i = 0;
 
-    // Traite les lignes par blocs de 4
-    for (let i = 0; i + 3 < lines.length; i += 4) {
-        const nameLine = lines[i];           // NOM Prénom
-        // const noteCount = lines[i + 1];   // Nombre de notes (ignoré)
-        const average = lines[i + 2];        // Moyenne
-        const contextLine = lines[i + 3];    // Prénom NOM - Période - Matière
+    while (i < lines.length) {
+        // Cherche la prochaine ligne nom
+        if (!isStudentName(lines[i])) { i++; continue; }
 
-        // Parse le contexte : "Prénom NOM - Période - Matière"
-        const contextParts = contextLine.split(' - ');
-        // On ignore la première partie (nom répété), on garde période + matière
-        const context = contextParts.slice(1).join(' - ');
+        const name = lines[i];
+        const block = lines.slice(i + 1, i + 4); // Max 3 lignes après le nom
 
-        // Normalise la moyenne (remplace virgule par point pour cohérence)
-        const normalizedAvg = average.replace(',', '.');
+        // Trouve le contexte dans le bloc
+        const ctxIdx = block.findIndex(isContextLine);
 
-        // Format: NOM Prénom | (vide=statut) | Moyenne | Contexte
-        students.push(`${nameLine}\t\t${normalizedAvg}\t${context}`);
+        let average = '';
+        let context = '';
+        let skip = 1;
+
+        if (ctxIdx === -1) {
+            // Données tronquées : cherche juste la moyenne
+            for (const line of block) {
+                if (isStudentName(line)) break;
+                if (isNumber(line) && !isSmallInt(line)) { average = parseAverage(line); break; }
+                if (isSmallInt(line)) continue; // Ignore le compte
+            }
+            skip = block.findIndex(isStudentName);
+            skip = skip === -1 ? block.length + 1 : skip + 1;
+        }
+        else if (ctxIdx === 0) {
+            // Sans note : Nom → Contexte
+            context = parseContext(block[0]);
+            skip = 2;
+        }
+        else {
+            // Avec note : la ligne avant le contexte est la moyenne
+            context = parseContext(block[ctxIdx]);
+            average = parseAverage(block[ctxIdx - 1]);
+            skip = ctxIdx + 2;
+        }
+
+        students.push(`${name}\t\t${average}\t${context}`);
+        i += skip;
     }
 
     return students.join('\n');

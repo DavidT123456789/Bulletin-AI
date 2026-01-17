@@ -42,8 +42,6 @@ export const ImportWizardManager = {
         const backdrop = document.getElementById('importHubBackdrop');
         if (!backdrop) return;
 
-
-
         // Also open hub from FAB button
         const fabBtn = document.getElementById('addStudentFab');
         fabBtn?.addEventListener('click', (e) => {
@@ -207,28 +205,14 @@ export const ImportWizardManager = {
             }
         });
 
-        // Step 2: Separator change
-        document.getElementById('wizardSeparatorSelect')?.addEventListener('change', () => this._processData());
+        // Step 2: Separator change - reparse with user-selected separator
+        document.getElementById('wizardSeparatorSelect')?.addEventListener('change', () => this._reparseWithSelectedSeparator());
 
-        // Step 2: Format toggle (Auto vs Saved)
-        const formatToggle = document.getElementById('wizardSaveFormatToggle');
-        const formatLabel = document.getElementById('formatToggleLabel');
-
-        formatToggle?.addEventListener('change', () => {
-            if (formatToggle.checked) {
-                // Save current format
-                this._saveFormat();
-                if (formatLabel) formatLabel.textContent = 'Enregistré';
-                UI.showNotification('Format enregistré pour les prochains imports', 'success');
-            } else {
-                // Switch back to auto-detection
-                if (formatLabel) formatLabel.textContent = 'Auto';
-                UI.showNotification('Détection automatique activée', 'info');
-            }
+        // Step 2: "Détection auto" button - forces re-detection of column types
+        document.getElementById('wizardAutoDetectBtn')?.addEventListener('click', () => {
+            this._forceAutoDetect();
+            UI.showNotification('Détection automatique relancée', 'info');
         });
-
-        // Check if a saved format exists on init
-        this._initFormatToggle();
 
         // Step 3: Import button (single action)
         document.getElementById('wizardImportOnlyBtn')?.addEventListener('click', () => this._importOnly());
@@ -505,11 +489,48 @@ export const ImportWizardManager = {
         // Enable Step 1 Next button when we have data
         if (step1NextBtn) step1NextBtn.disabled = this.state.lines.length === 0;
 
+        // Update Step 1 line count indicator (in footer)
+        const lineCountContainer = document.getElementById('wizardStep1LineCount');
+        const lineCountBadge = document.getElementById('wizardLineCountBadge');
+        if (lineCountContainer && lineCountBadge) {
+            if (this.state.lines.length > 0) {
+                lineCountBadge.textContent = this.state.lines.length;
+                lineCountContainer.style.display = 'flex';
+            } else {
+                lineCountContainer.style.display = 'none';
+            }
+        }
+
         // Build mapping table
         this._buildMappingTable();
 
         // Step 1 Preview (Magic Pills)
         this._updateStep1Preview();
+
+        // Warn if only 1 column detected (likely wrong separator)
+        this._checkSingleColumnWarning();
+    },
+
+    /**
+     * Check and show warning if only 1 column is detected
+     * @private
+     */
+    _checkSingleColumnWarning() {
+        let warningEl = document.getElementById('wizardSingleColumnWarning');
+
+        if (this.state.columnCount === 1 && this.state.lines.length > 0) {
+            if (!warningEl) {
+                warningEl = document.createElement('div');
+                warningEl.id = 'wizardSingleColumnWarning';
+                warningEl.className = 'mapping-warning';
+                const preview = document.getElementById('wizardStep1Preview');
+                preview?.insertAdjacentElement('afterend', warningEl);
+            }
+            warningEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Une seule colonne détectée. Essayez un autre séparateur.`;
+            warningEl.style.display = 'flex';
+        } else if (warningEl) {
+            warningEl.style.display = 'none';
+        }
     },
 
     /**
@@ -528,6 +549,30 @@ export const ImportWizardManager = {
         } else {
             select.value = 'tab'; // Default fallback
         }
+    },
+
+    /**
+     * Reparse data with the user-selected separator (no auto-detection)
+     * Called when user manually changes the separator dropdown
+     * @private
+     */
+    _reparseWithSelectedSeparator() {
+        const text = this.state.rawData;
+        if (!text) return;
+
+        // Use the user-selected separator instead of auto-detecting
+        const separator = this._getSeparator();
+        this.state.separator = separator;
+
+        const rawLines = text.split('\n').filter(l => l.trim());
+        this.state.lines = rawLines.map(l => parseLine(l, separator));
+        this.state.columnCount = Math.max(...this.state.lines.map(l => l.length));
+
+        // Rebuild mapping table with new column structure
+        this._buildMappingTable();
+
+        // Update preview pills
+        this._updateStep1Preview();
     },
 
     /**
@@ -610,13 +655,14 @@ export const ImportWizardManager = {
 
     /**
      * Build mapping table for step 2 - CLEANED UP VERSION with native selects
+     * @param {boolean} forceAuto - If true, ignores saved format and uses auto-detection
      */
-    _buildMappingTable() {
+    _buildMappingTable(forceAuto = false) {
         const container = document.getElementById('wizardMappingContainer');
         if (!container || this.state.lines.length === 0) return;
 
-        // Update student count badge
-        const countBadge = document.getElementById('wizardCountBadge');
+        // Update student count badge (now in footer)
+        const countBadge = document.getElementById('wizardCountBadge2');
         if (countBadge) {
             countBadge.textContent = this.state.lines.length;
         }
@@ -636,18 +682,31 @@ export const ImportWizardManager = {
             ]),
             { v: 'INSTRUCTIONS', t: 'Contexte (global)' }
         ];
-        const optionsHTML = options.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
 
-        // Try to load saved format
-        const savedFormat = this._loadSavedFormat();
+        // Try to load saved format (only if not forcing auto and column count matches)
+        const savedFormat = forceAuto ? null : this._loadSavedFormat();
+        const useSavedFormat = savedFormat && Object.keys(savedFormat).length === cols;
+
+        // UX: Show feedback when saved format is applied (only once per wizard session)
+        const autoDetectBtn = document.getElementById('wizardAutoDetectBtn');
+        if (useSavedFormat) {
+            // Only show notification if not already shown this session
+            if (!this.state._formatNotificationShown) {
+                UI.showNotification('Format précédent appliqué • Cliquez "Détection auto" pour changer', 'info');
+                this.state._formatNotificationShown = true;
+            }
+            autoDetectBtn?.classList.add('format-applied');
+        } else {
+            autoDetectBtn?.classList.remove('format-applied');
+        }
 
         // Build table with NATIVE selects
         let html = `<table class="import-mapping-table vertical-align">
             <thead><tr>`;
 
         for (let i = 0; i < cols; i++) {
-            // Determine initial value
-            let initialValue = savedFormat?.[i] || this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
+            // Determine initial value: use saved format if available and matching, otherwise auto-detect
+            let initialValue = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
 
             html += `<th>
                 <select class="mapping-select" data-col-index="${i}">
@@ -662,7 +721,9 @@ export const ImportWizardManager = {
         previewLines.forEach(line => {
             html += `<tr>`;
             for (let i = 0; i < cols; i++) {
-                const cellContent = (line[i] || '').substring(0, 50).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const fullContent = (line[i] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const cellContent = fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent;
+                const needsTooltip = fullContent.length > 50;
 
                 // Special styling for status column (column 1 typically)
                 const isStatusCol = i === 1; // Statut is typically column 1
@@ -677,10 +738,10 @@ export const ImportWizardManager = {
                     else if (statusLower.includes('nouveau')) statusType = 'nouveau';
                     else if (statusLower.includes('départ') || statusLower.includes('depart')) statusType = 'depart';
 
-                    // Render as colored badge
-                    html += `<td><span class="status-badge-cell status-${statusType}" data-status="${cellContent}">${cellContent}</span></td>`;
+                    // Render as colored badge (with tooltip if truncated)
+                    html += `<td${needsTooltip ? ` title="${fullContent}"` : ''}><span class="status-badge-cell status-${statusType}" data-status="${cellContent}">${cellContent}</span></td>`;
                 } else {
-                    html += `<td title="${cellContent}">${cellContent}</td>`;
+                    html += `<td${needsTooltip ? ` class="has-tooltip" title="${fullContent}"` : ''}>${cellContent}</td>`;
                 }
             }
             html += `</tr>`;
@@ -692,13 +753,59 @@ export const ImportWizardManager = {
         container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
         container.classList.add('horizontal-scroll');
 
-        // Bind SIMPLE change events to native selects
+        // Bind change events to native selects with duplicate validation
         container.querySelectorAll('.mapping-select').forEach(select => {
-            select.addEventListener('change', () => this._updatePreview());
+            select.addEventListener('change', () => {
+                this._validateMappings();
+                this._updatePreview();
+            });
         });
 
-        // Initial preview update
+        // Initial validation and preview
+        this._validateMappings();
         this._updatePreview();
+    },
+
+    /**
+     * Validate mapping selections - detect and highlight duplicates
+     * @private
+     */
+    _validateMappings() {
+        const selects = document.querySelectorAll('.mapping-select');
+        const valueCounts = {};
+
+        // Count occurrences of each value (excluding IGNORE)
+        selects.forEach(select => {
+            const val = select.value;
+            if (val && val !== 'IGNORE') {
+                valueCounts[val] = (valueCounts[val] || 0) + 1;
+            }
+        });
+
+        // Find duplicates
+        const duplicates = Object.keys(valueCounts).filter(k => valueCounts[k] > 1);
+
+        // Apply visual feedback to each select
+        selects.forEach(select => {
+            const isDuplicate = duplicates.includes(select.value);
+            select.classList.toggle('mapping-duplicate', isDuplicate);
+        });
+
+        // Show/hide warning message
+        let warningEl = document.getElementById('wizardMappingWarning');
+        if (duplicates.length > 0) {
+            if (!warningEl) {
+                warningEl = document.createElement('div');
+                warningEl.id = 'wizardMappingWarning';
+                warningEl.className = 'mapping-warning';
+                const container = document.getElementById('wizardMappingContainer');
+                container?.parentNode.insertBefore(warningEl, container);
+            }
+            warningEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Colonnes en doublon : plusieurs colonnes ont le même type`;
+            warningEl.style.display = 'flex';
+        } else if (warningEl) {
+            warningEl.style.display = 'none';
+        }
     },
 
     /**
@@ -747,150 +854,6 @@ export const ImportWizardManager = {
         checkScroll();
         container.addEventListener('scroll', checkScroll);
     },
-
-    /**
-     * Binds events for custom dropdowns
-     * @private
-     */
-    _bindCustomSelectEvents() {
-        const wrappers = document.querySelectorAll('.custom-select-wrapper');
-
-        // Helper function to close all open dropdowns
-        const closeAllDropdowns = (exceptWrapper = null) => {
-            document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
-                if (w === exceptWrapper) return;
-
-                // Find the portal in body or already in the wrapper
-                const portal = document.body.querySelector(`.portal-dropdown[data-parent="${w.dataset.col}"]`);
-                if (portal) {
-                    w.appendChild(portal);
-                    portal.classList.remove('open', 'portal-dropdown');
-                    portal.removeAttribute('data-parent');
-                    portal.style.cssText = '';
-                }
-                w.classList.remove('open');
-            });
-        };
-
-        wrappers.forEach(wrapper => {
-            const trigger = wrapper.querySelector('.custom-select-trigger');
-            const optionsContainer = wrapper.querySelector('.custom-select-options');
-            const options = wrapper.querySelectorAll('.custom-option');
-
-            // Toggle dropdown
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isOpen = wrapper.classList.contains('open');
-
-                // ALWAYS close all others first
-                closeAllDropdowns(isOpen ? null : wrapper);
-
-                if (isOpen) {
-                    // Close self
-                    const portal = document.body.querySelector(`.portal-dropdown[data-parent="${wrapper.dataset.col}"]`);
-                    if (portal) {
-                        wrapper.append(portal);
-                        portal.classList.remove('open', 'portal-dropdown');
-                        portal.style.cssText = '';
-                    }
-                    wrapper.classList.remove('open');
-                } else {
-                    // Open self (Portal Mode)
-                    wrapper.classList.add('open');
-
-                    // Mark options
-                    optionsContainer.dataset.parent = wrapper.dataset.col;
-                    optionsContainer.classList.add('portal-dropdown');
-
-                    document.body.appendChild(optionsContainer);
-
-                    // Calculate position (Fixed works better than absolute for portals to avoid scroll parent issues)
-                    const rect = wrapper.getBoundingClientRect();
-
-                    optionsContainer.style.position = 'fixed'; // FIXED to guarantee floating on top
-                    optionsContainer.style.top = `${rect.bottom + 4}px`;
-                    optionsContainer.style.left = `${rect.left}px`;
-                    optionsContainer.style.minWidth = '220px'; // Explicit min-width
-                    optionsContainer.style.width = 'max-content'; // Allow it to grow
-                    optionsContainer.style.maxWidth = '300px';
-                    optionsContainer.style.zIndex = '99999'; // Super high
-
-                    // Check if it goes off screen bottom
-                    const viewportHeight = window.innerHeight;
-                    if (rect.bottom + 300 > viewportHeight) {
-                        // Flip upwards if no space
-                        optionsContainer.style.top = 'auto';
-                        optionsContainer.style.bottom = `${viewportHeight - rect.top + 4}px`;
-                    }
-
-                    optionsContainer.classList.add('open');
-                }
-            });
-
-            // Select option
-            options.forEach(option => {
-                option.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const value = option.dataset.value;
-                    const text = option.textContent.trim();
-
-                    // Update trigger text
-                    trigger.querySelector('span').textContent = text;
-                    trigger.classList.add('active'); // Highlight active state
-
-                    // Update data-type for color coding
-                    let newType = 'ignored';
-                    if (value === 'Nom & Prénom') newType = 'name';
-                    else if (value === 'Statut') newType = 'status';
-                    else if (value.includes('Moy.')) newType = 'grade';
-                    else if (value.includes('Appréciation')) newType = 'appreciation';
-                    else if (value === 'Contexte') newType = 'context';
-                    trigger.dataset.type = newType;
-
-                    // Update wrapper data value
-                    wrapper.dataset.selectedValue = value;
-
-                    // Update selected visual state
-                    options.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-
-                    // Close dropdown (return to parent)
-                    if (document.body.contains(optionsContainer)) {
-                        wrapper.appendChild(optionsContainer);
-                        optionsContainer.classList.remove('open', 'portal-dropdown');
-                        optionsContainer.style.cssText = '';
-                    }
-                    wrapper.classList.remove('open');
-
-                    // Trigger preview update logic
-                    this._updatePreview();
-                });
-            });
-        });
-
-        // Close on click outside
-        const closeAll = (e) => {
-            if (!e.target.closest('.custom-select-trigger') && !e.target.closest('.portal-dropdown')) {
-                closeAllDropdowns();
-            }
-        };
-
-        // Scroll listener - close all dropdowns on scroll
-        const closeOnScroll = () => closeAllDropdowns();
-
-        document.removeEventListener('click', this._closeDropdownsHandler);
-        this._closeDropdownsHandler = closeAll;
-        document.addEventListener('click', this._closeDropdownsHandler);
-
-        // Also attach scroll listener to modal body to close on scroll
-        const modalBody = document.querySelector('.import-wizard-body');
-        if (modalBody) {
-            modalBody.removeEventListener('scroll', closeOnScroll);
-            modalBody.addEventListener('scroll', closeOnScroll);
-        }
-    },
-
-    _closeDropdownsHandler: null, // Placeholder property
 
     /**
      * Guess column type with improved logic (ported from ImportUIManager)
@@ -1050,24 +1013,15 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Initialize format toggle based on saved format existence
+     * Force auto-detection of column types (ignores saved format)
      * @private
      */
-    _initFormatToggle() {
-        const toggle = document.getElementById('wizardSaveFormatToggle');
-        const label = document.getElementById('formatToggleLabel');
-        if (!toggle) return;
+    _forceAutoDetect() {
+        // Clear any saved format to force fresh detection
+        this.state.useAutoDetect = true;
 
-        // Check if a format is saved for current period
-        const savedFormat = appState.massImportFormats?.[appState.periodSystem]?.[appState.currentPeriod];
-
-        if (savedFormat) {
-            toggle.checked = true;
-            if (label) label.textContent = 'Enregistré';
-        } else {
-            toggle.checked = false;
-            if (label) label.textContent = 'Auto';
-        }
+        // Rebuild the mapping table with fresh auto-detection
+        this._buildMappingTable(true); // true = force auto
     },
 
     /**
@@ -1223,23 +1177,6 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Generate appreciations
-     */
-    async _generate() {
-        if (this.state.studentsToProcess.length === 0) return;
-
-        this._saveFormat();
-
-        const { MassImportManager } = await import('./MassImportManager.js');
-        const strategy = document.querySelector('input[name="wizardStrategy"]:checked')?.value || 'merge';
-
-        if (strategy === 'replace') appState.generatedResults = [];
-
-        this.close();
-        await MassImportManager.processMassImport(this.state.studentsToProcess, 0);
-    },
-
-    /**
      * Reset wizard state
      */
     _reset() {
@@ -1256,6 +1193,11 @@ export const ImportWizardManager = {
             departedStudents: []
         };
         document.getElementById('wizardDataTextarea').value = '';
+
+        // Clean up dynamically created warning elements
+        document.getElementById('wizardMappingWarning')?.remove();
+        document.getElementById('wizardSingleColumnWarning')?.remove();
+
         this._updateUI();
     }
 };

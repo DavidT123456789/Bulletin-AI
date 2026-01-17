@@ -41,10 +41,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: 10px 24px;
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
-    height: 64px;
+    height: 58px;
 }
 
 .wizard-header-title {
@@ -352,7 +352,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    padding: 4px 0 15px 0;
+    /* Equal padding: top matches the body padding offset */
+    margin-bottom: 0;
     flex-wrap: wrap;
     gap: 16px;
 }
@@ -596,7 +598,69 @@
     /* Clip children - REMOVED to prevent double-border artifact on rounding */
     /* overflow: hidden; */
     /* Fix z-index context */
-    z-index: 1;
+    z-index: 10;
+}
+
+/* === FLOATING ACTIONS (Glassmorphism) === */
+.step-actions-row {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+}
+
+.btn-text-action {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode adjustment for glass buttons */
+/* Dark mode adjustment for glass buttons - More visible */
+/* Dark mode adjustment for glass buttons - More visible */
+[data-theme="dark"] .btn-text-action {
+    background: rgba(30, 30, 30, 0.4);
+    /* Lower opacity for glass effect */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-text-action:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.2);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .btn-text-action:hover {
+    background: rgba(var(--primary-color-rgb), 0.2);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-text-action i {
+    font-size: 0.75rem;
+    opacity: 0.8;
 }
 
 /* Hover Effect - Clean Dynamic Color Change */
@@ -713,6 +777,19 @@
     background: var(--surface-color);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
+
+    /* Centering logic */
+    flex: 1;
+    justify-content: center;
+    max-width: 200px;
+    margin: 0 auto;
+
+    /* Enhanced visibility */
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .import-wizard-modal .import-count-badge {
@@ -758,6 +835,53 @@
     background: var(--bg-secondary);
 }
 
+/* === AUTO-DETECT BUTTON - Format Applied Highlight === */
+#wizardAutoDetectBtn.format-applied {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+#wizardAutoDetectBtn.format-applied i {
+    animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.1);
+    }
+}
+
+@keyframes sparkle {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* === TOOLTIP ON TRUNCATED CELLS === */
+.import-mapping-table td.has-tooltip {
+    cursor: help;
+    position: relative;
+}
+
+.import-mapping-table td.has-tooltip::after {
+    content: '...';
+    color: var(--text-tertiary);
+}
+
 /* === MAPPING TABLE === */
 .import-wizard-modal .import-mapping-table-container {
     position: relative;
@@ -775,7 +899,7 @@
     display: flex;
     flex-direction: column;
     /* Allow shrinking for small screens/zoom */
-    min-height: 100px;
+    min-height: 200px;
 
     /* Force GPU layer to ensure sticky children are clipped */
     transform: translateZ(0);
@@ -786,6 +910,21 @@
 
     /* No padding - wrapper handles spacing */
     padding: 0;
+
+    /* Smooth fade-in animation when table appears */
+    animation: table-fade-in 0.4s ease-out;
+}
+
+@keyframes table-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) translateZ(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) translateZ(0);
+    }
 }
 
 .import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper {
@@ -822,18 +961,18 @@
     /* Hidden by default */
     justify-content: space-between;
     align-items: center;
-    padding: 12px 24px;
+    padding: 10px 24px;
     background: var(--surface-color);
     border-top: 1px solid var(--border-color);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     gap: 16px;
-    min-height: 56px;
+    min-height: 50px;
 }
 
 /* Show footer based on active step */
 .import-wizard-modal:has(#modalStep1.active) #wizardStep1Footer {
     display: flex;
-    justify-content: flex-end;
+    /* justify-content: flex-end; REMOVED to allow space-between (Cancel on left, Next on right) */
     /* Step 1: buttons on right */
 }
 
@@ -1252,7 +1391,7 @@
 #modalStep3 {
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    padding: 0;
     overflow: hidden;
     flex: 1;
     min-height: 0;
@@ -3036,4 +3175,37 @@
     .import-strategy-radio .strategy-desc {
         -webkit-line-clamp: 1;
     }
+}
+
+/* === WARNING MESSAGE === */
+.mapping-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--warning-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
+}
+
+.mapping-warning i {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* === DUPLICATE MAPPING HIGHLIGHT === */
+.mapping-select.mapping-duplicate {
+    border-color: var(--warning-color) !important;
+    background: rgba(245, 158, 11, 0.08) !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.mapping-select.mapping-duplicate:focus {
+    border-color: var(--warning-color) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
 }

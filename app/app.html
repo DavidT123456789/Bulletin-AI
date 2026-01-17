@@ -737,32 +737,20 @@
                 <!-- Step 2: Mapping -->
                 <div class="wizard-step-content" id="modalStep2">
                     <div class="wizard-step-header-group">
-                        <div class="import-detected-info">
-                            <span class="import-count-badge" id="wizardCountBadge">0</span>
-                            <span>élèves détectés</span>
+                        <div class="import-separator-row">
+                            <label style="white-space:nowrap">Séparateur :</label>
+                            <select id="wizardSeparatorSelect" class="import-separator-select">
+                                <option value="tab">Tabulation</option>
+                                <option value=";">Point-virgule</option>
+                                <option value=",">Virgule</option>
+                                <option value="|">Barre (|)</option>
+                            </select>
                         </div>
 
-                        <div class="wizard-step-controls">
-
-                            <div class="import-separator-row" style="margin:0">
-                                <label style="white-space:nowrap">Séparateur :</label>
-                                <select id="wizardSeparatorSelect" class="import-separator-select">
-                                    <option value="tab">Tabulation</option>
-                                    <option value=";">Point-virgule</option>
-                                    <option value=",">Virgule</option>
-                                    <option value="|">Barre (|)</option>
-                                </select>
-                            </div>
-
-                            <div class="format-toggle-container">
-                                <label class="format-toggle tooltip"
-                                    data-tooltip="Enregistrer ce mapping pour les prochains imports">
-                                    <input type="checkbox" id="wizardSaveFormatToggle">
-                                    <span class="format-toggle-slider"></span>
-                                    <span class="format-toggle-label" id="formatToggleLabel">Auto</span>
-                                </label>
-                            </div>
-                        </div>
+                        <button class="btn btn-ghost btn-sm" id="wizardAutoDetectBtn"
+                            title="Relancer la détection automatique des colonnes">
+                            <i class="fas fa-wand-magic-sparkles"></i> Détection auto
+                        </button>
                     </div>
 
                     <div class="import-mapping-table-container" id="wizardMappingContainer">
@@ -834,6 +822,10 @@
             <!-- Step 1 Footer -->
             <div class="import-wizard-footer" id="wizardStep1Footer">
                 <button class="btn btn-ghost" id="wizardStep1CancelBtn">Annuler</button>
+                <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
+                    <span class="import-count-badge" id="wizardLineCountBadge">0</span>
+                    <span>lignes détectées</span>
+                </div>
                 <button class="btn btn-primary" id="wizardStep1NextBtn" disabled>
                     Suivant <i class="fas fa-arrow-right"></i>
                 </button>
@@ -844,6 +836,10 @@
                 <button class="btn btn-ghost" id="wizardStep2PrevBtn">
                     <i class="fas fa-arrow-left"></i> Précédent
                 </button>
+                <div class="import-detected-info">
+                    <span class="import-count-badge" id="wizardCountBadge2">0</span>
+                    <span>élèves détectés</span>
+                </div>
                 <button class="btn btn-primary" id="wizardStep2NextBtn">
                     Suivant <i class="fas fa-arrow-right"></i>
                 </button>
