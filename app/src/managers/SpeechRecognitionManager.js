@@ -65,7 +65,7 @@ export const SpeechRecognitionManager = {
                 if (this._activeButton) {
                     this._activeButton.classList.add('recording');
                     // Dynamic tooltip
-                    this._activeButton.setAttribute('data-tooltip', 'Dictée en cours<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour arrêter</i>');
+                    this._activeButton.setAttribute('data-tooltip', 'Dictée en cours<br><span class="kbd-hint">Arrêter</span>');
                 }
                 // Show "Dictée..." badge for appreciation
                 if (this._activeTarget === 'appreciation') {
@@ -78,7 +78,7 @@ export const SpeechRecognitionManager = {
                 if (this._activeButton) {
                     this._activeButton.classList.remove('recording');
                     // Restore tooltip
-                    this._activeButton.setAttribute('data-tooltip', 'Dictée vocale<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour démarrer</i>');
+                    this._activeButton.setAttribute('data-tooltip', 'Dictée vocale<br><span class="kbd-hint">Démarrer</span>');
                 }
 
                 // If appreciation was dictating and NO result was received, clear the badge

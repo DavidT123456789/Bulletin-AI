@@ -83,7 +83,7 @@
                 <!-- Class Selector - À gauche pour hiérarchie: Classe > Trimestre > Modèle -->
                 <div class="class-selector-wrapper">
                     <div id="headerClassChip" class="header-context-chip class-chip tooltip" role="button" tabindex="0"
-                        data-tooltip="Cliquer pour changer de classe">
+                        data-tooltip="Changer de classe">
                         <span class="icon"><i class="fas fa-users"></i></span>
                         <span id="headerClassName">Ma Classe</span>
                         <span id="headerStudentCount" class="student-count-badge">0</span>
@@ -115,26 +115,25 @@
                         aria-label="Statut de génération">
                         <!-- Model indicator (subtle, clickable) -->
                         <button class="dash-model-label tooltip" id="dashModelLabel"
-                            data-tooltip="Cliquer pour changer de modèle">
+                            data-tooltip="Changer de modèle IA">
                             <i class="fas fa-microchip"></i>
                             <span id="dashModelName">Gemini</span>
                         </button>
                         <div class="dash-divider"></div>
                         <!-- Validated count -->
                         <button class="dash-badge dash-validated" id="dashValidated"
-                            data-tooltip="Appréciations validées – Cliquer pour filtrer">
+                            data-tooltip="Appréciations validées">
                             <i class="fas fa-check"></i>
                             <span class="dash-count" id="dashValidatedCount">0</span>
                         </button>
                         <!-- Error count (hidden if 0) -->
-                        <button class="dash-badge dash-errors" id="dashErrors"
-                            data-tooltip="Erreurs – Cliquer pour régénérer">
+                        <button class="dash-badge dash-errors" id="dashErrors" data-tooltip="Erreurs de génération">
                             <i class="fas fa-exclamation-triangle"></i>
                             <span class="dash-count" id="dashErrorCount">0</span>
                         </button>
                         <!-- Pending count -->
                         <button class="dash-badge dash-pending" id="dashPending"
-                            data-tooltip="En attente – Cliquer pour générer">
+                            data-tooltip="En attente de génération">
                             <i class="fas fa-hourglass-half"></i>
                             <span class="dash-count" id="dashPendingCount">0</span>
                         </button>
@@ -226,7 +225,7 @@
                             </div>
                             <div class="performance-details">
                                 <div class="detail-item tooltip" data-filter-id="minGrade" role="button" tabindex="0"
-                                    data-tooltip="Filtrer : Note la plus basse">
+                                    data-tooltip="Note la plus basse">
                                     <span class="detail-value" id="minAvgGradeOutput">--</span>
                                     <span class="detail-label">Min</span>
                                 </div>
@@ -236,7 +235,7 @@
                                     <span class="detail-label">Médiane</span>
                                 </div>
                                 <div class="detail-item tooltip" data-filter-id="maxGrade" role="button" tabindex="0"
-                                    data-tooltip="Filtrer : Note la plus haute">
+                                    data-tooltip="Note la plus haute">
                                     <span class="detail-value" id="maxAvgGradeOutput">--</span>
                                     <span class="detail-label">Max</span>
                                 </div>
@@ -1683,8 +1682,8 @@
                                     </div>
                                 </div>
 
-                                <!-- RGPD Warning (shown when connecting) -->
-                                <div class="sync-rgpd-warning" id="syncRgpdWarning" style="display: none;">
+                                <!-- RGPD Warning (always visible) -->
+                                <div class="sync-rgpd-warning" id="syncRgpdWarning">
                                     <i class="fas fa-shield-alt"></i>
                                     <span>En activant la synchronisation, vos données seront stockées sur le service
                                         choisi. Vous êtes responsable du respect des réglementations applicables

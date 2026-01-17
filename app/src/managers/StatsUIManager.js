@@ -461,7 +461,7 @@ export const StatsUI = {
 
                 barGroup.setAttribute('data-count', count);
 
-                // Update tooltip (Tippy.js)
+                // Update tooltip (Tippy.js) - Info only, filter action is implicit
                 const pluriel = count > 1 ? 's' : '';
                 barGroup.setAttribute('data-tooltip', `${count} élève${pluriel} (${range}/20)`);
             }

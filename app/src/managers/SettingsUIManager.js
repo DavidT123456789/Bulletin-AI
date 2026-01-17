@@ -240,7 +240,7 @@ export const SettingsUIManager = {
             } else {
                 // Clé présente mais non testée
                 el.classList.add('pending');
-                tooltipText = '⏳ Non vérifiée<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour tester</i>';
+                tooltipText = '⏳ Non vérifiée<br><span class="kbd-hint">Tester</span>';
             }
 
             // Appliquer le tooltip
@@ -535,7 +535,7 @@ export const SettingsUIManager = {
             if (DOM.headerAiChip) {
                 // Simplification : on n'affiche que l'ID technique car le nom est déjà sur le bouton
                 // Utilisation de HTML pour le style (supporté par Tippy.js via allowHTML: true)
-                const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><i style="opacity:0.8; font-size: 0.9em;">Cliquer pour changer</i>`;
+                const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><span class="kbd-hint">Changer de modèle</span>`;
                 DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
 
                 // Re-init tooltip content if needed

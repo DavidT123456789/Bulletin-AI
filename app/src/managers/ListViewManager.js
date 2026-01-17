@@ -641,7 +641,7 @@ export const ListViewManager = {
         const tableClass = isExpanded ? 'student-list-table appreciation-full-view' : 'student-list-table';
         const headerClass = isExpanded ? 'appreciation-header appreciation-toggle-header sortable-header expanded-view' : 'appreciation-header appreciation-toggle-header sortable-header';
         const iconClass = isExpanded ? 'fas fa-compress appreciation-toggle-icon' : 'fas fa-expand appreciation-toggle-icon';
-        const title = isExpanded ? 'Cliquer pour réduire' : 'Cliquer pour voir tout le texte';
+        const title = isExpanded ? 'Réduire' : 'Voir tout le texte';
 
         // Build table HTML (no animation classes in HTML - we'll add them after)
         let html = `
@@ -1821,7 +1821,7 @@ export const ListViewManager = {
             // COLLAPSE: Return to truncated view
             table.classList.remove('appreciation-full-view');
             header?.classList.remove('expanded-view');
-            header.title = 'Cliquer pour voir tout le texte';
+            header.title = 'Voir tout le texte';
 
             // Switch to Expand icon
             if (icon) {
@@ -1835,7 +1835,7 @@ export const ListViewManager = {
             // EXPAND: Show full text
             table.classList.add('appreciation-full-view');
             header?.classList.add('expanded-view');
-            header.title = 'Cliquer pour réduire';
+            header.title = 'Réduire';
 
             // Switch to Compress icon
             if (icon) {

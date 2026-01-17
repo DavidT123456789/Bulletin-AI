@@ -356,7 +356,33 @@ export const UI = {
         DOM.mainPeriodSelector.querySelectorAll('label').forEach(label => {
             const input = document.getElementById(label.getAttribute('for'));
             if (input && label.dataset.short && label.dataset.full) {
-                label.textContent = input.checked ? label.dataset.full : label.dataset.short;
+                const isActive = input.checked;
+                label.textContent = isActive ? label.dataset.full : label.dataset.short;
+
+                // Update tooltip based on active state
+                if (isActive) {
+                    // Active period: no tooltip
+                    label.classList.remove('tooltip');
+                    label.removeAttribute('data-tooltip');
+                    // Destroy Tippy instance if exists
+                    if (label._tippy) {
+                        label._tippy.destroy();
+                    }
+                } else {
+                    // Inactive period: show tooltip
+                    const tooltip = `Passer au ${label.dataset.full}`;
+                    label.classList.add('tooltip');
+                    label.setAttribute('data-tooltip', tooltip);
+                    // Update or create Tippy instance
+                    if (label._tippy) {
+                        label._tippy.setContent(tooltip);
+                    } else {
+                        // Will be init by initTooltips or TooltipsUI
+                        import('./TooltipsManager.js').then(({ TooltipsUI }) => {
+                            TooltipsUI.updateTooltip(label, tooltip);
+                        });
+                    }
+                }
             }
         });
     },
@@ -379,12 +405,15 @@ export const UI = {
         } else {
             // Premier rendu ou changement de structure : on construit le HTML
             // Note: getPeriodLabel(p, false) = court (T1), getPeriodLabel(p, true) = long (Trimestre 1)
-            DOM.mainPeriodSelector.innerHTML = periods.map(p => `
-                <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${appState.currentPeriod === p ? 'checked' : ''}>
-                <label for="period${p}" class="tooltip" data-tooltip="Sélectionnez la période de travail." data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
-                    ${appState.currentPeriod === p ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
+            DOM.mainPeriodSelector.innerHTML = periods.map(p => {
+                const isActive = appState.currentPeriod === p;
+                const tooltip = isActive ? '' : `Passer au ${Utils.getPeriodLabel(p, true)}`;
+                return `
+                <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${isActive ? 'checked' : ''}>
+                <label for="period${p}" class="${tooltip ? 'tooltip' : ''}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
+                    ${isActive ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
                 </label>
-            `).join('');
+            `}).join('');
 
             DOM.mainPeriodSelector.querySelectorAll('input').forEach(r => r.addEventListener('change', e => this.setPeriod(e.target.value)));
 
@@ -771,7 +800,7 @@ export const UI = {
             if (errors > 0 && errorMessages.length > 0) {
                 const errorList = errorMessages.slice(0, 3).join('<br>');
                 const moreText = errorMessages.length > 3 ? `<br>(+${errorMessages.length - 3} autre(s))` : '';
-                const tooltipText = `${errorList}${moreText}<br><span style="font-style:italic; opacity:0.8; font-size:0.9em">Cliquer pour régénérer</span>`;
+                const tooltipText = `${errorList}${moreText}<br><span class="kbd-hint">Régénérer</span>`;
                 DOM.dashErrors.setAttribute('data-tooltip', tooltipText);
             }
         }
@@ -800,7 +829,7 @@ export const UI = {
         if (DOM.dashModelLabel) {
             // Richer HTML tooltip with italics on second line
             // Tippy.js configured with allowHTML: true
-            const tooltip = `<strong>${modelName}</strong><br><span style="font-style:italic; opacity:0.8; font-size:0.9em">Cliquer pour changer</span>`;
+            const tooltip = `<strong>${modelName}</strong><br><span class="kbd-hint">Changer de modèle</span>`;
 
             // Use TooltipsManager to update if possible, otherwise attributes
             import('./TooltipsManager.js').then(({ TooltipsUI }) => {
