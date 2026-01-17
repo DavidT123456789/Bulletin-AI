@@ -1566,12 +1566,12 @@
 }
 
 /* === Voice Dictation Button (Mic) - iOS 2025 Style === */
-/* Neutral gray at rest (like the edit pencil), orange on hover */
+/* Minimalist: No border/bg at rest, background on hover */
 .focus-mic-btn {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    border: 1px solid var(--border-color);
+    border: none;
     background: transparent;
     color: var(--text-tertiary);
     display: flex;
@@ -1580,7 +1580,8 @@
     font-size: 12px;
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-left: 4px;
+    /* Negative margin to pull mic closer to text despite parent gap */
+    margin-left: -4px;
     flex-shrink: 0;
 }
 
@@ -1591,9 +1592,8 @@
 
 .focus-mic-btn:hover {
     color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.5);
-    background: rgba(var(--primary-color-rgb), 0.08);
-    transform: scale(1.08);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    transform: scale(1.1);
 }
 
 .focus-mic-btn.recording {
@@ -2096,8 +2096,8 @@
 }
 
 .appreciation-status-badge.valid {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
     width: auto;
     border-radius: var(--radius-pill);
     padding: 4px 10px;
@@ -2105,6 +2105,11 @@
     font-size: 12px;
     font-weight: 600;
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-theme="dark"] .appreciation-status-badge.valid {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
 }
 
 @keyframes saved-fade-in {
