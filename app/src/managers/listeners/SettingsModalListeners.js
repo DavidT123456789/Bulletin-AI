@@ -763,8 +763,20 @@ export const SettingsModalListeners = {
                         // Perform initial sync to download any existing cloud data
                         try {
                             const syncResult = await SyncService.sync();
-                            if (syncResult.stats?.classesImported > 0 || syncResult.stats?.imported > 0) {
-                                UI.showNotification(`Google Drive connecté ! ${syncResult.stats.classesImported || 0} classe(s) et ${syncResult.stats.imported || 0} élève(s) importés.`, 'success');
+                            const classCount = syncResult.stats?.classesImported || 0;
+                            const studentCount = syncResult.stats?.imported || 0;
+
+                            if (classCount > 0 || studentCount > 0) {
+                                // Only mention what was actually imported (new data)
+                                let importMsg = 'Google Drive connecté !';
+                                if (classCount > 0 && studentCount > 0) {
+                                    importMsg += ` ${classCount} classe(s) et ${studentCount} élève(s) synchronisé(s).`;
+                                } else if (classCount > 0) {
+                                    importMsg += ` ${classCount} classe(s) synchronisée(s).`;
+                                } else if (studentCount > 0) {
+                                    importMsg += ` ${studentCount} élève(s) synchronisé(s).`;
+                                }
+                                UI.showNotification(importMsg, 'success');
                             } else {
                                 UI.showNotification('Google Drive connecté ! Vos données seront synchronisées.', 'success');
                             }

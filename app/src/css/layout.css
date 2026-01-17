@@ -107,7 +107,7 @@
 
     /* Ajustement des marges internes pour éviter l'effet "collé" */
     /* Padding-top increased to account for absolute header (64px + 24px) */
-    padding: calc(64px + var(--space-6)) var(--space-8) var(--space-12);
+    padding: calc(64px + var(--space-6)) var(--space-8) var(--space-6);
     /* MAX-WIDTH RETIRÉ : Pleine largeur disponible */
     max-width: none;
     width: 100%;

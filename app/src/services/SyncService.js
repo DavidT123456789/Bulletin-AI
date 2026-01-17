@@ -55,6 +55,9 @@ export const SyncService = {
     /** @type {boolean} Whether a cloud provider was previously configured */
     _wasConfigured: false,
 
+    /** @type {boolean} Prevents duplicate reconnect notifications */
+    _reconnectNotificationVisible: false,
+
     // =========================================================================
     // INITIALIZATION
     // =========================================================================
@@ -208,9 +211,16 @@ export const SyncService = {
 
     /**
      * Show a notification prompting user to reconnect to cloud sync.
+     * Includes anti-duplicate mechanism to prevent multiple notifications.
      * @private
      */
     _showReconnectNotification() {
+        // Prevent duplicate notifications
+        if (this._reconnectNotificationVisible) {
+            return;
+        }
+        this._reconnectNotificationVisible = true;
+
         // Delay to ensure UI is ready
         setTimeout(() => {
             const UI = window.UI;
@@ -221,6 +231,10 @@ export const SyncService = {
                     8000
                 );
             }
+            // Reset flag after notification duration + buffer
+            setTimeout(() => {
+                this._reconnectNotificationVisible = false;
+            }, 10000);
         }, 2000);
     },
 
@@ -266,14 +280,20 @@ export const SyncService = {
                 badge.innerHTML = '';
             }
 
-            // Update tooltip text
-            const tooltips = {
-                connected: 'Google Drive connecté<br><span class="kbd-hint">Ouvrir les paramètres</span>',
-                expired: 'Session expirée<br><span class="kbd-hint">Reconnecter</span>',
-                syncing: 'Synchronisation en cours...',
-                local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Configurer le cloud</span>'
-            };
-            const tooltipText = tooltips[state] || 'Synchronisation Cloud';
+            // Build tooltip with last sync time when connected
+            let tooltipText;
+            if (state === 'connected' && this.lastSyncTime) {
+                const lastSyncLabel = this._formatLastSyncTime(this.lastSyncTime);
+                tooltipText = `Google Drive connecté<br>${lastSyncLabel}<br><span class="kbd-hint">Cliquer pour synchroniser</span>`;
+            } else {
+                const tooltips = {
+                    connected: 'Google Drive connecté<br><span class="kbd-hint">Cliquer pour synchroniser</span>',
+                    expired: 'Session expirée<br><span class="kbd-hint">Reconnecter</span>',
+                    syncing: 'Synchronisation en cours...',
+                    local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Configurer le cloud</span>'
+                };
+                tooltipText = tooltips[state] || 'Synchronisation Cloud';
+            }
 
             // Update attribute for CSS/HTML fallback
             indicator.setAttribute('data-tooltip', tooltipText);
@@ -293,17 +313,63 @@ export const SyncService = {
                 // Don't allow click during sync
                 if (indicator.classList.contains('syncing')) return;
 
-                // If expired, try reconnecting first -> User prefers opening settings to see what's wrong
-                // if (indicator.classList.contains('expired')) {
-                //    this.reconnect();
-                //    return;
-                // }
+                // If connected, trigger a manual sync refresh
+                if (state === 'connected') {
+                    this.forceRefresh();
+                    return;
+                }
 
-                // Always open settings to sync tab (user can reconnect from there)
+                // Otherwise open settings to sync tab
                 this._openSyncSettings();
             };
         }, 100);
     },
+
+    /**
+     * Format last sync time as a human-readable relative string.
+     * @param {number} timestamp - Unix timestamp in ms
+     * @returns {string} Relative time string
+     * @private
+     */
+    _formatLastSyncTime(timestamp) {
+        const now = Date.now();
+        const diffMs = now - timestamp;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+
+        if (diffSec < 60) {
+            return 'Dernière sync : à l\'instant';
+        } else if (diffMin < 60) {
+            return `Dernière sync : il y a ${diffMin} min`;
+        } else if (diffHour < 24) {
+            return `Dernière sync : il y a ${diffHour}h`;
+        } else {
+            const date = new Date(timestamp);
+            return `Dernière sync : ${date.toLocaleDateString('fr-FR')}`;
+        }
+    },
+
+    /**
+     * Force a manual sync refresh with visual feedback.
+     * Useful for cross-device synchronization.
+     */
+    async forceRefresh() {
+        if (!this._provider || this.status === 'syncing') {
+            return;
+        }
+
+        try {
+            this._updateCloudIndicator('syncing');
+            await this.sync();
+            window.UI?.showNotification('Synchronisation terminée', 'success', 3000);
+        } catch (e) {
+            console.error('[SyncService] Force refresh failed:', e);
+            window.UI?.showNotification('Erreur de synchronisation', 'error');
+            this._updateCloudIndicator('connected');
+        }
+    },
+
 
     /**
      * Open settings modal on the sync tab.
@@ -549,9 +615,28 @@ export const SyncService = {
 
                 // Merge generated results (keep local changes to avoid data loss)
                 if (remoteData.generatedResults?.length > 0) {
-                    const { merged } = this._mergeData(localData, remoteData);
-                    runtimeState.data.generatedResults = merged.generatedResults;
-                    stats.imported = merged.generatedResults.length;
+                    const localCountBefore = localData.generatedResults?.length || 0;
+                    const { merged, stats: mergeStats } = this._mergeData(localData, remoteData);
+
+                    // CRITICAL: Clean up orphan students (classId doesn't match any class)
+                    const validClassIds = new Set(
+                        (userSettings.academic.classes || []).map(c => c.id)
+                    );
+                    const cleanedResults = merged.generatedResults.filter(r => {
+                        // Keep students if: no classId (legacy) OR classId exists in classes
+                        return !r.classId || validClassIds.has(r.classId);
+                    });
+
+                    const orphansRemoved = merged.generatedResults.length - cleanedResults.length;
+                    if (orphansRemoved > 0) {
+                        console.log(`[SyncService] Removed ${orphansRemoved} orphan student(s) with invalid classId`);
+                    }
+
+                    runtimeState.data.generatedResults = cleanedResults;
+                    // Count only NEW students imported, not total
+                    stats.imported = mergeStats.imported - orphansRemoved; // Adjust for removed orphans
+                    if (stats.imported < 0) stats.imported = 0;
+                    stats.updated = mergeStats.updated;
                 }
 
                 // Merge settings
