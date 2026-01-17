@@ -558,17 +558,24 @@
 }
 
 /* Status colors map to the dot */
-/* État connecté - Nuage couleur thème, point vert */
+/* État connecté - Nuage couleur thème (clair) ou blanc (sombre), point vert */
 .cloud-sync-indicator.connected {
     color: var(--primary-color);
 }
 
+[data-theme="dark"] .cloud-sync-indicator.connected {
+    color: white;
+}
+
 .cloud-sync-indicator.connected:hover {
     color: var(--primary-color);
-    /* Keep primary on hover */
     background-color: var(--surface-color);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
     /* Consistent relief */
+}
+
+[data-theme="dark"] .cloud-sync-indicator.connected:hover {
+    color: white;
 }
 
 .cloud-sync-indicator.connected .cloud-status-badge {

@@ -8,6 +8,7 @@ import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -506,18 +507,21 @@ export const ResultsUIManager = {
                     const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
-                        newResult.id = resultToRegen.id;
-                        appState.generatedResults[resultIndex] = newResult;
+                        // Use centralized updateResult to preserve user data (photo, journal, history)
+                        const updatedResult = StudentDataManager.updateResult(
+                            appState.generatedResults[resultIndex],
+                            newResult
+                        );
                         successCount++;
 
                         // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
                         const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
                         if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = newResult;
+                            appState.filteredResults[filteredIndex] = updatedResult;
                         }
 
                         // Mettre à jour la ligne avec animation typewriter
-                        await ListViewManager.updateRow(newResult.id, newResult, true);
+                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
                     }
                 } catch (e) {
                     // Check if aborted
@@ -531,18 +535,20 @@ export const ResultsUIManager = {
                     const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
-                        errorResult.id = resultToRegen.id;
-                        appState.generatedResults[resultIndex] = errorResult;
+                        // Use centralized updateResult to preserve user data
+                        const updatedResult = StudentDataManager.updateResult(
+                            appState.generatedResults[resultIndex],
+                            errorResult
+                        );
 
                         // CORRECTIF: Synchroniser filteredResults aussi en cas d'erreur
                         const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
                         if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = errorResult;
+                            appState.filteredResults[filteredIndex] = updatedResult;
                         }
 
                         // Mettre à jour la ligne pour afficher l'erreur
-                        // ListViewManager gère l'affichage des erreurs via _getAppreciationCell
-                        ListViewManager.updateRow(errorResult.id, errorResult, false);
+                        ListViewManager.updateRow(updatedResult.id, updatedResult, false);
                     }
                 }
             }
@@ -646,16 +652,19 @@ export const ResultsUIManager = {
                     const newResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
-                        newResult.id = resultToRegen.id;
-                        appState.generatedResults[resultIndex] = newResult;
+                        // Use centralized updateResult to preserve user data
+                        const updatedResult = StudentDataManager.updateResult(
+                            appState.generatedResults[resultIndex],
+                            newResult
+                        );
                         successCount++;
 
                         const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
                         if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = newResult;
+                            appState.filteredResults[filteredIndex] = updatedResult;
                         }
 
-                        await ListViewManager.updateRow(newResult.id, newResult, true);
+                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
                     }
                 } catch (e) {
                     if (e.name === 'AbortError' || signal.aborted) {
@@ -668,15 +677,18 @@ export const ResultsUIManager = {
                     const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
-                        errorResult.id = resultToRegen.id;
-                        appState.generatedResults[resultIndex] = errorResult;
+                        // Use centralized updateResult to preserve user data
+                        const updatedResult = StudentDataManager.updateResult(
+                            appState.generatedResults[resultIndex],
+                            errorResult
+                        );
 
                         const filteredIndex = appState.filteredResults.findIndex(r => r.id === resultToRegen.id);
                         if (filteredIndex > -1) {
-                            appState.filteredResults[filteredIndex] = errorResult;
+                            appState.filteredResults[filteredIndex] = updatedResult;
                         }
 
-                        ListViewManager.updateRow(errorResult.id, errorResult, false);
+                        ListViewManager.updateRow(updatedResult.id, updatedResult, false);
                     }
                 }
             }

@@ -2021,7 +2021,8 @@
     height: 26px;
     width: 26px;
     border-radius: 50%;
-    display: inline-flex;
+    /* CRITICAL FIX: Use display:none instead of opacity:0 to remove from layout */
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 6px;
@@ -2564,6 +2565,29 @@
 [data-theme="dark"] .ai-indicator:hover {
     background: rgba(251, 191, 36, 0.15);
     color: rgb(251, 191, 36);
+}
+
+/* Source Indicator - Manual Edit (Pencil) */
+.ai-indicator.source-manual {
+    color: var(--text-secondary);
+}
+
+.ai-indicator.source-manual:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .ai-indicator.source-manual {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .ai-indicator.source-manual:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+}
+
+.ai-indicator.source-manual i {
+    font-size: 0.85rem;
 }
 
 /* Redefinition removed to avoid conflict with lines 1659-1678 */

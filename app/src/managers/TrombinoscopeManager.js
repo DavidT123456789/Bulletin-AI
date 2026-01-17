@@ -155,6 +155,10 @@ export const TrombinoscopeManager = {
         this._lastFocusedControl = null;
         this._lastFocusedZoneId = null;
 
+        // Reset file input so the same file can be re-imported
+        const fileInput = document.getElementById('trombiFileInput');
+        if (fileInput) fileInput.value = '';
+
         // Reset dropzone state
         const placeholder = document.getElementById('trombiDropPlaceholder');
         const preview = document.getElementById('trombiDropPreview');

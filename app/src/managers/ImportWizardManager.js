@@ -1169,7 +1169,27 @@ export const ImportWizardManager = {
         const { MassImportManager } = await import('./MassImportManager.js');
         const strategy = document.querySelector('input[name="wizardStrategy"]:checked')?.value || 'merge';
 
-        if (strategy === 'replace') appState.generatedResults = [];
+        // FIX: Confirmation before destructive replace operation
+        if (strategy === 'replace') {
+            const currentCount = appState.generatedResults?.length || 0;
+            if (currentCount > 0) {
+                const confirmed = await new Promise(resolve => {
+                    UI.showCustomConfirm(
+                        `⚠️ Mode "Remplacer" sélectionné\n\n` +
+                        `Cette action va SUPPRIMER ${currentCount} élève(s) existant(s) avant d'importer.\n\n` +
+                        `Continuer ?`,
+                        () => resolve(true),
+                        () => resolve(false)
+                    );
+                });
+
+                if (!confirmed) {
+                    UI.showNotification('Import annulé', 'info');
+                    return;
+                }
+            }
+            appState.generatedResults = [];
+        }
 
         await MassImportManager.importStudentsOnly(this.state.studentsToProcess, this.state.ignoredCount || 0);
 

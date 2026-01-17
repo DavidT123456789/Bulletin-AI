@@ -618,24 +618,24 @@ export const SyncService = {
                     const localCountBefore = localData.generatedResults?.length || 0;
                     const { merged, stats: mergeStats } = this._mergeData(localData, remoteData);
 
-                    // CRITICAL: Clean up orphan students (classId doesn't match any class)
+                    // FIX: Keep ALL students, only warn about orphans instead of deleting
+                    // This prevents data loss when classes sync out of order
                     const validClassIds = new Set(
                         (userSettings.academic.classes || []).map(c => c.id)
                     );
-                    const cleanedResults = merged.generatedResults.filter(r => {
-                        // Keep students if: no classId (legacy) OR classId exists in classes
-                        return !r.classId || validClassIds.has(r.classId);
-                    });
+                    const orphanStudents = merged.generatedResults.filter(r =>
+                        r.classId && !validClassIds.has(r.classId)
+                    );
 
-                    const orphansRemoved = merged.generatedResults.length - cleanedResults.length;
-                    if (orphansRemoved > 0) {
-                        console.log(`[SyncService] Removed ${orphansRemoved} orphan student(s) with invalid classId`);
+                    if (orphanStudents.length > 0) {
+                        console.warn(`[SyncService] Found ${orphanStudents.length} student(s) with unrecognized classId (kept, not deleted):`,
+                            orphanStudents.map(s => ({ id: s.id, name: `${s.prenom} ${s.nom}`, classId: s.classId }))
+                        );
                     }
 
-                    runtimeState.data.generatedResults = cleanedResults;
-                    // Count only NEW students imported, not total
-                    stats.imported = mergeStats.imported - orphansRemoved; // Adjust for removed orphans
-                    if (stats.imported < 0) stats.imported = 0;
+                    // Keep ALL students - don't delete orphans
+                    runtimeState.data.generatedResults = merged.generatedResults;
+                    stats.imported = mergeStats.imported;
                     stats.updated = mergeStats.updated;
                 }
 
@@ -847,14 +847,28 @@ export const SyncService = {
 
                 if (remoteTime > localTime) {
                     // Remote is newer - update local
-                    // CRITICAL FIX: Preserve local photo if remote has null
-                    // (prevents photo loss when syncing from a device without photos)
+                    // CRITICAL FIX: Preserve local-only data that remote might not have
                     const localPhoto = localItem.studentPhoto;
+                    const localManualEdits = localItem._manualEdits;
+
                     Object.assign(localItem, remoteItem);
 
-                    // Restore local photo if remote didn't have one
-                    if (!remoteItem.studentPhoto && localPhoto?.data) {
-                        localItem.studentPhoto = localPhoto;
+                    // Restore local photo if remote didn't have one or has older photo
+                    if (localPhoto?.data) {
+                        const remotePhotoTime = remoteItem.studentPhoto?.uploadedAt
+                            ? new Date(remoteItem.studentPhoto.uploadedAt).getTime() : 0;
+                        const localPhotoTime = localPhoto.uploadedAt
+                            ? new Date(localPhoto.uploadedAt).getTime() : 0;
+
+                        if (!remoteItem.studentPhoto || localPhotoTime > remotePhotoTime) {
+                            localItem.studentPhoto = localPhoto;
+                            console.log(`[SyncService] Preserved local photo for ${localItem.prenom} ${localItem.nom}`);
+                        }
+                    }
+
+                    // Preserve manual edits if remote doesn't have them
+                    if (localManualEdits && !remoteItem._manualEdits) {
+                        localItem._manualEdits = localManualEdits;
                     }
 
                     stats.updated++;

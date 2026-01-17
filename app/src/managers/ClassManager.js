@@ -351,27 +351,38 @@ export const ClassManager = {
      * @private
      */
     async _deleteClassData(classId) {
+        // FIX: Backup before delete for rollback capability
         const allResults = await DBService.getAll('generatedResults') || [];
         const resultsToKeep = allResults.filter(r => r.classId !== classId);
+        const deletedCount = allResults.length - resultsToKeep.length;
 
-        // Clear and re-add (IndexedDB n'a pas de delete batch facile)
-        await DBService.clear('generatedResults');
-        if (resultsToKeep.length > 0) {
+        try {
+            // putAll handles clear internally - single atomic operation
             await DBService.putAll('generatedResults', resultsToKeep);
+
+            // CRITICAL: Synchroniser la mémoire pour éviter les données orphelines
+            appState.generatedResults = resultsToKeep;
+
+            // Recalculer filteredResults selon la classe courante
+            const currentClassId = userSettings.academic.currentClassId;
+            if (currentClassId && currentClassId !== classId) {
+                appState.filteredResults = resultsToKeep.filter(r => r.classId === currentClassId);
+            } else {
+                appState.filteredResults = [];
+            }
+
+            console.log(`[ClassManager] Deleted ${deletedCount} student(s) from class ${classId}`);
+        } catch (error) {
+            console.error('[ClassManager] _deleteClassData failed, data may be corrupted:', error);
+            // Attempt recovery - try to restore from backup
+            try {
+                await DBService.putAll('generatedResults', allResults);
+                console.log('[ClassManager] Recovery successful - all data restored');
+            } catch (recoveryError) {
+                console.error('[ClassManager] Recovery FAILED - data may be lost:', recoveryError);
+            }
+            throw error;
         }
-
-        // CRITICAL: Synchroniser la mémoire pour éviter les données orphelines
-        appState.generatedResults = resultsToKeep;
-
-        // Recalculer filteredResults selon la classe courante
-        const currentClassId = userSettings.academic.currentClassId;
-        if (currentClassId && currentClassId !== classId) {
-            appState.filteredResults = resultsToKeep.filter(r => r.classId === currentClassId);
-        } else {
-            appState.filteredResults = [];
-        }
-
-        // Suppression terminée
     },
 
 

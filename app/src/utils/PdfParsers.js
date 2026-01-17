@@ -113,6 +113,20 @@ function mergeMultiLineNames(lines) {
             continue;
         }
 
+        // Format 2 lignes SANS notes : NOM / Prénom (quand pas de note du tout)
+        // Ex: "BRYCHE CRASSET" + "Evie" suivi d'un autre nom ou rien
+        // line3 est soit vide, soit un autre élève (ALL CAPS ou NOM Prénom), soit un header
+        const line3IsNewStudent = line3 && (
+            isAllCapsName(line3) ||
+            /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)?\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç]/.test(line3)
+        );
+        if (isAllCapsName(line1) && isFirstNameOnly(line2) &&
+            (!line3 || line3IsNewStudent || isHeaderLine(line3))) {
+            merged.push(line1 + ' ' + line2);
+            i++;
+            continue;
+        }
+
         merged.push(line1);
     }
 

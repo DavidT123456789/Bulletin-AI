@@ -32,8 +32,12 @@ export const StudentDataManager = {
             studentPhoto: null,
             // Snapshot des données au moment de la génération (pour détection dirty status)
             generationSnapshot: Utils.deepClone(newStudentData),
-            // Journal entry count at generation time (journal is on result, not studentData)
+            // Full journal at generation time (for granular dirty comparison)
+            generationSnapshotJournal: [],
+            // Journal entry count at generation time (legacy, for backward compat)
             generationSnapshotJournalCount: 0,
+            // Threshold used at generation time (for journal dirty detection)
+            generationThreshold: appState.journalThreshold ?? 2,
             // Period for which the generation was made (for per-period dirty detection)
             generationPeriod: appState.currentPeriod,
             // Historique des versions précédentes (max 5)
@@ -41,6 +45,78 @@ export const StudentDataManager = {
             // Flag pour indiquer si le résultat vient d'être généré par l'IA (vs import ou erreur)
             wasGenerated: !errorMessage
         };
+    },
+
+    /**
+     * Transfère les métadonnées de génération d'un nouveau résultat vers un existant
+     * Utilisé par MassImportManager et SingleStudentManager pour éviter la duplication
+     * 
+     * @param {Object} existingResult - Le résultat existant à mettre à jour
+     * @param {Object} newResult - Le nouveau résultat avec les métadonnées à transférer
+     */
+    transferGenerationMetadata(existingResult, newResult) {
+        existingResult.wasGenerated = newResult.wasGenerated;
+        existingResult.generationSnapshot = newResult.generationSnapshot;
+        existingResult.generationPeriod = newResult.generationPeriod;
+        existingResult.generationSnapshotJournal = newResult.generationSnapshotJournal;
+        existingResult.generationSnapshotJournalCount = newResult.generationSnapshotJournalCount;
+        existingResult.generationThreshold = newResult.generationThreshold;
+    },
+
+    /**
+     * Met à jour un résultat existant avec de nouvelles données générées par l'IA
+     * PRÉSERVE les données utilisateur : studentPhoto, journal, history, _lastModified
+     * 
+     * @param {Object} existingResult - Le résultat existant à mettre à jour
+     * @param {Object} newResult - Le nouveau résultat généré (de createResultObject)
+     * @returns {Object} - Le résultat mis à jour (même référence que existingResult)
+     */
+    updateResult(existingResult, newResult) {
+        // Sauvegarder les données utilisateur qui doivent être préservées
+        const preserved = {
+            id: existingResult.id,
+            studentPhoto: existingResult.studentPhoto,
+            journal: existingResult.journal,
+            history: existingResult.history,
+            _lastModified: existingResult._lastModified,
+            _manualEdits: existingResult._manualEdits
+        };
+
+        // Copier toutes les nouvelles propriétés générées
+        existingResult.appreciation = newResult.appreciation;
+        existingResult.evolutions = newResult.evolutions;
+        existingResult.errorMessage = newResult.errorMessage;
+        existingResult.timestamp = newResult.timestamp;
+        existingResult.tokenUsage = newResult.tokenUsage;
+        existingResult.copied = false;
+        existingResult.wasGenerated = newResult.wasGenerated;
+        existingResult.isPending = false;
+        existingResult.generationSnapshot = newResult.generationSnapshot;
+        existingResult.generationSnapshotJournal = Utils.deepClone(preserved.journal || []);
+        existingResult.generationSnapshotJournalCount = preserved.journal?.length || 0;
+        existingResult.generationThreshold = newResult.generationThreshold ?? appState.journalThreshold ?? 2;
+        existingResult.generationPeriod = newResult.generationPeriod;
+
+        // Mettre à jour studentData
+        if (newResult.studentData) {
+            Object.assign(existingResult.studentData.periods, newResult.studentData.periods);
+            existingResult.studentData.currentPeriod = newResult.studentData.currentPeriod;
+            existingResult.studentData.subject = newResult.studentData.subject;
+            existingResult.studentData.currentAIModel = newResult.studentData.currentAIModel;
+            existingResult.studentData.prompts = newResult.studentData.prompts;
+            existingResult.studentData.negativeInstructions = newResult.studentData.negativeInstructions;
+            existingResult.studentData.statuses = newResult.studentData.statuses;
+        }
+
+        // Restaurer les données utilisateur préservées
+        existingResult.id = preserved.id;
+        existingResult.studentPhoto = preserved.studentPhoto;
+        existingResult.journal = preserved.journal;
+        existingResult.history = preserved.history;
+        if (preserved._lastModified) existingResult._lastModified = preserved._lastModified;
+        if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
+
+        return existingResult;
     },
 
     /**

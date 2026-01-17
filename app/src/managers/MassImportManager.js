@@ -4,6 +4,7 @@ import { Utils } from '../utils/Utils.js';
 import { RateLimiter } from '../utils/RateLimiter.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
+import { StudentDataManager } from './StudentDataManager.js';
 
 let Am;
 let App;
@@ -155,11 +156,28 @@ export const MassImportManager = {
                     existingResult.evolutions = newResultObject.evolutions;
                     existingResult.tokenUsage = newResultObject.tokenUsage;
                     existingResult.studentData.prompts = newResultObject.studentData.prompts;
+                    // Transfer all generation metadata for dirty detection
+                    StudentDataManager.transferGenerationMetadata(existingResult, newResultObject);
                     // Reset pending flag
                     existingResult.isPending = false;
 
                 } else {
                     newResultObject.isPending = false;
+                    // CRITICAL FIX: Restore preserved data (photo, journal) if passed from generateAllPending
+                    if (studentData._preservedData) {
+                        if (studentData._preservedData.studentPhoto) {
+                            newResultObject.studentPhoto = studentData._preservedData.studentPhoto;
+                        }
+                        if (studentData._preservedData.journal) {
+                            newResultObject.journal = studentData._preservedData.journal;
+                        }
+                        if (studentData._preservedData.history) {
+                            newResultObject.history = studentData._preservedData.history;
+                        }
+                        if (studentData._preservedData._lastModified) {
+                            newResultObject._lastModified = studentData._preservedData._lastModified;
+                        }
+                    }
                     appState.generatedResults.unshift(newResultObject);
                 }
 
@@ -319,6 +337,7 @@ export const MassImportManager = {
 
         // Convertir les résultats pending en format étudiant pour processMassImport
         // IMPORTANT: Utiliser appState.currentPeriod (période AFFICHÉE) pour la génération
+        // CRITICAL FIX: Preserve studentPhoto, journal and other user data
         const targetPeriod = appState.currentPeriod;
         const studentsToProcess = pendingResults.map(r => ({
             nom: r.nom,
@@ -328,12 +347,19 @@ export const MassImportManager = {
             negativeInstructions: r.studentData?.negativeInstructions || '',
             currentPeriod: targetPeriod,  // Toujours utiliser la période affichée
             // Garder référence à l'ID existant pour mise à jour
-            existingId: r.id
+            existingId: r.id,
+            // CRITICAL: Preserve user-added data
+            _preservedData: {
+                studentPhoto: r.studentPhoto,
+                journal: r.journal,
+                history: r.history,
+                _lastModified: r._lastModified
+            }
         }));
 
-        // Supprimer les résultats pending (ils seront recréés avec l'appréciation)
-        const pendingIds = new Set(pendingResults.map(r => r.id));
-        appState.generatedResults = appState.generatedResults.filter(r => !pendingIds.has(r.id));
+        // CRITICAL FIX: Do NOT delete existing results - let processMassImport update them in place
+        // This preserves the studentPhoto and other user data
+        // The old code was: appState.generatedResults = appState.generatedResults.filter(r => !pendingIds.has(r.id));
 
         // Utiliser processMassImport pour la génération avec UI de progression
         await this.processMassImport(studentsToProcess, 0);
@@ -341,15 +367,26 @@ export const MassImportManager = {
 
     /**
      * Crée des résultats en attente et rafraîchit la vue Liste
-     * Liste + Focus: Ne crée plus de cartes DOM, utilise ListViewManager via renderResults
+     * Si les étudiants ont un existingId, utilise les résultats existants au lieu d'en créer de nouveaux
      * @param {Array} students - Liste des élèves à traiter
-     * @returns {Array} - Liste des IDs des résultats créés
+     * @returns {Array} - Liste des IDs des résultats (existants ou créés)
      */
     _createPendingCards(students) {
-        const createdIds = [];
+        const resultIds = [];
 
         for (const studentData of students) {
-            // Créer un objet résultat temporaire marqué comme "pending"
+            // CRITICAL FIX: If student has existingId (from generateAllPending), use existing result
+            if (studentData.existingId) {
+                const existingResult = appState.generatedResults.find(r => r.id === studentData.existingId);
+                if (existingResult) {
+                    // Mark as pending for skeleton animation
+                    existingResult.isPending = true;
+                    resultIds.push(existingResult.id);
+                    continue;
+                }
+            }
+
+            // No existing result - create new one
             const tempResult = Am.createResultObject(
                 studentData.nom,
                 studentData.prenom,
@@ -364,16 +401,28 @@ export const MassImportManager = {
             // Marquer comme en attente
             tempResult.isPending = true;
 
+            // CRITICAL: Restore preserved data if available
+            if (studentData._preservedData) {
+                if (studentData._preservedData.studentPhoto) {
+                    tempResult.studentPhoto = studentData._preservedData.studentPhoto;
+                }
+                if (studentData._preservedData.journal) {
+                    tempResult.journal = studentData._preservedData.journal;
+                }
+                if (studentData._preservedData.history) {
+                    tempResult.history = studentData._preservedData.history;
+                }
+            }
+
             // Ajouter aux résultats globaux
             appState.generatedResults.push(tempResult);
-            createdIds.push(tempResult.id);
+            resultIds.push(tempResult.id);
         }
 
         // Liste + Focus: Appeler renderResults pour rafraîchir la vue tableau
-        // Le ListViewManager affichera les élèves avec statut "En attente"
         Am.renderResults();
 
-        return createdIds;
+        return resultIds;
     },
 
     /**

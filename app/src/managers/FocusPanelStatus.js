@@ -51,6 +51,24 @@ export const FocusPanelStatus = {
     },
 
     /**
+     * Check if appreciation has REAL content (not placeholder or just whitespace)
+     * @param {string|null|undefined} appreciation - The appreciation text
+     * @returns {boolean}
+     * @private
+     */
+    _hasRealContent(appreciation) {
+        if (!appreciation) return false;
+        const text = appreciation.trim();
+        if (text.length === 0) return false;
+        // Exclude all variations of placeholder text
+        if (text.includes('Aucune appréciation')) return false;
+        if (text.includes('Cliquez sur')) return false;
+        // Exclude HTML placeholder spans that might be stored
+        if (text.startsWith('<span') && text.includes('empty')) return false;
+        return true;
+    },
+
+    /**
      * Vérifie si les données actuelles diffèrent du snapshot de génération
      * @param {Object} result - Student result object
      * @returns {boolean} true si des données pertinentes ont changé
@@ -141,9 +159,12 @@ export const FocusPanelStatus = {
             if (!snapshotHadActiveTags && currentHasActiveTags) return true;
             // Or if we had some and lost them (regeneration needed to remove content)
             if (snapshotHadActiveTags && !currentHasActiveTags) return true;
+        } else {
+            // If snapshot.journal AND snapshot.journalCount are undefined (Very Old Data)
+            // Assume generation was done with 0 journal entries
+            // If we NOW have active tags, we should show the dirty badge
+            if (currentActiveTags.length > 0) return true;
         }
-        // If snapshot.journal AND snapshot.journalCount are undefined (Very Old Data)
-        // We skip journal comparison to avoid false positives (Assume sync)
 
         return false;
     },
@@ -186,6 +207,8 @@ export const FocusPanelStatus = {
 
     /**
      * Unified Appreciation Status Badge Manager
+     * NOW: Only manages STATUS (pending/dirty/empty/uptodate)
+     * Source (AI/Manual) is handled separately by updateSourceIndicator()
      * @param {Object} result - Student result object
      * @param {Object} [options] - Optional overrides { state, tooltip, animate }
      */
@@ -195,29 +218,27 @@ export const FocusPanelStatus = {
 
         let state = options.state;
         let tooltip = options.tooltip || '';
-        const animate = options.animate !== false;
 
+        // If no explicit state, compute from result
         if (!state) {
             const isGenerating = this._isGenerating(result?.id);
-            const isGenerated = result?.wasGenerated === true;
-            const hasAppreciation = result?.appreciation && result.appreciation.trim();
-            const isDirty = hasAppreciation && isGenerated && this.checkDirtyState(result);
+            const hasContent = this._hasRealContent(result?.appreciation);
+            const currentPeriod = appState.currentPeriod;
+            const wasGeneratedForCurrentPeriod = result?.wasGenerated === true
+                && (!result.generationPeriod || result.generationPeriod === currentPeriod);
 
             if (isGenerating) {
                 state = 'pending';
                 tooltip = 'Génération en cours...';
-            } else if (isDirty) {
-                state = 'modified';
-                tooltip = 'Données modifiées depuis la génération.\nPensez à régénérer.';
-            } else if (isGenerated && hasAppreciation) {
-                state = 'generated';
-                tooltip = 'Appréciation générée et à jour';
-            } else if (hasAppreciation && !isGenerated) {
-                state = 'valid';
-                tooltip = 'Appréciation validée (éditée manuellement)';
-            } else {
+            } else if (!hasContent) {
                 state = 'empty';
                 tooltip = 'En attente de génération';
+            } else if (wasGeneratedForCurrentPeriod && this.checkDirtyState(result)) {
+                state = 'dirty';
+                tooltip = 'Données modifiées depuis la génération.\nPensez à régénérer.';
+            } else {
+                state = 'uptodate';
+                tooltip = '';
             }
         }
 
@@ -226,81 +247,43 @@ export const FocusPanelStatus = {
         badge.innerHTML = '';
         badge.removeAttribute('data-tooltip');
 
-        // Always show badge (including empty state)
-
-        badge.classList.add('visible', state);
-        badge.classList.remove('icon-only');
-
-        if (state === 'dictating') {
-            badge.classList.add('is-dictating');
-        }
-
-        let icon = '';
-        let text = '';
-
         switch (state) {
             case 'pending':
-                icon = '<i class="fas fa-spinner fa-spin"></i>';
-                text = '';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                badge.classList.add('visible', 'pending');
                 break;
-            case 'generated':
-                icon = '<i class="fas fa-check"></i>';
-                if (animate) {
-                    text = '<span class="badge-text">Généré</span>';
-                    setTimeout(() => {
-                        if (badge.classList.contains('generated')) {
-                            badge.classList.add('icon-only');
-                            UI.initTooltips();
-                        }
-                    }, 2000);
-                } else {
-                    text = '';
-                    badge.classList.add('icon-only');
-                }
+            case 'dirty':
+                badge.innerHTML = '<i class="fas fa-sync-alt"></i><span class="badge-text">Mettre à jour</span>';
+                badge.classList.add('visible', 'modified');
                 break;
-            case 'modified':
-                icon = '<i class="fas fa-sync-alt"></i>';
-                text = '<span class="badge-text" style="display:inline-block;">Modifié</span>';
+            case 'empty':
+                badge.innerHTML = '<i class="fas fa-clock"></i>';
+                badge.classList.add('visible', 'empty', 'icon-only');
                 break;
             case 'saved':
-                icon = '<i class="fas fa-check"></i>';
-                text = '<span class="badge-text">Enregistré</span>';
+                badge.innerHTML = '<i class="fas fa-check"></i><span class="badge-text">Enregistré</span>';
+                badge.classList.add('visible', 'saved');
                 setTimeout(() => {
                     if (badge.classList.contains('saved')) {
                         badge.classList.remove('visible', 'saved');
                     }
                 }, 2000);
                 break;
-            case 'valid':
-                icon = '<i class="fas fa-pen"></i>';
-                text = '<span class="badge-text">Édité</span>';
-                if (animate) {
-                    setTimeout(() => {
-                        if (badge.classList.contains('valid')) {
-                            badge.classList.add('icon-only');
-                        }
-                    }, 2000);
-                } else {
-                    badge.classList.add('icon-only');
-                    text = '';
-                }
+            case 'dictating':
+                badge.innerHTML = '<i class="fas fa-microphone"></i><span class="badge-text">Dictée...</span>';
+                badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':
-                icon = '<i class="fas fa-exclamation-triangle"></i>';
-                text = '<span class="badge-text">Erreur</span>';
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span class="badge-text">Erreur</span>';
+                badge.classList.add('visible', 'error');
                 break;
-            case 'dictating':
-                icon = '<i class="fas fa-microphone"></i>';
-                text = '<span class="badge-text">Dictée...</span>';
-                break;
-            case 'empty':
-                icon = '<i class="fas fa-clock"></i>';
-                text = '<span class="badge-text">En attente</span>';
-                badge.classList.add('icon-only'); // Show subtle, icon-only by default
+            case 'uptodate':
+            default:
+                // When up-to-date, hide badge - source indicator is sufficient
+                badge.classList.remove('visible');
                 break;
         }
 
-        badge.innerHTML = icon + text;
         if (tooltip) {
             badge.setAttribute('data-tooltip', tooltip);
         }
@@ -309,14 +292,17 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Quick helper to refresh status from current student
+     * Quick helper to refresh both Status and Source indicators from current student
      */
     refreshAppreciationStatus() {
         const currentStudentId = this._getCurrentStudentId();
         if (!currentStudentId) return;
         const result = appState.generatedResults.find(r => r.id === currentStudentId);
         if (result) {
+            // Update both indicators
             this.updateAppreciationStatus(result);
+            this.updateSourceIndicator(result);
+
             // Also update generate button to reflect dirty state
             this._callbacks?.onUpdateGenerateButton?.(result);
             // CRITICAL: Also update the List View row to show/hide dirty indicator
@@ -416,32 +402,61 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Update AI indicator display
+     * Update Source Indicator (shows HOW appreciation was produced)
+     * NEW: Manages source dimension - AI (✨) / Manual (✏️) / None (hidden)
+     * @param {Object} result - Student result object
+     */
+    updateSourceIndicator(result) {
+        const sourceIndicator = document.getElementById('focusAiIndicator');
+        if (!sourceIndicator) return;
+
+        const hasContent = this._hasRealContent(result?.appreciation);
+        const currentPeriod = appState.currentPeriod;
+        const wasGeneratedForCurrentPeriod = result?.wasGenerated === true
+            && (!result.generationPeriod || result.generationPeriod === currentPeriod);
+
+        // Determine source
+        let source = 'none';
+        if (hasContent) {
+            source = wasGeneratedForCurrentPeriod ? 'ai' : 'manual';
+        }
+
+        // Reset
+        sourceIndicator.style.display = 'none';
+        sourceIndicator.classList.remove('source-ai', 'source-manual');
+        sourceIndicator.removeAttribute('data-tooltip');
+
+        switch (source) {
+            case 'ai':
+                sourceIndicator.innerHTML = '✨';
+                sourceIndicator.style.display = 'inline-flex';
+                sourceIndicator.classList.add('source-ai');
+                // Get detailed tooltip if available (model, tokens, etc.)
+                const { tooltip } = Utils.getGenerationModeInfo(result);
+                sourceIndicator.setAttribute('data-tooltip', tooltip || 'Généré par IA');
+                break;
+            case 'manual':
+                sourceIndicator.innerHTML = '<i class="fas fa-pen"></i>';
+                sourceIndicator.style.display = 'inline-flex';
+                sourceIndicator.classList.add('source-manual');
+                sourceIndicator.setAttribute('data-tooltip', 'Édité manuellement');
+                break;
+            case 'none':
+            default:
+                // Hidden - no content
+                break;
+        }
+
+        UI.initTooltips();
+    },
+
+    /**
+     * Update AI indicator display (legacy wrapper)
+     * @deprecated Use updateSourceIndicator instead
      * @param {Object} result - Student result object
      */
     updateAiIndicator(result) {
-        const aiIndicator = document.getElementById('focusAiIndicator');
-        if (!aiIndicator) return;
-
-        const currentPeriod = appState.currentPeriod;
-        const hasAppreciation = result.appreciation && result.appreciation.trim().length > 0;
-
-        const isCurrentPeriodGenerated = result.generationPeriod && result.generationPeriod === currentPeriod;
-        const wasExplicitlyGenerated = result.wasGenerated === true && isCurrentPeriodGenerated;
-        const hasTokenData = (result.tokenUsage?.generationTimeMs > 0 ||
-            result.tokenUsage?.appreciation?.total_tokens > 0) && isCurrentPeriodGenerated;
-        const hasAiModelWithUsage = result.studentData?.currentAIModel && result.tokenUsage?.appreciation && isCurrentPeriodGenerated;
-
-        const showIndicator = hasAppreciation && (wasExplicitlyGenerated || hasTokenData || hasAiModelWithUsage);
-
-        if (showIndicator) {
-            const { tooltip } = Utils.getGenerationModeInfo(result);
-            aiIndicator.style.display = 'inline-flex';
-            aiIndicator.setAttribute('data-tooltip', tooltip);
-            UI.initTooltips();
-        } else {
-            aiIndicator.style.display = 'none';
-        }
+        this.updateSourceIndicator(result);
     },
 
     /**

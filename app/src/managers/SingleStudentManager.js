@@ -15,6 +15,7 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -160,6 +161,8 @@ export const SingleStudentManager = {
                 existingResult.evolutions = newResult.evolutions;
                 existingResult.tokenUsage = newResult.tokenUsage;
                 existingResult.studentData.prompts = newResult.studentData.prompts;
+                // Transfer all generation metadata for dirty detection
+                StudentDataManager.transferGenerationMetadata(existingResult, newResult);
                 newResult.id = existingResult.id;
             } else {
                 appState.generatedResults.unshift(newResult);
@@ -221,6 +224,8 @@ export const SingleStudentManager = {
                 existingResult.evolutions = newResult.evolutions;
                 existingResult.tokenUsage = newResult.tokenUsage;
                 existingResult.studentData.prompts = newResult.studentData.prompts;
+                // Transfer all generation metadata for dirty detection
+                StudentDataManager.transferGenerationMetadata(existingResult, newResult);
 
                 newResult.id = appState.currentEditingId;
 

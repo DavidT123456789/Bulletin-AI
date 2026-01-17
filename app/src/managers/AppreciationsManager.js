@@ -452,19 +452,23 @@ export const AppreciationsManager = {
             updatedStudentData.currentAIModel = appState.currentAIModel;
 
             const newResult = await this.generateAppreciation(updatedStudentData, false, null, null, 'single-student');
-            newResult.id = id;
-            // Transférer l'historique vers le nouveau résultat
-            newResult.history = originalResult.history || [];
-            appState.generatedResults[resultIndex] = newResult;
+
+            // Use centralized updateResult to preserve user data (photo, journal, history)
+            const updatedResult = StudentDataManager.updateResult(
+                appState.generatedResults[resultIndex],
+                newResult
+            );
+            // Transfer history (pushToHistory was called before generation)
+            updatedResult.history = originalResult.history || [];
 
             // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
             if (filteredIndex > -1) {
-                appState.filteredResults[filteredIndex] = newResult;
+                appState.filteredResults[filteredIndex] = updatedResult;
             }
 
             // Mettre à jour la ligne avec animation typewriter
-            await ListViewManager.updateRow(id, newResult, true);
+            await ListViewManager.updateRow(id, updatedResult, true);
 
             UI.showNotification(`Réussi pour ${originalResult.prenom}.`, 'success');
 
@@ -481,17 +485,22 @@ export const AppreciationsManager = {
                 originalResult.tokenUsage || {},
                 `Nouvelle Erreur : ${msg}.`
             );
-            errorResult.id = id;
-            appState.generatedResults[resultIndex] = errorResult;
+
+            // Use centralized updateResult to preserve user data
+            const updatedResult = StudentDataManager.updateResult(
+                appState.generatedResults[resultIndex],
+                errorResult
+            );
+            updatedResult.history = originalResult.history;
 
             // CORRECTIF: Synchroniser filteredResults aussi en cas d'erreur
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
             if (filteredIndex > -1) {
-                appState.filteredResults[filteredIndex] = errorResult;
+                appState.filteredResults[filteredIndex] = updatedResult;
             }
 
-            // Afficher l'erreur via updateRow (qui gère l'état d'erreur via _getAppreciationCell)
-            ListViewManager.updateRow(id, errorResult, false);
+            // Afficher l'erreur via updateRow
+            ListViewManager.updateRow(id, updatedResult, false);
 
             UI.showNotification(`Échec pour ${originalResult.prenom} : ${msg}`, 'error');
         } finally {

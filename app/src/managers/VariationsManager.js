@@ -146,7 +146,8 @@ Consigne : ${instruction}
 Produis UNIQUEMENT le texte reformulé, sans guillemets, sans introduction ni commentaire.`;
 
         try {
-            const aiResp = await AIService.callAIWithFallback(prompt);
+            // CRITICAL FIX: Pass context so that ai-generation-end properly hides the header progress
+            const aiResp = await AIService.callAIWithFallback(prompt, { context: 'refinement' });
             // Return full response with text and metadata
             return {
                 text: aiResp.text.trim(),

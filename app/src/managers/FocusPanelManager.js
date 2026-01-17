@@ -264,25 +264,34 @@ export const FocusPanelManager = {
                 // Update word count
                 FocusPanelStatus.updateWordCount();
 
-                // Detect manual edit
+                // Get current content and result
+                const content = appreciationText.textContent?.trim() || '';
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
                 const isGenerating = FocusPanelStatus._isGenerating(this.currentStudentId);
 
-                // If content changes & we are NOT generating -> It's a manual edit
                 if (result && !isGenerating) {
-                    // Only mark as edited if it wasn't already (optimization)
-                    if (result.wasGenerated !== false) {
-                        result.wasGenerated = false;
-                        result.tokenUsage = null;
+                    // Check if content is real (not placeholder)
+                    const hasRealContent = content.length > 0
+                        && !content.includes('Aucune appréciation')
+                        && !content.includes('Cliquez sur');
 
-                        // Hide AI indicator immediately
-                        const aiIndicator = document.getElementById('focusAiIndicator');
-                        if (aiIndicator) aiIndicator.style.display = 'none';
-
-                        // Update List Row (remove AI icon)
-                        this._updateListRow(result);
+                    if (hasRealContent) {
+                        // Content added -> mark as manual edit
+                        if (result.wasGenerated !== false) {
+                            result.wasGenerated = false;
+                            result.tokenUsage = null;
+                        }
+                    } else {
+                        // Content cleared -> update result to empty
+                        result.appreciation = '';
                     }
-                    // Note: We don't saveContext on every input, wait for debounce or blur
+
+                    // ALWAYS update both indicators to reflect current state
+                    FocusPanelStatus.updateSourceIndicator(result);
+                    FocusPanelStatus.updateAppreciationStatus(result);
+
+                    // Update List Row
+                    this._updateListRow(result);
                 }
             });
 
@@ -291,14 +300,26 @@ export const FocusPanelManager = {
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
 
                 if (result && content !== undefined) {
-                    // Simple save on blur (sync model)
-                    if (!content.includes('Aucune appréciation')) {
+                    // CRITICAL FIX: Check if content is real (not placeholder)
+                    const isRealContent = content && content.length > 0
+                        && !content.includes('Aucune appréciation')
+                        && !content.includes('Cliquez sur');
+
+                    if (isRealContent) {
+                        // Save real content
                         FocusPanelHistory.push(content);
                         this._saveContext();
 
                         // If it was manual, show "Saved" feedback
                         if (result.wasGenerated === false) {
                             FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                        }
+                    } else {
+                        // CRITICAL FIX: Clear result.appreciation when content is empty/placeholder
+                        // This ensures status icon correctly shows 'empty' (clock) state
+                        result.appreciation = '';
+                        if (result.studentData?.periods?.[appState.currentPeriod]) {
+                            result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
                     }
                     // ALWAYS refresh status to ensure button state is correct
@@ -1355,6 +1376,11 @@ export const FocusPanelManager = {
             // Show pending badge during refinement
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
 
+            // CRITICAL: Register in _activeGenerations to prevent input event from
+            // resetting wasGenerated to false during typewriter animation
+            const refineStudentId = this.currentStudentId;
+            this._activeGenerations.set(refineStudentId, { abort: () => { } }); // Dummy controller
+
             try {
                 // Use VariationsManager to apply refinement
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
@@ -1367,22 +1393,8 @@ export const FocusPanelManager = {
                 if (response && response.text) {
                     const refined = response.text;
 
-                    // Get current word count (for animation start value)
-                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
-
-                    // Calculate target word count from refined text
-                    const targetWordCount = Utils.countWords(refined);
-
-                    // Start word count animation IN PARALLEL with typewriter
-                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
-
-                    // Effet typewriter pour afficher le nouveau texte
-                    await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
-
-                    // Push refined version to history
-                    FocusPanelHistory.push(refined);
-
-                    // Save to result
+                    // CRITICAL: Update result data BEFORE typewriter to prevent input event
+                    // from resetting wasGenerated to false during the animation
                     result.appreciation = refined;
                     result.copied = false; // Reset copied status
                     result.wasGenerated = true; // Mark as AI-generated
@@ -1404,6 +1416,21 @@ export const FocusPanelManager = {
                     };
                     result.timestamp = new Date().toISOString();
 
+                    // Get current word count (for animation start value)
+                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
+
+                    // Calculate target word count from refined text
+                    const targetWordCount = Utils.countWords(refined);
+
+                    // Start word count animation IN PARALLEL with typewriter
+                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
+
+                    // Effet typewriter pour afficher le nouveau texte
+                    await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
+
+                    // Push refined version to history
+                    FocusPanelHistory.push(refined);
+
                     // Show done badge after successful refinement
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
 
@@ -1418,6 +1445,8 @@ export const FocusPanelManager = {
                 // Show error badge on failure
                 FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
             } finally {
+                // Clean up _activeGenerations
+                this._activeGenerations.delete(refineStudentId);
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }

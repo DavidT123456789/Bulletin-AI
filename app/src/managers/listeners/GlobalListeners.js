@@ -287,8 +287,8 @@ export const GlobalListeners = {
                 DOM.headerGenDashboard.classList.remove('fallback-active');
             }
 
-            // Gestion "Single Source of Truth": Si context = single-student, on initialise la pilule
-            if (e.detail && e.detail.context === 'single-student') {
+            // Gestion "Single Source of Truth": Si context = single-student OU refinement, on initialise la pilule
+            if (e.detail && (e.detail.context === 'single-student' || e.detail.context === 'refinement')) {
                 const { UI } = await import('../UIManager.js');
                 UI.showHeaderProgress(0, 1, e.detail.studentName || '');
             }
@@ -300,8 +300,9 @@ export const GlobalListeners = {
         window.addEventListener('ai-generation-end', (e) => {
             // Ne rien faire ici - évite les oscillations contraction/dilatation
             // pendant les générations en masse
-            // MAIS: Si c'est un single-student, on doit fermer car personne ne le fera sinon
-            if (e.detail && e.detail.context === 'single-student') {
+            // MAIS: Si c'est un single-student OU refinement, on doit fermer car personne ne le fera sinon
+            const ctx = e.detail?.context;
+            if (ctx === 'single-student' || ctx === 'refinement') {
                 import('../UIManager.js').then(({ UI }) => {
                     UI.hideHeaderProgress();
                 });
