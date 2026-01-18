@@ -55,8 +55,8 @@ export const SyncService = {
     /** @type {boolean} Whether a cloud provider was previously configured */
     _wasConfigured: false,
 
-    /** @type {boolean} Prevents duplicate reconnect notifications */
-    _reconnectNotificationVisible: false,
+    /** @type {number|null} Timestamp when last reconnect notification was shown */
+    _lastReconnectNotificationTime: null,
 
     // =========================================================================
     // INITIALIZATION
@@ -211,15 +211,21 @@ export const SyncService = {
 
     /**
      * Show a notification prompting user to reconnect to cloud sync.
-     * Includes anti-duplicate mechanism to prevent multiple notifications.
+     * Uses timestamp-based deduplication to prevent notification storms.
      * @private
      */
     _showReconnectNotification() {
-        // Prevent duplicate notifications
-        if (this._reconnectNotificationVisible) {
+        // Prevent duplicate notifications - only show if 60+ seconds since last one
+        const now = Date.now();
+        const COOLDOWN_MS = 60 * 1000; // 60 seconds
+
+        if (this._lastReconnectNotificationTime &&
+            (now - this._lastReconnectNotificationTime) < COOLDOWN_MS) {
+            console.log('[SyncService] Reconnect notification suppressed (cooldown active)');
             return;
         }
-        this._reconnectNotificationVisible = true;
+
+        this._lastReconnectNotificationTime = now;
 
         // Delay to ensure UI is ready
         setTimeout(() => {
@@ -231,11 +237,7 @@ export const SyncService = {
                     8000
                 );
             }
-            // Reset flag after notification duration + buffer
-            setTimeout(() => {
-                this._reconnectNotificationVisible = false;
-            }, 10000);
-        }, 2000);
+        }, 500);
     },
 
     /**
@@ -811,13 +813,8 @@ export const SyncService = {
             return true;
         }
 
-        // Silent refresh failed - show notification once
-        if (!this._reconnectNotificationShown) {
-            this._showReconnectNotification();
-            this._reconnectNotificationShown = true;
-            // Reset flag after 5 minutes to allow re-showing
-            setTimeout(() => { this._reconnectNotificationShown = false; }, 5 * 60 * 1000);
-        }
+        // Silent refresh failed - show notification (deduplication handled by _showReconnectNotification)
+        this._showReconnectNotification();
 
         return false;
     },
