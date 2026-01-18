@@ -178,10 +178,8 @@ export const FocusPanelNavigation = {
             this.callbacks.onUpdateActiveRow(targetResult.id);
         }
 
-        // FIX: Load period-specific history, not global history
-        const currentPeriod = appState.currentPeriod;
-        const periodHistory = targetResult.studentData?.periods?.[currentPeriod]?.appreciationHistory;
-        FocusPanelHistory.clear(periodHistory);
+        // Load unified persistent history for the new student
+        FocusPanelHistory.load(targetResult.id);
 
         // Hide spinner if it was stuck
         const generateBtn = document.getElementById('focusGenerateBtn');

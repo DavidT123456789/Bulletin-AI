@@ -435,10 +435,8 @@ export const FocusPanelManager = {
         this.currentStudentId = studentId;
         this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
 
-        // Load history from student for the CURRENT PERIOD (not global history)
-        const currentPeriod = appState.currentPeriod;
-        const periodHistory = result.studentData?.periods?.[currentPeriod]?.appreciationHistory;
-        FocusPanelHistory.clear(periodHistory);
+        // Load unified persistent history for this student
+        FocusPanelHistory.load(studentId);
 
         // Reset generate button state (only if target student is NOT being generated)
         // If target is being generated, _renderContent will restore the loading state
@@ -533,8 +531,8 @@ export const FocusPanelManager = {
         // Render empty timeline for creation (clears previous data)
         this._renderStudentDetailsTimeline(null, true);
 
-        // Clear history for fresh start
-        FocusPanelHistory.clear();
+        // Reset history state for creation mode (no student to load from)
+        FocusPanelHistory.reset();
     },
 
     /**
@@ -1316,16 +1314,8 @@ export const FocusPanelManager = {
             }
         }
 
-        // Save History (Persist versions) - use FocusPanelHistory module
-        // FIX: Store history per-period, not globally on the student
-        const historyState = FocusPanelHistory.getState();
-        if (historyState && historyState.versions.length > 0) {
-            const currentPeriod = appState.currentPeriod;
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
-            }
-            result.studentData.periods[currentPeriod].appreciationHistory = JSON.parse(JSON.stringify(historyState));
-        }
+        // Note: History is now unified and managed directly in result.history by FocusPanelHistory
+        // No need to save separately - it persists automatically
 
         // Persist to storage
         StorageManager.saveAppState();
@@ -1448,8 +1438,8 @@ export const FocusPanelManager = {
                     // Effet typewriter pour afficher le nouveau texte
                     await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
 
-                    // Push refined version to history
-                    FocusPanelHistory.push(refined);
+                    // Push refined version to history with source type
+                    FocusPanelHistory.push(refined, refineType);
 
                     // Show done badge after successful refinement
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });

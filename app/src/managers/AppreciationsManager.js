@@ -19,6 +19,7 @@ import { MassImportManager } from './MassImportManager.js';
 import { FileImportManager } from './FileImportManager.js';
 
 import { TooltipsUI } from './TooltipsManager.js';
+import * as HistoryUtils from '../utils/HistoryUtils.js';
 
 let App;
 let UI;
@@ -75,82 +76,46 @@ export const AppreciationsManager = {
     /**
      * Sauvegarde la version actuelle dans l'historique avant modification
      * @param {Object} result - L'objet résultat à sauvegarder
-     * @param {string} source - Source de la modification ('regenerate', 'refine', 'manual')
+     * @param {string} source - Source (non utilisé, gardé pour compatibilité)
      */
     pushToHistory(result, source = 'unknown') {
         if (!result || !result.appreciation) return;
-
-        // Initialiser l'historique si nécessaire
-        if (!result.history) result.history = [];
-
-        // Sauvegarder la version actuelle avec toutes les infos IA
-        result.history.unshift({
-            appreciation: result.appreciation,
-            timestamp: result.timestamp || new Date().toISOString(),
-            source: source,
-            modelUsed: result.studentData?.currentAIModel || null,
-            // Sauvegarder aussi les informations de tokens pour le tooltip
-            tokenUsage: result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null
-        });
-
-        // Limiter à 5 versions maximum
-        if (result.history.length > 5) {
-            result.history = result.history.slice(0, 5);
-        }
+        const state = HistoryUtils.getHistoryState(result);
+        HistoryUtils.pushToState(state, result.appreciation);
     },
 
     /**
-     * Bascule entre la version actuelle et la version précédente (toggle)
+     * Bascule entre versions (toggle)
      * @param {string} id - ID du résultat
-     * @returns {boolean} - true si bascule réussie
+     * @returns {boolean}
      */
     toggleVersion(id) {
         const result = appState.generatedResults.find(r => r.id === id);
-        if (!result || !result.history || result.history.length === 0) {
+        if (!result) return false;
+
+        const state = HistoryUtils.getHistoryState(result);
+
+        // Sauvegarder texte actuel s'il diffère
+        if (result.appreciation) {
+            HistoryUtils.pushToState(state, result.appreciation);
+        }
+
+        if (!HistoryUtils.hasMultipleVersions(state)) {
             UI.showNotification('Aucune version alternative disponible.', 'warning');
             return false;
         }
 
-        // Sauvegarder la version actuelle avec toutes les infos IA
-        // Si on affichait déjà une "ancienne" version, on doit préserver ce statut (source='regenerate')
-        // Sinon, c'est la version "latest" (la plus récente générée)
-        const sourceToSave = result.isShowingOriginal ? 'regenerate' : 'latest';
-
-        const currentVersion = {
-            appreciation: result.appreciation,
-            timestamp: result.timestamp || new Date().toISOString(),
-            source: sourceToSave,
-            modelUsed: result.studentData?.currentAIModel || null,
-            tokenUsage: result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null
-        };
-
-        // Récupérer la version précédente (première de l'historique)
-        const previousVersion = result.history.shift();
-
-        // Basculer : la version actuelle devient la première de l'historique
-        result.history.unshift(currentVersion);
-
-        // Appliquer la version précédente
-        result.appreciation = previousVersion.appreciation;
-        result.timestamp = previousVersion.timestamp;
-
-        // Restaurer le modèle IA utilisé pour cette version
-        if (previousVersion.modelUsed && result.studentData) {
-            result.studentData.currentAIModel = previousVersion.modelUsed;
+        // Naviguer (cycle)
+        if (state.currentIndex > 0) {
+            state.currentIndex--;
+        } else {
+            state.currentIndex = state.versions.length - 1;
         }
 
-        // Restaurer les tokenUsage pour cette version (pour le tooltip)
-        if (previousVersion.tokenUsage) {
-            result.tokenUsage = JSON.parse(JSON.stringify(previousVersion.tokenUsage));
-        }
+        result.appreciation = state.versions[state.currentIndex];
+        const isShowingOlder = state.currentIndex < state.versions.length - 1;
 
-        // Déterminer si on affiche maintenant la version "originale" (antérieure) ou "latest"
-        // Une version est considérée comme "originale" si sa source indique qu'elle a été sauvegardée suite à une régénération/refinement/variation
-        result.isShowingOriginal = (previousVersion.source === 'regenerate' || previousVersion.source === 'refine' || previousVersion.source === 'variation');
-
-        const isShowingOriginal = result.isShowingOriginal;
-
-        // Mettre à jour la carte dans l'UI
+        // Mettre à jour la carte UI
         const card = document.querySelector(`.appreciation-result[data-id="${id}"]`);
         if (card) {
             const appreciationEl = card.querySelector('[data-template="appreciation"]');
@@ -158,48 +123,33 @@ export const AppreciationsManager = {
                 appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
             }
 
-            // Mettre à jour le tooltip du bouton toggle
             const toggleBtn = card.querySelector('[data-action="toggle-version"]');
             if (toggleBtn) {
-                toggleBtn.dataset.tooltip = isShowingOriginal
-                    ? 'Revenir à la nouvelle version'
-                    : 'Voir version précédente';
-                toggleBtn.classList.toggle('showing-original', isShowingOriginal);
+                toggleBtn.dataset.tooltip = isShowingOlder ? 'Revenir à la version récente' : 'Voir version précédente';
+                toggleBtn.classList.toggle('showing-original', isShowingOlder);
             }
 
-            // Mettre à jour le compteur de mots
             const wordCountEl = card.querySelector('[data-template="wordCount"]');
             if (wordCountEl) {
                 const wordCount = Utils.countWords(result.appreciation);
-                const charCount = Utils.countCharacters(result.appreciation);
                 wordCountEl.textContent = `${wordCount} mot${wordCount > 1 ? 's' : ''}`;
-                wordCountEl.dataset.tooltip = `${charCount} caractères`;
-            }
-
-            // Mettre à jour le tooltip de la pastille IA (✨) avec les infos de la version restaurée
-            const nameEl = card.querySelector('[data-template="name"]');
-            if (nameEl) {
-                const aiIconEl = nameEl.querySelector('.ai-icon');
-                if (aiIconEl) {
-                    const { tooltip } = Utils.getGenerationModeInfo(result);
-                    TooltipsUI.updateTooltip(aiIconEl, tooltip);
-                }
+                wordCountEl.dataset.tooltip = `${Utils.countCharacters(result.appreciation)} caractères`;
             }
         }
 
         StorageManager.saveAppState();
-        UI.showNotification(isShowingOriginal ? 'Version originale affichée.' : 'Nouvelle version affichée.', 'info');
+        UI.showNotification(isShowingOlder ? 'Version précédente affichée.' : 'Version récente affichée.', 'info');
         return true;
     },
 
     /**
-     * Vérifie si un résultat a un historique disponible
-     * @param {string} id - ID du résultat
+     * Vérifie si un résultat a un historique
+     * @param {string} id
      * @returns {boolean}
      */
     hasHistory(id) {
         const result = appState.generatedResults.find(r => r.id === id);
-        return result?.history?.length > 0;
+        return result ? HistoryUtils.hasMultipleVersions(HistoryUtils.getHistoryState(result)) : false;
     },
 
 

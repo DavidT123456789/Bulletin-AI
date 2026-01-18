@@ -2291,8 +2291,8 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    min-width: 280px;
-    max-width: 400px;
+    min-width: 260px;
+    max-width: 360px;
     overflow: hidden;
     animation: popover-in 0.2s ease;
 }
@@ -2377,6 +2377,69 @@
     -webkit-box-orient: vertical;
     line-clamp: 2;
     overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* History Version Header - Contains label, source, diff, time */
+.history-version-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Relative timestamp - subtle, right-aligned */
+.history-time {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    margin-left: auto;
+    font-weight: 400;
+}
+
+/* Word count diff badges */
+.history-word-diff {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.history-word-diff.positive {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.history-word-diff.negative {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+/* Source label (for refinements) */
+.history-source {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+/* Original version - visual separator */
+.history-version-item--original {
+    border-top: 1px dashed var(--border-color);
+    margin-top: 4px;
+    padding-top: 14px !important;
+}
+
+.history-version-item--original .history-version-label {
+    color: var(--text-secondary);
+}
+
+.history-version-item--original::before {
+    /* Override the current dot for original */
+    background-color: var(--text-tertiary) !important;
+    box-shadow: none !important;
 }
 
 /* Hardcoded dark mode block removed as variables handle it now */
