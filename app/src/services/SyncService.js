@@ -958,7 +958,13 @@ export const SyncService = {
                         merged.appreciation = remotePeriodData.appreciation;
                         merged._lastModified = remotePeriodTime || Date.now();
                     } else if (!remoteApp && localApp) {
-                        // Local has content, remote is empty → keep local (already in merged)
+                        // Local has content, remote is empty
+                        // If remote is NEWER, user intentionally deleted → clear local too
+                        if (periodRemoteIsNewer) {
+                            merged.appreciation = '';
+                            merged._lastModified = remotePeriodTime;
+                        }
+                        // If local is newer or no timestamps, keep local (already in merged)
                     } else if (remoteApp && localApp) {
                         // Both have content → use per-period timestamp
                         if (periodRemoteIsNewer) {
