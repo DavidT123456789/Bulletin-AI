@@ -959,23 +959,19 @@ export const SyncService = {
                         merged._lastModified = remotePeriodTime || Date.now();
                     } else if (!remoteApp && localApp) {
                         // Local has content, remote is empty
-                        // If remote is NEWER, user intentionally deleted → clear local too
-                        if (periodRemoteIsNewer) {
+                        // If remote is NEWER (per-period OR global fallback), user intentionally deleted
+                        if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
                             merged.appreciation = '';
-                            merged._lastModified = remotePeriodTime;
+                            merged._lastModified = remotePeriodTime || Date.now();
                         }
-                        // If local is newer or no timestamps, keep local (already in merged)
+                        // Otherwise keep local (local is newer)
                     } else if (remoteApp && localApp) {
-                        // Both have content → use per-period timestamp
-                        if (periodRemoteIsNewer) {
+                        // Both have content → use per-period timestamp, fallback to global
+                        if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
                             merged.appreciation = remotePeriodData.appreciation;
-                            merged._lastModified = remotePeriodTime;
-                        } else if (periodLocalIsNewer) {
-                            // Keep local (already in merged)
-                        } else if (noTimestamps && !localIsNewer) {
-                            // No per-period timestamps, fall back to global result timestamp
-                            merged.appreciation = remotePeriodData.appreciation;
+                            merged._lastModified = remotePeriodTime || Date.now();
                         }
+                        // Otherwise keep local (local is newer or same)
                     }
 
                     mergedPeriods[period] = merged;
