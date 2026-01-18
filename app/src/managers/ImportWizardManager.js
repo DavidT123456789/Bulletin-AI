@@ -676,6 +676,7 @@ export const ImportWizardManager = {
             { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
             { v: 'STATUT', t: 'Statut' },
             ...periods.flatMap(p => [
+                { v: `DEV_${p}`, t: `Nb éval. ${p}` },
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
                 { v: `APP_${p}`, t: `Appr. ${p}` },
                 { v: `CTX_${p}`, t: `Contexte ${p}` }

@@ -85,7 +85,7 @@ export const PromptService = {
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
-        let periodsInfo = relevantPeriods.map(p => { const d = periods[p] || {}; const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A'; return `Période ${p} -> Moy : ${g}, App : "${d.appreciation || 'N/A'}"`; }).join('\n');
+        let periodsInfo = relevantPeriods.map(p => { const d = periods[p] || {}; const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A'; const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : ''; return `Période ${p} -> Moy : ${g}${evalCount}, App : "${d.appreciation || 'N/A'}"`; }).join('\n');
 
         // Use StatsService for evolution analysis
         const evolutions = StatsService.analyserEvolution(periods);
@@ -121,7 +121,8 @@ export const PromptService = {
         let periodsInfoForAnalysis = relevantPeriods.map(p => {
             const d = periods[p] || {};
             const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
-            return `Période ${p} -> Moy : ${g}, App : "${d.appreciation || 'N/A'}"`;
+            const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
+            return `Période ${p} -> Moy : ${g}${evalCount}, App : "${d.appreciation || 'N/A'}"`;
         }).join('\n');
 
         // Analysis prompts - use the current period's appreciation as reference

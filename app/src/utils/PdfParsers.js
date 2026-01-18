@@ -149,12 +149,14 @@ function extractStudents(lines) {
         // Skip headers
         if (isHeaderLine(line)) continue;
 
-        // Avec notes
+        // Avec notes : format "NOM Prénom[count][note]" (ex: "DUPONT Marie215,5")
         let match = line.match(patternWithGrade);
         if (match) {
             const name = match[1].trim();
+            const count = match[2] || ''; // Nombre d'évaluations (Dev.)
             const grade = match[3].replace(',', '.');
-            students.push(`${name}\t\t${grade}\t`);
+            // Output: NOM Prénom \t count \t grade \t
+            students.push(`${name}\t${count}\t${grade}\t`);
             continue;
         }
 

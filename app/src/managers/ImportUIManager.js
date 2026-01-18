@@ -44,6 +44,7 @@ export const ImportUI = {
             { v: 'INSTRUCTIONS', t: 'Contexte (global)' },
             ...Utils.getPeriods().flatMap(p => [
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
+                { v: `DEV_${p}`, t: `Nb éval. ${p}` },
                 { v: `APP_${p}`, t: `Appr. ${p}` },
                 { v: `CTX_${p}`, t: `Contexte ${p}` }
             ])
@@ -80,6 +81,7 @@ export const ImportUI = {
             };
             const periodKeywordMap = {
                 'MOY_': ['moy', 'note', 'moyenne'],
+                'DEV_': ['dev', 'nb', 'eval', 'devoir', 'devoirs'],
                 'APP_': ['app', 'appréciation', 'commentaire'],
                 'CTX_': ['contexte', 'ctx', 'observation', 'remarque']
             };
@@ -151,16 +153,51 @@ export const ImportUI = {
         const availablePeriods = Utils.getPeriods().filter(p => availableOptions.some(o => o.v === `MOY_${p}`));
         let periodIdx = 0;
 
+        // Helper: detect small integer (1-20) that could be evaluation count
+        const isSmallInt = (d) => {
+            const num = parseInt(d, 10);
+            return !isNaN(num) && num >= 1 && num <= 20 && String(num) === String(d).trim();
+        };
+
         for (let i = 0; i < guesses.length; i++) {
             if (assignedIndices.has(i)) continue;
 
             const currentPeriod = availablePeriods[periodIdx];
             if (!currentPeriod) break;
 
+            const devTag = `DEV_${currentPeriod}`;
             const moyTag = `MOY_${currentPeriod}`;
             const appTag = `APP_${currentPeriod}`;
 
-            if (isLikelyGrade(firstLineData[i])) {
+            const currentData = firstLineData[i];
+            const nextData = firstLineData[i + 1];
+
+            // Pattern: small int (count) followed by a grade → detect as DEV + MOY pair
+            if (isSmallInt(currentData) && nextData && isLikelyGrade(nextData)) {
+                guesses[i] = devTag;
+                assignedIndices.add(i);
+                guesses[i + 1] = moyTag;
+                assignedIndices.add(i + 1);
+
+                // Look for appreciation after the grade
+                let nextUnassignedIndex = -1;
+                for (let j = i + 2; j < guesses.length; j++) {
+                    if (!assignedIndices.has(j)) {
+                        nextUnassignedIndex = j;
+                        break;
+                    }
+                }
+                if (nextUnassignedIndex !== -1 && isLongText(firstLineData[nextUnassignedIndex])) {
+                    guesses[nextUnassignedIndex] = appTag;
+                    assignedIndices.add(nextUnassignedIndex);
+                }
+                periodIdx++;
+                i++; // Skip the grade we just assigned
+                continue;
+            }
+
+            // Fallback: just a grade without preceding count
+            if (isLikelyGrade(currentData)) {
                 guesses[i] = moyTag;
                 assignedIndices.add(i);
 
@@ -271,12 +308,22 @@ export const ImportUI = {
         const isLikelyGrade = (d) => Utils.isNumeric(d);
         const isLikelyName = (d) => typeof d === 'string' && d.split(' ').length >= 2 && /[a-zA-Z]/.test(d);
         const isLongText = (d) => typeof d === 'string' && d.length > 15;
+        const isSmallInt = (d) => {
+            const num = parseInt(d, 10);
+            return !isNaN(num) && num >= 1 && num <= 20 && String(num) === d.trim();
+        };
 
+        let foundGrade = false;
         return firstLineData.map((data, index) => {
             if (index === 0 || isLikelyName(data)) {
                 return { label: 'Nom', cssClass: 'type-name' };
             }
+            // Detect evaluation count: small int (1-20) just after a grade column
+            if (isSmallInt(data) && foundGrade) {
+                return { label: 'Nb éval.', cssClass: 'type-eval-count' };
+            }
             if (isLikelyGrade(data)) {
+                foundGrade = true;
                 return { label: 'Note', cssClass: 'type-grade' };
             }
             if (isLongText(data)) {

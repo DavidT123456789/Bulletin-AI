@@ -1090,6 +1090,7 @@ export const FocusPanelManager = {
                 if (idx >= currentIdx) return; // Only past periods
                 const periodData = result.studentData.periods?.[period] || {};
                 const grade = periodData.grade;
+                const evalCount = periodData.evaluationCount;
 
                 // Show chip for ALL past periods (even if empty) for consistency
                 const chip = document.createElement('span');
@@ -1097,6 +1098,12 @@ export const FocusPanelManager = {
                 const displayGrade = (grade !== undefined && grade !== null && grade !== '')
                     ? parseFloat(grade).toFixed(1).replace('.', ',')
                     : '--';
+
+                // Add tooltip class and data if we have evaluation count
+                if (typeof evalCount === 'number') {
+                    chip.classList.add('tooltip');
+                    chip.setAttribute('data-tooltip', `Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`);
+                }
 
                 chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)} :</span> <span class="prev-grade-value">${displayGrade}</span>`;
                 prevGradesEl.appendChild(chip);
@@ -1111,10 +1118,23 @@ export const FocusPanelManager = {
 
         const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
-            const currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
+            const currentPeriodData = result.studentData.periods?.[currentPeriod] || {};
+            const currentGrade = currentPeriodData.grade;
+            const evalCount = currentPeriodData.evaluationCount;
+
             gradeInput.value = (currentGrade !== undefined && currentGrade !== null)
                 ? parseFloat(currentGrade).toFixed(1).replace('.', ',')
                 : '';
+
+            // Add tooltip showing evaluation count if available
+            const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
+            if (gradeWrapper && typeof evalCount === 'number') {
+                gradeWrapper.classList.add('tooltip');
+                gradeWrapper.setAttribute('data-tooltip', `Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`);
+            } else if (gradeWrapper) {
+                gradeWrapper.classList.remove('tooltip');
+                gradeWrapper.removeAttribute('data-tooltip');
+            }
 
             // Add input listener for grade changes
             gradeInput.oninput = () => {

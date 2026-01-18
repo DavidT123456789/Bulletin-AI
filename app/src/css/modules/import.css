@@ -1512,6 +1512,12 @@
     color: rgb(168, 85, 247);
 }
 
+.mapping-pill.type-eval-count {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: rgb(217, 119, 6);
+}
+
 .mapping-pill.type-ignored {
     opacity: 0.5;
 }

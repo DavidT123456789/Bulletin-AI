@@ -63,6 +63,7 @@ export const ImportManager = {
             { v: 'STATUT', t: 'Statut' },
             { v: 'INSTRUCTIONS', t: 'Contexte (global)' },
             ...Utils.getPeriods().flatMap(p => [
+                { v: `DEV_${p}`, t: `Nb éval. ${p}` },
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
                 { v: `APP_${p}`, t: `Appr. ${p}` },
                 { v: `CTX_${p}`, t: `Contexte ${p}` }

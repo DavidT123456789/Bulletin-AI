@@ -909,16 +909,22 @@ export const ListViewManager = {
 
                 const data = safePeriodsData[p] || {};
                 const grade = (data && typeof data.grade === 'number') ? data.grade : null;
+                const evalCount = data.evaluationCount;
                 let gradeClass = '';
 
                 if (grade !== null) {
                     gradeClass = Utils.getGradeClass(grade);
                 }
 
+                // Build tooltip for evaluation count if available
+                const tooltipAttr = (typeof evalCount === 'number')
+                    ? ` class="tooltip" data-tooltip="Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}"`
+                    : '';
+
                 // Cellule de note
                 html += `
                     <td class="grade-cell">
-                        <div class="grade-content-wrapper">
+                        <div class="grade-content-wrapper"${tooltipAttr}>
                         ${grade !== null
                         ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
                         : `<span class="grade-empty">--</span>`

@@ -125,6 +125,18 @@ export const Utils = {
     },
 
     /**
+     * Parse le nombre d'évaluations depuis une valeur d'import
+     * @param {string} value - La valeur brute (ex: "6", "12")
+     * @returns {number|null} Nombre d'évaluations (0-50) ou null si invalide
+     * @private
+     */
+    _parseEvaluationCount(value) {
+        if (!value || typeof value !== 'string') return null;
+        const num = parseInt(value.trim(), 10);
+        return (!isNaN(num) && num >= 0 && num <= 50) ? num : null;
+    },
+
+    /**
      * Crée une fonction debounced qui retarde l'exécution
      * @param {Function} func - La fonction à exécuter
      * @param {number} wait - Délai en millisecondes
@@ -149,10 +161,14 @@ export const Utils = {
             const gradeStr = (mappedData[`MOY_${p}`] || '').replace(',', '.');
             // Get context for this period (CTX_T1, CTX_S1, etc.) or fallback to global INSTRUCTIONS for current period
             const periodContext = mappedData[`CTX_${p}`] || (p === currentPeriod ? mappedData['INSTRUCTIONS'] : '') || '';
+            // Parse evaluation count (DEV_T1, DEV_S1, etc.)
+            const evalCountStr = mappedData[`DEV_${p}`] || '';
+            const evalCount = this._parseEvaluationCount(evalCountStr);
             studentData.periods[p] = {
                 grade: this.isNumeric(gradeStr) ? parseFloat(gradeStr) : null,
                 appreciation: mappedData[`APP_${p}`] || '',
-                context: periodContext
+                context: periodContext,
+                evaluationCount: evalCount
             };
         });
         // NOTE: We no longer erase the current period appreciation here.
