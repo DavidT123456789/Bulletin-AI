@@ -758,15 +758,21 @@ export const ResultsUIManager = {
 
         UI.showCustomConfirm(`Voulez-vous effacer le texte des ${count} appréciations visibles ?<br><span style="font-size:0.9em; opacity:0.8;">Les notes et les données élèves seront conservées.</span>`, () => {
             let clearedCount = 0;
+            const now = Date.now();
+
             appState.generatedResults.forEach(r => {
                 if (visibleIds.has(r.id)) {
                     // Clear global appreciation
                     r.appreciation = '';
 
-                    // Clear period-specific appreciation
+                    // Clear period-specific appreciation WITH timestamp for sync
                     if (r.studentData && r.studentData.periods && r.studentData.periods[currentPeriod]) {
                         r.studentData.periods[currentPeriod].appreciation = '';
+                        r.studentData.periods[currentPeriod]._lastModified = now;
                     }
+
+                    // Update result timestamp for sync
+                    r._lastModified = now;
 
                     r.copied = false;
                     // We don't clear history by default to allow undo/reference, but we could if requested.
