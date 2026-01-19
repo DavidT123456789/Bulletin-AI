@@ -654,7 +654,7 @@ export const ListViewManager = {
                                     Nom
                                     <span class="sort-icon-placeholder name-sort-icon"></span>
                                 </div>
-                                <button type="button" class="inline-search-trigger-btn" id="inlineSearchTrigger" title="Rechercher (Ctrl+F)">
+                                <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" title="Rechercher (Ctrl+F)">
                                     <i class="fas fa-search"></i>
                                 </button>
                                 <div class="inline-search-container" id="inlineSearchContainer">
@@ -672,7 +672,7 @@ export const ListViewManager = {
                             </th>
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
                             <th class="${headerClass}" title="${title}">
-                                <span id="avgWordsChip" class="detail-chip" data-tooltip="Nombre moyen de mots" style="display:none"></span>
+                                <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="appreciation-header-actions" id="appreciationHeaderActions">
                                     <button type="button" class="btn-generate-inline tooltip" id="generatePendingBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
                                         <i class="fas fa-wand-magic-sparkles"></i>

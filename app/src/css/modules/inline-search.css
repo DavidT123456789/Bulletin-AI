@@ -14,42 +14,25 @@
     transition: opacity 0.2s ease;
 }
 
-/* Search trigger button - SEPARATE from header-content-wrapper to avoid click conflicts */
+/* Search trigger button - extends .header-action-trigger */
 .inline-search-trigger-btn {
-    position: absolute;
+    /* Position override - loupe is on the right side */
     right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
     width: 24px;
     height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    opacity: 0.3;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    z-index: 2;
 }
 
 .inline-search-trigger-btn i {
     font-size: 0.75rem;
 }
 
+/* Parent hover reveals button */
 .name-header-with-search:hover .inline-search-trigger-btn {
     opacity: 0.7;
     color: var(--primary-color);
 }
 
-.inline-search-trigger-btn:hover {
-    opacity: 1 !important;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    transform: translateY(-50%) scale(1.15);
-}
+/* Hover override - inherits from .header-action-trigger but keep specific transform */
 
 /* ====================================================================
    SEARCH INPUT CONTAINER (Overlay style)

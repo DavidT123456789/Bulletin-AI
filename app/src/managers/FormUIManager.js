@@ -58,7 +58,17 @@ export const FormUI = {
             DOM.iaLengthSlider.value = iaConfig.length;
         }
         DOM.iaToneSlider.value = iaConfig.tone;
-        DOM.iaStyleInstructions.value = isGenericMode ? '' : (iaConfig.styleInstructions || '');
+
+        // [FIX] Always try to get styleInstructions from MonStyle first to prevent data loss
+        // even if iaConfig fallback was triggered due to corrupted structure
+        let styleInstructionsValue = '';
+        if (!isGenericMode) {
+            // Try direct access to MonStyle first
+            styleInstructionsValue = appState.subjects['MonStyle']?.iaConfig?.styleInstructions
+                || iaConfig.styleInstructions
+                || '';
+        }
+        DOM.iaStyleInstructions.value = styleInstructionsValue;
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
             radio.checked = radio.value === (iaConfig.voice || 'default');

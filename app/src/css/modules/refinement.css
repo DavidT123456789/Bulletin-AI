@@ -3,6 +3,16 @@
    Styles pour la modale de raffinement et suggestions
    ==================================================================== */
 
+/* --- Focus Panel Refinement Options --- */
+.focus-refinement-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+
 /* --- Layout Général --- */
 .refinement-options {
     margin-bottom: 12px;

@@ -228,13 +228,22 @@ export const SettingsModalListeners = {
 
         if (DOM.iaStyleInstructions) {
             DOM.iaStyleInstructions.addEventListener('input', () => {
-                // [FIX] Update appState in real-time so generation uses current value immediately
-                if (appState.subjects['MonStyle']?.iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
+                // [FIX] Ensure MonStyle structure exists before updating
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
                 }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
+                }
+                appState.subjects['MonStyle'].iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
 
                 SettingsUIManager.showPreviewRefreshHint();
             });
+
+            // [FIX] Auto-save to disk with debounce to prevent data loss
+            DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
+                StorageManager.saveAppState();
+            }, 1500)); // Save 1.5s after last keystroke
         }
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {

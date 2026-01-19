@@ -26,18 +26,28 @@ export const SettingsUIManager = {
      * @private
      */
     _savePersonalStyleChanges() {
-        // S'assurer que MonStyle existe
+        // S'assurer que MonStyle existe avec structure correcte
         if (!appState.subjects['MonStyle']) {
-            appState.subjects['MonStyle'] = JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG));
-            appState.subjects['MonStyle'] = { iaConfig: appState.subjects['MonStyle'] };
+            appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
+        }
+        if (!appState.subjects['MonStyle'].iaConfig) {
+            appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
         }
 
         const styleData = appState.subjects['MonStyle'];
-        if (!styleData.iaConfig) styleData.iaConfig = {};
 
         styleData.iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
         styleData.iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
-        styleData.iaConfig.styleInstructions = DOM.iaStyleInstructions.value;
+
+        // [FIX] Preserve existing styleInstructions if DOM field is empty but state has value
+        // This prevents data loss when field wasn't properly populated due to loading issues
+        const domValue = DOM.iaStyleInstructions.value;
+        const existingValue = styleData.iaConfig.styleInstructions || '';
+        if (domValue || !existingValue) {
+            // Only update if user typed something OR if there was no existing value
+            styleData.iaConfig.styleInstructions = domValue;
+        }
+        // else: keep the existing value to prevent accidental data loss
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
         if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
     },
@@ -100,6 +110,9 @@ export const SettingsUIManager = {
             if (Object.keys(UIState.settingsBeforeEdit).length > 0) {
                 appState.useSubjectPersonalization = UIState.settingsBeforeEdit.useSubjectPersonalization;
                 appState.subjects = UIState.settingsBeforeEdit.subjects;
+
+                // [FIX] Also save to disk to revert any auto-saved changes
+                StorageManager.saveAppState();
             }
             this.updatePersonalizationState();
             UI.updateSettingsFields();

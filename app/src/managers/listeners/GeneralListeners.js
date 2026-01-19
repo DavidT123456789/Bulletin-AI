@@ -4,11 +4,12 @@
  */
 
 import { DOM } from '../../utils/DOM.js';
-import { appState } from '../../state/State.js';
+import { appState, UIState } from '../../state/State.js';
 import { UI } from '../UIManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
+
 
 let App = null;
 
@@ -104,12 +105,23 @@ export const GeneralListeners = {
         });
 
         addClickListener(DOM.settingsButton, () => {
+            // [FIX] Create snapshot of current state before opening modal
+            // This allows Cancel to properly revert changes including auto-saved ones
+            UIState.settingsBeforeEdit = {
+                useSubjectPersonalization: appState.useSubjectPersonalization,
+                subjects: JSON.parse(JSON.stringify(appState.subjects))
+            };
             UI.openModal(DOM.settingsModal);
             SettingsUIManager.updateApiStatusDisplay();
         });
 
         // Model label click -> opens settings (API config)
         addClickListener(DOM.dashModelLabel, () => {
+            // [FIX] Same snapshot logic for this entry point
+            UIState.settingsBeforeEdit = {
+                useSubjectPersonalization: appState.useSubjectPersonalization,
+                subjects: JSON.parse(JSON.stringify(appState.subjects))
+            };
             UI.openModal(DOM.settingsModal);
             SettingsUIManager.updateApiStatusDisplay();
         });

@@ -38,21 +38,10 @@ export const VariationsManager = {
             // Sauvegarder la version actuelle dans l'historique UNIFIÉ (comme regenerate)
             AppreciationsManager.pushToHistory(result, 'variation');
 
-            // Construire un prompt de REFORMULATION (pas de génération from scratch)
-            // On envoie l'appréciation actuelle et on demande une version différente
+            // Use unified PromptService for consistent prompt formatting
             const currentAppreciation = result.appreciation || '';
-            const studentName = result.studentData?.prenom || '[PRÉNOM]';
-
-            const variationPrompt = `Voici une appréciation scolaire pour l'élève ${studentName} :
-
-"${currentAppreciation}"
-
-Reformule cette appréciation de manière différente en gardant le même sens général et les mêmes informations clés, mais en variant :
-- La structure des phrases (ordre, tournures)
-- Le vocabulaire utilisé (synonymes, expressions alternatives)
-- Le ton (légèrement plus encourageant ou plus factuel)
-
-Produis UNIQUEMENT la nouvelle appréciation, sans introduction ni commentaire.`;
+            const { PromptService } = await import('../services/PromptService.js');
+            const variationPrompt = PromptService.getRefinementPrompt('variations', currentAppreciation);
 
             const aiResp = await AIService.callAIWithFallback(variationPrompt);
 
@@ -110,6 +99,7 @@ Produis UNIQUEMENT la nouvelle appréciation, sans introduction ni commentaire.`
 
     /**
      * Applies a specific refinement to a text (concise, detailed, encouraging, etc.)
+     * Uses unified prompts from PromptService for consistency
      * @param {string} text - The text to refine
      * @param {string} refineType - Type of refinement (concise, detailed, encouraging, variations, polish)
      * @returns {Promise<{text: string, modelUsed?: string, usage?: object, generationTimeMs?: number}|null>} 
@@ -118,32 +108,9 @@ Produis UNIQUEMENT la nouvelle appréciation, sans introduction ni commentaire.`
     async applyRefinement(text, refineType) {
         if (!text) return null;
 
-        let instruction = "";
-        switch (refineType) {
-            case 'concise':
-                instruction = "Reformule cette appréciation de manière plus concise, directe et synthétique, en gardant l'essentiel pour un bulletin scolaire. Réduis la longueur.";
-                break;
-            case 'detailed':
-                instruction = "Développe cette appréciation en explicitant davantage les points abordés pour un bulletin scolaire. Sois plus précis et constructif, sans inventer de faits absents du texte original.";
-                break;
-            case 'encouraging':
-                instruction = "Reformule cette appréciation sur un ton plus encourageant, bienveillant et positif. Mets en valeur les efforts et les marges de progression de l'élève.";
-                break;
-            case 'polish':
-                instruction = "Améliore le style, la syntaxe et le vocabulaire de cette appréciation pour qu'elle soit parfaitement professionnelle et élégante. Corrige toute faute éventuelle.";
-                break;
-            case 'variations':
-            default:
-                instruction = "Reformule cette appréciation de manière différente (vocabulaire, structure) tout en gardant strictement le même sens et la même tonalité.";
-                break;
-        }
-
-        const prompt = `Voici une appréciation scolaire :
-"${text}"
-
-Consigne : ${instruction}
-
-Produis UNIQUEMENT le texte reformulé, sans guillemets, sans introduction ni commentaire.`;
+        // Use unified PromptService for prompt generation
+        const { PromptService } = await import('../services/PromptService.js');
+        const prompt = PromptService.getRefinementPrompt(refineType, text);
 
         try {
             // CRITICAL FIX: Pass context so that ai-generation-end properly hides the header progress

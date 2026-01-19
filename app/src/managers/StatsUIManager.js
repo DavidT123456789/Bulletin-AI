@@ -387,7 +387,8 @@ export const StatsUI = {
 
                 // Make clickable to open personalization modal (attach once)
                 if (!avgWordsEl._clickListenerAdded) {
-                    avgWordsEl.addEventListener('click', () => {
+                    avgWordsEl.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent triggering parent header toggle
                         import('./UIManager.js').then(({ UI }) => {
                             const personalizationModal = document.getElementById('personalizationModal');
                             if (personalizationModal) {

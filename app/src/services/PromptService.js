@@ -38,7 +38,10 @@ export const PromptService = {
         // Anonymisation RGPD : on utilise [PRÉNOM] au lieu du vrai prénom
         // Le genre est détecté pour permettre l'accord grammatical correct
         const gender = Utils.detectGender(prenom);
-        const genderLabel = gender === 'féminin' ? 'féminin' : gender === 'masculin' ? 'masculin' : 'non spécifié';
+        // When gender unknown, favor impersonal constructions
+        const genderLabel = gender === 'féminin' ? 'féminin'
+            : gender === 'masculin' ? 'masculin'
+                : 'non déterminé - nommer une seule fois puis utiliser des tournures impersonnelles (ex: "Sa participation...", "Il convient de...")';
 
         const promptParts = [];
 
@@ -183,37 +186,56 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         return { appreciation: appreciationPrompt, sw: swPrompt, ns: nsPrompt };
     },
 
-    getRefinementPrompt(type, original, context = null) {
-        const ctx = context || (DOM.refinementContext ? DOM.refinementContext.value.trim() : '');
+    /**
+     * Generates a refinement prompt for appreciation modifications
+     * @param {string} type - Type of refinement (concise, detailed, encouraging, polish, variations, formal, context)
+     * @param {string} original - The original text to refine
+     * @param {Object} options - Optional configuration
+     * @param {string} options.context - Additional context to integrate
+     * @returns {string} The formatted prompt for AI
+     */
+    getRefinementPrompt(type, original, options = {}) {
+        const ctx = options.context || options || (DOM.refinementContext ? DOM.refinementContext.value.trim() : '');
+        // Handle legacy call signature: getRefinementPrompt(type, original, contextString)
+        const contextStr = typeof ctx === 'string' ? ctx : '';
+
         const wordCount = Utils.countWords(original);
-        const base = 'Sans "performance". Texte seul.';
+        // Strict instruction: raw text only, no formatting, no commentary
+        const base = 'IMPORTANT: Réponds uniquement avec le texte brut. Aucune introduction, aucun commentaire, aucun formatage.';
         let instruction = '';
 
         switch (type) {
             case 'polish':
-                instruction = `Peaufine : corrige fautes, améliore fluidité, ton pro. Garde sens et faits. ${base}\n\n"${original}"`;
+                // Same length, improved style
+                instruction = `Peaufine cette appréciation : corrige fautes, améliore fluidité, ton pro. Garde sens et longueur.\n\n${original}\n\n${base}`;
                 break;
             case 'variations':
-                instruction = `Reformule différemment, même sens, ~${wordCount} mots. ${base}\n\n"${original}"`;
+                // Same length, different wording
+                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'context':
-                instruction = `Intègre ce contexte : "${ctx}". Vise ~${Math.round(wordCount * 1.1)} mots. ${base}\n\n"${original}"`;
+                // Slightly longer to integrate context (+10%)
+                instruction = `Intègre ce contexte : "${contextStr}". Vise environ ${Math.round(wordCount * 1.1)} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'detailed':
-                instruction = `Développe les points, ~${Math.round(wordCount * 1.15)} mots, sans nouvelles infos. ${base}\n\n"${original}"`;
+                // +20% - Symmetric with concise (-20%)
+                instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n${original}\n\n${base}`;
                 break;
             case 'concise':
-                instruction = `Plus concis, ~${Math.round(wordCount * 0.85)} mots, garde l'essentiel. ${base}\n\n"${original}"`;
+                // -20% reduction
+                instruction = `Rends cette appréciation plus concise, environ ${Math.round(wordCount * 0.80)} mots. Garde l'essentiel.\n\n${original}\n\n${base}`;
                 break;
             case 'encouraging':
-                instruction = `Plus encourageant et positif, ~${wordCount} mots. ${base}\n\n"${original}"`;
+                // Same length, warmer tone
+                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'formal':
-                instruction = `Plus formel et soutenu, ~${wordCount} mots. ${base}\n\n"${original}"`;
+                // Same length, more formal
+                instruction = `Reformule cette appréciation avec un ton plus formel et soutenu, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'default':
             default:
-                instruction = `Reformule. ${base}\n\n"${original}"`;
+                instruction = `Reformule cette appréciation.\n\n${original}\n\n${base}`;
         }
         return instruction;
     },

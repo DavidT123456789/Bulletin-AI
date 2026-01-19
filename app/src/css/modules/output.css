@@ -272,52 +272,37 @@
     transition: all var(--transition-base);
 }
 
-/* Badge spécifique pour le tableau - style minimaliste */
+/* Badge spécifique pour le tableau - extends .header-action-trigger */
 #avgWordsChip {
-    /* Positionnement absolu à droite du header (hérite de .appreciation-header>.detail-chip) */
-    position: absolute;
+    /* Position override - chip is on the right side */
     right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    /* Style minimaliste */
-    height: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
+    /* Typography overrides */
     font-size: 12px;
     font-weight: 400;
-    color: var(--text-tertiary);
-    padding: 0;
-    border-radius: 0;
-    vertical-align: middle;
-    margin-left: 0;
-    box-shadow: none;
-    transition: color var(--transition-fast), opacity var(--transition-fast);
     font-variant-numeric: tabular-nums;
     text-transform: none;
+    /* Padding for visible hover background (harmonized with search button) */
+    padding: 6px 10px;
+    /* Reset inherited chip styles */
+    height: auto;
+    margin-left: 0;
+    box-shadow: none;
+    /* Lower initial opacity than default header-action-trigger */
     opacity: 0.8;
-    /* Garantir que le survol fonctionne au-dessus du pseudo-élément ::after */
-    z-index: 2;
-    cursor: default;
 }
 
-#avgWordsChip:hover {
+/* Hover is handled by .header-action-trigger
+   but we override for non-clickable state (before data loads) */
+#avgWordsChip:not(.clickable-chip):hover {
     color: var(--text-secondary);
     opacity: 1;
+    background: transparent;
+    transform: translateY(-50%);
 }
 
-/* Clickable chip style for avgWordsChip */
+/* Clickable chip style - cursor override */
 #avgWordsChip.clickable-chip {
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-#avgWordsChip.clickable-chip:hover {
-    opacity: 1 !important;
-    color: var(--primary-color);
-    transform: translateY(-50%) scale(1.15);
 }
 
 .output-header .detail-chip:hover {

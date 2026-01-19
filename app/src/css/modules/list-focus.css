@@ -51,6 +51,34 @@
     color: var(--text-secondary);
 }
 
+/* ====================================================================
+   HEADER ACTION TRIGGER - Single Source of Truth
+   Common style for interactive elements inside table headers (search, chips)
+   ==================================================================== */
+.header-action-trigger {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    opacity: 0.5;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 2;
+}
+
+.header-action-trigger:hover {
+    opacity: 1 !important;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    transform: translateY(-50%) scale(1.15);
+}
+
 /* Sortable Headers */
 .sortable-header {
     cursor: pointer;
@@ -105,6 +133,11 @@
 
 [data-theme="dark"] .sortable-header.active-sort:hover {
     background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Disable active-sort hover effect when hovering search button */
+.name-header-with-search.active-sort:has(.inline-search-trigger-btn:hover) {
+    background-color: transparent !important;
 }
 
 /* Disable pseudo-element on active-sort (we use direct background instead) */
@@ -576,6 +609,30 @@
 /* Ensure the hover overlay on appreciation header doesn't block the button */
 .appreciation-header::after {
     pointer-events: none;
+}
+
+/* === FIX: Disable header hover effect when hovering interactive children ===
+   When user hovers the Generate/Update buttons or the avgWords chip,
+   we don't want to trigger the parent header's hover overlay effect */
+.appreciation-toggle-header:has(.btn-generate-inline:hover)::after,
+.appreciation-toggle-header:has(.btn-update-inline:hover)::after,
+.appreciation-toggle-header:has(#avgWordsChip:hover)::after,
+/* Also for search button in name column */
+.name-header-with-search:has(.inline-search-trigger-btn:hover)::after {
+    opacity: 0 !important;
+}
+
+/* Also prevent the toggle icon from appearing when hovering interactive children */
+.appreciation-toggle-header:has(.btn-generate-inline:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(.btn-update-inline:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon {
+    opacity: 0 !important;
+}
+
+/* Disable sort icon highlight when hovering search button */
+.name-header-with-search:has(.inline-search-trigger-btn:hover) .sort-icon-placeholder,
+.name-header-with-search:has(.inline-search-trigger-btn:hover) .name-sort-icon {
+    opacity: 0 !important;
 }
 
 /* === Appreciation Column Toggle (Expand/Collapse Content) === */
