@@ -9,6 +9,8 @@
 
 .class-selector-wrapper {
     position: relative;
+    flex-shrink: 0;
+    min-width: max-content;
 }
 
 .class-chip {
@@ -17,6 +19,8 @@
     gap: 8px;
     cursor: pointer;
     padding-right: 10px;
+    flex-shrink: 0;
+    min-width: max-content;
 }
 
 .class-chip .student-count-badge {
@@ -483,8 +487,7 @@
    ==================================================================== */
 
 @media (max-width: 768px) {
-    /* No text truncation - header is horizontally scrollable */
-    /* All elements keep fixed size for visual consistency */
+    /* Class name keeps full size - header is scrollable */
 
     /* Full-width fixed dropdown on tablet/mobile */
     .class-dropdown {
@@ -517,8 +520,7 @@
 }
 
 @media (max-width: 480px) {
-    /* No shrinking or hiding - header scrolls horizontally */
-    /* All header elements maintain consistent fixed size */
+    /* All header elements keep fixed size - header is scrollable */
 
     /* Full-width centered dropdown on mobile */
     .class-dropdown {

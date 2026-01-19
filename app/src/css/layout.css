@@ -1106,42 +1106,28 @@
     }
 
     /* All header elements keep fixed size - header is scrollable */
-    .header-center {
-        gap: 4px;
+    .header-center,
+    .class-selector-wrapper,
+    .header-context-chip,
+    .header-actions,
+    .header-gen-dashboard,
+    .header-actions-pill {
         flex-shrink: 0;
         min-width: max-content;
+    }
+
+    .header-center {
+        gap: 4px;
     }
 
     .header-context-chip {
         padding: 6px 10px;
-        font-size: var(--font-sm);
         gap: 6px;
-        flex-shrink: 0;
-        min-width: max-content;
     }
 
-    /* No text truncation - keep full class name visible */
-
-    .header-actions {
-        flex-shrink: 0;
-        min-width: max-content;
-    }
-
-    .header-gen-dashboard {
-        flex-shrink: 0;
-        min-width: max-content;
-    }
-
-    /* Compact AI model chip */
+    /* Compact AI model chip padding only - no text truncation */
     .ai-model-chip {
         padding: 6px 10px;
-    }
-
-    .ai-model-chip #headerAiModelName {
-        max-width: 80px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .section-title {
@@ -1177,7 +1163,16 @@
         /* Tighter padding on very small screens */
     }
 
-    /* Compact padding but no shrinking - header scrolls */
+    /* All header elements keep fixed size - header scrolls */
+    .class-selector-wrapper,
+    .header-context-chip,
+    .header-actions,
+    .header-center,
+    .header-actions-pill {
+        flex-shrink: 0;
+        min-width: max-content;
+    }
+
     .header-context-chip {
         padding: 6px 8px;
         gap: 4px;
@@ -1194,7 +1189,6 @@
     /* Pilule plus compacte sur mobile */
     .header-actions-pill {
         padding: 3px;
-        flex-shrink: 0;
     }
 
     .pill-segment {
