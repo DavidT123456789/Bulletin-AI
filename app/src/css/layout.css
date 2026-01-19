@@ -156,7 +156,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--space-8);
+    padding: 0 var(--space-4);
     /* Position absolute to allow content to scroll BEHIND it (Glassmorphism) */
     position: absolute;
     top: 0;
@@ -1060,9 +1060,7 @@
         padding-top: calc(56px + var(--space-5));
     }
 
-    .header {
-        padding: 0 var(--space-6);
-    }
+    /* Header inherits 16px from base - no override needed */
 }
 
 /* Tablette Small / Phablet (max-width: 768px) */
@@ -1082,19 +1080,56 @@
     }
 
     .header {
-        padding: 0 16px;
-        /* Height remains 56px (inherited) */
-        gap: 8px;
+        padding: 0 var(--space-3);
+        /* 12px - compact for mobile */
+        gap: 6px;
+        /* Horizontal scroll for narrow screens - dropdowns use position:fixed to escape clipping */
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) transparent;
+        flex-wrap: nowrap;
     }
 
+    .header::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .header::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .header::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 4px;
+    }
+
+    /* All header elements keep fixed size - header is scrollable */
     .header-center {
         gap: 4px;
+        flex-shrink: 0;
+        min-width: max-content;
     }
 
     .header-context-chip {
         padding: 6px 10px;
         font-size: var(--font-sm);
-        gap: 8px;
+        gap: 6px;
+        flex-shrink: 0;
+        min-width: max-content;
+    }
+
+    /* No text truncation - keep full class name visible */
+
+    .header-actions {
+        flex-shrink: 0;
+        min-width: max-content;
+    }
+
+    .header-gen-dashboard {
+        flex-shrink: 0;
+        min-width: max-content;
     }
 
     /* Compact AI model chip */
@@ -1116,6 +1151,16 @@
     .sub-section-title {
         font-size: 1.1rem;
     }
+
+    /* Header menu dropdown: fixed position to escape header overflow clipping */
+    .header-dropdown-menu {
+        position: fixed !important;
+        top: 56px !important;
+        right: 12px !important;
+        left: auto !important;
+        width: 200px;
+        z-index: 9999;
+    }
 }
 
 /* Mobile (max-width: 480px) */
@@ -1127,21 +1172,29 @@
     }
 
     .header {
-        padding: 0 12px;
-        /* Height remains 56px (inherited) */
+        gap: 4px;
+        padding: 0 var(--space-2);
+        /* Tighter padding on very small screens */
     }
 
+    /* Compact padding but no shrinking - header scrolls */
     .header-context-chip {
-        display: none;
+        padding: 6px 8px;
+        gap: 4px;
     }
 
     .header-actions {
         gap: 4px;
     }
 
+    .header-center {
+        gap: 2px;
+    }
+
     /* Pilule plus compacte sur mobile */
     .header-actions-pill {
         padding: 3px;
+        flex-shrink: 0;
     }
 
     .pill-segment {

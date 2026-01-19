@@ -15,6 +15,7 @@ let StorageManager;
 
 export const ClassUIManager = {
     _isDropdownOpen: false,
+    _originalDropdownParent: null, // Store original parent for teleportation
 
     /**
      * Initialise le ClassUIManager avec les dépendances
@@ -84,6 +85,21 @@ export const ClassUIManager = {
         DOM.headerClassChip?.classList.add('active');
         DOM.classDropdown.style.display = 'block';
 
+        // On narrow screens, teleport to body to escape header clipping (backdrop-filter creates containing block)
+        if (window.innerWidth < 768) {
+            this._originalDropdownParent = DOM.classDropdown.parentElement;
+            const chipRect = DOM.headerClassChip?.getBoundingClientRect();
+            document.body.appendChild(DOM.classDropdown);
+            DOM.classDropdown.style.position = 'fixed';
+            DOM.classDropdown.style.top = `${(chipRect?.bottom || 56) + 8}px`;
+            DOM.classDropdown.style.left = '12px';
+            DOM.classDropdown.style.right = '12px';
+            DOM.classDropdown.style.minWidth = 'unset';
+            DOM.classDropdown.style.maxWidth = 'none';
+            DOM.classDropdown.style.width = 'auto';
+            DOM.classDropdown.style.zIndex = '9999';
+        }
+
         // Trigger animation
         requestAnimationFrame(() => {
             DOM.classDropdown.classList.add('visible');
@@ -107,6 +123,21 @@ export const ClassUIManager = {
         setTimeout(() => {
             if (!this._isDropdownOpen) {
                 DOM.classDropdown.style.display = 'none';
+
+                // Return to original parent if teleported
+                if (this._originalDropdownParent && DOM.classDropdown.parentElement === document.body) {
+                    this._originalDropdownParent.appendChild(DOM.classDropdown);
+                    // Reset inline styles
+                    DOM.classDropdown.style.position = '';
+                    DOM.classDropdown.style.top = '';
+                    DOM.classDropdown.style.left = '';
+                    DOM.classDropdown.style.right = '';
+                    DOM.classDropdown.style.minWidth = '';
+                    DOM.classDropdown.style.maxWidth = '';
+                    DOM.classDropdown.style.width = '';
+                    DOM.classDropdown.style.zIndex = '';
+                    this._originalDropdownParent = null;
+                }
             }
         }, 200);
     },

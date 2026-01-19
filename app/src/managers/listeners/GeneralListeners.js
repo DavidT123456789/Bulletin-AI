@@ -27,12 +27,47 @@ export const GeneralListeners = {
         addClickListener(DOM.resetFormBtn, App.handleClearClick);
         addClickListener(DOM.darkModeToggle, UI.toggleDarkMode);
 
-        // Header Menu Logic
+        // Header Menu Logic - with teleportation for mobile to escape backdrop-filter containing block
         if (DOM.headerMenuBtn && DOM.headerMenuDropdown) {
+            // Store original parent for restoration
+            const originalParent = DOM.headerMenuDropdown.parentElement;
+
+            const closeMenu = () => {
+                DOM.headerMenuDropdown.classList.remove('open');
+                DOM.headerMenuBtn.classList.remove('active');
+                // Return to original parent if teleported
+                if (DOM.headerMenuDropdown.parentElement === document.body && originalParent) {
+                    originalParent.appendChild(DOM.headerMenuDropdown);
+                    // Reset inline styles
+                    DOM.headerMenuDropdown.style.position = '';
+                    DOM.headerMenuDropdown.style.top = '';
+                    DOM.headerMenuDropdown.style.right = '';
+                    DOM.headerMenuDropdown.style.left = '';
+                    DOM.headerMenuDropdown.style.zIndex = '';
+                }
+            };
+
             addClickListener(DOM.headerMenuBtn, (e) => {
-                e.stopPropagation(); // Prevent document click from closing immediately
-                DOM.headerMenuDropdown.classList.toggle('open');
-                DOM.headerMenuBtn.classList.toggle('active');
+                e.stopPropagation();
+                const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
+
+                if (isOpening) {
+                    DOM.headerMenuDropdown.classList.add('open');
+                    DOM.headerMenuBtn.classList.add('active');
+
+                    // On narrow screens, teleport dropdown to body to escape header clipping
+                    if (window.innerWidth < 768) {
+                        const btnRect = DOM.headerMenuBtn.getBoundingClientRect();
+                        document.body.appendChild(DOM.headerMenuDropdown);
+                        DOM.headerMenuDropdown.style.position = 'fixed';
+                        DOM.headerMenuDropdown.style.top = `${btnRect.bottom + 8}px`;
+                        DOM.headerMenuDropdown.style.right = '12px';
+                        DOM.headerMenuDropdown.style.left = 'auto';
+                        DOM.headerMenuDropdown.style.zIndex = '9999';
+                    }
+                } else {
+                    closeMenu();
+                }
             });
 
             // Close menu when clicking outside
@@ -40,8 +75,14 @@ export const GeneralListeners = {
                 if (DOM.headerMenuDropdown.classList.contains('open') &&
                     !DOM.headerMenuDropdown.contains(e.target) &&
                     !DOM.headerMenuBtn.contains(e.target)) {
-                    DOM.headerMenuDropdown.classList.remove('open');
-                    DOM.headerMenuBtn.classList.remove('active');
+                    closeMenu();
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && DOM.headerMenuDropdown.classList.contains('open')) {
+                    closeMenu();
                 }
             });
         }

@@ -50,9 +50,7 @@
    BREAKPOINT: 900px - Layout Simplification
    ==================================================================== */
 @media (max-width: 900px) {
-    .header {
-        padding: 0 20px;
-    }
+    /* Header padding now managed in layout.css (16px desktop, 12px mobile) */
 
     .main-content {
         padding: 24px 20px;

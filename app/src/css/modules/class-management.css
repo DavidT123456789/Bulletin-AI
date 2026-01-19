@@ -483,12 +483,8 @@
    ==================================================================== */
 
 @media (max-width: 768px) {
-    .class-chip #headerClassName {
-        max-width: 100px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+    /* No text truncation - header is horizontally scrollable */
+    /* All elements keep fixed size for visual consistency */
 
     /* Full-width fixed dropdown on tablet/mobile */
     .class-dropdown {
@@ -521,13 +517,8 @@
 }
 
 @media (max-width: 480px) {
-    .class-chip #headerClassName {
-        display: none;
-    }
-
-    .class-chip .class-chevron {
-        display: none;
-    }
+    /* No shrinking or hiding - header scrolls horizontally */
+    /* All header elements maintain consistent fixed size */
 
     /* Full-width centered dropdown on mobile */
     .class-dropdown {
