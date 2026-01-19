@@ -51,7 +51,7 @@ export const WelcomeManager = {
         let currentWelcomeStep = 1;
         const totalWelcomeSteps = 4;
         let isAnimating = false;
-        let currentProvider = 'google';
+        let currentProvider = 'mistral';
 
         // Helpers Defined First
         const addClickListener = (element, handler) => {
@@ -106,6 +106,11 @@ export const WelcomeManager = {
 
         // Provider configuration
         const providerConfig = {
+            mistral: {
+                placeholder: "Collez votre clé API Mistral ici...",
+                linkUrl: "https://console.mistral.ai/api-keys/",
+                linkIcon: '<i class="fas fa-cat"></i>'
+            },
             google: {
                 placeholder: "Collez votre clé API Google ici (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
@@ -115,11 +120,6 @@ export const WelcomeManager = {
                 placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
                 linkIcon: '<i class="fas fa-bolt"></i>'
-            },
-            mistral: {
-                placeholder: "Collez votre clé API Mistral ici...",
-                linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<i class="fas fa-cat"></i>'
             }
         };
 
@@ -300,7 +300,21 @@ export const WelcomeManager = {
         };
 
         if (DOM.welcomeApiKeyInput) {
-            if (existingGoogleKey) {
+            if (existingMistralKey) {
+                // Mistral key exists - keep default Mistral provider
+                DOM.welcomeApiKeyInput.value = existingMistralKey;
+                // Mark as validated
+                if (DOM.welcomeValidateApiKeyBtn) {
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
+                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
+                    DOM.welcomeValidateApiKeyBtn.disabled = true;
+                }
+                DOM.welcomeNextBtn.disabled = false;
+            } else if (existingGoogleKey) {
+                // Switch to Google provider
+                selectProvider('providerGoogle');
+                currentProvider = 'google';
                 DOM.welcomeApiKeyInput.value = existingGoogleKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
@@ -315,19 +329,6 @@ export const WelcomeManager = {
                 selectProvider('providerOpenRouter');
                 currentProvider = 'openrouter';
                 DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
-                // Mark as validated
-                if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
-                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
-                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
-                    DOM.welcomeValidateApiKeyBtn.disabled = true;
-                }
-                DOM.welcomeNextBtn.disabled = false;
-            } else if (existingMistralKey) {
-                // Switch to Mistral provider
-                selectProvider('providerMistral');
-                currentProvider = 'mistral';
-                DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';

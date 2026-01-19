@@ -63,6 +63,25 @@
         </div>
     </nav>
 
+    <!-- Mobile Menu -->
+    <div class="lp-mobile-menu" id="mobileMenu">
+        <div class="lp-mobile-menu__backdrop" onclick="toggleMobileMenu()"></div>
+        <div class="lp-mobile-menu__panel">
+            <nav class="lp-mobile-menu__links">
+                <a href="#how-it-works" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Comment ça marche</a>
+                <a href="#features" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Fonctionnalités</a>
+                <a href="#problem-solution" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Objectifs</a>
+                <a href="#testimonials" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Témoignages</a>
+                <a href="#faq" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">FAQ</a>
+            </nav>
+            <div class="lp-mobile-menu__cta">
+                <a href="./app.html" class="lp-btn lp-btn--primary">
+                    <i class="fas fa-wand-magic-sparkles"></i> Lancer l'App
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <header class="lp-section lp-section--hero" id="hero">
         <div class="lp-container">
@@ -172,8 +191,8 @@
         <div class="lp-container lp-steps">
             <div class="lp-steps__header lp-reveal">
                 <h2 class="lp-steps__title">Comment ça marche ?</h2>
-                <p class="lp-steps__subtitle">Trois étapes simples pour transformer vos données en appréciations
-                    personnalisées.</p>
+                <p class="lp-steps__subtitle">Trois étapes pour transformer vos données en appréciations personnalisées.
+                </p>
             </div>
 
             <div class="lp-steps__grid">
@@ -228,65 +247,114 @@
                 <p class="lp-features__subtitle">Une interface fluide et ergonomique, pensée pour les enseignants.</p>
             </div>
 
-            <div class="lp-bento">
-                <!-- Large Feature -->
-                <div class="lp-bento__item lp-bento__item--wide lp-reveal lp-reveal--delay-1">
-                    <div class="lp-bento__icon lp-bento__icon--accent">
-                        <i class="fas fa-brain"></i>
+            <!-- Opal-Style Fan Deck Carousel -->
+            <div class="lp-features-carousel-wrapper lp-reveal">
+                <div class="lp-features-carousel" id="featuresCarousel">
+                    <!-- Card 1: Formats - Green -->
+                    <div class="lp-feature-card" data-color="green">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-file-csv"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Formats Universels</h3>
+                                <p class="lp-feature-card__text">
+                                    Compatible CSV, Excel, et copier-coller direct depuis les principaux logiciels
+                                    scolaires.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="lp-bento__title">Multi-Modèles IA</h3>
-                    <p class="lp-bento__text">
-                        Utilisez gratuitement Google Gemini intégré, ou Ollama pour une utilisation 100% locale
-                        et hors-ligne. Vous gardez le contrôle total.
-                    </p>
-                </div>
 
-                <!-- Feature 2 -->
-                <div class="lp-bento__item lp-reveal lp-reveal--delay-2">
-                    <div class="lp-bento__icon">
-                        <i class="fas fa-user-edit"></i>
+                    <!-- Card 2: Personnalisation - Blue -->
+                    <div class="lp-feature-card" data-color="blue">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Personnalisation</h3>
+                                <p class="lp-feature-card__text">
+                                    Définissez des règles précises : vouvoiement, tutoiement, structure des phrases.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="lp-bento__title">Personnalisation</h3>
-                    <p class="lp-bento__text">
-                        Définissez des règles précises : vouvoiement, tutoiement, structure des phrases, et vocabulaire
-                        spécifique.
-                    </p>
-                </div>
 
-                <!-- Feature 3 -->
-                <div class="lp-bento__item lp-reveal lp-reveal--delay-3">
-                    <div class="lp-bento__icon">
-                        <i class="fas fa-user-secret"></i>
+                    <!-- Card 3: Multi-Modèles IA - Amber -->
+                    <div class="lp-feature-card" data-color="amber">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Multi-Modèles IA</h3>
+                                <p class="lp-feature-card__text">
+                                    Mistral AI 🇫🇷 gratuit (1Md tokens/mois), Google Gemini, ou Ollama en local.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="lp-bento__title">Anonymisation Auto</h3>
-                    <p class="lp-bento__text">
-                        Les noms des élèves sont automatiquement anonymisés avant envoi à l'IA. Vos données sont
-                        stockées localement dans votre navigateur.
-                    </p>
-                </div>
 
-                <!-- Feature 4 -->
-                <div class="lp-bento__item lp-reveal">
-                    <div class="lp-bento__icon">
-                        <i class="fas fa-file-csv"></i>
+                    <!-- Card 4: Anonymisation - Rose -->
+                    <div class="lp-feature-card" data-color="rose">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Anonymisation Auto</h3>
+                                <p class="lp-feature-card__text">
+                                    Les noms sont anonymisés avant envoi. Données stockées localement.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="lp-bento__title">Formats Universels</h3>
-                    <p class="lp-bento__text">
-                        Compatible CSV, Excel, et copier-coller direct depuis les principaux logiciels scolaires.
-                    </p>
-                </div>
 
-                <!-- Feature 5 (Wide) -->
-                <div class="lp-bento__item lp-bento__item--wide lp-reveal lp-reveal--delay-1">
-                    <div class="lp-bento__icon">
-                        <i class="fas fa-user-graduate"></i>
+                    <!-- Card 5: Journal - Purple -->
+                    <div class="lp-feature-card" data-color="purple">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Journal de Bord</h3>
+                                <p class="lp-feature-card__text">
+                                    Notes et observations au fil du trimestre pour enrichir l'appréciation.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="lp-bento__title">Contexte Personnalisé</h3>
-                    <p class="lp-bento__text">
-                        Un journal de bord permet de noter observations, comportement et participation au fil du
-                        trimestre. Un seuil configurable filtre les événements ponctuels, seules les tendances
-                        récurrentes sont transmises à l'IA pour enrichir l'appréciation.
-                    </p>
+
+                    <!-- Card 6: Cloud Sync - Cyan -->
+                    <div class="lp-feature-card" data-color="cyan">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Sync Cloud</h3>
+                                <p class="lp-feature-card__text">
+                                    Synchronisez vos données sur Google Drive pour y accéder partout.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 7: Photos - Orange -->
+                    <div class="lp-feature-card" data-color="orange">
+                        <div class="lp-feature-card__inner">
+                            <div class="lp-feature-card__illustration">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <div class="lp-feature-card__content">
+                                <h3 class="lp-feature-card__title">Photos Élèves</h3>
+                                <p class="lp-feature-card__text">
+                                    Importez le trombinoscope pour visualiser vos élèves facilement.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,12 +542,13 @@
                     </button>
                     <div class="lp-faq__answer">
                         <div class="lp-faq__answer-content">
-                            Pour la plupart des usages, <strong>Google Gemini</strong> (gratuit et intégré) est idéal.
+                            Pour la plupart des usages, <strong>Mistral AI</strong> (français, gratuit, 1 milliard de
+                            tokens/mois) est idéal.
+                            <strong>Google Gemini</strong> (gratuit également) est une excellente alternative.
                             Si vous préférez garder vos données 100% locales, utilisez <strong>Ollama</strong> avec un
                             modèle comme Llama ou Mistral.
                             Pour accéder à un large choix de modèles (gratuits ou payants), <strong>OpenRouter</strong>
                             est une excellente passerelle.
-                            Les modèles payants (OpenAI, Claude, etc.) restent optionnels.
                         </div>
                     </div>
                 </div>
@@ -605,22 +674,36 @@
 
         // Mobile Menu Toggle
         function toggleMobileMenu() {
-            // Simple alert for now, can be expanded to a real drawer
-            const links = document.querySelector('.lp-nav__links');
-            if (links.style.display === 'flex') {
-                links.style.display = '';
-            } else {
-                links.style.display = 'flex';
-                links.style.flexDirection = 'column';
-                links.style.position = 'absolute';
-                links.style.top = '100%';
-                links.style.left = '0';
-                links.style.width = '100%';
-                links.style.background = 'var(--lp-surface)';
-                links.style.padding = '20px';
-                links.style.boxShadow = 'var(--lp-shadow-lg)';
+            const toggle = document.querySelector('.lp-nav__toggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            if (mobileMenu && toggle) {
+                const isOpen = mobileMenu.classList.contains('is-open');
+
+                if (isOpen) {
+                    mobileMenu.classList.remove('is-open');
+                    toggle.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                } else {
+                    mobileMenu.classList.add('is-open');
+                    toggle.classList.add('is-open');
+                    document.body.style.overflow = 'hidden';
+                }
             }
         }
+
+        // Close mobile menu on resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                const mobileMenu = document.getElementById('mobileMenu');
+                const toggle = document.querySelector('.lp-nav__toggle');
+                if (mobileMenu && mobileMenu.classList.contains('is-open')) {
+                    mobileMenu.classList.remove('is-open');
+                    toggle?.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
 
         // FAQ Toggle
         function toggleFaq(button) {
@@ -710,6 +793,162 @@
 
         // Initialize transition system
         initPageTransition();
+
+        // ============================================
+        // FEATURES CAROUSEL (Opal Style - Step by Step)
+        // ============================================
+
+        /**
+         * Arc carousel with step-by-step navigation
+         * Cards rotate into position with center card highlighted
+         */
+        function initFeaturesCarousel() {
+            const carousel = document.getElementById('featuresCarousel');
+            if (!carousel) return;
+
+            const cards = carousel.querySelectorAll('.lp-feature-card');
+            const cardCount = cards.length;
+            let currentCenter = 3; // Start with middle card (index 3 for 7 cards)
+            let autoPlayInterval = null;
+            let isPaused = false;
+            const AUTO_ADVANCE_DELAY = 3500; // 3.5 seconds
+
+            // Position names for 5 visible slots
+            const positions = ['far-left', 'left', 'center', 'right', 'far-right'];
+
+            /**
+             * Update card positions based on current center index
+             * Simple rule: any card crossing from left side to right side (or vice versa) is a wrap
+             */
+            function updatePositions() {
+                // Helper to determine which side a position is on
+                const getSide = (pos) => {
+                    if (!pos) return null;
+                    if (pos.includes('left')) return 'left';
+                    if (pos.includes('right')) return 'right';
+                    return 'center';
+                };
+
+                cards.forEach((card, index) => {
+                    const prevPos = card.getAttribute('data-pos');
+                    const prevSide = getSide(prevPos);
+
+                    // Calculate relative position from center
+                    let relativePos = index - currentCenter;
+
+                    // Handle wrapping for infinite loop
+                    if (relativePos > Math.floor(cardCount / 2)) {
+                        relativePos -= cardCount;
+                    } else if (relativePos < -Math.floor(cardCount / 2)) {
+                        relativePos += cardCount;
+                    }
+
+                    // Map relative position to actual position name
+                    let posName;
+                    if (relativePos === 0) {
+                        posName = 'center';
+                    } else if (relativePos === -1) {
+                        posName = 'left';
+                    } else if (relativePos === 1) {
+                        posName = 'right';
+                    } else if (relativePos === -2) {
+                        posName = 'far-left';
+                    } else if (relativePos === 2) {
+                        posName = 'far-right';
+                    } else if (relativePos < -2) {
+                        posName = 'hidden-left';
+                    } else {
+                        posName = 'hidden-right';
+                    }
+
+                    const newSide = getSide(posName);
+
+                    // WRAP: card crosses from left to right or right to left (excluding center)
+                    const isWrap = prevSide && newSide &&
+                        prevSide !== 'center' && newSide !== 'center' &&
+                        prevSide !== newSide;
+
+                    if (isWrap) {
+                        // Teleport: instant move to hidden position on destination side
+                        const hiddenPos = newSide === 'right' ? 'hidden-right' : 'hidden-left';
+
+                        card.style.transition = 'none';
+                        card.setAttribute('data-pos', hiddenPos);
+                        card.offsetHeight; // Force reflow
+                        card.style.transition = '';
+
+                        // Then animate to final position
+                        requestAnimationFrame(() => {
+                            card.setAttribute('data-pos', posName);
+                        });
+                    } else {
+                        card.setAttribute('data-pos', posName);
+                    }
+                });
+            }
+
+            /**
+             * Advance to next card
+             */
+            function nextCard() {
+                currentCenter = (currentCenter + 1) % cardCount;
+                updatePositions();
+            }
+
+            /**
+             * Go to previous card
+             */
+            function prevCard() {
+                currentCenter = (currentCenter - 1 + cardCount) % cardCount;
+                updatePositions();
+            }
+
+            /**
+             * Start auto-advance timer
+             */
+            function startAutoPlay() {
+                if (autoPlayInterval) clearInterval(autoPlayInterval);
+                autoPlayInterval = setInterval(() => {
+                    if (!isPaused) {
+                        nextCard();
+                    }
+                }, AUTO_ADVANCE_DELAY);
+            }
+
+            /**
+             * Pause/resume on hover
+             */
+            carousel.addEventListener('mouseenter', () => {
+                isPaused = true;
+            });
+
+            carousel.addEventListener('mouseleave', () => {
+                isPaused = false;
+            });
+
+            /**
+             * Click on card to bring it to center
+             */
+            cards.forEach((card, index) => {
+                card.addEventListener('click', () => {
+                    if (card.getAttribute('data-pos') !== 'center') {
+                        currentCenter = index;
+                        updatePositions();
+                        // Reset autoplay timer after manual interaction
+                        startAutoPlay();
+                    }
+                });
+            });
+
+            // Initialize positions
+            updatePositions();
+
+            // Start autoplay
+            startAutoPlay();
+        }
+
+        // Initialize features carousel
+        initFeaturesCarousel();
 
         // ============================================
         // TESTIMONIALS CAROUSEL (iOS Style)

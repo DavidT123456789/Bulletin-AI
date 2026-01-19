@@ -329,9 +329,61 @@
 .stats-container {
     grid-area: stats;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    /* Use minmax with 260px min to prevent cards from shrinking too much */
+    grid-template-columns: repeat(3, minmax(260px, 1fr));
     gap: var(--space-5);
     margin-bottom: var(--space-6);
+    /* Enable horizontal scroll when cards can't fit at min-width */
+    overflow-x: auto;
+    /* Smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+    /* Subtle scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    /* Padding for scroll shadow on edges */
+    padding-bottom: 4px;
+}
+
+/* Hide scrollbar when not needed (desktop) */
+.stats-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.stats-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.stats-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.stats-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+/* Mobile: Stack cards in 2+1 layout, no scroll */
+@media (max-width: 600px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        overflow-x: visible;
+    }
+
+    /* Third card (dynamique) spans full width */
+    .stats-container .stat-card:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Very small screens: Stack all cards vertically */
+@media (max-width: 400px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-container .stat-card:nth-child(3) {
+        grid-column: auto;
+    }
 }
 
 /* === Stat Card - Version Aérée (iOS 2025 mockup) === */
@@ -1127,59 +1179,75 @@
 
 /* ====================================================================
    Responsive - Adaptations tablette et mobile
+   
+   LOGICAL APPROACH (mobile-first progressive enhancement):
+   - Base/Default: 3 columns (using minmax for auto-sizing)
+   - Mobile only (<550px): 2 columns + 1 spanning below (2+1 layout)
+   
+   No need for separate tablet rules - 3 columns scale naturally.
    ==================================================================== */
-@media (max-width: 1024px) {
+
+/* Tablette: Compact styles but keep 3 columns */
+@media (max-width: 900px) {
     .stats-container {
-        grid-template-columns: 1fr 1fr;
+        gap: var(--space-3);
     }
 
-    .stats-container>.stat-card:last-child {
-        grid-column: span 2;
-    }
-}
-
-
-@media (max-width: 768px) {
-    .stats-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+    /* Prevent content from forcing card expansion */
+    .stats-container>.stat-card {
+        min-width: 0;
+        overflow: hidden;
     }
 
     .stat-card {
-        padding: 14px 16px;
-        border-radius: var(--radius-md);
+        padding: 12px 14px;
     }
 
     .performance-card .main-average-value {
         font-size: 2.2rem;
     }
 
+    .histogram-container {
+        height: 70px;
+        min-height: 60px;
+    }
+
     .performance-card .performance-details {
-        flex-wrap: wrap;
-    }
-
-    .performance-card .detail-item {
-        min-width: calc(50% - 3px);
-    }
-
-    .evolution-card .evolution-legend {
         gap: 6px;
     }
 
-    .evolution-card .legend-item {
-        padding: 8px 10px;
-        min-width: calc(50% - 3px);
+    .performance-card .detail-item {
+        padding: 8px 6px;
     }
 }
 
-@media (max-width: 480px) {
-    .performance-card .detail-item {
-        min-width: 100%;
+/* Mobile: 2 columns + 1 below (2+1 layout) */
+@media (max-width: 550px) {
+    .stats-container {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-3);
     }
 
-    .evolution-card .legend-item {
-        min-width: 100%;
+    /* Third card spans full width below */
+    .stats-container>.stat-card:last-child {
+        grid-column: span 2;
+    }
+
+    .stat-card {
+        padding: 10px 12px;
+    }
+
+    .performance-card .main-average-value {
+        font-size: 1.8rem;
+    }
+
+    .histogram-container {
+        height: 60px;
+        min-height: 50px;
+    }
+
+    .performance-card .detail-item {
+        padding: 6px;
     }
 }
 

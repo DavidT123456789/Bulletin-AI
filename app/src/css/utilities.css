@@ -101,9 +101,7 @@ body.side-panel-open {
         --sidebar-width: 380px;
     }
 
-    .stats-container {
-        grid-template-columns: 1fr;
-    }
+    /* Stats container layout handled in stats.css */
 }
 
 @media (max-width: 768px) {

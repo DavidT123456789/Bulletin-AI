@@ -44,7 +44,7 @@ export const MODEL_DESCRIPTIONS = {
     // OpenAI
     'openai-gpt-3.5-turbo': "Modèle rapide et économique d'OpenAI.",
     'openai-gpt-4o': "Le modèle le plus puissant d'OpenAI.",
-    'openai-gpt-4o-mini': "<strong>Recommandé.</strong> Économique et performant.",
+    'openai-gpt-4o-mini': "Économique et performant.",
     'openai-gpt-4-turbo': "Version turbo de GPT-4. Rapide.",
     // Google
     'gemini-1.5-flash': "<strong>Stable.</strong> Gemini 1.5 Flash.",
@@ -70,7 +70,7 @@ export const MODEL_DESCRIPTIONS = {
     'ollama-gemma3:4b': "🏠 Local. Google Gemma 3.",
     'ollama-deepseek-r1:8b': "<strong>🏠 Local.</strong> DeepSeek R1.",
     // Anthropic (Claude) - API directe
-    'anthropic-claude-sonnet-4.5': "<strong>⭐ Recommandé.</strong> Claude Sonnet 4.5. Excellent rapport qualité/prix.",
+    'anthropic-claude-sonnet-4.5': "Claude Sonnet 4.5. Excellent rapport qualité/prix.",
     'anthropic-claude-opus-4.5': "<strong>🔥 Le plus puissant.</strong> Claude Opus 4.5. Qualité maximale.",
     // Mistral - API directe (Plan Experiment GRATUIT : 1B tokens/mois !)
     'mistral-direct-large-latest': "<strong>🆓 GRATUIT</strong> Mistral Large 3. Le plus puissant. 1B tokens/mois offerts.",

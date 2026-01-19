@@ -1,19 +1,33 @@
 /* ====================================================================
    MODULE: Responsive
    Media queries pour l'adaptation mobile et tablette
+   
+   BREAKPOINTS (desktop-first, ordered from largest to smallest):
+   - 1200px: Sidebar collapse point
+   - 900px:  Layout simplification (header, content padding)
+   - 768px:  Tablet/Phablet (modal, cards, settings)
+   - 600px:  Small tablet (sidebar fullscreen, stats 2+1 layout)
+   - 480px:  Mobile (fullscreen modals, compact UI)
+   - 400px:  Very small mobile (single column stats)
    ==================================================================== */
 
+/* ====================================================================
+   DESKTOP MIN-WIDTH (Large screens only)
+   ==================================================================== */
+@media (min-width: 1201px) {
+    .sidebar-header {
+        justify-content: center;
+    }
+
+    #sidebarCloseBtn {
+        display: none;
+    }
+}
+
+/* ====================================================================
+   BREAKPOINT: 1200px - Sidebar Collapse
+   ==================================================================== */
 @media (max-width: 1200px) {
-    /* Note: Les règles de sidebar et overlay sont définies dans layout.css */
-    /* On garde uniquement les règles spécifiques aux composants ici */
-
-    /* #appLogo {
-        height: 40px !important;
-        opacity: 1 !important;
-        transform: scale(1) !important;
-        width: auto !important;
-    } */
-
     .sidebar .section-title {
         display: block;
     }
@@ -21,10 +35,20 @@
     .close-sidebar-btn {
         display: flex;
     }
-
-    /* .header-center conservé, car le sélecteur de trimestre est essentiel */
 }
 
+/* ====================================================================
+   BREAKPOINT: 1024px - Tablet Large
+   ==================================================================== */
+@media (max-width: 1024px) {
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+/* ====================================================================
+   BREAKPOINT: 900px - Layout Simplification
+   ==================================================================== */
 @media (max-width: 900px) {
     .header {
         padding: 0 20px;
@@ -32,10 +56,7 @@
 
     .main-content {
         padding: 24px 20px;
-    }
-
-    .stats-container {
-        grid-template-columns: 1fr;
+        padding-top: calc(56px + 24px);
     }
 
     .output-header,
@@ -67,24 +88,100 @@
     }
 }
 
+/* ====================================================================
+   BREAKPOINT: 768px - Tablet / Phablet
+   ==================================================================== */
+@media (max-width: 768px) {
+
+    /* Modal */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        max-height: 95vh;
+        margin: 0 auto;
+    }
+
+    .modal-header {
+        padding: 10px 14px;
+    }
+
+    .modal-body {
+        padding: 14px;
+    }
+
+    .modal-footer {
+        padding: 10px 14px;
+    }
+
+    .modal-title {
+        font-size: 1.1rem;
+    }
+
+    /* Cards */
+    .appreciation-result {
+        padding: 16px;
+    }
+
+    .appreciation-result .card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .appreciation-result .card-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    #empty-state-card {
+        padding: 40px 20px;
+    }
+
+    /* Toolbar */
+    .output-toolbar {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .search-wrapper {
+        width: 100%;
+        min-width: unset;
+    }
+
+    /* Import preview */
+    .import-preview-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+
+    .import-preview-grid>div {
+        min-height: auto;
+    }
+
+    /* Settings tabs */
+    .settings-tabs {
+        flex-wrap: wrap;
+    }
+
+    .settings-tab-btn {
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+}
+
+/* ====================================================================
+   BREAKPOINT: 600px - Small Tablet / Large Phone
+   Stats cards: 2+1 layout (handled in stats.css)
+   ==================================================================== */
 @media (max-width: 600px) {
     .sidebar {
         width: 100%;
         max-width: 100%;
-    }
-
-    .modal-content {
-        width: 95%;
-        max-width: 95%;
-    }
-
-    .modal-header,
-    .welcome-nav-container {
-        padding: 12px 16px;
-    }
-
-    .modal-body {
-        padding: 16px;
     }
 
     .stats-header {
@@ -111,7 +208,112 @@
     }
 }
 
+/* ====================================================================
+   BREAKPOINT: 480px - Mobile
+   ==================================================================== */
+@media (max-width: 480px) {
 
+    /* Fullscreen modals */
+    .modal-content {
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    .modal-header {
+        padding: 8px 12px;
+    }
+
+    .modal-body {
+        padding: 12px;
+    }
+
+    .modal-footer {
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    .modal-title {
+        font-size: 1rem;
+    }
+
+    /* Cards */
+    .stat-card {
+        padding: 12px;
+    }
+
+    .appreciation-result {
+        padding: 12px;
+    }
+
+    .appreciation-result .card-actions .btn-icon {
+        padding: 8px;
+    }
+
+    #empty-state-card {
+        padding: 30px 16px;
+    }
+
+    #empty-state-card .icon {
+        font-size: 2.5rem;
+    }
+
+    #empty-state-card h3 {
+        font-size: 1.2rem;
+    }
+
+    /* Header */
+    .header-center {
+        flex-grow: 0;
+    }
+
+    .generation-mode-selector.header-style {
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .generation-mode-selector.header-style .mode-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    /* Toolbar - Compact */
+    .output-toolbar {
+        gap: 8px;
+    }
+
+    .search-container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .toolbar-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .toolbar-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* FAB positioning with safe area */
+    .fab-add-student {
+        bottom: max(20px, env(safe-area-inset-bottom) + 12px);
+        right: 16px;
+    }
+}
+
+/* ====================================================================
+   PRINT STYLES
+   ==================================================================== */
 @media print {
     body {
         background: white;
@@ -150,241 +352,5 @@
 
     .card-content-wrapper {
         box-shadow: none;
-    }
-}
-
-@media (min-width: 1201px) {
-    .sidebar-header {
-        justify-content: center;
-    }
-
-    #sidebarCloseBtn {
-        display: none;
-    }
-}
-
-/* ====================================================================
-   Responsive Breakpoints - Modules
-   ==================================================================== */
-
-/* Tablette (max-width: 1024px) */
-@media (max-width: 1024px) {
-    .stats-container {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .results-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-}
-
-/* Tablette Small / Phablet (max-width: 768px) */
-@media (max-width: 768px) {
-    .modal-content {
-        width: 95%;
-        max-width: none;
-        max-height: 95vh;
-        margin: 0 auto;
-    }
-
-    .modal-header {
-        padding: 10px 14px;
-    }
-
-    .modal-body {
-        padding: 14px;
-    }
-
-    .modal-footer {
-        padding: 10px 14px;
-    }
-
-    .modal-title {
-        font-size: 1.1rem;
-    }
-
-    .stats-container {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .stats-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .stat-card {
-        padding: 16px;
-    }
-
-    .appreciation-result {
-        padding: 16px;
-    }
-
-    .appreciation-result .card-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .appreciation-result .card-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-
-    .results-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    #empty-state-card {
-        padding: 40px 20px;
-    }
-
-    .output-toolbar {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .search-wrapper {
-        width: 100%;
-        min-width: unset;
-    }
-
-    /* Import preview modal */
-    .import-preview-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-    }
-
-    .import-preview-grid>div {
-        min-height: auto;
-    }
-
-    /* Settings modal tabs */
-    .settings-tabs {
-        flex-wrap: wrap;
-    }
-
-    .settings-tab-btn {
-        flex: 1 1 auto;
-        min-width: 100px;
-    }
-}
-
-/* Mobile (max-width: 480px) */
-@media (max-width: 480px) {
-    .modal-content {
-        width: 100%;
-        height: 100%;
-        max-height: 100%;
-        border-radius: 0;
-    }
-
-    .modal-header {
-        padding: 8px 12px;
-    }
-
-    .modal-body {
-        padding: 12px;
-    }
-
-    .modal-footer {
-        padding: 8px 12px;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .modal-footer .btn {
-        width: 100%;
-    }
-
-    .modal-title {
-        font-size: 1rem;
-    }
-
-    .stat-card {
-        padding: 12px;
-    }
-
-    .appreciation-result {
-        padding: 12px;
-    }
-
-    .appreciation-result .card-actions .btn-icon {
-        padding: 8px;
-    }
-
-    #empty-state-card {
-        padding: 30px 16px;
-    }
-
-    #empty-state-card .icon {
-        font-size: 2.5rem;
-    }
-
-    #empty-state-card h3 {
-        font-size: 1.2rem;
-    }
-
-    /* Header: Period selector compact */
-    .header-center {
-        flex-grow: 0;
-    }
-
-    .generation-mode-selector.header-style {
-        gap: 2px;
-        padding: 3px;
-    }
-
-    .generation-mode-selector.header-style .mode-btn {
-        padding: 6px 10px;
-        font-size: 11px;
-    }
-
-    /* Toolbar: Stack vertically */
-    .output-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-
-    .search-container {
-        width: 100%;
-        max-width: none;
-    }
-
-    .toolbar-actions {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .toolbar-actions .btn {
-        flex: 1;
-        justify-content: center;
-    }
-
-    /* Stats container: Horizontal scroll on mobile */
-    .stats-container {
-        display: flex;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        gap: 12px;
-        padding-bottom: 8px;
-        scroll-snap-type: x mandatory;
-    }
-
-    .stats-container .stat-card {
-        flex: 0 0 auto;
-        min-width: 200px;
-        scroll-snap-align: start;
-    }
-
-    /* FAB positioning */
-    .fab-add-student {
-        bottom: max(20px, env(safe-area-inset-bottom) + 12px);
-        right: 16px;
     }
 }
