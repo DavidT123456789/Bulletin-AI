@@ -163,7 +163,7 @@ export const StatsUI = {
     calculateStats(filteredResults, activePeriod, previousPeriod) {
         const stats = {
             avgGrade: '--', prevAvgGrade: '--', minGrade: '--', maxGrade: '--',
-            avgWords: 0, progress: 0, stable: 0, regression: 0,
+            avgWords: 0, avgChars: 0, progress: 0, stable: 0, regression: 0,
             median: '--', heterogeneity: null, distribution: [0, 0, 0, 0, 0]
         };
 
@@ -171,7 +171,7 @@ export const StatsUI = {
 
         let totalGrades = 0, gradeCount = 0, totalPrevGrades = 0, prevGradeCount = 0;
         let minCurrentGrade = Infinity, maxCurrentGrade = -Infinity;
-        let words = 0, errFree = 0;
+        let words = 0, chars = 0, errFree = 0;
         const currentGrades = [];
 
         filteredResults.forEach(res => {
@@ -202,10 +202,11 @@ export const StatsUI = {
                 }
             }
 
-            // Statistique 3: Mots (Dépend des erreurs)
+            // Statistique 3: Mots et Caractères (Dépend des erreurs)
             if (!res.errorMessage) {
                 errFree++;
                 words += Utils.countWords(res.appreciation);
+                chars += (res.appreciation || '').replace(/<[^>]*>/g, '').length;
             }
         });
 
@@ -220,7 +221,10 @@ export const StatsUI = {
             stats.distribution = StatsService.getGradeDistribution(currentGrades);
         }
         if (prevGradeCount > 0) stats.prevAvgGrade = (totalPrevGrades / prevGradeCount);
-        if (errFree > 0) stats.avgWords = Math.round(words / errFree);
+        if (errFree > 0) {
+            stats.avgWords = Math.round(words / errFree);
+            stats.avgChars = Math.round(chars / errFree);
+        }
 
         return stats;
     },
@@ -374,6 +378,34 @@ export const StatsUI = {
                 const currentVal = parseInt(avgWordsEl.textContent.replace('Ø ', '').replace(' mots', '')) || 0;
                 if (currentVal !== stats.avgWords) {
                     animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `Ø ${val} mots`));
+                }
+                // Update tooltip with richer info: avg chars + target words
+                const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || 60;
+                avgWordsEl.setAttribute('data-tooltip', `Ø ${stats.avgWords} mots (${stats.avgChars} car.)<br>Cible : ${targetWords} mots<br><span class="kbd-hint">Modifier</span>`);
+                avgWordsEl.classList.add('tooltip', 'clickable-chip');
+                avgWordsEl.style.cursor = 'pointer';
+
+                // Make clickable to open personalization modal (attach once)
+                if (!avgWordsEl._clickListenerAdded) {
+                    avgWordsEl.addEventListener('click', () => {
+                        import('./UIManager.js').then(({ UI }) => {
+                            const personalizationModal = document.getElementById('personalizationModal');
+                            if (personalizationModal) {
+                                UI.openModal(personalizationModal);
+                                // Highlight the length slider with a subtle pulse
+                                setTimeout(() => {
+                                    const lengthSlider = document.getElementById('iaLengthSlider');
+                                    if (lengthSlider) {
+                                        lengthSlider.parentElement?.parentElement?.classList.add('highlight-pulse');
+                                        setTimeout(() => {
+                                            lengthSlider.parentElement?.parentElement?.classList.remove('highlight-pulse');
+                                        }, 2000);
+                                    }
+                                }, 300);
+                            }
+                        });
+                    });
+                    avgWordsEl._clickListenerAdded = true;
                 }
             }
         }

@@ -85,7 +85,18 @@ export const PromptService = {
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
-        let periodsInfo = relevantPeriods.map(p => { const d = periods[p] || {}; const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A'; const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : ''; return `Période ${p} -> Moy : ${g}${evalCount}, App : "${d.appreciation || 'N/A'}"`; }).join('\n');
+        // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
+        // L'appréciation de la période courante ne doit PAS être incluse pour éviter
+        // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
+        let periodsInfo = relevantPeriods.map(p => {
+            const d = periods[p] || {};
+            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
+            const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
+            // Pour la période courante, on n'inclut pas l'appréciation existante
+            const isCurrentPeriod = p === currentPeriod;
+            const appText = isCurrentPeriod ? 'À générer' : (d.appreciation || 'N/A');
+            return `Période ${p} -> Moy : ${g}${evalCount}, App : "${appText}"`;
+        }).join('\n');
 
         // Use StatsService for evolution analysis
         const evolutions = StatsService.analyserEvolution(periods);

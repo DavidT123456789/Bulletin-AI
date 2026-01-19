@@ -308,6 +308,18 @@
     opacity: 1;
 }
 
+/* Clickable chip style for avgWordsChip */
+#avgWordsChip.clickable-chip {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#avgWordsChip.clickable-chip:hover {
+    opacity: 1 !important;
+    color: var(--primary-color);
+    transform: translateY(-50%) scale(1.15);
+}
+
 .output-header .detail-chip:hover {
     background: rgba(var(--primary-color-rgb), 0.15);
     border-color: rgba(var(--primary-color-rgb), 0.4);
