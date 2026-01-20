@@ -91,6 +91,10 @@ export const GeneralListeners = {
         if (DOM.personalizationBtn) {
             addClickListener(DOM.personalizationBtn, () => {
                 UI.openModal(DOM.personalizationModal);
+                // [FIX] Refresh Lab data on modal open to sync with current period
+                import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
+                    SettingsModalListeners._updateStudentContextAndPrompt();
+                });
             });
         }
 

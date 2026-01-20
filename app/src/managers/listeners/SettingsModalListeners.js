@@ -298,9 +298,9 @@ export const SettingsModalListeners = {
         // Listen to main period changes to sync lab
         // [FIX] Use custom event dispatched by UI.setPeriod for reliable sync
         document.addEventListener('periodChanged', () => {
-            // Only update if personalization modal is open
+            // Only update if personalization modal is visible (display:flex when open)
             const modal = document.getElementById('personalizationModal');
-            if (modal && modal.classList.contains('open')) {
+            if (modal && modal.style.display === 'flex') {
                 this._updateStudentContextAndPrompt();
             }
         });

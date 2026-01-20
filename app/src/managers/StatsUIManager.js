@@ -393,6 +393,10 @@ export const StatsUI = {
                             const personalizationModal = document.getElementById('personalizationModal');
                             if (personalizationModal) {
                                 UI.openModal(personalizationModal);
+                                // [FIX] Refresh Lab data on modal open to sync with current period
+                                import('./listeners/SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
+                                    SettingsModalListeners._updateStudentContextAndPrompt();
+                                });
                                 // Highlight the length slider with a subtle pulse
                                 setTimeout(() => {
                                     const lengthSlider = document.getElementById('iaLengthSlider');
