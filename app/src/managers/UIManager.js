@@ -89,13 +89,9 @@ export const UI = {
      * Affiche une notification toast temporaire.
      * @param {string} message - Le message à afficher
      * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
+     * @param {number} [duration=4000] - Durée d'affichage en ms
      */
-    /**
-     * Affiche une notification toast temporaire.
-     * @param {string} message - Le message à afficher
-     * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
-     */
-    showNotification(message, type = 'success') {
+    showNotification(message, type = 'success', duration = 4000) {
         const container = document.getElementById('notification-container') || (() => {
             const c = document.createElement('div');
             c.id = 'notification-container';
@@ -103,7 +99,7 @@ export const UI = {
             return c;
         })();
 
-        // Prevent duplicate notifications (debounce)
+        // Prevent duplicate notifications (debounce 1s for same message)
         const timestamp = Date.now();
         if (this._lastNotification &&
             this._lastNotification.message === message &&
@@ -131,7 +127,6 @@ export const UI = {
 
         // Interaction: Pause on hover
         let timeoutId;
-        const duration = 4000; // Increased to 4s for better readability
 
         const removeNotification = () => {
             if (notif.dataset.removing) return;

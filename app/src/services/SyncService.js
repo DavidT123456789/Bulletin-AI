@@ -8,6 +8,9 @@
 import { userSettings, runtimeState } from '../state/State.js';
 import { StorageManager } from '../managers/StorageManager.js';
 
+/** @type {boolean} Enable debug logs (set to false for production) */
+const DEBUG = false;
+
 /**
  * Providers disponibles (seront chargés dynamiquement)
  */
@@ -129,7 +132,7 @@ export const SyncService = {
         const wasOnline = this._isOnline;
         this._isOnline = isOnline;
 
-        console.log(`[SyncService] Network ${isOnline ? 'restored' : 'lost'}`);
+        if (DEBUG) console.log(`[SyncService] Network ${isOnline ? 'restored' : 'lost'}`);
 
         if (!isOnline) {
             // Went offline - show local mode if we have a provider configured
@@ -173,7 +176,7 @@ export const SyncService = {
 
         if (!isValid) {
             // Token already expired - try silent refresh
-            console.log('[SyncService] Token expired, attempting silent refresh...');
+            if (DEBUG) console.log('[SyncService] Token expired, attempting silent refresh...');
             const refreshed = await this._trySilentRefresh();
             if (!refreshed) {
                 this._updateCloudIndicator('expired');
@@ -181,7 +184,7 @@ export const SyncService = {
             }
         } else if (typeof this._provider.isExpiringSoon === 'function' && this._provider.isExpiringSoon()) {
             // Token valid but expiring soon (within 10 min) - proactive refresh
-            console.log('[SyncService] Token expiring soon, proactive silent refresh...');
+            if (DEBUG) console.log('[SyncService] Token expiring soon, proactive silent refresh...');
             await this._trySilentRefresh();
         }
     },
@@ -199,7 +202,7 @@ export const SyncService = {
         try {
             const refreshed = await this._provider.silentRefresh();
             if (refreshed) {
-                console.log('[SyncService] Silent refresh successful');
+                if (DEBUG) console.log('[SyncService] Silent refresh successful');
                 this._updateCloudIndicator('connected');
                 return true;
             }
@@ -221,7 +224,7 @@ export const SyncService = {
 
         if (this._lastReconnectNotificationTime &&
             (now - this._lastReconnectNotificationTime) < COOLDOWN_MS) {
-            console.log('[SyncService] Reconnect notification suppressed (cooldown active)');
+            if (DEBUG) console.log('[SyncService] Reconnect notification suppressed (cooldown active)');
             return;
         }
 
@@ -310,7 +313,7 @@ export const SyncService = {
                 e.preventDefault();
                 e.stopPropagation();
 
-                console.log('[SyncService] Cloud indicator clicked. State:', state);
+                if (DEBUG) console.log('[SyncService] Cloud indicator clicked. State:', state);
 
                 // Don't allow click during sync
                 if (indicator.classList.contains('syncing')) return;
@@ -378,7 +381,7 @@ export const SyncService = {
      * @private
      */
     _openSyncSettings() {
-        console.log('[SyncService] Opening sync settings...');
+        if (DEBUG) console.log('[SyncService] Opening sync settings...');
 
         // Try multiple ways to get the modal and UI
         const settingsModal = document.getElementById('appSettingsModal') || window.DOM?.settingsModal;
@@ -395,14 +398,14 @@ export const SyncService = {
             return;
         }
 
-        console.log('[SyncService] Modal and UI found, opening...');
+        if (DEBUG) console.log('[SyncService] Modal and UI found, opening...');
         uiManager.openModal(settingsModal);
 
         // Wait for modal animation to start/finish before switching tabs and focusing
         setTimeout(() => {
             // Switch to the 'advanced' tab which contains the sync settings
             if (uiManager.showSettingsTab) {
-                console.log('[SyncService] Switching to advanced tab (Application)...');
+                if (DEBUG) console.log('[SyncService] Switching to advanced tab (Application)...');
                 uiManager.showSettingsTab('advanced');
             }
 
@@ -599,7 +602,7 @@ export const SyncService = {
             // Don't rely on lastSyncTime - it's the time of sync operation, not data modification
             // The _mergeData function uses per-result and per-period timestamps for conflict resolution
             if (remoteData) {
-                console.log('[SyncService] Performing bidirectional sync...');
+                if (DEBUG) console.log('[SyncService] Performing bidirectional sync...');
                 stats.direction = 'bidirectional';
 
                 // Merge classes: combine local and remote, prefer newer timestamps
@@ -668,7 +671,7 @@ export const SyncService = {
                 }
             } else {
                 // NO REMOTE DATA - Push local to initialize cloud
-                console.log('[SyncService] No remote data, pushing local to cloud...');
+                if (DEBUG) console.log('[SyncService] No remote data, pushing local to cloud...');
                 stats.direction = 'push';
             }
 
@@ -786,7 +789,7 @@ export const SyncService = {
                     await this.sync();
                 } else {
                     // Token invalid and couldn't refresh - user will see expired indicator
-                    console.log('[SyncService] Auto-sync skipped: token invalid, user needs to reconnect');
+                    if (DEBUG) console.log('[SyncService] Auto-sync skipped: token invalid, user needs to reconnect');
                 }
             } catch (e) {
                 console.warn('[SyncService] Auto-sync failed:', e.message);

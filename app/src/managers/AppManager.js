@@ -204,25 +204,18 @@ export const App = {
             }
         });
 
-        // Offline Detection
+        // Offline Detection - Silent state update (visual feedback via .is-offline class and disabled buttons is sufficient)
         const updateOnlineStatus = () => {
             const isOffline = !navigator.onLine;
             document.body.classList.toggle('is-offline', isOffline);
-
-            if (isOffline) {
-                UI.showNotification('Mode hors-ligne activé. La génération IA est désactivée.', 'warning');
-            } else {
-                UI.showNotification('Connexion rétablie.', 'success');
-            }
-
-            // Update generate button state
+            // Update generate button state (buttons show tooltip explaining why they're disabled)
             UI.updateGenerateButtonState();
         };
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
-        // Set initial state without notification
+        // Set initial state
         if (!navigator.onLine) {
             document.body.classList.add('is-offline');
         }
