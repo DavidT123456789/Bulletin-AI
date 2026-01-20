@@ -397,16 +397,8 @@ export const StatsUI = {
                                 import('./listeners/SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
                                     SettingsModalListeners._updateStudentContextAndPrompt();
                                 });
-                                // Highlight the length slider with a subtle pulse
-                                setTimeout(() => {
-                                    const lengthSlider = document.getElementById('iaLengthSlider');
-                                    if (lengthSlider) {
-                                        lengthSlider.parentElement?.parentElement?.classList.add('highlight-pulse');
-                                        setTimeout(() => {
-                                            lengthSlider.parentElement?.parentElement?.classList.remove('highlight-pulse');
-                                        }, 2000);
-                                    }
-                                }, 300);
+                                // Use centralized highlight utility for length slider
+                                UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
                             }
                         });
                     });

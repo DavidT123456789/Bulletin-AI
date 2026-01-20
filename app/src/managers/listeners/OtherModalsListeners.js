@@ -40,6 +40,25 @@ export const OtherModalsListeners = {
             }
         });
 
+        // "Accéder à la personnalisation" button in Help > Personnaliser tab
+        const helpToPersonalizationBtn = document.getElementById('helpToPersonalizationBtn');
+        helpToPersonalizationBtn?.addEventListener('click', () => {
+            UI.closeAllModals();
+            setTimeout(() => {
+                const personalizationModal = document.getElementById('personalizationModal');
+                if (personalizationModal) UI.openModal(personalizationModal);
+                // Refresh Lab data on modal open
+                import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
+                    SettingsModalListeners._updateStudentContextAndPrompt();
+                });
+                // Highlight the entire style controls card for broader context
+                UI.highlightSettingsElement('settings-controls-panel', {
+                    tab: 'templates',
+                    useParentFormGroup: false  // Target the card directly, not parent
+                });
+            }, 300);
+        });
+
         // Bouton pour relancer le guide de bienvenue (dans le footer de la modale d'aide)
         const relaunchBtn = document.getElementById('relaunchWelcomeBtn');
         relaunchBtn?.addEventListener('click', (e) => {

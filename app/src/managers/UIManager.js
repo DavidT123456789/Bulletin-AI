@@ -971,9 +971,73 @@ export const UI = {
     },
 
     // ====================================================================
+    //  SETTINGS FOCUS UTILITY
+    //  Centralized highlight effect for shortcuts to settings
+    // ====================================================================
+
+    /**
+     * Highlights an element in the settings modal with a focus animation.
+     * Used by avgWordsChip, word count badge, and other shortcuts.
+     * @param {HTMLElement|string} elementOrId - Element or ID to highlight
+     * @param {Object} [options={}] - Options
+     * @param {boolean} [options.scrollIntoView=true] - Whether to scroll to the element
+     * @param {number} [options.duration=2400] - Duration of the highlight in ms (3 iterations × 800ms)
+     * @param {string} [options.tab] - Tab to switch to before highlighting (e.g., 'templates', 'advanced')
+     * @param {boolean} [options.useParentFormGroup=true] - Apply highlight to parent .form-group if available
+     */
+    highlightSettingsElement(elementOrId, options = {}) {
+        const {
+            scrollIntoView = true,
+            duration = 2400,  // 3 iterations × 800ms animation
+            tab = null,
+            useParentFormGroup = true
+        } = options;
+
+        // Switch tab if specified
+        if (tab) {
+            this.showSettingsTab(tab);
+        }
+
+        // Delay to allow modal/tab animations to complete
+        setTimeout(() => {
+            const element = typeof elementOrId === 'string'
+                ? document.getElementById(elementOrId)
+                : elementOrId;
+
+            if (!element) return;
+
+            // Determine target element (parent form-group or element itself)
+            let target = element;
+            if (useParentFormGroup) {
+                const formGroup = element.closest('.form-group');
+                if (formGroup) target = formGroup;
+            }
+
+            // Scroll into view
+            if (scrollIntoView) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Focus the element for accessibility
+            if (element.focus) element.focus();
+
+            // Apply highlight animation class
+            target.classList.remove('settings-focus-highlight');
+            void target.offsetWidth; // Force reflow for restart
+            target.classList.add('settings-focus-highlight');
+
+            // Remove class after animation completes
+            setTimeout(() => {
+                target.classList.remove('settings-focus-highlight');
+            }, duration);
+        }, 150);  // Small delay for tab/modal animation
+    },
+
+    // ====================================================================
     //  GESTION DES BOUTONS DE CONTRÔLE
     //  Régénération, copie, erreurs, filtres
     // ====================================================================
+
 
     /**
      * Initialise les animations "Glider" pour les sélecteurs.

@@ -354,32 +354,22 @@ export const FocusPanelManager = {
             });
         }
 
-        // [NEW] Word Count Badge Click Listener (Quick access to Settings)
+        // [NEW] Word Count Badge Click Listener (Quick access to Personalization)
+        // Behavior aligned with avgWordsChip in header for single source of truth
         const wordCountBadge = document.getElementById('focusWordCount');
         if (wordCountBadge) {
             wordCountBadge.addEventListener('click', () => {
-                // 1. Open Settings Modal
-                if (DOM.settingsModal) UI.openModal(DOM.settingsModal);
+                // 1. Open Personalization Modal (same as avgWordsChip)
+                const personalizationModal = document.getElementById('personalizationModal');
+                if (personalizationModal) UI.openModal(personalizationModal);
 
-                // 2. Switch to "Style de Rédaction" tab (templates)
-                // Use a small timeout to ensure modal is rendered and transitions started
-                setTimeout(() => {
-                    UI.showSettingsTab('templates');
+                // 2. Refresh Lab data on modal open to sync with current period
+                import('./listeners/SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
+                    SettingsModalListeners._updateStudentContextAndPrompt();
+                });
 
-                    // 3. Scroll to and Focus the Length Slider
-                    const slider = document.getElementById('iaLengthSlider');
-                    if (slider) {
-                        // Smooth scroll the slider into view
-                        slider.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                        // Highlight or Focus for accessibility
-                        slider.focus();
-
-                        // Optional: Add a temporary flash effect using CSS class
-                        slider.classList.add('highlight-flash');
-                        setTimeout(() => slider.classList.remove('highlight-flash'), 1000);
-                    }
-                }, 100);
+                // 3. Use centralized highlight utility for length slider
+                UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
             });
         }
 
@@ -1387,7 +1377,14 @@ export const FocusPanelManager = {
             // CRITICAL: Register in _activeGenerations to prevent input event from
             // resetting wasGenerated to false during typewriter animation
             const refineStudentId = this.currentStudentId;
-            this._activeGenerations.set(refineStudentId, { abort: () => { } }); // Dummy controller
+
+            // Cancel any existing generation for this student (restart behavior)
+            this._cancelGenerationForStudent(refineStudentId);
+
+            // Create real AbortController for this refinement
+            const abortController = new AbortController();
+            this._activeGenerations.set(refineStudentId, abortController);
+            const signal = abortController.signal;
 
             try {
                 // Use VariationsManager to apply refinement
@@ -1396,7 +1393,10 @@ export const FocusPanelManager = {
 
                 // Import VariationsManager dynamically
                 const { VariationsManager } = await import('./VariationsManager.js');
-                const response = await VariationsManager.applyRefinement(currentText, refineType);
+                const response = await VariationsManager.applyRefinement(currentText, refineType, signal);
+
+                // Check if aborted
+                if (signal.aborted) return;
 
                 if (response && response.text) {
                     const refined = response.text;
@@ -1448,9 +1448,23 @@ export const FocusPanelManager = {
                     UI.showNotification('Appréciation raffinée !', 'success');
                 }
             } catch (error) {
+                // Handle abort gracefully (user cancelled)
+                // AIService throws "Import annulé par l'utilisateur." when external signal is aborted
+                const isAborted = error.name === 'AbortError'
+                    || signal.aborted
+                    || error.message?.includes('annulé');
+
+                if (isAborted) {
+                    UI.showNotification('Amélioration annulée', 'info');
+                    // Reset status to previous state
+                    FocusPanelStatus.refreshAppreciationStatus();
+                    return;
+                }
+
                 console.error('Refinement error:', error);
                 UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
                 // Show error badge on failure
+                const result = appState.generatedResults.find(r => r.id === refineStudentId);
                 FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
             } finally {
                 // Clean up _activeGenerations

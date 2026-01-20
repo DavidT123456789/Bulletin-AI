@@ -337,14 +337,10 @@ export const GlobalListeners = {
                     UI.closeAllModals();
                     setTimeout(() => {
                         UI.openModal(DOM.settingsModal);
-                        UI.showSettingsTab(link.dataset.targetTab);
-                        setTimeout(() => {
-                            const targetElement = document.getElementById(link.dataset.targetElement);
-                            if (targetElement) {
-                                targetElement.focus();
-                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
-                        }, 100);
+                        // Use centralized highlight utility
+                        UI.highlightSettingsElement(link.dataset.targetElement, {
+                            tab: link.dataset.targetTab
+                        });
                     }, 350);
                 }
             }

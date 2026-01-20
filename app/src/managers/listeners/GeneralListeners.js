@@ -119,7 +119,7 @@ export const GeneralListeners = {
             SettingsUIManager.updateApiStatusDisplay();
         });
 
-        // Model label click -> opens settings (API config)
+        // Model label click -> opens settings (API config) with focus on model selector
         addClickListener(DOM.dashModelLabel, () => {
             // [FIX] Same snapshot logic for this entry point
             UIState.settingsBeforeEdit = {
@@ -128,6 +128,8 @@ export const GeneralListeners = {
             };
             UI.openModal(DOM.settingsModal);
             SettingsUIManager.updateApiStatusDisplay();
+            // Highlight the model selector for clear feedback
+            UI.highlightSettingsElement('iaModelSelect', { tab: 'advanced' });
         });
 
         // Generation Dashboard badge click handlers
@@ -139,11 +141,24 @@ export const GeneralListeners = {
         });
 
         // Cancel button during generation
-        addClickListener(DOM.dashCancelBtn, () => {
+        addClickListener(DOM.dashCancelBtn, async () => {
+            // 1. Cancel mass import if running
             import('../MassImportManager.js').then(({ MassImportManager }) => {
                 if (MassImportManager.massImportAbortController) {
                     MassImportManager.massImportAbortController.abort();
                     MassImportManager.massImportAbortController = null;
+                }
+            });
+
+            // 2. Cancel Focus Panel active generations (refinements)
+            import('../FocusPanelManager.js').then(({ FocusPanelManager }) => {
+                if (FocusPanelManager._activeGenerations && FocusPanelManager._activeGenerations.size > 0) {
+                    for (const [studentId, controller] of FocusPanelManager._activeGenerations) {
+                        if (controller && typeof controller.abort === 'function') {
+                            controller.abort();
+                        }
+                    }
+                    FocusPanelManager._activeGenerations.clear();
                 }
             });
         });

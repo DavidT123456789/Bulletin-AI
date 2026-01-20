@@ -93,10 +93,12 @@ export const SettingsModalListeners = {
         if (openApiKeysBtn) {
             openApiKeysBtn.addEventListener('click', () => {
                 const accordion = document.getElementById('apiKeysAccordion');
-                if (accordion) {
-                    accordion.open = true;
-                    accordion.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                if (accordion) accordion.open = true;
+                // Use centralized highlight utility
+                UI.highlightSettingsElement('apiKeysAccordion', {
+                    tab: 'advanced',
+                    useParentFormGroup: false
+                });
             });
         }
     },
@@ -114,15 +116,14 @@ export const SettingsModalListeners = {
             if (card) {
                 card.addEventListener('click', () => {
                     const accordion = document.getElementById('apiKeysAccordion');
-                    if (accordion) {
-                        accordion.open = true;
-                        // Scroll vers la section correspondante
-                        const inputId = `${provider}ApiKey`;
-                        const inputSection = document.getElementById(inputId)?.closest('.api-key-group');
-                        if (inputSection) {
-                            inputSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }
+                    if (accordion) accordion.open = true;
+
+                    // Use centralized highlight utility for consistent behavior
+                    const inputId = `${provider}ApiKey`;
+                    UI.highlightSettingsElement(inputId, {
+                        tab: 'advanced',
+                        useParentFormGroup: true  // Highlight the .api-key-group parent
+                    });
 
                     // Ne revalider que si nécessaire (pas déjà validé) pour éviter le spam API
                     if (!appState.validatedApiKeys[provider]) {
@@ -161,10 +162,11 @@ export const SettingsModalListeners = {
             DOM.ollamaApiStatus.addEventListener('click', () => {
                 const accordion = document.getElementById('apiKeysAccordion');
                 if (accordion) accordion.open = true;
-                const ollamaSection = document.getElementById('ollamaConfigGroup');
-                if (ollamaSection) {
-                    ollamaSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                // Use centralized highlight utility
+                UI.highlightSettingsElement('ollamaConfigGroup', {
+                    tab: 'advanced',
+                    useParentFormGroup: false
+                });
             });
         }
     },
