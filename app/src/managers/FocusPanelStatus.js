@@ -373,7 +373,7 @@ export const FocusPanelStatus = {
             }
             wordCountEl.removeAttribute('data-tooltip');
         } else {
-            const templateFn = (val) => `<i class="fas fa-align-left"></i>${val} mot${val !== 1 ? 's' : ''}`;
+            const templateFn = (val) => `${val} mot${val !== 1 ? 's' : ''}`;
 
             if (animate) {
                 let startVal = 0;

@@ -1422,6 +1422,15 @@
     background: transparent;
 }
 
+/* Dark theme: buttons need visible background contrast */
+[data-theme="dark"] .focus-nav-btn:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+}
+
 
 /* ============================
    2. CONTENT (Cards Grid)
@@ -1736,8 +1745,9 @@
     /* Adjusted padding to prevent scrollbar on single line */
     padding: 14px 16px;
     margin: 0;
-    background: transparent;
-    border: 2px solid transparent;
+    background: transparent !important;
+    /* CRITICAL: 2px border at all times to prevent layout shift on hover */
+    border: 2px solid transparent !important;
     /* Fix: match container radius (bottom corners) */
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     font-size: 15px;
@@ -1747,7 +1757,8 @@
     /* Auto-resize handled by JS typically, but simple none here */
     overflow-y: hidden;
     /* Hide scrollbar by default, JS should handle expansion */
-    transition: all var(--transition-fast);
+    /* Smooth transition for border color (harmonized) */
+    transition: border-color var(--transition-fast);
     font-family: inherit;
     box-sizing: border-box;
     display: block;
@@ -1766,39 +1777,24 @@
     opacity: 1;
 }
 
-/* Hover state - subtle border glow before focus */
-.focus-context-textarea:hover:not(:focus) {
-    background: var(--bg-color);
-    border-color: transparent;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
+/* Hover state - Subtle light background instead of border */
+/* Selector must have HIGHER specificity than textarea:hover:not(:disabled):not(:focus) */
+.focus-context-textarea:hover:not(:disabled):not(:focus) {
+    /* Subtle background instead of border - more elegant */
+    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background-image: none !important;
+    border: 2px solid transparent !important;
 }
 
+/* Focus state - Slightly more visible background than hover */
+/* Must override global textarea:focus from components.css */
 .focus-context-textarea:focus {
-    outline: none;
-    background: var(--bg-color);
-    /* Style dynamique harmonisé - focus signature */
+    outline: none !important;
+    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background-image: none !important;
     border: 2px solid transparent !important;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 /* ============================
@@ -2065,9 +2061,11 @@
     overflow-y: auto;
     white-space: pre-wrap;
     position: relative;
-    transition: all var(--transition-fast);
+    /* Smooth transition for border color (harmonized with context-textarea) */
+    transition: border-color var(--transition-fast);
     background: transparent;
-    border: none;
+    /* CRITICAL: 2px border at all times to prevent layout shift (harmonized with context-textarea) */
+    border: 2px solid transparent;
     border-radius: 0;
     box-sizing: border-box;
 }
@@ -2097,7 +2095,6 @@
     white-space: nowrap;
     overflow: hidden;
     /* Clean resize */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .appreciation-status-badge.visible {
@@ -2127,14 +2124,18 @@
     color: #ef4444;
 }
 
-/* Empty state - "En attente" - neutral grey, distinct from orange "modified" */
+/* Empty state - "En attente" - icon only, no background (harmonized with source-manual) */
 .appreciation-status-badge.empty {
-    background: rgba(0, 0, 0, 0.06);
+    background: transparent;
     color: var(--text-secondary);
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    padding: 4px;
 }
 
 [data-theme="dark"] .appreciation-status-badge.empty {
-    background: rgba(255, 255, 255, 0.1);
+    background: transparent;
     color: var(--text-secondary);
 }
 
@@ -2594,13 +2595,12 @@
     padding: 0;
 }
 
-
 .word-count {
     font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    background: transparent;
+    border: none;
     padding: 3px 10px;
     border-radius: var(--radius-pill);
     font-variant-numeric: tabular-nums;
@@ -2614,23 +2614,17 @@
     display: none;
 }
 
-.word-count i {
-    margin-right: 6px;
-    opacity: 0.6;
-    font-size: 10px;
-}
 
 .word-count:hover {
-    background: rgba(var(--primary-color-rgb), 0.04);
-    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
+
 
 /* Word Count Badge - Premium UI (Specific ID override) */
 #focusWordCount {
-    border: 1px solid var(--border-color);
-    background: rgba(0, 0, 0, 0.02);
+    border: none;
+    background: transparent;
     border-radius: var(--radius-pill);
     padding: 4px 10px;
     font-size: 12px;
@@ -2643,17 +2637,13 @@
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] #focusWordCount {
-    background: rgba(255, 255, 255, 0.04);
-}
-
 #focusWordCount:hover {
     transform: scale(1.05);
     background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: var(--primary-color);
     color: var(--primary-color);
     cursor: help;
 }
+
 
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
@@ -2665,7 +2655,8 @@
     background: transparent;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
+    /* Harmonized with #focusWordCount font-size */
+    font-size: 12px;
     cursor: help;
     transition: all var(--transition-fast);
     color: rgba(251, 191, 36, 0.8);
@@ -2697,7 +2688,8 @@
 }
 
 [data-theme="dark"] .ai-indicator.source-manual {
-    color: var(--text-tertiary);
+    /* Harmonized with #focusWordCount */
+    color: var(--text-secondary);
 }
 
 [data-theme="dark"] .ai-indicator.source-manual:hover {
@@ -2706,49 +2698,37 @@
 }
 
 .ai-indicator.source-manual i {
-    font-size: 0.85rem;
+    /* Harmonized with #focusWordCount font-size */
+    font-size: 12px;
 }
 
 /* Redefinition removed to avoid conflict with lines 1659-1678 */
 
-/* Editable appreciation */
+/* Editable appreciation - harmonized with .focus-context-textarea */
 .focus-appreciation-text[contenteditable="true"] {
-    /* No additional styling needed - base styles handle it */
+    /* Border needed for gradient hover/focus effect (single source of truth) */
+    border: 2px solid transparent;
+    /* NO border-radius: this element is NOT the last child of the card (refinement buttons are below) */
+    border-radius: 0;
 }
 
-/* Hover state - subtle border glow before focus (harmonized with context textarea) */
+/* Hover state - Subtle light background instead of border */
 .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: var(--bg-color);
-    border-color: transparent;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
+    /* Subtle background instead of border - more elegant */
+    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background-image: none !important;
+    border: 2px solid transparent !important;
 }
 
+/* Focus state - Slightly more visible background than hover */
+/* Harmonized with hover - no border, just subtle background */
 .focus-appreciation-text[contenteditable="true"]:focus {
-    outline: none;
-    background: var(--bg-color);
-    /* Style dynamique harmonisé - focus signature */
+    outline: none !important;
+    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background-image: none !important;
     border: 2px solid transparent !important;
-    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 /* Empty state for appreciation - CSS-only placeholder using data attribute */
@@ -2779,17 +2759,15 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 0;
-    /* Consistent padding with other card elements */
-    padding: 16px;
-
+    /* Reduced top padding for balanced spacing: text (14px bottom) + 8px = 22px ≈ 16px bottom  */
+    padding: 8px 16px 16px 16px;
 }
 
 /* Redesigned Chips - Compact */
 /* Redesigned Chips - Modern & Premium */
 /* Redesigned Chips - Modern & Premium with Shine */
 .btn-ai-outline {
-    background: rgba(0, 0, 0, 0.04);
-    /* Plus de contraste pour les boutons */
+    background: rgba(0, 0, 0, 0.02);
     border: none;
     color: var(--text-secondary);
     padding: 7px 14px;
@@ -2806,6 +2784,11 @@
     position: relative;
     overflow: hidden;
     /* Pour l'effet shine */
+}
+
+/* Dark mode: fond plus visible */
+[data-theme="dark"] .btn-ai-outline {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .btn-ai-outline i {
@@ -2846,6 +2829,10 @@
     box-shadow: none;
 }
 
+[data-theme="dark"] .btn-ai-outline:hover:not(:disabled) {
+    background: rgba(var(--primary-color-rgb), 0.2);
+}
+
 .btn-ai-outline.active {
     background: var(--primary-color);
     color: #ffffff !important;
@@ -2864,6 +2851,11 @@
     cursor: not-allowed;
     background: rgba(0, 0, 0, 0.02);
     color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .btn-ai-outline:disabled,
+[data-theme="dark"] .btn-ai-outline.disabled {
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .btn-ai-outline:disabled i,
