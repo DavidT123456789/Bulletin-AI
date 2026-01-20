@@ -207,6 +207,24 @@ export const ClassManager = {
     },
 
     /**
+     * Réordonne les classes selon un nouvel ordre
+     * @param {string[]} orderedIds - IDs des classes dans le nouvel ordre
+     */
+    reorderClasses(orderedIds) {
+        const classes = userSettings.academic.classes || [];
+        const reordered = orderedIds
+            .map(id => classes.find(c => c.id === id))
+            .filter(Boolean);
+
+        // Préserver les classes non incluses (edge case safety)
+        const remaining = classes.filter(c => !orderedIds.includes(c.id));
+        userSettings.academic.classes = [...reordered, ...remaining];
+
+        StorageManager?.saveAppState();
+        this._triggerCloudSync();
+    },
+
+    /**
      * Récupère la classe courante
      * @returns {Object|null} Classe courante ou null
      */

@@ -76,12 +76,12 @@ export const AppreciationsManager = {
     /**
      * Sauvegarde la version actuelle dans l'historique avant modification
      * @param {Object} result - L'objet résultat à sauvegarder
-     * @param {string} source - Source (non utilisé, gardé pour compatibilité)
+     * @param {string} source - Source de la modification (edit, concise, detailed, encouraging, variation, regenerate)
      */
-    pushToHistory(result, source = 'unknown') {
+    pushToHistory(result, source = 'edit') {
         if (!result || !result.appreciation) return;
         const state = HistoryUtils.getHistoryState(result);
-        HistoryUtils.pushToState(state, result.appreciation);
+        HistoryUtils.pushToState(state, result.appreciation, source);
     },
 
     /**
@@ -392,8 +392,9 @@ export const AppreciationsManager = {
         originalResult.copied = false;
 
         try {
-            // Sauvegarder l'ancienne version dans l'historique AVANT régénération
-            this.pushToHistory(originalResult, 'regenerate');
+            // Réinitialiser l'historique - la régénération est un nouveau départ
+            // L'"Original" sera la nouvelle génération IA
+            originalResult.historyState = null;
 
             // Mise à jour de certaines données si nécessaire
             const updatedStudentData = { ...originalResult.studentData };
@@ -408,8 +409,7 @@ export const AppreciationsManager = {
                 appState.generatedResults[resultIndex],
                 newResult
             );
-            // Transfer history (pushToHistory was called before generation)
-            updatedResult.history = originalResult.history || [];
+            // historyState is reset - will be re-initialized on first access
 
             // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);

@@ -97,13 +97,23 @@ export const PromptService = {
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             // Pour la période courante, on n'inclut pas l'appréciation existante
             const isCurrentPeriod = p === currentPeriod;
-            const appText = isCurrentPeriod ? 'À générer' : (d.appreciation || 'N/A');
-            return `Période ${p} -> Moy : ${g}${evalCount}, App : "${appText}"`;
+            // [FIX] Use brackets for instruction, quotes only for actual appreciation text
+            const appText = isCurrentPeriod ? '[à générer]' : `"${d.appreciation || 'N/A'}"`;
+            return `Période ${p} -> Moy : ${g}${evalCount}, App : ${appText}`;
         }).join('\n');
 
         // Use StatsService for evolution analysis
-        const evolutions = StatsService.analyserEvolution(periods);
-        const evolutionText = this._formatEvolutions(evolutions);
+        // [FIX] Filter evolutions to only include those ENDING at or before currentPeriod
+        // For S1/T1 (first period), there should be NO evolution to display
+        const allEvolutions = StatsService.analyserEvolution(periods);
+        const filteredEvolutions = allEvolutions.filter(e => {
+            // Evolution format: "T1-T2" or "S1-S2" - extract target period
+            const targetPeriod = e.periode.split('-')[1];
+            const targetIndex = allPeriods.indexOf(targetPeriod);
+            // Only include if target period index <= current period index
+            return targetIndex >= 0 && targetIndex <= currentPeriodIndex;
+        });
+        const evolutionText = this._formatEvolutions(filteredEvolutions);
 
         // Anonymisation : on n'envoie plus le nom complet, seulement les données scolaires
         // On n'inclut la ligne Statuts que si l'élève a des statuts
@@ -120,7 +130,7 @@ export const PromptService = {
         const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
         const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
 
-        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (élève ${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nHistorique :\n${periodsInfo}\n\n${evolutionText}`);
+        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (élève ${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
 
         // Instruction finale simple (déplacée dans les instructions de style)
         // promptParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);

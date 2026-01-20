@@ -149,6 +149,11 @@ export const SingleStudentManager = {
 
             if (existingStudentIndex > -1) {
                 const existingResult = appState.generatedResults[existingStudentIndex];
+
+                // Réinitialiser l'historique - la régénération est un nouveau départ
+                // L'"Original" sera la nouvelle génération IA
+                existingResult.historyState = null;
+
                 Object.assign(existingResult.studentData.periods, newResult.studentData.periods);
 
                 existingResult.appreciation = newResult.appreciation;
@@ -204,6 +209,10 @@ export const SingleStudentManager = {
 
             if (studentIndex > -1) {
                 const existingResult = appState.generatedResults[studentIndex];
+
+                // Réinitialiser l'historique - la régénération est un nouveau départ
+                // L'"Original" sera la nouvelle génération IA
+                existingResult.historyState = null;
 
                 for (const periodKey in newResult.studentData.periods) {
                     if (Object.prototype.hasOwnProperty.call(newResult.studentData.periods, periodKey)) {

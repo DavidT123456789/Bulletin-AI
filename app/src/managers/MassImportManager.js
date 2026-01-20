@@ -335,6 +335,46 @@ export const MassImportManager = {
             return;
         }
 
+        // Trier les résultats en attente selon l'ordre d'affichage actuel (tri visuel)
+        const { field, direction, param } = appState.sortState || { field: 'name', direction: 'asc' };
+        const dir = direction === 'asc' ? 1 : -1;
+        const activePeriod = appState.currentPeriod;
+
+        pendingResults.sort((a, b) => {
+            if (field === 'recent') {
+                return (new Date(b.timestamp) - new Date(a.timestamp)) * dir;
+            }
+            if (field === 'name') {
+                return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`) * dir;
+            }
+            if (field === 'grade') {
+                const p = param || activePeriod;
+                const gA = a.studentData?.periods?.[p]?.grade ?? -1;
+                const gB = b.studentData?.periods?.[p]?.grade ?? -1;
+                if (gA === -1 && gB !== -1) return 1;
+                if (gA !== -1 && gB === -1) return -1;
+                return (gA - gB) * dir;
+            }
+            if (field === 'evolution') {
+                const p = param || activePeriod;
+                const getRank = r => {
+                    const e = Utils.getRelevantEvolution(r.evolutions, p);
+                    return e ? { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[e.type] || 0 : 0;
+                };
+                return (getRank(a) - getRank(b)) * dir;
+            }
+            if (field === 'status') {
+                const getStatusStr = r => {
+                    if (r.errorMessage) return '!';
+                    const statuses = r.studentData?.statuses || [];
+                    if (statuses.length > 0) return statuses.slice().sort().join(' ').toLowerCase();
+                    return '\uFFFF';
+                };
+                return getStatusStr(a).localeCompare(getStatusStr(b)) * dir;
+            }
+            return 0;
+        });
+
         // Convertir les résultats pending en format étudiant pour processMassImport
         // IMPORTANT: Utiliser appState.currentPeriod (période AFFICHÉE) pour la génération
         // CRITICAL FIX: Preserve studentPhoto, journal and other user data

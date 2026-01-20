@@ -296,12 +296,14 @@ export const SettingsModalListeners = {
         }
 
         // Listen to main period changes to sync lab
-        if (DOM.mainPeriodSelector) {
-            // Use event delegation since radios are dynamically created
-            DOM.mainPeriodSelector.addEventListener('change', () => {
-                setTimeout(() => this._updateStudentContextAndPrompt(), 100);
-            });
-        }
+        // [FIX] Use custom event dispatched by UI.setPeriod for reliable sync
+        document.addEventListener('periodChanged', () => {
+            // Only update if personalization modal is open
+            const modal = document.getElementById('personalizationModal');
+            if (modal && modal.classList.contains('open')) {
+                this._updateStudentContextAndPrompt();
+            }
+        });
 
         // Settings changes should update prompt preview automatically
         if (DOM.iaLengthSlider) {
@@ -498,7 +500,10 @@ export const SettingsModalListeners = {
         const previewPromptEl = document.getElementById('settingsPreviewPrompt');
         if (previewPromptEl) {
             try {
-                const prompts = AppreciationsManager.getAllPrompts(studentResult.studentData, currentSettings);
+                // [FIX] Sync studentData.currentPeriod with appState.currentPeriod
+                // to ensure prompt inspector displays same period as table preview
+                const syncedStudentData = { ...studentResult.studentData, currentPeriod };
+                const prompts = AppreciationsManager.getAllPrompts(syncedStudentData, currentSettings);
                 previewPromptEl.textContent = prompts.appreciation;
                 previewPromptEl.classList.remove('placeholder');
             } catch (promptError) {
@@ -531,6 +536,15 @@ export const SettingsModalListeners = {
         }
 
         // Context is already displayed by _updateStudentContextAndPrompt, no need to rebuild
+
+        // [FIX] Determine current period same as in _updateStudentContextAndPrompt
+        const periodSystem = appState.periodSystem || 'trimestres';
+        const periodKeys = periodSystem === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
+        const defaultPeriod = periodSystem === 'semestres' ? 'S2' : 'T3';
+        let currentPeriod = appState.currentPeriod || defaultPeriod;
+        if (!periodKeys.includes(currentPeriod)) {
+            currentPeriod = defaultPeriod;
+        }
 
         // Vérifier qu'une clé API est configurée (ou Ollama activé)
         const currentModel = appState.currentAIModel || 'gemini-2.0-flash';
@@ -586,11 +600,15 @@ export const SettingsModalListeners = {
                 voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default'
             };
 
+            // [FIX] Sync studentData.currentPeriod with appState.currentPeriod
+            // Used for both prompt preview and AI generation
+            const syncedStudentData = { ...studentResult.studentData, currentPeriod };
+
             // Display the prompt that will be sent to the AI
             const previewPromptEl = document.getElementById('settingsPreviewPrompt');
             if (previewPromptEl) {
                 try {
-                    const prompts = AppreciationsManager.getAllPrompts(studentResult.studentData, currentSettings);
+                    const prompts = AppreciationsManager.getAllPrompts(syncedStudentData, currentSettings);
                     previewPromptEl.textContent = prompts.appreciation;
                     previewPromptEl.classList.remove('placeholder');
                 } catch (promptError) {
@@ -599,7 +617,7 @@ export const SettingsModalListeners = {
                 }
             }
 
-            const result = await AppreciationsManager.generateAppreciation(studentResult.studentData, true, currentSettings);
+            const result = await AppreciationsManager.generateAppreciation(syncedStudentData, true, currentSettings);
 
             if (previewResult) {
                 previewResult.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));

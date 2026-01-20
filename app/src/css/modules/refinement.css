@@ -529,7 +529,8 @@
     }
 }
 
-button[data-refine-type="encouraging"]:hover i {
+button[data-refine-type="encouraging"]:hover i,
+button[data-refine-type="encouraging"].is-generating i {
     animation: heart-beat-soft 1.4s ease-in-out infinite;
     display: inline-block;
     /* Required for transform */
@@ -549,7 +550,8 @@ button[data-refine-type="encouraging"]:hover i {
     }
 }
 
-button[data-refine-type="detailed"]:hover i {
+button[data-refine-type="detailed"]:hover i,
+button[data-refine-type="detailed"].is-generating i {
     animation: expand-pulse 1.2s ease-in-out infinite;
     color: var(--primary-color);
 }
@@ -569,7 +571,8 @@ button[data-refine-type="detailed"]:hover i {
     }
 }
 
-button[data-refine-type="concise"]:hover i {
+button[data-refine-type="concise"]:hover i,
+button[data-refine-type="concise"].is-generating i {
     animation: compress-pulse 1.2s ease-in-out infinite;
     color: var(--primary-color);
 }
@@ -585,7 +588,8 @@ button[data-refine-type="concise"]:hover i {
     }
 }
 
-button[data-refine-type="variations"]:hover i {
+button[data-refine-type="variations"]:hover i,
+button[data-refine-type="variations"].is-generating i {
     animation: rotate-soft 1.5s linear infinite;
     display: inline-block;
 }
@@ -671,26 +675,31 @@ button[data-refine-type="variations"]:hover i {
     }
 }
 
-/* Hover: baguette wobble */
-button[data-refine-type="polish"]:hover .polish-wand {
-    animation: magic-wobble 0.6s ease-in-out;
+/* Hover & is-generating: baguette wobble */
+button[data-refine-type="polish"]:hover .polish-wand,
+button[data-refine-type="polish"].is-generating .polish-wand {
+    animation: magic-wobble 0.6s ease-in-out infinite;
     color: var(--primary-color);
 }
 
-/* Hover: étoiles scintillent (décalées) */
-button[data-refine-type="polish"]:hover .polish-sparkle {
+/* Hover & is-generating: étoiles scintillent (décalées) */
+button[data-refine-type="polish"]:hover .polish-sparkle,
+button[data-refine-type="polish"].is-generating .polish-sparkle {
     animation: sparkle-twinkle 1s ease-in-out infinite;
     color: var(--primary-color);
 }
 
-button[data-refine-type="polish"]:hover .polish-sparkle.s1 {
+button[data-refine-type="polish"]:hover .polish-sparkle.s1,
+button[data-refine-type="polish"].is-generating .polish-sparkle.s1 {
     animation-delay: 0s;
 }
 
-button[data-refine-type="polish"]:hover .polish-sparkle.s2 {
+button[data-refine-type="polish"]:hover .polish-sparkle.s2,
+button[data-refine-type="polish"].is-generating .polish-sparkle.s2 {
     animation-delay: 0.33s;
 }
 
-button[data-refine-type="polish"]:hover .polish-sparkle.s3 {
+button[data-refine-type="polish"]:hover .polish-sparkle.s3,
+button[data-refine-type="polish"].is-generating .polish-sparkle.s3 {
     animation-delay: 0.66s;
 }

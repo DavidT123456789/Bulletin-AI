@@ -606,7 +606,10 @@ export const ClassUIManager = {
                         ${classes.map(cls => {
             const stats = this._getClassStats(cls.id);
             return `
-                            <div class="class-management-item" data-class-id="${cls.id}">
+                            <div class="class-management-item" data-class-id="${cls.id}" draggable="true">
+                                <div class="class-drag-handle" title="Glisser pour réorganiser">
+                                    <i class="fas fa-grip-vertical"></i>
+                                </div>
                                 <div class="class-management-info">
                                     <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
                                     <div class="class-management-meta">
@@ -676,6 +679,104 @@ export const ClassUIManager = {
             UI?.closeModal(modalEl);
             setTimeout(() => modalEl.remove(), 300);
         });
+
+        // ========== Drag & Drop Reorder (Rail-Style) ==========
+        let draggedItem = null;
+        const list = modalEl.querySelector('.class-management-list');
+
+        if (list) {
+            // Create invisible drag ghost (1x1 transparent pixel)
+            const ghostImg = document.createElement('div');
+            ghostImg.style.cssText = 'width:1px;height:1px;position:fixed;top:-100px;opacity:0;';
+            document.body.appendChild(ghostImg);
+
+            // Cleanup ghost on modal close
+            const cleanupGhost = () => ghostImg.remove();
+            modalEl.addEventListener('close', cleanupGhost, { once: true });
+
+            list.addEventListener('dragstart', (e) => {
+                const item = e.target.closest('.class-management-item');
+                if (!item) return;
+                draggedItem = item;
+
+                // Hide native ghost - item stays in place visually
+                e.dataTransfer.setDragImage(ghostImg, 0, 0);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.dataset.classId);
+
+                // Mark as dragging after a frame
+                requestAnimationFrame(() => {
+                    item.classList.add('dragging');
+                });
+            });
+
+            list.addEventListener('dragend', () => {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                }
+                draggedItem = null;
+
+                // Persist final order
+                const newOrder = [...list.querySelectorAll('.class-management-item')]
+                    .map(i => i.dataset.classId);
+                ClassManager.reorderClasses(newOrder);
+                this.renderClassList();
+            });
+
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const target = e.target.closest('.class-management-item');
+                if (!target || target === draggedItem) return;
+
+                const targetRect = target.getBoundingClientRect();
+                const mouseY = e.clientY;
+                const targetMiddle = targetRect.top + targetRect.height / 2;
+
+                // Check if we need to move
+                const shouldInsertBefore = mouseY < targetMiddle;
+                const isAlreadyBefore = target.previousElementSibling === draggedItem;
+                const isAlreadyAfter = target.nextElementSibling === draggedItem;
+
+                if ((shouldInsertBefore && isAlreadyBefore) || (!shouldInsertBefore && isAlreadyAfter)) {
+                    return; // Already in correct position
+                }
+
+                // FLIP Animation: capture positions before move
+                const items = [...list.querySelectorAll('.class-management-item:not(.dragging)')];
+                const firstRects = new Map();
+                items.forEach(item => {
+                    firstRects.set(item, item.getBoundingClientRect());
+                });
+
+                // Perform DOM move
+                if (shouldInsertBefore) {
+                    target.before(draggedItem);
+                } else {
+                    target.after(draggedItem);
+                }
+
+                // FLIP: animate from old position to new
+                items.forEach(item => {
+                    const firstRect = firstRects.get(item);
+                    const lastRect = item.getBoundingClientRect();
+                    const deltaY = firstRect.top - lastRect.top;
+
+                    if (Math.abs(deltaY) > 1) {
+                        item.style.transition = 'none';
+                        item.style.transform = `translateY(${deltaY}px)`;
+                        item.offsetHeight; // Force reflow
+                        item.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+                        item.style.transform = '';
+                        setTimeout(() => {
+                            item.style.transition = '';
+                            item.style.transform = '';
+                        }, 250);
+                    }
+                });
+            });
+        }
 
         // Add new class button in modal - inline form
         const addClassBtn = modalEl.querySelector('#addClassFromModalBtn');

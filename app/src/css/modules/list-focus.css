@@ -1070,12 +1070,12 @@
 .focus-panel {
     position: fixed;
     /* Start BELOW the main header so period selector remains accessible */
-    top: 64px;
+    top: 56px;
     right: 0;
     width: 100%;
     max-width: 680px;
-    /* Adjust height to account for header */
-    height: calc(100vh - 64px);
+    /* Adjust height to account for header (matches .header height: 56px) */
+    height: calc(100vh - 56px);
     background: var(--bg-color);
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0);
     z-index: var(--z-focus-panel);
@@ -1089,8 +1089,7 @@
     flex-direction: column;
     overflow: hidden;
     will-change: transform;
-    /* Subtle top border to separate from header */
-    border-top: 1px solid var(--border-color);
+    /* No top border - seamless junction with header */
 }
 
 /* Open state - slide in from right */
@@ -1101,11 +1100,11 @@
 
 .focus-panel-backdrop {
     position: fixed;
-    /* Start below header so it remains interactive */
-    top: 64px;
+    /* Start below header so it remains interactive (matches .header height: 56px) */
+    top: 56px;
     left: 0;
     width: 100%;
-    height: calc(100% - 64px);
+    height: calc(100% - 56px);
     background: rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(8px);
     /* Stronger blur for focus */
@@ -2870,6 +2869,78 @@
 .btn-ai-outline:disabled i,
 .btn-ai-outline.disabled i {
     color: var(--text-tertiary);
+}
+
+/* ============================================
+   MAGIC LOADING STATE - Premium AI Generation
+   Keeps text visible with animated effects
+   ============================================ */
+.btn-ai-outline.is-generating {
+    /* Foundation */
+    pointer-events: none;
+    cursor: wait;
+
+    /* Elevated visual treatment - static, no pulse to let icon animation shine */
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.btn-ai-outline.is-generating i {
+    color: var(--primary-color);
+    /* Existing hover animations from refinement.css will play */
+}
+
+/* Shine sweep - synced with header progress (2s) */
+.btn-ai-outline.is-generating::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.6) 50%,
+            transparent 100%);
+    animation: shine-sweep 2s ease-in-out infinite;
+}
+
+/* Animated gradient border ring */
+.btn-ai-outline.is-generating::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            var(--primary-color) 0%,
+            rgba(var(--primary-color-rgb), 0.3) 25%,
+            var(--glow-highlight, rgba(255, 255, 255, 0.8)) 50%,
+            rgba(var(--primary-color-rgb), 0.3) 75%,
+            var(--primary-color) 100%);
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotate-gradient 2s linear infinite;
+    pointer-events: none;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .btn-ai-outline.is-generating {
+    background: rgba(var(--primary-color-rgb), 0.18);
+    box-shadow:
+        0 0 0 2px rgba(var(--primary-color-rgb), 0.4),
+        0 4px 20px rgba(var(--primary-color-rgb), 0.25);
+}
+
+[data-theme="dark"] .btn-ai-outline.is-generating::before {
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
 }
 
 /* ============================

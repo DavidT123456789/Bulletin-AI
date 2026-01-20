@@ -334,6 +334,11 @@ export const UI = {
 
             StorageManager.saveAppState();
 
+            // [FIX] Dispatch custom event so Lab/Prompt Inspector can sync
+            document.dispatchEvent(new CustomEvent('periodChanged', {
+                detail: { period: appState.currentPeriod }
+            }));
+
             // Cleanup animation after it finishes
             setTimeout(() => {
                 containersToAnimate.forEach(el => {

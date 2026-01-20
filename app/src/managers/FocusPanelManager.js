@@ -773,10 +773,6 @@ export const FocusPanelManager = {
             UI.showInlineSpinner(generateBtn);
         }
 
-        // Save current state to history before generating (allows Undo)
-        const currentText = document.getElementById('focusAppreciationText')?.textContent;
-        if (currentText) FocusPanelHistory.push(currentText);
-
         // Show pending badge and skeleton loading in appreciation area
         FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
         this._showAppreciationSkeleton();
@@ -879,8 +875,11 @@ export const FocusPanelManager = {
                         await UI.typewriterReveal(appreciationEl, newResult.appreciation, { speed: 'fast' });
                     }
 
-                    // Initialize history with generated appreciation
-                    FocusPanelHistory.push(newResult.appreciation);
+                    // Réinitialiser l'historique - la régénération est un nouveau départ
+                    // L'"Original" sera la nouvelle génération IA
+                    result.historyState = null;
+                    FocusPanelHistory.load(generatingForStudentId); // Re-init with fresh state
+                    FocusPanelHistory.push(newResult.appreciation, 'original');
 
                     // Show done badge
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
@@ -1379,9 +1378,8 @@ export const FocusPanelManager = {
         // Find the refine button and show loading
         const btn = document.querySelector(`[data-refine-type="${refineType}"]`);
         if (btn) {
-            btn.disabled = true;
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            // Add magic loading state - keeps text visible with animated effects
+            btn.classList.add('is-generating');
 
             // Show pending badge during refinement
             FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
@@ -1457,8 +1455,8 @@ export const FocusPanelManager = {
             } finally {
                 // Clean up _activeGenerations
                 this._activeGenerations.delete(refineStudentId);
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
+                // Remove magic loading state
+                btn.classList.remove('is-generating');
             }
         }
     },

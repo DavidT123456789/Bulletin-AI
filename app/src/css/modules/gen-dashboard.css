@@ -304,21 +304,27 @@
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
-/* Remove shimmer overlay */
-/* Enable shimmer overlay (Landing Page Effect) */
-/* Global shimmer removed to focus on the fill effect */
+/* Animated gradient border during generation */
 .header-gen-dashboard.generating::before {
-    display: none !important;
-}
-
-@keyframes shimmer-sweep {
-    0% {
-        background-position: -100% center;
-    }
-
-    100% {
-        background-position: 200% center;
-    }
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            var(--primary-color) 0%,
+            rgba(var(--primary-color-rgb), 0.3) 25%,
+            var(--glow-highlight, rgba(255, 255, 255, 0.8)) 50%,
+            rgba(var(--primary-color-rgb), 0.3) 75%,
+            var(--primary-color) 100%);
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotate-gradient 2s linear infinite;
+    pointer-events: none;
+    z-index: 2;
 }
 
 /* Model badge with background during generation */
