@@ -1035,7 +1035,7 @@ export const FocusPanelManager = {
                 }, 1500);
             }
             
-            UI.showNotification('Appréciation copiée !', 'success');
+
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
         }

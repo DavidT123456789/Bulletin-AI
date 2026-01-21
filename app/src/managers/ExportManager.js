@@ -73,7 +73,7 @@ export const ExportManager = {
                     buttonEl.innerHTML = originalIcon;
                 }, 1500);
             }
-            UI.showNotification('Copiée !', 'success');
+
         }).catch(err => {
             UI.showNotification('Échec copie.', 'error');
             console.error('Erreur :', err);
@@ -90,7 +90,7 @@ export const ExportManager = {
 
         if (text && !el.classList.contains('placeholder')) {
             navigator.clipboard.writeText(text).then(() => {
-                UI.showNotification(`Texte ${type === 'original' ? 'original' : 'suggéré'} copié !`, 'success');
+
                 const btn = DOM.refinementModal.querySelector(`[data-action="copy-${type}"]`);
                 if (btn) {
                     btn.innerHTML = '<i class="fas fa-check"></i>';
