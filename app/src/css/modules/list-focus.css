@@ -4955,14 +4955,15 @@
     }
 
     .focus-context-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        /* Restore row layout on mobile for header to save space */
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
     }
 
     .grades-wrapper {
-        width: 100%;
-        justify-content: flex-start;
+        width: auto;
+        justify-content: flex-end;
     }
 
     .focus-context-textarea {
