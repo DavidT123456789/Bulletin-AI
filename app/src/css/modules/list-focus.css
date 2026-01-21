@@ -4951,7 +4951,7 @@
 
     /* Context group */
     .focus-context-group {
-        padding: 12px;
+        padding: 0;
     }
 
     .focus-context-header {
@@ -4972,7 +4972,7 @@
 
     /* Appreciation area */
     .focus-appreciation {
-        padding: 12px;
+        padding: 0;
     }
 
     .focus-appreciation-text {
@@ -4983,8 +4983,8 @@
 
     /* Refinement buttons: Horizontal scroll */
     .focus-refinement-options {
-        margin: 8px -12px 0;
-        padding: 0 12px 8px;
+        margin: 8px 0 0;
+        padding: 0 16px 8px;
         gap: 6px;
     }
 
