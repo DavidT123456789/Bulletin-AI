@@ -4,7 +4,7 @@
  */
 
 export const DEFAULT_IA_CONFIG = {
-    length: 45,
+    length: 40,
     tone: 3,
     voice: 'default',
     styleInstructions: "",
