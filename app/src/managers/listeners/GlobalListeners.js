@@ -159,6 +159,14 @@ export const GlobalListeners = {
     _fallbackNotificationDebounceMs: 3000,
     _modelHistory: [], // Track model usage history
 
+    /**
+     * Counter for active AI generations.
+     * This unified approach ensures the header progress badge is hidden when ALL
+     * concurrent generations complete, regardless of their context (single, mass, lab, refinement).
+     * No need to pass context to each call site - it "just works".
+     */
+    _activeGenerationsCount: 0,
+
     _setupAiFallbackListener() {
         // Guard: avoid adding listener multiple times
         if (this._aiFallbackListenerAttached) return;
@@ -281,28 +289,54 @@ export const GlobalListeners = {
         });
 
         // Listener pour démarrer/arrêter l'animation de génération
+        // UNIFIED APPROACH: Uses a counter to track ALL active generations.
+        // This ensures the badge is hidden when ALL generations complete,
+        // regardless of their source (single, mass, lab preview, refinement).
         window.addEventListener('ai-generation-start', async (e) => {
+            this._activeGenerationsCount++;
+
             if (DOM.headerGenDashboard) {
                 DOM.headerGenDashboard.classList.add('generating');
                 DOM.headerGenDashboard.classList.remove('fallback-active');
             }
 
-            // Gestion "Single Source of Truth": Si context = single-student OU refinement, on initialise la pilule
-            if (e.detail && (e.detail.context === 'single-student' || e.detail.context === 'refinement')) {
+            // For isolated generations (single, refinement, lab preview), show the mini progress bar
+            // Mass operations handle their own progress display (1/8, 2/8...)
+            // Check if a mass operation is in progress - if so, don't interfere
+            if (this._activeGenerationsCount === 1) {
+                try {
+                    const { MassImportManager } = await import('../MassImportManager.js');
+                    if (MassImportManager.massImportAbortController) {
+                        // Mass operation in progress - let it handle its own progress
+                        return;
+                    }
+                } catch (e) {
+                    // Module not loaded yet, safe to proceed
+                }
+
                 const { UI } = await import('../UIManager.js');
-                UI.showHeaderProgress(0, 1, e.detail.studentName || '');
+                UI.showHeaderProgress(0, 1, e.detail?.studentName || '');
             }
         });
 
-        // NOTE: On n'enlève PAS la classe 'generating' ici car cet événement est émis
-        // pour CHAQUE génération individuelle, pas pour la génération en masse complète.
-        // Le hideHeaderProgress() du UIManager s'en charge à la fin de la génération complète.
-        window.addEventListener('ai-generation-end', (e) => {
-            // Ne rien faire ici - évite les oscillations contraction/dilatation
-            // pendant les générations en masse
-            // MAIS: Si c'est un single-student OU refinement, on doit fermer car personne ne le fera sinon
-            const ctx = e.detail?.context;
-            if (ctx === 'single-student' || ctx === 'refinement') {
+        // Unified end handler: hide progress only when ALL generations are complete
+        // AND no mass import/regeneration is in progress (those manage their own progress)
+        window.addEventListener('ai-generation-end', async (e) => {
+            this._activeGenerationsCount = Math.max(0, this._activeGenerationsCount - 1);
+
+            // Only hide when all concurrent generations are done
+            if (this._activeGenerationsCount === 0) {
+                // Check if a mass operation is in progress - if so, let it handle its own progress
+                try {
+                    const { MassImportManager } = await import('../MassImportManager.js');
+                    if (MassImportManager.massImportAbortController) {
+                        // Mass operation in progress - don't interfere with its progress display
+                        return;
+                    }
+                } catch (e) {
+                    // Module not loaded yet, safe to proceed
+                }
+
                 import('../UIManager.js').then(({ UI }) => {
                     UI.hideHeaderProgress();
                 });
