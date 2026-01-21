@@ -1073,10 +1073,13 @@
     top: 56px;
     right: 0;
     width: 100%;
-    max-width: 650px;
+    max-width: 640px;
     /* Adjust height to account for header (matches .header height: 56px) */
     height: calc(100vh - 56px);
-    background: var(--bg-color);
+    /* Glassmorphism - Semi-transparent background with blur */
+    background: rgba(245, 245, 244, 0.75);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0);
     z-index: var(--z-focus-panel);
     /* GPU-accelerated transform for smooth animations */
@@ -1090,6 +1093,10 @@
     overflow: hidden;
     will-change: transform;
     /* No top border - seamless junction with header */
+}
+
+[data-theme="dark"] .focus-panel {
+    background: rgba(3, 7, 18, 0.75);
 }
 
 /* Open state - slide in from right */
@@ -1128,11 +1135,8 @@
     align-items: center;
     gap: 12px;
     padding: 10px 18px;
-    /* Compact padding */
-    background: rgba(245, 245, 244, 0.85);
-    /* Translucent fallback */
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Opaque background - contrasts with glassmorphism panel */
+    background: var(--bg-color);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     flex-shrink: 0;
     z-index: 10;
@@ -1141,7 +1145,6 @@
 }
 
 [data-theme="dark"] .focus-header {
-    background: rgba(3, 7, 18, 0.85);
     border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -1439,7 +1442,8 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 12px 18px 32px;
+    /* Reduced margins: tighter horizontal, balanced vertical */
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -2936,27 +2940,23 @@
 }
 
 /* ============================
-   6. FOOTER (Glass with Primary Action)
+   6. FOOTER (Opaque - contrasts with glassmorphism panel)
    ============================ */
 .focus-footer {
     padding: 14px 18px;
-    background: rgba(245, 245, 244, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Opaque background - contrasts with glassmorphism panel */
+    background: var(--bg-color);
     border-top: 1px solid rgba(0, 0, 0, 0.05);
-    /* Very faint border */
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
     z-index: 10;
     position: sticky;
-    /* Keep it reachable */
     bottom: 0;
 }
 
 [data-theme="dark"] .focus-footer {
-    background: rgba(3, 7, 18, 0.8);
     border-top-color: rgba(255, 255, 255, 0.05);
 }
 
