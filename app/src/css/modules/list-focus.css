@@ -1073,7 +1073,7 @@
     top: 56px;
     right: 0;
     width: 100%;
-    max-width: 680px;
+    max-width: 665px;
     /* Adjust height to account for header (matches .header height: 56px) */
     height: calc(100vh - 56px);
     background: var(--bg-color);
