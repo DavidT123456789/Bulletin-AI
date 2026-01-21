@@ -299,6 +299,7 @@ export function initDOM() {
     DOM.actionsDropdownContent = document.querySelector('.actions-dropdown-content');
     DOM.iaStyleHeader = document.getElementById('iaStyleHeader');
     DOM.iaStyleInstructions = document.getElementById('iaStyleInstructions');
+    DOM.iaDiscipline = document.getElementById('iaDiscipline');
     DOM.iaLengthSlider = document.getElementById('iaLengthSlider');
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
     DOM.iaToneSlider = document.getElementById('iaToneSlider');

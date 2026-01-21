@@ -8,6 +8,7 @@ export const DEFAULT_IA_CONFIG = {
     tone: 3,
     voice: 'default',
     styleInstructions: "",
+    discipline: "",  // Optionnel: Mathématiques, Français, etc.
 };
 
 /**

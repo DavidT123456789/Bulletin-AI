@@ -45,20 +45,26 @@ export const PromptService = {
 
         const promptParts = [];
 
-        // Introduction du prompt (simplifié sans nom de matière)
-        promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        // Introduction du prompt (avec discipline si renseignée)
+        const disciplineContext = iaConfig.discipline
+            ? ` en ${iaConfig.discipline}`
+            : '';
+        promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
 
 
         const styleParts = [];
 
         const toneMap = {
             1: 'très encourageant et positif',
-            2: 'encourageant et bienveillant',
-            3: 'équilibré, factuel et neutre',
-            4: 'strict mais juste',
-            5: 'très strict et formel'
+            2: 'bienveillant et constructif',
+            3: null, // Mode libre: l'IA adapte selon le contexte
+            4: 'exigeant mais constructif',
+            5: 'strict et formel'
         };
-        styleParts.push(`Adopte un ton ${toneMap[iaConfig.tone] || toneMap[3]}.`);
+        const toneInstruction = toneMap[iaConfig.tone];
+        if (toneInstruction) {
+            styleParts.push(`Adopte un ton ${toneInstruction}.`);
+        }
 
         const voiceInstruction = {
             'je': 'Utilise impérativement la première personne du singulier ("Je", "J\'observe", "mon avis").',
@@ -76,7 +82,7 @@ export const PromptService = {
         styleParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
 
         if (iaConfig.styleInstructions) {
-            styleParts.push(`Respecte ces habitudes de rédaction : "${iaConfig.styleInstructions}"`);
+            styleParts.push(`Note : ${iaConfig.styleInstructions}`);
         }
 
         promptParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.join('\n'));
@@ -99,7 +105,7 @@ export const PromptService = {
             const isCurrentPeriod = p === currentPeriod;
             // [FIX] Use brackets for instruction, quotes only for actual appreciation text
             const appText = isCurrentPeriod ? '[à générer]' : `"${d.appreciation || 'N/A'}"`;
-            return `Période ${p} -> Moy : ${g}${evalCount}, App : ${appText}`;
+            return `${p} : Moy ${g}${evalCount}, App ${appText}`;
         }).join('\n');
 
         // Use StatsService for evolution analysis
@@ -122,7 +128,7 @@ export const PromptService = {
         // NOUVEAU: Utiliser le contexte de la période courante avec fallback sur negativeInstructions (legacy)
         const periodContext = periods?.[currentPeriod]?.context;
         const contextToUse = periodContext ?? negativeInstructions;
-        const specificInfoLine = contextToUse ? `\n"${contextToUse}"` : '';
+        const specificInfoLine = contextToUse ? `\nContexte : "${contextToUse}"` : '';
 
         // === JOURNAL DE BORD: Synthesis for prompt ===
         // Injects tag counts and recent notes to enrich AI context
@@ -130,7 +136,7 @@ export const PromptService = {
         const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
         const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
 
-        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (élève ${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
+        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
 
         // Instruction finale simple (déplacée dans les instructions de style)
         // promptParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
@@ -146,7 +152,7 @@ export const PromptService = {
             const d = periods[p] || {};
             const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
-            return `Période ${p} -> Moy : ${g}${evalCount}, App : "${d.appreciation || 'N/A'}"`;
+            return `${p} : Moy ${g}${evalCount}, App "${d.appreciation || 'N/A'}"`;
         }).join('\n');
 
         // Analysis prompts - use the current period's appreciation as reference

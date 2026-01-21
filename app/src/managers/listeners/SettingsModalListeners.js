@@ -198,14 +198,14 @@ export const SettingsModalListeners = {
             DOM.iaToneSlider.addEventListener('input', (e) => {
                 const toneVal = parseInt(e.target.value);
                 const toneLabels = {
-                    1: 'Très encourageant et positif',
-                    2: 'Encourageant et bienveillant',
-                    3: 'Équilibré, factuel et neutre',
-                    4: 'Strict mais juste',
-                    5: 'Très strict et formel'
+                    1: 'Très encourageant',
+                    2: 'Bienveillant',
+                    3: 'Libre (par défaut)',
+                    4: 'Exigeant',
+                    5: 'Strict'
                 };
                 const toneDisplay = document.getElementById('iaToneSliderValue');
-                if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Équilibré, factuel et neutre';
+                if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Libre (par défaut)';
 
                 // [FIX] Update appState in real-time so generation uses current value immediately
                 if (appState.subjects['MonStyle']?.iaConfig) {
@@ -246,6 +246,28 @@ export const SettingsModalListeners = {
             DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
                 StorageManager.saveAppState();
             }, 1500)); // Save 1.5s after last keystroke
+        }
+
+        // Discipline field listener (optional field for subject-specific vocabulary)
+        if (DOM.iaDiscipline) {
+            DOM.iaDiscipline.addEventListener('input', () => {
+                // Ensure MonStyle structure exists
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
+                }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
+                }
+                appState.subjects['MonStyle'].iaConfig.discipline = DOM.iaDiscipline.value;
+
+                SettingsUIManager.showPreviewRefreshHint();
+                this._updateStudentContextAndPrompt();
+            });
+
+            // Auto-save with debounce
+            DOM.iaDiscipline.addEventListener('input', Utils.debounce(() => {
+                StorageManager.saveAppState();
+            }, 1500));
         }
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
@@ -496,7 +518,8 @@ export const SettingsModalListeners = {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
             tone: parseInt(DOM.iaToneSlider?.value || 3),
             styleInstructions: DOM.iaStyleInstructions?.value || '',
-            voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default'
+            voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
+            discipline: DOM.iaDiscipline?.value || ''
         };
 
         const previewPromptEl = document.getElementById('settingsPreviewPrompt');
@@ -599,7 +622,8 @@ export const SettingsModalListeners = {
                 length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
                 tone: parseInt(DOM.iaToneSlider?.value || 3),
                 styleInstructions: DOM.iaStyleInstructions?.value || '',
-                voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default'
+                voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
+                discipline: DOM.iaDiscipline?.value || ''
             };
 
             // [FIX] Sync studentData.currentPeriod with appState.currentPeriod

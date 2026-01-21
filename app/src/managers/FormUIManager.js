@@ -70,13 +70,24 @@ export const FormUI = {
         }
         DOM.iaStyleInstructions.value = styleInstructionsValue;
 
+        // Load discipline field (optional, for subject-specific vocabulary)
+        let disciplineValue = '';
+        if (!isGenericMode) {
+            disciplineValue = appState.subjects['MonStyle']?.iaConfig?.discipline
+                || iaConfig.discipline
+                || '';
+        }
+        if (DOM.iaDiscipline) {
+            DOM.iaDiscipline.value = disciplineValue;
+        }
+
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
             radio.checked = radio.value === (iaConfig.voice || 'default');
         });
 
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            let headerText = `<i class="fas fa-brain" aria-hidden="true"></i> Style de l'IA`;
+            let headerText = `<i class="fas fa-sliders-h" aria-hidden="true"></i> Style de Rédaction`;
             if (isGenericMode) {
                 headerText += ` <span class="generic-lock-icon tooltip" data-tooltip="Les réglages sont verrouillés sur les valeurs par défaut lorsque la personnalisation est désactivée."><i class="fas fa-lock"></i></span>`;
             }
@@ -84,7 +95,7 @@ export const FormUI = {
         }
 
         const controlsToDisable = [
-            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaStyleInstructions,
+            DOM.iaLengthSlider, DOM.iaToneSlider, DOM.iaStyleInstructions, DOM.iaDiscipline,
             ...document.querySelectorAll('#iaVoiceSelector input'),
             ...document.querySelectorAll('#iaVoiceSelector label')
         ];
@@ -107,14 +118,14 @@ export const FormUI = {
         if (DOM.iaToneSlider) {
             const toneVal = parseInt(DOM.iaToneSlider.value);
             const toneLabels = {
-                1: 'Très encourageant et positif',
-                2: 'Encourageant et bienveillant',
-                3: 'Équilibré, factuel et neutre',
-                4: 'Strict mais juste',
-                5: 'Très strict et formel'
+                1: 'Très encourageant',
+                2: 'Bienveillant',
+                3: 'Libre (par défaut)',
+                4: 'Exigeant',
+                5: 'Strict'
             };
             const toneDisplay = document.getElementById('iaToneSliderValue');
-            if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Équilibré, factuel et neutre';
+            if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Libre (par défaut)';
         }
 
 

@@ -1331,8 +1331,9 @@
     pointer-events: none;
 }
 
-/* === Placeholder styling for settings textareas === */
-.style-instructions-textarea::placeholder {
+/* === Placeholder styling for settings inputs/textareas === */
+.style-instructions-textarea::placeholder,
+.settings-card-content input[type="text"]::placeholder {
     color: var(--text-tertiary);
     font-style: italic;
     opacity: 1;
