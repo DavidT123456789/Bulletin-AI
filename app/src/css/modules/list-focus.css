@@ -1542,21 +1542,20 @@
 }
 
 
-/* Fix header corners matching card radius - removed to avoid double-rounded effect */
-/* The card itself has border-radius, no need for inner elements to also have rounded corners */
+/* Fix header corners matching card radius - Explicit radius to prevent clipping issues */
 .grades-timeline> :first-child,
 .focus-context-group> :first-child,
 .focus-appreciation> :first-child {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
 }
 
-/* Fix footer corners - remove to avoid double-rounded effect */
+/* Fix footer corners */
 .grades-timeline> :last-child,
 .focus-context-group> :last-child,
 .focus-appreciation> :last-child {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
 }
 
 [data-theme="dark"] .grades-timeline,
