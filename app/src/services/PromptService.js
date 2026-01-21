@@ -229,10 +229,6 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
                 // Same length, different wording
                 instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
-            case 'context':
-                // Slightly longer to integrate context (+10%)
-                instruction = `Intègre ce contexte : "${contextStr}". Vise environ ${Math.round(wordCount * 1.1)} mots.\n\n${original}\n\n${base}`;
-                break;
             case 'detailed':
                 // +20% - Symmetric with concise (-20%)
                 instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n${original}\n\n${base}`;
@@ -246,8 +242,8 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
                 instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'formal':
-                // Same length, more formal
-                instruction = `Reformule cette appréciation avec un ton plus formel et soutenu, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
+                // Formal / Institutional tone
+                instruction = `Reformule cette appréciation avec un ton soutenu, formel et institutionnel. Évite le langage familier. Environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
             case 'default':
             default:
