@@ -128,9 +128,43 @@
     flex-shrink: 0;
 }
 
-.modal-title .modal-title-icon {
-    font-size: 1.1em;
+/* Harmonized Modal Header (Subtitle Style) */
+.modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-title-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
+    border-radius: var(--radius-md);
+    font-size: 1.1em;
+}
+
+.modal-title-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.modal-title-main {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.modal-subtitle {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .close-button {

@@ -401,6 +401,22 @@ export const ClassUIManager = {
                 countBadge.textContent = classStudentCount;
             }
         }
+
+        // UPDATE "Mes Classes" button with class count & total students tooltip
+        const totalStudents = appState.generatedResults?.length || 0;
+        const classesCount = ClassManager.getAllClasses().length;
+
+        const manageBtn = document.getElementById('manageClassesBtn');
+        const manageBtnSpan = manageBtn ? manageBtn.querySelector('span') : null;
+
+        if (manageBtn && manageBtnSpan) {
+            // Button: "Mes Classes (3)" -> Shows number of classes
+            manageBtnSpan.textContent = `Mes Classes (${classesCount})`;
+
+            // Tooltip: "Total : 158 élèves"
+            manageBtn.classList.add('tooltip');
+            manageBtn.setAttribute('data-tooltip', `Total : ${totalStudents} élèves`);
+        }
     },
 
     /**
@@ -654,10 +670,13 @@ export const ClassUIManager = {
         modalEl.innerHTML = `
             <div class="modal-content" style="max-width: 450px;">
                 <div class="modal-header">
-                    <h2 class="modal-title">
+                    <div class="modal-title-group">
                         <span class="modal-title-icon"><i class="fas fa-cog"></i></span>
-                        <span class="modal-title-text">Gestion des classes</span>
-                    </h2>
+                        <div class="modal-title-text-col">
+                            <h2 class="modal-title-main">Gestion des classes</h2>
+                            <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
+                        </div>
+                    </div>
                     <button class="close-button close-manage-modal"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
