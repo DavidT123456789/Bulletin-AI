@@ -4835,11 +4835,7 @@
         flex-shrink: 0;
     }
 
-    /* List table: hide evolution column */
-    .student-list-table .evolution-header,
-    .student-list-table .evolution-cell {
-        display: none;
-    }
+
 }
 
 /* Mobile Breakpoint (max-width: 600px) */
@@ -5059,13 +5055,7 @@
         font-size: 13px;
     }
 
-    /* Hide less important columns on mobile */
-    .student-list-table .evolution-header,
-    .student-list-table .evolution-cell,
-    .student-list-table th[data-sort-field="evolution"],
-    .student-list-table td.evolution-cell {
-        display: none;
-    }
+
 
     /* Name cell: More space */
     .student-name-cell {
@@ -5185,11 +5175,7 @@
 
 @media (max-width: 900px) {
 
-    /* Hide less critical columns to preserve appreciation legibility */
-    .evolution-header,
-    .evolution-cell {
-        display: none;
-    }
+
 
     /* Further compress Status */
     .status-cell {
