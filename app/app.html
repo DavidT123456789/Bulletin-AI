@@ -579,10 +579,6 @@
                                 </span>
                                 Peaufiner
                             </button>
-                            <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="formal"
-                                data-tooltip="Ton plus soutenu et institutionnel">
-                                <i class="fas fa-graduation-cap"></i> Formel
-                            </button>
                         </div>
                     </div>
                 </div> <!-- End focus-content -->
@@ -1896,8 +1892,8 @@
                         <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-style')">
                             <i class="fas fa-sliders-h icon-customize"></i> Personnaliser
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-refinement')">
-                            <i class="fas fa-wand-magic-sparkles icon-refine"></i> Améliorations
+                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-actions')">
+                            <i class="fas fa-wand-magic-sparkles icon-actions"></i> Commandes IA
                         </button>
                         <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-privacy')">
                             <i class="fas fa-shield-halved icon-privacy"></i> Confidentialité
@@ -2068,75 +2064,80 @@
                                 la personnalisation</button>
                         </div>
 
-                        <!-- Tab Refinement: Améliorations -->
-                        <div id="help-refinement" class="help-tab-content">
-                            <p>Voici les actions rapides disponibles pour ajuster l'appréciation sans réécriture
-                                manuelle :</p>
+                        <!-- Tab: Actions IA (New) -->
+                        <div id="help-actions" class="help-tab-content">
+                            <div class="help-intro-text">
+                                <p>Instructions envoyées à l'IA pour chaque bouton.</p>
+                            </div>
 
-                            <div class="help-actions-grid" style="display: grid; gap: 15px; margin-top: 15px;">
-                                <!-- Peaufiner -->
-                                <div class="help-action-card"
-                                    style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                                        <div
-                                            style="background: var(--primary-light); color: var(--primary-color); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-wand-magic"></i>
-                                        </div>
-                                        <strong style="color: var(--text-primary);">Peaufiner</strong>
-                                    </div>
-                                    <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">Corrige le style, la grammaire
-                                        et le ton pour un rendu professionnel, sans changer le sens ni la longueur.</p>
-                                </div>
+                            <table class="help-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 140px;">Bouton</th>
+                                        <th style="width: 120px;">Action</th>
+                                        <th>Prompt Système</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="help-btn-badge">
+                                                <i class="fas fa-compress-alt"></i> Concise
+                                            </div>
+                                        </td>
+                                        <td>Réduire (~20%)</td>
+                                        <td class="prompt-cell">"Rends cette appréciation plus concise, environ
+                                            <strong>[Mots * 0.8]</strong> mots. Garde l'essentiel."
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="help-btn-badge">
+                                                <i class="fas fa-expand-alt"></i> Détaillée
+                                            </div>
+                                        </td>
+                                        <td>Développer (~20%)</td>
+                                        <td class="prompt-cell">"Développe les points, environ <strong>[Mots *
+                                                1.2]</strong> mots. N'invente pas de faits."</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="help-btn-badge">
+                                                <i class="fas fa-heart"></i> Encourageante
+                                            </div>
+                                        </td>
+                                        <td>Ton positif</td>
+                                        <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif.
+                                            Garde la même longueur."</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="help-btn-badge">
+                                                <i class="fas fa-sync-alt"></i> Variation
+                                            </div>
+                                        </td>
+                                        <td>Reformuler</td>
+                                        <td class="prompt-cell">"Reformule différemment (vocabulaire, structure) mais
+                                            garde le même sens et la même longueur."</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="help-btn-badge rainbow-border">
+                                                <i class="fas fa-wand-magic"></i> Peaufiner
+                                            </div>
+                                        </td>
+                                        <td>Correction Pro</td>
+                                        <td class="prompt-cell">"Peaufine : corrige fautes, améliore fluidité, adopte un
+                                            ton pro. Garde sens et longueur."</td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                                <!-- Variations -->
-                                <div class="help-action-card"
-                                    style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                                        <div
-                                            style="background: var(--bg-color-secondary); color: var(--text-secondary); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </div>
-                                        <strong style="color: var(--text-primary);">Variation</strong>
-                                    </div>
-                                    <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">Propose une formulation
-                                        différente du même contenu. Idéal pour éviter les répétitions.</p>
-                                </div>
-
-                                <!-- Concise / Détaillée -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                    <div class="help-action-card"
-                                        style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                        <strong style="display: block; margin-bottom: 4px;"><i
-                                                class="fas fa-compress-alt"></i> Concise</strong>
-                                        <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">Réduit le texte (-20%) en
-                                            gardant l'essentiel.</p>
-                                    </div>
-                                    <div class="help-action-card"
-                                        style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                        <strong style="display: block; margin-bottom: 4px;"><i
-                                                class="fas fa-expand-alt"></i> Détaillée</strong>
-                                        <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">Développe les idées
-                                            (+20%) sans inventer de faits.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Encourageante / Formel -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                    <div class="help-action-card"
-                                        style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                        <strong style="display: block; margin-bottom: 4px;"><i class="fas fa-heart"></i>
-                                            Encourageante</strong>
-                                        <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">Adopte un ton
-                                            bienveillant et positif.</p>
-                                    </div>
-                                    <div class="help-action-card"
-                                        style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                                        <strong style="display: block; margin-bottom: 4px;"><i
-                                                class="fas fa-graduation-cap"></i> Formel</strong>
-                                        <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">Ton soutenu et
-                                            institutionnel.</p>
-                                    </div>
-                                </div>
+                            <div class="help-tip-box" style="margin-top: 20px;">
+                                <i class="fas fa-terminal"></i>
+                                <span><strong>Note technique :</strong> Toutes ces commandes finissent par l'instruction
+                                    : <em>"Réponds uniquement avec le texte brut. Aucune introduction, aucun
+                                        commentaire."</em></span>
                             </div>
                         </div>
 

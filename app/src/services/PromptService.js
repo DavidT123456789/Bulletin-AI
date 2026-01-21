@@ -241,10 +241,6 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
                 // Same length, warmer tone
                 instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
                 break;
-            case 'formal':
-                // Formal / Institutional tone
-                instruction = `Reformule cette appréciation avec un ton soutenu, formel et institutionnel. Évite le langage familier. Environ ${wordCount} mots.\n\n${original}\n\n${base}`;
-                break;
             case 'default':
             default:
                 instruction = `Reformule cette appréciation.\n\n${original}\n\n${base}`;

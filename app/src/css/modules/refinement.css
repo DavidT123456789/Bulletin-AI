@@ -595,6 +595,11 @@ button[data-refine-type="variations"].is-generating i {
 }
 
 /* 5. Peaufiner (Magic) - Baguette + Étoiles séparées */
+button[data-refine-type="polish"] {
+    padding-left: 8px !important;
+    /* Reduced to bring icon closer to left edge */
+}
+
 .polish-icon-wrapper {
     position: relative;
     display: inline-flex;
