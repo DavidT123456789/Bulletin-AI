@@ -1529,8 +1529,8 @@
     border: 1px solid var(--border-color);
     margin: 0;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    /* FIXED: Remove overflow hidden that clips content */
-    overflow: visible;
+    /* Apply overflow hidden to clip inner headers at rounded corners */
+    overflow: hidden;
     height: auto;
     min-height: auto;
 }
@@ -1542,20 +1542,21 @@
 }
 
 
-/* Fix header corners matching card radius - use calc to be slightly smaller than parent radius */
+/* Fix header corners matching card radius - removed to avoid double-rounded effect */
+/* The card itself has border-radius, no need for inner elements to also have rounded corners */
 .grades-timeline> :first-child,
 .focus-context-group> :first-child,
 .focus-appreciation> :first-child {
-    border-top-left-radius: calc(var(--radius-lg) - 1px);
-    border-top-right-radius: calc(var(--radius-lg) - 1px);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
-/* Fix footer corners - slightly inside parent radius */
+/* Fix footer corners - remove to avoid double-rounded effect */
 .grades-timeline> :last-child,
 .focus-context-group> :last-child,
 .focus-appreciation> :last-child {
-    border-bottom-left-radius: calc(var(--radius-lg) - 1px);
-    border-bottom-right-radius: calc(var(--radius-lg) - 1px);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 [data-theme="dark"] .grades-timeline,
@@ -4888,11 +4889,37 @@
     .focus-status-badges {
         flex-wrap: wrap;
         gap: 4px;
+        max-width: 100%;
     }
 
     .focus-status-badges .status-badge {
         font-size: 10px;
         padding: 2px 6px;
+    }
+
+    /* CRITICAL: Ensure nav buttons never get pushed off-screen */
+    .focus-nav-buttons {
+        flex-shrink: 0;
+        margin-left: 8px;
+    }
+
+    /* Limit header content to allow space for nav buttons */
+    .focus-header-content {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .focus-header-read {
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+
+    .focus-student-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
     }
 
     /* Navigation: Compact pill */
