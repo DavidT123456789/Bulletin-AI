@@ -1009,6 +1009,8 @@ export const FocusPanelManager = {
             return;
         }
 
+        const copyBtn = document.getElementById('focusCopyBtn');
+
         try {
             // Strip HTML tags for clean copy
             const tempDiv = document.createElement('div');
@@ -1016,11 +1018,29 @@ export const FocusPanelManager = {
             const cleanText = tempDiv.textContent || tempDiv.innerText || '';
 
             await navigator.clipboard.writeText(cleanText);
+            
+            // Visual feedback on button
+            if (copyBtn) {
+                const icon = copyBtn.querySelector('i');
+                const originalClass = icon?.className;
+                
+                // Change to check icon and add 'copied' class
+                if (icon) icon.className = 'fas fa-check';
+                copyBtn.classList.add('copied');
+                
+                // Reset after delay
+                setTimeout(() => {
+                    if (icon && originalClass) icon.className = originalClass;
+                    copyBtn.classList.remove('copied');
+                }, 1500);
+            }
+            
             UI.showNotification('Appréciation copiée !', 'success');
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
         }
     },
+
 
     /**
      * Rend le contenu du Focus Panel - "Ultima" Redesign

@@ -1542,20 +1542,20 @@
 }
 
 
-/* Fix header corners matching card radius to prevent background bleed */
+/* Fix header corners matching card radius - use calc to be slightly smaller than parent radius */
 .grades-timeline> :first-child,
 .focus-context-group> :first-child,
 .focus-appreciation> :first-child {
-    border-top-left-radius: var(--radius-lg);
-    border-top-right-radius: var(--radius-lg);
+    border-top-left-radius: calc(var(--radius-lg) - 1px);
+    border-top-right-radius: calc(var(--radius-lg) - 1px);
 }
 
-/* Fix footer corners if needed */
+/* Fix footer corners - slightly inside parent radius */
 .grades-timeline> :last-child,
 .focus-context-group> :last-child,
 .focus-appreciation> :last-child {
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
+    border-bottom-left-radius: calc(var(--radius-lg) - 1px);
+    border-bottom-right-radius: calc(var(--radius-lg) - 1px);
 }
 
 [data-theme="dark"] .grades-timeline,
@@ -2614,6 +2614,7 @@
     text-transform: none;
 }
 
+
 .word-count:empty {
     display: none;
 }
@@ -2977,6 +2978,17 @@
     opacity: 0.4;
     cursor: default;
 }
+
+/* Copy success feedback animation */
+.focus-footer .btn-secondary.copied {
+    color: var(--success-color, #10b981);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.focus-footer .btn-secondary.copied i {
+    color: var(--success-color, #10b981);
+}
+
 
 #focusGenerateBtn {
     background: var(--gradient-primary);
@@ -4152,6 +4164,8 @@
     overflow: hidden;
     transform: translateY(-10px);
     transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    /* CRITICAL: Prevent invisible inputs from receiving clicks */
+    pointer-events: none;
 }
 
 .focus-header-edit.visible {
@@ -4159,6 +4173,7 @@
     /* Enough to show content */
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 /* Inputs Row in Header */
@@ -4825,30 +4840,29 @@
 /* Mobile Breakpoint (max-width: 600px) */
 @media (max-width: 600px) {
 
-    /* Focus Panel: Full screen takeover */
+    /* Focus Panel: Full screen takeover - positioned below general header */
     .focus-panel {
         max-width: 100%;
         width: 100%;
-        top: 0;
-        height: 100vh;
-        height: 100dvh;
+        /* Position below the general header (56px) */
+        top: 56px;
+        height: calc(100vh - 56px);
+        height: calc(100dvh - 56px);
         /* Dynamic viewport height for mobile browsers */
         border-radius: 0;
         border-top: none;
     }
 
-    /* Backdrop: full screen */
+    /* Backdrop: below header */
     .focus-panel-backdrop {
-        top: 0;
-        height: 100%;
+        top: 56px;
+        height: calc(100% - 56px);
     }
 
-    /* Header: Simplified for mobile */
+    /* Header: Simplified for mobile - no safe-area needed since panel is below general header */
     .focus-header {
         padding: 12px 16px;
         gap: 8px;
-        /* Safe area for notched devices */
-        padding-top: max(12px, env(safe-area-inset-top));
     }
 
     .focus-header-left {
@@ -4958,14 +4972,20 @@
         padding: 12px 16px;
         padding-bottom: max(12px, env(safe-area-inset-bottom));
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        /* No wrap - keep buttons in a row but make them flexible */
     }
 
     .focus-footer .btn {
-        flex: 1 1 auto;
-        min-width: 80px;
-        padding: 12px 14px;
-        font-size: 14px;
+        flex: 1 1 0;
+        min-width: 0;
+        /* Allow shrinking below content size */
+        padding: 12px 10px;
+        font-size: 13px;
+        /* Ensure text doesn't overflow */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Analysis page on mobile */
