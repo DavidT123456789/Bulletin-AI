@@ -1,5 +1,5 @@
 ﻿/**
- * @fileoverview List View Manager - Rend les Ã©lÃ¨ves en vue tableau
+ * @fileoverview List View Manager - Rend les élèves en vue tableau
  * Part of Liste + Focus UX Revolution - REFACTORED: Inline Appreciation Display
  * @module managers/ListViewManager
  */
@@ -832,7 +832,7 @@ export const ListViewManager = {
 
 
     /**
-     * GÃ©nÃ¨re les headers de notes avec colonnes d'Ã©volution
+     * Génère les headers de notes avec colonnes d'évolution
      * @param {Array} periods - PÃ©riodes Ã  afficher
      * @returns {string} HTML des headers
      * @private
@@ -889,7 +889,7 @@ export const ListViewManager = {
     },
 
     /**
-     * Rend les cellules de notes pour un Ã©lÃ¨ve avec colonnes d'Ã©volution sÃ©parÃ©es
+     * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
      * @param {Object} periods - DonnÃ©es par pÃ©riode
      * @param {Array} allPeriods - Liste de toutes les pÃ©riodes
      * @param {number} currentIndex - Index de la pÃ©riode courante
@@ -1193,6 +1193,13 @@ export const ListViewManager = {
             // Fermer les menus d'actions individuelles
             listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
                 menu.classList.remove('open');
+                // CLEANUP: Reset styles in case it was opened via context menu with fixed positioning
+                menu.style.position = '';
+                menu.style.top = '';
+                menu.style.left = '';
+                menu.style.right = '';
+                menu.style.width = '';
+                menu.style.zIndex = '';
             });
             // Fermer le menu global du header
             listContainer.querySelectorAll('.global-actions-dropdown-menu.open').forEach(menu => {
@@ -1321,6 +1328,44 @@ export const ListViewManager = {
             if (row && !target.closest('.action-dropdown') && !target.closest('.sortable-header') && !target.closest('a') && !target.closest('input')) {
                 const studentId = row.dataset.studentId;
                 if (studentId) FocusPanelManager.open(studentId);
+            }
+        });
+
+        // Right click (context menu) on student row to open actions menu
+        listContainer.addEventListener('contextmenu', (e) => {
+            const row = e.target.closest('.student-row');
+            // Allow default context menu on inputs/links/text-selection or if no row found
+            if (!row || e.target.closest('a') || e.target.closest('input')) return;
+
+            // Allow text selection context menu if text is selected
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const menuBtn = row.querySelector('[data-action="toggle-menu"]');
+            if (menuBtn) {
+                const dropdown = menuBtn.closest('.action-dropdown');
+                const menu = dropdown?.querySelector('.action-dropdown-menu');
+
+                closeAllMenus();
+
+                // Position at mouse cursor [USER REQUEST]
+                // Use absolute positioning relative to parent so it follows scroll
+                const rect = dropdown.getBoundingClientRect();
+                const relX = e.clientX - rect.left;
+                const relY = e.clientY - rect.top;
+
+                menu.style.position = 'absolute';
+                menu.style.top = `${relY}px`;
+                menu.style.left = `${relX}px`;
+                // CRITICAL FIX: Override 'right: 0' from CSS to prevent stretching
+                menu.style.right = 'auto';
+                menu.style.width = 'max-content';
+                menu.style.zIndex = '9999';
+
+                menu?.classList.add('open');
             }
         });
 
@@ -1531,14 +1576,14 @@ export const ListViewManager = {
     },
 
     /**
-     * Supprime un Ã©lÃ¨ve avec confirmation
-     * @param {string} studentId - ID de l'Ã©lÃ¨ve
+     * Supprime un élève avec confirmation
+     * @param {string} studentId - ID de l'élève
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
     /**
-     * Supprime un Ã©lÃ¨ve avec confirmation
-     * @param {string} studentId - ID de l'Ã©lÃ¨ve
+     * Supprime un élève avec confirmation
+     * @param {string} studentId - ID de l'élève
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
@@ -1583,12 +1628,12 @@ export const ListViewManager = {
 
             // Update UI elements
             const { UI } = await import('./UIManager.js');
-            ClassUIManager.updateStudentCount();       // Compteur dans l'entÃªte
-            UI?.populateLoadStudentSelect();           // Menu dÃ©roulant des Ã©lÃ¨ves
+            ClassUIManager.updateStudentCount();       // Compteur dans l'entête
+            UI?.populateLoadStudentSelect();           // Menu déroulant des élèves
             UI?.updateStats();                         // Stats globales
 
             // Notify user
-            UI?.showNotification(`${studentName} supprimÃ©`, 'success');
+            UI?.showNotification(`${studentName} supprimé`, 'success');
         }, 300);
     },
 
