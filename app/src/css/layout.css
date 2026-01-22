@@ -533,7 +533,12 @@
 .cloud-sync-indicator.minimal-cloud i.fa-cloud,
 .cloud-sync-indicator.minimal-cloud i.fa-hard-drive {
     font-size: 16px;
-    /* Increased from 14px */
+    /* User request: Cloud always white with dark grey outline */
+    color: #ffffff;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+    -webkit-text-stroke: 1px #374151;
+    /* Gray-700 */
+    transition: all var(--transition-fast);
 }
 
 /* Status dot instead of complex badge */
@@ -558,24 +563,23 @@
 }
 
 /* Status colors map to the dot */
-/* État connecté - Nuage couleur thème (clair) ou blanc (sombre), point vert */
+/* État connecté - Nuage BLANC (fixe), point VERT */
 .cloud-sync-indicator.connected {
-    color: var(--primary-color);
+    color: inherit;
+    /* Icon handles its own color */
 }
 
 [data-theme="dark"] .cloud-sync-indicator.connected {
-    color: white;
+    color: inherit;
 }
 
 .cloud-sync-indicator.connected:hover {
-    color: var(--primary-color);
     background-color: var(--surface-color);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
-    /* Consistent relief */
 }
 
 [data-theme="dark"] .cloud-sync-indicator.connected:hover {
-    color: white;
+    background-color: var(--surface-color);
 }
 
 .cloud-sync-indicator.connected .cloud-status-badge {
@@ -589,9 +593,9 @@
     right: 4px;
 }
 
-/* État expiré - Nuage neutre, point orange */
+/* État expiré - Nuage BLANC (fixe), point ORANGE */
 .cloud-sync-indicator.expired {
-    color: var(--text-secondary);
+    color: inherit;
     cursor: pointer;
     background-color: transparent;
 }

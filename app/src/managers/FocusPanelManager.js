@@ -924,9 +924,21 @@ export const FocusPanelManager = {
                 }
             }
 
-            // Only hide spinner if still on the same student
-            if (this.currentStudentId === generatingForStudentId && generateBtn) {
-                UI.hideInlineSpinner(generateBtn);
+            // Only update UI if we are truly done (no other generation took over)
+            // This prevents hiding spinner/resetting UI if user clicked "Générer" again (restart)
+            if (!this._activeGenerations.has(generatingForStudentId)) {
+
+                // Only touch UI if still on the same student
+                if (this.currentStudentId === generatingForStudentId) {
+                    if (generateBtn) UI.hideInlineSpinner(generateBtn);
+
+                    // Reset Card UI to sync with model (e.g. if aborted)
+                    // This ensures badge and appreciation text are restored to valid state
+                    if (result) {
+                        FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+                        this._renderAppreciationText(result);
+                    }
+                }
             }
         }
     },
@@ -1018,23 +1030,23 @@ export const FocusPanelManager = {
             const cleanText = tempDiv.textContent || tempDiv.innerText || '';
 
             await navigator.clipboard.writeText(cleanText);
-            
+
             // Visual feedback on button
             if (copyBtn) {
                 const icon = copyBtn.querySelector('i');
                 const originalClass = icon?.className;
-                
+
                 // Change to check icon and add 'copied' class
                 if (icon) icon.className = 'fas fa-check';
                 copyBtn.classList.add('copied');
-                
+
                 // Reset after delay
                 setTimeout(() => {
                     if (icon && originalClass) icon.className = originalClass;
                     copyBtn.classList.remove('copied');
                 }, 1500);
             }
-            
+
 
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
@@ -1171,73 +1183,14 @@ export const FocusPanelManager = {
         }
 
         // === 7. APPRECIATION CARD: Text Content ===
-        // [FIX] Use period-specific appreciation as source of truth (not result.appreciation)
-        // This ensures consistency between list view and focus panel
-        const appreciationEl = document.getElementById('focusAppreciationText');
-        let hasAppreciation = false;
-
-        if (appreciationEl) {
-            // Check if this student has a generation in progress
-            const isGenerating = this._activeGenerations.has(result.id);
-
-            if (isGenerating) {
-                // Restore loading state for this student
-                this._showAppreciationSkeleton();
-                FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
-
-                // Also restore Generate button loading state
-                const generateBtn = document.getElementById('focusGenerateBtn');
-                if (generateBtn) {
-                    UI.showInlineSpinner(generateBtn);
-                }
-
-                hasAppreciation = false; // Consider as no appreciation yet
-            } else {
-                // Normal rendering: Get appreciation for the CURRENT period specifically
-                const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
-
-                if (periodAppreciation && periodAppreciation.trim()) {
-                    // Decode HTML entities and strip tags for clean display
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = periodAppreciation;
-                    const cleanText = tempDiv.textContent || tempDiv.innerText || '';
-                    appreciationEl.textContent = cleanText;
-                    appreciationEl.classList.remove('empty');
-                    appreciationEl.classList.add('filled');
-                    hasAppreciation = true;
-
-                    // History is now managed by FocusPanelHistory module
-                    // Initial content is pushed on first modification (blur event)
-                } else {
-                    // Apply empty state class directly on the element for proper styling
-                    appreciationEl.textContent = ''; // Clear content to show ::before placeholder
-                    appreciationEl.classList.add('empty');
-                    appreciationEl.classList.remove('filled');
-                    hasAppreciation = false;
-                }
-            }
-            FocusPanelStatus.updateWordCount();
-        }
+        this._renderAppreciationText(result);
 
         // === 8. FOOTER: Generate Button State (Générer vs Régénérer) ===
         this._updateGenerateButton(result);
 
-        // === 9. Copy Button State ===
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) {
-            copyBtn.disabled = !hasAppreciation;
-        }
-
-        // === 10. Refinement Buttons State ===
-        // Disable refinement buttons when there's no appreciation to refine
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
-            refineButtons.forEach(btn => {
-                btn.disabled = !hasAppreciation;
-                btn.classList.toggle('disabled', !hasAppreciation);
-            });
-        }
+        // === 9. Copy Button State & 10. Refinement Buttons ===
+        // Handled dynamically by FocusPanelStatus.updateWordCount() triggered in _renderAppreciationText
+        // or by Observer to ensure disabled state matches content emptiness.
 
         // === 11. AI INDICATOR (✨) - Provenance info ===
         FocusPanelStatus.updateAiIndicator(result);
@@ -1252,6 +1205,61 @@ export const FocusPanelManager = {
 
 
 
+
+
+    /**
+     * Renders the appreciation text area (handles skeleton vs content)
+     * @param {Object} result - Student result object
+     * @private
+     */
+    _renderAppreciationText(result) {
+        if (!result) return;
+
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        if (!appreciationEl) return;
+
+        const currentPeriod = appState.currentPeriod;
+        let hasAppreciation = false;
+
+        // Check if this student has a generation in progress
+        const isGenerating = this._activeGenerations.has(result.id);
+
+        if (isGenerating) {
+            // Restore loading state for this student
+            this._showAppreciationSkeleton();
+            FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
+
+            // Also restore Generate button loading state
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            if (generateBtn) {
+                UI.showInlineSpinner(generateBtn);
+            }
+
+            hasAppreciation = false; // Consider as no appreciation yet
+        } else {
+            // Normal rendering: Get appreciation for the CURRENT period specifically
+            // [FIX] Use period-specific appreciation as source of truth (not result.appreciation)
+            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+
+            if (periodAppreciation && periodAppreciation.trim()) {
+                // Decode HTML entities and strip tags for clean display
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = periodAppreciation;
+                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+                appreciationEl.textContent = cleanText;
+                appreciationEl.classList.remove('empty');
+                appreciationEl.classList.add('filled');
+                hasAppreciation = true;
+            } else {
+                // Apply empty state class directly on the element for proper styling
+                appreciationEl.textContent = ''; // Clear content to show ::before placeholder
+                appreciationEl.classList.add('empty');
+                appreciationEl.classList.remove('filled');
+                hasAppreciation = false;
+            }
+        }
+        FocusPanelStatus.updateWordCount();
+    },
 
     /**
      * Public method to save current context (called by UIManager before period switch)

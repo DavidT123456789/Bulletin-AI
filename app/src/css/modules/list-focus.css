@@ -2598,6 +2598,11 @@
 .focus-appreciation-text:has(.appreciation-skeleton) {
     line-height: 1;
     min-height: auto;
+    /* Padding 0 removed so it inherits 14px 16px from container (alignment fix) */
+}
+
+/* Remove skeleton's own padding to prevent vertical doubling (14px + 8px) */
+.focus-appreciation-text .appreciation-skeleton {
     padding: 0;
 }
 
