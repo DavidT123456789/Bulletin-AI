@@ -1913,105 +1913,160 @@
                     <!-- Content Area -->
                     <div class="modal-tabs-content-area">
                         <!-- Tab 1: Connecter l'IA -->
+                        <!-- Tab 1: Connecter l'IA -->
                         <div id="help-apikey" class="help-tab-content active">
-                            <p>Pour fonctionner, l'application a besoin d'un "cerveau" IA. Nous recommandons
-                                <strong>Mistral AI</strong> 🇫🇷 pour débuter : solution française, performante et
-                                <strong>gratuite</strong> (1 milliard de tokens/mois).
-                            </p>
+                            <div class="help-section-header" style="text-align: center; margin-bottom: 25px;">
+                                <p style="margin-bottom: 15px; color: var(--text-secondary);">
+                                    L'application a besoin d'un "cerveau" IA. Choisissez votre fournisseur pour voir la
+                                    marche à suivre.
+                                </p>
+                                <div class="provider-selector-compact" id="helpProviderSelector"
+                                    style="margin: 0 auto;">
+                                    <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral"
+                                        checked>
+                                    <label for="helpProviderMistral">
+                                        <i class="fas fa-cat"></i>
+                                        <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                    </label>
+                                    <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google">
+                                    <label for="helpProviderGoogle">
+                                        <i class="fab fa-google"></i>
+                                        <span>Google</span>
+                                    </label>
+                                    <input type="radio" id="helpProviderOpenRouter" name="helpProvider"
+                                        value="openrouter">
+                                    <label for="helpProviderOpenRouter">
+                                        <i class="fas fa-bolt"></i>
+                                        <span>OpenRouter</span>
+                                    </label>
+                                    <div class="selector-glider"></div>
+                                </div>
+                            </div>
 
-                            <div class="help-step-card">
-                                <div style="display: flex; gap: 10px;">
-                                    <div class="help-step-number">1</div>
-                                    <div style="flex: 1;">
-                                        <strong>Récupérer votre clé (Gratuit)</strong>
-                                        <p style="margin: 5px 0 10px 0; font-size: 0.9em;">Créez un compte sur Mistral
-                                            AI
-                                            et générez votre clé API.</p>
-                                        <a href="https://console.mistral.ai/api-keys/" target="_blank"
-                                            rel="noopener noreferrer" class="btn btn-secondary btn-small"
-                                            style="width: 100%; justify-content: center; margin-top: 5px;">
-                                            <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Ouvrir
-                                            Mistral Console
-                                        </a>
+                            <!-- MISTRAL CONTENT (Default) -->
+                            <div id="helpContentMistral" class="provider-help-content">
+                                <p><strong>Mistral AI</strong> est une solution française, performante et
+                                    <strong>gratuite</strong> (1 milliard de tokens/mois).
+                                </p>
+
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">1</div>
+                                        <div style="flex: 1;">
+                                            <strong>Récupérer votre clé (Gratuit)</strong>
+                                            <p style="margin: 5px 0 10px 0; font-size: 0.9em;">Créez un compte sur
+                                                Mistral AI et générez votre clé API.</p>
+                                            <a href="https://console.mistral.ai/api-keys/" target="_blank"
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
+                                                style="width: 100%; justify-content: center; margin-top: 5px;">
+                                                <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Ouvrir
+                                                Mistral Console
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">2</div>
+                                        <div style="flex: 1;">
+                                            <strong>Copier / Coller</strong>
+                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                                Copiez la clé générée et collez-la dans les <a href="#"
+                                                    class="link-to-settings btn-link" data-target-tab="advanced"
+                                                    data-target-element="mistralApiKey">Paramètres</a>.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="help-step-card">
-                                <div style="display: flex; gap: 10px;">
-                                    <div class="help-step-number">2</div>
-                                    <div style="flex: 1;">
-                                        <strong>Copier / Coller</strong>
-                                        <p style="margin: 5px 0 0 0; font-size: 0.9em;">
-                                            Copiez la clé générée et collez-la dans les <a href="#"
-                                                class="link-to-settings btn-link" data-target-tab="advanced"
-                                                data-target-element="mistralApiKey">Paramètres</a> de cette application.
-                                        </p>
+                            <!-- GOOGLE CONTENT -->
+                            <div id="helpContentGoogle" class="provider-help-content" style="display: none;">
+                                <p><strong>Google Gemini</strong> est une alternative gratuite et très performante.</p>
+
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">1</div>
+                                        <div style="flex: 1;">
+                                            <strong>Créer une clé API</strong>
+                                            <p style="margin: 5px 0 10px 0; font-size: 0.9em;">Connectez-vous avec votre
+                                                compte Google et cliquez sur "Create API key".</p>
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
+                                                style="width: 100%; justify-content: center; margin-top: 5px;">
+                                                <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Ouvrir
+                                                Google AI Studio
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">2</div>
+                                        <div style="flex: 1;">
+                                            <strong>Copier / Coller</strong>
+                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                                Copiez la clé et collez-la dans les <a href="#"
+                                                    class="link-to-settings btn-link" data-target-tab="advanced"
+                                                    data-target-element="googleApiKey">Paramètres</a> section Google.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Alternative: Google Gemini -->
-                            <details class="details-accordion help-accordion">
-                                <summary>
-                                    <i class="fab fa-google" style="margin-right: 8px; color: var(--accent-color);"></i>
-                                    <strong>Alternative :</strong> Google Gemini (gratuit également)
-                                </summary>
-                                <div class="details-content">
-                                    <div class="details-content-inner">
-                                        <p style="font-size: 0.9em; margin-bottom: 10px;">
-                                            <strong>Google Gemini</strong> est également gratuit et performant.
-                                            Allez sur Google AI Studio, connectez-vous avec votre compte Google,
-                                            et cliquez sur "Create API key".
-                                        </p>
-                                        <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                            rel="noopener noreferrer" class="btn btn-secondary btn-small"
-                                            style="width: 100%; justify-content: center;">
-                                            <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Ouvrir
-                                            Google AI Studio
-                                        </a>
+                            <!-- OPENROUTER CONTENT -->
+                            <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
+                                <p><strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les
+                                    meilleurs modèles (DeepSeek, Claude, GPT-4, Llama 3...).</p>
+
+                                <ul
+                                    style="background: var(--card-bg-secondary); padding: 15px 15px 15px 35px; border-radius: 8px; font-size: 0.9em; margin: 15px 0;">
+                                    <li>Accès centralisé à +100 modèles</li>
+                                    <li>Tarification à l'usage (souvent moins cher)</li>
+                                    <li>Modèles "Free" disponibles (parfois limités)</li>
+                                </ul>
+
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">1</div>
+                                        <div style="flex: 1;">
+                                            <strong>Obtenir une clé</strong>
+                                            <a href="https://openrouter.ai/keys" target="_blank"
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
+                                                style="width: 100%; justify-content: center; margin-top: 10px;">
+                                                <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Site
+                                                OpenRouter
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                            </details>
 
-                            <!-- Alternative: OpenRouter -->
-                            <details class="details-accordion help-accordion">
-                                <summary>
-                                    <i class="fas fa-layer-group"
-                                        style="margin-right: 8px; color: var(--accent-color);"></i>
-                                    <strong>Alternative :</strong> Accéder à plus de modèles via OpenRouter
-                                </summary>
-                                <div class="details-content">
-                                    <div class="details-content-inner">
-                                        <p style="font-size: 0.9em; margin-bottom: 10px;">
-                                            <strong>OpenRouter</strong> est une passerelle unifiée qui vous donne accès
-                                            à des dizaines de modèles IA (DeepSeek, Claude, GPT-4, etc.) avec une
-                                            seule clé API.
-                                        </p>
-                                        <ul
-                                            style="font-size: 0.85em; margin: 10px 0; padding-left: 20px; color: var(--text-secondary);">
-                                            <li>✓ Crédit gratuit offert à l'inscription</li>
-                                            <li>✓ Accès aux modèles les plus performants</li>
-                                            <li>✓ Tarification à l'usage (très économique)</li>
-                                        </ul>
-                                        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer"
-                                            class="btn btn-secondary btn-small"
-                                            style="width: 100%; justify-content: center;">
-                                            <i class="fas fa-external-link-alt" style="margin-right:8px"></i> Obtenir
-                                            une clé OpenRouter
-                                        </a>
+                                <div class="help-step-card">
+                                    <div style="display: flex; gap: 10px;">
+                                        <div class="help-step-number">2</div>
+                                        <div style="flex: 1;">
+                                            <strong>Configurer</strong>
+                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                                Collez la clé dans les <a href="#" class="link-to-settings btn-link"
+                                                    data-target-tab="advanced"
+                                                    data-target-element="openrouterApiKey">Paramètres</a> section
+                                                OpenRouter.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </details>
+                            </div>
 
-                            <!-- Fallback / Relais automatique -->
+                            <!-- Common Footer -->
                             <div class="help-tip-box"
-                                style="margin-top: 15px; font-size: 0.9em; color: var(--text-secondary); display: flex; gap: 10px; align-items: flex-start;">
+                                style="margin-top: 25px; font-size: 0.9em; color: var(--text-secondary); display: flex; gap: 10px; align-items: flex-start; padding-top: 15px; border-top: 1px solid var(--border-color);">
                                 <i class="fas fa-rotate" style="color: var(--accent-color); margin-top: 2px;"></i>
-                                <span><strong>Relais automatique :</strong> Si le modèle échoue (limite, surcharge...),
-                                    l'app peut basculer vers un autre. Activable dans les
-                                    <a href="#" class="link-to-settings btn-link" data-target-tab="advanced">Paramètres
-                                        avancés</a>.</span>
+                                <span><strong>Relais automatique :</strong> Si le modèle échoue, l'app peut basculer
+                                    vers un autre. Activable dans les <a href="#" class="link-to-settings btn-link"
+                                        data-target-tab="advanced">Paramètres avancés</a>.</span>
                             </div>
                         </div>
 
@@ -2169,10 +2224,16 @@
                                         <div class="about-version">v0.1.0 Beta</div>
                                     </div>
                                 </div>
-                                <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
-                                    target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                    <i class="fas fa-comment-dots"></i> Donner mon avis
-                                </a>
+                                <div style="display: flex; gap: 8px;">
+                                    <a id="linkGithub" href="#" target="_blank" rel="noopener noreferrer"
+                                        class="btn btn-secondary btn-small">
+                                        <i class="fab fa-github"></i> GitHub
+                                    </a>
+                                    <a id="linkFeedback" href="#" target="_blank" rel="noopener noreferrer"
+                                        class="btn btn-secondary btn-small">
+                                        <i class="fas fa-comment-dots"></i> Avis
+                                    </a>
+                                </div>
                             </div>
 
                             <div class="about-content">
@@ -2189,7 +2250,7 @@
                                         son
                                         développement en m'offrant un café !
                                     </p>
-                                    <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
+                                    <a id="linkKofi" href="#" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-kofi">
                                         <i class="fas fa-coffee"></i> Soutenir sur Ko-fi
                                     </a>
@@ -2198,8 +2259,10 @@
                                 <div class="about-footer">
                                     <p>Développé pour les enseignants par David Trafial</p>
                                     <p>© 2025 Bulletin AI - Tous droits réservés</p>
-                                    <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.7;">Sous licence Creative
-                                        Commons BY-NC-SA 4.0</p>
+                                    <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.7;">Sous licence <a
+                                            id="linkLicense" href="#" target="_blank"
+                                            style="color: inherit; text-decoration: underline;">Creative Commons
+                                            BY-NC-SA 4.0</a></p>
                                 </div>
                             </div>
                         </div>
@@ -2218,6 +2281,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title" id="welcomeModalTitle">🎉 Bienvenue dans Bulletin AI !</h2>
+                <button class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
+                    <i class="fas fa-xmark"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <div id="welcome-step-1" class="welcome-step active">

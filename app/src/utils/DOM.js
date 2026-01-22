@@ -240,6 +240,10 @@ export function initDOM() {
     DOM.helpModal = document.getElementById('helpModal');
     DOM.closeHelpModalBtn = document.getElementById('closeHelpModalBtn');
     DOM.closeHelpModalFooterBtn = document.getElementById('closeHelpModalFooterBtn');
+    DOM.linkGithub = document.getElementById('linkGithub');
+    DOM.linkKofi = document.getElementById('linkKofi');
+    DOM.linkFeedback = document.getElementById('linkFeedback');
+    DOM.linkLicense = document.getElementById('linkLicense');
     DOM.closeClassAnalysisFooterBtn = document.getElementById('closeClassAnalysisFooterBtn');
     DOM.helpGoToSettingsBtn = document.getElementById('helpGoToSettingsBtn');
     DOM.helpFormatSelector = document.getElementById('helpFormatSelector');
@@ -268,6 +272,7 @@ export function initDOM() {
     // Cloud sync header indicator
     DOM.cloudSyncIndicator = document.getElementById('cloudSyncIndicator');
     DOM.welcomeModal = document.getElementById('welcomeModal');
+    DOM.closeWelcomeModalBtn = document.getElementById('closeWelcomeModalBtn');
     DOM.welcomeNextStepInfo = document.getElementById('welcome-next-step-info');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');
     DOM.welcomeNextBtn = document.getElementById('welcomeNextBtn');

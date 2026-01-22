@@ -392,6 +392,7 @@ export const WelcomeManager = {
 
         addClickListener(DOM.welcomeFinishBtn, () => finishWelcome(false));
         addClickListener(DOM.welcomeFinishAndHideBtn, () => finishWelcome(true));
+        addClickListener(DOM.closeWelcomeModalBtn, () => UI.closeModal(DOM.welcomeModal));
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 
         addClickListener(DOM.welcomeSkipApiKeyBtn, () => {
