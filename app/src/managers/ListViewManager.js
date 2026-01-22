@@ -1192,14 +1192,30 @@ export const ListViewManager = {
         const closeAllMenus = () => {
             // Fermer les menus d'actions individuelles
             listContainer.querySelectorAll('.action-dropdown-menu.open').forEach(menu => {
+                // Trigger exit animation
                 menu.classList.remove('open');
-                // CLEANUP: Reset styles in case it was opened via context menu with fixed positioning
-                menu.style.position = '';
-                menu.style.top = '';
-                menu.style.left = '';
-                menu.style.right = '';
-                menu.style.width = '';
-                menu.style.zIndex = '';
+
+                // Clear any existing timeout to avoid conflict
+                if (menu.dataset.closeTimeout) {
+                    clearTimeout(parseInt(menu.dataset.closeTimeout));
+                }
+
+                // DELAY CLEANUP: Wait for CSS transition (200ms) before resetting styles
+                // This prevents the menu from jumping to default position while fading out
+                const timeoutId = setTimeout(() => {
+                    // Only cleanup if it hasn't been reopened in the meantime
+                    if (!menu.classList.contains('open')) {
+                        menu.style.position = '';
+                        menu.style.top = '';
+                        menu.style.left = '';
+                        menu.style.right = '';
+                        menu.style.width = '';
+                        menu.style.zIndex = '';
+                    }
+                    delete menu.dataset.closeTimeout;
+                }, 200);
+
+                menu.dataset.closeTimeout = timeoutId.toString();
             });
             // Fermer le menu global du header
             listContainer.querySelectorAll('.global-actions-dropdown-menu.open').forEach(menu => {
@@ -1256,6 +1272,21 @@ export const ListViewManager = {
 
                 // Toggle this menu (if it was closed, open it; if it was open, it stays closed)
                 if (!wasOpen) {
+                    // Cancel pending cleanup if re-opening same menu
+                    if (menu.dataset.closeTimeout) {
+                        clearTimeout(parseInt(menu.dataset.closeTimeout));
+                        delete menu.dataset.closeTimeout;
+                    }
+
+                    // CRITICAL: Explicitly clear inline styles to ensure default positioning (relative to button)
+                    // This fixes the case where menu was previously opened via context menu (absolute/fixed position)
+                    menu.style.position = '';
+                    menu.style.top = '';
+                    menu.style.left = '';
+                    menu.style.right = '';
+                    menu.style.width = '';
+                    menu.style.zIndex = '';
+
                     menu?.classList.add('open');
                 }
                 return;
@@ -1350,6 +1381,12 @@ export const ListViewManager = {
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
 
                 closeAllMenus();
+
+                // Cancel pending cleanup
+                if (menu.dataset.closeTimeout) {
+                    clearTimeout(parseInt(menu.dataset.closeTimeout));
+                    delete menu.dataset.closeTimeout;
+                }
 
                 // Position at mouse cursor [USER REQUEST]
                 // Use absolute positioning relative to parent so it follows scroll
