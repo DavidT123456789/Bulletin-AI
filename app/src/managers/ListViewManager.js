@@ -36,11 +36,9 @@ export const ListViewManager = {
             this._activeFilterTimeout = null;
         }
 
-        // Cleanup previous document listener if exists
-        if (this._activeDocClickListener) {
-            document.removeEventListener('click', this._activeDocClickListener, true);
-            this._activeDocClickListener = null;
-        }
+        // Cleanup previous document listener handled in _attachEventListeners
+        // [FIX] Listener is no longer removed here to prevent losing "click outside"
+        // functionality during soft updates (sort/reorder) that don't re-attach listeners.
 
         if (!container) return;
 
