@@ -81,7 +81,7 @@ export const PromptService = {
         styleParts.push(`Ne mentionne pas les notes chiffrées (moyennes) dans le texte.`);
         styleParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
 
-        if (iaConfig.styleInstructions) {
+        if (iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false) {
             styleParts.push(`Note : ${iaConfig.styleInstructions}`);
         }
 

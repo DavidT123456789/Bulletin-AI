@@ -64,6 +64,72 @@ export const OtherModalsListeners = {
         relaunchBtn?.addEventListener('click', (e) => {
             WelcomeManager.handleRelaunchWelcomeGuide(e);
         });
+
+        // --- NEW: Help Provider Selector Logic ---
+        const helpProviderRadios = document.querySelectorAll('input[name="helpProvider"]');
+        const helpContainer = document.getElementById('helpProviderSelector');
+        const helpGlider = helpContainer?.querySelector('.selector-glider');
+
+        const updateHelpProviderUI = () => {
+            const checked = document.querySelector('input[name="helpProvider"]:checked');
+            if (!checked) return;
+
+            // 1. Update Glider Position
+            if (helpGlider && checked.nextElementSibling) {
+                const label = checked.nextElementSibling;
+                requestAnimationFrame(() => {
+                    helpGlider.style.width = `${label.offsetWidth}px`;
+                    helpGlider.style.left = `${label.offsetLeft}px`;
+                });
+            }
+
+            // 2. Show/Hide Content
+            const value = checked.value;
+            const contentMap = {
+                'mistral': 'helpContentMistral',
+                'google': 'helpContentGoogle',
+                'openrouter': 'helpContentOpenRouter'
+            };
+
+            const contents = document.querySelectorAll('.provider-help-content');
+            contents.forEach(el => {
+                if (el.id === contentMap[value]) {
+                    el.style.display = 'block';
+                    // Petite animation d'entrée
+                    el.animate([
+                        { opacity: 0, transform: 'translateY(5px)' },
+                        { opacity: 1, transform: 'translateY(0)' }
+                    ], {
+                        duration: 300,
+                        easing: 'ease-out',
+                        fill: 'forwards'
+                    });
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        };
+
+        if (helpProviderRadios.length > 0) {
+            helpProviderRadios.forEach(radio => {
+                radio.addEventListener('change', updateHelpProviderUI);
+            });
+
+            // Init on modal open or tab switch could be tricky, but we can init now 
+            // and whenever the help tab is clicked.
+            // A simple timeout helps ensure layout is computed if modal opens immediately
+            setTimeout(updateHelpProviderUI, 200);
+
+            // Re-calc glider when switching TABS inside help modal
+            const helpTabs = document.querySelectorAll('.modal-tab-btn');
+            helpTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    if (tab.getAttribute('onclick')?.includes('help-apikey')) {
+                        setTimeout(updateHelpProviderUI, 50);
+                    }
+                });
+            });
+        }
     },
 
     /**

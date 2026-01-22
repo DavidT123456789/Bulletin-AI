@@ -50,6 +50,10 @@ export const SettingsUIManager = {
         // else: keep the existing value to prevent accidental data loss
         const selectedVoice = document.querySelector('input[name="iaVoiceRadio"]:checked');
         if (selectedVoice) styleData.iaConfig.voice = selectedVoice.value;
+
+        if (DOM.iaStyleInstructionsToggle) {
+            styleData.iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
+        }
     },
 
     /**
@@ -140,6 +144,15 @@ export const SettingsUIManager = {
             DOM.personalizationToggle.checked = enabled;
         }
 
+        // Get current config for specific toggle
+        const styleData = appState.subjects['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
+        const styleInstructionsEnabled = styleData.enableStyleInstructions !== false; // Default true
+
+        if (DOM.iaStyleInstructionsToggle) {
+            DOM.iaStyleInstructionsToggle.checked = styleInstructionsEnabled;
+            DOM.iaStyleInstructionsToggle.disabled = !enabled;
+        }
+
         // Toggle visibility of the info message
         if (DOM.genericSubjectInfo) {
             // Use CSS class for smooth transition instead of display: none
@@ -154,13 +167,26 @@ export const SettingsUIManager = {
         const inputsToToggle = [
             DOM.iaLengthSlider,
             DOM.iaToneSlider,
-            DOM.iaStyleInstructions,
+            // DOM.iaStyleInstructions, // Handled separately below
             ...document.querySelectorAll('input[name="iaVoiceRadio"]')
         ];
 
         inputsToToggle.forEach(input => {
             if (input) input.disabled = !enabled;
         });
+
+        // Specific logic for Style Instructions: Disabled if global OFF OR specific OFF
+        if (DOM.iaStyleInstructions) {
+            DOM.iaStyleInstructions.disabled = !enabled || !styleInstructionsEnabled;
+            // Visual feedback
+            if (DOM.iaStyleInstructions.disabled) {
+                DOM.iaStyleInstructions.classList.add('disabled-look');
+                DOM.iaStyleInstructions.parentElement.classList.add('opacity-reduced');
+            } else {
+                DOM.iaStyleInstructions.classList.remove('disabled-look');
+                DOM.iaStyleInstructions.parentElement.classList.remove('opacity-reduced');
+            }
+        }
 
         // Add visual class to disabled container
         const controlsPanel = document.getElementById('settings-controls-panel');

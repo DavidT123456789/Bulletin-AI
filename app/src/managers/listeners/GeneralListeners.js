@@ -10,6 +10,8 @@ import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
 
+import { APP_LINKS } from '../../config/Config.js';
+
 
 let App = null;
 
@@ -23,6 +25,12 @@ export const GeneralListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
+        // Initialize external links
+        if (DOM.linkGithub) DOM.linkGithub.href = APP_LINKS.GITHUB;
+        if (DOM.linkKofi) DOM.linkKofi.href = APP_LINKS.KOFI;
+        if (DOM.linkFeedback) DOM.linkFeedback.href = APP_LINKS.FEEDBACK;
+        if (DOM.linkLicense) DOM.linkLicense.href = APP_LINKS.LICENSE;
+
         addClickListener(DOM.generateAppreciationBtn, App.handleGenerateClick);
         addClickListener(DOM.importGenerateBtn, () => FileImportManager.handleMassImportTrigger());
         addClickListener(DOM.resetFormBtn, App.handleClearClick);

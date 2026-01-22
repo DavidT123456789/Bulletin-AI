@@ -8,7 +8,18 @@ export const DEFAULT_IA_CONFIG = {
     tone: 3,
     voice: 'default',
     styleInstructions: "",
+    enableStyleInstructions: true,
     discipline: "",  // Optionnel: Mathématiques, Français, etc.
+};
+
+/**
+ * Liens externes de l'application (Source de vérité).
+ */
+export const APP_LINKS = {
+    GITHUB: 'https://github.com/davidt123456789/Bulletin-AI',
+    KOFI: 'https://ko-fi.com/profassistant',
+    FEEDBACK: 'https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform',
+    LICENSE: 'https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr'
 };
 
 /**

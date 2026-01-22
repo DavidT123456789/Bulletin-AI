@@ -242,10 +242,27 @@ export const SettingsModalListeners = {
                 SettingsUIManager.showPreviewRefreshHint();
             });
 
-            // [FIX] Auto-save to disk with debounce to prevent data loss
             DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
                 StorageManager.saveAppState();
             }, 1500)); // Save 1.5s after last keystroke
+        }
+
+        if (DOM.iaStyleInstructionsToggle) {
+            DOM.iaStyleInstructionsToggle.addEventListener('change', () => {
+                // Ensure MonStyle structure exists
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
+                }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = { ...DEFAULT_IA_CONFIG };
+                }
+                appState.subjects['MonStyle'].iaConfig.enableStyleInstructions = DOM.iaStyleInstructionsToggle.checked;
+
+                SettingsUIManager.updatePersonalizationState();
+                SettingsUIManager.showPreviewRefreshHint();
+                this._updateStudentContextAndPrompt();
+                StorageManager.saveAppState();
+            });
         }
 
         // Discipline field listener (optional field for subject-specific vocabulary)
