@@ -22,7 +22,7 @@ export const ResultsUIManager = {
     renderResults(highlightId = null, highlightType = 'new') {
         if (document.activeElement?.contentEditable === 'true') return;
         const term = DOM.searchInput.value.toLowerCase();
-        // const sort = DOM.sortSelect.value; // Removed for new sort system
+
         const filter = appState.activeStatFilter;
         const activePeriod = appState.currentPeriod;
         const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);

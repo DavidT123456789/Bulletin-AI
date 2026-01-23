@@ -253,22 +253,31 @@ export const ModalUI = {
             const closeBtn = modal.querySelector('.close-button');
 
             // Wrappers pour gérer à la fois Callback et Promise, et la fermeture
+            let keyHandler; // Définition en amont pour le cleanup
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
             const handleConfirm = () => {
+                cleanup();
                 if (onConfirm) onConfirm();
                 resolve(true);
                 this.closeModal(modal);
             };
 
             const handleCancel = () => {
+                cleanup();
                 if (onCancel) onCancel();
                 resolve(false);
                 this.closeModal(modal);
             };
 
             const handleExtra = () => {
+                // Pas de cleanup ici car le bouton extra ne ferme pas forcément la modale
+                // Sauf si on décide qu'il la ferme (comportement d'origine : closeModal appelé)
+                cleanup();
                 if (extraButton && extraButton.action) extraButton.action();
-                // Note: Extra button doesn't necessarily close modal or resolve promise?
-                // Legacy UIManager closed it. Let's close it.
                 this.closeModal(modal);
             };
 
@@ -283,11 +292,16 @@ export const ModalUI = {
                 if (e.target === modal) handleCancel();
             });
 
-            // Fermeture sur Escape
-            const keyHandler = (e) => {
-                if (e.key === 'Escape' && this.activeModal === modal) {
-                    document.removeEventListener('keydown', keyHandler);
+            // Gestion clavier (Escape = Annuler, Enter = Confirmer)
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+
+                if (e.key === 'Escape') {
+                    e.preventDefault();
                     handleCancel();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault(); // Empêche le click sur le bouton annulé (si focus)
+                    handleConfirm();
                 }
             };
             document.addEventListener('keydown', keyHandler);

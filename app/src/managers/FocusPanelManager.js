@@ -606,8 +606,7 @@ export const FocusPanelManager = {
                 item.classList.add('editing');
                 // Remove the forced column layout to match read-only view's row layout
                 // However, we need to ensure the content area takes full width
-                // item.style.flexDirection = 'column'; // REMOVED
-                // item.style.alignItems = 'stretch';   // REMOVED
+
             }
 
             if (isEditable) {

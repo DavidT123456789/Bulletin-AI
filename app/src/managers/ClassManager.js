@@ -398,13 +398,13 @@ export const ClassManager = {
                 appState.filteredResults = [];
             }
 
-            console.log(`[ClassManager] Deleted ${deletedCount} student(s) from class ${classId}`);
+
         } catch (error) {
             console.error('[ClassManager] _deleteClassData failed, data may be corrupted:', error);
             // Attempt recovery - try to restore from backup
             try {
                 await DBService.putAll('generatedResults', allResults);
-                console.log('[ClassManager] Recovery successful - all data restored');
+
             } catch (recoveryError) {
                 console.error('[ClassManager] Recovery FAILED - data may be lost:', recoveryError);
             }
