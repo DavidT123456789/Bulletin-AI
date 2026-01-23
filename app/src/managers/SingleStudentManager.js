@@ -405,12 +405,24 @@ export const SingleStudentManager = {
      * @param {string} id - Identifiant de l'élève
      */
     delete(id) {
-        UI.showCustomConfirm('Supprimer cette appréciation ?', () => {
+        UI.showCustomConfirm('Supprimer cette appréciation ?', async () => {
             const visibleIds = new Set(appState.filteredResults.map(r => r.id));
+            const student = appState.generatedResults.find(r => r.id === id);
 
             if (id === appState.currentEditingId) { this.resetForm(false); }
 
             appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+
+            // Record tombstone for sync (prevents re-import from cloud)
+            const { runtimeState } = await import('../state/State.js');
+            if (!runtimeState.data.deletedItems) {
+                runtimeState.data.deletedItems = { students: [], classes: [] };
+            }
+            runtimeState.data.deletedItems.students.push({
+                id: id,
+                classId: student?.classId,
+                deletedAt: Date.now()
+            });
 
             if (visibleIds.has(id)) {
                 const deletedCard = document.querySelector(`.appreciation-result[data-id="${id}"]`);

@@ -158,19 +158,13 @@ export const ClassManager = {
 
     /**
      * Trigger cloud sync if connected (non-blocking)
+     * @deprecated Now using explicit Save/Load paradigm - this method is kept for backward compatibility but does nothing
      * @private
      */
     _triggerCloudSync() {
-        // Use dynamic import to avoid circular dependencies
-        import('../services/SyncService.js').then(({ SyncService }) => {
-            if (SyncService.isConnected()) {
-                SyncService.sync().catch(e =>
-                    console.warn('[ClassManager] Cloud sync after deletion failed:', e.message)
-                );
-            }
-        }).catch(() => {
-            // SyncService not available, ignore
-        });
+        // DEPRECATED: With Save/Load paradigm, sync is explicit
+        // User must manually save to cloud via Settings > Cloud > Sauvegarder
+        if (DEBUG) console.log('[ClassManager] Auto-sync disabled - using Save/Load paradigm');
     },
 
     /**
@@ -371,8 +365,23 @@ export const ClassManager = {
     async _deleteClassData(classId) {
         // FIX: Backup before delete for rollback capability
         const allResults = await DBService.getAll('generatedResults') || [];
+        const studentsToDelete = allResults.filter(r => r.classId === classId);
         const resultsToKeep = allResults.filter(r => r.classId !== classId);
-        const deletedCount = allResults.length - resultsToKeep.length;
+        const deletedCount = studentsToDelete.length;
+
+        // Record tombstones for sync BEFORE deletion (prevents re-import from cloud)
+        const { runtimeState } = await import('../state/State.js');
+        if (!runtimeState.data.deletedItems) {
+            runtimeState.data.deletedItems = { students: [], classes: [] };
+        }
+        const now = Date.now();
+        studentsToDelete.forEach(student => {
+            runtimeState.data.deletedItems.students.push({
+                id: student.id,
+                classId: classId,
+                deletedAt: now
+            });
+        });
 
         try {
             // putAll handles clear internally - single atomic operation

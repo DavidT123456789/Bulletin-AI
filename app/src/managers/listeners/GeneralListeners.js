@@ -94,6 +94,82 @@ export const GeneralListeners = {
                     closeMenu();
                 }
             });
+
+            // Cloud Save Menu Button - Always visible
+            const cloudSaveBtn = document.getElementById('cloudSaveMenuBtn');
+            if (cloudSaveBtn) {
+                // Always show the button
+                cloudSaveBtn.style.display = 'flex';
+
+                // Update last save time on menu open
+                DOM.headerMenuBtn.addEventListener('click', async () => {
+                    const hintEl = document.getElementById('cloudSaveTimeHint');
+                    try {
+                        const { SyncService } = await import('../../services/SyncService.js');
+                        if (SyncService.isConnected()) {
+                            const lastSync = localStorage.getItem('bulletin_last_sync');
+                            if (hintEl && lastSync) {
+                                const date = new Date(parseInt(lastSync));
+                                hintEl.textContent = `Dernière : ${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                            } else if (hintEl) {
+                                hintEl.textContent = 'Prêt à sauvegarder';
+                            }
+                        } else if (hintEl) {
+                            hintEl.textContent = 'Connexion requise';
+                        }
+                    } catch {
+                        if (hintEl) hintEl.textContent = 'Connexion requise';
+                    }
+                });
+
+                // Handle save click - connect if needed, then save
+                cloudSaveBtn.addEventListener('click', async () => {
+                    const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
+                    const originalLabel = labelEl?.textContent;
+
+                    try {
+                        const { SyncService } = await import('../../services/SyncService.js');
+
+                        // If not connected, connect first
+                        if (!SyncService.isConnected()) {
+                            cloudSaveBtn.classList.add('saving');
+                            if (labelEl) labelEl.textContent = 'Connexion';
+
+                            const connected = await SyncService.connect('google');
+                            if (!connected) {
+                                UI.showNotification('Connexion annulée.', 'warning');
+                                return;
+                            }
+
+                            // Update Settings UI if open
+                            const actionsBar = document.getElementById('cloudActionsBar');
+                            if (actionsBar) actionsBar.style.display = 'flex';
+                        }
+
+                        // Now save
+                        cloudSaveBtn.classList.add('saving');
+                        if (labelEl) labelEl.textContent = 'Sauvegarde';
+
+                        await SyncService.saveToCloud();
+
+                        // Update timestamp
+                        const hintEl = document.getElementById('cloudSaveTimeHint');
+                        if (hintEl) {
+                            const now = new Date();
+                            hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+
+                        UI.showNotification('Données sauvegardées sur Google Drive !', 'success');
+                        closeMenu();
+                    } catch (error) {
+                        console.error('Cloud save error:', error);
+                        UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+                    } finally {
+                        cloudSaveBtn.classList.remove('saving');
+                        if (labelEl) labelEl.textContent = originalLabel;
+                    }
+                });
+            }
         }
 
         if (DOM.personalizationBtn) {

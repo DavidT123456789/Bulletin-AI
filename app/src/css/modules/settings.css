@@ -1293,6 +1293,30 @@
     margin-top: 2px;
 }
 
+/* Cloud Actions Bar (Save/Load) */
+.cloud-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+}
+
+.cloud-actions-bar .btn {
+    min-width: 120px;
+    justify-content: center;
+}
+
+.cloud-last-save {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
 
 /* === Personalization Toggle Animation === */
 .generic-info-card {

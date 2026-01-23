@@ -1656,6 +1656,17 @@ export const ListViewManager = {
             appState.generatedResults = appState.generatedResults.filter(r => r.id !== studentId);
             appState.filteredResults = appState.filteredResults.filter(r => r.id !== studentId);
 
+            // Record tombstone for sync (prevents re-import from cloud)
+            const { runtimeState } = await import('../state/State.js');
+            if (!runtimeState.data.deletedItems) {
+                runtimeState.data.deletedItems = { students: [], classes: [] };
+            }
+            runtimeState.data.deletedItems.students.push({
+                id: studentId,
+                classId: student.classId,
+                deletedAt: Date.now()
+            });
+
             // Remove row from DOM
             row.remove();
 

@@ -124,6 +124,11 @@ export const runtimeState = {
         filteredResults: [],
         refinementEdits: {},
         variationHistory: {},
+        /** Tombstones for deleted items (for sync conflict resolution) */
+        deletedItems: {
+            students: [],  // [{ id, classId, deletedAt }]
+            classes: [],   // [{ id, deletedAt }]
+        },
     },
 };
 

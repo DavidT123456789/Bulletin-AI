@@ -824,36 +824,14 @@ export const SettingsModalListeners = {
                     if (connected) {
                         DOM.googleSyncStatus.textContent = 'Connecté';
                         DOM.googleSyncStatus.classList.add('connected');
-                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Synchronisation...';
 
                         // Find parent card and add connected class
                         const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
                         if (card) card.classList.add('connected');
 
-                        // Perform initial sync to download any existing cloud data
-                        try {
-                            const syncResult = await SyncService.sync();
-                            const classCount = syncResult.stats?.classesImported || 0;
-                            const studentCount = syncResult.stats?.imported || 0;
-
-                            if (classCount > 0 || studentCount > 0) {
-                                // Only mention what was actually imported (new data)
-                                let importMsg = 'Google Drive connecté !';
-                                if (classCount > 0 && studentCount > 0) {
-                                    importMsg += ` ${classCount} classe(s) et ${studentCount} élève(s) synchronisé(s).`;
-                                } else if (classCount > 0) {
-                                    importMsg += ` ${classCount} classe(s) synchronisée(s).`;
-                                } else if (studentCount > 0) {
-                                    importMsg += ` ${studentCount} élève(s) synchronisé(s).`;
-                                }
-                                UI.showNotification(importMsg, 'success');
-                            } else {
-                                UI.showNotification('Google Drive connecté ! Vos données seront synchronisées.', 'success');
-                            }
-                        } catch (syncError) {
-                            console.warn('[SyncService] Initial sync failed:', syncError);
-                            UI.showNotification('Google Drive connecté !', 'success');
-                        }
+                        // Show Save/Load actions bar
+                        const actionsBar = document.getElementById('cloudActionsBar');
+                        if (actionsBar) actionsBar.style.display = 'flex';
 
                         // Update UI to show connected state with disconnect button
                         DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
@@ -862,6 +840,8 @@ export const SettingsModalListeners = {
                         if (DOM.disconnectGoogleBtn) {
                             DOM.disconnectGoogleBtn.style.display = 'inline-flex';
                         }
+
+                        UI.showNotification('Google Drive connecté ! Utilisez les boutons Sauvegarder/Charger.', 'success');
                     } else {
                         DOM.connectGoogleBtn.innerHTML = 'Connecter';
                         DOM.connectGoogleBtn.disabled = false;
@@ -873,6 +853,69 @@ export const SettingsModalListeners = {
                     DOM.connectGoogleBtn.disabled = false;
                     UI.showNotification('Erreur de connexion : ' + error.message, 'error');
                 }
+            });
+        }
+
+        // Cloud Save button
+        const cloudSaveBtn = document.getElementById('cloudSaveBtn');
+        if (cloudSaveBtn) {
+            cloudSaveBtn.addEventListener('click', async () => {
+                try {
+                    cloudSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+                    cloudSaveBtn.disabled = true;
+
+                    const { SyncService } = await import('../../services/SyncService.js');
+                    await SyncService.saveToCloud();
+
+                    // Update last save time
+                    const lastSaveEl = document.getElementById('cloudLastSave');
+                    if (lastSaveEl) {
+                        const now = new Date();
+                        lastSaveEl.textContent = `Dernière sauvegarde : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                    }
+
+                    UI.showNotification('Données sauvegardées sur Google Drive !', 'success');
+                } catch (error) {
+                    console.error('Cloud save error:', error);
+                    UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+                } finally {
+                    cloudSaveBtn.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Sauvegarder';
+                    cloudSaveBtn.disabled = false;
+                }
+            });
+        }
+
+        // Cloud Load button
+        const cloudLoadBtn = document.getElementById('cloudLoadBtn');
+        if (cloudLoadBtn) {
+            cloudLoadBtn.addEventListener('click', async () => {
+                // Confirm before overwriting local data
+                UI.showCustomConfirm(
+                    'Charger les données depuis Google Drive ? Vos données locales seront remplacées.',
+                    async () => {
+                        try {
+                            cloudLoadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+                            cloudLoadBtn.disabled = true;
+
+                            const { SyncService } = await import('../../services/SyncService.js');
+                            const result = await SyncService.loadFromCloud();
+
+                            if (result.success) {
+                                UI.showNotification('Données chargées depuis Google Drive !', 'success');
+                                // Reload page to reflect new data
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                UI.showNotification('Aucune donnée trouvée sur Google Drive.', 'warning');
+                            }
+                        } catch (error) {
+                            console.error('Cloud load error:', error);
+                            UI.showNotification('Erreur de chargement : ' + error.message, 'error');
+                        } finally {
+                            cloudLoadBtn.innerHTML = '<i class="fas fa-cloud-arrow-down"></i> Charger';
+                            cloudLoadBtn.disabled = false;
+                        }
+                    }
+                );
             });
         }
 
@@ -900,6 +943,10 @@ export const SettingsModalListeners = {
                     DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
                     DOM.disconnectGoogleBtn.disabled = false;
                     DOM.disconnectGoogleBtn.style.display = 'none';
+
+                    // Hide Save/Load actions bar
+                    const actionsBar = document.getElementById('cloudActionsBar');
+                    if (actionsBar) actionsBar.style.display = 'none';
 
                     const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
                     if (card) card.classList.remove('connected');

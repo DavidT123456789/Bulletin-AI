@@ -891,7 +891,6 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
-    /* display: none; REMOVED for animation support */
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -906,7 +905,6 @@
 }
 
 .action-dropdown-menu.open {
-    /* display: block; REMOVED */
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -1022,14 +1020,12 @@
 }
 
 .global-actions-dropdown-menu.open {
-    /* display: block; REMOVED */
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
     transform: translateX(-20px) translateY(0) scale(1);
 }
 
-/* === Headers sectionnels (spécifique au menu global) === */
 /* === Headers sectionnels (Partagé global + individuel) === */
 .global-actions-dropdown-menu .dropdown-header,
 .action-dropdown-menu .dropdown-header {

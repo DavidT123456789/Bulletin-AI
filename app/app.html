@@ -149,14 +149,6 @@
                         </div>
                     </div>
                     <div class="header-actions-pill">
-                        <button id="cloudSyncIndicator" class="pill-segment cloud-sync-indicator minimal-cloud tooltip"
-                            data-tooltip="Synchronisation Cloud" aria-label="État de la synchronisation cloud"
-                            style="display: none;">
-                            <i class="fas fa-cloud"></i>
-                            <span class="cloud-status-badge"></span>
-                        </button>
-
-                        <div class="pill-divider"></div>
 
                         <div class="dropdown-wrapper">
                             <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu">
@@ -187,6 +179,13 @@
                                 </button>
                                 <button id="settingsButton" class="menu-item">
                                     <i class="fas fa-cog"></i> Paramètres
+                                </button>
+                                <div class="menu-separator"></div>
+                                <button id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item"
+                                    style="display: none;">
+                                    <i class="fas fa-cloud-arrow-up"></i>
+                                    <span class="cloud-save-label">Sauvegarder sur Cloud</span>
+                                    <span class="cloud-save-time" id="cloudSaveTimeHint"></span>
                                 </button>
                                 <button id="helpButton" class="menu-item">
                                     <i class="fas fa-circle-question"></i> Aide
@@ -1656,23 +1655,13 @@
 
                             <div class="settings-divider-light"></div>
 
-                            <!-- Section Synchronisation Cloud -->
+                            <!-- Section Cloud Save/Load -->
                             <div class="setting-row setting-row-column" id="cloudSyncSection">
                                 <div class="setting-info setting-info-full">
-                                    <h4 class="setting-subtitle"><i class="fas fa-cloud"></i> Synchronisation Cloud</h4>
+                                    <h4 class="setting-subtitle"><i class="fas fa-cloud"></i> Sauvegarde Cloud</h4>
                                     <p class="setting-description">
-                                        Synchronisez vos données automatiquement entre vos appareils via Google Drive ou
-                                        Dropbox.
+                                        Sauvegardez ou restaurez vos données via Google Drive.
                                     </p>
-                                </div>
-
-                                <!-- Sync Status -->
-                                <div class="sync-status-bar" id="syncStatusBar" style="display: none;">
-                                    <div class="sync-status-indicator">
-                                        <i class="fas fa-circle-notch fa-spin" id="syncStatusIcon"></i>
-                                        <span id="syncStatusText">Synchronisation...</span>
-                                    </div>
-                                    <span class="sync-last-time" id="syncLastTime"></span>
                                 </div>
 
                                 <!-- Provider Selection -->
@@ -1709,10 +1698,21 @@
                                     </div>
                                 </div>
 
+                                <!-- Save/Load Actions (visible when connected) -->
+                                <div class="cloud-actions-bar" id="cloudActionsBar" style="display: none;">
+                                    <button class="btn btn-primary btn-small" id="cloudSaveBtn">
+                                        <i class="fas fa-cloud-arrow-up"></i> Sauvegarder
+                                    </button>
+                                    <button class="btn btn-secondary btn-small" id="cloudLoadBtn">
+                                        <i class="fas fa-cloud-arrow-down"></i> Charger
+                                    </button>
+                                    <span class="cloud-last-save" id="cloudLastSave"></span>
+                                </div>
+
                                 <!-- RGPD Warning (always visible) -->
                                 <div class="sync-rgpd-warning" id="syncRgpdWarning">
                                     <i class="fas fa-shield-alt"></i>
-                                    <span>En activant la synchronisation, vos données seront stockées sur le service
+                                    <span>En activant la sauvegarde cloud, vos données seront stockées sur le service
                                         choisi. Vous êtes responsable du respect des réglementations applicables
                                         (RGPD).</span>
                                 </div>

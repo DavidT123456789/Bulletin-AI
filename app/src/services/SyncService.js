@@ -749,6 +749,36 @@ export const SyncService = {
     },
 
     // =========================================================================
+    // SAVE/LOAD (User-friendly wrappers for explicit Save/Load paradigm)
+    // =========================================================================
+
+    /**
+     * Save local data to cloud (explicit user action).
+     * @returns {Promise<{success: boolean}>}
+     */
+    async saveToCloud() {
+        await this.forceUpload();
+        this._updateCloudIndicator('connected');
+        return { success: true };
+    },
+
+    /**
+     * Load data from cloud to local (explicit user action).
+     * @returns {Promise<{success: boolean}>}
+     */
+    async loadFromCloud() {
+        if (!this._provider) throw new Error('Aucun provider connecté');
+
+        const remoteData = await this._provider.read();
+        if (!remoteData || (!remoteData.generatedResults && !remoteData.classes && !remoteData.settings)) {
+            return { success: false };
+        }
+
+        await this.forceDownload();
+        return { success: true };
+    },
+
+    // =========================================================================
     // AUTO-SYNC
     // =========================================================================
 
@@ -841,6 +871,10 @@ export const SyncService = {
         const localResults = local.generatedResults || [];
         const remoteResults = remote.generatedResults || [];
 
+        // Get local tombstones to prevent re-importing deleted items
+        const localTombstones = local._deletedItems?.students || [];
+        const tombstoneMap = new Map(localTombstones.map(t => [t.id, t]));
+
         // Create map of local results by ID
         const localMap = new Map(localResults.map(r => [r.id, r]));
         const mergedResults = [...localResults];
@@ -849,8 +883,16 @@ export const SyncService = {
         remoteResults.forEach(remoteItem => {
             const localItem = localMap.get(remoteItem.id);
 
+            // Check if this item was deleted locally
+            const tombstone = tombstoneMap.get(remoteItem.id);
+            if (tombstone && tombstone.deletedAt > (remoteItem._lastModified || 0)) {
+                // Local deletion is more recent than remote modification → skip import
+                stats.skipped++;
+                return;
+            }
+
             if (!localItem) {
-                // New item from remote
+                // New item from remote (and not deleted locally)
                 mergedResults.push(remoteItem);
                 stats.imported++;
             } else {
@@ -1103,6 +1145,9 @@ export const SyncService = {
      * @private
      */
     async _getLocalData() {
+        // Cleanup old tombstones (> 30 days) to prevent infinite growth
+        this._cleanupOldTombstones();
+
         return {
             _meta: {
                 appVersion: '0.1.0', // Will be replaced with actual version
@@ -1120,8 +1165,29 @@ export const SyncService = {
             generatedResults: (runtimeState.data.generatedResults || []).map(r => ({
                 ...r,
                 _lastModified: r._lastModified || Date.now()
-            }))
+            })),
+            // Include tombstones for sync conflict resolution
+            _deletedItems: runtimeState.data.deletedItems || { students: [], classes: [] }
         };
+    },
+
+    /**
+     * Cleanup tombstones older than 30 days to prevent infinite growth.
+     * @private
+     */
+    _cleanupOldTombstones() {
+        if (!runtimeState.data.deletedItems) return;
+
+        const threshold = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
+
+        if (runtimeState.data.deletedItems.students) {
+            runtimeState.data.deletedItems.students =
+                runtimeState.data.deletedItems.students.filter(t => t.deletedAt > threshold);
+        }
+        if (runtimeState.data.deletedItems.classes) {
+            runtimeState.data.deletedItems.classes =
+                runtimeState.data.deletedItems.classes.filter(t => t.deletedAt > threshold);
+        }
     },
 
     /**

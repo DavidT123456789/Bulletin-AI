@@ -783,7 +783,100 @@
     color: var(--text-primary);
 }
 
-/* Specific Toggle Button inside Menu (Dark Mode) */
+/* Cloud Save Menu Item - Aligned with other menu items */
+.cloud-save-menu-item {
+    display: grid !important;
+    /* Override flex */
+    grid-template-columns: 18px 1fr;
+    /* 18px matches .menu-item i min-width */
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    /* Matches .menu-item gap */
+    row-gap: 0;
+    align-items: center;
+    padding: 8px 12px;
+    /* Matches .menu-item padding */
+    height: auto;
+}
+
+.cloud-save-menu-item>i {
+    grid-row: 1 / span 2;
+    grid-column: 1;
+    position: static;
+    transform: none;
+    font-size: 14px;
+    /* Matches .menu-item i size */
+    justify-self: start;
+    /* Left align like others */
+    color: var(--text-secondary);
+    /* Standard color */
+    margin-top: 2px;
+    /* Optical center */
+}
+
+.cloud-save-menu-item:hover>i {
+    color: var(--text-primary);
+}
+
+.cloud-save-menu-item .cloud-save-label {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-weight: 500;
+    /* Standard weight but maybe slightly bolder? No, user wants consistency */
+    color: var(--text-secondary);
+    /* Standard color */
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.cloud-save-menu-item:hover .cloud-save-label {
+    color: var(--text-primary);
+}
+
+.cloud-save-menu-item .cloud-save-time {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.cloud-save-menu-item:hover .cloud-save-time {
+    color: var(--text-secondary);
+}
+
+.cloud-save-menu-item.saving {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.cloud-save-menu-item.saving .cloud-save-label::after {
+    content: '...';
+    animation: ellipsis 1.2s steps(4, end) infinite;
+}
+
+@keyframes ellipsis {
+    0% {
+        content: '';
+    }
+
+    25% {
+        content: '.';
+    }
+
+    50% {
+        content: '..';
+    }
+
+    75% {
+        content: '...';
+    }
+}
+
+/* Separator Line */
 #darkModeToggle {
     width: 36px;
     height: 20px;
