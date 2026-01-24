@@ -196,6 +196,40 @@
     background: rgba(var(--primary-color-rgb), 0.04);
 }
 
+/* === POLISH: Show Actions on Hover (Desktop) === */
+.student-list-table tbody tr .btn-action-menu {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Show when row hovered */
+.student-list-table tbody tr:hover .btn-action-menu,
+.student-list-table tbody tr:focus-within .btn-action-menu,
+.student-list-table tbody tr .btn-action-menu:focus,
+.student-list-table tbody tr .action-dropdown-menu.open~.btn-action-menu,
+.student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+    opacity: 1;
+    transform: scale(1);
+    background: white;
+    /* Pop out effect */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu {
+    background: var(--surface-alert-bg);
+}
+
+/* Always visible on touch devices */
+@media (hover: none) {
+    .student-list-table tbody tr .btn-action-menu {
+        opacity: 0.6;
+        transform: scale(1);
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
 /* Active row when focus panel is open - maintains visual link */
 .student-list-table tbody tr.focus-active {
     background: rgba(var(--primary-color-rgb), 0.06);

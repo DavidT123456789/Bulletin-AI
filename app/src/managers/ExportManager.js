@@ -211,5 +211,42 @@ export const ExportManager = {
         };
 
         window.print();
+    },
+
+    /**
+     * Copie les appréciations de plusieurs élèves
+     * @param {Array<string>} ids - Liste des IDs
+     * @returns {Promise<number>} Nombre d'appréciations copiées
+     */
+    async copyBulkAppreciations(ids) {
+        if (!ids || ids.length === 0) return 0;
+
+        const resultsToCopy = appState.generatedResults.filter(r => ids.includes(r.id));
+        const activeResults = resultsToCopy.filter(r => r.appreciation && r.appreciation.trim());
+
+        if (activeResults.length === 0) {
+            UI.showNotification('Aucune appréciation à copier parmi la sélection.', 'warning');
+            return 0;
+        }
+
+        const text = activeResults.map(r =>
+            `${r.nom} ${r.prenom}\n${Utils.decodeHtmlEntities(r.appreciation)}`
+        ).join('\n\n');
+
+        try {
+            await navigator.clipboard.writeText(text);
+
+            // Marquer comme copiés
+            activeResults.forEach(r => {
+                r.copied = true;
+            });
+
+            StorageManager.saveAppState();
+            return activeResults.length;
+        } catch (err) {
+            console.error('Erreur bulk copy:', err);
+            UI.showNotification('Échec de la copie groupée.', 'error');
+            return 0;
+        }
     }
 };

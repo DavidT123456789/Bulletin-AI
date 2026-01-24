@@ -237,5 +237,59 @@ export const StudentDataManager = {
             });
         }
         return importPreviewData;
+    },
+
+    /**
+     * Supprime un élève et enregistre un tombstone pour la synchro
+     * @param {string} id - ID de l'élève
+     */
+    async deleteStudent(id) {
+        const student = appState.generatedResults.find(r => r.id === id);
+        if (!student) return false;
+
+        // Filtrer l'état
+        appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+        appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
+
+        // Enregistrer le tombstone pour la synchro cloud
+        try {
+            const { runtimeState } = await import('../state/State.js');
+            if (!runtimeState.data.deletedItems) {
+                runtimeState.data.deletedItems = { students: [], classes: [] };
+            }
+            runtimeState.data.deletedItems.students.push({
+                id: id,
+                classId: student.classId || student.studentData?.classId,
+                deletedAt: Date.now()
+            });
+        } catch (e) {
+            console.warn('[StudentDataManager] Erreur tombstone:', e);
+        }
+
+        return true;
+    },
+
+    /**
+     * Efface l'appréciation d'un élève pour la période actuelle
+     * @param {string} id - ID de l'élève
+     */
+    clearStudentAppreciation(id) {
+        const student = appState.generatedResults.find(r => r.id === id);
+        if (!student) return false;
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Clear in main object
+        student.appreciation = '';
+
+        // Clear in periods data
+        if (student.studentData?.periods?.[currentPeriod]) {
+            student.studentData.periods[currentPeriod].appreciation = '';
+        }
+
+        // Reset history if desired? No, let's keep it but mark changed
+        student._lastModified = Date.now();
+
+        return true;
     }
 };

@@ -87,29 +87,39 @@ export const StudentPhotoManager = {
      * Generate avatar HTML for a student
      * @param {Object} result - Student result object
      * @param {'sm'|'md'|'lg'} size - Avatar size
+     * @param {boolean} isSelected - Whether the student is selected
      * @returns {string} HTML string
      */
-    getAvatarHTML(result, size = 'sm') {
+    getAvatarHTML(result, size = 'sm', isSelected = false) {
         if (!result) return '';
 
         const initials = this.getInitialsFromName(result.nom, result.prenom);
         const color = this.getColorFromName(result.nom, result.prenom);
         const sizeClass = `student-avatar--${size}`;
+        const selectedClass = isSelected ? 'is-selected' : '';
+
+        const checkmarkHTML = `
+            <div class="avatar-selection-overlay">
+                <i class="fas fa-check"></i>
+            </div>
+        `;
 
         // Check if student has a photo
         const photo = result.studentPhoto;
         if (photo?.data) {
             return `
-                <div class="student-avatar ${sizeClass}" data-student-id="${result.id}">
+                <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}">
                     <img src="${photo.data}" alt="${result.prenom} ${result.nom}" class="student-avatar__img" loading="lazy">
+                    ${checkmarkHTML}
                 </div>
             `;
         }
 
         // Fallback to initials
         return `
-            <div class="student-avatar ${sizeClass}" data-student-id="${result.id}" style="background-color: ${color}">
+            <div class="student-avatar ${sizeClass} ${selectedClass}" data-student-id="${result.id}" style="background-color: ${color}">
                 <span class="student-avatar__initials">${initials}</span>
+                ${checkmarkHTML}
             </div>
         `;
     },

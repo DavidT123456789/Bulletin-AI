@@ -317,8 +317,149 @@ export const ModalUI = {
     },
 
     /**
-     * Ferme toutes les modales ouvertes.
+     * Affiche une modale de confirmation avec des choix (checkboxes).
+     * @param {string} title - Titre de la modale
+     * @param {string} message - Message explicatif
+     * @param {Array<{id: string, label: string, checked: boolean}>} choices - Liste des choix
+     * @param {Object} [options] - Options standard (textes boutons, danger, etc.)
+     * @returns {Promise<{confirmed: boolean, values: Object}>}
      */
+    showChoicesModal(title, message, choices, options = {}) {
+        return new Promise((resolve) => {
+            const {
+                confirmText = 'Confirmer',
+                cancelText = 'Annuler',
+                isDanger = true,
+                iconClass = 'fa-tasks'
+            } = options;
+
+            const modalId = 'customChoicesModal';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal';
+
+            const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
+            const iconColorVar = isDanger ? 'var(--warning-color)' : 'var(--primary-color)';
+
+            // Generate checkboxes HTML
+            const choicesHTML = choices.map(choice => `
+                <div class="modal-choice-item ${choice.checked ? 'checked' : ''}">
+                    <label class="modal-choice-label-wrapper" for="choice_${choice.id}">
+                        <div class="modal-choice-checkbox-wrapper">
+                            <input type="checkbox" id="choice_${choice.id}" ${choice.checked ? 'checked' : ''}>
+                            <div class="custom-checkbox-display">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="modal-choice-text">
+                            <span class="modal-choice-title">${choice.label}</span>
+                            ${choice.sublabel ? `<span class="modal-choice-subtitle">${choice.sublabel}</span>` : ''}
+                        </div>
+                    </label>
+                </div>
+            `).join('');
+
+            modal.innerHTML = `
+                <div class="modal-content modal-content-confirm">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <div class="modal-title-icon" style="color: ${iconColorVar}; background: rgba(var(--${isDanger ? 'warning' : 'primary'}-rgb), 0.1);">
+                                <i class="fas ${iconClass}"></i>
+                            </div>
+                            ${title}
+                        </h3>
+                        <button class="close-button" aria-label="Fermer">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="margin-bottom:20px; color: var(--text-secondary);">${message}</p>
+                        <div class="modal-choices-container">
+                            ${choicesHTML}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="choicesCancelBtn">${cancelText}</button>
+                        <button class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            // Add change listener to toggle checked class for styling
+            const inputs = modal.querySelectorAll('input[type="checkbox"]');
+            inputs.forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const item = e.target.closest('.modal-choice-item');
+                    if (item) {
+                        if (e.target.checked) item.classList.add('checked');
+                        else item.classList.remove('checked');
+                    }
+                });
+            });
+
+            const okBtn = document.getElementById('choicesOkBtn');
+            const cancelBtn = document.getElementById('choicesCancelBtn');
+            const closeBtn = modal.querySelector('.close-button');
+
+            let keyHandler;
+
+            const getValues = () => {
+                const values = {};
+                choices.forEach(choice => {
+                    const el = document.getElementById(`choice_${choice.id}`);
+                    if (el) values[choice.id] = el.checked;
+                });
+                return values;
+            };
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
+            const handleConfirm = () => {
+                cleanup();
+                resolve({ confirmed: true, values: getValues() });
+                this.closeModal(modal);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve({ confirmed: false, values: {} });
+                this.closeModal(modal);
+            };
+
+            okBtn.addEventListener('click', handleConfirm, { once: true });
+            cancelBtn.addEventListener('click', handleCancel, { once: true });
+            if (closeBtn) closeBtn.addEventListener('click', handleCancel, { once: true });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) handleCancel();
+            });
+
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancel();
+                } else if (e.key === 'Enter') {
+                    // Only confirm if not interacting with checkboxes
+                    if (document.activeElement.type !== 'checkbox') {
+                        e.preventDefault();
+                        handleConfirm();
+                    }
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+
+            if (isDanger) cancelBtn.focus();
+            else okBtn.focus();
+        });
+    },
     closeAllModals() {
         const modals = [
             DOM.settingsModal,

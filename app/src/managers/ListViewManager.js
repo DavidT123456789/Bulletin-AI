@@ -23,6 +23,8 @@ export const ListViewManager = {
     _lastRenderedClassId: null, // Track class changes to force fresh render
     _lastRenderedPeriod: null,  // Track period changes to force fresh render (header column count changes)
     _activeFilterTimeout: null, // Track filter animation timeout to prevent race conditions
+    _selectedIds: new Set(),    // Track selected student IDs for bulk actions
+    _lastSelectedId: null,      // Track last selected student ID for range selection
 
     /**
      * Rend la liste des élèves en format tableau
@@ -101,6 +103,7 @@ export const ListViewManager = {
 
         if (classChanged || periodChanged) {
             // Class or period changed - force fresh render to ensure header/cell alignment
+            this.clearSelections(); // Reset selections on class/period change
             this._renderFresh(container, results, periods, currentPeriodIndex);
             return;
         }
@@ -292,7 +295,8 @@ export const ListViewManager = {
             // Re-attach event listeners
             const viewElement = container.querySelector('.student-list-view');
             if (viewElement) {
-                this._attachEventListeners(viewElement);
+                // [FIX] Do NOT re-attach listeners here as the view element persists
+                // this._attachEventListeners(viewElement); 
                 this._updateHeaderSortIcons(viewElement);
             }
 
@@ -445,11 +449,12 @@ export const ListViewManager = {
         const studentData = result.studentData || {};
         const status = this._getStatus(result);
         const appreciationCell = this._getAppreciationCell(result, status);
-        const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+        const isSelected = this._selectedIds.has(result.id);
+        const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
 
         tr.innerHTML = `
             <td class="student-name-cell">
-                <div class="student-identity-wrapper">
+                <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                     ${avatarHTML}
                     <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
                 </div>
@@ -692,22 +697,19 @@ export const ListViewManager = {
                                         <i class="fas fa-ellipsis-vertical"></i>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                                        <!-- SECTION SELECTION -->
+                                        <button class="action-dropdown-item" id="selectAllBtn-global">
+                                            <i class="fas fa-check-double"></i> Tout sélectionner
+                                        </button>
+                                        
+                                        <!-- SECTION VUE -->
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
                                             <i class="fas fa-chart-pie"></i> Analyser la classe
                                         </button>
-                                        <h5 class="dropdown-header"><i class="fas fa-magic"></i> APPRÉCIATIONS</h5>
-                                        <button class="action-dropdown-item" id="copyAllBtn-shortcut">
-                                            <i class="fas fa-copy"></i> Copier les visibles
-                                        </button>
-                                        <button class="action-dropdown-item" id="regenerateAllBtn">
-                                            <i class="fas fa-sync-alt"></i> Régénérer les visibles
-                                        </button>
-                                        <button class="action-dropdown-item" id="regenerateErrorsBtn-shortcut" style="display:none;">
-                                            <i class="fas fa-exclamation-triangle"></i> Régénérer les erreurs
-                                        </button>
-                                        <button class="action-dropdown-item danger" id="clearAppreciationsBtn-shortcut">
-                                            <i class="fas fa-eraser"></i> Effacer les appréciations
-                                        </button>
+
+
+
+                                        <!-- SECTION EXPORT -->
                                         <h5 class="dropdown-header"><i class="fas fa-download"></i> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
                                             <i class="fas fa-file-code"></i> Données (JSON)
@@ -717,13 +719,6 @@ export const ListViewManager = {
                                         </button>
                                         <button class="action-dropdown-item" id="exportPdfBtn">
                                             <i class="fas fa-file-pdf"></i> Imprimer / PDF
-                                        </button>
-                                        <h5 class="dropdown-header"><i class="fas fa-triangle-exclamation"></i> SUPPRIMER</h5>
-                                        <button class="action-dropdown-item danger" id="clearJournalsBtn-shortcut">
-                                            <i class="fas fa-book"></i> Journaux (Contexte IA)
-                                        </button>
-                                        <button class="action-dropdown-item danger" id="clearAllResultsBtn-shortcut">
-                                            <i class="fas fa-user-times"></i> Élèves affichés
                                         </button>
                                     </div>
                                 </div>
@@ -1299,7 +1294,7 @@ export const ListViewManager = {
                 closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
-                if (studentId) ClassUIManager.showMoveStudentModal(studentId);
+                if (studentId) ClassUIManager.showMoveStudentsModal([studentId]);
                 return;
             }
 
@@ -1353,11 +1348,35 @@ export const ListViewManager = {
                 return;
             }
 
-            // Click anywhere on the row -> Open Focus Panel
+            // Avatar selection toggle
+            const avatar = target.closest('.student-avatar');
+            if (avatar) {
+                e.stopPropagation();
+                const studentId = avatar.dataset.studentId;
+                if (studentId) {
+                    this._handleSelectionInteraction(studentId, e);
+                }
+                return;
+            }
+
+            // Click anywhere on the row -> Open Focus Panel OR Select if modifiers used
             const row = target.closest('.student-row');
-            // Prevent opening if clicking on sortable headers (which are in THEAD, but just in case)
+            // Prevent opening if clicking on sortable headers, etc.
             if (row && !target.closest('.action-dropdown') && !target.closest('.sortable-header') && !target.closest('a') && !target.closest('input')) {
                 const studentId = row.dataset.studentId;
+
+                // [NEW] Handle Selection Modifiers (Ctrl/Shift)
+                if (studentId && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+                    // Prevent text selection during shift-click
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        const selection = window.getSelection();
+                        if (selection) selection.removeAllRanges();
+                    }
+                    this._handleSelectionInteraction(studentId, e);
+                    return; // Stop here, don't open focus panel
+                }
+
                 if (studentId) FocusPanelManager.open(studentId);
             }
         });
@@ -1408,13 +1427,54 @@ export const ListViewManager = {
 
         // Close menus on escape key
         // CRITICAL FIX: Remove previous listener to prevent accumulation
+        // Global shortcuts (Escape, Delete)
         if (this._activeKeydownListener) {
             document.removeEventListener('keydown', this._activeKeydownListener);
         }
         this._activeKeydownListener = (e) => {
-            if (e.key === 'Escape') closeAllMenus();
+            if (e.key === 'Escape') {
+                // Priority 1: Close menus if any are open
+                const openMenus = listContainer.querySelectorAll('.action-dropdown-menu.open, .global-actions-dropdown-menu.open');
+                if (openMenus.length > 0) {
+                    closeAllMenus();
+                }
+                // Priority 2: Clear selections if no menu was open
+                else if (this._selectedIds.size > 0) {
+                    this.clearSelections();
+                }
+            }
+
+            // Delete key shortcut for bulk delete
+            if (e.key === 'Delete' && this._selectedIds.size > 0) {
+                // Ignore if user is typing in an input
+                const tag = document.activeElement.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+
+                e.preventDefault();
+                this._handleBulkAction('delete');
+            }
+
+            // Ctrl+A: Select All
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                // Ignore if user is typing in an input
+                const tag = document.activeElement.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+
+                e.preventDefault();
+                this.toggleSelectVisible(true);
+            }
         };
         document.addEventListener('keydown', this._activeKeydownListener);
+
+        // [FIX] Prevent native text selection/blue rectangle when using Shift+Click
+        listContainer.addEventListener('mousedown', (e) => {
+            if (e.shiftKey && e.target.closest('.student-row')) {
+                // Don't prevent if user is clicking on an input
+                if (e.target.closest('input') || e.target.closest('textarea')) return;
+
+                e.preventDefault();
+            }
+        });
 
         // Keyboard navigation - Enter/Space opens Focus Panel
         listContainer.querySelectorAll('.student-row').forEach(row => {
@@ -1427,9 +1487,454 @@ export const ListViewManager = {
             });
         });
 
+        // (Avatar click delegation removed - consolidated above)
+
         // === GLOBAL ACTIONS DROPDOWN LISTENERS ===
         // These are dynamically created in the table header, so we attach them here
         this._attachGlobalActionsListeners(listContainer, closeAllMenus);
+    },
+
+    /**
+     * Gère l'interaction de sélection avec support Shift/Ctrl
+     * @param {string} studentId 
+     * @param {Event} e 
+     */
+    _handleSelectionInteraction(studentId, e) {
+        if (!studentId) return;
+
+        // Shift + Click : Range selection
+        if (e.shiftKey && this._lastSelectedId) {
+            this._selectRange(this._lastSelectedId, studentId);
+            return;
+        }
+
+        // Standard toggle (Ctrl or simple click on avatar)
+        this.toggleSelection(studentId);
+    },
+
+    /**
+     * Sélectionne une plage d'élèves
+     * @param {string} startId 
+     * @param {string} endId 
+     */
+    _selectRange(startId, endId) {
+        // [OPTIMIZATION] Get rows directly from table body
+        const tbody = document.querySelector('.student-list-table tbody');
+        if (!tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll('.student-row'));
+        const startIndex = rows.findIndex(r => r.dataset.studentId === startId);
+        const endIndex = rows.findIndex(r => r.dataset.studentId === endId);
+
+        if (startIndex === -1 || endIndex === -1) return;
+
+        const [low, high] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+
+        // Select all in range
+        let changed = false;
+        for (let i = low; i <= high; i++) {
+            const id = rows[i].dataset.studentId;
+            if (!this._selectedIds.has(id)) {
+                this._selectedIds.add(id);
+                this._updateSelectionUI(id, false); // Don't updating toolbar yet
+                changed = true;
+            }
+        }
+
+        if (changed) this._updateToolbarState();
+
+        // Update last selected to the end of range
+        this._lastSelectedId = endId;
+    },
+
+    /**
+     * Bascule l'état de sélection d'un élève
+     * @param {string} studentId 
+     */
+    toggleSelection(studentId) {
+        if (!studentId) return;
+
+        if (this._selectedIds.has(studentId)) {
+            this._selectedIds.delete(studentId);
+        } else {
+            this._selectedIds.add(studentId);
+        }
+        this._lastSelectedId = studentId; // Update anchor for range selection
+
+        this._updateSelectionUI(studentId);
+    },
+
+    /**
+     * Tout sélectionner ou tout désélectionner (visibles)
+     * @param {boolean} selectAll 
+     */
+    toggleSelectVisible(selectAll = true) {
+        const rows = document.querySelectorAll('.student-row');
+        rows.forEach(row => {
+            const id = row.dataset.studentId;
+            if (id) {
+                if (selectAll) this._selectedIds.add(id);
+                else this._selectedIds.delete(id);
+                this._updateSelectionUI(id, false); // Update without calling toolbar update every time
+            }
+        });
+        this._updateToolbarState();
+    },
+
+    /**
+     * Réinitialise les sélections
+     */
+    clearSelections() {
+        this._selectedIds.clear();
+        this._updateSelectionUI(null);
+    },
+
+    /**
+     * Met à jour l'UI suite à un changement de sélection
+     * @param {string|null} studentId - ID de l'élève modifié ou null pour tout reset
+     * @param {boolean} updateToolbar - Si on doit rafraîchir la barre d'outils
+     * @private
+     */
+    _updateSelectionUI(studentId, updateToolbar = true) {
+        if (studentId) {
+            const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+            if (row) {
+                const isSelected = this._selectedIds.has(studentId);
+                row.classList.toggle('selected', isSelected);
+
+                const wrapper = row.querySelector('.student-identity-wrapper');
+                if (wrapper) wrapper.classList.toggle('selected', isSelected);
+
+                const avatar = row.querySelector('.student-avatar');
+                if (avatar) {
+                    const student = appState.generatedResults.find(r => r.id === studentId);
+                    if (student) {
+                        avatar.outerHTML = StudentPhotoManager.getAvatarHTML(student, 'sm', isSelected);
+                    }
+                }
+            }
+        } else {
+            // Reset all
+            const selectedRows = document.querySelectorAll('.student-row.selected');
+            selectedRows.forEach(row => {
+                row.classList.remove('selected');
+                // also wrapper
+                const wrapper = row.querySelector('.student-identity-wrapper.selected');
+                if (wrapper) wrapper.classList.remove('selected');
+
+                // AND RESET AVATAR
+                const studentId = row.dataset.studentId;
+                const avatar = row.querySelector('.student-avatar');
+                if (avatar && studentId) {
+                    const student = appState.generatedResults.find(r => r.id === studentId);
+                    if (student) {
+                        // Pass false for isSelected since we are clearing
+                        avatar.outerHTML = StudentPhotoManager.getAvatarHTML(student, 'sm', false);
+                    }
+                }
+            });
+            // Just in case some wrappers are selected but rows are not (cleanup)
+            document.querySelectorAll('.student-identity-wrapper.selected').forEach(w => w.classList.remove('selected'));
+        }
+
+        if (updateToolbar) {
+            this._updateToolbarState();
+        }
+    },
+
+    /**
+     * Gère l'affichage de la barre d'outils de sélection
+     * @private
+     */
+    _updateToolbarState() {
+        const count = this._selectedIds.size;
+        let toolbar = document.getElementById('selectionToolbar');
+
+        if (count > 0) {
+            if (!toolbar) {
+                toolbar = this._createSelectionToolbar();
+                document.querySelector('.student-list-view').prepend(toolbar);
+                // Trigger animation
+                requestAnimationFrame(() => toolbar.classList.add('active'));
+            }
+
+            const countLabel = toolbar.querySelector('#selectionCount');
+            if (countLabel) countLabel.textContent = `${count} ${count > 1 ? 'élèves sélectionnés' : 'élève sélectionné'}`;
+        } else if (toolbar) {
+            toolbar.classList.remove('active');
+            setTimeout(() => {
+                if (toolbar) toolbar.remove();
+            }, 400); // Wait for animation
+        }
+    },
+
+    /**
+     * Crée la barre d'outils de sélection contextualisée
+     * @returns {HTMLElement}
+     * @private
+     */
+    _createSelectionToolbar() {
+        const div = document.createElement('div');
+        div.id = 'selectionToolbar';
+        div.className = 'selection-toolbar';
+
+        div.innerHTML = `
+            <div class="selection-toolbar-content">
+                <div class="selection-info">
+                    <button class="btn-deselect" id="btnDeselectAll" title="Tout désélectionner">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span id="selectionCount">0 élève sélectionné</span>
+                </div>
+                <div class="selection-actions">
+                    <button class="btn-selection-action" data-bulk-action="regenerate" title="Régénérer">
+                        <i class="fas fa-sync-alt"></i> <span>Régénérer</span>
+                    </button>
+                    <button class="btn-selection-action" data-bulk-action="copy" title="Copier">
+                        <i class="fas fa-copy"></i> <span>Copier</span>
+                    </button>
+                    <button class="btn-selection-action" data-bulk-action="clear" title="Effacer texte">
+                        <i class="fas fa-eraser"></i> <span>Effacer</span>
+                    </button>
+                    <div class="selection-action-separator"></div>
+                    <button class="btn-selection-action" data-bulk-action="move" title="Déplacer vers une autre classe">
+                        <i class="fas fa-arrow-right-arrow-left"></i> <span>Déplacer</span>
+                    </button>
+                    
+                     <button class="btn-selection-action" data-bulk-action="reset-context" title="Supprimer les éléments de contexte (notes, infos) utilisés par l'IA">
+                        <i class="fas fa-history"></i> <span>Vider contexte</span>
+                    </button>
+
+                    <button class="btn-selection-action danger" data-bulk-action="delete" title="Supprimer">
+                        <i class="fas fa-trash"></i> <span>Supprimer</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Listeners for toolbar actions
+        div.querySelector('#btnDeselectAll').onclick = (e) => {
+            e.stopPropagation();
+            this.toggleSelectVisible(false);
+        };
+
+        div.querySelectorAll('[data-bulk-action]').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                this._handleBulkAction(btn.dataset.bulkAction);
+            };
+        });
+
+        return div;
+    },
+
+    /**
+     * Dispatcher pour les actions de masse
+     * @param {string} action 
+     * @private
+     */
+    async _handleBulkAction(action) {
+        const ids = Array.from(this._selectedIds);
+        if (ids.length === 0) return;
+
+        switch (action) {
+            case 'delete':
+                await this._bulkDelete(ids);
+                break;
+            case 'regenerate':
+                await this._bulkRegenerate(ids);
+                break;
+            case 'copy':
+                await this._bulkCopy(ids);
+                break;
+            case 'clear':
+                await this._bulkClearAppreciation(ids);
+                break;
+            case 'move':
+                await this._bulkMove(ids);
+                break;
+            case 'reset-context':
+                await this._bulkClearJournals(ids);
+                break;
+        }
+    },
+
+    async _bulkDelete(ids) {
+        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
+        const confirmed = await ModalUIManager.showCustomConfirm(
+            `Êtes-vous sûr de vouloir supprimer les ${ids.length} élèves sélectionnés ? Cette action est irréversible.`,
+            null,
+            null,
+            {
+                title: 'Supprimer les élèves sélectionnés',
+                confirmText: 'Supprimer',
+                isDanger: true
+            }
+        );
+
+        if (confirmed) {
+            const { StudentDataManager } = await import('./StudentDataManager.js');
+            for (const id of ids) {
+                // [FIX] Await deletion to ensure state is updated before render
+                await StudentDataManager.deleteStudent(id);
+            }
+
+            // Persist changes
+            const { StorageManager } = await import('./StorageManager.js');
+            await StorageManager.saveAppState();
+
+            this.clearSelections();
+            // Re-render
+            this.render(appState.filteredResults, document.getElementById('outputList'));
+
+            // Use standard UI notification
+            const { UI } = await import('./UIManager.js');
+            UI?.showNotification(`${ids.length} élèves supprimés.`, 'success');
+        }
+    },
+
+    async _bulkMove(ids) {
+        // Use ClassUIManager to show modal
+        ClassUIManager.showMoveStudentsModal(ids, () => {
+            this.clearSelections();
+        });
+    },
+
+    async _bulkRegenerate(ids) {
+        const { AppreciationsManager } = await import('./AppreciationsManager.js');
+        const { UI } = await import('./UIManager.js');
+
+        UI?.showNotification(`Lancement de la régénération pour ${ids.length} élèves...`, 'info');
+
+        // Parallel execution
+        const promises = ids.map(id => AppreciationsManager.regenerateFailedAppreciation(id));
+        await Promise.all(promises);
+
+        this.clearSelections();
+        UI?.showNotification(`Régénération terminée pour les élèves sélectionnés.`, 'success');
+    },
+
+    async _bulkCopy(ids) {
+        const { ExportManager } = await import('./ExportManager.js');
+        const count = await ExportManager.copyBulkAppreciations(ids);
+        if (count > 0) {
+            this.clearSelections();
+            const { UI } = await import('./UIManager.js');
+            UI?.showNotification(`${count} appréciation(s) copiée(s).`, 'success');
+        }
+    },
+
+    async _bulkClearAppreciation(ids) {
+        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
+        const confirmed = await ModalUIManager.showCustomConfirm(
+            `Effacer le texte des appréciations pour les ${ids.length} élèves sélectionnés ? (Les données seront conservées)`,
+            null,
+            null,
+            {
+                title: 'Effacer les appréciations',
+                confirmText: 'Effacer',
+                isDanger: true
+            }
+        );
+
+        if (confirmed) {
+            const { StudentDataManager } = await import('./StudentDataManager.js');
+            for (const id of ids) {
+                StudentDataManager.clearStudentAppreciation(id);
+            }
+
+            // Persist changes
+            const { StorageManager } = await import('./StorageManager.js');
+            await StorageManager.saveAppState();
+
+            this.clearSelections();
+            this.render(appState.filteredResults, document.getElementById('outputList'));
+
+            const { UI } = await import('./UIManager.js');
+            UI?.showNotification(`${ids.length} appréciations effacées.`, 'success');
+        }
+    },
+
+    async _bulkClearJournals(ids) {
+        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
+
+        const choices = [
+            {
+                id: 'journal',
+                label: 'Journal de bord',
+                sublabel: 'Efface les observations (gommettes/remarques). Conserve le champ Contexte.',
+                checked: true
+            },
+            {
+                id: 'context',
+                label: 'Notes de contexte',
+                sublabel: 'Efface le texte que vous avez saisi dans le champ "Contexte" pour ce trimestre.',
+                checked: false
+            }
+        ];
+
+        const { confirmed, values } = await ModalUIManager.showChoicesModal(
+            'Réinitialiser le contexte',
+            `Vous êtes sur le point de réinitialiser les données pour <strong>${ids.length} élèves</strong>.<br>Choisissez les éléments à effacer :`,
+            choices,
+            {
+                confirmText: 'Réinitialiser',
+                cancelText: 'Annuler',
+                isDanger: true,
+                iconClass: 'fa-history'
+            }
+        );
+
+        if (confirmed) {
+            const clearJournal = values.journal;
+            const clearContext = values.context;
+
+            if (!clearJournal && !clearContext) return;
+
+            const currentPeriod = appState.currentPeriod;
+            const results = appState.generatedResults || [];
+            let journalCount = 0;
+            let contextCount = 0;
+
+            ids.forEach(id => {
+                const student = results.find(r => r.id === id);
+                if (student) {
+                    // Clear Journal
+                    if (clearJournal && student.journal && student.journal.length > 0) {
+                        student.journal = [];
+                        journalCount++;
+                    }
+
+                    // Clear Context
+                    if (clearContext) {
+                        // Check if context exists in current period
+                        if (student.studentData &&
+                            student.studentData.periods &&
+                            student.studentData.periods[currentPeriod] &&
+                            student.studentData.periods[currentPeriod].context) {
+
+                            student.studentData.periods[currentPeriod].context = '';
+                            contextCount++;
+                        }
+                    }
+                }
+            });
+
+            if (journalCount > 0 || contextCount > 0) {
+                const { StorageManager } = await import('./StorageManager.js');
+                await StorageManager.saveAppState();
+
+                const { UI } = await import('./UIManager.js');
+                let msg = '';
+                if (journalCount > 0 && contextCount > 0) msg = `${journalCount} élèves réinitialisés (Journal + Contexte).`;
+                else if (journalCount > 0) msg = `${journalCount} journaux réinitialisés.`;
+                else if (contextCount > 0) msg = `${contextCount} contextes effacés.`;
+
+                UI?.showNotification(msg, 'success');
+            }
+
+            this.clearSelections();
+        }
     },
 
     /**
@@ -1455,15 +1960,10 @@ export const ListViewManager = {
         import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
             import('./StorageManager.js').then(({ StorageManager }) => {
                 import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
-                    // Actions sur les élèves
-                    addAction('#copyAllBtn-shortcut', AppreciationsManager.copyAllResults);
-                    addAction('#regenerateAllBtn', EventHandlersManager.handleRegenerateAllClick);
-                    addAction('#regenerateErrorsBtn-shortcut', EventHandlersManager.handleRegenerateErrorsClick);
-                    addAction('#clearAppreciationsBtn-shortcut', () => AppreciationsManager.clearVisibleAppreciations());
+                    // Selection
+                    addAction('#selectAllBtn-global', () => this.toggleSelectVisible(true));
 
-                    // Zone Danger
-                    addAction('#clearJournalsBtn-shortcut', () => AppreciationsManager.clearVisibleJournals());
-                    addAction('#clearAllResultsBtn-shortcut', () => AppreciationsManager.clearAllResults());
+                    // Maintenance - Moved to toolbar
 
                     // Export
                     addAction('#exportJsonBtn', () => StorageManager.exportToJson());
@@ -1646,43 +2146,25 @@ export const ListViewManager = {
 
         if (!confirmed) return;
 
-        // Animate row removal
-        row.style.opacity = '0';
-        row.style.transform = 'translateX(-20px)';
-        row.style.transition = 'all 0.3s ease-out';
+        // Use standard data manager
+        const { StudentDataManager } = await import('./StudentDataManager.js');
+        await StudentDataManager.deleteStudent(studentId);
 
-        setTimeout(async () => {
-            // Remove from arrays
-            appState.generatedResults = appState.generatedResults.filter(r => r.id !== studentId);
-            appState.filteredResults = appState.filteredResults.filter(r => r.id !== studentId);
+        // Save state
+        const { StorageManager } = await import('./StorageManager.js');
+        await StorageManager.saveAppState();
 
-            // Record tombstone for sync (prevents re-import from cloud)
-            const { runtimeState } = await import('../state/State.js');
-            if (!runtimeState.data.deletedItems) {
-                runtimeState.data.deletedItems = { students: [], classes: [] };
-            }
-            runtimeState.data.deletedItems.students.push({
-                id: studentId,
-                classId: student.classId,
-                deletedAt: Date.now()
-            });
+        // Render with standard FLIP animation
+        this.render(appState.filteredResults, document.getElementById('outputList'));
 
-            // Remove row from DOM
-            row.remove();
+        // Update global UI
+        const { UI } = await import('./UIManager.js');
+        ClassUIManager.updateStudentCount();
+        UI?.populateLoadStudentSelect();
+        UI?.updateStats();
 
-            // Persist to storage (IndexedDB + localStorage)
-            const { StorageManager } = await import('./StorageManager.js');
-            await StorageManager.saveAppState();
-
-            // Update UI elements
-            const { UI } = await import('./UIManager.js');
-            ClassUIManager.updateStudentCount();       // Compteur dans l'entête
-            UI?.populateLoadStudentSelect();           // Menu déroulant des élèves
-            UI?.updateStats();                         // Stats globales
-
-            // Notify user
-            UI?.showNotification(`${studentName} supprimé`, 'success');
-        }, 300);
+        // Notify user
+        UI?.showNotification(`${studentName} supprimé`, 'success');
     },
 
     /**
@@ -1722,12 +2204,9 @@ export const ListViewManager = {
 
         if (!confirmed) return;
 
-        // Effacer l'appréciation
-        student.appreciation = '';
-        if (student.studentData?.periods?.[currentPeriod]) {
-            student.studentData.periods[currentPeriod].appreciation = '';
-        }
-        student.copied = false; // Reset copied state
+        // Effacer l'appréciation via le Manager (Single Source of Truth)
+        const { StudentDataManager } = await import('./StudentDataManager.js');
+        StudentDataManager.clearStudentAppreciation(studentId);
 
         // Animation de mise à jour
         const appreciationCell = row.querySelector('.appreciation-cell');
@@ -1744,6 +2223,7 @@ export const ListViewManager = {
         }
 
         // Persist to storage
+
         const { StorageManager } = await import('./StorageManager.js');
         await StorageManager.saveAppState();
 

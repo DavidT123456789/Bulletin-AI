@@ -1073,18 +1073,39 @@ export const ClassUIManager = {
     },
 
     /**
-     * Affiche une modale pour déplacer un élève vers une autre classe
-     * @param {string} studentId - ID de l'élève à déplacer
+     * Affiche une modale pour déplacer un ou plusieurs élèves vers une autre classe
+     * @param {string|Array<string>} studentIds - ID(s) des élèves à déplacer
+     * @param {Function} [onSuccess] - Callback appelée après le déplacement réussi
      */
-    showMoveStudentModal(studentId) {
-        const student = appState.generatedResults.find(r => r.id === studentId);
-        if (!student) {
-            UI?.showNotification('Élève non trouvé', 'error');
+    showMoveStudentsModal(studentIds, onSuccess = null) {
+        // Ensure array
+        const ids = Array.isArray(studentIds) ? studentIds : [studentIds];
+        if (ids.length === 0) return;
+
+        // Find students
+        const students = appState.generatedResults.filter(r => ids.includes(r.id));
+        if (students.length === 0) {
+            UI?.showNotification('Aucun élève trouvé', 'error');
             return;
         }
 
-        const currentClassId = student.classId;
-        const classes = ClassManager.getAllClasses().filter(c => c.id !== currentClassId);
+        const isBulk = students.length > 1;
+        const firstStudent = students[0];
+
+        // Check if all are in the same class (they should be for this UI, but good to be safe)
+        const currentClassId = firstStudent.classId;
+        const allClassesAreSame = students.every(s => s.classId === currentClassId);
+
+        // Target classes (exclude current)
+        // If mixed classes, exclude none? Or just use "Move to..." logic. 
+        // For simplicity, we assume we are in a context where we move FROM a class (class dashboard usually).
+        // If from "All Students" view, we might have mixed classes.
+        // Let's list ALL classes except the one they are predominantly in, or just ALL classes if mixed.
+
+        let classes = ClassManager.getAllClasses();
+        if (allClassesAreSame) {
+            classes = classes.filter(c => c.id !== currentClassId);
+        }
 
         if (classes.length === 0) {
             UI?.showNotification('Aucune autre classe disponible. Créez d\'abord une autre classe.', 'warning');
@@ -1092,7 +1113,12 @@ export const ClassUIManager = {
         }
 
         const currentClass = ClassManager.getClassById(currentClassId);
-        const studentName = `${student.prenom} ${student.nom}`;
+
+        // Title & Description
+        const title = isBulk ? 'Déplacer les élèves' : 'Déplacer l\'élève';
+        const description = isBulk
+            ? `Déplacer <strong>${students.length} élèves</strong> vers :`
+            : `Déplacer <strong>${this._escapeHtml(firstStudent.prenom + ' ' + firstStudent.nom)}</strong> ${allClassesAreSame ? `depuis <strong>${this._escapeHtml(currentClass?.name || 'Class')}</strong>` : ''} vers :`;
 
         // Créer la modale
         const modalEl = document.createElement('div');
@@ -1103,14 +1129,13 @@ export const ClassUIManager = {
                 <div class="modal-header">
                     <h2 class="modal-title">
                         <span class="modal-title-icon"><i class="fas fa-arrow-right-arrow-left"></i></span>
-                        <span class="modal-title-text">Déplacer l'élève</span>
+                        <span class="modal-title-text">${title}</span>
                     </h2>
                     <button class="close-button close-move-modal"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
                     <p style="margin-bottom: 16px; color: var(--text-secondary);">
-                        Déplacer <strong>${this._escapeHtml(studentName)}</strong> 
-                        depuis <strong>${this._escapeHtml(currentClass?.name || 'Classe inconnue')}</strong> vers :
+                        ${description}
                     </p>
                     <div class="move-class-list" style="display: flex; flex-direction: column; gap: 8px;">
                         ${classes.map(cls => `
@@ -1148,29 +1173,57 @@ export const ClassUIManager = {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Déplacement...';
 
-                // Move student
-                student.classId = targetClassId;
+                // Move students
+                let movedCount = 0;
 
-                // Remove from current filtered results (if viewing current class)
-                const indexInFiltered = appState.filteredResults.findIndex(r => r.id === studentId);
-                if (indexInFiltered !== -1) {
-                    appState.filteredResults.splice(indexInFiltered, 1);
-                }
+                // Using imported StudentDataManager if needed, but here we seem to update raw objects
+                // Ideally we should use StudentDataManager.updateStudent() but direct manipulation 
+                // seems to be the pattern here (based on previous code). 
+                // Wait, previous code accessed 'student.classId = ...'. 
+                // Let's stick to that for now, but really we should persist it.
+                // The previous code did `await StorageManager?.saveAppState();` so that's enough.
+
+                students.forEach(student => {
+                    student.classId = targetClassId;
+
+                    // Remove from current filtered results if we are viewing the source class
+                    // (This logic is a bit fragile if we are in "All Classes" view, but keeps consistency with previous code)
+                    const indexInFiltered = appState.filteredResults.findIndex(r => r.id === student.id);
+                    if (indexInFiltered !== -1 && allClassesAreSame && appState.currentClassId === currentClassId) {
+                        appState.filteredResults.splice(indexInFiltered, 1);
+                    }
+                    movedCount++;
+                });
 
                 // Save
                 await StorageManager?.saveAppState();
 
                 // Update UI
                 this.updateStudentCount();
+
+                // CRITICAL: if we are in ListView, we might need to refresh the whole list if we removed items
+                // The splice above modifies filteredResults in place, so renderResults SHOULD refect it.
+                // However, renderResults takes filteredResults as arg usually.
                 AppreciationsManager.renderResults();
+                UI?.updateStats?.();
+
+                // If ListViewManager has selections, we should probably clear them
+                // But we don't have access to ListViewManager instance here directly easily?
+                // Actually `AppreciationsManager.renderResults()` usually calls `ListViewManager.render`.
+                // We should rely on that.
 
                 // Close modal and notify
                 UI?.closeModal(modalEl);
                 setTimeout(() => modalEl.remove(), 300);
-                UI?.showNotification(
-                    `${studentName} déplacé vers "${targetClass?.name}"`,
-                    'success'
-                );
+
+                const notificationText = isBulk
+                    ? `${movedCount} élèves déplacés vers "${targetClass?.name}"`
+                    : `${firstStudent.prenom} déplacé vers "${targetClass?.name}"`;
+
+                UI?.showNotification(notificationText, 'success');
+
+                // Callback for caller (e.g. to clear selections)
+                if (onSuccess) onSuccess();
             });
         });
     }

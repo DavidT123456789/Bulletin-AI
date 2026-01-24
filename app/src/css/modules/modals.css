@@ -797,6 +797,143 @@
     background: rgba(245, 158, 11, 0.08);
 }
 
+
+/* === Modal Choices (Checkbox Group) === */
+/* === Modal Choices (Checkbox Group) === */
+.modal-choices-container {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+    background: transparent;
+    border: none;
+}
+
+.modal-choice-item {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+/* Hover state */
+.modal-choice-item:hover {
+    background: var(--surface-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Soft shadow lift */
+    transform: translateY(-2px);
+    z-index: 1;
+}
+
+/* Checked state */
+.modal-choice-item.checked {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+    z-index: 2;
+    /* Bring to front */
+}
+
+.modal-choice-label-wrapper {
+    display: flex;
+    padding: 16px;
+    gap: 16px;
+    cursor: pointer;
+    width: 100%;
+    align-items: flex-start;
+    /* Ensure label covers full area */
+    margin: 0;
+}
+
+/* Custom Checkbox */
+.modal-choice-checkbox-wrapper {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.modal-choice-checkbox-wrapper input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.custom-checkbox-display {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background-color: var(--surface-color);
+    border: 2px solid var(--text-tertiary);
+    /* Soft default border */
+    border-radius: 8px;
+    /* Smooth rounded corners (Apple style) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Bouncy spring */
+}
+
+.modal-choice-item:hover .custom-checkbox-display {
+    border-color: var(--text-secondary);
+    transform: scale(1.05);
+}
+
+/* Checked Checkbox Style */
+.modal-choice-item.checked .custom-checkbox-display {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(var(--primary-color-rgb), 0.4);
+}
+
+.custom-checkbox-display i {
+    color: white;
+    font-size: 13px;
+    transform: scale(0) rotate(-45deg);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-choice-item.checked .custom-checkbox-display i {
+    transform: scale(1) rotate(0deg);
+}
+
+/* Text Styling */
+.modal-choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.modal-choice-title {
+    font-weight: 600;
+    font-size: 1.05em;
+    color: var(--text-primary);
+    transition: color 0.2s;
+}
+
+.modal-choice-subtitle {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.modal-choice-item.checked .modal-choice-title {
+    color: var(--primary-color);
+}
+
 .api-status-item.pending .api-status-icon {
     background: var(--warning-color);
     animation: pulse-warning 2s infinite;
