@@ -302,22 +302,47 @@ export const ClassUIManager = {
         const classToDelete = ClassManager.getClassById(classId);
         if (!classToDelete) return;
 
-        // Confirmation déjà faite dans l'UI inline
-
-        // Si c'est la classe courante, switch vers une autre avant suppression
-        const classes = ClassManager.getAllClasses();
-        if (appState.currentClassId === classId && classes.length > 1) {
-            const nextClass = classes.find(c => c.id !== classId);
-            if (nextClass) {
-                await ClassManager.switchClass(nextClass.id);
-            }
+        // Visual feedback during deletion
+        const row = document.querySelector(`.class-management-item[data-class-id="${classId}"]`);
+        if (row) {
+            const btn = row.querySelector('.confirm-delete-btn');
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         }
 
-        await ClassManager.deleteClass(classId, true);
-        this.renderClassList();
-        this.updateHeaderDisplay();
-        AppreciationsManager.renderResults();
-        UI?.updateStats?.(); // Refresh stats panel
+        try {
+            // Si c'est la classe courante, switch vers une autre avant suppression
+            const classes = ClassManager.getAllClasses();
+            const isCurrentClass = appState.currentClassId === classId;
+
+            if (isCurrentClass && classes.length > 1) {
+                const nextClass = classes.find(c => c.id !== classId);
+                if (nextClass) {
+                    // Switch logic: State first to ensure UI consistency
+                    await ClassManager.switchClass(nextClass.id);
+                }
+            } else if (isCurrentClass) {
+                // Deleting the last/only class - Clear view immediately
+                if (DOM.resultsDiv) DOM.resultsDiv.innerHTML = '';
+            }
+
+            // Proceed to delete
+            await ClassManager.deleteClass(classId, true);
+
+        } catch (error) {
+            console.error('[ClassUIManager] Delete failed:', error);
+            UI?.showNotification("Erreur lors de la suppression de la classe.", "error");
+        } finally {
+            // Always refresh UI state
+            this.renderClassList();
+            this.updateHeaderDisplay();
+
+            // Force refresh interactions
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.(); // Refresh stats panel
+
+            // Check migration if 0 classes left
+            this.checkAndOfferMigration();
+        }
     },
 
     /**

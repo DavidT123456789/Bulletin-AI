@@ -116,6 +116,21 @@ export const TrombinoscopeManager = {
 
         // Keyboard navigation for gap sliders and zone positioning
         document.addEventListener('keydown', e => this._handleKeyDown(e));
+
+        // Global paste event for image
+        document.addEventListener('paste', e => {
+            const modal = document.getElementById('trombiWizardModal');
+            if (!modal || !modal.classList.contains('visible') || this._currentStep !== 1) return;
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    this._loadFile(file);
+                    break;
+                }
+            }
+        });
     },
 
     // ========================================================================

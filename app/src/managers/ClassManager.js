@@ -164,7 +164,7 @@ export const ClassManager = {
     _triggerCloudSync() {
         // DEPRECATED: With Save/Load paradigm, sync is explicit
         // User must manually save to cloud via Settings > Cloud > Sauvegarder
-        if (DEBUG) console.log('[ClassManager] Auto-sync disabled - using Save/Load paradigm');
+        // console.debug('[ClassManager] Auto-sync disabled - using Save/Load paradigm');
     },
 
     /**
