@@ -1112,10 +1112,8 @@ export const FocusPanelManager = {
         const copyBtn = document.getElementById('focusCopyBtn');
 
         try {
-            // Strip HTML tags for clean copy
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = periodAppreciation;
-            const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+            // Strip Markdown and HTML tags for clean copy (Plain Text)
+            const cleanText = Utils.stripMarkdown(Utils.decodeHtmlEntities(periodAppreciation));
 
             await navigator.clipboard.writeText(cleanText);
 
@@ -1330,11 +1328,8 @@ export const FocusPanelManager = {
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
 
             if (periodAppreciation && periodAppreciation.trim()) {
-                // Decode HTML entities and strip tags for clean display
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = periodAppreciation;
-                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
-                appreciationEl.textContent = cleanText;
+                // Render with Markdown support (checking for entities)
+                appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(periodAppreciation));
                 appreciationEl.classList.remove('empty');
                 appreciationEl.classList.add('filled');
                 hasAppreciation = true;
@@ -1550,7 +1545,8 @@ export const FocusPanelManager = {
                     FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
 
                     // Effet typewriter pour afficher le nouveau texte
-                    await UI.typewriterReveal(appreciationText, refined, { speed: 'fast' });
+                    const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(refined));
+                    await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
 
                     // Push refined version to history with source type
                     FocusPanelHistory.push(refined, refineType);

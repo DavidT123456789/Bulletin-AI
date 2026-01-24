@@ -49,7 +49,7 @@ export const ExportManager = {
             return;
         }
 
-        navigator.clipboard.writeText(Utils.decodeHtmlEntities(appreciationToCopy)).then(() => {
+        navigator.clipboard.writeText(Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciationToCopy))).then(() => {
             appState.generatedResults[resultIndex].copied = true;
             StorageManager.saveAppState();
 
@@ -118,7 +118,7 @@ export const ExportManager = {
         }
 
         const text = appState.filteredResults.map(r =>
-            `${r.nom} ${r.prenom}\n${Utils.decodeHtmlEntities(r.appreciation)}`
+            `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(r.appreciation))}`
         ).join('\n\n');
 
         navigator.clipboard.writeText(text).then(() => {
@@ -171,7 +171,7 @@ export const ExportManager = {
             });
 
             row.push(
-                r.appreciation,
+                Utils.stripMarkdown(r.appreciation),
                 r.studentData.currentPeriod,
                 r.studentData.subject,
                 r.studentData.negativeInstructions,
@@ -230,7 +230,7 @@ export const ExportManager = {
         }
 
         const text = activeResults.map(r =>
-            `${r.nom} ${r.prenom}\n${Utils.decodeHtmlEntities(r.appreciation)}`
+            `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(r.appreciation))}`
         ).join('\n\n');
 
         try {

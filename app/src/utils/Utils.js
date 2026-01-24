@@ -305,6 +305,28 @@ export const Utils = {
     },
 
     /**
+     * Supprime le balisage markdown pour obtenir du texte brut sans astérisques
+     * @param {string} text - Texte avec markdown
+     * @returns {string} Texte brut
+     */
+    stripMarkdown(text) {
+        if (typeof text !== 'string') return text;
+        let res = text
+            .replace(/\*\*(.*?)\*\*/g, '$1') // Gras **
+            .replace(/__(.*?)__/g, '$1')     // Gras __
+            .replace(/\*(.*?)\*/g, '$1')     // Italique *
+            .replace(/_(.*?)_/g, '$1')       // Italique _
+            .replace(/###\s*(.*)/g, '$1')    // Titres H3
+            .replace(/##\s*(.*)/g, '$1')     // Titres H2
+            .replace(/^[\*\-]\s+/gm, '• ');  // Listes à puces (remplacer par puce standard ou vide)
+
+        // Remove HTML tags
+        res = res.replace(/<[^>]*>/g, '');
+
+        return res;
+    },
+
+    /**
      * Convertit le markdown simple en HTML
      * @param {string} text - Texte avec markdown
      * @returns {string} HTML formaté

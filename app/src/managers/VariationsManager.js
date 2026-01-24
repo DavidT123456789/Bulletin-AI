@@ -7,6 +7,7 @@ import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { Utils } from '../utils/Utils.js';
 
 export const VariationsManager = {
     /**
@@ -61,7 +62,8 @@ export const VariationsManager = {
 
             // Effet typewriter pour afficher le nouveau texte
             if (appreciationEl) {
-                await UI.typewriterReveal(appreciationEl, newAppreciation, { speed: 'fast' });
+                const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(newAppreciation));
+                await UI.animateHtmlReveal(appreciationEl, finalHtml, { speed: 'fast' });
                 card?.classList.add('just-generated');
                 setTimeout(() => card?.classList.remove('just-generated'), 1000);
             }

@@ -1059,7 +1059,7 @@ export const ListViewManager = {
                 dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><i class="fas fa-exclamation-circle"></i></span>`;
             }
 
-            return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${appreciation}</div>`;
+            return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>`;
         }
 
         // Si pas de contenu, on dÃ©termine le statut Ã  afficher
