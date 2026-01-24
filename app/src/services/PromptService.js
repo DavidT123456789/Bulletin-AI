@@ -51,6 +51,9 @@ export const PromptService = {
             : '';
         promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
 
+        // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
+        promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
+
 
         const styleParts = [];
 
@@ -99,7 +102,7 @@ export const PromptService = {
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
         let periodsInfo = relevantPeriods.map(p => {
             const d = periods[p] || {};
-            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
+            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             // Pour la période courante, on n'inclut pas l'appréciation existante
             const isCurrentPeriod = p === currentPeriod;
@@ -150,7 +153,7 @@ export const PromptService = {
         // Build periods info for analysis - use stored appreciation per period
         let periodsInfoForAnalysis = relevantPeriods.map(p => {
             const d = periods[p] || {};
-            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') : 'N/A';
+            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             return `${p} : Moy ${g}${evalCount}, App "${d.appreciation || 'N/A'}"`;
         }).join('\n');
