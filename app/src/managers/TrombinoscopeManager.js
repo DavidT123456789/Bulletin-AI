@@ -1198,7 +1198,7 @@ export const TrombinoscopeManager = {
             if (!zone) return;
 
             // Move step in natural pixels (relative to image size)
-            const baseStep = Math.min(this._imageNaturalWidth, this._imageNaturalHeight) * 0.005;
+            const baseStep = Math.min(this._imageNaturalWidth, this._imageNaturalHeight) * 0.003;
             const step = e.shiftKey ? baseStep * 5 : baseStep; // Shift for bigger steps
             const r = this._globalRadius;
 

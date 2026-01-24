@@ -59,7 +59,7 @@ export const SyncService = {
     _wasConfigured: false,
 
     /** @type {number|null} Timestamp when last reconnect notification was shown */
-    _lastReconnectNotificationTime: null,
+    // _lastReconnectNotificationTime: null,
 
     // =========================================================================
     // INITIALIZATION
@@ -94,7 +94,7 @@ export const SyncService = {
                     // Token expired but user had a valid connection before
                     // Show notification AND update indicator to prompt reconnection
                     this._updateCloudIndicator('expired');
-                    this._showReconnectNotification();
+                    // this._showReconnectNotification();
                 } else {
                     // Provider exists but connection failed for other reason
                     // Show local mode if offline, expired if was configured
@@ -180,7 +180,7 @@ export const SyncService = {
             const refreshed = await this._trySilentRefresh();
             if (!refreshed) {
                 this._updateCloudIndicator('expired');
-                this._showReconnectNotification();
+                // this._showReconnectNotification();
             }
         } else if (typeof this._provider.isExpiringSoon === 'function' && this._provider.isExpiringSoon()) {
             // Token valid but expiring soon (within 10 min) - proactive refresh
@@ -216,7 +216,9 @@ export const SyncService = {
      * Show a notification prompting user to reconnect to cloud sync.
      * Uses timestamp-based deduplication to prevent notification storms.
      * @private
+     * DEPRECATED: Disabled to prevent spam (2026-01-24)
      */
+    /*
     _showReconnectNotification() {
         // Prevent duplicate notifications - only show if 60+ seconds since last one
         const now = Date.now();
@@ -242,91 +244,106 @@ export const SyncService = {
             }
         }, 500);
     },
+    */
 
     /**
-     * Update the cloud sync indicator in the header.
+     * Update the cloud sync indicator in the menu.
      * @param {'connected'|'expired'|'syncing'|'local'|'disconnected'} state
      * @private
      */
     _updateCloudIndicator(state) {
         // Delay to ensure DOM is ready
         setTimeout(() => {
-            const indicator = document.getElementById('cloudSyncIndicator');
-            if (!indicator) return;
+            // Target the menu item instead of standalone indicator
+            const menuBtn = document.getElementById('cloudSaveMenuBtn');
+            if (!menuBtn) return;
 
-            // Remove all state classes
-            indicator.classList.remove('connected', 'expired', 'syncing', 'local', 'disconnected');
+            // Remove previous state classes
+            menuBtn.classList.remove('status-connected', 'status-expired', 'status-syncing');
 
-            // Always show indicator - even in local mode
-            indicator.style.display = 'flex';
-            indicator.classList.add(state);
-
-            // Update main icon based on state
-            const mainIcon = indicator.querySelector('i.fa-cloud, i.fa-hard-drive');
-            if (mainIcon) {
-                if (state === 'local') {
-                    mainIcon.classList.remove('fa-cloud');
-                    mainIcon.classList.add('fa-hard-drive');
-                } else {
-                    mainIcon.classList.remove('fa-hard-drive');
-                    mainIcon.classList.add('fa-cloud');
+            // Labels and icons map
+            const config = {
+                connected: {
+                    icon: 'fa-cloud-arrow-up',
+                    label: 'Sauvegarder sur Cloud',
+                    class: 'status-connected',
+                    color: '' // Default text color
+                },
+                expired: {
+                    icon: 'fa-exclamation-triangle',
+                    label: 'Session expirée (Reconnecter)',
+                    class: 'status-expired',
+                    color: 'var(--warning-color)'
+                },
+                syncing: {
+                    icon: 'fa-spinner fa-spin',
+                    label: 'Synchronisation...',
+                    class: 'status-syncing',
+                    color: ''
+                },
+                local: {
+                    icon: 'fa-cloud-arrow-up',
+                    label: 'Sauvegarder sur Cloud',
+                    class: '',
+                    color: ''
                 }
-            }
-
-            // Update badge icon
-            const badge = indicator.querySelector('.cloud-status-badge');
-            if (badge) {
-                const icons = {
-                    connected: '',
-                    expired: '',
-                    syncing: '',
-                    local: ''
-                };
-                badge.innerHTML = '';
-            }
-
-            // Build tooltip with last sync time when connected
-            let tooltipText;
-            if (state === 'connected' && this.lastSyncTime) {
-                const lastSyncLabel = this._formatLastSyncTime(this.lastSyncTime);
-                tooltipText = `Google Drive connecté<br>${lastSyncLabel}<br><span class="kbd-hint">Cliquer pour synchroniser</span>`;
-            } else {
-                const tooltips = {
-                    connected: 'Google Drive connecté<br><span class="kbd-hint">Cliquer pour synchroniser</span>',
-                    expired: 'Session expirée<br><span class="kbd-hint">Reconnecter</span>',
-                    syncing: 'Synchronisation en cours...',
-                    local: 'Mode local — Données stockées sur cet appareil<br><span class="kbd-hint">Configurer le cloud</span>'
-                };
-                tooltipText = tooltips[state] || 'Synchronisation Cloud';
-            }
-
-            // Update attribute for CSS/HTML fallback
-            indicator.setAttribute('data-tooltip', tooltipText);
-
-            // Update Tippy instance if it exists (critical for dynamic updates)
-            if (indicator._tippy) {
-                indicator._tippy.setContent(tooltipText);
-            }
-
-            // Force update click handler
-            indicator.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (DEBUG) console.log('[SyncService] Cloud indicator clicked. State:', state);
-
-                // Don't allow click during sync
-                if (indicator.classList.contains('syncing')) return;
-
-                // If connected, trigger a manual sync refresh
-                if (state === 'connected') {
-                    this.forceRefresh();
-                    return;
-                }
-
-                // Otherwise open settings to sync tab
-                this._openSyncSettings();
             };
+
+            const currentConfig = config[state] || config.local;
+
+            // Update visibility: Only show if configured (wasConfigured) or currently connected/syncing/expired
+            // If strictly local (provider never set), we might hide it, but usually we want to offer the option.
+            // For now, follow existing logic: show if connected or was configured.
+
+            if (state === 'disconnected' && !this._wasConfigured) {
+                menuBtn.style.display = 'none';
+                return;
+            }
+
+            menuBtn.style.display = 'grid'; // Maintain grid layout defined in CSS
+
+            // Update Icon
+            const iconEl = menuBtn.querySelector('i');
+            if (iconEl) {
+                iconEl.className = `fas ${currentConfig.icon}`;
+                if (currentConfig.color) iconEl.style.color = currentConfig.color;
+                else iconEl.style.color = '';
+            }
+
+            // Update Label
+            const labelEl = menuBtn.querySelector('.cloud-save-label');
+            if (labelEl) {
+                labelEl.textContent = currentConfig.label;
+                if (currentConfig.color) labelEl.style.color = currentConfig.color;
+                else labelEl.style.color = '';
+            }
+
+            // Update Time Hint (only if connected/syncing)
+            const timeHint = menuBtn.querySelector('#cloudSaveTimeHint');
+            if (timeHint) {
+                if (state === 'connected' && this.lastSyncTime) {
+                    timeHint.textContent = this._formatLastSyncTime(this.lastSyncTime).replace('Dernière sync : ', '');
+                    timeHint.style.display = 'block';
+                } else if (state === 'expired') {
+                    timeHint.style.display = 'none'; // Clean look for warning
+                } else {
+                    timeHint.style.display = 'none';
+                }
+            }
+
+            // Add status class for potential CSS styling
+            if (currentConfig.class) {
+                menuBtn.classList.add(currentConfig.class);
+            }
+
+            // Update click handler context
+            // Note: The specific click action (Save or Reconnect) is handled by the controller/listeners usually,
+            // but we can ensure the UI guides them.
+            // If expired, the click should ideally trigger reconnect logic.
+            // Currently, the listener for #cloudSaveMenuBtn is likely 'saveToCloud'.
+            // If session is expired, saveToCloud will fail -> error -> might trigger reconnect flow.
+            // We'll rely on that for now to keep it simple.
+
         }, 100);
     },
 
