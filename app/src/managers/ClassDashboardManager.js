@@ -10,6 +10,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { StorageManager } from './StorageManager.js';
+import { ModalUI } from './ModalUIManager.js';
 
 /**
  * Class Dashboard Manager
@@ -32,11 +33,23 @@ export const ClassDashboardManager = {
     /** @type {string|null} Period for which synthesis was generated */
     cachedSynthesisPeriod: null,
 
+    /** @type {string|null} Data Hash for which synthesis was generated */
+    cachedSynthesisDataHash: null,
+
     /**
      * Initialize the dashboard modal reference
      */
     init() {
         this.modal = document.getElementById('classDashboardModal');
+
+        // Attach Context Menu listener for Prompt Preview (Right Click)
+        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
+        if (generateBtn) {
+            generateBtn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this._showPromptPreview();
+            });
+        }
     },
 
     /**
@@ -219,8 +232,29 @@ export const ClassDashboardManager = {
             topProgressions: topProgressions,
             topRegressions: topRegressions,
             atRisk: atRisk,
-            hasEvolutionData: withEvolution.length > 0
+            atRisk: atRisk,
+            hasEvolutionData: withEvolution.length > 0,
+
+            // New Metadata for AI & Consistency
+            dataHash: this._computeClassDataHash(students),
+            appreciationsList: students.filter(s => s.appreciation && s.appreciation.trim().length > 0)
+                .map(s => ({ prenom: s.prenom, text: s.appreciation }))
         };
+    },
+
+    /**
+     * Compute a simple hash of the current class data to detect changes
+     * @param {Array} students
+     * @returns {string}
+     * @private
+     */
+    _computeClassDataHash(students) {
+        if (!students || students.length === 0) return '';
+        // Create a signature based on ID, grade, and appreciation content length
+        // We use length/presence to detect changes without storing full text in hash
+        return students.map(s =>
+            `${s.id}:${s.grade}:${s.appreciation ? s.appreciation.length : 0}`
+        ).join('|');
     },
 
     /**
@@ -413,6 +447,7 @@ export const ClassDashboardManager = {
             this.cachedSynthesisPeriod === currentPeriod) {
 
             this._applySynthesisToUI(this.cachedSynthesisHTML);
+            this._checkStaleData(); // Check stale data for memory cache too
             return;
         }
 
@@ -432,12 +467,42 @@ export const ClassDashboardManager = {
                 this.cachedSynthesisHTML = savedAnalysis.content;
                 this.cachedSynthesisClassId = currentClassId;
                 this.cachedSynthesisPeriod = currentPeriod;
+                this.cachedSynthesisDataHash = savedAnalysis.dataHash || null;
+
+                // Check for stale data (if data has changed since generation)
+                // We do this AFTER applying the content to ensure the button state updates correctly
+                this._checkStaleData();
                 return;
             }
         }
 
         // 3. No matching cache or saved data, reset to placeholder
         this.resetAISection();
+    },
+
+    /**
+     * Check if the current data differs from the data used for synthesis
+     * Updates the UI button if data is stale
+     * @private
+     */
+    _checkStaleData() {
+        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+        if (!generateBtn || !this.cachedStats || !this.cachedSynthesisDataHash) return;
+
+        if (this.cachedStats.dataHash !== this.cachedSynthesisDataHash) {
+            // Data is stale
+            generateBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser la synthèse';
+            generateBtn.className = 'btn btn-warning'; // Use warning color (orange/yellow) to indicate update needed
+            generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
+
+            // Optional: Add a small badge or text in the synthesis area? 
+            // For now, the button change is a strong enough signal.
+        } else {
+            // Data is fresh
+            generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Régénérer';
+            generateBtn.className = 'btn btn-primary';
+            generateBtn.title = "";
+        }
     },
 
     /**
@@ -497,10 +562,11 @@ export const ClassDashboardManager = {
             // Cache the synthesis for persistence across modal open/close
             this.cachedSynthesisHTML = synthesisHTML;
             this.cachedSynthesisClassId = appState.currentClassId;
+            this.cachedSynthesisDataHash = stats.dataHash; // Update hash
             this.cachedSynthesisPeriod = appState.currentPeriod;
 
             // PERSISTENCE: Save to Class Object in Storage
-            this._saveSynthesisToStorage(synthesisHTML);
+            this._saveSynthesisToStorage(synthesisHTML, stats.dataHash);
 
         } catch (error) {
             content.innerHTML = `
@@ -521,7 +587,7 @@ export const ClassDashboardManager = {
      * Helper to save synthesis to the persistent Class object
      * @private
      */
-    _saveSynthesisToStorage(htmlContent) {
+    _saveSynthesisToStorage(htmlContent, dataHash) {
         const currentClassId = appState.currentClassId;
         const currentPeriod = appState.currentPeriod;
 
@@ -541,6 +607,7 @@ export const ClassDashboardManager = {
                 content: htmlContent,
                 timestamp: Date.now(),
                 model: appState.currentAIModel,
+                dataHash: dataHash || null, // Save the signature of data used
                 statsSnapshot: this.cachedStats // Optional: save stats used for generation
             };
 
@@ -574,12 +641,21 @@ export const ClassDashboardManager = {
             }
         }
 
+        if (stats.appreciationsList && stats.appreciationsList.length > 0) {
+            prompt += `\n\n**APPRÉCIATIONS INDIVIDUELLES (pour contexte qualitatif) :**
+Utilise ces commentaires pour affiner l'analyse (ambiance, comportement, efforts) mais NE CITE PAS d'élèves spécifiques pour les points négatifs de comportement.
+${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
+        }
+
         prompt += `
 
-**FORMAT OBLIGATOIRE - Réponds UNIQUEMENT avec ces 4 sections :**
+**FORMAT OBLIGATOIRE - Réponds UNIQUEMENT avec ces 5 sections :**
 
-📊 **Bilan**
-[1 phrase sur le niveau général et l'homogénéité]
+📝 **Synthèse Globale**
+[2-3 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe. Max 40 mots.]
+
+📊 **Bilan Chiffré**
+[1 phrase sur le niveau statististique et l'hétérogénéité]
 
 ✅ **Points forts**
 • [Point 1 - max 10 mots]
@@ -594,12 +670,72 @@ export const ClassDashboardManager = {
 • [Action 2 concrète - max 15 mots]
 
 RÈGLES STRICTES :
-- Maximum 120 mots au total
-- Style télégraphique, pas de phrases longues
+- Maximum 150 mots au total
+- Style professionnel et constructif
 - Pas d'introduction ni de formules de politesse
 - Utilise les prénoms, pas les noms complets`;
 
         return prompt;
+    },
+
+    /**
+     * Show a preview of the AI prompt
+     * Triggered by right-click on Generate button
+     * @private
+     */
+    async _showPromptPreview() {
+        if (!this.cachedStats) return;
+
+        const prompt = this.buildAIPrompt(this.cachedStats);
+
+        // Simple HTML reset/escape for display
+        const escapedText = prompt
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        // Create HTML content for the modal
+        const message = `
+            <div style="text-align: left;">
+                <p style="margin-bottom: 10px; font-size: 0.9em; color: var(--text-secondary);">
+                    Voici le prompt exact qui sera envoyé à l'IA. Vous pouvez le copier pour tester dans une autre interface.
+                </p>
+                <textarea readonly id="promptPreviewTextarea" style="
+                    width: 100%; 
+                    height: 400px; 
+                    padding: 12px; 
+                    border-radius: var(--radius-sm); 
+                    border: 1px solid var(--border-color); 
+                    background: var(--bg-secondary); 
+                    color: var(--text-primary); 
+                    font-family: 'SF Mono', Consolas, monospace; 
+                    font-size: 0.85rem; 
+                    line-height: 1.5;
+                    white-space: pre-wrap;
+                    resize: vertical;">${escapedText}</textarea>
+            </div>
+        `;
+
+        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
+            title: 'Prévisualisation du Prompt',
+            confirmText: 'Copier',
+            cancelText: 'Fermer',
+            isDanger: false,
+            compact: false
+        });
+
+        if (confirmed) {
+            try {
+                // We use the raw text for clipboard
+                await navigator.clipboard.writeText(prompt);
+                UI.showNotification('Prompt copié dans le presse-papier', 'success');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                UI.showNotification('Échec de la copie', 'error');
+            }
+        }
     },
 
 
@@ -630,6 +766,7 @@ RÈGLES STRICTES :
 
         // Define section configs with icons and colors
         const sections = [
+            { emoji: '📝', title: 'Synthèse', icon: 'align-left', color: 'primary-dark', isFullWidth: true },
             { emoji: '📊', title: 'Bilan', icon: 'chart-simple', color: 'primary' },
             { emoji: '✅', title: 'Points forts', icon: 'check-circle', color: 'success' },
             { emoji: '⚠️', title: 'Points de vigilance', icon: 'exclamation-triangle', color: 'warning' },
@@ -653,7 +790,7 @@ RÈGLES STRICTES :
                 // Clean the title (remove ** and emoji)
                 let cleanTitle = currentSection
                     .replace(/\*\*/g, '')
-                    .replace(/[📊✅⚠️💡]/g, '')
+                    .replace(/[📝📊✅⚠️💡]/g, '')
                     .trim();
 
                 // Process content - convert bullet points to list items
@@ -661,20 +798,32 @@ RÈGLES STRICTES :
                     .map(line => line.replace(/^[•\-→]\s*/, '').trim())
                     .filter(line => line.length > 0);
 
-                html += `
+                if (config.isFullWidth) {
+                    // Narrative section (Synthesis)
+                    const paragraph = items.join(' ');
+                    html += `
+                    <div class="synthesis-section synthesis-intro-card">
+                        <div class="synthesis-intro-header">
+                            <i class="fas fa-sparkles"></i>
+                            <span>${cleanTitle || 'Synthèse'}</span>
+                        </div>
+                        <p class="synthesis-intro-text">${paragraph}</p>
+                    </div>
+                 `;
+                } else {
+                    // Bullet point sections
+                    html += `
                     <div class="synthesis-section synthesis-section--${config.color}">
                         <div class="synthesis-section-header">
                             <i class="fas fa-${config.icon}"></i>
                             <span>${cleanTitle}</span>
                         </div>
-                        <div class="synthesis-section-content">
-                            ${items.length > 1
-                        ? `<ul>${items.map(item => `<li>${item}</li>`).join('')}</ul>`
-                        : `<p>${items.join('')}</p>`
-                    }
-                        </div>
+                        <ul class="synthesis-list">
+                            ${items.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
                     </div>
                 `;
+                }
             }
             currentContent = [];
         };

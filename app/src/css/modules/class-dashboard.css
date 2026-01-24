@@ -605,8 +605,55 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Make Bilan section full width */
-.synthesis-section:first-child {
+/* 0. SYNTHESIS INTRO (Narrative) */
+.synthesis-intro-card {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
+    border-color: rgba(99, 102, 241, 0.3);
+    position: relative;
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.synthesis-intro-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--primary-color);
+    font-size: var(--font-lg);
+    font-weight: 700;
+}
+
+.synthesis-intro-header i {
+    font-size: 1.25rem;
+    animation: pulse-soft 3s infinite ease-in-out;
+}
+
+@keyframes pulse-soft {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+}
+
+.synthesis-intro-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Make Bilan section full width too if needed, but here we keep it half width or full */
+.synthesis-section:nth-child(2) {
     grid-column: 1 / -1;
     display: flex;
     flex-direction: row;
