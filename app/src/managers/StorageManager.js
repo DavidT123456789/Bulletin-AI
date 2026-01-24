@@ -556,7 +556,8 @@ export const StorageManager = {
                     });
 
                     runtimeState.data.generatedResults = existingResults;
-                } else {
+                    // CLEAR DB first if forcing overwrite to ensure deletions are propagated
+                    await DBService.clear('generatedResults');
                     runtimeState.data.generatedResults = importedResults;
                     stats.imported = importedResults.length;
                 }

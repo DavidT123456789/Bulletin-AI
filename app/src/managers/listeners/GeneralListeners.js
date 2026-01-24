@@ -144,11 +144,17 @@ export const GeneralListeners = {
                             // Update Settings UI if open
                             const actionsBar = document.getElementById('cloudActionsBar');
                             if (actionsBar) actionsBar.style.display = 'flex';
+
+                            // [FIX] Stop here. Do not auto-save after connection.
+                            // The user just reconnected. They might want to Restore, not Save.
+                            UI.showNotification('Connecté à Google Drive', 'success');
+                            closeMenu();
+                            return;
                         }
 
                         // Now save
                         cloudSaveBtn.classList.add('saving');
-                        if (labelEl) labelEl.textContent = 'Sauvegarde';
+                        if (labelEl) labelEl.textContent = 'Enregistrement...';
 
                         await SyncService.saveToCloud();
 
@@ -159,7 +165,7 @@ export const GeneralListeners = {
                             hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
                         }
 
-                        UI.showNotification('Données sauvegardées sur Google Drive !', 'success');
+                        UI.showNotification('Données envoyées sur le Cloud !', 'success');
                         closeMenu();
                     } catch (error) {
                         console.error('Cloud save error:', error);
@@ -169,6 +175,53 @@ export const GeneralListeners = {
                         if (labelEl) labelEl.textContent = originalLabel;
                     }
                 });
+
+                // Handle load click - Pull from cloud with confirmation
+                const cloudLoadBtn = document.getElementById('cloudLoadMenuBtn');
+                if (cloudLoadBtn) {
+                    cloudLoadBtn.addEventListener('click', async () => {
+                        const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
+                        const originalLabel = labelEl?.textContent;
+
+                        try {
+                            const { SyncService } = await import('../../services/SyncService.js');
+
+                            if (!SyncService.isConnected()) {
+                                const connected = await SyncService.connect('google');
+                                if (!connected) return;
+                            }
+
+                            UI.showCustomConfirm(
+                                "⚠️ ÉCRASER LES DONNÉES LOCALES ?\n\nVous êtes sur le point de récupérer la sauvegarde du Cloud.\nCeci remplacera TOUTES vos données actuelles (élèves, paramètres) par celles du Cloud.\n\nCette action est irréversible.",
+                                async () => {
+                                    try {
+                                        cloudLoadBtn.classList.add('saving');
+                                        if (labelEl) labelEl.textContent = 'Récupération...';
+
+                                        const result = await SyncService.loadFromCloud();
+                                        if (result.success) {
+                                            UI.showNotification('Données récupérées avec succès !', 'success');
+                                            // Reload to ensure deep state consistency
+                                            setTimeout(() => window.location.reload(), 1000);
+                                        } else {
+                                            UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
+                                        }
+                                        closeMenu();
+                                    } catch (error) {
+                                        console.error('Cloud load error:', error);
+                                        UI.showNotification('Erreur de récupération : ' + error.message, 'error');
+                                    } finally {
+                                        cloudLoadBtn.classList.remove('saving');
+                                        if (labelEl) labelEl.textContent = originalLabel;
+                                    }
+                                }
+                            );
+
+                        } catch (error) {
+                            console.error('Cloud load setup error:', error);
+                        }
+                    });
+                }
             }
         }
 

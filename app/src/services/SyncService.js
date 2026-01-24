@@ -37,14 +37,13 @@ export const SyncService = {
     /** @type {Object|null} Current provider instance */
     _provider: null,
 
-    /** @type {number|null} Last successful sync timestamp */
+    /** @type {number|null} Last successful sync timestamp (Local) */
     lastSyncTime: null,
 
-    /** @type {boolean} Whether auto-sync is enabled */
-    autoSyncEnabled: false,
+    /** @type {number|null} Last remote modification timestamp (Cloud) */
+    remoteSyncTime: null,
 
-    /** @type {number|null} Debounce timer for auto-sync */
-    _syncDebounceTimer: null,
+    // Auto-sync variables removed to enforce Manual-Only paradigm
 
     /** @type {Function[]} Listeners for status changes */
     _statusListeners: [],
@@ -58,8 +57,7 @@ export const SyncService = {
     /** @type {boolean} Whether a cloud provider was previously configured */
     _wasConfigured: false,
 
-    /** @type {number|null} Timestamp when last reconnect notification was shown */
-    // _lastReconnectNotificationTime: null,
+
 
     // =========================================================================
     // INITIALIZATION
@@ -71,7 +69,7 @@ export const SyncService = {
     async init() {
         // Load saved provider preference
         const savedProvider = localStorage.getItem('bulletin_sync_provider');
-        this.autoSyncEnabled = localStorage.getItem('bulletin_sync_auto') === 'true';
+        // this.autoSyncEnabled = localStorage.getItem('bulletin_sync_auto') === 'true'; // Removed by request
         this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync')) || null;
         this._isOnline = navigator.onLine;
         this._wasConfigured = !!savedProvider;
@@ -83,21 +81,13 @@ export const SyncService = {
             try {
                 const connected = await this.connect(savedProvider, { silent: true });
 
-                // If connected, perform initial sync to get cloud data
+                // If connected, just update UI status - DO NOT SYNC AUTOMATICALLY
                 if (connected) {
-                    this._updateCloudIndicator('syncing');
-                    await this.sync();
-                    // Update UI to show connected status
-                    this._updateUIConnected(savedProvider);
                     this._updateCloudIndicator('connected');
+                    this._updateUIConnected(savedProvider);
                 } else if (this._provider?.needsReconnect?.()) {
-                    // Token expired but user had a valid connection before
-                    // Show notification AND update indicator to prompt reconnection
                     this._updateCloudIndicator('expired');
-                    // this._showReconnectNotification();
                 } else {
-                    // Provider exists but connection failed for other reason
-                    // Show local mode if offline, expired if was configured
                     this._updateCloudIndicator(this._isOnline ? 'expired' : 'local');
                 }
             } catch (e) {
@@ -105,7 +95,6 @@ export const SyncService = {
                 this._updateCloudIndicator('expired');
             }
         } else {
-            // No saved provider - show local mode icon
             this._updateCloudIndicator('local');
         }
     },
@@ -135,25 +124,18 @@ export const SyncService = {
         if (DEBUG) console.log(`[SyncService] Network ${isOnline ? 'restored' : 'lost'}`);
 
         if (!isOnline) {
-            // Went offline - show local mode if we have a provider configured
             if (this._wasConfigured || this.currentProviderName) {
                 this._updateCloudIndicator('local');
             }
         } else if (!wasOnline && isOnline) {
-            // Came back online - try to restore connection
+            // Came back online - verify token but DO NOT SYNC
             if (this.currentProviderName && this._provider) {
                 this._checkTokenValidity();
             } else if (this._wasConfigured) {
-                // Try to reconnect silently
                 const savedProvider = localStorage.getItem('bulletin_sync_provider');
                 if (savedProvider) {
                     this.connect(savedProvider, { silent: true }).then(connected => {
-                        if (connected) {
-                            this._updateCloudIndicator('connected');
-                            this.sync().catch(() => { });
-                        } else {
-                            this._updateCloudIndicator('expired');
-                        }
+                        this._updateCloudIndicator(connected ? 'connected' : 'expired');
                     }).catch(() => {
                         this._updateCloudIndicator('expired');
                     });
@@ -163,29 +145,41 @@ export const SyncService = {
     },
 
     /**
-     * Check if the current token is still valid and proactively refresh if expiring soon.
+     * Check if the current token is still valid.
      * @private
      */
     async _checkTokenValidity() {
         if (!this._provider || !this._isOnline) return;
-
-        // Check if provider has the required methods
         if (typeof this._provider.isConnected !== 'function') return;
 
         const isValid = this._provider.isConnected();
 
         if (!isValid) {
-            // Token already expired - try silent refresh
             if (DEBUG) console.log('[SyncService] Token expired, attempting silent refresh...');
             const refreshed = await this._trySilentRefresh();
             if (!refreshed) {
                 this._updateCloudIndicator('expired');
-                // this._showReconnectNotification();
             }
         } else if (typeof this._provider.isExpiringSoon === 'function' && this._provider.isExpiringSoon()) {
-            // Token valid but expiring soon (within 10 min) - proactive refresh
             if (DEBUG) console.log('[SyncService] Token expiring soon, proactive silent refresh...');
             await this._trySilentRefresh();
+        }
+    },
+
+    /**
+     * Check remote file status (modification date).
+     */
+    async checkRemoteStatus() {
+        if (!this._provider || !this._isOnline) return;
+
+        try {
+            const meta = await this._provider.getMetadata();
+            if (meta && meta.lastModified) {
+                this.remoteSyncTime = new Date(meta.lastModified).getTime();
+                this._updateCloudIndicator('connected'); // Refresh UI
+            }
+        } catch (e) {
+            console.warn('[SyncService] Failed to check remote status:', e);
         }
     },
 
@@ -213,40 +207,6 @@ export const SyncService = {
     },
 
     /**
-     * Show a notification prompting user to reconnect to cloud sync.
-     * Uses timestamp-based deduplication to prevent notification storms.
-     * @private
-     * DEPRECATED: Disabled to prevent spam (2026-01-24)
-     */
-    /*
-    _showReconnectNotification() {
-        // Prevent duplicate notifications - only show if 60+ seconds since last one
-        const now = Date.now();
-        const COOLDOWN_MS = 60 * 1000; // 60 seconds
-
-        if (this._lastReconnectNotificationTime &&
-            (now - this._lastReconnectNotificationTime) < COOLDOWN_MS) {
-            if (DEBUG) console.log('[SyncService] Reconnect notification suppressed (cooldown active)');
-            return;
-        }
-
-        this._lastReconnectNotificationTime = now;
-
-        // Delay to ensure UI is ready
-        setTimeout(() => {
-            const UI = window.UI;
-            if (UI?.showNotification) {
-                UI.showNotification(
-                    'Session Google Drive expirée. <a href="#" onclick="window.SyncService?.reconnect(); return false;">Reconnecter</a>',
-                    'warning',
-                    8000
-                );
-            }
-        }, 500);
-    },
-    */
-
-    /**
      * Update the cloud sync indicator in the menu.
      * @param {'connected'|'expired'|'syncing'|'local'|'disconnected'} state
      * @private
@@ -254,18 +214,20 @@ export const SyncService = {
     _updateCloudIndicator(state) {
         // Delay to ensure DOM is ready
         setTimeout(() => {
-            // Target the menu item instead of standalone indicator
-            const menuBtn = document.getElementById('cloudSaveMenuBtn');
-            if (!menuBtn) return;
+            // Target both menu items
+            const saveBtn = document.getElementById('cloudSaveMenuBtn');
+            const loadBtn = document.getElementById('cloudLoadMenuBtn');
+
+            if (!saveBtn) return;
 
             // Remove previous state classes
-            menuBtn.classList.remove('status-connected', 'status-expired', 'status-syncing');
+            saveBtn.classList.remove('status-connected', 'status-expired', 'status-syncing');
 
             // Labels and icons map
             const config = {
                 connected: {
                     icon: 'fa-cloud-arrow-up',
-                    label: 'Sauvegarder sur Cloud',
+                    label: 'Enregistrer (Cloud)',
                     class: 'status-connected',
                     color: '' // Default text color
                 },
@@ -277,13 +239,13 @@ export const SyncService = {
                 },
                 syncing: {
                     icon: 'fa-spinner fa-spin',
-                    label: 'Synchronisation...',
+                    label: 'Enregistrement...',
                     class: 'status-syncing',
                     color: ''
                 },
                 local: {
                     icon: 'fa-cloud-arrow-up',
-                    label: 'Sauvegarder sur Cloud',
+                    label: 'Enregistrer (Cloud)',
                     class: '',
                     color: ''
                 }
@@ -291,19 +253,17 @@ export const SyncService = {
 
             const currentConfig = config[state] || config.local;
 
-            // Update visibility: Only show if configured (wasConfigured) or currently connected/syncing/expired
-            // If strictly local (provider never set), we might hide it, but usually we want to offer the option.
-            // For now, follow existing logic: show if connected or was configured.
-
             if (state === 'disconnected' && !this._wasConfigured) {
-                menuBtn.style.display = 'none';
+                saveBtn.style.display = 'none';
+                if (loadBtn) loadBtn.style.display = 'none';
                 return;
             }
 
-            menuBtn.style.display = 'grid'; // Maintain grid layout defined in CSS
+            saveBtn.style.display = 'grid'; // Maintain grid layout defined in CSS
+            if (loadBtn) loadBtn.style.display = 'grid';
 
             // Update Icon
-            const iconEl = menuBtn.querySelector('i');
+            const iconEl = saveBtn.querySelector('i');
             if (iconEl) {
                 iconEl.className = `fas ${currentConfig.icon}`;
                 if (currentConfig.color) iconEl.style.color = currentConfig.color;
@@ -311,7 +271,7 @@ export const SyncService = {
             }
 
             // Update Label
-            const labelEl = menuBtn.querySelector('.cloud-save-label');
+            const labelEl = saveBtn.querySelector('.cloud-save-label');
             if (labelEl) {
                 labelEl.textContent = currentConfig.label;
                 if (currentConfig.color) labelEl.style.color = currentConfig.color;
@@ -319,7 +279,7 @@ export const SyncService = {
             }
 
             // Update Time Hint (only if connected/syncing)
-            const timeHint = menuBtn.querySelector('#cloudSaveTimeHint');
+            const timeHint = saveBtn.querySelector('#cloudSaveTimeHint');
             if (timeHint) {
                 if (state === 'connected' && this.lastSyncTime) {
                     timeHint.textContent = this._formatLastSyncTime(this.lastSyncTime).replace('Dernière sync : ', '');
@@ -331,18 +291,21 @@ export const SyncService = {
                 }
             }
 
-            // Add status class for potential CSS styling
-            if (currentConfig.class) {
-                menuBtn.classList.add(currentConfig.class);
+            // Update Recover Button Time Hint
+            const loadTimeHint = document.getElementById('cloudLoadTimeHint');
+            if (loadTimeHint) {
+                if (state === 'connected' && this.remoteSyncTime) {
+                    loadTimeHint.textContent = this._formatLastSyncTime(this.remoteSyncTime).replace('Dernière sync : ', 'Cloud : ');
+                    loadTimeHint.style.display = 'block';
+                } else {
+                    loadTimeHint.style.display = 'none';
+                }
             }
 
-            // Update click handler context
-            // Note: The specific click action (Save or Reconnect) is handled by the controller/listeners usually,
-            // but we can ensure the UI guides them.
-            // If expired, the click should ideally trigger reconnect logic.
-            // Currently, the listener for #cloudSaveMenuBtn is likely 'saveToCloud'.
-            // If session is expired, saveToCloud will fail -> error -> might trigger reconnect flow.
-            // We'll rely on that for now to keep it simple.
+            // Add status class for potential CSS styling
+            if (currentConfig.class) {
+                saveBtn.classList.add(currentConfig.class);
+            }
 
         }, 100);
     },
@@ -372,26 +335,6 @@ export const SyncService = {
         }
     },
 
-    /**
-     * Force a manual sync refresh with visual feedback.
-     * Useful for cross-device synchronization.
-     */
-    async forceRefresh() {
-        if (!this._provider || this.status === 'syncing') {
-            return;
-        }
-
-        try {
-            this._updateCloudIndicator('syncing');
-            await this.sync();
-            window.UI?.showNotification('Synchronisation terminée', 'success', 3000);
-        } catch (e) {
-            console.error('[SyncService] Force refresh failed:', e);
-            window.UI?.showNotification('Erreur de synchronisation', 'error');
-            this._updateCloudIndicator('connected');
-        }
-    },
-
 
     /**
      * Open settings modal on the sync tab.
@@ -399,53 +342,23 @@ export const SyncService = {
      */
     _openSyncSettings() {
         if (DEBUG) console.log('[SyncService] Opening sync settings...');
-
-        // Try multiple ways to get the modal and UI
         const settingsModal = document.getElementById('appSettingsModal') || window.DOM?.settingsModal;
         const uiManager = window.UI;
 
-        if (!settingsModal) {
-            console.error('[SyncService] Settings modal not found (ID: appSettingsModal)');
-            return;
-        }
-
-        if (!uiManager) {
-            console.error('[SyncService] UI Manager not found in window.UI');
-            // Try to import dynamically if missing? No, user interactions should happen after init.
-            return;
-        }
-
-        if (DEBUG) console.log('[SyncService] Modal and UI found, opening...');
-        uiManager.openModal(settingsModal);
-
-        // Wait for modal animation to start/finish before switching tabs and focusing
-        setTimeout(() => {
-            // Switch to the 'advanced' tab which contains the sync settings
-            if (uiManager.showSettingsTab) {
-                if (DEBUG) console.log('[SyncService] Switching to advanced tab (Application)...');
-                uiManager.showSettingsTab('advanced');
-            }
-
-            // Scroll to the specific section and focus button
+        if (settingsModal && uiManager) {
+            uiManager.openModal(settingsModal);
             setTimeout(() => {
-                // Scroll to sync section
-                const syncSection = document.getElementById('cloudSyncSection');
-                if (syncSection) {
-                    syncSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (uiManager.showSettingsTab) {
+                    uiManager.showSettingsTab('advanced');
                 }
-
-                // Focus the Connect button (or disconnect) for better accessibility
-                const connectBtn = document.getElementById('connectGoogleBtn');
-                const disconnectBtn = document.getElementById('disconnectGoogleBtn');
-
-                // Focus visible button
-                if (disconnectBtn && disconnectBtn.offsetParent !== null) {
-                    disconnectBtn.focus();
-                } else if (connectBtn && connectBtn.offsetParent !== null) {
-                    connectBtn.focus();
-                }
-            }, 400); // Wait for tab transition (approx 350ms)
-        }, 100);
+                setTimeout(() => {
+                    const syncSection = document.getElementById('cloudSyncSection');
+                    if (syncSection) {
+                        syncSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 400);
+            }, 100);
+        }
     },
 
     /**
@@ -478,7 +391,6 @@ export const SyncService = {
                     card.classList.add('connected');
                 }
             }
-            // Add similar handling for dropbox if needed
         }, 500);
     },
 
@@ -489,13 +401,11 @@ export const SyncService = {
         if (!this.currentProviderName) return false;
 
         try {
-            this._setStatus('syncing');
             this._updateCloudIndicator('syncing');
             const authorized = await this._provider?.authorize?.({ silent: false });
             if (authorized) {
-                await this.sync();
+                // Just connect, DO NOT SYNC
                 window.UI?.showNotification('Reconnecté à Google Drive', 'success');
-                this._setStatus('idle');
                 this._updateCloudIndicator('connected');
                 this._updateUIConnected(this.currentProviderName);
                 return true;
@@ -503,7 +413,6 @@ export const SyncService = {
         } catch (e) {
             console.error('[SyncService] Reconnection failed:', e);
         }
-        this._setStatus('error');
         this._updateCloudIndicator('expired');
         return false;
     },
@@ -525,8 +434,6 @@ export const SyncService = {
         }
 
         try {
-            this._setStatus('syncing');
-
             // Dynamically load provider
             const ProviderClass = await PROVIDERS[providerName]();
             this._provider = ProviderClass;
@@ -537,20 +444,20 @@ export const SyncService = {
             if (!authorized) {
                 this._provider = null;
                 this.currentProviderName = null;
-                this._setStatus('idle');
                 return false;
             }
 
             // Save preference
             localStorage.setItem('bulletin_sync_provider', providerName);
-            this._setStatus('idle');
-            // FIX: Ensure UI is updated immediately after connection
             this._updateCloudIndicator('connected');
+
+            // Check remote status immediately
+            this.checkRemoteStatus();
+
             return true;
 
         } catch (error) {
             console.error('[SyncService] Connection error:', error);
-            this._setStatus('error');
             throw error;
         }
     },
@@ -564,8 +471,8 @@ export const SyncService = {
         }
         this._provider = null;
         this.currentProviderName = null;
+        this.remoteSyncTime = null;
         localStorage.removeItem('bulletin_sync_provider');
-        this._setStatus('idle');
         this._updateCloudIndicator('disconnected');
     },
 
@@ -594,131 +501,8 @@ export const SyncService = {
     // SYNC OPERATIONS
     // =========================================================================
 
-    /**
-     * Perform a full sync (bidirectional).
-     * Simple approach: compare global timestamp, newest wins entirely.
-     * @returns {Promise<{success: boolean, stats: Object}>}
-     */
-    async sync() {
-        if (!this._provider) {
-            throw new Error('Aucun provider connecté');
-        }
-
-        try {
-            this._setStatus('syncing');
-            // FIX: Show syncing state in UI
-            this._updateCloudIndicator('syncing');
-
-            // 1. Get local and remote data
-            const localData = await this._getLocalData();
-            const remoteData = await this._provider.read();
-
-            const stats = { updated: 0, imported: 0, classesImported: 0, direction: 'none' };
-
-            // 2. ALWAYS merge if remote has data (bidirectional sync)
-            // Don't rely on lastSyncTime - it's the time of sync operation, not data modification
-            // The _mergeData function uses per-result and per-period timestamps for conflict resolution
-            if (remoteData) {
-                if (DEBUG) console.log('[SyncService] Performing bidirectional sync...');
-                stats.direction = 'bidirectional';
-
-                // Merge classes: combine local and remote, prefer newer timestamps
-                if (remoteData.classes && Array.isArray(remoteData.classes)) {
-                    const localClasses = userSettings.academic.classes || [];
-                    const classMap = new Map();
-
-                    // Add local classes first
-                    localClasses.forEach(c => classMap.set(c.id, c));
-
-                    // Merge remote classes (remote wins if same ID and has more recent data)
-                    remoteData.classes.forEach(remoteClass => {
-                        const localClass = classMap.get(remoteClass.id);
-                        if (!localClass) {
-                            classMap.set(remoteClass.id, remoteClass);
-                            stats.classesImported++;
-                        }
-                        // If both exist, keep local (could add per-class timestamps later)
-                    });
-
-                    userSettings.academic.classes = Array.from(classMap.values());
-                }
-
-                // Merge currentClassId only if local doesn't have one
-                if (remoteData.currentClassId !== undefined && !userSettings.academic.currentClassId) {
-                    userSettings.academic.currentClassId = remoteData.currentClassId;
-                }
-
-                // Merge generated results using deep merge with per-period timestamps
-                if (remoteData.generatedResults?.length > 0 || localData.generatedResults?.length > 0) {
-                    const localCountBefore = localData.generatedResults?.length || 0;
-                    const { merged, stats: mergeStats } = this._mergeData(localData, remoteData);
-
-                    // FIX: Keep ALL students, only warn about orphans instead of deleting
-                    const validClassIds = new Set(
-                        (userSettings.academic.classes || []).map(c => c.id)
-                    );
-                    const orphanStudents = merged.generatedResults.filter(r =>
-                        r.classId && !validClassIds.has(r.classId)
-                    );
-
-                    if (orphanStudents.length > 0) {
-                        console.warn(`[SyncService] Found ${orphanStudents.length} student(s) with unrecognized classId (kept, not deleted):`,
-                            orphanStudents.map(s => ({ id: s.id, name: `${s.prenom} ${s.nom}`, classId: s.classId }))
-                        );
-                    }
-
-                    // Keep ALL students - don't delete orphans
-                    runtimeState.data.generatedResults = merged.generatedResults;
-                    stats.imported = mergeStats.imported;
-                    stats.updated = mergeStats.updated;
-                }
-
-                // Merge settings
-                if (remoteData.settings) {
-                    if (remoteData.settings.theme) userSettings.ui.theme = remoteData.settings.theme;
-                    if (remoteData.settings.periodSystem) userSettings.academic.periodSystem = remoteData.settings.periodSystem;
-                    if (remoteData.settings.subjects) userSettings.academic.subjects = remoteData.settings.subjects;
-                }
-
-                await StorageManager.saveAppState();
-
-                // Refresh UI
-                if (window.App?.updateUIOnLoad) {
-                    window.App.updateUIOnLoad();
-                }
-            } else {
-                // NO REMOTE DATA - Push local to initialize cloud
-                if (DEBUG) console.log('[SyncService] No remote data, pushing local to cloud...');
-                stats.direction = 'push';
-            }
-
-            // 3. Always push current state to cloud (ensures both are in sync)
-            const dataToUpload = await this._getLocalData();
-            dataToUpload._meta = {
-                ...dataToUpload._meta,
-                lastSyncAt: new Date().toISOString(),
-                lastSyncTimestamp: Date.now(),
-                deviceId: StorageManager.getDeviceId()
-            };
-            await this._provider.write(dataToUpload);
-
-            // 4. Update local sync time
-            this.lastSyncTime = dataToUpload._meta.lastSyncTimestamp;
-            localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
-
-            this._setStatus('idle');
-            // FIX: Return to connected state in UI
-            this._updateCloudIndicator('connected');
-
-            return { success: true, stats };
-
-        } catch (error) {
-            console.error('[SyncService] Sync error:', error);
-            this._setStatus('error');
-            // Optional: visual feedback for error, but usually we just keep existing state or toast
-            return { success: false, stats: {}, error: error.message };
-        }
-    },
+    // NOTE: Bidirectional sync() removed to enforce Strict Manual Push/Pull paradigm.
+    // Use forceUpload() or forceDownload() instead.
 
     /**
      * Force push local data to cloud (overwrites remote).
@@ -738,6 +522,11 @@ export const SyncService = {
         await this._provider.write(localData);
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+
+        // Update remote time since we just wrote the file
+        this.remoteSyncTime = this.lastSyncTime;
+        this._updateCloudIndicator('connected');
+
         this._setStatus('idle');
     },
 
@@ -796,364 +585,6 @@ export const SyncService = {
     },
 
     // =========================================================================
-    // AUTO-SYNC
-    // =========================================================================
-
-    /**
-     * Enable or disable auto-sync.
-     * @param {boolean} enabled
-     */
-    setAutoSync(enabled) {
-        this.autoSyncEnabled = enabled;
-        localStorage.setItem('bulletin_sync_auto', enabled.toString());
-    },
-
-    /**
-     * Trigger auto-sync with debounce (called after data changes).
-     * Ensures valid token before syncing to avoid false sync indicators.
-     * @param {number} delayMs - Debounce delay (default 5000ms)
-     */
-    triggerAutoSync(delayMs = 5000) {
-        // Early exit if auto-sync disabled or no provider configured
-        if (!this.autoSyncEnabled) return;
-
-        // Check if we have a provider configured (even if token might be expired)
-        const savedProvider = localStorage.getItem('bulletin_sync_provider');
-        if (!savedProvider && !this.isConnected()) return;
-
-        // Clear existing timer
-        if (this._syncDebounceTimer) {
-            clearTimeout(this._syncDebounceTimer);
-        }
-
-        // Set new timer
-        this._syncDebounceTimer = setTimeout(async () => {
-            try {
-                // Ensure we have a valid token before syncing
-                const tokenValid = await this._ensureValidToken();
-
-                if (tokenValid) {
-                    await this.sync();
-                } else {
-                    // Token invalid and couldn't refresh - user will see expired indicator
-                    if (DEBUG) console.log('[SyncService] Auto-sync skipped: token invalid, user needs to reconnect');
-                }
-            } catch (e) {
-                console.warn('[SyncService] Auto-sync failed:', e.message);
-            }
-        }, delayMs);
-    },
-
-    /**
-     * Ensure we have a valid token, attempting silent refresh if needed.
-     * @returns {Promise<boolean>} True if token is valid (or was refreshed)
-     * @private
-     */
-    async _ensureValidToken() {
-        if (!this._provider) return false;
-
-        // Check if currently valid
-        if (typeof this._provider.isConnected === 'function' && this._provider.isConnected()) {
-            return true;
-        }
-
-        // Try silent refresh
-        const refreshed = await this._trySilentRefresh();
-        if (refreshed) {
-            return true;
-        }
-
-        // Silent refresh failed - show notification (deduplication handled by _showReconnectNotification)
-        this._showReconnectNotification();
-
-        return false;
-    },
-
-    // =========================================================================
-    // CONFLICT RESOLUTION
-    // =========================================================================
-
-    /**
-     * Merge local and remote data using last-write-wins strategy.
-     * Deep-merges studentData.periods and preserves AI generation metadata.
-     * @private
-     */
-    _mergeData(local, remote) {
-        const stats = { imported: 0, updated: 0, skipped: 0, conflicts: 0 };
-
-        if (!remote || !remote.generatedResults) {
-            return { merged: local, stats };
-        }
-
-        const localResults = local.generatedResults || [];
-        const remoteResults = remote.generatedResults || [];
-
-        // Get local tombstones to prevent re-importing deleted items
-        const localTombstones = local._deletedItems?.students || [];
-        const tombstoneMap = new Map(localTombstones.map(t => [t.id, t]));
-
-        // Create map of local results by ID
-        const localMap = new Map(localResults.map(r => [r.id, r]));
-        const mergedResults = [...localResults];
-
-        // Process remote results
-        remoteResults.forEach(remoteItem => {
-            const localItem = localMap.get(remoteItem.id);
-
-            // Check if this item was deleted locally
-            const tombstone = tombstoneMap.get(remoteItem.id);
-            if (tombstone && tombstone.deletedAt > (remoteItem._lastModified || 0)) {
-                // Local deletion is more recent than remote modification → skip import
-                stats.skipped++;
-                return;
-            }
-
-            if (!localItem) {
-                // New item from remote (and not deleted locally)
-                mergedResults.push(remoteItem);
-                stats.imported++;
-            } else {
-                // Existing item - compare timestamps
-                const remoteTime = remoteItem._lastModified || 0;
-                const localTime = localItem._lastModified || 0;
-
-                if (remoteTime > localTime) {
-                    // Remote is newer - deep merge to preserve local data
-                    this._deepMergeResult(localItem, remoteItem);
-                    stats.updated++;
-                    stats.conflicts++;
-                } else if (remoteTime < localTime) {
-                    // Local is newer - but still merge any missing data from remote
-                    this._deepMergeResult(localItem, remoteItem, true);
-                    stats.skipped++;
-                    stats.conflicts++;
-                }
-                // If equal, no action needed
-            }
-        });
-
-        return {
-            merged: { ...local, generatedResults: mergedResults },
-            stats
-        };
-    },
-
-    /**
-     * Deep merge a remote result into a local result.
-     * Preserves local-only data and deep-merges studentData.periods.
-     * @param {Object} localItem - The local result to update
-     * @param {Object} remoteItem - The remote result to merge from
-     * @param {boolean} localIsNewer - If true, only fill in missing data from remote
-     * @private
-     */
-    _deepMergeResult(localItem, remoteItem, localIsNewer = false) {
-        // Preserve local-only data that should never be overwritten blindly
-        const preserved = {
-            id: localItem.id,
-            studentPhoto: localItem.studentPhoto,
-            journal: localItem.journal,
-            history: localItem.history,
-            _manualEdits: localItem._manualEdits,
-            // Root-level appreciation (cache for current period)
-            appreciation: localItem.appreciation,
-            // AI generation metadata
-            wasGenerated: localItem.wasGenerated,
-            generationSnapshot: localItem.generationSnapshot,
-            generationSnapshotJournal: localItem.generationSnapshotJournal,
-            generationSnapshotJournalCount: localItem.generationSnapshotJournalCount,
-            generationThreshold: localItem.generationThreshold,
-            generationPeriod: localItem.generationPeriod,
-            // Local periods data for deep merge
-            localPeriods: localItem.studentData?.periods ? { ...localItem.studentData.periods } : {}
-        };
-
-        if (!localIsNewer) {
-            // Remote is newer - take remote as base
-            Object.assign(localItem, remoteItem);
-        }
-
-        // === Deep merge studentData.periods ===
-        // Combine local and remote periods, keeping data from both
-        if (localItem.studentData && preserved.localPeriods) {
-            const remotePeriods = remoteItem.studentData?.periods || {};
-            const mergedPeriods = { ...preserved.localPeriods };
-
-            // Merge each period from remote
-            for (const period in remotePeriods) {
-                const remotePeriodData = remotePeriods[period];
-                const localPeriodData = preserved.localPeriods[period] || {};
-
-                if (!mergedPeriods[period]) {
-                    // Period only exists in remote
-                    mergedPeriods[period] = { ...remotePeriodData };
-                } else {
-                    // Period exists in both - merge using per-period timestamps
-                    const merged = { ...localPeriodData };
-
-                    // Get per-period timestamps (new system) or fall back to global comparison
-                    const localPeriodTime = localPeriodData._lastModified || 0;
-                    const remotePeriodTime = remotePeriodData._lastModified || 0;
-
-                    // Determine which period data is newer
-                    const periodRemoteIsNewer = remotePeriodTime > localPeriodTime;
-                    const periodLocalIsNewer = localPeriodTime > remotePeriodTime;
-                    const noTimestamps = !localPeriodTime && !remotePeriodTime;
-
-                    // Grade: use newer, or non-null if one is missing
-                    if (remotePeriodData.grade !== undefined && remotePeriodData.grade !== null) {
-                        if (merged.grade === undefined || merged.grade === null) {
-                            merged.grade = remotePeriodData.grade;
-                        } else if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
-                            merged.grade = remotePeriodData.grade;
-                        }
-                    }
-
-                    // Appreciation: use per-period timestamps for precise conflict resolution
-                    const remoteApp = remotePeriodData.appreciation?.trim() || '';
-                    const localApp = localPeriodData.appreciation?.trim() || '';
-
-                    if (remoteApp && !localApp) {
-                        // Remote has content, local is empty → take remote
-                        merged.appreciation = remotePeriodData.appreciation;
-                        merged._lastModified = remotePeriodTime || Date.now();
-                    } else if (!remoteApp && localApp) {
-                        // Local has content, remote is empty
-                        // If remote is NEWER (per-period OR global fallback), user intentionally deleted
-                        if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
-                            merged.appreciation = '';
-                            merged._lastModified = remotePeriodTime || Date.now();
-                        }
-                        // Otherwise keep local (local is newer)
-                    } else if (remoteApp && localApp) {
-                        // Both have content → use per-period timestamp, fallback to global
-                        if (periodRemoteIsNewer || (noTimestamps && !localIsNewer)) {
-                            merged.appreciation = remotePeriodData.appreciation;
-                            merged._lastModified = remotePeriodTime || Date.now();
-                        }
-                        // Otherwise keep local (local is newer or same)
-                    }
-
-                    mergedPeriods[period] = merged;
-                }
-            }
-
-            localItem.studentData.periods = mergedPeriods;
-        }
-
-        // === Restore preserved ID (never change) ===
-        localItem.id = preserved.id;
-
-        // === Restore local photo with timestamp comparison ===
-        if (preserved.studentPhoto?.data) {
-            const remotePhotoTime = remoteItem.studentPhoto?.uploadedAt
-                ? new Date(remoteItem.studentPhoto.uploadedAt).getTime() : 0;
-            const localPhotoTime = preserved.studentPhoto.uploadedAt
-                ? new Date(preserved.studentPhoto.uploadedAt).getTime() : 0;
-
-            if (!remoteItem.studentPhoto || localPhotoTime > remotePhotoTime) {
-                localItem.studentPhoto = preserved.studentPhoto;
-            }
-        }
-
-        // === Merge journal entries (additive) ===
-        // Combine local and remote entries, deduplicating by ID
-        const localJournal = preserved.journal || [];
-        const remoteJournal = remoteItem.journal || [];
-
-        if (localJournal.length > 0 || remoteJournal.length > 0) {
-            const journalMap = new Map();
-
-            // Add all local entries first
-            localJournal.forEach(entry => {
-                journalMap.set(entry.id, entry);
-            });
-
-            // Merge remote entries
-            remoteJournal.forEach(remoteEntry => {
-                const localEntry = journalMap.get(remoteEntry.id);
-
-                if (!localEntry) {
-                    // New entry from remote
-                    journalMap.set(remoteEntry.id, remoteEntry);
-                } else {
-                    // Entry exists in both - use per-entry timestamp
-                    const localTime = localEntry._lastModified || new Date(localEntry.date).getTime();
-                    const remoteTime = remoteEntry._lastModified || new Date(remoteEntry.date).getTime();
-
-                    if (remoteTime > localTime) {
-                        journalMap.set(remoteEntry.id, remoteEntry);
-                    }
-                    // If local is newer, keep local (already in map)
-                }
-            });
-
-            // Convert back to array, sorted by date (newest first)
-            localItem.journal = Array.from(journalMap.values())
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-        } else {
-            localItem.journal = [];
-        }
-
-        // === Restore history (cumulative) ===
-        if (preserved.history) {
-            localItem.history = preserved.history;
-        }
-
-        // === Restore root-level appreciation if local has one and remote doesn't ===
-        const localAppTrimmed = preserved.appreciation?.trim() || '';
-        const remoteAppTrimmed = remoteItem.appreciation?.trim() || '';
-        if (localAppTrimmed && !remoteAppTrimmed) {
-            localItem.appreciation = preserved.appreciation;
-        }
-
-        // === Restore manual edits ===
-        if (preserved._manualEdits && !remoteItem._manualEdits) {
-            localItem._manualEdits = preserved._manualEdits;
-        }
-
-        // === Restore AI generation metadata ===
-        // Prefer local wasGenerated if it's true and remote doesn't have it
-        if (preserved.wasGenerated === true && remoteItem.wasGenerated !== true) {
-            localItem.wasGenerated = true;
-            // Also restore related generation metadata
-            if (preserved.generationSnapshot) {
-                localItem.generationSnapshot = preserved.generationSnapshot;
-            }
-            if (preserved.generationSnapshotJournal) {
-                localItem.generationSnapshotJournal = preserved.generationSnapshotJournal;
-            }
-            if (preserved.generationSnapshotJournalCount !== undefined) {
-                localItem.generationSnapshotJournalCount = preserved.generationSnapshotJournalCount;
-            }
-            if (preserved.generationThreshold !== undefined) {
-                localItem.generationThreshold = preserved.generationThreshold;
-            }
-            if (preserved.generationPeriod) {
-                localItem.generationPeriod = preserved.generationPeriod;
-            }
-        }
-
-        // If remote has wasGenerated = true, ensure we have the generation metadata
-        if (remoteItem.wasGenerated === true && !localItem.generationSnapshot) {
-            if (remoteItem.generationSnapshot) {
-                localItem.generationSnapshot = remoteItem.generationSnapshot;
-            }
-            if (remoteItem.generationSnapshotJournal) {
-                localItem.generationSnapshotJournal = remoteItem.generationSnapshotJournal;
-            }
-            if (remoteItem.generationSnapshotJournalCount !== undefined) {
-                localItem.generationSnapshotJournalCount = remoteItem.generationSnapshotJournalCount;
-            }
-            if (remoteItem.generationThreshold !== undefined) {
-                localItem.generationThreshold = remoteItem.generationThreshold;
-            }
-            if (remoteItem.generationPeriod) {
-                localItem.generationPeriod = remoteItem.generationPeriod;
-            }
-        }
-    },
-
-    // =========================================================================
     // HELPERS
     // =========================================================================
 
@@ -1162,9 +593,6 @@ export const SyncService = {
      * @private
      */
     async _getLocalData() {
-        // Cleanup old tombstones (> 30 days) to prevent infinite growth
-        this._cleanupOldTombstones();
-
         return {
             _meta: {
                 appVersion: '0.1.0', // Will be replaced with actual version
@@ -1182,30 +610,10 @@ export const SyncService = {
             generatedResults: (runtimeState.data.generatedResults || []).map(r => ({
                 ...r,
                 _lastModified: r._lastModified || Date.now()
-            })),
-            // Include tombstones for sync conflict resolution
-            _deletedItems: runtimeState.data.deletedItems || { students: [], classes: [] }
+            }))
         };
     },
 
-    /**
-     * Cleanup tombstones older than 30 days to prevent infinite growth.
-     * @private
-     */
-    _cleanupOldTombstones() {
-        if (!runtimeState.data.deletedItems) return;
-
-        const threshold = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
-
-        if (runtimeState.data.deletedItems.students) {
-            runtimeState.data.deletedItems.students =
-                runtimeState.data.deletedItems.students.filter(t => t.deletedAt > threshold);
-        }
-        if (runtimeState.data.deletedItems.classes) {
-            runtimeState.data.deletedItems.classes =
-                runtimeState.data.deletedItems.classes.filter(t => t.deletedAt > threshold);
-        }
-    },
 
     /**
      * Update status and notify listeners.
