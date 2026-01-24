@@ -96,7 +96,6 @@
 
                     <p class="lp-hero__subtitle">
                         Une aide à la rédaction assistée par IA, conçue pour les enseignants.
-                        Open source, gratuite, et tournant exclusivement sur votre navigateur.
                     </p>
 
                     <div class="lp-hero__actions">
@@ -119,8 +118,8 @@
                             <span>Données anonymisées</span>
                         </div>
                         <div class="lp-hero__stat">
-                            <div class="lp-hero__stat-icon"><i class="fas fa-database"></i></div>
-                            <span>Stockage local</span>
+                            <div class="lp-hero__stat-icon"><i class="fas fa-bolt"></i></div>
+                            <span>Sans installation</span>
                         </div>
                     </div>
                 </div>
@@ -650,6 +649,10 @@
          * Arc carousel with step-by-step navigation
          * Cards rotate into position with center card highlighted
          */
+        /**
+         * Arc carousel with step-by-step navigation
+         * Cards rotate into position with center card highlighted
+         */
         function initFeaturesCarousel() {
             const carousel = document.getElementById('featuresCarousel');
             if (!carousel) return;
@@ -659,6 +662,7 @@
             let currentCenter = 3; // Start with middle card (index 3 for 7 cards)
             let autoPlayInterval = null;
             let isPaused = false;
+            let isAnimating = false;
             const AUTO_ADVANCE_DELAY = 3500; // 3.5 seconds
 
             // Position names for 5 visible slots
@@ -752,12 +756,55 @@
             }
 
             /**
+             * Move multiple steps sequentially
+             * @param {number} steps - Number of steps (positive = next, negative = prev)
+             */
+            function moveSteps(steps) {
+                if (steps === 0 || isAnimating) return;
+
+                isAnimating = true;
+                const direction = steps > 0 ? 1 : -1;
+                let remaining = Math.abs(steps);
+
+                // Determine shortest path (wrap around if needed)
+                if (remaining > cardCount / 2) {
+                    remaining = cardCount - remaining;
+                    // Invert direction if we found a shorter path wrapping around
+                    // logic: steps was e.g. 6 (go right), wrap is 1 (go left)
+                    // But effectively we just use next/prev logic
+                }
+
+                // For simplicity in this fan, we just execute sequential moves
+                // If the user clicked something 2 steps away, we do 2 steps.
+
+                function step() {
+                    if (remaining <= 0) {
+                        isAnimating = false;
+                        return;
+                    }
+
+                    if (direction > 0) nextCard();
+                    else prevCard();
+
+                    remaining--;
+
+                    if (remaining > 0) {
+                        setTimeout(step, 150); // fast delay between steps
+                    } else {
+                        isAnimating = false;
+                    }
+                }
+
+                step();
+            }
+
+            /**
              * Start auto-advance timer
              */
             function startAutoPlay() {
                 if (autoPlayInterval) clearInterval(autoPlayInterval);
                 autoPlayInterval = setInterval(() => {
-                    if (!isPaused) {
+                    if (!isPaused && !isAnimating && !document.hidden) {
                         nextCard();
                     }
                 }, AUTO_ADVANCE_DELAY);
@@ -775,15 +822,37 @@
             });
 
             /**
+             * Handle Visibility Change (Tab Switch Bug)
+             */
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    // Pause definitely
+                    if (autoPlayInterval) clearInterval(autoPlayInterval);
+                } else {
+                    // Resume checking
+                    startAutoPlay();
+                }
+            });
+
+            /**
              * Click on card to bring it to center
              */
             cards.forEach((card, index) => {
                 card.addEventListener('click', () => {
-                    if (card.getAttribute('data-pos') !== 'center') {
-                        currentCenter = index;
-                        updatePositions();
-                        // Reset autoplay timer after manual interaction
-                        startAutoPlay();
+                    if (isAnimating) return;
+
+                    // Reset autoplay timer manually
+                    startAutoPlay();
+
+                    // Calculate shortest distance
+                    let diff = index - currentCenter;
+
+                    // Normalize diff to -cardCount/2 to cardCount/2
+                    if (diff > cardCount / 2) diff -= cardCount;
+                    if (diff < -cardCount / 2) diff += cardCount;
+
+                    if (diff !== 0) {
+                        moveSteps(diff);
                     }
                 });
             });
