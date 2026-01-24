@@ -518,12 +518,17 @@ export const StorageManager = {
 
             // Import classes if present
             if (backup.classes && Array.isArray(backup.classes)) {
-                const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
-                backup.classes.forEach(importedClass => {
-                    if (!existingIds.has(importedClass.id)) {
-                        userSettings.academic.classes.push(importedClass);
-                    }
-                });
+                if (options.mergeData) {
+                    const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
+                    backup.classes.forEach(importedClass => {
+                        if (!existingIds.has(importedClass.id)) {
+                            userSettings.academic.classes.push(importedClass);
+                        }
+                    });
+                } else {
+                    // Overwrite mode for classes
+                    userSettings.academic.classes = backup.classes;
+                }
             }
 
             // Import student data
@@ -556,11 +561,26 @@ export const StorageManager = {
                     });
 
                     runtimeState.data.generatedResults = existingResults;
-                    // CLEAR DB first if forcing overwrite to ensure deletions are propagated
+                    // CLEAR DB first and save merged results
                     await DBService.clear('generatedResults');
-                    runtimeState.data.generatedResults = importedResults;
-                    stats.imported = importedResults.length;
+                    await DBService.putAll('generatedResults', existingResults);
+                    // stats.imported was updated in loop
+                } else {
+                    // Overwrite mode for generatedResults
+                    const newResults = importedResults.map(r => ({
+                        ...r,
+                        _lastModified: r._lastModified || Date.now()
+                    }));
+                    runtimeState.data.generatedResults = newResults;
+
+                    await DBService.clear('generatedResults');
+                    await DBService.putAll('generatedResults', newResults);
+                    stats.imported = newResults.length;
                 }
+            } else if (!options.mergeData) {
+                // If backup has NO results and we are overwriting, clear local results
+                runtimeState.data.generatedResults = [];
+                await DBService.clear('generatedResults');
             }
 
             await this.saveAppState();
