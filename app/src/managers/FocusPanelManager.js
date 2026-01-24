@@ -23,6 +23,7 @@ import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
 import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
+import { ModalUI } from './ModalUIManager.js';
 
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -141,7 +142,14 @@ export const FocusPanelManager = {
         if (nextBtn) nextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
 
         // Generate
-        if (generateBtn) generateBtn.addEventListener('click', () => this.generate());
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => this.generate());
+            // [NEW] Right-click to preview the prompt
+            generateBtn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this._showPromptPreview();
+            });
+        }
 
         // Copy
         if (copyBtn) copyBtn.addEventListener('click', () => this.copy());
@@ -718,6 +726,94 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Affiche une prévisualisation du prompt qui serait envoyé à l'IA
+     * Triggered by right-click on Generate button
+     */
+    async _showPromptPreview() {
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Helper to construct student data for prompt generation (same as generate)
+        const studentData = this._prepareStudentData(this.currentStudentId, currentPeriod, result);
+        studentData.generatedAppreciation = ''; // Explicitly clear for preview
+
+        const prompts = AppreciationsManager.getAllPrompts(studentData);
+        // We only show prompt.appreciation
+        const promptText = prompts.appreciation || '';
+
+        // Simple HTML reset/escape
+        const escapedText = promptText
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        // Create HTML content for the modal
+        const message = `
+            <div style="text-align: left;">
+                <textarea readonly id="promptPreviewTextarea" style="
+                    width: 100%; 
+                    height: 400px; 
+                    padding: 12px; 
+                    border-radius: var(--radius-sm); 
+                    border: 1px solid var(--border-color); 
+                    background: var(--bg-secondary); 
+                    color: var(--text-primary); 
+                    font-family: 'SF Mono', Consolas, monospace; 
+                    font-size: 0.85rem; 
+                    line-height: 1.5;
+                    white-space: pre-wrap;
+                    resize: vertical;">${escapedText}</textarea>
+            </div>
+        `;
+
+        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
+            title: 'Prévisualisation du Prompt',
+            confirmText: 'Copier',
+            cancelText: 'Fermer',
+            isDanger: false,
+            compact: false
+        });
+
+        if (confirmed) {
+            try {
+                // We use the raw text for clipboard
+                await navigator.clipboard.writeText(promptText);
+                UI.showNotification('Prompt copié dans le presse-papier', 'success');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                UI.showNotification('Échec de la copie', 'error');
+            }
+        }
+    },
+
+    /**
+     * Helper to prepare student data object for prompt generation
+     * Ensures consistency between Generate and Preview
+     * @param {string} studentId - Student ID
+     * @param {string} period - Target period
+     * @param {Object} result - Student result object
+     * @returns {Object} Student data object ready for AppreciationsManager
+     * @private
+     */
+    _prepareStudentData(studentId, period, result) {
+        return {
+            id: studentId, // Required for journal lookup
+            nom: result.nom,
+            prenom: result.prenom,
+            statuses: result.studentData.statuses || [],
+            negativeInstructions: result.studentData.periods?.[period]?.context || '',
+            periods: result.studentData.periods,
+            currentPeriod: period
+        };
+    },
+
+    /**
      * Génère l'appréciation pour l'élève courant
      * IMPORTANT: Captures studentId at start and verifies it hasn't changed before applying results
      */
@@ -770,15 +866,8 @@ export const FocusPanelManager = {
 
         try {
             // Use existing appreciation generation logic
-            const studentData = {
-                id: generatingForStudentId, // Required for journal lookup
-                nom: result.nom,
-                prenom: result.prenom,
-                statuses: result.studentData.statuses || [],
-                negativeInstructions: result.studentData.periods?.[generatingForPeriod]?.context || '',
-                periods: result.studentData.periods,
-                currentPeriod: generatingForPeriod
-            };
+            // Use centralized data preparation
+            const studentData = this._prepareStudentData(generatingForStudentId, generatingForPeriod, result);
 
             const newResult = await AppreciationsManager.generateAppreciation(studentData, false, null, signal, 'single-student');
 
