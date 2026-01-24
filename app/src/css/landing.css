@@ -4593,8 +4593,10 @@ img {
     position: relative;
     width: auto;
     margin: 0 -12px;
-    padding: 0 12px 100px;
+    padding: 0 12px 20px;
     overflow: hidden;
+    margin-bottom: -40px;
+    /* Pull the next section closer */
 }
 
 @media (min-width: 1025px) {
