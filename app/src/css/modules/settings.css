@@ -1383,3 +1383,24 @@
         background-color: rgba(var(--primary-color-rgb), 0.12);
     }
 }
+
+/* === Privacy Settings Styles === */
+.privacy-description-container {
+    line-height: 1.5;
+    font-size: 0.95em;
+}
+
+.privacy-option-item {
+    margin-top: 4px;
+}
+
+.privacy-note {
+    margin-top: 6px;
+    font-style: italic;
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+.privacy-note i {
+    font-size: 0.9em;
+}

@@ -138,6 +138,11 @@ export const FormUI = {
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
         if (DOM.sessionTokens) DOM.sessionTokens.textContent = (appState.sessionTokens || 0).toLocaleString('fr-FR');
 
+        // Confidentialité
+        if (DOM.settingsPrivacyAnonymizeToggle) {
+            DOM.settingsPrivacyAnonymizeToggle.checked = appState.anonymizeData;
+        }
+
         this.toggleAIKeyFields();
         this.renderSettingsLists();
         this.updateModelDescription();

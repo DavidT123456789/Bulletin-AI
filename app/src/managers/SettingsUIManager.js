@@ -72,6 +72,11 @@ export const SettingsUIManager = {
         if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
         if (DOM.ollamaBaseUrl) appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
 
+        // Confidentialité
+        if (DOM.settingsPrivacyAnonymizeToggle) {
+            appState.anonymizeData = DOM.settingsPrivacyAnonymizeToggle.checked;
+        }
+
         const journalThresholdInput = document.getElementById('journalThresholdInput');
         if (journalThresholdInput) {
             appState.journalThreshold = parseInt(journalThresholdInput.value, 10) || 2;

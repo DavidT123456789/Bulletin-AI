@@ -43,13 +43,19 @@ export const PromptService = {
             : gender === 'masculin' ? 'masculin'
                 : 'non déterminé - nommer une seule fois puis utiliser des tournures impersonnelles (ex: "Sa participation...", "Il convient de...")';
 
+        // GESTION DE LA CONFIDENTIALITÉ
+        // Si anonymisation désactivée, on utilise les vraies données
+        // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
+        const isAnonymous = appState.anonymizeData ?? true;
+        const studentIdentifier = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
+
         const promptParts = [];
 
         // Introduction du prompt (avec discipline si renseignée)
         const disciplineContext = iaConfig.discipline
             ? ` en ${iaConfig.discipline}`
             : '';
-        promptParts.push(`Rédige l'appréciation de l'élève ${this.PRENOM_PLACEHOLDER}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        promptParts.push(`Rédige l'appréciation de l'élève ${studentIdentifier}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
 
         // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
         promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
@@ -139,7 +145,16 @@ export const PromptService = {
         const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
         const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
 
-        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${this.PRENOM_PLACEHOLDER} (${genderLabel})${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
+        // Note: Le nom de famille n'est JAMAIS envoyé, même si l'anonymisation est désactivée.
+        // Seul le prénom est partagé si l'utilisateur le permet.
+        const nameContext = studentIdentifier;
+
+        // Si on envoie le vrai prénom, on laisse l'IA déduire le genre (sauf si indéterminé)
+        // Si anonyme ([PRÉNOM]), on DOIT fournir le genre.
+        const showGender = isAnonymous || gender === 'indéterminé';
+        const genderSuffix = showGender ? ` (${genderLabel})` : '';
+
+        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${nameContext}${genderSuffix}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
 
         // Instruction finale simple (déplacée dans les instructions de style)
         // promptParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);

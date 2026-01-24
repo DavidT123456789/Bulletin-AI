@@ -9,7 +9,7 @@
  * @module state/State
  */
 
-import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS } from '../config/Config.js';
+import { CONSTS, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS } from '../config/Config.js';
 
 // ============================================================================
 // PARAMÈTRES UTILISATEUR (persistés en localStorage)
@@ -58,6 +58,9 @@ export const userSettings = {
     import: {
         massImportFormats: { trimestres: {}, semestres: {} },
     },
+
+    /** Confidentialité */
+    privacy: { ...DEFAULT_PRIVACY_SETTINGS },
 };
 
 // ============================================================================
@@ -168,6 +171,9 @@ const propertyMap = {
 
     // userSettings.import
     massImportFormats: () => userSettings.import,
+
+    // userSettings.privacy
+    anonymizeData: () => userSettings.privacy,
 
     // runtimeState.session
     sessionCost: () => runtimeState.session,

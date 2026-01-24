@@ -50,6 +50,10 @@ export const DEFAULT_EVOLUTION_THRESHOLDS = {
     veryNegative: -2.0
 };
 
+export const DEFAULT_PRIVACY_SETTINGS = {
+    anonymizeData: true
+};
+
 export const DEFAULT_MASS_IMPORT_FORMATS = {
     trimestres: {
         'T1': '{{NOM_PRENOM}} | {{STATUT}} | {{MOY_T1}} | {{INSTRUCTIONS}}',

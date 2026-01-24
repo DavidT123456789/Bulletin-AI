@@ -1,5 +1,5 @@
 import { appState, userSettings, runtimeState } from '../state/State.js';
-import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS } from '../config/Config.js';
+import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS } from '../config/Config.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 
@@ -56,6 +56,11 @@ export const StorageManager = {
 
                     // Import Settings
                     if (settings.massImportFormats !== undefined) userSettings.import.massImportFormats = settings.massImportFormats;
+
+                    // Privacy Settings
+                    if (settings.privacy !== undefined) userSettings.privacy = settings.privacy;
+                    // Fallback for flat structure if ever needed (unlikely for new feature)
+                    if (settings.anonymizeData !== undefined && !settings.privacy) userSettings.privacy = { anonymizeData: settings.anonymizeData };
 
                     // Navigation State
                     if (settings.currentPeriod !== undefined) runtimeState.navigation.currentPeriod = settings.currentPeriod;
@@ -277,6 +282,9 @@ export const StorageManager = {
             // Configuration import
             massImportFormats: userSettings.import.massImportFormats,
 
+            // Privacy
+            privacy: userSettings.privacy,
+
             // État de navigation (persisté)
             currentPeriod: runtimeState.navigation.currentPeriod,
             currentSubject: runtimeState.navigation.currentSubject,
@@ -326,6 +334,7 @@ export const StorageManager = {
                     massImportFormats: { trimestres: {}, semestres: {} },
                     currentSubject: 'MonStyle',
                     currentAIModel: 'gemini-2.0-flash',
+                    privacy: { ...DEFAULT_PRIVACY_SETTINGS },
                 });
 
                 appState.openaiApiKey = '';
@@ -512,7 +521,8 @@ export const StorageManager = {
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
-                    refinementEdits: settings.refinementEdits || {}
+                    refinementEdits: settings.refinementEdits || {},
+                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS }
                 });
             }
 
@@ -618,7 +628,8 @@ export const StorageManager = {
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
-                    refinementEdits: settings.refinementEdits || {}
+                    refinementEdits: settings.refinementEdits || {},
+                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS }
                 });
                 if (appState.wordCountLimit) {
                     delete appState.wordCountLimit;

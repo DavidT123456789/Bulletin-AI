@@ -322,6 +322,7 @@ export function initDOM() {
 
 
     DOM.previewStatus = document.getElementById('previewStatus');
+    DOM.settingsPrivacyAnonymizeToggle = document.getElementById('settingsPrivacyAnonymizeToggle');
 
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.subjectCustomizationPanel = document.getElementById('subject-customization-panel');
