@@ -1628,12 +1628,20 @@
                             <div class="setting-row">
                                 <div class="setting-info">
                                     <h4 class="setting-subtitle">Anonymisation renforcée</h4>
-                                    <div class="setting-description privacy-description-container">
-                                        <div><strong>Activé :</strong> Remplace le prénom par un placeholder pour une
-                                            confidentialité maximale.</div>
-                                        <div class="privacy-option-item"><strong>Désactivé :</strong> Utilise le vrai
-                                            prénom pour une rédaction plus fluide et naturelle.</div>
-                                        <div class="privacy-note">
+                                    <div class="privacy-description-wrapper">
+                                        <div class="privacy-option">
+                                            <span class="option-label">Activé :</span>
+                                            <span class="option-desc">Remplace le prénom par un placeholder.</span>
+                                            <span class="privacy-warning-badge" title="Peut causer des répétitions">
+                                                <i class="fas fa-exclamation-triangle"></i> Rédaction moins fluide
+                                            </span>
+                                        </div>
+                                        <div class="privacy-option">
+                                            <span class="option-label">Désactivé :</span>
+                                            <span class="option-desc">Utilise le vrai prénom pour un texte plus
+                                                naturel.</span>
+                                        </div>
+                                        <div class="privacy-footer-note">
                                             <i class="fas fa-shield-alt"></i> Le nom de famille n'est
                                             <strong>jamais</strong> transmis à l'IA.
                                         </div>
@@ -1641,7 +1649,7 @@
                                 </div>
                                 <div class="toggle-switch-container">
                                     <label class="toggle-switch">
-                                        <input type="checkbox" id="settingsPrivacyAnonymizeToggle" checked>
+                                        <input type="checkbox" id="settingsPrivacyAnonymizeToggle">
                                         <span class="slider"></span>
                                     </label>
                                 </div>

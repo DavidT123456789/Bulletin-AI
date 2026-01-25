@@ -51,7 +51,7 @@ export const DEFAULT_EVOLUTION_THRESHOLDS = {
 };
 
 export const DEFAULT_PRIVACY_SETTINGS = {
-    anonymizeData: true
+    anonymizeData: false
 };
 
 export const DEFAULT_MASS_IMPORT_FORMATS = {
