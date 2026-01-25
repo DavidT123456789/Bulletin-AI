@@ -448,8 +448,11 @@
                     <div class="focus-context-group">
                         <div class="focus-context-header">
                             <div class="focus-context-label">
-                                <i class="fas fa-info-circle"></i>
-                                Contexte
+                                <span class="tooltip focus-context-info-trigger"
+                                    data-tooltip="Un contexte relatif au travail, comportement et implication dans les projets de l'élève, permet d'obtenir des appréciations plus précises.">
+                                    <i class="fas fa-info-circle"></i>
+                                    Contexte
+                                </span>
                                 <!-- Voice Dictation Button -->
                                 <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter le contexte">
@@ -470,7 +473,7 @@
                             </div>
                         </div>
                         <textarea id="focusContextInput" class="focus-context-textarea"
-                            placeholder="Contexte spécifique (bavardages, efforts, attitude...)"></textarea>
+                            placeholder="Bavardages, travail sérieux, compréhension fragile, bonne participation, etc."></textarea>
                     </div>
 
                     <!-- 3. JOURNAL DE BORD - Observation notes -->
@@ -593,7 +596,8 @@
                     <button id="focusCopyBtn" class="btn btn-secondary" disabled>
                         <i class="fas fa-copy"></i> Copier
                     </button>
-                    <button id="focusGenerateBtn" class="btn btn-ai" data-tooltip="Générer l'appréciation (Ctrl + Entrée)">
+                    <button id="focusGenerateBtn" class="btn btn-ai"
+                        data-tooltip="Générer l'appréciation (Ctrl + Entrée)">
                         <i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">T2</span>
                     </button>
                     <button id="focusAnalyzeBtn" class="btn btn-secondary">

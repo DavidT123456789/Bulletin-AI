@@ -1676,9 +1676,17 @@
 }
 
 /* Icon styling - matches focus-appreciation-label > i:first-child */
-.focus-context-label>i:first-child {
+/* Icon styling - matches focus-appreciation-label > i:first-child */
+.focus-context-label i.fa-info-circle {
     color: var(--primary-color);
     font-size: 14px;
+}
+
+.focus-context-info-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: help;
 }
 
 /* === Voice Dictation Button (Mic) - iOS 2025 Style === */
