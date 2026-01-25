@@ -245,6 +245,13 @@ export const FocusPanelManager = {
             const activeEl = document.activeElement;
             const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
 
+            // [NEW] Shortcut: Ctrl + Enter to launch generation
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                this.generate();
+                return;
+            }
+
             if (e.key === 'Escape') {
                 this.close();
             } else if (e.key === 'ArrowLeft' && !isEditing) {
