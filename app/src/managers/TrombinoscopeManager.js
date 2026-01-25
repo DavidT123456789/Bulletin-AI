@@ -1071,6 +1071,12 @@ export const TrombinoscopeManager = {
         this._lastFocusedZoneId = zoneId;
 
         el.classList.add('dragging');
+
+        // Highlight corresponding row in assignment list
+        this._highlightAssignmentRow(zoneId);
+
+        // Also ensure self is focused
+        this._highlightZone(zoneId);
     },
 
     _handleMouseMove(e) {
@@ -1229,6 +1235,10 @@ export const TrombinoscopeManager = {
 
             this._renderZones();
             this._updateLivePreviews();
+
+            // Highlight corresponding row in assignment list when moving via keyboard
+            this._highlightAssignmentRow(this._lastFocusedZoneId);
+            this._highlightZone(this._lastFocusedZoneId);
         }
     },
 
@@ -1269,42 +1279,52 @@ export const TrombinoscopeManager = {
 
     _renderAssignmentGrid() {
         const container = document.getElementById('trombiAssignmentGrid');
-        const panel = document.querySelector('.trombi-assignment-panel');
         if (!container) return;
 
         const students = appState.filteredResults || [];
-
-
 
         if (this._zones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-hand-pointer"></i>
                     <p>Cliquez sur l'image pour ajouter des zones</p>
+                </div>
             `;
             return;
         }
 
+        // Sort zones by ID to keep order stable
+        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
+
         container.innerHTML = `
-            ${students.map(student => {
+            ${sortedZones.map((zone, index) => {
             return `
-                    <div class="assignment-row" data-student-id="${student.id}">
+                    <div class="assignment-row" data-zone-id="${zone.id}">
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
-                                    data-student-id="${student.id}" 
+                                    data-zone-id="${zone.id}" 
                                     width="80" height="80"></canvas>
                         </div>
-                        <div class="assignment-student">
-                            <span>${student.prenom} ${student.nom}</span>
+                        <div class="assignment-id">
+                            #${index + 1}
                         </div>
-                        <select class="assignment-select" data-student-id="${student.id}">
-                            <option value="">—</option>
-                            ${this._zones.map((z, i) => `
-                                <option value="${z.id}" ${z.studentId === student.id ? 'selected' : ''}>
-                                    ${i + 1}
-                                </option>
-                            `).join('')}
-                        </select>
+                        <div class="assignment-student-select">
+                            <select class="assignment-select" data-zone-id="${zone.id}">
+                                <option value="">Choisir un élève...</option>
+                                ${students.map(s => {
+                // Check if this student is assigned to ANOTHER zone
+                const assignedToOther = this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
+                // If assigned to other, maybe disabled or show (assigned)
+                const label = assignedToOther ? `${s.prenom} ${s.nom} (déjà assigné)` : `${s.prenom} ${s.nom}`;
+
+                return `
+                                        <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>
+                                            ${label}
+                                        </option>
+                                    `;
+            }).join('')}
+                            </select>
+                        </div>
                     </div>
                 `;
         }).join('')}
@@ -1320,35 +1340,51 @@ export const TrombinoscopeManager = {
         // Bind select events
         container.querySelectorAll('.assignment-select').forEach(select => {
             select.addEventListener('change', e => {
-                const studentId = select.dataset.studentId;
-                const zoneId = e.target.value ? parseInt(e.target.value) : null;
+                const zoneId = parseInt(select.dataset.zoneId);
+                const studentId = e.target.value || null;
 
-                // Remove student from any existing zone
-                this._zones.forEach(z => {
-                    if (z.studentId === studentId) z.studentId = null;
-                });
+                // Find the zone
+                const zone = this._zones.find(z => z.id === zoneId);
+                if (!zone) return;
 
-                // Assign to new zone
-                if (zoneId !== null) {
-                    const zone = this._zones.find(z => z.id === zoneId);
-                    if (zone) zone.studentId = studentId;
+                // If we are selecting a student, check if they were already assigned elsewhere
+                // (Though the UI disables them, it's good safety)
+                if (studentId) {
+                    const existingZone = this._zones.find(z => z.studentId === studentId && z.id !== zoneId);
+                    if (existingZone) {
+                        existingZone.studentId = null; // Unassign from previous
+                    }
                 }
 
+                zone.studentId = studentId;
+
                 this._renderZones();
-                this._renderAssignmentGrid();
+                this._renderAssignmentGrid(); // Re-render to update other dropdowns (disabled states)
             });
 
             // Track focus/interaction for keyboard zone positioning
             const trackZoneFocus = () => {
-                const zoneId = select.value ? parseInt(select.value) : null;
-                if (zoneId !== null) {
-                    this._lastFocusedControl = 'zone';
-                    this._lastFocusedZoneId = zoneId;
-                }
+                const zoneId = parseInt(select.dataset.zoneId);
+                this._lastFocusedControl = 'zone';
+                this._lastFocusedZoneId = zoneId;
             };
             select.addEventListener('focus', trackZoneFocus);
             select.addEventListener('mousedown', trackZoneFocus);
-            select.addEventListener('change', trackZoneFocus);
+
+            // Also highlight row on focus
+            select.addEventListener('focus', () => this._highlightAssignmentRow(parseInt(select.dataset.zoneId), false));
+        });
+
+        // Add click listeners for rows to highlight zones
+        container.querySelectorAll('.assignment-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                // Ignore if clicked on select (already handled)
+                if (e.target.closest('select')) return;
+
+                const zoneId = parseInt(row.dataset.zoneId);
+                this._highlightZone(zoneId);
+                this._highlightAssignmentRow(zoneId, false); // Keep row highlighted but don't scroll
+            });
         });
 
         // Initial preview render
@@ -1375,8 +1411,8 @@ export const TrombinoscopeManager = {
         const img = this._cachedImage;
 
         canvases.forEach(canvas => {
-            const studentId = canvas.dataset.studentId;
-            const zone = this._zones.find(z => z.studentId === studentId);
+            const zoneId = parseInt(canvas.dataset.zoneId);
+            const zone = this._zones.find(z => z.id === zoneId);
             const ctx = canvas.getContext('2d');
 
             // Canvas buffer is 80x80, displayed at 40x40 CSS for HiDPI sharpness
@@ -1384,19 +1420,7 @@ export const TrombinoscopeManager = {
 
             ctx.clearRect(0, 0, size, size);
 
-            if (!zone) {
-                // Draw placeholder circle
-                const center = size / 2;
-                const radius = (size / 2) - 4;
-                ctx.fillStyle = 'rgba(255,255,255,0.05)';
-                ctx.beginPath();
-                ctx.arc(center, center, radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                return;
-            }
+            if (!zone) return;
 
             // Draw cropped zone using global radius
             const { cx, cy } = zone;
@@ -1410,6 +1434,54 @@ export const TrombinoscopeManager = {
             // Draw full image - CSS handles circular shape and border
             ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
         });
+    },
+
+    /**
+     * Highlights the zone corresponding to the given ID
+     * @param {number} zoneId 
+     */
+    _highlightZone(zoneId) {
+        const overlay = document.getElementById('trombiZonesOverlay');
+        if (!overlay) return;
+
+        // Remove focus from all zones
+        overlay.querySelectorAll('.trombi-zone').forEach(zone => {
+            zone.classList.remove('focused');
+        });
+
+        // Add focus to target zone
+        const zone = overlay.querySelector(`.trombi-zone[data-zone-id="${zoneId}"]`);
+        if (zone) {
+            zone.classList.add('focused');
+        }
+    },
+
+    /**
+     * Highlights the assignment row corresponding to the given zone ID
+     * @param {number} zoneId - The ID of the zone to highlight
+     * @param {boolean} scroll - Whether to scroll the row into view (default: true)
+     */
+    _highlightAssignmentRow(zoneId, scroll = true) {
+        const container = document.getElementById('trombiAssignmentGrid');
+        if (!container) return;
+
+        // Remove focus from all rows
+        container.querySelectorAll('.assignment-row').forEach(row => {
+            row.classList.remove('focused');
+        });
+
+        // Add focus to target row
+        const row = container.querySelector(`.assignment-row[data-zone-id="${zoneId}"]`);
+        if (row) {
+            row.classList.add('focused');
+
+            if (scroll) {
+                row.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
     },
 
     // ========================================================================
