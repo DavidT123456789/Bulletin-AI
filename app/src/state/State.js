@@ -174,6 +174,7 @@ const propertyMap = {
 
     // userSettings.privacy
     anonymizeData: () => userSettings.privacy,
+    privacy: () => userSettings,
 
     // runtimeState.session
     sessionCost: () => runtimeState.session,
