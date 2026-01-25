@@ -332,7 +332,7 @@
     /* Use minmax with 260px min to prevent cards from shrinking too much */
     grid-template-columns: repeat(3, minmax(260px, 1fr));
     gap: var(--space-5);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
     /* Enable horizontal scroll when cards can't fit at min-width */
     overflow-x: auto;
     /* Smooth scrolling on mobile */

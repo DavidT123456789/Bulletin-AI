@@ -206,7 +206,7 @@
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
     flex-grow: 1;
     background: var(--bg-color);

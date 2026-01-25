@@ -98,7 +98,7 @@
 /* === HEADER === */
 .import-hub-header {
     text-align: center;
-    padding: 40px 24px 24px;
+    padding: 32px 16px 20px;
 }
 
 .import-hub-title {
@@ -121,7 +121,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
-    padding: 0 24px 32px;
+    padding: 0 16px 24px;
 }
 
 /* === CHOICE CARD === */

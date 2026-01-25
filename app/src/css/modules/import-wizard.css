@@ -41,7 +41,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 24px;
+    padding: 10px 16px;
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
     height: 58px;
@@ -232,7 +232,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 20px 24px;
+    padding: 16px;
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
 }
@@ -302,7 +302,7 @@
 
 /* === BODY === */
 .import-wizard-body {
-    padding: 20px 24px;
+    padding: 16px;
     flex: 1;
     display: flex;
     flex-direction: column;

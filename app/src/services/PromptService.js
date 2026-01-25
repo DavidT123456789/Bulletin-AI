@@ -241,7 +241,7 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         switch (type) {
             case 'polish':
                 // Same length, improved style
-                instruction = `Peaufine cette appréciation : corrige fautes et contradictions, améliore cohérence, fluidité et ton pro. Garde le sens, nombre de mots proche.\n\n"""\n${original}\n"""\n\n${base}`;
+                instruction = `Peaufine cette appréciation scolaire : corrige fautes et contradictions, améliore cohérence, fluidité et naturel. Garde le sens, nombre de mots proche.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'variations':
                 // Same length, different wording
