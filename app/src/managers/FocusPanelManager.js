@@ -270,6 +270,15 @@ export const FocusPanelManager = {
                 const btn = e.target.closest('[data-refine-type]');
                 if (btn) this._refineAppreciation(btn.dataset.refineType);
             });
+
+            // [NEW] Right-click to preview the refinement prompt
+            refinementOptions.addEventListener('contextmenu', (e) => {
+                const btn = e.target.closest('[data-refine-type]');
+                if (btn) {
+                    e.preventDefault();
+                    this._showRefinementPreview(btn.dataset.refineType);
+                }
+            });
         }
 
         const appreciationText = document.getElementById('focusAppreciationText');
@@ -753,50 +762,7 @@ export const FocusPanelManager = {
         const promptText = prompts.appreciation || '';
 
         // Simple HTML reset/escape
-        const escapedText = promptText
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-
-        // Create HTML content for the modal
-        const message = `
-            <div style="text-align: left;">
-                <textarea readonly id="promptPreviewTextarea" style="
-                    width: 100%; 
-                    height: 400px; 
-                    padding: 12px; 
-                    border-radius: var(--radius-sm); 
-                    border: 1px solid var(--border-color); 
-                    background: var(--bg-secondary); 
-                    color: var(--text-primary); 
-                    font-family: 'SF Mono', Consolas, monospace; 
-                    font-size: 0.85rem; 
-                    line-height: 1.5;
-                    white-space: pre-wrap;
-                    resize: vertical;">${escapedText}</textarea>
-            </div>
-        `;
-
-        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
-            title: 'Prévisualisation du Prompt',
-            confirmText: 'Copier',
-            cancelText: 'Fermer',
-            isDanger: false,
-            compact: false
-        });
-
-        if (confirmed) {
-            try {
-                // We use the raw text for clipboard
-                await navigator.clipboard.writeText(promptText);
-                UI.showNotification('Prompt copié dans le presse-papier', 'success');
-            } catch (err) {
-                console.error('Failed to copy: ', err);
-                UI.showNotification('Échec de la copie', 'error');
-            }
-        }
+        await this._displayPromptModal(promptText, 'Prévisualisation du Prompt');
     },
 
     /**
@@ -1464,6 +1430,78 @@ export const FocusPanelManager = {
     },
 
 
+
+    /**
+     * Affiche une prévisualisation du prompt de raffinement
+     * @param {string} refineType - Type de raffinement
+     * @private
+     */
+    async _showRefinementPreview(refineType) {
+        const appreciationText = document.getElementById('focusAppreciationText');
+        if (!appreciationText) return;
+
+        const currentText = appreciationText.textContent?.trim();
+        if (!currentText || currentText.includes('Aucune appréciation')) {
+            UI.showNotification('Générez d\'abord une appréciation', 'info');
+            return;
+        }
+
+        const promptText = PromptService.getRefinementPrompt(refineType, currentText);
+        await this._displayPromptModal(promptText, 'Prévisualisation du Prompt (Raffinement)');
+    },
+
+    /**
+     * Helper partagé pour afficher une modale de prévisualisation de prompt
+     * @param {string} promptText - Le texte du prompt à afficher
+     * @param {string} title - Le titre de la modale
+     * @private
+     */
+    async _displayPromptModal(promptText, title) {
+        // Simple HTML reset/escape
+        const escapedText = promptText
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        // Create HTML content for the modal
+        const message = `
+            <div style="text-align: left;">
+                <textarea readonly class="prompt-preview-textarea" style="
+                    width: 100%; 
+                    height: 400px; 
+                    padding: 12px; 
+                    border-radius: var(--radius-sm); 
+                    border: 1px solid var(--border-color); 
+                    background: var(--bg-secondary); 
+                    color: var(--text-primary); 
+                    font-family: 'SF Mono', Consolas, monospace; 
+                    font-size: 0.85rem; 
+                    line-height: 1.5;
+                    white-space: pre-wrap;
+                    resize: vertical;">${escapedText}</textarea>
+            </div>
+        `;
+
+        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
+            title: title,
+            confirmText: 'Copier',
+            cancelText: 'Fermer',
+            isDanger: false,
+            compact: false
+        });
+
+        if (confirmed) {
+            try {
+                await navigator.clipboard.writeText(promptText);
+                UI.showNotification('Prompt copié dans le presse-papier', 'success');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                UI.showNotification('Échec de la copie', 'error');
+            }
+        }
+    },
 
     /**
      * Apply a refinement style to the appreciation

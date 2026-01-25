@@ -241,27 +241,27 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         switch (type) {
             case 'polish':
                 // Same length, improved style
-                instruction = `Peaufine cette appréciation : corrige fautes, améliore fluidité, ton pro. Garde sens et longueur.\n\n${original}\n\n${base}`;
+                instruction = `Peaufine cette appréciation : corrige fautes et contradictions, améliore cohérence, fluidité et ton pro. Garde le sens, nombre de mots proche.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'variations':
                 // Same length, different wording
-                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
+                instruction = `Reformule cette appréciation différemment (vocabulaire, structure), même sens, environ ${wordCount} mots.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'detailed':
                 // +20% - Symmetric with concise (-20%)
-                instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n${original}\n\n${base}`;
+                instruction = `Développe les points de cette appréciation, environ ${Math.round(wordCount * 1.20)} mots. N'invente pas de faits.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'concise':
                 // -20% reduction
-                instruction = `Rends cette appréciation plus concise, environ ${Math.round(wordCount * 0.80)} mots. Garde l'essentiel.\n\n${original}\n\n${base}`;
+                instruction = `Rends cette appréciation plus concise, environ ${Math.round(wordCount * 0.80)} mots. Garde l'essentiel.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'encouraging':
                 // Same length, warmer tone
-                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n${original}\n\n${base}`;
+                instruction = `Reformule cette appréciation avec un ton plus encourageant et positif, environ ${wordCount} mots.\n\n"""\n${original}\n"""\n\n${base}`;
                 break;
             case 'default':
             default:
-                instruction = `Reformule cette appréciation.\n\n${original}\n\n${base}`;
+                instruction = `Reformule cette appréciation.\n\n"""\n${original}\n"""\n\n${base}`;
         }
         return instruction;
     },

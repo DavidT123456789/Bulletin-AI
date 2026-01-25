@@ -170,6 +170,12 @@ export const TrombinoscopeManager = {
         this._lastFocusedControl = null;
         this._lastFocusedZoneId = null;
 
+        // Cleanup observer
+        if (this._imgResizeObserver) {
+            this._imgResizeObserver.disconnect();
+            this._imgResizeObserver = null;
+        }
+
         // Reset file input so the same file can be re-imported
         const fileInput = document.getElementById('trombiFileInput');
         if (fileInput) fileInput.value = '';
@@ -534,9 +540,14 @@ export const TrombinoscopeManager = {
         if (!imagePanel) return;
 
         // Setup image with overlay
+        // Setup image with overlay - wrapped in a container for correct aspect ratio positioning
         imagePanel.innerHTML = `
-            <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image">
-            <div class="trombi-zones-overlay" id="trombiZonesOverlay"></div>
+            <div class="trombi-viewport">
+                <div class="trombi-content-wrapper" style="aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight}">
+                    <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image">
+                    <div class="trombi-zones-overlay" id="trombiZonesOverlay"></div>
+                </div>
+            </div>
         `;
 
         const img = document.getElementById('trombiStep2Image');
@@ -547,6 +558,16 @@ export const TrombinoscopeManager = {
             }
             this._renderZones();
         };
+
+        // Fix: Observer for layout changes (aspect-ratio reflow)
+        // This ensures zones are re-calculated when the image size changes
+        if (this._imgResizeObserver) this._imgResizeObserver.disconnect();
+
+        this._imgResizeObserver = new ResizeObserver(() => {
+            // Debounce slightly or just call render (it's cheap enough)
+            window.requestAnimationFrame(() => this._renderZones());
+        });
+        this._imgResizeObserver.observe(img);
 
         // Click on overlay to add zone
         const overlay = document.getElementById('trombiZonesOverlay');

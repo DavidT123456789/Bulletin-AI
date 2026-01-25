@@ -37,10 +37,10 @@
 /* Content with iOS 2025 spring animation */
 .trombi-wizard-content {
     position: relative;
-    width: 90%;
-    max-width: 1000px;
-    height: 680px;
-    max-height: 90vh;
+    width: 92%;
+    max-width: 1250px;
+    height: 90vh;
+    max-height: 95vh;
     background: var(--bg-color);
     border-radius: var(--radius-lg);
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
@@ -580,11 +580,37 @@
 }
 
 .trombi-zone.focused {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.5),
-        0 12px 32px rgba(0, 0, 0, 0.3);
+    border-color: transparent;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     z-index: 90;
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: translate(-50%, -50%);
+}
+
+.trombi-zone.focused::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 3px;
+    background: conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%) border-box;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: rotate-gradient 4s linear infinite;
+    pointer-events: none;
 }
 
 .trombi-zone .zone-label {
@@ -663,41 +689,121 @@
 }
 
 /* Step 2: Split View */
+/* Step 2: Split View - Optimized layout */
 .trombi-split-view {
-    display: grid;
-    grid-template-columns: 7.5fr 2.5fr;
-    /* 75% mappage / 25% association */
+    display: flex;
+    /* Use Flexbox for better responsiveness than grid */
+    flex-direction: row;
+    align-items: stretch;
     gap: 24px;
-    min-height: 400px;
-}
-
-.trombi-image-panel {
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    padding: 0;
+    height: 100%;
+    /* Fill available height */
+    min-height: 0;
+    /* Prevent overflow */
     overflow: hidden;
 }
 
-.trombi-image-wrapper {
+/* Image Panel: Takes available space, shrinks if needed */
+.trombi-image-panel {
+    flex: 1;
+    min-width: 0;
+    /* Allow shrinking below content size */
+    background: var(--bg-secondary-dark);
+    /* Dark background to match viewport & hide gaps */
+    border-radius: var(--radius-md);
+    padding: 0;
+    overflow: hidden;
+    /* Use Grid to manage Image vs Controls - minmax(0, 1fr) is CRITICAL to override auto min-size */
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    /* Force strict height */
     position: relative;
-    /* No max-height - let image fit naturally */
+    border: 1px solid var(--border-color);
+    height: 100%;
+    min-height: 0;
 }
 
-.trombi-image-wrapper .trombi-image {
+/* Assignment Panel: Fixed width or natural width, doesn't shrink */
+.trombi-assignment-panel {
+    width: 320px;
+    /* Fixed optimal width for list */
+    flex-shrink: 0;
+    /* Never shrink the sidebar */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    /* Crucial for flex overflow */
+}
+
+/* Viewport: The flexible area available for the image */
+.trombi-viewport {
+    /* Grid child: Occupy the first row entirely */
+    grid-row: 1;
+    min-height: 0;
+    /* CRITICAL for Grid scrolling */
+    width: 100%;
+    height: 100%;
+    /* Force fill grid area */
+    position: relative;
+    overflow: hidden;
+    /* Clean centering layout */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+    /* Minimal padding */
+    background: var(--bg-secondary);
+    /* Correct theme variable */
+}
+
+/* Wrapper: The container that holds Image + Overlay
+   It must shrink-wrap the image exactly to preserve overlay coordinate system.
+*/
+.trombi-content-wrapper {
+    position: relative;
+    /* Constraint rules: Never exceed the viewport */
+    max-width: 100%;
+    max-height: 100%;
+    /* Display block is fine with aspect-ratio */
+    display: block;
+    /* Aspect ratio will be set via inline style by JS */
+}
+
+/* Image: Hits the wrapper boundaries exactly */
+.trombi-content-wrapper .trombi-image {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: fill;
+    /* Fill the aspect-ratio wrapper perfectly */
+    border-radius: 4px;
 }
 
-/* Grid Control Panel - Compact 2-column layout */
+/* Grid Control Panel - Floating Card Style */
 .grid-control-panel {
-    background: var(--bg-secondary);
+    background: var(--surface-color);
     border-radius: 8px;
     padding: 8px 12px;
-    margin: 4px 6px 6px 6px;
+    margin: 0;
+    /* Align perfectly with bottom */
+    border-top: 1px solid var(--border-color);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    /* Integrate as a seamless toolbar */
+    border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
+    /* Full width look if margin is 0, slightly different style */
     display: flex;
     flex-direction: column;
     gap: 4px;
+    /* Grid child: Occupy second row */
+    grid-row: 2;
+    z-index: 20;
+    /* Ensure controls stay above image if overlap occurs */
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
 }
 
 /* Two-column layout for compact display */
@@ -744,7 +850,7 @@
     gap: 6px;
 }
 
-/* Slider track wrapper - clips overflow to eliminate visual dead zones */
+/* Slider track wrapper - "Tube" design restored */
 .slider-track {
     flex: 1;
     position: relative;
@@ -919,13 +1025,7 @@
 }
 
 /* Panneau d'association restructuré avec header, liste flex et summary sticky */
-.trombi-assignment-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    /* Crucial pour flex overflow */
-}
+/* .trombi-assignment-panel definition moved to .trombi-split-view section for layout logic */
 
 .trombi-assignment-panel-header {
     display: flex;
@@ -951,7 +1051,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 4px;
 }
 
 .assignment-header {

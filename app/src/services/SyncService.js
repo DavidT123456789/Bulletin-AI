@@ -100,7 +100,7 @@ export const SyncService = {
     },
 
     /**
-     * Start monitoring network connectivity and token validity.
+     * Start monitoring network connectivity.
      * @private
      */
     _startMonitoring() {
@@ -108,8 +108,8 @@ export const SyncService = {
         window.addEventListener('online', () => this._handleNetworkChange(true));
         window.addEventListener('offline', () => this._handleNetworkChange(false));
 
-        // Check token validity every 5 minutes
-        this._tokenCheckInterval = setInterval(() => this._checkTokenValidity(), 5 * 60 * 1000);
+        // Background token check removed to prevent "popups" and interruptions
+        // The user will be prompted to reconnect only when they interact (Save/Load).
     },
 
     /**
@@ -128,43 +128,24 @@ export const SyncService = {
                 this._updateCloudIndicator('local');
             }
         } else if (!wasOnline && isOnline) {
-            // Came back online - verify token but DO NOT SYNC
+            // Came back online - update status
             if (this.currentProviderName && this._provider) {
-                this._checkTokenValidity();
-            } else if (this._wasConfigured) {
-                const savedProvider = localStorage.getItem('bulletin_sync_provider');
-                if (savedProvider) {
-                    this.connect(savedProvider, { silent: true }).then(connected => {
-                        this._updateCloudIndicator(connected ? 'connected' : 'expired');
-                    }).catch(() => {
-                        this._updateCloudIndicator('expired');
-                    });
+                // Do not auto-refresh. State remains as is until user action.
+                // We could check expiry locally to update UI, but no network calls.
+                if (!this._provider.isConnected()) {
+                    this._updateCloudIndicator('expired');
+                } else {
+                    this._updateCloudIndicator('connected');
                 }
-            }
-        }
-    },
-
-    /**
-     * Check if the current token is still valid.
-     * @private
-     */
-    async _checkTokenValidity() {
-        if (!this._provider || !this._isOnline) return;
-        if (typeof this._provider.isConnected !== 'function') return;
-
-        const isValid = this._provider.isConnected();
-
-        if (!isValid) {
-            if (DEBUG) console.log('[SyncService] Token expired, attempting silent refresh...');
-            const refreshed = await this._trySilentRefresh();
-            if (!refreshed) {
+            } else if (this._wasConfigured) {
+                // Do not auto-connect
                 this._updateCloudIndicator('expired');
             }
-        } else if (typeof this._provider.isExpiringSoon === 'function' && this._provider.isExpiringSoon()) {
-            if (DEBUG) console.log('[SyncService] Token expiring soon, proactive silent refresh...');
-            await this._trySilentRefresh();
         }
     },
+
+    // _checkTokenValidity and _trySilentRefresh removed to prevent interruptions.
+    // Connection is now fully manual or checked only on explicit user action.
 
     /**
      * Check remote file status (modification date).
@@ -181,29 +162,6 @@ export const SyncService = {
         } catch (e) {
             console.warn('[SyncService] Failed to check remote status:', e);
         }
-    },
-
-    /**
-     * Attempt silent token refresh.
-     * @returns {Promise<boolean>} True if refresh succeeded
-     * @private
-     */
-    async _trySilentRefresh() {
-        if (!this._provider || typeof this._provider.silentRefresh !== 'function') {
-            return false;
-        }
-
-        try {
-            const refreshed = await this._provider.silentRefresh();
-            if (refreshed) {
-                if (DEBUG) console.log('[SyncService] Silent refresh successful');
-                this._updateCloudIndicator('connected');
-                return true;
-            }
-        } catch (e) {
-            console.warn('[SyncService] Silent refresh failed:', e.message);
-        }
-        return false;
     },
 
     /**
