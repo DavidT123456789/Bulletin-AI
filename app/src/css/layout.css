@@ -708,7 +708,7 @@
     border-radius: 50%;
     z-index: 10;
     box-shadow: 0 0 0 1px var(--primary-color);
-    animation: pulsing-dot 2s ease-in-out infinite;
+    /* Animation removed as requested for cleaner look */
 }
 
 /* Update menu item style */
@@ -725,7 +725,7 @@
 
 .menu-item.update-item i {
     color: var(--primary-color);
-    animation: pulse-update 2s infinite;
+    /* Animation removed as requested */
 }
 
 /* 3. Dropdown Menu Container */
