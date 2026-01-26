@@ -144,6 +144,10 @@ export const FocusPanelManager = {
         // [UX Mobile] Back Button Trap
         // Intercept browser back button to close panel instead of navigating away/closing app
         window.addEventListener('popstate', (e) => {
+            // [FIX] Don't close FocusPanel if a Modal is active on top of it
+            // The Modal will handle the back button event
+            if (ModalUI.activeModal) return;
+
             if (this.isOpen()) {
                 // Close panel without triggering another history.back()
                 this.close({ causedByHistory: true });

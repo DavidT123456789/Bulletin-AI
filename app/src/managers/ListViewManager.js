@@ -20,6 +20,7 @@ import { StatsUI } from './StatsUIManager.js';
 export const ListViewManager = {
     _activeDocClickListener: null,
     _activeKeydownListener: null,
+    _activePopstateListener: null, // Listener pour gérer le bouton retour sur mobile
     _lastRenderedClassId: null, // Track class changes to force fresh render
     _lastRenderedPeriod: null,  // Track period changes to force fresh render (header column count changes)
     _activeFilterTimeout: null, // Track filter animation timeout to prevent race conditions
@@ -1988,6 +1989,12 @@ export const ListViewManager = {
      * @private
      */
     _attachInlineSearchListeners(listContainer) {
+        // CLEANUP: Remove previous popstate listener to avoid accumulation
+        if (this._activePopstateListener) {
+            window.removeEventListener('popstate', this._activePopstateListener);
+            this._activePopstateListener = null;
+        }
+
         const nameHeader = listContainer.querySelector('.name-header-with-search');
         const headerContent = listContainer.querySelector('#nameHeaderContent');
         const searchContainer = listContainer.querySelector('#inlineSearchContainer');
@@ -1996,8 +2003,8 @@ export const ListViewManager = {
 
         if (!nameHeader || !searchContainer || !searchInput) return;
 
-        // Helper to activate search mode
-        const activateSearch = () => {
+        // Perform UI update for activation (without history push)
+        const _performActivateUI = () => {
             searchContainer.classList.add('active');
             // Small delay to ensure transition starts and element is focusable
             setTimeout(() => {
@@ -2012,13 +2019,52 @@ export const ListViewManager = {
             }
         };
 
-        // Helper to deactivate search mode
-        const deactivateSearch = () => {
+        // Perform UI update for deactivation (without history manipulation)
+        const _performDeactivateUI = () => {
             searchContainer.classList.remove('active');
             if (!searchInput.value) {
                 searchContainer.classList.remove('has-value');
             }
         };
+
+        // Helper to activate search mode (With History Push)
+        const activateSearch = () => {
+            if (searchContainer.classList.contains('active')) return;
+
+            _performActivateUI();
+
+            // HISTORY PUSH [NEW]
+            // Permet de fermer la recherche avec le bouton retour du mobile
+            const state = { inlineSearch: true };
+            history.pushState(state, '', '');
+        };
+
+        // Helper to deactivate search mode (With History Check)
+        const deactivateSearch = () => {
+            _performDeactivateUI();
+
+            // HISTORY BACK [NEW]
+            // Si l'état courant indique qu'on est en recherche, on revient en arrière
+            // pour garder l'historique propre
+            if (history.state && history.state.inlineSearch) {
+                history.back();
+            }
+        };
+
+        // EVENT: Popstate (Back Button) [NEW]
+        this._activePopstateListener = (e) => {
+            const isSearchState = e.state && e.state.inlineSearch;
+            const isVisible = searchContainer.classList.contains('active');
+
+            if (!isSearchState && isVisible) {
+                // On est revenu en arrière (plus d'état local) -> on ferme
+                _performDeactivateUI();
+            } else if (isSearchState && !isVisible) {
+                // On est revenu en avant (ou refresh) -> on rouvre
+                _performActivateUI();
+            }
+        };
+        window.addEventListener('popstate', this._activePopstateListener);
 
         // Click on search trigger button to activate search
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
@@ -2096,7 +2142,9 @@ export const ListViewManager = {
         // Click outside to deactivate (if empty)
         document.addEventListener('click', (e) => {
             if (!nameHeader.contains(e.target) && !searchInput.value) {
-                deactivateSearch();
+                if (searchContainer.classList.contains('active')) {
+                    deactivateSearch();
+                }
             }
         });
 
