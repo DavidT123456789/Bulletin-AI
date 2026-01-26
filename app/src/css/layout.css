@@ -345,19 +345,19 @@
 .ai-model-chip.fallback-active {
     animation: switch-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.25));
-    border-color: #f59e0b;
+    border-color: var(--warning-color);
     box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
 }
 
 .ai-model-chip.fallback-active .icon {
-    color: #f59e0b;
+    color: var(--warning-color);
     transform: scale(1.1);
     /* L'icône grossit un peu */
     transition: transform var(--transition-base);
 }
 
 .ai-model-chip.fallback-active #headerAiModelName {
-    color: #d97706;
+    color: var(--warning-hover);
     font-weight: 600;
 }
 
@@ -607,7 +607,7 @@
 }
 
 .cloud-sync-indicator.expired .cloud-status-badge {
-    background: #f59e0b;
+    background: var(--warning-color);
     border: 2px solid var(--surface-color);
     width: 10px;
     height: 10px;

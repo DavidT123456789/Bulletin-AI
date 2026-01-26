@@ -56,9 +56,6 @@ export const EventHandlersManager = {
             case 'details':
                 AppreciationsManager.showAppreciationDetails(id);
                 break;
-            case 'refine':
-                AppreciationsManager.refineAppreciation(id);
-                break;
             case 'edit':
                 if (appState.currentInputMode !== CONSTS.INPUT_MODE.SINGLE) {
                     UI.setInputMode(CONSTS.INPUT_MODE.SINGLE);
@@ -100,11 +97,6 @@ export const EventHandlersManager = {
         if (e.shiftKey) {
             if (document.activeElement === first) {
                 last.focus();
-                e.preventDefault();
-            }
-        } else {
-            if (document.activeElement === last) {
-                first.focus();
                 e.preventDefault();
             }
         }

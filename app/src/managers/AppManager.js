@@ -295,24 +295,9 @@ export const App = {
 
     // --- Refinement Logic (partiellement ici car partage d'état refinementEdits) ---
 
-    saveRefinementEdit(e) {
-        const id = DOM.refinementErrorActions.querySelector('button')?.dataset.id;
-        if (id) {
-            appState.refinementEdits[id] = e.target.innerText;
-        }
-    },
+    // --- Refinement Logic (partiellement ici car partage d'état refinementEdits) ---
+    // Legacy Refinement logic removed
 
-    resetRefinementChanges() {
-        const id = DOM.refinementErrorActions.querySelector('button')?.dataset.id;
-        if (id) {
-            delete appState.refinementEdits[id];
-            const result = appState.generatedResults.find(r => r.id === id);
-            if (result && DOM.originalAppreciationText) {
-                DOM.originalAppreciationText.innerText = result.appreciation;
-                AppreciationsManager.refineAppreciation(id);
-            }
-        }
-    },
 
     // --- Navigation Modales ---
 
