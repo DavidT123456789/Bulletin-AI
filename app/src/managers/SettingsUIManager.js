@@ -419,55 +419,23 @@ export const SettingsUIManager = {
             let isAvailable = false;
             let requiredProvider = '';
 
+            // Utiliser le helper centralisé pour vérifier la disponibilité
+            isAvailable = this._isModelAvailable(model);
+
+            // Déterminer le provider requis pour le message d'aide
             if (model.endsWith('-free')) {
-                // Modèles gratuits OpenRouter (ex: gemini-2.0-flash-exp-free, llama-3.3-70b-free)
-                isAvailable = !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
                 requiredProvider = 'OpenRouter';
             } else if (model.startsWith('gemini')) {
-                isAvailable = !!appState.googleApiKey && appState.googleApiKey.length > 5;
                 requiredProvider = 'Google Gemini';
             } else if (model.startsWith('openai')) {
-                isAvailable = !!appState.openaiApiKey && appState.openaiApiKey.length > 5;
                 requiredProvider = 'OpenAI';
             } else if (model.startsWith('ollama')) {
                 requiredProvider = 'Ollama';
-                if (!appState.ollamaEnabled) {
-                    isAvailable = false;
-                } else {
-                    // Si on a la liste des modèles installés, on vérifie
-                    const installed = appState.ollamaInstalledModels || [];
-                    if (installed.length > 0) {
-                        const modelName = model.replace('ollama-', '');
-                        // Vérification flexible pour gérer les variations de nommage Ollama
-                        // Ex: "qwen3:4b" doit matcher "qwen3:4b", "qwen3:4b-q4_0", etc.
-                        isAvailable = installed.some(installedModel => {
-                            // Match exact
-                            if (installedModel === modelName) return true;
-                            // Le modèle installé commence par le nom recherché (ex: qwen3:4b vs qwen3:4b-q4_0)
-                            if (installedModel.startsWith(modelName)) return true;
-                            // Le nom recherché correspond au préfixe du modèle installé (sans le tag secondaire)
-                            // Ex: "qwen3:4b" match "qwen3:4b" dans "qwen3:4b-something"
-                            const [baseName, tag] = modelName.split(':');
-                            const [installedBase, installedTag] = installedModel.split(':');
-                            if (baseName === installedBase && installedTag && installedTag.startsWith(tag || '')) return true;
-                            return false;
-                        });
-                    } else {
-                        // Si liste non chargée mais Ollama activé, on suppose dispo (bénéfice du doute)
-                        isAvailable = true;
-                    }
-                }
             } else if (model.startsWith('anthropic')) {
-                // Claude (Anthropic) - nécessite clé API directe
-                isAvailable = !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
                 requiredProvider = 'Claude (Anthropic)';
             } else if (model.startsWith('mistral-direct')) {
-                // Mistral API directe - nécessite clé Mistral
-                isAvailable = !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
                 requiredProvider = 'Mistral';
             } else {
-                // OpenRouter / DeepSeek
-                isAvailable = !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
                 requiredProvider = 'OpenRouter';
             }
 

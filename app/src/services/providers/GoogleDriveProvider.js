@@ -105,7 +105,7 @@ export const GoogleDriveProvider = {
                         return true;
                     }
                     // Token expired - mark for reconnection but don't try OAuth refresh
-                    if (DEBUG) console.log('[GoogleDrive] Token expired');
+
                     this._needsReconnect = true;
                     if (options.silent) {
                         // In silent mode, just fail - don't trigger OAuth popup
@@ -131,7 +131,7 @@ export const GoogleDriveProvider = {
                         if (tokenResponse.error) {
                             // If silent refresh failed and we had a saved token, try with consent
                             if (options.silent && savedToken && tokenResponse.error === 'interaction_required') {
-                                if (DEBUG) console.log('[GoogleDrive] Silent refresh failed, user interaction required');
+
                                 // Mark that reconnection is needed
                                 this._needsReconnect = true;
                             } else {
@@ -153,7 +153,7 @@ export const GoogleDriveProvider = {
                     },
                     error_callback: (error) => {
                         // Called when user closes popup OR access is denied
-                        if (DEBUG) console.log('[GoogleDrive] Auth cancelled or popup closed:', error?.type || error);
+
                         resolve(false);
                     },
                 });
@@ -221,7 +221,7 @@ export const GoogleDriveProvider = {
                     scope: GOOGLE_SCOPES,
                     callback: (tokenResponse) => {
                         if (tokenResponse.error) {
-                            if (DEBUG) console.log('[GoogleDrive] Silent refresh failed:', tokenResponse.error);
+
                             // Mark that user interaction is needed
                             this._needsReconnect = true;
                             resolve(false);
@@ -237,12 +237,11 @@ export const GoogleDriveProvider = {
                         localStorage.setItem('bulletin_google_token', JSON.stringify(this._token));
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         this._needsReconnect = false;
-                        if (DEBUG) console.log('[GoogleDrive] Silent refresh successful, new expiry:', new Date(this._token.expiry).toLocaleTimeString());
                         resolve(true);
                     },
                     error_callback: (error) => {
                         // Called when popup closes or access denied (shouldn't happen in silent mode, but be safe)
-                        if (DEBUG) console.log('[GoogleDrive] Silent refresh error_callback:', error?.type || error);
+
                         this._needsReconnect = true;
                         resolve(false);
                     },

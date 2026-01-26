@@ -121,7 +121,7 @@ export const SyncService = {
         const wasOnline = this._isOnline;
         this._isOnline = isOnline;
 
-        if (DEBUG) console.log(`[SyncService] Network ${isOnline ? 'restored' : 'lost'}`);
+
 
         if (!isOnline) {
             if (this._wasConfigured || this.currentProviderName) {
@@ -299,7 +299,7 @@ export const SyncService = {
      * @private
      */
     _openSyncSettings() {
-        if (DEBUG) console.log('[SyncService] Opening sync settings...');
+
         const settingsModal = document.getElementById('appSettingsModal') || window.DOM?.settingsModal;
         const uiManager = window.UI;
 
