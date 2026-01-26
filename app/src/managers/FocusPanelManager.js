@@ -141,6 +141,15 @@ export const FocusPanelManager = {
         if (prevBtn) prevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
         if (nextBtn) nextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
 
+        // [UX Mobile] Back Button Trap
+        // Intercept browser back button to close panel instead of navigating away/closing app
+        window.addEventListener('popstate', (e) => {
+             if (this.isOpen()) {
+                 // Close panel without triggering another history.back()
+                 this.close({ causedByHistory: true });
+             }
+        });
+
         // Generate
         if (generateBtn) {
             generateBtn.addEventListener('click', () => this.generate());
@@ -446,6 +455,17 @@ export const FocusPanelManager = {
             this._saveContext();
         }
 
+        // [UX Mobile] Manage History State
+        // Allows using system Back button to close panel
+        const state = { focusPanel: true, studentId: studentId };
+        if (this.isOpen() && history.state?.focusPanel) {
+            // Already open, switching student -> Replace state to keep history clean (prevent needing 50 back clicks)
+            history.replaceState(state, '');
+        } else {
+            // Opening from closed -> Push state
+            history.pushState(state, '');
+        }
+
         this.currentStudentId = studentId;
         this.currentIndex = appState.filteredResults.findIndex(r => r.id === studentId);
 
@@ -504,6 +524,9 @@ export const FocusPanelManager = {
 
         const currentPeriod = appState.currentPeriod;
 
+        // [UX Mobile] Push history state for creation mode
+        history.pushState({ focusPanel: true, mode: 'creation' }, '');
+
         // Create a dummy result for the new student
         const dummyResult = {
             id: null,
@@ -551,10 +574,13 @@ export const FocusPanelManager = {
 
     /**
      * Ferme le Focus Panel
+     * @param {Object} options - Options de fermeture
+     * @param {boolean} [options.causedByHistory=false] - Si true, ne tente pas de faire history.back()
      */
-    close() {
+    close(options = {}) {
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
+        const wasOpen = this.isOpen();
 
         // Exit edit mode if active (cancel, don't save)
         const header = document.querySelector('.focus-header');
@@ -575,10 +601,17 @@ export const FocusPanelManager = {
         this._clearActiveRow();
 
         // Reset state
+        // Reset state
         this.currentStudentId = null;
         this.currentIndex = -1;
         this.isCreationMode = false;
         // _originalHeaderValues managed by FocusPanelHeader
+
+        // [UX Mobile] History Cleanup
+        // If closed via UI (button/backdrop) and we have a history state, go back
+        if (wasOpen && !options.causedByHistory && history.state?.focusPanel) {
+            history.back();
+        }
     },
 
 
