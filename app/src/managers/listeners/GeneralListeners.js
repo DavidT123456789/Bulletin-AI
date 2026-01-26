@@ -9,6 +9,7 @@ import { UI } from '../UIManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
+import { StorageManager } from '../StorageManager.js';
 
 import { APP_LINKS } from '../../config/Config.js';
 
@@ -254,6 +255,8 @@ export const GeneralListeners = {
 
         if (DOM.personalizationBtn) {
             addClickListener(DOM.personalizationBtn, () => {
+                SettingsUIManager.createSnapshot();
+
                 UI.openModal(DOM.personalizationModal);
                 // [FIX] Refresh Lab data on modal open to sync with current period
                 import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
@@ -263,33 +266,59 @@ export const GeneralListeners = {
         }
 
         // Personalization Modal Actions
-        const closePersonalization = () => UI.closeModal(DOM.personalizationModal);
-        addClickListener(DOM.closePersonalizationModalBtn, closePersonalization);
-        addClickListener(DOM.cancelPersonalizationBtn, closePersonalization);
+        const closePersonalization = (isSave = false) => {
+            // If cancelling (not saving), restore the original state
+            if (!isSave) {
+                const restored = SettingsUIManager.restoreSnapshot();
+                if (restored) {
+                    // Update UI to reflect restored state
+                    SettingsUIManager.updatePersonalizationState();
+                    import('../FormUIManager.js').then(({ FormUI }) => FormUI.updateSettingsFields());
+                }
+            } else {
+                // Confirm changes: clear snapshot without restoring
+                UIState.settingsBeforeEdit = {};
+            }
+
+            UI.closeModal(DOM.personalizationModal);
+        };
+
+        addClickListener(DOM.closePersonalizationModalBtn, () => closePersonalization(false));
+        addClickListener(DOM.cancelPersonalizationBtn, () => closePersonalization(false));
+
         addClickListener(DOM.savePersonalizationBtn, () => {
             SettingsUIManager.saveSettings(false); // Saves all settings including style
-            closePersonalization();
+            closePersonalization(true);
             UI.showNotification('Paramètres de personnalisation enregistrés', 'success');
         });
 
+        // Close on backdrop click
+        if (DOM.personalizationModal) {
+            DOM.personalizationModal.addEventListener('click', (e) => {
+                if (e.target === DOM.personalizationModal) {
+                    closePersonalization(false);
+                }
+            });
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && UI.activeModal === DOM.personalizationModal) {
+                e.preventDefault();
+                e.stopPropagation();
+                closePersonalization(false);
+            }
+        });
+
         addClickListener(DOM.settingsButton, () => {
-            // [FIX] Create snapshot of current state before opening modal
-            // This allows Cancel to properly revert changes including auto-saved ones
-            UIState.settingsBeforeEdit = {
-                useSubjectPersonalization: appState.useSubjectPersonalization,
-                subjects: JSON.parse(JSON.stringify(appState.subjects))
-            };
+            SettingsUIManager.createSnapshot();
             UI.openModal(DOM.settingsModal);
             SettingsUIManager.updateApiStatusDisplay();
         });
 
         // Model label click -> opens settings (API config) with focus on model selector
         addClickListener(DOM.dashModelLabel, () => {
-            // [FIX] Same snapshot logic for this entry point
-            UIState.settingsBeforeEdit = {
-                useSubjectPersonalization: appState.useSubjectPersonalization,
-                subjects: JSON.parse(JSON.stringify(appState.subjects))
-            };
+            SettingsUIManager.createSnapshot();
             UI.openModal(DOM.settingsModal);
             SettingsUIManager.updateApiStatusDisplay();
             // Highlight the model selector for clear feedback

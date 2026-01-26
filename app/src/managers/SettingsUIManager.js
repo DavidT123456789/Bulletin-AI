@@ -108,6 +108,36 @@ export const SettingsUIManager = {
     },
 
     /**
+     * Crée un point de sauvegarde des paramètres actuels.
+     * Utilisé avant l'ouverture des modales d'édition pour permettre l'annulation.
+     */
+    createSnapshot() {
+        UIState.settingsBeforeEdit = {
+            useSubjectPersonalization: appState.useSubjectPersonalization,
+            subjects: JSON.parse(JSON.stringify(appState.subjects))
+        };
+    },
+
+    /**
+     * Restaure les paramètres depuis le dernier point de sauvegarde.
+     * @returns {boolean} true si une restauration a été effectuée
+     */
+    restoreSnapshot() {
+        if (Object.keys(UIState.settingsBeforeEdit).length > 0) {
+            appState.useSubjectPersonalization = UIState.settingsBeforeEdit.useSubjectPersonalization;
+            appState.subjects = UIState.settingsBeforeEdit.subjects;
+
+            // Persister immédiatement la restauration pour annuler les sauvegardes auto
+            StorageManager.saveAppState();
+
+            // Nettoyer le snapshot après restauration
+            UIState.settingsBeforeEdit = {};
+            return true;
+        }
+        return false;
+    },
+
+    /**
      * Annule les modifications des paramètres.
      */
     cancelSettings() {
@@ -116,15 +146,12 @@ export const SettingsUIManager = {
 
         // Restaurer l'état après l'animation de fermeture (250ms)
         setTimeout(() => {
-            if (Object.keys(UIState.settingsBeforeEdit).length > 0) {
-                appState.useSubjectPersonalization = UIState.settingsBeforeEdit.useSubjectPersonalization;
-                appState.subjects = UIState.settingsBeforeEdit.subjects;
+            const restored = this.restoreSnapshot();
 
-                // [FIX] Also save to disk to revert any auto-saved changes
-                StorageManager.saveAppState();
+            if (restored) {
+                this.updatePersonalizationState();
+                UI.updateSettingsFields();
             }
-            this.updatePersonalizationState();
-            UI.updateSettingsFields();
         }, 260);
     },
 
