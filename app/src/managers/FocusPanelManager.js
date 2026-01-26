@@ -144,10 +144,10 @@ export const FocusPanelManager = {
         // [UX Mobile] Back Button Trap
         // Intercept browser back button to close panel instead of navigating away/closing app
         window.addEventListener('popstate', (e) => {
-             if (this.isOpen()) {
-                 // Close panel without triggering another history.back()
-                 this.close({ causedByHistory: true });
-             }
+            if (this.isOpen()) {
+                // Close panel without triggering another history.back()
+                this.close({ causedByHistory: true });
+            }
         });
 
         // Generate
@@ -600,7 +600,6 @@ export const FocusPanelManager = {
         // Clear active row highlight
         this._clearActiveRow();
 
-        // Reset state
         // Reset state
         this.currentStudentId = null;
         this.currentIndex = -1;
