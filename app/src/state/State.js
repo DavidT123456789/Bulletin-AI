@@ -78,6 +78,7 @@ export const runtimeState = {
         sessionCost: 0,
         sessionTokens: 0,
         isDemoMode: false,
+        isUpdateAvailable: false,
     },
 
     /** État de navigation et sélection */
@@ -180,6 +181,7 @@ const propertyMap = {
     sessionCost: () => runtimeState.session,
     sessionTokens: () => runtimeState.session,
     isDemoMode: () => runtimeState.session,
+    isUpdateAvailable: () => runtimeState.session,
 
     // runtimeState.navigation
     currentPeriod: () => runtimeState.navigation,

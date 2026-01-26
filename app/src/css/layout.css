@@ -692,6 +692,42 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* Update indicator dot on menu button */
+.menu-btn.has-update {
+    position: relative;
+}
+
+.menu-btn .update-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--primary-color);
+    border: 2px solid var(--surface-color);
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 0 0 1px var(--primary-color);
+    animation: pulsing-dot 2s ease-in-out infinite;
+}
+
+/* Update menu item style */
+.menu-item.update-item {
+    background-color: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.menu-item.update-item:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.15);
+}
+
+.menu-item.update-item i {
+    color: var(--primary-color);
+    animation: pulse-update 2s infinite;
+}
+
 /* 3. Dropdown Menu Container */
 .dropdown-wrapper {
     position: relative;

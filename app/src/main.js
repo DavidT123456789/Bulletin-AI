@@ -102,9 +102,19 @@ function setupPWAUpdateHandler() {
             }
         };
 
+        // Expose update trigger for menu button
+        window.triggerAppUpdate = () => {
+            updateSW && updateSW(true);
+        };
+
         updateSW = registerSW({
             onNeedRefresh() {
                 showUpdateBanner();
+                // Update global state
+                if (window.appState) {
+                    window.appState.isUpdateAvailable = true;
+                    document.dispatchEvent(new CustomEvent('app-update-available'));
+                }
             },
             onOfflineReady() {
             },

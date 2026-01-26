@@ -95,6 +95,33 @@ export const GeneralListeners = {
                 }
             });
 
+            // Update Menu Item Logic
+            document.addEventListener('app-update-available', () => {
+                const updateBtn = document.getElementById('updateMenuItem');
+                if (updateBtn) updateBtn.style.display = 'flex';
+                // Also show a dot on the menu button
+                if (DOM.headerMenuBtn) {
+                    DOM.headerMenuBtn.classList.add('has-update');
+                    // Add update dot if not exists
+                    if (!DOM.headerMenuBtn.querySelector('.update-dot')) {
+                        const dot = document.createElement('span');
+                        dot.className = 'update-dot';
+                        DOM.headerMenuBtn.appendChild(dot);
+                    }
+                }
+            });
+
+            const updateMenuItem = document.getElementById('updateMenuItem');
+            if (updateMenuItem) {
+                addClickListener(updateMenuItem, () => {
+                    if (window.triggerAppUpdate) {
+                        window.triggerAppUpdate();
+                    } else {
+                        window.location.reload();
+                    }
+                });
+            }
+
             // Cloud Save Menu Button - Always visible
             const cloudSaveBtn = document.getElementById('cloudSaveMenuBtn');
             if (cloudSaveBtn) {
