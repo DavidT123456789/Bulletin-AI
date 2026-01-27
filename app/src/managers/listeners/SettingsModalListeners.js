@@ -798,6 +798,33 @@ export const SettingsModalListeners = {
 
         addClickListener(DOM.resetAllSettingsBtn, StorageManager.resetAllSettings.bind(StorageManager));
 
+        // Update Check Button
+        const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
+        if (checkUpdatesBtn) {
+            addClickListener(checkUpdatesBtn, async () => {
+                checkUpdatesBtn.disabled = true;
+                const originalContent = checkUpdatesBtn.innerHTML;
+                checkUpdatesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification...';
+
+                try {
+                    if (window.checkForUpdates) {
+                        await window.checkForUpdates();
+                        // Wait a bit to ensure potential PWA events fire
+                        await new Promise(r => setTimeout(r, 1000));
+                        UI.showNotification("Vérification des mises à jour terminée", "info");
+                    } else {
+                        UI.showNotification("Fonction de mise à jour non disponible", "warning");
+                    }
+                } catch (e) {
+                    console.error("Update check failed", e);
+                    UI.showNotification("Erreur lors de la vérification", "error");
+                } finally {
+                    checkUpdatesBtn.disabled = false;
+                    checkUpdatesBtn.innerHTML = originalContent;
+                }
+            });
+        }
+
         // Factory reset (deletes everything)
         const factoryResetBtn = document.getElementById('factoryResetBtn');
         if (factoryResetBtn) {

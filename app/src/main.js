@@ -78,8 +78,10 @@ function setupPWAUpdateHandler() {
     // Import the virtual module from vite-plugin-pwa
     import('virtual:pwa-register').then(({ registerSW }) => {
         let updateSW;
+        let registration;
 
         const showUpdateBanner = () => {
+            console.log('[PWA] Showing update banner');
             const banner = document.getElementById('pwaUpdateBanner');
             if (banner) {
                 banner.style.display = 'flex';
@@ -88,6 +90,7 @@ function setupPWAUpdateHandler() {
                 const updateBtn = document.getElementById('pwaUpdateBtn');
                 if (updateBtn) {
                     updateBtn.onclick = () => {
+                        console.log('[PWA] User accepted update');
                         updateSW && updateSW(true);
                     };
                 }
@@ -104,11 +107,35 @@ function setupPWAUpdateHandler() {
 
         // Expose update trigger for menu button
         window.triggerAppUpdate = () => {
-            updateSW && updateSW(true);
+            if (updateSW) {
+                updateSW(true);
+            } else {
+                window.location.reload();
+            }
+        };
+
+        // Expose manual check function
+        window.checkForUpdates = async () => {
+            if (registration) {
+                console.log('[PWA] Manually checking for updates...');
+                try {
+                    await registration.update();
+                    console.log('[PWA] Update check complete');
+                    // Notification handled by UI if needed, or via events
+                    // If no update found, we might want to tell the user?
+                    // But registration.update() doesn't return "found/not found". It updates the registration.
+                    // If a new worker is found, 'updatefound' (or onNeedRefresh) triggers.
+                } catch (e) {
+                    console.error('[PWA] Manual update check failed:', e);
+                }
+            } else {
+                console.warn('[PWA] Cannot check for updates: No registration yet.');
+            }
         };
 
         updateSW = registerSW({
             onNeedRefresh() {
+                console.log('[PWA] New content available, need refresh');
                 showUpdateBanner();
                 // Update global state
                 if (window.appState) {
@@ -117,18 +144,23 @@ function setupPWAUpdateHandler() {
                 }
             },
             onOfflineReady() {
+                console.log('[PWA] App ready to work offline');
             },
-            onRegistered(registration) {
+            onRegistered(swRegistration) {
+                console.log('[PWA] Service Worker registered', swRegistration);
+                registration = swRegistration;
+
                 // Check for updates every hour
                 setInterval(() => {
-                    registration?.update();
+                    swRegistration.update();
                 }, 60 * 60 * 1000);
             },
             onRegisterError(error) {
                 console.error('[PWA] Service worker registration error:', error);
             }
         });
-    }).catch(() => {
+    }).catch((e) => {
         // virtual:pwa-register not available in dev mode
+        console.warn('[PWA] Update handler disabled (dev mode or error):', e);
     });
 }
