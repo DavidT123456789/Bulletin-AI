@@ -8,6 +8,7 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Module de gestion des modales.
@@ -26,26 +27,6 @@ export const ModalUI = {
     /** @private */
     _isIgnoringTooltips: false,
 
-    /** @private */
-    _historyListenerAttached: false,
-
-    /**
-     * Initializes the history listener for back button support
-     * @private
-     */
-    _ensureHistoryListener() {
-        if (this._historyListenerAttached) return;
-
-        window.addEventListener('popstate', (e) => {
-            if (this.activeModal) {
-                // Close modal without triggering another history.back()
-                this.closeModal(this.activeModal, { causedByHistory: true });
-            }
-        });
-
-        this._historyListenerAttached = true;
-    },
-
     /**
      * Ouvre une modale avec animation style Apple.
      * @param {HTMLElement|string} modalOrId - L'élément modale ou son ID
@@ -54,14 +35,8 @@ export const ModalUI = {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
-        // Ensure history listener is attached
-        this._ensureHistoryListener();
-
-        // [UX Mobile] History Push
-        // Avoid pushing state for stacked modals (like help over settings) if desired, 
-        // OR push it so back button un-stacks them one by one (preferred behavior).
-        const state = { modalOpen: true, modalId: modal.id };
-        history.pushState(state, '', '');
+        // [UX Mobile] History Push via Manager
+        HistoryManager.pushState(modal.id, (options) => this.closeModal(modal, options));
 
         // Si une modale est déjà ouverte et qu'on ouvre helpModal, on la "stack"
         if (this.activeModal && modal.id === 'helpModal') {
@@ -147,28 +122,9 @@ export const ModalUI = {
         if (!modal) return;
 
         // [UX Mobile] History Cleanup
-        // If closed via UI (X button/backdrop) and we have a history state, go back
-        if (!options.causedByHistory && history.state?.modalOpen && history.state?.modalId === modal.id) {
-            history.back();
-            // The popstate listener will NOT trigger this.closeModal again because 
-            // the state will change before the event ? No, popstate fires AFTER back.
-            // Actually, manual history.back() triggers popstate. 
-            // BUT we are doing this conditionally.
-            // Wait: we want to avoid double closing or loops.
-            // If we call history.back(), popstate fires.
-            // Inside popstate: we call closeModal({ causedByHistory: true }).
-            // So we should return HERE to let popstate handle the actual closing?
-            // NO, because we want immediate UI feedback.
-
-            // BETTER STRATEGY: 
-            // 1. If causedByHistory: Just close UI.
-            // 2. If NOT causedByHistory (User clicked X):
-            //    Check if current history state matches this modal.
-            //    If yes, history.back().
-            //    BUT history.back() is async. The UI will close, then popstate fires?
-
-            // To prevent the popstate listener from trying to close an already closing modal:
-            // We can check if modal is already closing.
+        // If closed via UI (X button) and NOT caused by back button, we must clean up history
+        if (!options.causedByHistory) {
+            HistoryManager.handleManualClose(modal.id);
         }
 
         if (modal.classList.contains('modal-closing') || modal.style.display === 'none') return;

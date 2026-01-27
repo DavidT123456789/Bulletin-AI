@@ -9,6 +9,7 @@ import { DOM } from '../utils/DOM.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 let UI;
 let StorageManager;
@@ -81,6 +82,9 @@ export const ClassUIManager = {
     openDropdown() {
         if (!DOM.classDropdown) return;
 
+        // [UX Mobile] Push History State
+        HistoryManager.pushState('classDropdown', (options) => this.closeDropdown(options));
+
         this._isDropdownOpen = true;
         DOM.headerClassChip?.classList.add('active');
         DOM.classDropdown.style.display = 'block';
@@ -112,8 +116,13 @@ export const ClassUIManager = {
     /**
      * Ferme le dropdown
      */
-    closeDropdown() {
+    closeDropdown(options = {}) {
         if (!DOM.classDropdown) return;
+
+        // [UX Mobile] History Cleanup
+        if (!options.causedByHistory && this._isDropdownOpen) {
+            HistoryManager.handleManualClose('classDropdown');
+        }
 
         this._isDropdownOpen = false;
         DOM.headerClassChip?.classList.remove('active');

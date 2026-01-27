@@ -1,6 +1,6 @@
 {
   "name": "bulletin-assistant-v2",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Assistant Bulletin V2 - Refactored with ES6 Modules and Vite",
   "author": "David Trafial",

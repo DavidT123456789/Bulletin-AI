@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser l'error boundary en premier pour capturer toutes les erreurs
     initErrorBoundary();
 
+    console.log('Bulletin AI v0.1.1 loaded 🚀');
+
     try {
         initDOM();
         App.init();
