@@ -13,6 +13,7 @@ import { UI } from './UIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Import Wizard Manager
@@ -104,6 +105,9 @@ export const ImportWizardManager = {
 
         const backdrop = document.getElementById('importHubBackdrop');
         if (backdrop) {
+            // [UX Mobile] Push History State
+            HistoryManager.pushState('importHub', (options) => this.closeHub(options));
+
             backdrop.classList.add('active');
             document.body.style.overflow = 'hidden';
             // Focus first card for accessibility
@@ -116,9 +120,14 @@ export const ImportWizardManager = {
     /**
      * Close the Hub Modal
      */
-    closeHub() {
+    closeHub(options = {}) {
         const backdrop = document.getElementById('importHubBackdrop');
         if (backdrop) {
+            // [UX Mobile] History Cleanup
+            if (!options.causedByHistory && backdrop.classList.contains('active')) {
+                HistoryManager.handleManualClose('importHub');
+            }
+
             backdrop.classList.remove('active');
             document.body.style.overflow = '';
         }
