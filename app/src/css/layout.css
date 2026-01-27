@@ -1527,7 +1527,7 @@
     -webkit-backdrop-filter: blur(16px) saturate(180%);
 
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-lg);
 
     /* Double shadow for depth + Violet Glow */
     box-shadow:
