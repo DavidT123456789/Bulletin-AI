@@ -1618,70 +1618,7 @@ textarea {
     }
 }
 
-/* PWA Update Banner */
-.pwa-update-banner {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--primary-color) 0%, #7c3aed 100%);
-    color: white;
-    padding: 12px 20px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 8px 32px rgba(var(--primary-color-rgb), 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: var(--z-modal);
-    animation: slide-up-banner 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-weight: 500;
-}
 
-.pwa-update-banner span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.pwa-update-banner i {
-    font-size: 1.2em;
-}
-
-.pwa-update-banner .btn {
-    background: white;
-    color: var(--primary-color);
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-}
-
-.pwa-update-banner .btn:hover {
-    background: #f0f0f0;
-}
-
-.pwa-update-banner .btn-icon {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    width: 32px;
-    height: 32px;
-    color: white;
-}
-
-.pwa-update-banner .btn-icon:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-@keyframes slide-up-banner {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(100px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-}
 
 /* Offline Mode Indicator */
 body.is-offline::before {
