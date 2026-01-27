@@ -1514,21 +1514,25 @@
     gap: 16px;
     padding: 12px 16px 12px 20px;
 
-    /* Organic Gradient Background + Glass (Violet/Primary) */
+    /* Organic Gradient Background + Glass (Specific Vibrant Violet) */
+    /* Force Violet gradient regardless of theme primary color (Gold/Indigo) */
     background: linear-gradient(135deg,
-            rgba(var(--primary-color-rgb), 0.9) 0%,
-            rgba(124, 58, 237, 0.85) 60%,
-            rgba(var(--primary-color-rgb), 0.7) 100%);
+            rgba(124, 58, 237, 0.95) 0%,
+            /* Violet 600 */
+            rgba(139, 92, 246, 0.85) 60%,
+            /* Violet 500 */
+            rgba(167, 139, 250, 0.9) 100%);
+    /* Violet 400 */
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
 
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: var(--radius-pill);
 
-    /* Double shadow for depth + Primary Glow */
+    /* Double shadow for depth + Violet Glow */
     box-shadow:
-        0 14px 40px -10px rgba(var(--primary-color-rgb), 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.1);
+        0 14px 40px -10px rgba(124, 58, 237, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
 
     animation: pwa-toast-enter 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards;
     width: auto;
@@ -1536,13 +1540,15 @@
 }
 
 [data-theme="dark"] .pwa-update-banner {
+    /* Slightly deeper in dark mode but still vibrant */
     background: linear-gradient(135deg,
-            rgba(var(--primary-color-rgb), 0.8) 0%,
-            rgba(124, 58, 237, 0.7) 100%);
+            rgba(109, 40, 217, 0.9) 0%,
+            /* Violet 700 */
+            rgba(124, 58, 237, 0.8) 100%);
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow:
         0 14px 40px -10px rgba(0, 0, 0, 0.6),
-        0 0 20px rgba(var(--primary-color-rgb), 0.2);
+        0 0 20px rgba(124, 58, 237, 0.3);
 }
 
 @keyframes pwa-toast-enter {
