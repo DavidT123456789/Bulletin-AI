@@ -1499,7 +1499,7 @@
    ANIMATION: Filter/Sort Switch (Quick Fade)
 
 /* ====================================================================
-   PWA UPDATE TOAST (Premium Glassmorphism)
+   PWA UPDATE TOAST (Premium Glassmorphism + Gradient)
    ==================================================================== */
 .pwa-update-banner {
     position: fixed;
@@ -1514,14 +1514,21 @@
     gap: 16px;
     padding: 12px 16px 12px 20px;
 
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* Organic Gradient Background + Glass */
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(255, 255, 255, 0.85) 60%,
+            rgba(var(--primary-color-rgb), 0.12) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+
+    border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: var(--radius-pill);
+
+    /* Double shadow for depth */
     box-shadow:
-        0 10px 40px -10px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(0, 0, 0, 0.02);
+        0 10px 40px -10px rgba(var(--primary-color-rgb), 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
 
     animation: pwa-toast-enter 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards;
     width: auto;
@@ -1529,11 +1536,13 @@
 }
 
 [data-theme="dark"] .pwa-update-banner {
-    background: rgba(30, 41, 59, 0.85);
-    /* Slate-800 */
-    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg,
+            rgba(30, 41, 59, 0.9) 0%,
+            rgba(30, 41, 59, 0.8) 60%,
+            rgba(var(--primary-color-rgb), 0.2) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
     box-shadow:
-        0 10px 40px -10px rgba(0, 0, 0, 0.5),
+        0 14px 40px -10px rgba(0, 0, 0, 0.6),
         0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -1553,15 +1562,25 @@
 }
 
 .pwa-update-banner span i {
-    color: var(--primary-color);
-    font-size: 1.1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-color-rgb), 0.2));
 }
 
 .pwa-update-banner .btn-primary {
     padding: 8px 16px;
     border-radius: var(--radius-pill);
     font-size: 0.85rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pwa-update-banner .btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
 }
 
 .pwa-update-banner .btn-icon {
@@ -1582,6 +1601,7 @@
 .pwa-update-banner .btn-icon:hover {
     background: rgba(0, 0, 0, 0.05);
     color: var(--text-primary);
+    transform: rotate(90deg);
 }
 
 [data-theme="dark"] .pwa-update-banner .btn-icon:hover {
