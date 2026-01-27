@@ -692,23 +692,81 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Update indicator dot on menu button */
+/* Update indicator: Organic animation of the 3 dots (Pure CSS) */
 .menu-btn.has-update {
-    position: relative;
+    /* Switch to column layout to stack our 3 dots */
+    flex-direction: column;
+    gap: 3px;
+    /* Ensure icon color transition works */
+    color: var(--text-secondary);
 }
 
-.menu-btn .update-dot {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 10px;
-    height: 10px;
-    background-color: var(--primary-color);
-    border: 2px solid var(--surface-color);
+/* 
+   We construct the 3 dots using:
+   1. ::before (Top)
+   2. The existing <i> element (Middle)
+   3. ::after (Bottom)
+*/
+
+/* Shared logic for all 3 dots */
+.menu-btn.has-update::before,
+.menu-btn.has-update::after,
+.menu-btn.has-update i {
+    content: '';
+    display: block;
+    width: 3.5px;
+    height: 3.5px;
+    min-width: 3.5px;
+    min-height: 3.5px;
     border-radius: 50%;
-    z-index: 10;
-    box-shadow: 0 0 0 1px var(--primary-color);
-    /* Animation removed as requested for cleaner look */
+    background-color: var(--text-secondary);
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* Animation base */
+    animation: organic-pulse-dots 2.2s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    /* Override FA specific styles for the middle dot */
+    font-size: 0;
+    line-height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+/* Specific overrides to hide the original font icon glyph */
+.menu-btn.has-update i::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* Stagger delay for wave effect (Top -> Bottom) */
+.menu-btn.has-update::before {
+    animation-delay: 0s;
+}
+
+.menu-btn.has-update i {
+    animation-delay: 0.15s;
+}
+
+.menu-btn.has-update::after {
+    animation-delay: 0.3s;
+}
+
+@keyframes organic-pulse-dots {
+
+    0%,
+    100% {
+        background-color: var(--text-secondary);
+        transform: scale(1);
+        box-shadow: none;
+        opacity: 0.8;
+    }
+
+    50% {
+        background-color: var(--primary-color);
+        transform: scale(1.6);
+        /* Glow effect matching primary color */
+        box-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.6);
+        opacity: 1;
+    }
 }
 
 /* Update menu item style */

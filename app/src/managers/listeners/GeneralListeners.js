@@ -101,14 +101,9 @@ export const GeneralListeners = {
                 const updateBtn = document.getElementById('updateMenuItem');
                 if (updateBtn) updateBtn.style.display = 'flex';
                 // Also show a dot on the menu button
+                // Also trigger organic animation on the menu button itself
                 if (DOM.headerMenuBtn) {
                     DOM.headerMenuBtn.classList.add('has-update');
-                    // Add update dot if not exists
-                    if (!DOM.headerMenuBtn.querySelector('.update-dot')) {
-                        const dot = document.createElement('span');
-                        dot.className = 'update-dot';
-                        DOM.headerMenuBtn.appendChild(dot);
-                    }
                 }
             });
 
