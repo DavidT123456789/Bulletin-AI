@@ -479,20 +479,31 @@ export const FocusPanelStatus = {
      * Update the history indicator UI
      */
     updateHistoryIndicator() {
+        const group = document.getElementById('historyNavigationGroup');
         const indicator = document.getElementById('focusHistoryIndicator');
-        if (!indicator) return;
+        const prevBtn = document.getElementById('focusHistoryPrevBtn');
+        const nextBtn = document.getElementById('focusHistoryNextBtn');
+
+        if (!group || !indicator) return;
 
         const modifCount = FocusPanelHistory.getModificationCount();
 
         if (modifCount > 0) {
-            indicator.style.display = 'inline-flex';
+            group.style.display = 'inline-flex';
+
+            // Update counter
             const countEl = indicator.querySelector('.history-count');
             if (countEl) {
                 countEl.textContent = modifCount;
             }
-            indicator.setAttribute('data-tooltip', `${modifCount} modification${modifCount > 1 ? 's' : ''} • Ctrl+Z pour annuler`);
+            indicator.setAttribute('data-tooltip', `${modifCount} modification${modifCount > 1 ? 's' : ''}`);
+
+            // Update navigation buttons
+            if (prevBtn) prevBtn.disabled = !FocusPanelHistory.canUndo();
+            if (nextBtn) nextBtn.disabled = !FocusPanelHistory.canRedo();
+
         } else {
-            indicator.style.display = 'none';
+            group.style.display = 'none';
         }
     },
 

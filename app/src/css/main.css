@@ -36,6 +36,8 @@
 @import './modules/class-dashboard.css';
 @import './modules/journal.css';
 @import './modules/list-focus.css';
+@import './modules/history-nav.css';
+/* New History Navigation */
 @import './modules/responsive.css';
 @import './modules/theme-control.css';
 @import './modules/selection-toolbar.css';

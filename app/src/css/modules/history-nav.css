@@ -1,0 +1,82 @@
+/* History Navigation - Segmented Control Style */
+.history-navigation-group {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-primary);
+    /* Slightly lighter background than card */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    margin-left: 10px;
+}
+
+/* Base button style for group */
+.history-nav-btn,
+.history-indicator-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: var(--radius-xs);
+    font-size: 0.85rem;
+}
+
+/* Arrows */
+.history-nav-btn {
+    width: 24px;
+    /* Square touch target */
+    padding: 0;
+}
+
+.history-nav-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--primary-color);
+}
+
+.history-nav-btn:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    /* No hover state on disabled */
+    cursor: default;
+}
+
+/* Central Indicator */
+.history-indicator-btn {
+    gap: 6px;
+    font-weight: 500;
+    color: var(--text-primary);
+    padding: 0 8px;
+    margin: 0 2px;
+    /* Breathing room */
+    position: relative;
+    /* Remove old styles */
+    min-width: unset;
+}
+
+.history-indicator-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary-color);
+}
+
+.history-indicator-btn .history-count {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    padding: 1px 6px;
+    border-radius: 12px;
+    min-width: 18px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Active state for indicator (when popover open) */
+.history-indicator-btn.active {
+    background: var(--primary-color-light);
+    color: var(--primary-color);
+}

@@ -578,12 +578,26 @@
                                     data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
                                     <i class="fas fa-microphone"></i>
                                 </button>
-                                <!-- History Indicator: Shows modification count, click for history popover -->
-                                <button id="focusHistoryIndicator" class="journal-header-btn focus-history-btn tooltip"
-                                    style="display: none;" data-tooltip="Historique des modifications">
-                                    <i class="fas fa-history"></i>
-                                    <span class="history-count">0</span>
-                                </button>
+                                <!-- History Navigation Group (Segmented) -->
+                                <div class="history-navigation-group" id="historyNavigationGroup"
+                                    style="display: none;">
+                                    <button id="focusHistoryPrevBtn" class="history-nav-btn tooltip"
+                                        data-tooltip="Version précédente (Ctrl+Z)" disabled>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+
+                                    <!-- Central Indicator (Existing) -->
+                                    <button id="focusHistoryIndicator" class="history-indicator-btn tooltip"
+                                        data-tooltip="Historique des modifications">
+                                        <i class="fas fa-history"></i>
+                                        <span class="history-count">0</span>
+                                    </button>
+
+                                    <button id="focusHistoryNextBtn" class="history-nav-btn tooltip"
+                                        data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" disabled>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="focus-appreciation-meta">
                                 <span id="focusWordCount" class="word-count">0 mots</span>

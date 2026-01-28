@@ -379,6 +379,23 @@ export const FocusPanelManager = {
             });
         }
 
+        // History Navigation Arrows
+        const historyPrevBtn = document.getElementById('focusHistoryPrevBtn');
+        if (historyPrevBtn) {
+            historyPrevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                FocusPanelHistory.undo();
+            });
+        }
+
+        const historyNextBtn = document.getElementById('focusHistoryNextBtn');
+        if (historyNextBtn) {
+            historyNextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                FocusPanelHistory.redo();
+            });
+        }
+
         // Note: FAB button (addStudentFab) is now handled by ImportWizardManager via the Hub
 
         // Context textarea
