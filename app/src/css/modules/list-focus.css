@@ -5117,10 +5117,10 @@
         min-width: 45px;
     }
 
-    /* Appreciation preview: Shorter */
+    /* Appreciation preview: Shorter but wide enough for header content */
     .appreciation-cell {
-        max-width: 150px;
-        min-width: 100px;
+        max-width: 300px;
+        min-width: 200px;
     }
 
     .appreciation-preview {
