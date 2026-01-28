@@ -733,10 +733,7 @@
     width: 230px;
 }
 
-/* Center name header in expanded view */
-.student-list-table.appreciation-full-view th[data-sort-field="name"] .header-content-wrapper {
-    justify-content: center;
-}
+
 
 /* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
 @keyframes appreciation-expand-reveal {

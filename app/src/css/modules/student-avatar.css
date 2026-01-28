@@ -165,53 +165,77 @@
     z-index: 10;
 }
 
-/* === EXPANDED VIEW: Avatar Above Name === */
-/* When appreciation column is expanded, switch to vertical layout */
+/* === EXPANDED VIEW: Avatar Left + Stacked Text (Disposition 2) === */
 .appreciation-full-view .student-identity-wrapper {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
-    gap: 8px;
-    /* Blur-to-sharp animation masks the instant flex-direction change */
-    animation: identity-expand-reveal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    text-align: left;
+    gap: 16px;
+    padding-left: 8px;
+    /* Slight indent for visual hierarchy */
+
+    /* Blur-to-sharp animation masks the layout change */
+    animation: identity-expand-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Larger avatar in expanded view */
+/* Larger premium avatar in expanded view */
 .appreciation-full-view .student-identity-wrapper .student-avatar {
-    width: 48px;
-    height: 48px;
-    font-size: 16px;
-    /* Opacity-only animation to avoid transform conflicts with hover */
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    /* Lifted effect */
+
+    /* Opacity-only animation, transform managed by transition */
     animation: avatar-expand-fade 0.4s ease-out forwards;
-    /* GPU acceleration + smooth hover transition */
-    will-change: transform;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    will-change: transform, width, height;
+}
+
+/* Stack Name/Surname in expanded view */
+.appreciation-full-view .student-identity-wrapper .student-nom-prenom {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    line-height: 1.2;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Style the firstname (span) within the stack */
+.appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
 
 /* Hover zoom in expanded view - triggered by row hover or focus state */
 .appreciation-full-view tbody tr:hover .student-avatar,
 .appreciation-full-view tbody tr.focus-active .student-avatar {
-    transform: scale(1.18) !important;
+    transform: scale(1.1) !important;
+    /* Slightly less zoom as avatar is bigger */
     z-index: 10;
-    /* Force smooth transition despite animation conflict */
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    will-change: transform;
 }
 
 /* Keyframe: subtle blur-to-sharp masks layout change */
 @keyframes identity-expand-reveal {
     0% {
-        opacity: 0.5;
+        opacity: 0.6;
+        transform: translateX(-10px);
         filter: blur(2px);
     }
 
     100% {
         opacity: 1;
+        transform: translateX(0);
         filter: blur(0);
     }
 }
 
-/* Keyframe: opacity-only fade (no transform to avoid hover conflicts) */
+/* Keyframe: opacity-only fade */
 @keyframes avatar-expand-fade {
     0% {
         opacity: 0.5;
@@ -225,7 +249,12 @@
 .student-identity-wrapper .student-nom-prenom {
     flex: 1;
     min-width: 0;
-    /* Allow text truncation */
+    /* Transitions for smooth state switching */
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.student-identity-wrapper .student-prenom {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Focus Panel Header Avatar */
@@ -270,5 +299,3 @@
 [data-theme="dark"] .student-avatar {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-
-/* Dark mode: no shadow needed in flat design */
