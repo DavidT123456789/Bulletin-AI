@@ -553,9 +553,9 @@ export const StatsUI = {
             const containerWidth = container.offsetWidth;
             const cardWidth = container.querySelector('.stat-card').offsetWidth;
 
-            // Calculate active index based on center position, or mostly visible
-            // Adding half margin/gap to buffer
-            const index = Math.round(scrollLeft / (cardWidth + 12));
+            // Calculate active index based on scroll position
+            // Since cards are 100% width and snap to center, simple division works
+            const index = Math.round(scrollLeft / containerWidth);
 
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);

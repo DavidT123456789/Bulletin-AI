@@ -373,12 +373,14 @@
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
-        gap: 12px;
+        gap: 16px;
         grid-template-columns: none;
-        padding-bottom: 24px;
-        /* Space for shadow */
-        padding-right: 20px;
-        /* End padding for scroll */
+        padding-bottom: 12px;
+        /* Reduced from 24px */
+        margin-bottom: 0;
+        /* Removing excess margin */
+        padding-right: 0;
+        /* No end padding needed for full width */
 
         /* Hide scrollbar */
         scrollbar-width: none;
@@ -390,10 +392,9 @@
     }
 
     .stats-container .stat-card {
-        min-width: 88%;
-        /* Shows a clear peek of the next card */
-        scroll-snap-align: start;
-        /* Aligns left naturally */
+        min-width: 100%;
+        /* Full width focus */
+        scroll-snap-align: center;
         flex-shrink: 0;
         margin-right: 0;
     }
@@ -408,21 +409,25 @@
         display: flex;
         justify-content: center;
         gap: 8px;
+        margin-top: 4px;
+        /* Tight connection to cards */
         margin-bottom: 24px;
     }
 
     .stats-dot {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         background-color: var(--border-color);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0.5;
     }
 
     .stats-dot.active {
         background-color: var(--primary-color);
-        width: 24px;
+        width: 18px;
         border-radius: 4px;
+        opacity: 1;
     }
 }
 
