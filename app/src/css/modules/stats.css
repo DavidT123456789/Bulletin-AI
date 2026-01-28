@@ -392,8 +392,12 @@
     }
 
     .stats-container .stat-card {
+        width: 100%;
+        /* Force exact width */
         min-width: 100%;
-        /* Full width focus */
+        max-width: 100%;
+        box-sizing: border-box;
+        /* Ensure padding doesn't add to width */
         scroll-snap-align: center;
         flex-shrink: 0;
         margin-right: 0;
