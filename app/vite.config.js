@@ -1,5 +1,20 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'child_process';
+
+const getGitInfo = () => {
+  try {
+    const hash = execSync('git rev-parse --short HEAD').toString().trim();
+    // %s = subject only (first line) to avoid breaking UI with long messages
+    const message = execSync('git log -1 --pretty=%s').toString().trim();
+    return { hash, message };
+  } catch (e) {
+    console.warn('Failed to fetch git info:', e.message);
+    return { hash: 'dev', message: 'Development build' };
+  }
+};
+
+const gitInfo = getGitInfo();
 
 export default defineConfig({
   // GitHub Pages: /Bulletin-AI/ | Local dev: ./
@@ -46,8 +61,8 @@ export default defineConfig({
     strictPort: false
   },
   define: {
-    __COMMIT_HASH__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 7) || 'dev'),
-    __COMMIT_MESSAGE__: JSON.stringify(process.env.COMMIT_MESSAGE || 'Development build'),
+    __COMMIT_HASH__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 7) || gitInfo.hash),
+    __COMMIT_MESSAGE__: JSON.stringify(process.env.COMMIT_MESSAGE || gitInfo.message),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString())
   },
   build: {

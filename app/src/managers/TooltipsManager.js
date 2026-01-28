@@ -22,6 +22,42 @@ let _tippyInstances = [];
 let _isIgnoringTooltips = false;
 
 /**
+ * Génère la configuration commune pour Tippy
+ * pour assurer la cohérence et gérer le tactile.
+ * @returns {Object} Configuration Tippy
+ */
+const getCommonTippyConfig = () => {
+    // Détection plus robuste du mobile/tactile
+    // On vérifie (hover: none) pour capturer les appareils purement tactiles
+    // On vérifie (pointer: coarse) pour les pointeurs grossiers
+    const isTouch = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+        (window.matchMedia && window.matchMedia('(hover: none)').matches) ||
+        ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0);
+
+    return {
+        appendTo: () => document.body,
+        theme: 'custom-theme',
+        animation: 'shift-away',
+        arrow: false,
+        delay: [400, 0],
+        duration: [300, 200],
+        allowHTML: true,
+        interactive: false,
+        hideOnClick: true,
+        // 'manual' disable le trigger 'mouseenter' standard, évitant le sticky hover sur tactile
+        // Le 'hold' via l'option touch prend le relais pour l'affichage tactile
+        trigger: isTouch ? 'manual' : 'mouseenter',
+        touch: ['hold', 500],
+        onShow(instance) {
+            if (_isIgnoringTooltips) return false;
+            if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
+            return true;
+        }
+    };
+};
+
+/**
  * Module de gestion des tooltips.
  * @namespace TooltipsUI
  */
@@ -46,49 +82,19 @@ export const TooltipsUI = {
      * Initialise ou réinitialise tous les tooltips de la page.
      * Détruit les instances existantes avant de créer les nouvelles.
      */
+
     initTooltips() {
         // Détruire les instances existantes
-        if (_tippyInstances && _tippyInstances.length > 0) {
-            _tippyInstances.forEach(instance => {
-                if (instance && typeof instance.destroy === 'function') {
-                    instance.destroy();
-                }
-            });
-            _tippyInstances = [];
-        }
+        this.destroyTooltips();
 
         // Créer les nouvelles instances si Tippy.js est disponible
         if (window.tippy) {
+            const commonConfig = getCommonTippyConfig();
+
             _tippyInstances = window.tippy('[data-tooltip]', {
+                ...commonConfig,
                 content(reference) {
                     return reference.getAttribute('data-tooltip');
-                },
-                appendTo: () => document.body,
-                theme: 'custom-theme',
-                animation: 'shift-away',
-                arrow: false,
-                /* Pas de flèche (design épuré) */
-                delay: [400, 0],
-                /* Délai de 400ms avant apparition */
-                duration: [300, 200],
-                allowHTML: true,
-                interactive: false,
-                hideOnClick: true,
-
-                trigger: (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ? 'manual' : 'mouseenter', // 'manual' for touch to avoid "sticky hover", 'mouseenter' for mouse
-                touch: ['hold', 500], // Show on long press (500ms)
-
-                onShow(instance) {
-                    // Ne pas afficher si les tooltips sont temporairement ignorés
-                    if (_isIgnoringTooltips) {
-                        return false;
-                    }
-
-                    // Éviter l'affichage pour focus non-visible (accessibilité)
-                    if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) {
-                        return false;
-                    }
-                    return true;
                 }
             });
         }
@@ -132,26 +138,24 @@ export const TooltipsUI = {
             element._tippy.setContent(content);
         } else {
             // Créer une nouvelle instance si elle n'existe pas
+            const commonConfig = getCommonTippyConfig();
+
             const instance = window.tippy(element, {
+                ...commonConfig,
                 content: content,
-                appendTo: () => document.body,
-                theme: 'custom-theme',
-                animation: 'fade',
-                duration: 200,
-                allowHTML: true,
-                interactive: false,
-                hideOnClick: true,
-                trigger: (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ? 'manual' : 'mouseenter',
-                touch: ['hold', 500],
-                onShow(inst) {
-                    if (_isIgnoringTooltips) return false;
-                    if (inst.state.isFocused && !inst.reference.matches(':focus-visible')) return false;
-                    return true;
-                }
+                animation: 'fade', // Spécifique pour update ? Gardons 'fade' comme dans l'original ou harmonisons ? L'original avait 'fade', init avait 'shift-away'. Je garde 'fade' pour minimiser changement visuel inattendu, ou je peux harmoniser. L'original avait 'fade' ici.
+                duration: 200
             });
             _tippyInstances.push(instance);
         }
     },
+
+    /**
+     * Génère la configuration commune pour Tippy
+     * pour assurer la cohérence et gérer le tactile.
+     * @returns {Object} Configuration Tippy
+     */
+
 
     /**
      * Nettoie (détruit) les tooltips attachés aux éléments à l'intérieur d'un conteneur spécifique.
