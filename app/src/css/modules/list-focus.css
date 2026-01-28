@@ -5133,6 +5133,15 @@
         width: 28px;
         height: 28px;
     }
+
+    /* Harmonize header radius with container radius on mobile */
+    .student-list-table thead tr:first-child th:first-child {
+        border-top-left-radius: var(--radius-md);
+    }
+
+    .student-list-table thead tr:first-child th:last-child {
+        border-top-right-radius: var(--radius-md);
+    }
 }
 
 /* Small Mobile Breakpoint (max-width: 375px) */
