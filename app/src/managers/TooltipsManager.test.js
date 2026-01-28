@@ -12,6 +12,17 @@ describe('TooltipsManager', () => {
         document.body.innerHTML = '';
         // Reset window.tippy mock
         window.tippy = undefined;
+        // Mock matchMedia for mouse by default
+        window.matchMedia = vi.fn().mockImplementation(query => ({
+            matches: query === '(pointer: coarse)' ? false : true,
+            media: query,
+            onchange: null,
+            addListener: vi.fn(), // Deprecated
+            removeListener: vi.fn(), // Deprecated
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        }));
     });
 
     afterEach(() => {
@@ -76,11 +87,36 @@ describe('TooltipsManager', () => {
 
             expect(mockTippy).toHaveBeenCalledWith('[data-tooltip]', expect.objectContaining({
                 theme: 'custom-theme',
-                animation: 'fade',
-                duration: 200,
+                animation: 'shift-away',
+                duration: [300, 200],
                 allowHTML: true,
                 interactive: false,
-                hideOnClick: true
+                hideOnClick: true,
+                trigger: 'mouseenter'
+            }));
+        });
+
+        it('should configure tippy with manual trigger on touch devices', () => {
+            // Mock matchMedia for touch
+            window.matchMedia = vi.fn().mockImplementation(query => ({
+                matches: query === '(pointer: coarse)' ? true : false,
+                media: query,
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(),
+            }));
+
+            const mockTippy = vi.fn(() => []);
+            window.tippy = mockTippy;
+
+            TooltipsUI.initTooltips();
+
+            expect(mockTippy).toHaveBeenCalledWith('[data-tooltip]', expect.objectContaining({
+                trigger: 'manual',
+                touch: ['hold', 500]
             }));
         });
     });
