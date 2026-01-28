@@ -5084,7 +5084,9 @@
 
     /* List Table Mobile Adaptations */
     .student-list-view {
-        border-radius: var(--radius-md);
+        /* Revert to radius-lg (desktop default) for consistency with stats cards */
+        /* border-radius: var(--radius-md);  <- REMOVED */
+
         /* CRITICAL: Allow horizontal scroll on mobile */
         overflow-x: auto;
         overflow-y: hidden;
@@ -5134,14 +5136,7 @@
         height: 28px;
     }
 
-    /* Harmonize header radius with container radius on mobile */
-    .student-list-table thead tr:first-child th:first-child {
-        border-top-left-radius: var(--radius-md);
-    }
-
-    .student-list-table thead tr:first-child th:last-child {
-        border-top-right-radius: var(--radius-md);
-    }
+    /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
 /* Small Mobile Breakpoint (max-width: 375px) */
