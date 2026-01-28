@@ -442,7 +442,7 @@ export const StatsUI = {
         // Update Median (maintenant dans performance-details)
         const medianEl = document.getElementById('medianGradeOutput');
         if (medianEl) {
-            const medianValue = stats.median === '--' ? '--' : stats.median.toString().replace('.', ',');
+            const medianValue = stats.median === '--' ? '--' : (Number.isInteger(stats.median) ? stats.median : stats.median.toFixed(1));
             medianEl.textContent = medianValue;
         }
 
