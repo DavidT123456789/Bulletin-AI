@@ -320,6 +320,11 @@
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
+.modal-nav-btn:active:not(:disabled) {
+    transform: scale(0.92);
+    box-shadow: none;
+}
+
 .modal-nav-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;

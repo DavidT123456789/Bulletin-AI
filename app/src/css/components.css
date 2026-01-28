@@ -341,6 +341,11 @@
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
+.btn-icon:active:not(:disabled) {
+    transform: scale(0.95);
+    background-color: rgba(var(--primary-color-rgb), 0.15);
+}
+
 .btn-icon:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -377,6 +382,11 @@
 .icon-button:hover {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
+}
+
+.icon-button:active {
+    transform: scale(0.92);
+    background-color: var(--bg-secondary);
 }
 
 .icon-button:focus-visible,

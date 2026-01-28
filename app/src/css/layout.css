@@ -519,6 +519,12 @@
     transform: translateY(-1px);
 }
 
+.cloud-sync-indicator.minimal-cloud:active {
+    transform: scale(0.92);
+    background-color: var(--surface-color);
+    box-shadow: none;
+}
+
 [data-theme="dark"] .cloud-sync-indicator.minimal-cloud:hover {
     background-color: var(--surface-color);
     /* Ensure contrast in dark mode too */
@@ -680,6 +686,12 @@
     color: var(--text-primary);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
+}
+
+.menu-btn:active {
+    transform: scale(0.92);
+    background-color: var(--surface-color);
+    box-shadow: none;
 }
 
 [data-theme="dark"] .menu-btn:hover,
