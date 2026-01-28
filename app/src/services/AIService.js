@@ -72,6 +72,7 @@ export const AIService = {
                     // NOTE: La plupart des modèles :free partagent le même quota quotidien
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
+                        'claude-sonnet-4.5': 'anthropic/claude-3.5-sonnet',
                         // === GRATUITS ===
                         'devstral-free': 'mistralai/devstral-2512:free',          // ⭐ Quota indépendant
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé

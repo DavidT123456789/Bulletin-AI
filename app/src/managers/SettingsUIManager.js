@@ -682,6 +682,10 @@ export const SettingsUIManager = {
                 if (baseName === installedBase && installedTag && installedTag.startsWith(tag || '')) return true;
                 return false;
             });
+        } else if (model.startsWith('anthropic')) {
+            return !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
+        } else if (model.startsWith('mistral-direct')) {
+            return !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
         } else {
             // OpenRouter (DeepSeek, Mistral, Qwen, etc.)
             return !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;

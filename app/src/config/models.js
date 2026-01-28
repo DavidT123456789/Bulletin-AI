@@ -28,6 +28,7 @@ export const COSTS_PER_MILLION_TOKENS = {
     'openrouter': { input: 0.14, output: 0.28 },     // DeepSeek V3
     'mistral-small': { input: 0.10, output: 0.30 },
     'mistral-large': { input: 2.00, output: 6.00 },
+    'claude-sonnet-4.5': { input: 3.00, output: 15.00 }, // Via OpenRouter
     // Ollama (local - gratuit)
     'ollama-qwen3:8b': { input: 0, output: 0 },
     'ollama-mistral': { input: 0, output: 0 },
@@ -64,6 +65,7 @@ export const MODEL_DESCRIPTIONS = {
     'openrouter': "DeepSeek V3. Performant et économique.",
     'mistral-small': "<strong>Français.</strong> Mistral Small.",
     'mistral-large': "Mistral Large. Pour textes nuancés.",
+    'claude-sonnet-4.5': "<strong>✨ Recommandé.</strong> Claude Sonnet 4.5 (via OpenRouter).",
     // Ollama
     'ollama-qwen3:8b': "<strong>🏠 Local - Recommandé.</strong> Qwen 3 8B.",
     'ollama-mistral': "🏠 Local - Équilibré. Le standard Mistral 7B.",
@@ -85,7 +87,7 @@ export const FALLBACK_CONFIG = {
     // Gratuits sponsorisés d'abord, puis payants économiques
     google: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-001', 'gemini-2.0-flash-lite'],
     openai: ['openai-gpt-4o-mini', 'openai-gpt-3.5-turbo', 'openai-gpt-4o'],
-    openrouter: ['llama-3.3-70b-free', 'devstral-free', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
+    openrouter: ['claude-sonnet-4.5', 'llama-3.3-70b-free', 'devstral-free', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen3:8b', 'ollama-mistral', 'ollama-deepseek-r1:8b', 'ollama-gemma3:4b'],
     anthropic: ['anthropic-claude-sonnet-4.5', 'anthropic-claude-opus-4.5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
@@ -117,6 +119,7 @@ export const MODEL_SHORT_NAMES = {
     'openrouter': 'DeepSeek V3',
     'mistral-small': 'Mistral Small',
     'mistral-large': 'Mistral Large',
+    'claude-sonnet-4.5': 'Claude Sonnet 4.5',
     // Ollama (local)
     'ollama-qwen3:8b': '🏠 Qwen 3 8B',
     'ollama-mistral': '🏠 Mistral 7B',
@@ -172,6 +175,7 @@ export const RATE_LIMITS = {
     'deepseek-r1-free': { rpm: 10, delayMs: 6000 }, // Gratuit R1 (lourd)
     'minimax-m21': { rpm: 60, delayMs: 1000 }, // MiniMax M2.1 - modèle léger, rapide
     'openrouter': { rpm: 100, delayMs: 600 },
+    'claude-sonnet-4.5': { rpm: 50, delayMs: 1200 }, // Plus strict pour un gros modèle
 
     // Ollama (local) - pas de rate limit
     'ollama-qwen3:8b': { rpm: 999, delayMs: 500 },
