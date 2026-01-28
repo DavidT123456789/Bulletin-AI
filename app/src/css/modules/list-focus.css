@@ -452,7 +452,7 @@
 /* Appreciation/Status column */
 .appreciation-cell {
     max-width: 340px;
-    min-width: 200px;
+    min-width: 280px;
     text-align: left;
     transition: padding 0.3s ease;
     position: relative;
@@ -5087,10 +5087,11 @@
         border-radius: var(--radius-md);
         /* CRITICAL: Allow horizontal scroll on mobile */
         overflow-x: auto;
-        overflow-y: hidden; /* Fix double scrollbar */
+        overflow-y: hidden;
+        /* Fix double scrollbar */
         -webkit-overflow-scrolling: touch;
         /* Bottom padding to avoid FAB overlap - removed as it created abnormal space inside card */
-        padding-bottom: 0; 
+        padding-bottom: 0;
     }
 
     .student-list-table {
