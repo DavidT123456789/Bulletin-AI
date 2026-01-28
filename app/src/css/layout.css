@@ -1734,4 +1734,54 @@
 
 
 
+/* Mobile adjustments for PWA Banner to prevent truncation */
+@media (max-width: 480px) {
+    .pwa-update-banner {
+        width: calc(100vw - 24px);
+        /* Maximize width with small margin */
+        bottom: 12px;
+    }
+
+    .pwa-banner-main {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .pwa-banner-text {
+        width: 100%;
+    }
+
+    .pwa-subtitle {
+        max-width: 100%;
+        /* Allow full width text */
+        white-space: normal;
+        /* Allow wrapping if needed */
+    }
+
+    .pwa-banner-actions {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 4px;
+    }
+
+    #pwaUpdateBanner .btn-primary {
+        flex-grow: 1;
+        margin: 0 12px;
+        justify-content: center;
+        display: flex;
+        height: 36px;
+        /* Taller touch target */
+        align-items: center;
+    }
+
+    .pwa-info-btn,
+    .pwa-close-btn {
+        width: 36px;
+        /* Larger touch targets */
+        height: 36px;
+    }
+}
+
 /* End of layout.css */
