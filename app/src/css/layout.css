@@ -1631,9 +1631,9 @@
     margin-left: 0;
 }
 
-.pwa-update-banner .btn-icon:hover {
+#pwaUpdateBanner .btn-icon:hover {
     background: rgba(255, 255, 255, 0.3);
-    color: white;
+    color: white !important;
     transform: rotate(90deg);
     border-color: rgba(255, 255, 255, 0.5);
 }
