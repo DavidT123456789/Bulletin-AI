@@ -29,7 +29,7 @@ export const HistoryManager = {
                 // On dépile le dernier élément ouvert
                 const top = this._stack.pop();
 
-                console.log('[HistoryManager] Back detected, closing:', top.id);
+                // console.log('[HistoryManager] Back detected, closing:', top.id);
                 // On ferme l'UI (le callback doit gérer la fermeture visuelle)
                 if (top && typeof top.closeCallback === 'function') {
                     top.closeCallback({ causedByHistory: true });
@@ -54,7 +54,7 @@ export const HistoryManager = {
         history.pushState(state, '', '');
 
         this._stack.push({ id, closeCallback });
-        console.log('[HistoryManager] Pushed state for:', id, '(Stack size:', this._stack.length, ')');
+        // console.log('[HistoryManager] Pushed state for:', id, '(Stack size:', this._stack.length, ')');
     },
 
     /**
@@ -72,7 +72,7 @@ export const HistoryManager = {
         const top = this._stack[this._stack.length - 1];
 
         if (top.id === id) {
-            console.log('[HistoryManager] Manual close for:', id);
+            // console.log('[HistoryManager] Manual close for:', id);
 
             // On le retire de notre pile locale
             this._stack.pop();

@@ -1494,12 +1494,7 @@ export const FocusPanelManager = {
      */
     async _displayPromptModal(promptText, title) {
         // Simple HTML reset/escape
-        const escapedText = promptText
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        const escapedText = Utils.escapeHtml(promptText);
 
         // Create HTML content for the modal
         const message = `

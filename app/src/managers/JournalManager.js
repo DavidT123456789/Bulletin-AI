@@ -14,18 +14,18 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
  */
 const PREDEFINED_TAGS = [
     // POSITIF (vert) - 4 items
-    { id: 'participation+', label: 'Participe', icon: 'fa-hand', color: '#10b981', category: 'positive' },
-    { id: 'travail+', label: 'Travail sérieux', icon: 'fa-book-open', color: '#10b981', category: 'positive' },
-    { id: 'progres', label: 'Progrès', icon: 'fa-arrow-trend-up', color: '#10b981', category: 'positive' },
-    { id: 'attitude+', label: 'Attitude +', icon: 'fa-face-smile', color: '#10b981', category: 'positive' },
+    { id: 'participation+', label: 'Participe', icon: 'fa-hand', color: 'var(--success-color)', category: 'positive' },
+    { id: 'travail+', label: 'Travail sérieux', icon: 'fa-book-open', color: 'var(--success-color)', category: 'positive' },
+    { id: 'progres', label: 'Progrès', icon: 'fa-arrow-trend-up', color: 'var(--success-color)', category: 'positive' },
+    { id: 'attitude+', label: 'Attitude +', icon: 'fa-face-smile', color: 'var(--success-color)', category: 'positive' },
     // NÉGATIF (rouge) - 4 items
-    { id: 'bavardage', label: 'Bavardage', icon: 'fa-comments', color: '#ef4444', category: 'negative' },
-    { id: 'travail-', label: 'Travail insuffisant', icon: 'fa-book', color: '#ef4444', category: 'negative' },
-    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'fa-bag-shopping', color: '#ef4444', category: 'negative' },
-    { id: 'attitude-', label: 'Attitude -', icon: 'fa-face-frown', color: '#ef4444', category: 'negative' },
+    { id: 'bavardage', label: 'Bavardage', icon: 'fa-comments', color: 'var(--error-color)', category: 'negative' },
+    { id: 'travail-', label: 'Travail insuffisant', icon: 'fa-book', color: 'var(--error-color)', category: 'negative' },
+    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'fa-bag-shopping', color: 'var(--error-color)', category: 'negative' },
+    { id: 'attitude-', label: 'Attitude -', icon: 'fa-face-frown', color: 'var(--error-color)', category: 'negative' },
     // NEUTRE (orange/gris) - 2 direct buttons
-    { id: 'difficulte', label: 'Difficulté', icon: 'fa-triangle-exclamation', color: '#f59e0b', category: 'neutral' },
-    { id: 'remarque', label: 'Remarque', icon: 'fa-comment', color: '#6b7280', category: 'neutral' }
+    { id: 'difficulte', label: 'Difficulté', icon: 'fa-triangle-exclamation', color: 'var(--warning-color)', category: 'neutral' },
+    { id: 'remarque', label: 'Remarque', icon: 'fa-comment', color: 'var(--text-secondary)', category: 'neutral' }
 ];
 
 /**
@@ -547,8 +547,8 @@ export const JournalManager = {
         `).join('');
 
         return `
-            ${renderPillDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, '#10b981')}
-            ${renderPillDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, '#ef4444')}
+            ${renderPillDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, 'var(--success-color)')}
+            ${renderPillDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, 'var(--error-color)')}
             ${neutralBtnsHTML}
         `;
     },
@@ -584,8 +584,8 @@ export const JournalManager = {
         };
 
         return `
-            ${renderDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, '#10b981')}
-            ${renderDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, '#ef4444')}
+            ${renderDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, 'var(--success-color)')}
+            ${renderDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, 'var(--error-color)')}
         `;
     }
 };

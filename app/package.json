@@ -5,8 +5,9 @@
   "description": "Assistant Bulletin V2 - Refactored with ES6 Modules and Vite",
   "author": "David Trafial",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "generate-version": "node scripts/generate-version.js",
+    "dev": "npm run generate-version && vite",
+    "build": "npm run generate-version && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

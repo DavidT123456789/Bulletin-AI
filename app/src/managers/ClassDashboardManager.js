@@ -689,12 +689,7 @@ RÈGLES STRICTES :
         const prompt = this.buildAIPrompt(this.cachedStats);
 
         // Simple HTML reset/escape for display
-        const escapedText = prompt
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        const escapedText = Utils.escapeHtml(prompt);
 
         // Create HTML content for the modal
         const message = `

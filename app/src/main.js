@@ -83,24 +83,46 @@ function setupPWAUpdateHandler() {
         let registration;
 
         const showUpdateBanner = () => {
-            console.log('[PWA] Showing update banner');
+            // console.log('[PWA] Showing update banner');
             const banner = document.getElementById('pwaUpdateBanner');
             if (banner) {
                 banner.style.display = 'block';
 
-                // Populate Commit Info (injected by Vite)
-                try {
-                    if (typeof __COMMIT_HASH__ !== 'undefined') {
-                        const hashEl = document.getElementById('pwaCommitHash');
-                        if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
+                // Populate Commit Info (Dynamic from version.json)
+                const populateUpdateInfo = async () => {
+                    try {
+                        // Fetch latest version info (bust cache)
+                        const res = await fetch('./version.json?t=' + Date.now());
+                        if (res.ok) {
+                            const data = await res.json();
+
+                            const hashEl = document.getElementById('pwaCommitHash');
+                            if (hashEl && data.hash) hashEl.textContent = `${data.hash}`;
+
+                            const msgEl = document.getElementById('pwaCommitMsg');
+                            if (msgEl && data.message) msgEl.textContent = data.message;
+
+                            // Optional: Check if version changed significantly
+                            // if (data.version !== APP_VERSION) ...
+                        } else {
+                            // Fallback to static build constants if fetch fails
+                            throw new Error('version.json fetch failed');
+                        }
+                    } catch (e) {
+                        console.warn('[PWA] Failed to fetch dynamic version info, using static fallback:', e);
+                        // Fallback to static constants injected by Vite
+                        if (typeof __COMMIT_HASH__ !== 'undefined') {
+                            const hashEl = document.getElementById('pwaCommitHash');
+                            if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
+                        }
+                        if (typeof __COMMIT_MESSAGE__ !== 'undefined') {
+                            const msgEl = document.getElementById('pwaCommitMsg');
+                            if (msgEl) msgEl.textContent = __COMMIT_MESSAGE__;
+                        }
                     }
-                    if (typeof __COMMIT_MESSAGE__ !== 'undefined') {
-                        const msgEl = document.getElementById('pwaCommitMsg');
-                        if (msgEl) msgEl.textContent = __COMMIT_MESSAGE__;
-                    }
-                } catch (e) {
-                    console.warn('[PWA] Failed to populate update info:', e);
-                }
+                };
+
+                populateUpdateInfo();
 
                 // Handle Details Toggle
                 const infoBtn = document.getElementById('pwaInfoBtn');
@@ -125,7 +147,7 @@ function setupPWAUpdateHandler() {
                 const updateBtn = document.getElementById('pwaUpdateBtn');
                 if (updateBtn) {
                     updateBtn.onclick = () => {
-                        console.log('[PWA] User accepted update');
+                        // console.log('[PWA] User accepted update');
                         updateSW && updateSW(true);
                     };
                 }
@@ -152,10 +174,10 @@ function setupPWAUpdateHandler() {
         // Expose manual check function
         window.checkForUpdates = async () => {
             if (registration) {
-                console.log('[PWA] Manually checking for updates...');
+                // console.log('[PWA] Manually checking for updates...');
                 try {
                     await registration.update();
-                    console.log('[PWA] Update check complete');
+                    // console.log('[PWA] Update check complete');
                     // Notification handled by UI if needed, or via events
                     // If no update found, we might want to tell the user?
                     // But registration.update() doesn't return "found/not found". It updates the registration.
@@ -170,7 +192,7 @@ function setupPWAUpdateHandler() {
 
         updateSW = registerSW({
             onNeedRefresh() {
-                console.log('[PWA] New content available, need refresh');
+                // console.log('[PWA] New content available, need refresh');
                 showUpdateBanner();
                 // Update global state
                 if (window.appState) {
@@ -179,10 +201,10 @@ function setupPWAUpdateHandler() {
                 }
             },
             onOfflineReady() {
-                console.log('[PWA] App ready to work offline');
+                // console.log('[PWA] App ready to work offline');
             },
             onRegistered(swRegistration) {
-                console.log('[PWA] Service Worker registered', swRegistration);
+                // console.log('[PWA] Service Worker registered', swRegistration);
                 registration = swRegistration;
 
                 // Check for updates every hour

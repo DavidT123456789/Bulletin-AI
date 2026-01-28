@@ -654,5 +654,20 @@ export const Utils = {
         }
 
         return true;
+    },
+
+    /**
+     * Échappe les caractères spéciaux HTML pour prévenir les injections XSS
+     * @param {string} text - Texte à échapper
+     * @returns {string} Texte échappé
+     */
+    escapeHtml(text) {
+        if (!text) return text;
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 };

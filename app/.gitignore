@@ -31,3 +31,6 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+
+# Generated files
+public/version.json
