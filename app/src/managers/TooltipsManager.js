@@ -75,7 +75,7 @@ export const TooltipsUI = {
                 interactive: false,
                 hideOnClick: true,
                 trigger: 'mouseenter', // Only show on mouse hover, not on focus
-                touch: false, // Disable tooltips on touch devices entirely
+                touch: ['hold', 500], // Show on long press (500ms)
 
                 onShow(instance) {
                     // Ne pas afficher si les tooltips sont temporairement ignorés
@@ -141,7 +141,7 @@ export const TooltipsUI = {
                 interactive: false,
                 hideOnClick: true,
                 trigger: 'mouseenter',
-                touch: false, // Disable tooltips on touch devices
+                touch: ['hold', 500],
                 onShow(inst) {
                     if (_isIgnoringTooltips) return false;
                     if (inst.state.isFocused && !inst.reference.matches(':focus-visible')) return false;
