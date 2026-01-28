@@ -99,6 +99,17 @@ export const FocusPanelHistory = {
         return state ? state.versions.length : 0;
     },
 
+    getCurrentVersionInfo() {
+        const state = this._getState();
+        if (!state || !state.versions || state.versions.length === 0) {
+            return { current: 0, total: 0 };
+        }
+        return {
+            current: (state.currentIndex ?? 0) + 1,
+            total: state.versions.length
+        };
+    },
+
     restoreVersion(index) {
         const state = this._getState();
         const oldIndex = state?.currentIndex ?? 0;

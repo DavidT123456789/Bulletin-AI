@@ -486,17 +486,17 @@ export const FocusPanelStatus = {
 
         if (!group || !indicator) return;
 
-        const modifCount = FocusPanelHistory.getModificationCount();
+        const { current, total } = FocusPanelHistory.getCurrentVersionInfo();
 
-        if (modifCount > 0) {
+        if (total > 1) {
             group.style.display = 'inline-flex';
 
-            // Update counter
+            // Update counter to "Current/Total"
             const countEl = indicator.querySelector('.history-count');
             if (countEl) {
-                countEl.textContent = modifCount;
+                countEl.textContent = `${current}/${total}`;
             }
-            indicator.setAttribute('data-tooltip', `${modifCount} modification${modifCount > 1 ? 's' : ''}`);
+            indicator.setAttribute('data-tooltip', `Version ${current} sur ${total} • Cliquez pour l'historique`);
 
             // Update navigation buttons
             if (prevBtn) prevBtn.disabled = !FocusPanelHistory.canUndo();

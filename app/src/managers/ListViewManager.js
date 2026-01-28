@@ -1655,6 +1655,13 @@ export const ListViewManager = {
             if (!toolbar) {
                 toolbar = this._createSelectionToolbar();
                 document.querySelector('.student-list-view').prepend(toolbar);
+
+                // Initialize tooltips for the new toolbar
+                // Import dynamically to avoid circular dependencies or load order issues
+                import('./TooltipsManager.js').then(({ TooltipsUI }) => {
+                    TooltipsUI.initTooltips();
+                });
+
                 // Trigger animation
                 requestAnimationFrame(() => toolbar.classList.add('active'));
             }
@@ -1682,31 +1689,31 @@ export const ListViewManager = {
         div.innerHTML = `
             <div class="selection-toolbar-content">
                 <div class="selection-info">
-                    <button class="btn-deselect" id="btnDeselectAll" title="Tout désélectionner">
+                    <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection">
                         <i class="fas fa-times"></i>
                     </button>
                     <span id="selectionCount">0 élève sélectionné</span>
                 </div>
                 <div class="selection-actions">
-                    <button class="btn-selection-action" data-bulk-action="regenerate" title="Régénérer">
+                    <button class="btn-selection-action tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
                         <i class="fas fa-sync-alt"></i> <span>Régénérer</span>
                     </button>
-                    <button class="btn-selection-action" data-bulk-action="copy" title="Copier">
+                    <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations (Presse-papier)">
                         <i class="fas fa-copy"></i> <span>Copier</span>
                     </button>
-                    <button class="btn-selection-action" data-bulk-action="clear" title="Effacer texte">
+                    <button class="btn-selection-action tooltip" data-bulk-action="clear" data-tooltip="Effacer les appréciations (conserve la fiche élève)">
                         <i class="fas fa-eraser"></i> <span>Effacer</span>
                     </button>
                     <div class="selection-action-separator"></div>
-                    <button class="btn-selection-action" data-bulk-action="move" title="Déplacer vers une autre classe">
+                    <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
                         <i class="fas fa-arrow-right-arrow-left"></i> <span>Déplacer</span>
                     </button>
                     
-                     <button class="btn-selection-action" data-bulk-action="reset-context" title="Supprimer les éléments de contexte (notes, infos) utilisés par l'IA">
+                     <button class="btn-selection-action tooltip" data-bulk-action="reset-context" data-tooltip="Réinitialiser le Journal de bord et les observations">
                         <i class="fas fa-history"></i> <span>Vider contexte</span>
                     </button>
 
-                    <button class="btn-selection-action danger" data-bulk-action="delete" title="Supprimer">
+                    <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves">
                         <i class="fas fa-trash"></i> <span>Supprimer</span>
                     </button>
                 </div>
@@ -1842,6 +1849,8 @@ export const ListViewManager = {
             const { StudentDataManager } = await import('./StudentDataManager.js');
             for (const id of ids) {
                 StudentDataManager.clearStudentAppreciation(id);
+                // [FIX] Update row directly to ensure UI reflects change immediately
+                this.updateStudentRow(id);
             }
 
             // Persist changes
@@ -1849,7 +1858,6 @@ export const ListViewManager = {
             await StorageManager.saveAppState();
 
             this.clearSelections();
-            this.render(appState.filteredResults, document.getElementById('outputList'));
 
             const { UI } = await import('./UIManager.js');
             UI?.showNotification(`${ids.length} appréciations effacées.`, 'success');
@@ -1918,6 +1926,9 @@ export const ListViewManager = {
                             contextCount++;
                         }
                     }
+
+                    // [FIX] Update row to reflect changes (e.g. dirty status might change)
+                    this.updateStudentRow(id);
                 }
             });
 
