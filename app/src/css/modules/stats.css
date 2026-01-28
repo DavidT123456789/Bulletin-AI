@@ -362,25 +362,36 @@
     background: var(--text-tertiary);
 }
 
-/* Mobile: Stack cards in 2+1 layout, no scroll */
-@media (max-width: 600px) {
+/* Mobile: Carousel behavior for stats (iOS Scroll Snap) */
+@media (max-width: 700px) {
     .stats-container {
-        grid-template-columns: repeat(2, 1fr);
-        overflow-x: visible;
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 16px;
+        grid-template-columns: none;
+        padding-bottom: 20px;
+        /* Space for shadow/interaction */
+
+        /* Hide scrollbar for premium feel */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
 
-    /* Third card (dynamique) spans full width */
-    .stats-container .stat-card:nth-child(3) {
-        grid-column: 1 / -1;
-    }
-}
-
-/* Very small screens: Stack all cards vertically */
-@media (max-width: 400px) {
-    .stats-container {
-        grid-template-columns: 1fr;
+    .stats-container::-webkit-scrollbar {
+        display: none;
     }
 
+    .stats-container .stat-card {
+        /* Card takes full width minus a bit for context peeling */
+        min-width: calc(100% - 32px);
+        scroll-snap-align: center;
+        flex-shrink: 0;
+        margin-right: 0;
+        /* Reset margins */
+    }
+
+    /* Ensure the 3rd card behaves normally in flex */
     .stats-container .stat-card:nth-child(3) {
         grid-column: auto;
     }
