@@ -45,6 +45,11 @@ export default defineConfig({
     port: 4000,
     strictPort: false
   },
+  define: {
+    __COMMIT_HASH__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 7) || 'dev'),
+    __COMMIT_MESSAGE__: JSON.stringify(process.env.COMMIT_MESSAGE || 'Development build'),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString())
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

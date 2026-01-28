@@ -213,10 +213,36 @@
 
             <!-- PWA Update Banner -->
             <div id="pwaUpdateBanner" class="pwa-update-banner" style="display: none;">
-                <span><i class="fas fa-gift"></i> Nouvelle version disponible !</span>
-                <button id="pwaUpdateBtn" class="btn btn-small btn-primary">Mettre à jour</button>
-                <button id="pwaUpdateDismissBtn" class="btn-icon" aria-label="Fermer"><i
-                        class="fas fa-times"></i></button>
+                <div class="pwa-banner-main">
+                    <div class="pwa-banner-text">
+                        <i class="fas fa-gift pwa-gift-icon"></i>
+                        <div class="pwa-text-col">
+                            <span class="pwa-title">Mise à jour disponible</span>
+                            <span class="pwa-subtitle" id="pwaUpdateMeta">Version plus récente détectée</span>
+                        </div>
+                    </div>
+                    <div class="pwa-banner-actions">
+                        <button id="pwaInfoBtn" class="btn-icon pwa-info-btn tooltip" data-tooltip="Nouveautés">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button id="pwaUpdateBtn" class="btn btn-sm btn-primary">Installer</button>
+                        <button id="pwaUpdateDismissBtn" class="btn-icon pwa-close-btn" aria-label="Fermer">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="pwaUpdateDetails" class="pwa-banner-details">
+                    <div class="pwa-details-content">
+                        <div class="pwa-detail-row">
+                            <span class="pwa-detail-label">Message :</span>
+                            <span class="pwa-detail-value" id="pwaCommitMsg">Améliorations générales et corrections de bugs.</span>
+                        </div>
+                        <div class="pwa-detail-row">
+                            <span class="pwa-detail-label">Version :</span>
+                            <span class="pwa-detail-code" id="pwaCommitHash">v0.1.X</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <main class="main-content" id="main-content">

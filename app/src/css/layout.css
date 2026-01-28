@@ -1513,54 +1513,48 @@
 /* ====================================================================
    PWA UPDATE TOAST (Premium Glassmorphism + Gradient)
    ==================================================================== */
+/* ====================================================================
+   PWA UPDATE TOAST (Premium Glassmorphism + Accordion Info)
+   ==================================================================== */
 .pwa-update-banner {
     position: fixed;
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    /* Start hidden below */
     z-index: 10000;
 
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 12px 16px 12px 20px;
+    flex-direction: column;
+    padding: 0;
 
-    /* Organic Gradient Background + Glass (Specific Vibrant Violet) */
-    /* Force Violet gradient regardless of theme primary color (Gold/Indigo) */
+    /* Premium Violet Gradient */
     background: linear-gradient(135deg,
             rgba(124, 58, 237, 0.95) 0%,
-            /* Violet 600 */
-            rgba(139, 92, 246, 0.85) 60%,
-            /* Violet 500 */
-            rgba(167, 139, 250, 0.9) 100%);
-    /* Violet 400 */
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+            rgba(139, 92, 246, 0.9) 60%,
+            rgba(167, 139, 250, 0.95) 100%);
 
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: var(--radius-lg);
 
-    /* Double shadow for depth + Violet Glow */
     box-shadow:
-        0 14px 40px -10px rgba(124, 58, 237, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.15);
+        0 20px 50px -12px rgba(124, 58, 237, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
 
     animation: pwa-toast-enter 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-    width: auto;
-    max-width: 90vw;
+    width: min(420px, 90vw);
+    overflow: hidden;
+    /* For accordion expansion */
 }
 
 [data-theme="dark"] .pwa-update-banner {
-    /* Slightly deeper in dark mode but still vibrant */
     background: linear-gradient(135deg,
-            rgba(109, 40, 217, 0.9) 0%,
-            /* Violet 700 */
-            rgba(124, 58, 237, 0.8) 100%);
+            rgba(109, 40, 217, 0.95) 0%,
+            rgba(88, 28, 135, 0.9) 100%);
     border-color: rgba(255, 255, 255, 0.15);
-    box-shadow:
-        0 14px 40px -10px rgba(0, 0, 0, 0.6),
-        0 0 20px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
 }
 
 @keyframes pwa-toast-enter {
@@ -1569,73 +1563,173 @@
     }
 }
 
-.pwa-update-banner span {
-    font-weight: 600;
-    color: white;
-    /* White text for contrast on violet */
+/* --- Main Banner Row --- */
+.pwa-banner-main {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+    padding: 14px 16px 14px 20px;
+    gap: 12px;
+    width: 100%;
 }
 
-.pwa-update-banner span i {
-    /* Icon matches white text or soft glow */
+.pwa-banner-text {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-grow: 1;
+}
+
+.pwa-gift-icon {
+    font-size: 1.5rem;
     color: white;
-    background: none;
-    -webkit-text-fill-color: initial;
-    font-size: 1.25rem;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* Higher specificity using ID to override components.css without !important */
-#pwaUpdateBanner .btn-primary {
-    padding: 8px 18px;
-    border-radius: var(--radius-pill);
-    font-size: 0.9rem;
-    /* White button for strong CTA on colored background */
-    background: white;
-    color: #7c3aed;
-    /* Force Violet to match banner */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: none;
+.pwa-text-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pwa-title {
     font-weight: 700;
+    color: white;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    margin-bottom: 2px;
 }
 
-#pwaUpdateBanner .btn-primary:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    transform: translateY(-1px);
-    background: white;
-    opacity: 0.9;
-    /* Slight feedback */
+.pwa-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
 }
 
-/* Remove global shine effect for this specific button to avoid artifacts */
-#pwaUpdateBanner .btn-primary::before {
-    display: none;
+.pwa-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.pwa-update-banner .btn-icon {
-    width: 32px;
-    height: 32px;
+/* --- Details Section (Accordion) --- */
+.pwa-banner-details {
+    max-height: 0;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    transition: max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.pwa-banner-details.expanded {
+    max-height: 200px;
+    /* Allow enough space for content */
+}
+
+.pwa-details-content {
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.pwa-detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.pwa-detail-label {
+    font-weight: 600;
+    min-width: 70px;
+    opacity: 0.8;
+}
+
+.pwa-detail-value {
+    opacity: 0.95;
+    line-height: 1.4;
+}
+
+.pwa-detail-code {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+/* --- Buttons --- */
+.pwa-info-btn {
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    margin-left: 0;
 }
 
-#pwaUpdateBanner .btn-icon:hover {
+.pwa-info-btn:hover,
+.pwa-info-btn.active {
     background: rgba(255, 255, 255, 0.3);
-    color: white !important;
-    transform: rotate(90deg);
-    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.pwa-info-btn i {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Update Button */
+#pwaUpdateBanner .btn-primary {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: white;
+    color: #7c3aed;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+#pwaUpdateBanner .btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+/* Close Button */
+.pwa-close-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.pwa-close-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
 }
 
 

@@ -86,7 +86,40 @@ function setupPWAUpdateHandler() {
             console.log('[PWA] Showing update banner');
             const banner = document.getElementById('pwaUpdateBanner');
             if (banner) {
-                banner.style.display = 'flex';
+                banner.style.display = 'block';
+
+                // Populate Commit Info (injected by Vite)
+                try {
+                    if (typeof __COMMIT_HASH__ !== 'undefined') {
+                        const hashEl = document.getElementById('pwaCommitHash');
+                        if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
+                    }
+                    if (typeof __COMMIT_MESSAGE__ !== 'undefined') {
+                        const msgEl = document.getElementById('pwaCommitMsg');
+                        if (msgEl) msgEl.textContent = __COMMIT_MESSAGE__;
+                    }
+                } catch (e) {
+                    console.warn('[PWA] Failed to populate update info:', e);
+                }
+
+                // Handle Details Toggle
+                const infoBtn = document.getElementById('pwaInfoBtn');
+                const details = document.getElementById('pwaUpdateDetails');
+
+                if (infoBtn && details) {
+                    infoBtn.onclick = () => {
+                        const isExpanded = details.classList.contains('expanded');
+                        if (isExpanded) {
+                            details.classList.remove('expanded');
+                            infoBtn.style.transform = 'rotate(0deg)';
+                            infoBtn.classList.remove('active');
+                        } else {
+                            details.classList.add('expanded');
+                            infoBtn.style.transform = 'rotate(180deg)';
+                            infoBtn.classList.add('active');
+                        }
+                    };
+                }
 
                 // Update button - reload the app
                 const updateBtn = document.getElementById('pwaUpdateBtn');
