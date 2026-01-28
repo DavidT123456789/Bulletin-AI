@@ -21,20 +21,18 @@ let _tippyInstances = [];
  */
 let _isIgnoringTooltips = false;
 
+// Tracking global pour filtrer les "sticky hovers" sur mobile
+let _lastTouchTime = 0;
+document.addEventListener('touchstart', () => {
+    _lastTouchTime = Date.now();
+}, { passive: true });
+
 /**
  * Génère la configuration commune pour Tippy
  * pour assurer la cohérence et gérer le tactile.
  * @returns {Object} Configuration Tippy
  */
 const getCommonTippyConfig = () => {
-    // Détection plus robuste du mobile/tactile
-    // On vérifie (hover: none) pour capturer les appareils purement tactiles
-    // On vérifie (pointer: coarse) pour les pointeurs grossiers
-    const isTouch = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
-        (window.matchMedia && window.matchMedia('(hover: none)').matches) ||
-        ('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0);
-
     return {
         appendTo: () => document.body,
         theme: 'custom-theme',
@@ -45,13 +43,32 @@ const getCommonTippyConfig = () => {
         allowHTML: true,
         interactive: false,
         hideOnClick: true,
-        // 'manual' disable le trigger 'mouseenter' standard, évitant le sticky hover sur tactile
-        // Le 'hold' via l'option touch prend le relais pour l'affichage tactile
-        trigger: isTouch ? 'manual' : 'mouseenter',
+
+        // Sur mobile : le sticky hover est le fléau.
+        // On utilise 'mouseenter' par défaut pour desktop/hybrid.
+        // On gère l'annulation du sticky hover via onShow et le timestamp tactile.
+        trigger: 'mouseenter',
+
+        // Active le "Long Press" pour afficher le tooltip sur tactile
         touch: ['hold', 500],
+
         onShow(instance) {
             if (_isIgnoringTooltips) return false;
+
+            // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
+
+            // PROTECTION TACTILE :
+            // Si une touche a eu lieu il y a moins de 500ms, c'est un TAP rapide.
+            // Sur un tap rapide, le navigateur émet souvent 'mouseenter' (sticky hover).
+            // On bloque l'affichage dans ce cas.
+            // Le "Long Press" (géré par Tippy via l'option 'touch') se déclenchera après 500ms,
+            // donc à ce moment-là, le delta sera > 500ms, et ça passera.
+            const now = Date.now();
+            if (now - _lastTouchTime < 500) {
+                return false;
+            }
+
             return true;
         }
     };
