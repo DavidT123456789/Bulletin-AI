@@ -136,19 +136,37 @@ export const GeneralListeners = {
 
             // Cloud Save/Load Logic
             this.setupCloudListeners(addClickListener, closeMenu);
-        }
 
-        if (DOM.personalizationBtn) {
-            addClickListener(DOM.personalizationBtn, () => {
-                SettingsUIManager.createSnapshot();
-
-                UI.openModal(DOM.personalizationModal);
-                // [FIX] Refresh Lab data on modal open to sync with current period
-                import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
-                    SettingsModalListeners._updateStudentContextAndPrompt();
+            // Integrated Menu Items Handlers
+            if (DOM.personalizationBtn) {
+                addClickListener(DOM.personalizationBtn, () => {
+                    closeMenu();
+                    SettingsUIManager.createSnapshot();
+                    UI.openModal(DOM.personalizationModal);
+                    import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
+                        SettingsModalListeners._updateStudentContextAndPrompt();
+                    });
                 });
-            });
+            }
+
+            if (DOM.settingsButton) {
+                addClickListener(DOM.settingsButton, () => {
+                    closeMenu();
+                    SettingsUIManager.createSnapshot();
+                    UI.openModal(DOM.settingsModal);
+                    SettingsUIManager.updateApiStatusDisplay();
+                });
+            }
+
+            if (DOM.helpButton) {
+                addClickListener(DOM.helpButton, () => {
+                    closeMenu();
+                    App.handleHelpButtonClick();
+                });
+            }
         }
+
+
 
         // Personalization Modal Actions
         const closePersonalization = (isSave = false) => {
@@ -195,11 +213,7 @@ export const GeneralListeners = {
             }
         });
 
-        addClickListener(DOM.settingsButton, () => {
-            SettingsUIManager.createSnapshot();
-            UI.openModal(DOM.settingsModal);
-            SettingsUIManager.updateApiStatusDisplay();
-        });
+
 
         // Model label click -> opens settings (API config) with focus on model selector
         addClickListener(DOM.dashModelLabel, () => {
@@ -241,9 +255,7 @@ export const GeneralListeners = {
             });
         });
 
-        addClickListener(DOM.helpButton, () => {
-            App.handleHelpButtonClick();
-        });
+
 
         // Sidebar removed - toggling handled by Hub Modal now
 

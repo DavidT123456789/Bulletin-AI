@@ -369,6 +369,10 @@ export const GlobalListeners = {
                     }
                 } else {
                     UI.closeAllModals();
+                    // Explicitly close actions dropdown and custom dropdowns
+                    DOM.actionsDropdown?.classList.remove('show');
+                    import('../DropdownManager.js').then(({ DropdownManager }) => DropdownManager.closeAll());
+
                     setTimeout(() => {
                         UI.openModal(DOM.settingsModal);
                         // Use centralized highlight utility

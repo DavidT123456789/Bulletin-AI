@@ -75,7 +75,7 @@ export const TooltipsUI = {
                 interactive: false,
                 hideOnClick: true,
 
-                trigger: window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'manual' : 'mouseenter', // 'manual' for touch to avoid "sticky hover", 'mouseenter' for mouse
+                trigger: (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ? 'manual' : 'mouseenter', // 'manual' for touch to avoid "sticky hover", 'mouseenter' for mouse
                 touch: ['hold', 500], // Show on long press (500ms)
 
                 onShow(instance) {
@@ -141,7 +141,7 @@ export const TooltipsUI = {
                 allowHTML: true,
                 interactive: false,
                 hideOnClick: true,
-                trigger: window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'manual' : 'mouseenter',
+                trigger: (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ? 'manual' : 'mouseenter',
                 touch: ['hold', 500],
                 onShow(inst) {
                     if (_isIgnoringTooltips) return false;

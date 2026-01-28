@@ -12,6 +12,10 @@ describe('TooltipsManager', () => {
         document.body.innerHTML = '';
         // Reset window.tippy mock
         window.tippy = undefined;
+        // Clean up touch indicators
+        delete window.ontouchstart;
+        Object.defineProperty(window.navigator, 'maxTouchPoints', { value: 0, writable: true });
+
         // Mock matchMedia for mouse by default
         window.matchMedia = vi.fn().mockImplementation(query => ({
             matches: query === '(pointer: coarse)' ? false : true,
