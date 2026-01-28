@@ -362,18 +362,25 @@
     background: var(--text-tertiary);
 }
 
+/* Default: hide pagination dots */
+.stats-pagination {
+    display: none;
+}
+
 /* Mobile: Carousel behavior for stats (iOS Scroll Snap) */
 @media (max-width: 700px) {
     .stats-container {
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
-        gap: 16px;
+        gap: 12px;
         grid-template-columns: none;
-        padding-bottom: 20px;
-        /* Space for shadow/interaction */
+        padding-bottom: 24px;
+        /* Space for shadow */
+        padding-right: 20px;
+        /* End padding for scroll */
 
-        /* Hide scrollbar for premium feel */
+        /* Hide scrollbar */
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -383,17 +390,39 @@
     }
 
     .stats-container .stat-card {
-        /* Card takes full width minus a bit for context peeling */
-        min-width: calc(100% - 32px);
-        scroll-snap-align: center;
+        min-width: 88%;
+        /* Shows a clear peek of the next card */
+        scroll-snap-align: start;
+        /* Aligns left naturally */
         flex-shrink: 0;
         margin-right: 0;
-        /* Reset margins */
     }
 
     /* Ensure the 3rd card behaves normally in flex */
     .stats-container .stat-card:nth-child(3) {
         grid-column: auto;
+    }
+
+    /* Show pagination on mobile */
+    .stats-pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .stats-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--border-color);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stats-dot.active {
+        background-color: var(--primary-color);
+        width: 24px;
+        border-radius: 4px;
     }
 }
 

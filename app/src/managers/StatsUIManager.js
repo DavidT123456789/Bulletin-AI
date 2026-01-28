@@ -536,5 +536,45 @@ export const StatsUI = {
      */
     resetProgressBar() {
         this.updateOutputProgress(0, 0);
+    },
+
+    /**
+     * Initialise le carrousel mobile (gestion des points de pagination).
+     */
+    initMobileCarousel() {
+        const container = document.getElementById('statsContainer');
+        if (!container) return;
+
+        const dots = document.querySelectorAll('.stats-dot');
+        if (dots.length === 0) return;
+
+        const updateActiveDot = () => {
+            const scrollLeft = container.scrollLeft;
+            const containerWidth = container.offsetWidth;
+            const cardWidth = container.querySelector('.stat-card').offsetWidth;
+
+            // Calculate active index based on center position, or mostly visible
+            // Adding half margin/gap to buffer
+            const index = Math.round(scrollLeft / (cardWidth + 12));
+
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        };
+
+        // Throttled scroll listener
+        let ticking = false;
+        container.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    updateActiveDot();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Initial check
+        updateActiveDot();
     }
 };

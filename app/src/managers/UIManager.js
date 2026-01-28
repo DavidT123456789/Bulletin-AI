@@ -62,6 +62,8 @@ export const UI = {
         ThemeManager.init();
         // Initialize stats view toggle
         StatsUI.initViewToggle();
+        // Initialize mobile stats carousel
+        StatsUI.initMobileCarousel();
         // Initialize tooltips at startup
         this.initTooltips();
         // Initialize smooth accordion animations
