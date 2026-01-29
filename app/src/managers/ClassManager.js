@@ -40,6 +40,49 @@ export const ClassManager = {
     },
 
     /**
+     * Trouve l'index d'insertion idéal pour regrouper logiquement les classes
+     * Priorise le regroupement par "pairs" (même premier caractère)
+     * @param {Array} classes Liste actuelle
+     * @param {string} newName Nom de la nouvelle classe
+     * @private
+     */
+    _findInsertionIndex(classes, newName) {
+        if (!classes || classes.length === 0) return 0;
+
+        const normalize = str => str.charAt(0).toLowerCase();
+        const pivot = normalize(newName);
+
+        // 1. Identifier les "Pairs" (classes commençant par le même caractère)
+        const peerIndices = classes
+            .map((c, i) => ({ name: c.name, index: i, isPeer: normalize(c.name) === pivot }))
+            .filter(item => item.isPeer);
+
+        // Si des pairs existent, on s'insère RELATIVEMENT à eux
+        if (peerIndices.length > 0) {
+            // Chercher le premier pair qui est "plus grand" alphabétiquement
+            const successorPeer = peerIndices.find(peer =>
+                peer.name.localeCompare(newName, undefined, { numeric: true, sensitivity: 'base' }) > 0
+            );
+
+            if (successorPeer) {
+                // Insérer AVANT ce pair
+                return successorPeer.index;
+            } else {
+                // On est plus grand que tous les pairs, insérer APRÈS le dernier pair
+                return peerIndices[peerIndices.length - 1].index + 1;
+            }
+        }
+
+        // 2. Pas de pairs : fallback sur tri alphabétique global
+        // Note: Cela place "4ème" avant "6ème" (ordre alphabétique standard)
+        const globalIndex = classes.findIndex(c =>
+            c.name.localeCompare(newName, undefined, { numeric: true, sensitivity: 'base' }) > 0
+        );
+
+        return globalIndex === -1 ? classes.length : globalIndex;
+    },
+
+    /**
      * Crée une nouvelle classe
      * @param {string} name - Nom de la classe (ex: "CM2 A")
      * @param {string} [year] - Année scolaire (ex: "2024-2025")
@@ -67,7 +110,10 @@ export const ClassManager = {
         if (!userSettings.academic.classes) {
             userSettings.academic.classes = [];
         }
-        userSettings.academic.classes.push(newClass);
+
+        // Utiliser la logique de tri intelligente (clustering)
+        const insertIndex = this._findInsertionIndex(userSettings.academic.classes, newClass.name);
+        userSettings.academic.classes.splice(insertIndex, 0, newClass);
 
         // Sauvegarder localement
         StorageManager?.saveAppState();
