@@ -723,31 +723,49 @@
     animation: slideInConfirm 0.2s ease-out;
 }
 
+/* ====================================================================
+   NEBULA CARD STYLE FOR CLASS MANAGEMENT
+   ==================================================================== */
+
 .class-management-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    /* Light mode default - lighter */
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    transition: background 0.2s ease, transform 0.3s ease, opacity 0.2s ease;
+    padding: 16px 20px;
+    /* More breathing room */
+
+    /* NEBULA CARD VISUALS */
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur));
+    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+
+    transition: all var(--transition-base);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 8px;
+    /* Ensure spacing between cards */
 }
 
-/* Dark mode override */
+/* Dark mode override handled by var(--card-glass-bg) usually, but ensuring consistency */
 [data-theme="dark"] .class-management-item {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.06);
+    /* Variables should handle this, but if not: */
+    /* background: rgba(30, 30, 35, 0.6); */
 }
 
 .class-management-item:hover {
-    /* Light mode hover - theme color tint */
-    background: rgba(var(--primary-color-rgb), 0.12);
+    /* NEBULA HOVER */
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    transform: translateY(-1px);
 }
 
-[data-theme="dark"] .class-management-item:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
+.class-management-item.active-switch {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
 /* Drag Handle */
@@ -757,12 +775,17 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    margin-right: 10px;
+    margin-right: 14px;
     color: var(--text-tertiary);
     cursor: grab;
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
     flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.class-management-item:hover .class-drag-handle {
+    opacity: 1;
 }
 
 .class-drag-handle:hover {
@@ -773,6 +796,49 @@
 .class-drag-handle:active {
     cursor: grabbing;
     color: var(--primary-color);
+}
+
+/* ====================================================================
+   ACTIONS BUTTONS
+   ==================================================================== */
+.class-management-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0.8;
+    transition: opacity var(--transition-fast);
+}
+
+.class-management-item:hover .class-management-actions {
+    opacity: 1;
+}
+
+.manage-rename-btn,
+.manage-delete-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 0.9em;
+}
+
+/* Minimalist default: Transparent */
+/* Colored on Hover */
+
+.manage-rename-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.manage-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
 }
 
 /* ====================================================================
@@ -978,8 +1044,8 @@
 
 .class-management-item .manage-rename-btn,
 .class-management-item .manage-delete-btn {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    background: transparent;
+    border: none;
     cursor: pointer;
     padding: 8px 12px;
     border-radius: var(--radius-md);
@@ -998,9 +1064,9 @@
     box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
 }
 
+/* Delete button specific tweaks if needed */
 .class-management-item .manage-delete-btn {
-    color: var(--error-color);
-    opacity: 0.85;
+    /* Keep generic styles */
 }
 
 .class-management-item .manage-delete-btn:hover {
@@ -1009,4 +1075,127 @@
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 4px 12px rgba(var(--error-rgb, 239, 68, 68), 0.3);
     opacity: 1;
+}
+
+/* ====================================================================
+   CLASS OVERVIEW STATS (Enhanced Management)
+   ==================================================================== */
+
+.class-info-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.class-management-name {
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Performance Badge */
+.class-stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.class-stat-badge.good {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.class-stat-badge.average {
+    background: rgba(234, 179, 8, 0.1);
+    color: #ca8a04;
+    border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.class-stat-badge.risk {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Dark Mode Stats */
+[data-theme="dark"] .class-stat-badge.good {
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .class-stat-badge.average {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+[data-theme="dark"] .class-stat-badge.risk {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.stat-value {
+    font-weight: 700;
+}
+
+.stat-suffix {
+    font-size: 0.85em;
+    opacity: 0.7;
+    font-weight: 500;
+}
+
+.class-no-data {
+    font-size: 0.75em;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+/* Trend Indicator */
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    font-size: 1.1em;
+}
+
+.trend-indicator.positive {
+    color: inherit;
+    transform: translateY(-1px);
+}
+
+.trend-indicator.negative {
+    color: inherit;
+    transform: translateY(1px);
+}
+
+.trend-indicator.neutral {
+    opacity: 0.5;
+    font-size: 0.9em;
+}
+
+/* Dashboard Action Button & Separator */
+.class-management-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Active switch state for feedback */
+.class-management-item.active-switch {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--primary-color);
 }

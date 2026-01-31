@@ -62,7 +62,8 @@
 .settings-inspector-column {
     display: none;
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
+    /* Changed from hidden to allow box-shadow to render */
 }
 
 /* Show inspector when grid has inspector-visible class */
@@ -198,7 +199,7 @@
 
 .settings-card-title {
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -218,18 +219,89 @@
     transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
+/* "Ma Patte" behavior matching "Inspector" - Fills available space */
+.settings-card-content .form-group:last-child {
+    margin-bottom: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-card-content .form-group:last-child textarea {
+    flex: 1;
+    resize: none;
+}
+
+/* Fix scrollbar overlapping rounded corners */
+.style-instructions-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.style-instructions-textarea::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 4px;
+    /* Push scrollbar away from rounded corners */
+}
+
+.style-instructions-textarea::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: var(--radius-pill);
+}
+
+.style-instructions-textarea::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}
+
+/* Default spacing for all form groups in cards */
+.settings-card .form-group {
+    margin-bottom: 24px;
+}
+
+/* Harmonized Input Field - Height adjusted to match sliders */
+.settings-input {
+    height: 36px;
+    padding: 0 12px;
+}
+
 .options-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 16px;
 }
 
+/* Remove usage of duplicate margin definition */
 .options-grid .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 0;
+    /* Let grid gap handle it, or keep 24px if layout demands, but base rule handles it now */
 }
 
 .options-grid+h3 {
     margin-top: 32px;
+}
+
+/* Harmonized Labels for Input Fields */
+.settings-card .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Reset for specific components that use label tags */
+.settings-card .form-group .generation-mode-selector label,
+.settings-card .form-group .toggle-switch,
+.settings-card .form-group .toggle-switch-label {
+    margin-bottom: 0;
+    display: inline-block;
+    /* Reset display if needed, though flex context usually handles it */
+}
+
+.settings-card .form-group label small {
+    font-weight: 400;
+    opacity: 0.7;
+    font-size: 0.85em;
+    margin-left: 4px;
 }
 
 .label-with-icon {
@@ -363,8 +435,8 @@
     position: relative;
     height: 34px;
     /* Hauteur fixe pour la pilule */
-    margin-top: 10px;
-    margin-bottom: 30px;
+    margin-top: 2px;
+    margin-bottom: 24px;
     border: 1.5px solid var(--border-color);
     /* La "Pilule" */
     border-radius: var(--radius-pill);
@@ -514,9 +586,8 @@
     right: 4px;
     height: 4px;
     /* refined thickness */
-    background: var(--text-tertiary);
-    opacity: 0.3;
-    /* Plus sombre pour être visible */
+    background: var(--bg-tertiary);
+    /* Neutral track color */
     border-radius: var(--radius-xs);
     z-index: 0;
 }
@@ -561,9 +632,8 @@
 .tick {
     width: 3px;
     height: 10px;
-    background-color: var(--text-tertiary);
-    /* Plus clair que text-secondary pour le repos */
-    /* text-secondary est trop sombre sur fond blanc */
+    background-color: var(--bg-tertiary);
+    /* Neutral tick color - harmonized with track */
     border-radius: 2px;
     transition: all var(--transition-fast);
     position: relative;
@@ -578,11 +648,10 @@
 
 .tick.active {
     background-color: var(--primary-color);
-    height: 14px;
-    /* Plus grand pour bien marquer */
-    transform: translateY(-2px);
+    height: 12px;
+    /* Harmonized active height */
+    transform: translateY(-1px);
     opacity: 1;
-    /* Force l'opacité */
 }
 
 .tick::after {
@@ -598,11 +667,7 @@
     cursor: pointer;
 }
 
-.tick.active {
-    background-color: var(--primary-color);
-    height: 12px;
-    transform: translateY(-2px);
-}
+
 
 .slider-labels {
     position: absolute;
@@ -654,7 +719,8 @@
 .slider-header-row label {
     margin-bottom: 0;
     color: var(--text-primary);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
 .slider-value-display {
@@ -673,7 +739,7 @@
 
 .length-slider-container {
     position: relative;
-    margin-top: 10px;
+    /* Removed specific margin-top to match .slider-container (2px) */
 }
 
 .toggle-switch-container {
@@ -701,7 +767,7 @@
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: var(--border-color);
+    background: var(--bg-secondary);
     transition: 0.3s;
     border-radius: var(--radius-xl);
     /* rond */
@@ -730,7 +796,7 @@
     /* ajuster translation */
 }
 
-.toggle-switch-label {
+.settings-card .toggle-switch-label {
     margin: 0;
     font-weight: 500;
     cursor: pointer;
@@ -746,13 +812,14 @@
     gap: 4px;
     width: fit-content;
     border: 1px solid var(--border-color);
+    /* margin-bottom removed - handled by parent form-group */
 }
 
 .generation-mode-selector input[type="radio"] {
     display: none;
 }
 
-.generation-mode-selector label {
+.settings-card .generation-mode-selector label {
     text-align: center;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
@@ -767,7 +834,7 @@
 
 .generation-mode-selector label:hover {
     color: var(--text-primary);
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: var(--bg-hover);
 }
 
 /* État actif : Style harmonisé avec fond primary color pour meilleure visibilité */
@@ -780,6 +847,26 @@
 /* Hover sur l'élément sélectionné */
 .generation-mode-selector input[type="radio"]:checked+label:hover {
     background: var(--primary-color);
+}
+
+/* Compact variant for smaller settings controls (Pill Shape) */
+.generation-mode-selector.selector-compact {
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    gap: 2px;
+}
+
+.generation-mode-selector.selector-compact label {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-pill);
+    min-width: 60px;
+    /* Ensure minimum click area */
+}
+
+/* Ensure glider allows follows pill shape in compact mode */
+.generation-mode-selector.selector-compact .selector-glider {
+    border-radius: var(--radius-pill);
 }
 
 /* === GLIDER SUPPORT FOR RADIO SELECTORS === */
@@ -804,12 +891,6 @@
     background: transparent;
 }
 
-/* Exception pour header-style : le glider ne doit pas overrider le style */
-.generation-mode-selector.header-style.has-glider input[type="radio"]:checked+label {
-    background: var(--surface-color) !important;
-    box-shadow: var(--shadow-sm) !important;
-    color: var(--primary-color) !important;
-}
 
 /* === VARIANTE HEADER : Style Segmented Control (Trimestre) === */
 .generation-mode-selector.header-style {
@@ -833,6 +914,7 @@
 .generation-mode-selector.header-style label {
     color: var(--text-secondary);
     padding: 8px 16px;
+    margin: 0;
     font-weight: 500;
     font-size: 0.9em;
     border-radius: var(--radius-pill);
@@ -990,7 +1072,7 @@
 }
 
 .vocab-item:hover {
-    background: var(--border-color);
+    background: var(--bg-hover);
 }
 
 .vocab-item-text {
@@ -1117,25 +1199,19 @@
     margin-top: 8px;
 }
 
-.danger-accordion {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    background-color: var(--surface-color);
-    overflow: hidden;
-    transition: all var(--transition-base);
-}
+/* .danger-accordion inherits layout/animation from .details-accordion (modals.css) */
+/* We only override colors here to indicate danger */
 
 .danger-accordion[open] {
-    box-shadow: var(--shadow-sm);
     border-color: rgba(239, 68, 68, 0.3);
 }
 
 .danger-accordion summary {
     color: var(--error-color);
-    font-weight: 600;
-    padding: 14px 18px;
-    margin: 0;
-    /* Ensure no margin interferes */
+}
+
+.danger-accordion summary i {
+    color: var(--error-color);
 }
 
 .danger-accordion summary:hover {
@@ -1144,23 +1220,12 @@
 
 .danger-accordion[open] summary {
     background-color: rgba(239, 68, 68, 0.08);
-    border-bottom: 1px solid rgba(239, 68, 68, 0.15);
-}
-
-.danger-accordion summary i {
-    color: var(--error-color);
+    border-bottom-color: rgba(239, 68, 68, 0.15);
 }
 
 .danger-accordion .details-content {
-    background: rgba(239, 68, 68, 0.05);
-    /* very light red */
-    border: none;
-    /* Remove duplicate border */
-    border-radius: 0;
-    /* Let parent handle radius */
-
-    /* Match parent .details-accordion border-radius */
-    margin-top: 8px;
+    background: rgba(239, 68, 68, 0.03);
+    /* Inherits padding/inner structure from base class */
 }
 
 .danger-action-row {
@@ -1597,7 +1662,7 @@
 
 /* Harmonize word count badge in preview */
 .preview-meta-container .word-count {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--bg-secondary);
     border: none;
     border-radius: var(--radius-pill);
     padding: 4px 10px;

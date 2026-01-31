@@ -209,7 +209,7 @@
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    background: var(--text-tertiary);
+    background: var(--bg-tertiary);
     border: none;
     border-radius: 50%;
     width: 20px;

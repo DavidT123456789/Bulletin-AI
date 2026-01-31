@@ -505,9 +505,19 @@ export const SettingsModalListeners = {
             const modelBadgeEl = document.getElementById('previewModelBadge');
             if (modelBadgeEl) {
                 const modelName = MODEL_SHORT_NAMES[cached.modelUsed] || cached.modelUsed;
+
+                // [FIX] Synchronize tooltip with Standard Utils
+                const mockResult = {
+                    studentData: { currentAIModel: cached.modelUsed },
+                    tokenUsage: cached.tokenUsage // Now available in cache
+                };
+                const { tooltip } = Utils.getGenerationModeInfo(mockResult);
+
                 modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelName}`;
-                modelBadgeEl.title = `Généré par ${modelName}`;
+                modelBadgeEl.setAttribute('data-tooltip', tooltip);
+                modelBadgeEl.removeAttribute('title');
                 modelBadgeEl.style.display = 'flex';
+                UI.initTooltips();
             }
 
             if (metaContainer) metaContainer.style.display = 'flex';
@@ -778,6 +788,10 @@ export const SettingsModalListeners = {
             this.previewCache[studentId] = {
                 appreciation: result.appreciation,
                 modelUsed: result.modelUsed || appState.currentAIModel,
+                tokenUsage: {
+                    appreciation: result.usage,
+                    generationTimeMs: result.generationTimeMs
+                },
                 timestamp: Date.now()
             };
 
@@ -800,9 +814,28 @@ export const SettingsModalListeners = {
             if (modelBadgeEl) {
                 const modelUsed = result.modelUsed || appState.currentAIModel;
                 const modelDisplayName = MODEL_SHORT_NAMES[modelUsed] || modelUsed;
+
+                // [FIX] Enable Single Source of Truth for tooltip info
+                // Create a mock result object compatible with Utils.getGenerationModeInfo
+                // Preview 'result' has different structure ({usage, generationTimeMs}) than full result ({tokenUsage: {appreciation: ... }})
+                const mockResult = {
+                    studentData: { currentAIModel: modelUsed },
+                    tokenUsage: {
+                        appreciation: result.usage,
+                        generationTimeMs: result.generationTimeMs
+                    }
+                };
+
+                // Get standardized tooltip
+                const { tooltip } = Utils.getGenerationModeInfo(mockResult);
+
                 modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelDisplayName}`;
-                modelBadgeEl.title = `Généré par ${modelDisplayName}`;
+                modelBadgeEl.setAttribute('data-tooltip', tooltip);
+                modelBadgeEl.removeAttribute('title'); // Remove native tooltip
                 modelBadgeEl.style.display = 'flex';
+
+                // Refresh tooltips to apply Tippy
+                UI.initTooltips();
             }
 
             const metaContainer = document.getElementById('previewMetaContainer');

@@ -10,6 +10,7 @@ import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { ClassDashboardManager } from './ClassDashboardManager.js';
 
 let UI;
 let StorageManager;
@@ -639,7 +640,7 @@ export const ClassUIManager = {
     },
 
     /**
-     * Affiche la modale de gestion des classes
+     * Affiche la modale de gestion des classes (Vue d'ensemble)
      */
     showManageClassesModal() {
         const classes = ClassManager.getAllClasses();
@@ -655,13 +656,44 @@ export const ClassUIManager = {
                     <div class="class-management-list" style="display: flex; flex-direction: column; gap: 8px;">
                         ${classes.map(cls => {
             const stats = this._getClassStats(cls.id);
+            // Get pedagogical stats (Average, Evolution)
+            const pedagoStats = ClassDashboardManager.getStatsForClass(cls.id);
+            const hasGrades = pedagoStats && pedagoStats.count > 0;
+
+            let averageBadge = '';
+            if (hasGrades) {
+                const avg = pedagoStats.average.toFixed(1);
+                const colorClass = avg >= 14 ? 'good' : avg >= 10 ? 'average' : 'risk';
+
+                let trendIcon = '';
+                if (pedagoStats.avgEvolution !== null) {
+                    const trend = pedagoStats.avgEvolution;
+                    const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
+                    const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
+                    trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution par rapport au trimestre précédent">${trendArrow}</span>`;
+                }
+
+                averageBadge = `
+                    <div class="class-stat-badge ${colorClass}" title="Moyenne de classe">
+                        <span class="stat-value">${avg}</span>
+                        <span class="stat-suffix">/20</span>
+                        ${trendIcon}
+                    </div>
+                `;
+            } else {
+                averageBadge = `<span class="class-no-data">Sans notes</span>`;
+            }
+
             return `
                             <div class="class-management-item" data-class-id="${cls.id}" draggable="true">
                                 <div class="class-drag-handle" title="Glisser pour réorganiser">
                                     <i class="fas fa-grip-vertical"></i>
                                 </div>
                                 <div class="class-management-info">
-                                    <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
+                                    <div class="class-info-header">
+                                        <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
+                                        ${averageBadge}
+                                    </div>
                                     <div class="class-management-meta">
                                         <span class="meta-item">
                                             <i class="fas fa-calendar"></i>
@@ -702,12 +734,12 @@ export const ClassUIManager = {
         modalEl.className = 'modal modal-small';
         modalEl.id = 'classManagementModal';
         modalEl.innerHTML = `
-            <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
                     <div class="modal-title-group">
-                        <span class="modal-title-icon"><i class="fas fa-cog"></i></span>
+                        <span class="modal-title-icon"><i class="fas fa-layer-group"></i></span>
                         <div class="modal-title-text-col">
-                            <h2 class="modal-title-main">Gestion des classes</h2>
+                            <h2 class="modal-title-main">Vue d'ensemble des classes</h2>
                             <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
                         </div>
                     </div>
@@ -731,6 +763,34 @@ export const ClassUIManager = {
         modalEl.querySelector('.close-manage-modal')?.addEventListener('click', () => {
             UI?.closeModal(modalEl);
             setTimeout(() => modalEl.remove(), 300);
+        });
+
+        // Bind Row Click (Switch Class)
+        // We use event delegation to handle clicks on the row but ignore clicks on buttons/drag handle
+        modalEl.querySelector('.class-management-list')?.addEventListener('click', async (e) => {
+            const item = e.target.closest('.class-management-item');
+            if (!item) return;
+
+            // Ignore if clicking on actions or drag handle
+            if (e.target.closest('.class-management-actions') || e.target.closest('.class-drag-handle')) {
+                return;
+            }
+
+            const classId = item.dataset.classId;
+            if (classId) {
+                // Add active state visual feedback
+                modalEl.querySelectorAll('.class-management-item').forEach(i => i.classList.remove('active-switch'));
+                item.classList.add('active-switch');
+
+                // Switch class
+                await this.handleClassSwitch(classId);
+
+                // Close modal after short delay for feedback
+                setTimeout(() => {
+                    UI?.closeModal(modalEl);
+                    setTimeout(() => modalEl.remove(), 300);
+                }, 150);
+            }
         });
 
         // ========== Drag & Drop Reorder (Rail-Style) ==========

@@ -856,7 +856,7 @@
     position: relative;
     overflow: hidden;
     border-radius: 4px;
-    background: var(--border-color);
+    background: var(--bg-secondary);
     height: 20px;
     display: flex;
     align-items: center;
@@ -903,7 +903,7 @@
 
 .control-slider::-moz-range-track {
     height: 4px;
-    background: var(--border-color);
+    background: var(--bg-secondary);
     border-radius: 2px;
 }
 
@@ -971,7 +971,7 @@
     position: relative;
     width: 36px;
     height: 20px;
-    background: var(--border-color);
+    background: var(--bg-secondary);
     border-radius: 10px;
     transition: background 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }

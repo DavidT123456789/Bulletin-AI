@@ -74,14 +74,21 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Get current students data from filtered results
+     * Get students data for a specific class or current filtered results
+     * @param {string|null} classId Optional class ID. If null, uses current appState.filteredResults
      * @returns {Array} Array of student objects with grades and info
      */
-    getStudentsData() {
+    getStudentsData(classId = null) {
+        let sourceData = appState.filteredResults;
         const period = appState.currentPeriod;
 
+        // If specific class requested, fetch from main repository
+        if (classId) {
+            sourceData = (appState.generatedResults || []).filter(r => r.classId === classId);
+        }
+
         // Robust data gathering that doesn't fail on appreciation errors
-        return appState.filteredResults
+        return sourceData
             .map(r => {
                 // 1. Safe access to period data
                 const periodData = r.studentData?.periods?.[period];
@@ -122,6 +129,16 @@ export const ClassDashboardManager = {
             })
             // Filter out nulls (students without valid grades for this period)
             .filter(s => s !== null);
+    },
+
+    /**
+     * Helper to get stats for a specific class ID
+     * @param {string} classId 
+     * @returns {Object|null} Stats object or null if empty
+     */
+    getStatsForClass(classId) {
+        const students = this.getStudentsData(classId);
+        return this.calculateStatistics(students);
     },
 
     /**
