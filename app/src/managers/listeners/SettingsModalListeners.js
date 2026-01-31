@@ -876,24 +876,21 @@ export const SettingsModalListeners = {
             }
         };
 
+        // Explicitly handle Personalization Modal (Lab context)
+        const personalizationModal = document.getElementById('personalizationModal');
+        if (personalizationModal) {
+            personalizationModal.addEventListener('click', (e) => {
+                if (e.target === personalizationModal) clearCache();
+            });
+            const pCloseBtns = personalizationModal.querySelectorAll('#cancelPersonalizationBtn, #savePersonalizationBtn, #closePersonalizationModalBtn, .close-button');
+            pCloseBtns.forEach(btn => btn.addEventListener('click', clearCache));
+        }
+
         DOM.settingsModal.addEventListener('click', (e) => {
             if (e.target === DOM.settingsModal) {
                 clearCache();
                 SettingsUIManager.cancelSettings();
             }
-        });
-
-        // Attach clear cache to explicit close actions for Personalization Modal
-        const closeSelectors = [
-            '#cancelPersonalizationBtn',
-            '#savePersonalizationBtn',
-            '#closePersonalizationModalBtn',
-            '.close-button'
-        ];
-
-        const closeActions = DOM.settingsModal.querySelectorAll(closeSelectors.join(', '));
-        closeActions.forEach(btn => {
-            btn.addEventListener('click', clearCache);
         });
 
 
@@ -928,6 +925,16 @@ export const SettingsModalListeners = {
                 e.stopPropagation(); // Empêcher le handler global de recevoir cet événement
                 clearCache();
                 SettingsUIManager.cancelSettings();
+            }
+        });
+
+        // Safeguard: Global Escape listener for Personalization Modal to ensure cache clear
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const pModal = document.getElementById('personalizationModal');
+                if (pModal && (pModal.style.display === 'flex' || pModal.style.display === 'block')) {
+                    clearCache();
+                }
             }
         });
 
