@@ -318,9 +318,8 @@ export const ResultsUIManager = {
             const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
             if (hasError) return true;
 
-            // Dirty state (data modified since generation)
-            const isDirty = r.wasGenerated && FocusPanelStatus.checkDirtyState(r);
-            return isDirty;
+            // Dirty state (data modified since creation - works for AI and manual)
+            return FocusPanelStatus.checkDirtyState(r);
         }).length;
 
         // === GENERATE BUTTON ===
@@ -594,8 +593,8 @@ export const ResultsUIManager = {
             const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
             if (hasError) return true;
 
-            const isDirty = r.wasGenerated && FocusPanelStatus.checkDirtyState(r);
-            return isDirty;
+            // Dirty state (data modified since creation - works for AI and manual)
+            return FocusPanelStatus.checkDirtyState(r);
         });
 
         if (toRegen.length === 0) {

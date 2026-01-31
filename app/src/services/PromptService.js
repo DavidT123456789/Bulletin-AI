@@ -293,6 +293,31 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
         });
 
         return lines.join('\n');
+    },
+
+    /**
+     * Génère un hash du prompt d'appréciation pour détecter les changements
+     * Utilisé pour le dirty state: si le hash change, les données ont changé
+     * @param {Object} studentData - Données de l'élève (comme dans getAllPrompts)
+     * @returns {string} Hash du prompt (simple djb2 hash)
+     */
+    getPromptHash(studentData) {
+        try {
+            const prompts = this.getAllPrompts(studentData);
+            const promptText = prompts.appreciation;
+
+            // Simple djb2 hash algorithm - fast and good distribution
+            let hash = 5381;
+            for (let i = 0; i < promptText.length; i++) {
+                hash = ((hash << 5) + hash) + promptText.charCodeAt(i);
+                hash = hash & hash; // Convert to 32bit integer
+            }
+
+            return hash.toString(16);
+        } catch (e) {
+            console.warn('[PromptService] Failed to generate prompt hash:', e);
+            return null;
+        }
     }
 };
 

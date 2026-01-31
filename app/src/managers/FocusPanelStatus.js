@@ -10,6 +10,7 @@ import { UI } from './UIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { JournalManager } from './JournalManager.js';
+import { PromptService } from '../services/PromptService.js';
 
 /**
  * Module de gestion des badges et indicateurs du Focus Panel
@@ -138,17 +139,30 @@ export const FocusPanelStatus = {
                 .join('||');
         };
 
-        // Get current active tags
+        // Get what the AI would see NOW (current journal + current threshold)
         const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
+        const currentNotes = getRelevantNotes(currentJournal, currentThreshold);
 
         if (snapshot.journal) {
-            // Full snapshot available (New Data) - compare active tags and notes
+            // Full snapshot available
             const snapshotJournal = snapshot.journal;
+            // Use snapshot's threshold (what the AI saw at generation time)
             const snapshotThreshold = snapshot.threshold ?? currentThreshold;
-            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
 
-            if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) return true;
-            if (getRelevantNotes(currentJournal, currentThreshold) !== getRelevantNotes(snapshotJournal, snapshotThreshold)) return true;
+            // Get what the AI SAW at generation time
+            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
+            const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotThreshold);
+
+
+
+            // Compare: is what the AI would see NOW different from what it SAW?
+            if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) {
+                return true;
+            }
+
+            if (currentNotes !== snapshotNotes) {
+                return true;
+            }
         } else if (snapshot.journalCount !== undefined) {
             // Legacy snapshot (count only) - only trigger dirty if we NOW have active tags
             // that weren't there before (assume old generation had no active tags if count was 0)
@@ -156,44 +170,84 @@ export const FocusPanelStatus = {
             const currentHasActiveTags = currentActiveTags.length > 0;
 
             // Only dirty if we went from no active tags to having some
-            if (!snapshotHadActiveTags && currentHasActiveTags) return true;
+            if (!snapshotHadActiveTags && currentHasActiveTags) {
+                return true;
+            }
             // Or if we had some and lost them (regeneration needed to remove content)
-            if (snapshotHadActiveTags && !currentHasActiveTags) return true;
+            if (snapshotHadActiveTags && !currentHasActiveTags) {
+                return true;
+            }
         } else {
             // If snapshot.journal AND snapshot.journalCount are undefined (Very Old Data)
             // Assume generation was done with 0 journal entries
             // If we NOW have active tags, we should show the dirty badge
-            if (currentActiveTags.length > 0) return true;
+            if (currentActiveTags.length > 0) {
+                return true;
+            }
         }
 
         return false;
     },
 
     /**
-     * Vérifie si les données actuelles diffèrent du snapshot de génération
+     * Vérifie si les données actuelles diffèrent de ce qui a été utilisé pour la génération
+     * NOUVELLE APPROCHE: Compare le hash du prompt actuel avec celui stocké à la génération
+     * Cela capture TOUS les changements: notes, contexte, journal, seuil, paramètres, etc.
      * @param {Object} result - Student result object
-     * @returns {boolean} true si des données pertinentes ont changé
+     * @returns {boolean} true si le prompt serait différent (donc régénération utile)
      */
     checkDirtyState(result) {
-        if (!result || !result.wasGenerated || !result.generationSnapshot) return false;
+        // Must have content and a stored hash to compare
+        if (!result || !this._hasRealContent(result.appreciation)) return false;
 
+        // If no hash stored, fall back to legacy check or return false
+        if (!result.promptHash) {
+            // BACKWARD COMPAT: Check legacy snapshot if present
+            if (result.generationSnapshot) {
+                return this._checkDirtyStateLegacy(result);
+            }
+            return false;
+        }
+
+        // Only check for the period the appreciation was generated for
         const currentPeriod = appState.currentPeriod;
         if (result.generationPeriod && result.generationPeriod !== currentPeriod) {
             return false;
         }
 
-        // REFACTOR: Use Model Data directly (Single Source of Truth)
-        // Eliminates DOM parsing issues, timing bugs, and string/number mismatches
+        // Calculate current prompt hash
+        const currentHash = PromptService.getPromptHash({
+            ...result.studentData,
+            id: result.id,
+            currentPeriod: currentPeriod
+        });
+
+        // If hash calculation failed, don't show dirty
+        if (!currentHash) return false;
+
+        return currentHash !== result.promptHash;
+    },
+
+    /**
+     * Legacy dirty state check for backward compatibility
+     * Used when promptHash is not available but generationSnapshot is
+     * @private
+     */
+    _checkDirtyStateLegacy(result) {
+        const currentPeriod = appState.currentPeriod;
+        if (result.generationPeriod && result.generationPeriod !== currentPeriod) {
+            return false;
+        }
+
         const currentStatuses = result.studentData.statuses || [];
         const currentGrade = result.studentData.periods?.[currentPeriod]?.grade;
         const currentContext = result.studentData.periods?.[currentPeriod]?.context || '';
         const currentJournal = result.journal || [];
 
-        // CRITICAL FIX: Include generationSnapshotJournal in the snapshot object
         const snapshot = {
             ...result.generationSnapshot,
             journal: result.generationSnapshotJournal,
-            journalCount: result.generationSnapshotJournalCount, // BACKWARD COMPAT: Include legacy count
+            journalCount: result.generationSnapshotJournalCount,
             threshold: result.generationThreshold
         };
 
@@ -223,19 +277,19 @@ export const FocusPanelStatus = {
         if (!state) {
             const isGenerating = this._isGenerating(result?.id);
             const hasContent = this._hasRealContent(result?.appreciation);
-            const currentPeriod = appState.currentPeriod;
-            const wasGeneratedForCurrentPeriod = result?.wasGenerated === true
-                && (!result.generationPeriod || result.generationPeriod === currentPeriod);
 
             if (isGenerating) {
                 state = 'pending';
                 tooltip = 'Génération en cours...';
             } else if (!hasContent) {
                 state = 'empty';
-                tooltip = 'En attente de génération';
-            } else if (wasGeneratedForCurrentPeriod && this.checkDirtyState(result)) {
+                tooltip = 'En attente';
+            } else if (this.checkDirtyState(result)) {
                 state = 'dirty';
-                tooltip = 'Données modifiées depuis la génération.\nPensez à régénérer.';
+                const isAI = result?.wasGenerated === true;
+                tooltip = isAI
+                    ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
+                    : 'Données modifiées depuis l\'écriture.\nPensez à vérifier l\'appréciation.';
             } else {
                 state = 'uptodate';
                 tooltip = '';
@@ -276,6 +330,16 @@ export const FocusPanelStatus = {
             case 'error':
                 badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span class="badge-text">Erreur</span>';
                 badge.classList.add('visible', 'error');
+                break;
+            case 'generated':
+                // Success state after generation - show brief confirmation then hide
+                badge.innerHTML = '<i class="fas fa-check"></i>';
+                badge.classList.add('visible', 'generated', 'icon-only');
+                setTimeout(() => {
+                    if (badge.classList.contains('generated')) {
+                        badge.classList.remove('visible', 'generated', 'icon-only');
+                    }
+                }, 1500);
                 break;
             case 'uptodate':
             default:

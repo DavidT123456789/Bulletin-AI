@@ -80,10 +80,10 @@ export const GlobalListeners = {
 
                 if (!ListViewManager?.updateStudentRow) return;
 
-                // Update all rows with generated appreciations
+                // Update all rows with appreciations that have a hash (can be dirty)
                 const results = appState.generatedResults || [];
                 for (const result of results) {
-                    if (result.wasGenerated && result.generationSnapshot) {
+                    if (result.promptHash || result.generationSnapshot) {
                         ListViewManager.updateStudentRow(result.id);
                     }
                 }

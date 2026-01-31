@@ -87,7 +87,7 @@ export const FALLBACK_CONFIG = {
     // Gratuits sponsorisés d'abord, puis payants économiques
     google: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-001', 'gemini-2.0-flash-lite'],
     openai: ['openai-gpt-4o-mini', 'openai-gpt-3.5-turbo', 'openai-gpt-4o'],
-    openrouter: ['claude-sonnet-4.5', 'llama-3.3-70b-free', 'devstral-free', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
+    openrouter: ['devstral-free', 'llama-3.3-70b-free', 'claude-sonnet-4.5', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen3:8b', 'ollama-mistral', 'ollama-deepseek-r1:8b', 'ollama-gemma3:4b'],
     anthropic: ['anthropic-claude-sonnet-4.5', 'anthropic-claude-opus-4.5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
@@ -95,6 +95,20 @@ export const FALLBACK_CONFIG = {
     // Ordre inter-providers (priorité : local > gratuits > payants)
     // Mistral avant Anthropic car plan gratuit généreux (1B tokens/mois)
     providerOrder: ['ollama', 'google', 'mistral', 'openrouter', 'anthropic', 'openai'],
+};
+
+/**
+ * Modèle recommandé par provider pour les nouveaux utilisateurs
+ * Utilise le premier modèle de chaque chaîne de fallback (le plus recommandé)
+ * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
+ */
+export const PROVIDER_DEFAULT_MODELS = {
+    google: FALLBACK_CONFIG.google[0],       // gemini-3-flash-preview
+    openai: FALLBACK_CONFIG.openai[0],       // openai-gpt-4o-mini
+    openrouter: FALLBACK_CONFIG.openrouter[0], // devstral-free 🆓
+    ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen3:8b
+    anthropic: FALLBACK_CONFIG.anthropic[0], // anthropic-claude-sonnet-4.5
+    mistral: FALLBACK_CONFIG.mistral[0],     // mistral-direct-small-latest 🆓
 };
 
 /**

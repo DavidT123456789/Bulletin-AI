@@ -298,36 +298,41 @@ export const FocusPanelManager = {
         if (appreciationText) {
             // Use 'input' logic to reliably detect manual edits
             appreciationText.addEventListener('input', () => {
-                // Update word count
                 FocusPanelStatus.updateWordCount();
 
-                // Get current content and result
                 const content = appreciationText.textContent?.trim() || '';
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
                 const isGenerating = FocusPanelStatus._isGenerating(this.currentStudentId);
 
                 if (result && !isGenerating) {
-                    // Check if content is real (not placeholder)
-                    const hasRealContent = content.length > 0
-                        && !content.includes('Aucune appréciation')
-                        && !content.includes('Cliquez sur');
+                    const hasRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (hasRealContent) {
-                        // Content added -> mark as manual edit
-                        if (result.wasGenerated !== false) {
+                        // Only set wasGenerated=false on first manual entry (from empty)
+                        // This preserves AI source indicator when editing AI-generated text
+                        const wasEmpty = !FocusPanelStatus._hasRealContent(result.appreciation);
+
+                        if (wasEmpty && result.wasGenerated !== true) {
                             result.wasGenerated = false;
-                            result.tokenUsage = null;
+
+                            // Capture prompt hash for manual entries (enables dirty detection)
+                            if (!result.promptHash) {
+                                result.promptHash = PromptService.getPromptHash({
+                                    ...result.studentData,
+                                    id: result.id,
+                                    currentPeriod: appState.currentPeriod
+                                });
+                                result.generationPeriod = appState.currentPeriod;
+                            }
                         }
+
+                        result.appreciation = content;
                     } else {
-                        // Content cleared -> update result to empty
                         result.appreciation = '';
                     }
 
-                    // ALWAYS update both indicators to reflect current state
                     FocusPanelStatus.updateSourceIndicator(result);
                     FocusPanelStatus.updateAppreciationStatus(result);
-
-                    // Update List Row
                     this._updateListRow(result);
                 }
             });
@@ -337,29 +342,24 @@ export const FocusPanelManager = {
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
 
                 if (result && content !== undefined) {
-                    // CRITICAL FIX: Check if content is real (not placeholder)
-                    const isRealContent = content && content.length > 0
-                        && !content.includes('Aucune appréciation')
-                        && !content.includes('Cliquez sur');
+                    const isRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (isRealContent) {
-                        // Save real content
                         FocusPanelHistory.push(content);
                         this._saveContext();
 
-                        // If it was manual, show "Saved" feedback
+                        // Show "Saved" feedback for manual edits
                         if (result.wasGenerated === false) {
                             FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
                         }
                     } else {
-                        // CRITICAL FIX: Clear result.appreciation when content is empty/placeholder
-                        // This ensures status icon correctly shows 'empty' (clock) state
+                        // Clear appreciation when content is empty/placeholder
                         result.appreciation = '';
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
                     }
-                    // ALWAYS refresh status to ensure button state is correct
+
                     FocusPanelStatus.refreshAppreciationStatus();
                 }
             });
@@ -926,19 +926,15 @@ export const FocusPanelManager = {
                 result.studentData.currentAIModel = newResult.studentData.currentAIModel;
             }
 
-            // CRITICAL: Update generationSnapshot to capture current state for dirty detection
-            // This must be done BEFORE any UI updates to capture the "baseline" at generation time
-            result.generationSnapshot = Utils.deepClone(result.studentData);
-            // Also capture full journal for granular comparison
-            result.generationSnapshotJournal = Utils.deepClone(result.journal || []);
-            // Capture threshold used at generation time
-            result.generationThreshold = appState.journalThreshold ?? 2;
-            // CRITICAL FIX: Store which period the generation was for
-            // This allows dirty check to only apply to this specific period
+            // NEW APPROACH: Store hash of the prompt used for generation
+            // This captures ALL data that affects AI output (grade, context, journal, settings, etc.)
+            // Much simpler and more robust than tracking individual fields
+            result.promptHash = PromptService.getPromptHash({
+                ...result.studentData,
+                id: result.id,
+                currentPeriod: generatingForPeriod
+            });
             result.generationPeriod = generatingForPeriod;
-
-            // Deprecated: existing count (kept for backward compat)
-            result.generationSnapshotJournalCount = result.journal?.length || 0;
 
             // CRITICAL FIX: Use captured period, not current one (user may have switched)
             if (!result.studentData.periods[generatingForPeriod]) {
@@ -1627,6 +1623,15 @@ export const FocusPanelManager = {
                         generationTimeMs: response.generationTimeMs || 0
                     };
                     result.timestamp = new Date().toISOString();
+
+                    // CRITICAL FIX: Update snapshot after refinement to reset dirty state
+                    // Refinement uses current data, so the new appreciation is up-to-date
+                    result.promptHash = PromptService.getPromptHash({
+                        ...result.studentData,
+                        id: result.id,
+                        currentPeriod: currentPeriod
+                    });
+                    result.generationPeriod = currentPeriod;
 
                     // Get current word count (for animation start value)
                     const currentWordCount = Utils.countWords(appreciationText.textContent || '');

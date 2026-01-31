@@ -10,6 +10,7 @@
 
 import { appState } from '../state/State.js';
 import { CONFIG } from '../config/Config.js';
+import { PROVIDER_DEFAULT_MODELS } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
@@ -278,6 +279,21 @@ export const WelcomeManager = {
                     DOM.welcomeApiKeyError,
                     DOM.welcomeValidateApiKeyBtn,
                     () => {
+                        // ✅ Auto-sélection du modèle compatible avec la clé validée
+                        // Évite l'erreur "clé OpenRouter requise" quand l'utilisateur a configuré Mistral
+                        const recommendedModel = PROVIDER_DEFAULT_MODELS[currentProvider];
+                        if (recommendedModel && appState.currentAIModel !== recommendedModel) {
+                            // Le modèle actuel n'est pas compatible avec la clé validée
+                            // → Basculer automatiquement vers un modèle qui fonctionne
+                            appState.currentAIModel = recommendedModel;
+                            StorageManager.saveAppState();
+
+                            // Mettre à jour le select du modèle dans les paramètres si présent
+                            if (DOM.aiModelSelect) {
+                                DOM.aiModelSelect.value = recommendedModel;
+                            }
+                        }
+
                         DOM.welcomeNextBtn.disabled = false;
                         setTimeout(() => DOM.welcomeNextBtn.click(), 500);
                     }

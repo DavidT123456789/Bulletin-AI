@@ -194,6 +194,10 @@ export const JournalManager = {
         entry._lastModified = Date.now(); // Update timestamp for sync
 
         StorageManager.saveAppState();
+
+        // Trigger status refresh to detect dirty state
+        FocusPanelStatus.refreshAppreciationStatus();
+
         return entry;
     },
 

@@ -8,6 +8,7 @@
  */
 
 import { appState } from '../state/State.js';
+import { PROVIDER_DEFAULT_MODELS } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -141,6 +142,24 @@ export const ApiValidationManager = {
             await StorageManager.saveAppState();
             SettingsUIManager.updateApiStatusDisplay();
             UI.showNotification(`Clé ${provider} validée et sauvegardée !`, 'success');
+
+            // ✅ Auto-sélection du modèle si le modèle actuel n'a pas de clé configurée
+            // Évite la confusion UX où l'utilisateur valide Mistral mais le modèle reste sur Gemini
+            if (!AIService._hasApiKeyForModel(appState.currentAIModel)) {
+                const recommendedModel = PROVIDER_DEFAULT_MODELS[provider];
+                if (recommendedModel) {
+                    appState.currentAIModel = recommendedModel;
+                    await StorageManager.saveAppState();
+
+                    // Mettre à jour le select du modèle si présent
+                    if (DOM.aiModelSelect) {
+                        DOM.aiModelSelect.value = recommendedModel;
+                    }
+
+                    UI.showNotification(`Modèle basculé vers ${recommendedModel}`, 'info');
+                }
+            }
+
             if (onSuccess) onSuccess();
 
 
