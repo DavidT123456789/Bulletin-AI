@@ -33,14 +33,13 @@ export const MassImportManager = {
         let wasAborted = false;
 
         try {
-            // Afficher l'estimation du temps total
-            const estimate = RateLimiter.estimateTime(studentsToProcess.length);
+            // Notification de démarrage (pas d'estimation car le rate limiting est réactif)
             UI.showNotification(
-                `Génération de ${studentsToProcess.length} élèves (~${estimate.totalMinutes} min avec rate limiting)`,
+                `Génération de ${studentsToProcess.length} élève(s) en cours...`,
                 'info'
             );
 
-            UI.updateOutputProgress(0, studentsToProcess.length, `Démarrage... (~${estimate.totalMinutes} min)`);
+            UI.updateOutputProgress(0, studentsToProcess.length, 'Démarrage...');
 
             for (const [index, studentData] of studentsToProcess.entries()) {
                 if (this.massImportAbortController.signal.aborted) {
@@ -66,18 +65,14 @@ export const MassImportManager = {
                 let hasError = false;
 
                 try {
-                    // Attendre le délai approprié AVANT la requête (rate limiting préventif)
-                    if (index > 0) {
-                        const waitTime = RateLimiter.getWaitTime(appState.currentAIModel);
-                        if (waitTime > 0) {
-                            const remaining = studentsToProcess.length - index;
-                            const estimate = RateLimiter.estimateTime(remaining);
-                            UI.updateOutputProgress(
-                                index,
-                                studentsToProcess.length,
-                                `⏱️ Pause ${RateLimiter.formatTime(waitTime)} (~${estimate.totalMinutes} min restantes)`
-                            );
-                        }
+                    // Rate limiting RÉACTIF : on attend seulement si l'API a demandé un délai
+                    const waitTime = RateLimiter.getWaitTime(appState.currentAIModel);
+                    if (waitTime > 0) {
+                        UI.updateOutputProgress(
+                            index,
+                            studentsToProcess.length,
+                            `⏱️ Pause API (${RateLimiter.formatTime(waitTime)})`
+                        );
                         await RateLimiter.waitIfNeeded(appState.currentAIModel, null, this.massImportAbortController.signal);
                     }
 
@@ -115,10 +110,10 @@ export const MassImportManager = {
 
                         // Extraire le temps d'attente suggéré par l'API
                         const retryAfter = RateLimiter.extractRetryAfter(e.message);
-                        const waitTime = retryAfter || 30000; // 30s par défaut
+                        const waitTime = retryAfter || 5000; // 5s par défaut (réactif)
 
                         UI.showNotification(
-                            `Quota atteint, reprise dans ${RateLimiter.formatTime(waitTime)}...`,
+                            `Limite API atteinte, reprise dans ${RateLimiter.formatTime(waitTime)}...`,
                             'warning'
                         );
 

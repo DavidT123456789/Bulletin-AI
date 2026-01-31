@@ -35,12 +35,6 @@ import { DOM } from '../utils/DOM.js';
  * @property {string} displayName - Nom d'affichage
  */
 
-/**
- * Cache des cooldowns par provider (évite de spammer un provider en quota)
- * @type {Map<string, number>} provider -> timestamp de fin de cooldown
- */
-const providerCooldowns = new Map();
-
 
 export const AIService = {
     /**
@@ -433,72 +427,6 @@ export const AIService = {
         }
     },
 
-    /**
-     * Vérifie si l'erreur est de type quota/rate limit (réessayable)
-     * @param {Error} error - L'erreur à analyser
-     * @returns {boolean}
-     */
-    _isRetryableError(error) {
-        const msg = error.message.toLowerCase();
-        return msg.includes('429') ||
-            msg.includes('404') ||
-            msg.includes('not found') ||
-            msg.includes('quota') ||
-            msg.includes('rate') ||
-            msg.includes('limit') ||
-            msg.includes('overloaded') ||
-            msg.includes('capacity') ||
-            msg.includes('resource_exhausted') ||
-            msg.includes('réponse vide');
-    },
-
-    /**
-     * Extrait le temps d'attente suggéré d'un message d'erreur 429
-     * @param {string} errorMessage - Le message d'erreur
-     * @returns {number} Secondes à attendre (60 par défaut si non trouvé)
-     */
-    _extractRetrySeconds(errorMessage) {
-        if (!errorMessage) return 60;
-        const match = errorMessage.match(/retry in (\d+(?:\.\d+)?)/i);
-        return match ? Math.ceil(parseFloat(match[1])) : 60;
-    },
-
-    /**
-     * Met un provider en cooldown après une erreur de quota
-     * @param {string} provider - Le provider à mettre en cooldown
-     * @param {number} seconds - Durée du cooldown en secondes
-     */
-    _setProviderCooldown(provider, seconds) {
-        const cooldownEnd = Date.now() + (seconds * 1000);
-        providerCooldowns.set(provider, cooldownEnd);
-    },
-
-    /**
-     * Vérifie si un provider est en cooldown
-     * @param {string} provider - Le provider à vérifier
-     * @returns {boolean}
-     */
-    _isProviderInCooldown(provider) {
-        const cooldownEnd = providerCooldowns.get(provider);
-        if (!cooldownEnd) return false;
-        if (Date.now() >= cooldownEnd) {
-            providerCooldowns.delete(provider);
-            return false;
-        }
-        return true;
-    },
-
-    /**
-     * Retourne le temps restant de cooldown d'un provider
-     * @param {string} provider - Le provider à vérifier
-     * @returns {number} Secondes restantes (0 si pas en cooldown)
-     */
-    _getProviderCooldownRemaining(provider) {
-        const cooldownEnd = providerCooldowns.get(provider);
-        if (!cooldownEnd) return 0;
-        const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
-        return remaining > 0 ? remaining : 0;
-    },
 
     /**
      * Construit la file de fallback à partir du modèle actuel
@@ -594,33 +522,19 @@ export const AIService = {
                     console.warn(`[AI Fallback] Modèle ${model} a échoué:`, error.message);
                     lastError = error;
 
-                    // Plus de cooldown - on passe simplement au modèle suivant
-                    // Chaque modèle a ses propres limites, inutile de bloquer les autres
-
                     // Erreurs non réessayables : annulation utilisateur, clé invalide
                     const isNonRetryable = error.message.includes('annulé') ||
                         error.message.includes('401') ||
                         error.message.includes('Invalid API');
 
-                    // Timeout spécifique: pour Ollama on continue (modèle local occupé), sinon on arrête
-                    const provider = this._getProviderForModel(model);
-                    const isTimeout = error.message.toLowerCase().includes('timeout');
-                    if (isTimeout && provider !== 'ollama') {
-                        throw error;
-                    }
-
                     if (isNonRetryable) {
                         throw error;
                     }
 
-                    // Pour les erreurs réessayables, continuer avec le modèle suivant
-                    const isRetryable = this._isRetryableError(error);
-
-                    if (isRetryable) {
-                        continue;
-                    }
-
-                    // Autres erreurs : essayer quand même le modèle suivant
+                    // Pour TOUTES les autres erreurs (timeout, quota, 429, 404, etc.)
+                    // → Continuer avec le modèle suivant
+                    // Le fallback doit toujours essayer les alternatives disponibles
+                    continue;
                 }
             }
 

@@ -1,46 +1,24 @@
 /**
- * @fileoverview Tests unitaires pour RateLimiter
+ * @fileoverview Tests unitaires pour RateLimiter (version réactive)
  * @module utils/RateLimiter.test
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock des dépendances avant l'import
-vi.mock('../config/models.js', () => ({
-    RATE_LIMITS: {
-        'gemini-2.5-flash': { delayMs: 2000, rpm: 30 },
-        'openai-gpt-4o-mini': { delayMs: 500, rpm: 60 },
-        'default': { delayMs: 1000, rpm: 30 }
-    }
-}));
-
+// Mock des dépendances avant l'import - plus besoin de RATE_LIMITS
 vi.mock('../state/State.js', () => ({
     appState: {
         currentAIModel: 'gemini-2.5-flash'
     }
 }));
 
-// Mock localStorage
-const localStorageMock = (() => {
-    let store = {};
-    return {
-        getItem: vi.fn(key => store[key] || null),
-        setItem: vi.fn((key, value) => { store[key] = value; }),
-        removeItem: vi.fn(key => { delete store[key]; }),
-        clear: vi.fn(() => { store = {}; })
-    };
-})();
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
-
 // Import après les mocks
 import { RateLimiter } from './RateLimiter.js';
 
-describe('RateLimiter', () => {
+describe('RateLimiter (réactif)', () => {
     beforeEach(() => {
         // Reset l'état entre chaque test
         RateLimiter.reset();
-        RateLimiter.resetAdaptiveDelays();
-        localStorageMock.clear();
         vi.clearAllMocks();
     });
 
@@ -48,65 +26,51 @@ describe('RateLimiter', () => {
         vi.restoreAllMocks();
     });
 
-    describe('getDelayForModel', () => {
-        it('retourne le délai configuré pour un modèle connu', () => {
-            const delay = RateLimiter.getDelayForModel('gemini-2.5-flash');
-            expect(delay).toBe(2000);
-        });
-
-        it('retourne le délai par défaut pour un modèle inconnu', () => {
-            const delay = RateLimiter.getDelayForModel('modele-inconnu');
-            expect(delay).toBe(1000);
-        });
-
-        it('retourne le délai adaptatif si configuré', () => {
-            // Simuler un délai adaptatif en appelant markError429
-            RateLimiter.markError429('gemini-2.5-flash', '');
-            const delay = RateLimiter.getDelayForModel('gemini-2.5-flash');
-            // Le délai devrait être doublé (2000 * 2 = 4000)
-            expect(delay).toBe(4000);
-        });
-    });
-
     describe('getWaitTime', () => {
-        it('retourne 0 si aucune requête précédente', () => {
+        it('retourne 0 si aucune requête précédente et pas de backoff', () => {
             const waitTime = RateLimiter.getWaitTime('openai-gpt-4o-mini');
             expect(waitTime).toBe(0);
         });
 
-        it('retourne le temps restant après une requête', async () => {
-            // Marquer une requête
+        it('retourne le temps minimum après une requête récente', async () => {
             RateLimiter.markSuccess('openai-gpt-4o-mini');
 
-            // Attendre un peu
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Le temps d'attente devrait être ~400ms (500 - 100)
+            // Juste après une requête, on doit attendre le délai minimum
             const waitTime = RateLimiter.getWaitTime('openai-gpt-4o-mini');
-            expect(waitTime).toBeGreaterThan(300);
-            expect(waitTime).toBeLessThan(500);
+            expect(waitTime).toBeGreaterThanOrEqual(0);
+            expect(waitTime).toBeLessThanOrEqual(RateLimiter.MIN_DELAY_MS);
+        });
+
+        it('retourne 0 après le délai minimum écoulé', async () => {
+            RateLimiter.markSuccess('test-model');
+
+            // Simuler l'écoulement du temps
+            await new Promise(resolve => setTimeout(resolve, RateLimiter.MIN_DELAY_MS + 50));
+
+            const waitTime = RateLimiter.getWaitTime('test-model');
+            expect(waitTime).toBe(0);
         });
     });
 
     describe('waitIfNeeded', () => {
-        it('n\'attend pas si aucune requête précédente', async () => {
+        it('n\'attend pas s\'il n\'y a pas de backoff', async () => {
             const start = Date.now();
-            await RateLimiter.waitIfNeeded('openai-gpt-4o-mini');
+            await RateLimiter.waitIfNeeded('nouveau-modele');
             const elapsed = Date.now() - start;
 
             expect(elapsed).toBeLessThan(100);
         });
 
-        it('appelle le callback onWait quand il faut attendre', async () => {
-            // D'abord marquer une requête
-            RateLimiter.markSuccess('openai-gpt-4o-mini');
+        it('appelle le callback onWait quand il y a un backoff', async () => {
+            // Mock sleep first
+            vi.spyOn(RateLimiter, 'sleep').mockResolvedValue();
+
+            // Simuler une erreur 429 pour créer un backoff
+            RateLimiter.markError429('test-model', 'retry in 1s');
 
             const onWait = vi.fn();
 
-            // Utiliser un mock pour éviter d'attendre vraiment
-            vi.spyOn(RateLimiter, 'sleep').mockResolvedValue();
-
-            await RateLimiter.waitIfNeeded('openai-gpt-4o-mini', onWait);
+            await RateLimiter.waitIfNeeded('test-model', onWait);
 
             expect(onWait).toHaveBeenCalled();
             expect(onWait.mock.calls[0][0]).toBeGreaterThan(0);
@@ -114,57 +78,61 @@ describe('RateLimiter', () => {
     });
 
     describe('markSuccess', () => {
-        it('incrémente le compteur de succès', () => {
-            RateLimiter.markSuccess('gemini-2.5-flash');
-            const stats = RateLimiter.getStats('gemini-2.5-flash');
-            expect(stats.successStreak).toBe(1);
+        it('réduit progressivement le backoff', () => {
+            const model = 'test-model';
+
+            // Créer un backoff
+            const initialBackoff = RateLimiter.markError429(model, '');
+            expect(RateLimiter.getStats(model).backoff).toBe(initialBackoff);
+
+            // Chaque succès réduit le backoff
+            RateLimiter.markSuccess(model);
+            const afterOneSuccess = RateLimiter.getStats(model).backoff;
+            expect(afterOneSuccess).toBeLessThan(initialBackoff);
+
+            RateLimiter.markSuccess(model);
+            const afterTwoSuccesses = RateLimiter.getStats(model).backoff;
+            expect(afterTwoSuccesses).toBeLessThan(afterOneSuccess);
         });
 
-        it('réduit le délai après plusieurs succès consécutifs', () => {
-            const model = 'gemini-2.5-flash';
-            const initialDelay = RateLimiter.getDelayForModel(model);
+        it('le backoff disparaît après suffisamment de succès', () => {
+            const model = 'test-model';
 
-            // 3 succès = seuil par défaut
-            for (let i = 0; i < 3; i++) {
+            // Créer un petit backoff
+            RateLimiter.markError429(model, 'retry in 2s');
+
+            // Suffisamment de succès pour effacer le backoff
+            for (let i = 0; i < 10; i++) {
                 RateLimiter.markSuccess(model);
             }
 
-            const newDelay = RateLimiter.getDelayForModel(model);
-            expect(newDelay).toBeLessThan(initialDelay);
+            expect(RateLimiter.getStats(model).hasBackoff).toBe(false);
         });
     });
 
     describe('markError429', () => {
-        it('double le délai après une erreur 429', () => {
-            const model = 'openai-gpt-4o-mini';
-            const initialDelay = RateLimiter.getBaseDelayForModel(model);
+        it('crée un backoff avec la valeur par défaut si pas de retry-after', () => {
+            const model = 'test-model';
+            const backoff = RateLimiter.markError429(model, 'Generic 429 error');
 
-            RateLimiter.markError429(model, '');
-
-            const newDelay = RateLimiter.getDelayForModel(model);
-            expect(newDelay).toBe(initialDelay * 2);
+            expect(backoff).toBe(5000); // Valeur par défaut
+            expect(RateLimiter.getStats(model).hasBackoff).toBe(true);
         });
 
-        it('utilise le temps suggéré par l\'API si disponible', () => {
-            const model = 'openai-gpt-4o-mini';
-            RateLimiter.markError429(model, 'Rate limit exceeded. Please retry in 5.5s');
+        it('utilise le temps suggéré par l\'API', () => {
+            const model = 'test-model';
+            const backoff = RateLimiter.markError429(model, 'Please retry in 3.5s');
 
-            // Le délai est plafonné à 5x la base (500ms * 5 = 2500ms)
-            // Donc même si l'API suggère 5.5s, le max est 2500ms
-            const newDelay = RateLimiter.getDelayForModel(model);
-            expect(newDelay).toBe(2500);
+            // 3.5s + 0.5s marge = 4s
+            expect(backoff).toBe(4000);
         });
 
-        it('reset le compteur de succès', () => {
-            const model = 'gemini-2.5-flash';
-            RateLimiter.markSuccess(model);
-            RateLimiter.markSuccess(model);
+        it('retourne le backoff configuré', () => {
+            const model = 'test-model';
+            const backoff = RateLimiter.markError429(model, '');
 
-            expect(RateLimiter.getStats(model).successStreak).toBe(2);
-
-            RateLimiter.markError429(model, '');
-
-            expect(RateLimiter.getStats(model).successStreak).toBe(0);
+            expect(typeof backoff).toBe('number');
+            expect(backoff).toBeGreaterThan(0);
         });
     });
 
@@ -186,19 +154,45 @@ describe('RateLimiter', () => {
         });
     });
 
-    describe('estimateTime', () => {
-        it('calcule le temps total pour N requêtes', () => {
-            const estimate = RateLimiter.estimateTime(5, 'gemini-2.5-flash');
+    describe('waitForRetryAfter', () => {
+        it('attend le temps suggéré par l\'API', async () => {
+            vi.spyOn(RateLimiter, 'sleep').mockResolvedValue();
+            const onWait = vi.fn();
 
-            // 5 * (2000 délai + 2000 génération) = 20000ms = 20s
-            expect(estimate.totalMs).toBe(20000);
-            expect(estimate.perItemMs).toBe(4000);
-            expect(estimate.delayMs).toBe(2000);
+            const result = await RateLimiter.waitForRetryAfter('retry in 5s', onWait);
+
+            expect(result).toBe(true);
+            expect(onWait).toHaveBeenCalledWith(5500); // 5s + 0.5s marge
+            expect(RateLimiter.sleep).toHaveBeenCalledWith(5500, null);
         });
 
-        it('utilise le modèle actuel par défaut', () => {
-            const estimate = RateLimiter.estimateTime(1);
-            expect(estimate.delayMs).toBe(2000); // gemini-2.5-flash
+        it('retourne false si pas de temps trouvé', async () => {
+            const result = await RateLimiter.waitForRetryAfter('Erreur sans temps');
+            expect(result).toBe(false);
+        });
+
+        it('refuse d\'attendre plus de 2 minutes', async () => {
+            const result = await RateLimiter.waitForRetryAfter('retry in 180s');
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('estimateTime', () => {
+        it('calcule le temps sans backoff', () => {
+            const estimate = RateLimiter.estimateTime(5);
+
+            // 5 * (200ms min + 2000ms génération) = 11000ms
+            expect(estimate.totalMs).toBe(5 * (RateLimiter.MIN_DELAY_MS + 2000));
+            expect(estimate.hasBackoff).toBe(false);
+        });
+
+        it('prend en compte le backoff existant', () => {
+            RateLimiter.markError429('test-model', 'retry in 5s');
+
+            const estimate = RateLimiter.estimateTime(5, 'test-model');
+
+            expect(estimate.hasBackoff).toBe(true);
+            expect(estimate.perItemMs).toBeGreaterThan(RateLimiter.MIN_DELAY_MS + 2000);
         });
     });
 
@@ -220,62 +214,66 @@ describe('RateLimiter', () => {
 
     describe('reset', () => {
         it('reset un modèle spécifique', () => {
-            RateLimiter.markSuccess('gemini-2.5-flash');
-            RateLimiter.markSuccess('openai-gpt-4o-mini');
+            RateLimiter.markError429('model-a', '');
+            RateLimiter.markError429('model-b', '');
 
-            RateLimiter.reset('gemini-2.5-flash');
+            RateLimiter.reset('model-a');
 
-            expect(RateLimiter.getWaitTime('gemini-2.5-flash')).toBe(0);
-            expect(RateLimiter.getWaitTime('openai-gpt-4o-mini')).toBeGreaterThan(0);
+            expect(RateLimiter.getStats('model-a').hasBackoff).toBe(false);
+            expect(RateLimiter.getStats('model-b').hasBackoff).toBe(true);
         });
 
         it('reset tous les modèles sans argument', () => {
-            RateLimiter.markSuccess('gemini-2.5-flash');
-            RateLimiter.markSuccess('openai-gpt-4o-mini');
+            RateLimiter.markError429('model-a', '');
+            RateLimiter.markError429('model-b', '');
 
             RateLimiter.reset();
 
-            expect(RateLimiter.getWaitTime('gemini-2.5-flash')).toBe(0);
-            expect(RateLimiter.getWaitTime('openai-gpt-4o-mini')).toBe(0);
-        });
-    });
-
-    describe('persistance localStorage', () => {
-        it('sauvegarde les délais adaptatifs', () => {
-            RateLimiter.markError429('gemini-2.5-flash', '');
-
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'bulletinAI_adaptiveRateLimits',
-                expect.any(String)
-            );
-        });
-
-        it('charge les délais au reset', () => {
-            localStorageMock.getItem.mockReturnValueOnce(
-                JSON.stringify({ 'gemini-2.5-flash': 5000 })
-            );
-
-            // Forcer le rechargement
-            RateLimiter._loadAdaptiveDelays();
-
-            // Le délai devrait être chargé depuis localStorage
-            expect(RateLimiter.getDelayForModel('gemini-2.5-flash')).toBe(5000);
+            expect(RateLimiter.getStats('model-a').hasBackoff).toBe(false);
+            expect(RateLimiter.getStats('model-b').hasBackoff).toBe(false);
         });
     });
 
     describe('getStats', () => {
-        it('retourne les statistiques complètes', () => {
-            RateLimiter.markSuccess('gemini-2.5-flash');
-            RateLimiter.markSuccess('gemini-2.5-flash');
-
-            const stats = RateLimiter.getStats('gemini-2.5-flash');
+        it('retourne les statistiques sans backoff', () => {
+            const stats = RateLimiter.getStats('nouveau-modele');
 
             expect(stats).toMatchObject({
-                model: 'gemini-2.5-flash',
-                baseDelay: 2000,
-                successStreak: 2,
-                isAdapted: false,
+                model: 'nouveau-modele',
+                backoff: 0,
+                hasBackoff: false,
+                backoffFormatted: 'aucun'
             });
+        });
+
+        it('retourne les statistiques avec backoff', () => {
+            RateLimiter.markError429('test-model', 'retry in 5s');
+
+            const stats = RateLimiter.getStats('test-model');
+
+            expect(stats.model).toBe('test-model');
+            expect(stats.hasBackoff).toBe(true);
+            expect(stats.backoff).toBeGreaterThan(0);
+            expect(stats.backoffFormatted).toMatch(/sec/);
+        });
+    });
+
+    describe('sleep', () => {
+        it('peut être interrompu par AbortSignal', async () => {
+            const controller = new AbortController();
+
+            // Démarrer le sleep et l'avorter immédiatement
+            const sleepPromise = RateLimiter.sleep(10000, controller.signal);
+            controller.abort();
+
+            await expect(sleepPromise).rejects.toThrow('Aborted');
+        });
+
+        it('rejette immédiatement si signal déjà avorté', async () => {
+            const controller = new AbortController();
+            controller.abort();
+
+            await expect(RateLimiter.sleep(1000, controller.signal)).rejects.toThrow('Aborted');
         });
     });
 });
