@@ -47,6 +47,10 @@
     padding: 32px 16px;
     color: var(--text-secondary);
     font-style: italic;
+    /* Ensure proper centering in containers like .refinement-box */
+    min-height: 100%;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 /* Skeleton text lines */

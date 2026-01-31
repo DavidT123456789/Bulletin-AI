@@ -1094,16 +1094,23 @@
     <!-- MODALES -->
     <div id="personalizationModal" class="modal" role="dialog" aria-modal="true"
         aria-labelledby="personalizationModalTitle">
-        <div class="modal-content">
+        <div class="modal-content personalization-modal-content">
             <div class="modal-header">
                 <h2 class="modal-title" id="personalizationModalTitle"><i class="fas fa-wand-magic-sparkles"></i>
                     Personnalisation</h2>
-                <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer"><i
-                        class="fas fa-xmark"></i></button>
+                <div class="modal-header-actions spaced">
+                    <button type="button" class="btn-icon-small inspector-toggle-btn tooltip" id="toggleInspectorBtn"
+                        data-tooltip="Afficher/Masquer l'inspecteur de prompt"
+                        aria-label="Afficher/Masquer l'inspecteur de prompt">
+                        <i class="fas fa-terminal"></i>
+                    </button>
+                    <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer"><i
+                            class="fas fa-xmark"></i></button>
+                </div>
             </div>
             <div class="modal-body">
-                <div class="settings-layout-grid">
-                    <!-- CARTE 2: RÉGLAGES DE STYLE IA -->
+                <div class="settings-layout-grid personalization-grid">
+                    <!-- CARTE 1: RÉGLAGES DE STYLE IA -->
                     <div class="settings-controls-column">
                         <div class="settings-card settings-card-full-height" id="settings-controls-panel">
                             <div class="settings-card-header-row">
@@ -1210,7 +1217,7 @@
                         </div>
                     </div>
 
-                    <!-- CARTE 3: LABORATOIRE D'APERÇU -->
+                    <!-- CARTE 2: LABORATOIRE D'APERÇU -->
                     <div class="settings-preview-column">
                         <div class="settings-card settings-card-full-height">
                             <h3 class="settings-card-title"><i class="fas fa-vial"></i> Aperçu</h3>
@@ -1250,24 +1257,39 @@
                                         data-tooltip="Générer une appréciation avec l'IA"><i class="fas fa-play"
                                             aria-hidden="true"></i> Générer</button>
                                 </div>
-                                <div class="refinement-box placeholder" id="settingsPreviewResult">Cliquez sur
-                                    "Générer" pour voir l'impact de vos réglages en direct.</div>
-                                <div class="preview-meta-container" id="previewMetaContainer" style="display: none;">
-                                    <div class="word-count" id="settingsPreviewTokenCount"></div>
-                                    <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
+                                <div class="refinement-group">
+                                    <div class="refinement-content" id="settingsPreviewResult">Cliquez sur
+                                        "Générer" pour voir l'impact de vos réglages en direct.</div>
+                                    <div class="preview-meta-container" id="previewMetaContainer"
+                                        style="display: none;">
+                                        <div class="preview-model-badge" id="previewModelBadge" style="display: none;">
+                                            <i class="fas fa-wand-magic-sparkles"></i> —
+                                        </div>
+                                        <div class="word-count" id="settingsPreviewTokenCount"></div>
+                                        <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
+                                    </div>
                                 </div>
 
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- CARTE 4: INSPECTEUR DE PROMPT -->
-                <div class="settings-card settings-card-full-width" style="margin-top: 16px;">
-                    <h3 class="settings-card-title"><i class="fas fa-terminal"></i> Inspecteur de Prompt</h3>
-                    <div class="settings-card-content">
-                        <div id="settingsPreviewPrompt" class="help-code-block prompt-preview-block">
-                            Le prompt s'affichera ici après avoir rafraîchi l'aperçu.
+                    <!-- CARTE 3: INSPECTEUR DE PROMPT (collapsible) -->
+                    <div class="settings-inspector-column" id="inspectorColumn">
+                        <div class="settings-card settings-card-full-height">
+                            <div class="settings-card-header-row">
+                                <h3 class="settings-card-title"><i class="fas fa-terminal"></i> Inspecteur de Prompt
+                                </h3>
+                                <button type="button" class="btn-icon-small tooltip" id="copyPromptBtn"
+                                    data-tooltip="Copier le prompt" aria-label="Copier le prompt">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="settings-card-content">
+                                <div id="settingsPreviewPrompt" class="help-code-block prompt-preview-block">
+                                    Le prompt s'affichera ici après avoir rafraîchi l'aperçu.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

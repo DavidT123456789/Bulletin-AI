@@ -14,6 +14,7 @@ import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 
 import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
+import { MODEL_SHORT_NAMES } from '../../config/models.js';
 
 let App = null;
 
@@ -21,6 +22,23 @@ export const SettingsModalListeners = {
     init(appInstance) {
         App = appInstance;
         this.lastPreviewIndex = -1; // Track index for directional animation
+    },
+
+    /**
+     * Builds current IA settings from DOM inputs.
+     * Single source of truth for both prompt preview and AI generation.
+     * @returns {Object} Current settings object
+     * @private
+     */
+    _getCurrentSettings() {
+        return {
+            length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
+            tone: parseInt(DOM.iaToneSlider?.value || 3),
+            styleInstructions: DOM.iaStyleInstructions?.value || '',
+            enableStyleInstructions: DOM.iaStyleInstructionsToggle?.checked !== false,
+            voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
+            discipline: DOM.iaDiscipline?.value || ''
+        };
     },
 
     /**
@@ -86,6 +104,55 @@ export const SettingsModalListeners = {
 
         // Settings modal interactions
         this._setupModalInteractions(addClickListener);
+
+        // Inspector toggle button for personalization modal
+        this._setupInspectorToggle();
+    },
+
+    /**
+     * Setup Inspector toggle button for the personalization modal
+     * @private
+     */
+    _setupInspectorToggle() {
+        const toggleBtn = document.getElementById('toggleInspectorBtn');
+        const grid = document.querySelector('.personalization-grid');
+        const modalContent = document.querySelector('.personalization-modal-content');
+
+        if (!toggleBtn || !grid) return;
+
+        // Restore state from localStorage (hidden by default)
+        const isVisible = localStorage.getItem('inspectorVisible') === 'true';
+        if (isVisible) {
+            grid.classList.add('inspector-visible');
+            modalContent?.classList.add('inspector-visible');
+            toggleBtn.classList.add('active');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            const nowVisible = grid.classList.toggle('inspector-visible');
+            modalContent?.classList.toggle('inspector-visible', nowVisible);
+            toggleBtn.classList.toggle('active', nowVisible);
+            localStorage.setItem('inspectorVisible', nowVisible);
+        });
+
+        // Copy prompt button
+        const copyBtn = document.getElementById('copyPromptBtn');
+        const promptContainer = document.getElementById('settingsPreviewPrompt');
+        if (copyBtn && promptContainer) {
+            copyBtn.addEventListener('click', async () => {
+                const text = promptContainer.textContent?.trim();
+                if (!text || text === 'Le prompt s\'affichera ici après avoir rafraîchi l\'aperçu.') {
+                    UI.showNotification('Générez d\'abord un aperçu pour copier le prompt.', 'warning');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    UI.showNotification('Prompt copié !', 'success');
+                } catch {
+                    UI.showNotification('Échec de la copie', 'error');
+                }
+            });
+        }
     },
 
     _setupApiKeysAccordion(addClickListener) {
@@ -531,13 +598,7 @@ export const SettingsModalListeners = {
         }
 
         // Display prompt preview (no AI call)
-        const currentSettings = {
-            length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
-            tone: parseInt(DOM.iaToneSlider?.value || 3),
-            styleInstructions: DOM.iaStyleInstructions?.value || '',
-            voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
-            discipline: DOM.iaDiscipline?.value || ''
-        };
+        const currentSettings = this._getCurrentSettings();
 
         const previewPromptEl = document.getElementById('settingsPreviewPrompt');
         if (previewPromptEl) {
@@ -557,6 +618,7 @@ export const SettingsModalListeners = {
 
     async _handlePreviewRefresh() {
         SettingsUIManager.hidePreviewRefreshHint();
+        let generationSuccess = false;
         const previewResult = document.getElementById('settingsPreviewResult');
         const previewStatus = document.getElementById('previewStatus');
         const studentId = DOM.previewStudentSelect?.value;
@@ -635,13 +697,7 @@ export const SettingsModalListeners = {
         }
 
         try {
-            const currentSettings = {
-                length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
-                tone: parseInt(DOM.iaToneSlider?.value || 3),
-                styleInstructions: DOM.iaStyleInstructions?.value || '',
-                voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
-                discipline: DOM.iaDiscipline?.value || ''
-            };
+            const currentSettings = this._getCurrentSettings();
 
             // [FIX] Sync studentData.currentPeriod with appState.currentPeriod
             // Used for both prompt preview and AI generation
@@ -663,8 +719,10 @@ export const SettingsModalListeners = {
             const result = await AppreciationsManager.generateAppreciation(syncedStudentData, true, currentSettings);
 
             if (previewResult) {
-                previewResult.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
+                const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
                 previewResult.classList.remove('has-error', 'placeholder');
+                // Apply word-by-word reveal animation
+                await UI.typewriterReveal(previewResult, cleanText, { speed: 'fast' });
             }
 
             const wordCountEl = document.getElementById('settingsPreviewWordCount');
@@ -674,8 +732,20 @@ export const SettingsModalListeners = {
                 wordCountEl.textContent = `${wordCount} mots • ${charCount} car.`;
             }
 
+            // Display the AI model used for this generation
+            const modelBadgeEl = document.getElementById('previewModelBadge');
+            if (modelBadgeEl) {
+                const modelUsed = result.modelUsed || appState.currentAIModel;
+                const modelDisplayName = MODEL_SHORT_NAMES[modelUsed] || modelUsed;
+                modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelDisplayName}`;
+                modelBadgeEl.title = `Généré par ${modelDisplayName}`;
+                modelBadgeEl.style.display = 'flex';
+            }
+
             const metaContainer = document.getElementById('previewMetaContainer');
-            if (metaContainer) metaContainer.style.display = 'block';
+            if (metaContainer) metaContainer.style.display = 'flex';
+
+            generationSuccess = true;
 
         } catch (error) {
             console.error('Preview Error:', error);
@@ -711,7 +781,13 @@ export const SettingsModalListeners = {
             }
 
         } finally {
-            DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+            if (generationSuccess) {
+                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Régénérer';
+                DOM.refreshPreviewBtn.classList.add('btn-regenerate');
+            } else {
+                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
+            }
             DOM.refreshPreviewBtn.disabled = false;
         }
     },

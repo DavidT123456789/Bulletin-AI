@@ -107,9 +107,11 @@ export const ModalUI = {
             });
         }, 150);
 
+        // Delay tooltip re-enabling until AFTER focus is set (150ms)
+        // to avoid showing tooltip on the initially focused element
         setTimeout(() => {
             this._isIgnoringTooltips = false;
-        }, 100);
+        }, 200);
     },
 
     /**

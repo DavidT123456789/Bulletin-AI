@@ -9,17 +9,13 @@
  * @module managers/TooltipsManager
  */
 
+import { ModalUI } from './ModalUIManager.js';
+
 /**
  * Stockage des instances Tippy.js actives.
  * @type {Array}
  */
 let _tippyInstances = [];
-
-/**
- * Flag pour ignorer temporairement les tooltips (pendant les modales par ex.)
- * @type {boolean}
- */
-let _isIgnoringTooltips = false;
 
 /**
  * Génère la configuration commune pour Tippy
@@ -40,7 +36,8 @@ const getCommonTippyConfig = () => {
         trigger: 'mouseenter',
         touch: ['hold', 500],
         onShow(instance) {
-            if (_isIgnoringTooltips) return false;
+            // Use centralized flag from ModalUI for tooltip suppression
+            if (ModalUI._isIgnoringTooltips) return false;
             // Accessibilité : pas de tooltip si focus invisible
             if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
             return true;
@@ -58,7 +55,7 @@ export const TooltipsUI = {
      * @returns {boolean}
      */
     get isIgnoringTooltips() {
-        return _isIgnoringTooltips;
+        return ModalUI._isIgnoringTooltips;
     },
 
     /**
@@ -66,14 +63,13 @@ export const TooltipsUI = {
      * @param {boolean} value
      */
     set isIgnoringTooltips(value) {
-        _isIgnoringTooltips = value;
+        ModalUI._isIgnoringTooltips = value;
     },
 
     /**
      * Initialise ou réinitialise tous les tooltips de la page.
      * Détruit les instances existantes avant de créer les nouvelles.
      */
-
     initTooltips() {
         // Détruire les instances existantes
         this.destroyTooltips();
@@ -134,19 +130,12 @@ export const TooltipsUI = {
             const instance = window.tippy(element, {
                 ...commonConfig,
                 content: content,
-                animation: 'fade', // Spécifique pour update ? Gardons 'fade' comme dans l'original ou harmonisons ? L'original avait 'fade', init avait 'shift-away'. Je garde 'fade' pour minimiser changement visuel inattendu, ou je peux harmoniser. L'original avait 'fade' ici.
+                animation: 'fade',
                 duration: 200
             });
             _tippyInstances.push(instance);
         }
     },
-
-    /**
-     * Génère la configuration commune pour Tippy
-     * pour assurer la cohérence et gérer le tactile.
-     * @returns {Object} Configuration Tippy
-     */
-
 
     /**
      * Nettoie (détruit) les tooltips attachés aux éléments à l'intérieur d'un conteneur spécifique.

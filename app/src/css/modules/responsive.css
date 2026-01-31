@@ -84,6 +84,21 @@
         grid-template-columns: 1fr;
         gap: 24px;
     }
+
+    /* Personalization modal: single column on tablet, show inspector inline */
+    .settings-layout-grid.personalization-grid,
+    .settings-layout-grid.personalization-grid.inspector-visible {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-layout-grid.personalization-grid .settings-inspector-column {
+        display: block;
+    }
+
+    /* Hide toggle button on mobile (inspector always visible inline) */
+    .inspector-toggle-btn {
+        display: none;
+    }
 }
 
 /* ====================================================================

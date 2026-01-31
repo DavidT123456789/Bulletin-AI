@@ -25,6 +25,150 @@
     z-index: 5;
 }
 
+/* ====================================================================
+   PERSONALIZATION MODAL: 3-Column Layout (Config | Preview | Inspector)
+   ==================================================================== */
+
+/* Wider modal for personalization - base width for 2 columns */
+.personalization-modal-content {
+    max-width: 900px;
+    width: 95%;
+    transition: max-width 0.3s ease;
+}
+
+/* Expand modal when inspector is visible (3 columns) */
+.personalization-modal-content.inspector-visible {
+    max-width: 1200px;
+}
+
+/* 2-column grid when inspector is hidden (default) - equal 50/50 */
+.settings-layout-grid.personalization-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    /* Harmonized with modal-body padding */
+}
+
+/* Inspector visible: 3 equal columns - 33/33/33 */
+.settings-layout-grid.personalization-grid.inspector-visible {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* Force columns to respect grid sizing (prevent content overflow) */
+.personalization-grid>* {
+    min-width: 0;
+}
+
+/* Inspector column - hidden by default */
+.settings-inspector-column {
+    display: none;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Show inspector when grid has inspector-visible class */
+.personalization-grid.inspector-visible .settings-inspector-column {
+    display: block;
+    animation: slideInFromRight 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Inspector toggle button in header */
+.inspector-toggle-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.6;
+}
+
+.inspector-toggle-btn:hover {
+    opacity: 1;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+}
+
+/* Active state when inspector is visible */
+.inspector-toggle-btn.active {
+    opacity: 1;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Header actions spacing - increased gap */
+.modal-header-actions.spaced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Force equal height cards in personalization grid */
+.personalization-grid {
+    align-items: stretch;
+}
+
+.personalization-grid .settings-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.personalization-grid .settings-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Copy button styling in Inspector */
+#copyPromptBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 12px;
+}
+
+#copyPromptBtn:hover {
+    background: var(--bg-secondary);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Prompt preview block in inspector - better sizing */
+.settings-inspector-column .prompt-preview-block {
+    max-height: 400px;
+    min-height: 200px;
+    font-size: 12px;
+    line-height: 1.5;
+    flex: 1;
+}
+
 .settings-card {
     background: var(--card-glass-bg);
     backdrop-filter: blur(var(--glass-surface-blur));
@@ -1404,4 +1548,147 @@
 
 .privacy-note i {
     font-size: 0.9em;
+}
+
+/* === Preview Meta Container (Lab) === */
+.preview-meta-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+/* Preview Model Badge - Shows AI model used for generation */
+.preview-model-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(251, 191, 36, 0.9);
+    cursor: help;
+    transition: all var(--transition-fast);
+    /* margin-right: auto; Removed for grouped look */
+}
+
+.preview-model-badge:hover {
+    background: rgba(251, 191, 36, 0.18);
+    color: rgb(251, 191, 36);
+    transform: scale(1.02);
+}
+
+.preview-model-badge i {
+    font-size: 10px;
+}
+
+[data-theme="dark"] .preview-model-badge {
+    background: rgba(251, 191, 36, 0.15);
+    color: rgb(251, 191, 36);
+}
+
+[data-theme="dark"] .preview-model-badge:hover {
+    background: rgba(251, 191, 36, 0.25);
+}
+
+/* Harmonize word count badge in preview */
+.preview-meta-container .word-count {
+    background: rgba(0, 0, 0, 0.04);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: auto;
+    /* Push word count to the right */
+}
+
+[data-theme="dark"] .preview-meta-container .word-count {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+/* === Refinement Group (Card containing Text + Meta Footer) === */
+.refinement-group {
+    background: var(--bg-secondary);
+    /* Default background like refinement-box */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Ensure children don't overflow radius */
+    transition: all var(--transition-base);
+    margin-bottom: 20px;
+}
+
+.refinement-content {
+    padding: 16px 16px 8px 16px;
+    /* Less bottom padding because meta is below */
+    min-height: 100px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Specific placeholder style */
+.refinement-content:empty,
+.refinement-content.placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Adjust Preview Meta Container to fit inside the group */
+.preview-meta-container {
+    background: transparent;
+    border-top: 1px solid rgba(0, 0, 0, 0.03);
+    /* Subtle separator */
+    margin-top: 0;
+    /* Remove top margin, handled by padding/layout */
+    padding: 8px 12px 12px 12px;
+    /* Bottom padding for badges */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+[data-theme="dark"] .refinement-group {
+    background: rgba(31, 41, 55, 0.4);
+    /* Dark mode semi-transparent */
+}
+
+[data-theme="dark"] .preview-meta-container {
+    border-top-color: rgba(255, 255, 255, 0.03);
+}
+
+/* === Button State: Regenerate (Discreet) === */
+#settingsPreviewRefreshBtn.btn-regenerate {
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+#settingsPreviewRefreshBtn.btn-regenerate:hover {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+    transform: translateY(-1px);
+}
+
+#settingsPreviewRefreshBtn.btn-regenerate:active {
+    transform: translateY(0);
 }
