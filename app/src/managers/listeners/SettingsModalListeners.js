@@ -856,8 +856,21 @@ export const SettingsModalListeners = {
     },
 
     _setupModalInteractions(addClickListener) {
+        // Clear preview cache when closing the modal
+        const clearCache = () => { this.previewCache = {}; };
+
         DOM.settingsModal.addEventListener('click', (e) => {
-            if (e.target === DOM.settingsModal) SettingsUIManager.cancelSettings();
+            if (e.target === DOM.settingsModal) {
+                clearCache();
+                SettingsUIManager.cancelSettings();
+            }
+        });
+
+        // Attach clear cache to explicit close actions if they exist inside the modal
+        // Note: The actual close logic might be handled elsewhere, but we hook here to clear cache.
+        const closeActions = DOM.settingsModal.querySelectorAll('#cancelSettingsBtn, #saveSettingsBtn, .close-modal');
+        closeActions.forEach(btn => {
+            btn.addEventListener('click', clearCache);
         });
 
 
@@ -890,6 +903,7 @@ export const SettingsModalListeners = {
         DOM.settingsModal.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 e.stopPropagation(); // Empêcher le handler global de recevoir cet événement
+                clearCache();
                 SettingsUIManager.cancelSettings();
             }
         });
