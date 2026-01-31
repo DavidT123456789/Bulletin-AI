@@ -22,6 +22,7 @@ export const SettingsModalListeners = {
     init(appInstance) {
         App = appInstance;
         this.lastPreviewIndex = -1; // Track index for directional animation
+        this.previewCache = {}; // Cache for lab session previews
     },
 
     /**
@@ -480,27 +481,59 @@ export const SettingsModalListeners = {
         const studentId = DOM.previewStudentSelect?.value;
         if (!studentId) return;
 
-        // Reset previous generation result to ensure consistency
+        // Check cache for restoration
         const previewResult = document.getElementById('settingsPreviewResult');
         const metaContainer = document.getElementById('previewMetaContainer');
+        const cached = this.previewCache?.[studentId];
 
-        if (previewResult) {
-            previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
-            previewResult.classList.add('placeholder');
-            previewResult.classList.remove('has-error');
-        }
+        if (cached) {
+            // RESTORE FROM CACHE
+            if (previewResult) {
+                const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(cached.appreciation));
+                previewResult.innerHTML = cleanText;
+                previewResult.classList.remove('placeholder', 'has-error');
+            }
 
-        if (metaContainer) {
-            metaContainer.style.display = 'none';
-        }
+            // Restore Meta Badges
+            const wordCountEl = document.getElementById('settingsPreviewWordCount');
+            if (wordCountEl) {
+                const wordCount = Utils.countWords(cached.appreciation);
+                const charCount = Utils.countCharacters(cached.appreciation);
+                wordCountEl.textContent = `${wordCount} mots • ${charCount} car.`;
+            }
 
-        // Reset button state
-        if (DOM.refreshPreviewBtn) {
-            DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
-            DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
-            // Reset success flag for current session logic
-            // Note: generationSuccess is local to _handlePreviewRefresh, 
-            // but button class removal handles the visual state.
+            const modelBadgeEl = document.getElementById('previewModelBadge');
+            if (modelBadgeEl) {
+                const modelName = MODEL_SHORT_NAMES[cached.modelUsed] || cached.modelUsed;
+                modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelName}`;
+                modelBadgeEl.title = `Généré par ${modelName}`;
+                modelBadgeEl.style.display = 'flex';
+            }
+
+            if (metaContainer) metaContainer.style.display = 'flex';
+
+            // Restore Button Style (Regenerate)
+            if (DOM.refreshPreviewBtn) {
+                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Régénérer';
+                DOM.refreshPreviewBtn.classList.add('btn-regenerate');
+            }
+
+        } else {
+            // NO CACHE -> RESET TO INITIAL STATE
+            if (previewResult) {
+                previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
+                previewResult.classList.add('placeholder');
+                previewResult.classList.remove('has-error');
+            }
+
+            if (metaContainer) {
+                metaContainer.style.display = 'none';
+            }
+
+            if (DOM.refreshPreviewBtn) {
+                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
+            }
         }
 
         // Determine period system and current period
@@ -740,6 +773,13 @@ export const SettingsModalListeners = {
             }
 
             const result = await AppreciationsManager.generateAppreciation(syncedStudentData, true, currentSettings);
+
+            // Save to session cache so it persists when navigating back to this student
+            this.previewCache[studentId] = {
+                appreciation: result.appreciation,
+                modelUsed: result.modelUsed || appState.currentAIModel,
+                timestamp: Date.now()
+            };
 
             if (previewResult) {
                 const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
