@@ -480,6 +480,29 @@ export const SettingsModalListeners = {
         const studentId = DOM.previewStudentSelect?.value;
         if (!studentId) return;
 
+        // Reset previous generation result to ensure consistency
+        const previewResult = document.getElementById('settingsPreviewResult');
+        const metaContainer = document.getElementById('previewMetaContainer');
+
+        if (previewResult) {
+            previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
+            previewResult.classList.add('placeholder');
+            previewResult.classList.remove('has-error');
+        }
+
+        if (metaContainer) {
+            metaContainer.style.display = 'none';
+        }
+
+        // Reset button state
+        if (DOM.refreshPreviewBtn) {
+            DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+            DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
+            // Reset success flag for current session logic
+            // Note: generationSuccess is local to _handlePreviewRefresh, 
+            // but button class removal handles the visual state.
+        }
+
         // Determine period system and current period
         const periodSystem = appState.periodSystem || 'trimestres';
         const periodKeys = periodSystem === 'semestres' ? ['S1', 'S2'] : ['T1', 'T2', 'T3'];
