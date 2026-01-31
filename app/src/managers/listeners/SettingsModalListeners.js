@@ -856,8 +856,25 @@ export const SettingsModalListeners = {
     },
 
     _setupModalInteractions(addClickListener) {
-        // Clear preview cache when closing the modal
-        const clearCache = () => { this.previewCache = {}; };
+        // Clear preview cache and reset UI when closing the modal
+        const clearCache = () => {
+            this.previewCache = {};
+
+            // Reset UI State immediately
+            const previewResult = document.getElementById('settingsPreviewResult');
+            if (previewResult) {
+                previewResult.textContent = 'Cliquez sur "Générer" pour voir l\'impact de vos réglages en direct.';
+                previewResult.classList.add('placeholder');
+                previewResult.classList.remove('has-error');
+            }
+            const meta = document.getElementById('previewMetaContainer');
+            if (meta) meta.style.display = 'none';
+
+            if (DOM.refreshPreviewBtn) {
+                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
+            }
+        };
 
         DOM.settingsModal.addEventListener('click', (e) => {
             if (e.target === DOM.settingsModal) {
@@ -866,9 +883,15 @@ export const SettingsModalListeners = {
             }
         });
 
-        // Attach clear cache to explicit close actions if they exist inside the modal
-        // Note: The actual close logic might be handled elsewhere, but we hook here to clear cache.
-        const closeActions = DOM.settingsModal.querySelectorAll('#cancelSettingsBtn, #saveSettingsBtn, .close-modal');
+        // Attach clear cache to explicit close actions for Personalization Modal
+        const closeSelectors = [
+            '#cancelPersonalizationBtn',
+            '#savePersonalizationBtn',
+            '#closePersonalizationModalBtn',
+            '.close-button'
+        ];
+
+        const closeActions = DOM.settingsModal.querySelectorAll(closeSelectors.join(', '));
         closeActions.forEach(btn => {
             btn.addEventListener('click', clearCache);
         });
