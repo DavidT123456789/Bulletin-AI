@@ -978,6 +978,34 @@
     }
 }
 
+/* État désactivé (session expirée) */
+.cloud-save-menu-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.cloud-save-menu-item.disabled>i,
+.cloud-save-menu-item.disabled .cloud-save-label {
+    color: var(--text-tertiary);
+}
+
+/* Bouton Reconnexion - Style warning */
+.cloud-reconnect-item {
+    background-color: rgba(var(--warning-color-rgb), 0.1);
+    color: var(--warning-color) !important;
+    font-weight: 500;
+}
+
+.cloud-reconnect-item:hover {
+    background-color: rgba(var(--warning-color-rgb), 0.2);
+    color: var(--warning-color) !important;
+}
+
+.cloud-reconnect-item i {
+    color: var(--warning-color) !important;
+}
+
 /* Separator Line */
 #darkModeToggle {
     width: 36px;

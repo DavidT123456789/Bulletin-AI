@@ -48,9 +48,6 @@ export const SyncService = {
     /** @type {Function[]} Listeners for status changes */
     _statusListeners: [],
 
-    /** @type {number|null} Token check interval ID */
-    _tokenCheckInterval: null,
-
     /** @type {boolean} Current network connectivity state */
     _isOnline: true,
 
@@ -172,14 +169,16 @@ export const SyncService = {
     _updateCloudIndicator(state) {
         // Delay to ensure DOM is ready
         setTimeout(() => {
-            // Target both menu items
+            // Target menu items
             const saveBtn = document.getElementById('cloudSaveMenuBtn');
             const loadBtn = document.getElementById('cloudLoadMenuBtn');
+            const reconnectBtn = document.getElementById('cloudReconnectBtn');
 
             if (!saveBtn) return;
 
             // Remove previous state classes
-            saveBtn.classList.remove('status-connected', 'status-expired', 'status-syncing');
+            saveBtn.classList.remove('status-connected', 'status-expired', 'status-syncing', 'disabled');
+            if (loadBtn) loadBtn.classList.remove('disabled');
 
             // Labels and icons map
             const config = {
@@ -187,25 +186,25 @@ export const SyncService = {
                     icon: 'fa-cloud-arrow-up',
                     label: 'Enregistrer (Cloud)',
                     class: 'status-connected',
-                    color: '' // Default text color
+                    disabled: false
                 },
                 expired: {
-                    icon: 'fa-exclamation-triangle',
-                    label: 'Session expirée (Reconnecter)',
+                    icon: 'fa-cloud-arrow-up',
+                    label: 'Enregistrer (Cloud)',
                     class: 'status-expired',
-                    color: 'var(--warning-color)'
+                    disabled: true
                 },
                 syncing: {
                     icon: 'fa-spinner fa-spin',
                     label: 'Enregistrement...',
                     class: 'status-syncing',
-                    color: ''
+                    disabled: false
                 },
                 local: {
                     icon: 'fa-cloud-arrow-up',
                     label: 'Enregistrer (Cloud)',
                     class: '',
-                    color: ''
+                    disabled: false
                 }
             };
 
@@ -214,6 +213,7 @@ export const SyncService = {
             if (state === 'disconnected' && !this._wasConfigured) {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
+                if (reconnectBtn) reconnectBtn.style.display = 'none';
                 return;
             }
 
@@ -224,16 +224,38 @@ export const SyncService = {
             const iconEl = saveBtn.querySelector('i');
             if (iconEl) {
                 iconEl.className = `fas ${currentConfig.icon}`;
-                if (currentConfig.color) iconEl.style.color = currentConfig.color;
-                else iconEl.style.color = '';
+                iconEl.style.color = '';
             }
 
             // Update Label
             const labelEl = saveBtn.querySelector('.cloud-save-label');
             if (labelEl) {
                 labelEl.textContent = currentConfig.label;
-                if (currentConfig.color) labelEl.style.color = currentConfig.color;
-                else labelEl.style.color = '';
+                labelEl.style.color = '';
+            }
+
+            // Handle disabled state for expired session
+            if (currentConfig.disabled) {
+                saveBtn.classList.add('disabled');
+                if (loadBtn) loadBtn.classList.add('disabled');
+            }
+
+            // Show/hide reconnect button with dynamic provider name
+            if (reconnectBtn) {
+                if (state === 'expired') {
+                    reconnectBtn.style.display = 'flex';
+                    // Update label with provider name
+                    const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
+                    const providerLabels = {
+                        'google': 'Google Drive',
+                        'dropbox': 'Dropbox'
+                    };
+                    const label = providerLabels[providerName] || 'Cloud';
+                    const labelEl = reconnectBtn.querySelector('span');
+                    if (labelEl) labelEl.textContent = `Reconnecter ${label}`;
+                } else {
+                    reconnectBtn.style.display = 'none';
+                }
             }
 
             // Update Time Hint (only if connected/syncing)
@@ -242,8 +264,6 @@ export const SyncService = {
                 if (state === 'connected' && this.lastSyncTime) {
                     timeHint.textContent = this._formatLastSyncTime(this.lastSyncTime).replace('Dernière sync : ', '');
                     timeHint.style.display = 'block';
-                } else if (state === 'expired') {
-                    timeHint.style.display = 'none'; // Clean look for warning
                 } else {
                     timeHint.style.display = 'none';
                 }
@@ -320,7 +340,7 @@ export const SyncService = {
     },
 
     /**
-     * Update UI to show connected status after successful auto-reconnection.
+     * Update UI to show connected status after successful reconnection.
      * @private
      * @param {string} providerName - 'google' or 'dropbox'
      */
@@ -354,13 +374,37 @@ export const SyncService = {
 
     /**
      * Attempt to reconnect with user interaction (shows popup).
+     * @param {Object} options
+     * @param {boolean} [options.skipIndicator=false] - If true, don't update cloud indicator (caller handles UI)
      */
-    async reconnect() {
-        if (!this.currentProviderName) return false;
+    async reconnect(options = {}) {
+        const { skipIndicator = false } = options;
+
+        // Try to get provider name from current state or localStorage
+        let providerName = this.currentProviderName;
+        if (!providerName) {
+            providerName = localStorage.getItem('bulletin_sync_provider');
+        }
+
+        if (!providerName) {
+            window.UI?.showNotification('Aucun fournisseur Cloud configuré', 'warning');
+            return false;
+        }
 
         try {
-            this._updateCloudIndicator('syncing');
-            const authorized = await this._provider?.authorize?.({ silent: false });
+            // If provider not loaded yet, connect first (which loads and authorizes)
+            if (!this._provider) {
+                const connected = await this.connect(providerName, { silent: false });
+                if (connected) {
+                    window.UI?.showNotification('Reconnecté à Google Drive', 'success');
+                    return true;
+                }
+                if (!skipIndicator) this._updateCloudIndicator('expired');
+                return false;
+            }
+
+            // Provider already loaded, just reauthorize
+            const authorized = await this._provider.authorize({ silent: false });
             if (authorized) {
                 // Just connect, DO NOT SYNC
                 window.UI?.showNotification('Reconnecté à Google Drive', 'success');
@@ -370,8 +414,9 @@ export const SyncService = {
             }
         } catch (e) {
             console.error('[SyncService] Reconnection failed:', e);
+            window.UI?.showNotification('Erreur de reconnexion', 'error');
         }
-        this._updateCloudIndicator('expired');
+        if (!skipIndicator) this._updateCloudIndicator('expired');
         return false;
     },
 

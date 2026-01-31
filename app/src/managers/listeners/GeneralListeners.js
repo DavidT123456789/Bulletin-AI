@@ -400,6 +400,37 @@ export const GeneralListeners = {
                     }
                 });
             }
+
+            // Handle reconnect button click
+            const reconnectBtn = document.getElementById('cloudReconnectBtn');
+            if (reconnectBtn) {
+                reconnectBtn.addEventListener('click', async () => {
+                    const iconEl = reconnectBtn.querySelector('i');
+                    const originalIconClass = iconEl?.className || 'fas fa-plug';
+
+                    try {
+                        // Show loading state on THIS button
+                        reconnectBtn.classList.add('saving');
+                        if (iconEl) iconEl.className = 'fas fa-spinner fa-spin';
+
+                        const { SyncService } = await import('../../services/SyncService.js');
+                        const success = await SyncService.reconnect({ skipIndicator: true });
+
+                        if (success) {
+                            closeMenu();
+                        } else {
+                            // OAuth cancelled or failed - give feedback
+                            UI.showNotification('Reconnexion annulée', 'info');
+                        }
+                    } catch (error) {
+                        console.error('Reconnection error:', error);
+                        UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
+                    } finally {
+                        reconnectBtn.classList.remove('saving');
+                        if (iconEl) iconEl.className = originalIconClass;
+                    }
+                });
+            }
         }
     }
 };
