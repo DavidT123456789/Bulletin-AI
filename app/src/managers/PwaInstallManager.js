@@ -27,6 +27,10 @@ const Platform = {
         return /Android/.test(navigator.userAgent);
     },
 
+    isDesktop() {
+        return !this.isIOS() && !this.isAndroid();
+    },
+
     isStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
@@ -160,13 +164,22 @@ export const PwaInstallManager = {
         if (!this._shouldShowBanner()) return;
 
         setTimeout(() => {
+            // Desktop: Skip banner, only use menu button
+            // Native browser install prompt is available in Chrome/Edge
+            if (Platform.isDesktop()) {
+                if (this.deferredPrompt || !Platform.isStandalone()) {
+                    this._showMenuButton();
+                }
+                return;
+            }
+
             // iOS (all browsers) - show banner with manual instructions
             if (Platform.needsManualInstall()) {
                 this._showBanner();
                 return;
             }
 
-            // Chrome/Edge - wait for beforeinstallprompt
+            // Android Chrome/Edge - show banner if prompt available
             if (this.deferredPrompt) {
                 this._showBanner();
             }

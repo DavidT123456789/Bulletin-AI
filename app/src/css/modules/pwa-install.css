@@ -443,11 +443,40 @@
    RESPONSIVE
    ============================================ */
 
+/* Hide banner on desktop - use menu button instead */
+@media (min-width: 769px) {
+    .pwa-install-banner {
+        display: none !important;
+    }
+}
+
+/* Tablets and larger phones (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .pwa-install-banner {
+        margin: var(--spacing-md);
+        margin-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+        max-width: 500px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(120%);
+    }
+
+    .pwa-install-banner.visible {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .pwa-install-banner.hiding {
+        transform: translateX(-50%) translateY(120%);
+    }
+}
+
+/* Mobile phones (max-width 480px) */
 @media (max-width: 480px) {
     .pwa-install-banner {
         margin: var(--spacing-sm);
         margin-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0px));
         padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-lg, 12px);
     }
 
     .pwa-banner-content {
@@ -468,6 +497,58 @@
     .pwa-banner-icon img {
         width: 28px;
         height: 28px;
+    }
+
+    .pwa-banner-title {
+        font-size: 0.95rem;
+    }
+
+    .pwa-banner-subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* iOS Guide steps - more compact on small screens */
+    .pwa-ios-step {
+        font-size: 0.8rem;
+    }
+
+    .pwa-ios-step i {
+        width: 18px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Extra small phones (max-width 360px) */
+@media (max-width: 360px) {
+    .pwa-install-banner {
+        margin: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .pwa-banner-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .pwa-banner-icon img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .pwa-banner-title {
+        font-size: 0.9rem;
+    }
+
+    .pwa-banner-subtitle {
+        font-size: 0.75rem;
+    }
+
+    .btn-dismiss {
+        padding: 4px;
+    }
+
+    .btn-dismiss i {
+        font-size: 0.85rem;
     }
 }
 
