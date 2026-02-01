@@ -251,6 +251,7 @@ export function initDOM() {
     DOM.loadingOverlay = document.getElementById('loadingOverlay');
     DOM.loadingText = document.getElementById('loadingText');
     DOM.pwaInstallBanner = document.getElementById('pwaInstallBanner');
+    DOM.installPwaBtn = document.getElementById('installPwaBtn');
     DOM.pwaInstallBtn = document.getElementById('pwaInstallBtn');
     DOM.pwaLaterBtn = document.getElementById('pwaLaterBtn');
     DOM.pwaDismissBtn = document.getElementById('pwaDismissBtn');
