@@ -1233,12 +1233,19 @@ export const ImportWizardManager = {
 
         // FIX: Confirmation before destructive replace operation
         if (strategy === 'replace') {
-            const currentCount = appState.generatedResults?.length || 0;
+            const currentClassId = ClassManager.getCurrentClassId();
+            const currentClassStudents = appState.generatedResults?.filter(r =>
+                r.classId === currentClassId
+            ) || [];
+            const currentCount = currentClassStudents.length;
+
             if (currentCount > 0) {
+                const className = ClassManager.getCurrentClass()?.name || 'cette classe';
                 const confirmed = await new Promise(resolve => {
                     UI.showCustomConfirm(
                         `⚠️ Mode "Remplacer" sélectionné\n\n` +
-                        `Cette action va SUPPRIMER ${currentCount} élève(s) existant(s) avant d'importer.\n\n` +
+                        `Cette action va SUPPRIMER les ${currentCount} élève(s) de "${className}" avant d'importer.\n` +
+                        `Les autres classes ne seront pas affectées.\n\n` +
                         `Continuer ?`,
                         () => resolve(true),
                         () => resolve(false)
@@ -1250,7 +1257,10 @@ export const ImportWizardManager = {
                     return;
                 }
             }
-            appState.generatedResults = [];
+            // CRITICAL: Only remove students from CURRENT class, keep other classes intact
+            appState.generatedResults = appState.generatedResults.filter(r =>
+                r.classId !== currentClassId
+            );
         }
 
         await MassImportManager.importStudentsOnly(this.state.studentsToProcess, this.state.ignoredCount || 0);
