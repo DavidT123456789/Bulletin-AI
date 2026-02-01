@@ -22,16 +22,17 @@
     margin: var(--spacing-md);
     margin-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
 
+    /* Light theme: Amber/Gold gradient (Sand theme) */
     background: linear-gradient(135deg,
-            rgba(var(--primary-rgb, 108, 92, 231), 0.95) 0%,
-            rgba(var(--secondary-rgb, 162, 155, 254), 0.9) 100%);
+            rgba(217, 119, 6, 0.95) 0%,
+            rgba(180, 83, 9, 0.9) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 
     border-radius: var(--radius-xl, 16px);
     box-shadow:
-        0 -4px 30px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        0 -4px 30px rgba(217, 119, 6, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 
     transform: translateY(120%);
     opacity: 0;
@@ -557,9 +558,13 @@
    ============================================ */
 
 [data-theme="dark"] .pwa-install-banner {
+    /* Dark theme: Blue/Violet gradient */
     background: linear-gradient(135deg,
-            rgba(var(--primary-rgb, 108, 92, 231), 0.85) 0%,
-            rgba(var(--secondary-rgb, 162, 155, 254), 0.75) 100%);
+            rgba(108, 92, 231, 0.85) 0%,
+            rgba(162, 155, 254, 0.75) 100%);
+    box-shadow:
+        0 -4px 30px rgba(108, 92, 231, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 [data-theme="dark"] .pwa-modal {
