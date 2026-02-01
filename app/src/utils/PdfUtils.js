@@ -58,20 +58,37 @@ export async function extractTextFromPdf(file) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
 
-        // Reconstruit le texte avec les sauts de ligne
+        // Reconstruit le texte avec les sauts de ligne et espaces
         let lastY = null;
+        let lastX = null;
+        let lastWidth = 0;
         const pageText = [];
 
         for (const item of textContent.items) {
             if (item.str.trim() === '') continue;
 
+            const currentY = item.transform[5];
+            const currentX = item.transform[4];
+
             // Détecte les sauts de ligne basés sur la position Y
-            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+            // Utilise un seuil relatif à la hauteur du texte
+            const lineHeight = item.height || 10;
+            if (lastY !== null && Math.abs(currentY - lastY) > lineHeight * 0.5) {
                 pageText.push('\n');
+            }
+            // Sinon, ajoute un espace si les items sont séparés horizontalement
+            else if (lastX !== null && pageText.length > 0) {
+                const gap = currentX - (lastX + lastWidth);
+                // Si gap significatif entre items sur même ligne, ajoute un espace
+                if (gap > 2) {
+                    pageText.push(' ');
+                }
             }
 
             pageText.push(item.str);
-            lastY = item.transform[5];
+            lastY = currentY;
+            lastX = currentX;
+            lastWidth = item.width || item.str.length * 5; // Estimation si width non dispo
         }
 
         textParts.push(pageText.join(''));

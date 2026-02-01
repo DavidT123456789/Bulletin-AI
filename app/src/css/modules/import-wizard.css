@@ -871,6 +871,61 @@
     }
 }
 
+/* === FORMAT DETECTION BADGE - Shows detected format (MBN, Pronote, etc.) === */
+.format-detection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    margin: 8px auto 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    animation: badge-appear 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.format-detection-badge i {
+    font-size: 0.9rem;
+}
+
+/* MBN format (ENT) - Purple gradient */
+.format-detection-badge.format-mbn {
+    background: linear-gradient(135deg, #9333ea, #7c3aed);
+    color: white;
+}
+
+/* Pronote format - Blue gradient */
+.format-detection-badge.format-pronote {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+/* Vertical format - Teal gradient */
+.format-detection-badge.format-vertical {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    color: white;
+}
+
+/* Generic format fallback */
+.format-detection-badge:not(.format-mbn):not(.format-pronote):not(.format-vertical) {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+@keyframes badge-appear {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* === TOOLTIP ON TRUNCATED CELLS === */
 .import-mapping-table td.has-tooltip {
     cursor: help;

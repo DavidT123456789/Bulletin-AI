@@ -453,6 +453,9 @@ export const ImportWizardManager = {
     _processData() {
         let text = document.getElementById('wizardDataTextarea')?.value?.trim() || '';
 
+        // Reset detected format
+        this.state.detectedFormat = null;
+
         // Auto-détection et conversion des formats PDF (architecture modulaire)
         const pdfResult = text ? autoConvertPdf(text) : null;
         if (pdfResult) {
@@ -460,6 +463,11 @@ export const ImportWizardManager = {
             const textarea = document.getElementById('wizardDataTextarea');
             if (textarea) textarea.value = text;
             UI.showNotification(`Format "${pdfResult.description}" détecté et converti`, 'info');
+            // Store detected format for badge
+            this.state.detectedFormat = {
+                type: pdfResult.name.includes('mbn') ? 'mbn' : 'pronote',
+                name: pdfResult.description
+            };
         }
         // Auto-détection et conversion du format vertical multi-lignes
         else if (text && detectVerticalFormat(text)) {
@@ -467,7 +475,11 @@ export const ImportWizardManager = {
             const textarea = document.getElementById('wizardDataTextarea');
             if (textarea) textarea.value = text;
             UI.showNotification('Format vertical détecté et converti', 'info');
+            this.state.detectedFormat = { type: 'vertical', name: 'Format vertical Pronote' };
         }
+
+        // Update format badge visibility
+        this._updateFormatBadge();
 
         this.state.rawData = text;
 
@@ -539,6 +551,46 @@ export const ImportWizardManager = {
             warningEl.style.display = 'flex';
         } else if (warningEl) {
             warningEl.style.display = 'none';
+        }
+    },
+
+    /**
+     * Update the visual format detection badge
+     * Shows when MBN, Pronote or other formats are detected
+     * @private
+     */
+    _updateFormatBadge() {
+        let badge = document.getElementById('wizardFormatBadge');
+        const container = document.getElementById('modalStep1');
+
+        if (!this.state.detectedFormat) {
+            // Hide badge if exists
+            if (badge) badge.style.display = 'none';
+            return;
+        }
+
+        // Create badge if doesn't exist
+        if (!badge && container) {
+            badge = document.createElement('div');
+            badge.id = 'wizardFormatBadge';
+            badge.className = 'format-detection-badge';
+            // Insert after the textarea container
+            const inputContainer = container.querySelector('.import-input-container');
+            inputContainer?.insertAdjacentElement('afterend', badge);
+        }
+
+        if (badge) {
+            const format = this.state.detectedFormat;
+            const icons = {
+                'mbn': 'fa-school',
+                'pronote': 'fa-graduation-cap',
+                'vertical': 'fa-list'
+            };
+            const icon = icons[format.type] || 'fa-file-lines';
+
+            badge.innerHTML = `<i class="fas ${icon}"></i> ${format.name}`;
+            badge.className = `format-detection-badge format-${format.type}`;
+            badge.style.display = 'inline-flex';
         }
     },
 
