@@ -879,6 +879,9 @@
     color: var(--text-secondary);
     min-width: 18px;
     /* Alignment */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .menu-item:hover i {

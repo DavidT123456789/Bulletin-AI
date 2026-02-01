@@ -5281,7 +5281,8 @@ img {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 700;
     margin-bottom: 16px;
-    letter-spacing: -.02em
+    letter-spacing: -.02em;
+    line-height: 1.2
 }
 
 .lp-faq__subtitle {
