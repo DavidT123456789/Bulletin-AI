@@ -1233,7 +1233,7 @@ export const ImportWizardManager = {
 
         // FIX: Confirmation before destructive replace operation
         if (strategy === 'replace') {
-            const currentClassId = ClassManager.getCurrentClassId();
+            const currentClassId = appState.currentClassId;
             const currentClassStudents = appState.generatedResults?.filter(r =>
                 r.classId === currentClassId
             ) || [];
