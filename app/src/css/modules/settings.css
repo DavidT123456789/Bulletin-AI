@@ -823,7 +823,6 @@
     text-align: center;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
-    cursor: pointer;
     transition: all var(--transition-base);
     font-weight: 600;
     color: var(--text-secondary);
@@ -878,6 +877,7 @@
 .generation-mode-selector label {
     position: relative;
     z-index: 2;
+    cursor: pointer;
 }
 
 /* Si le glider est activé par JS - le glider gère le fond */

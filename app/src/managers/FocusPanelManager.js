@@ -165,7 +165,14 @@ export const FocusPanelManager = {
         }
 
         // Copy
-        if (copyBtn) copyBtn.addEventListener('click', () => this.copy());
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => this.copy());
+            // [NEW] Right-click to copy the prompt directly (symmetric with Generate button)
+            copyBtn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this._copyPromptToClipboard();
+            });
+        }
 
         // Header inputs change detection delegated to FocusPanelHeader
 
@@ -816,6 +823,61 @@ export const FocusPanelManager = {
 
         // Simple HTML reset/escape
         await this._displayPromptModal(promptText, 'Prévisualisation du Prompt');
+    },
+
+    /**
+     * Copie directement le prompt dans le presse-papier (sans modal)
+     * Triggered by right-click on Copy button
+     * @private
+     */
+    async _copyPromptToClipboard() {
+        if (!this.currentStudentId) {
+            UI.showNotification('Aucun élève sélectionné', 'warning');
+            return;
+        }
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Use same logic as _showPromptPreview but copy directly
+        const studentData = this._prepareStudentData(this.currentStudentId, currentPeriod, result);
+        studentData.generatedAppreciation = ''; // Explicitly clear for prompt
+
+        const prompts = AppreciationsManager.getAllPrompts(studentData);
+        const promptText = prompts.appreciation || '';
+
+        if (!promptText) {
+            UI.showNotification('Impossible de générer le prompt', 'warning');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(promptText);
+
+            // Visual feedback on Copy button
+            const copyBtn = document.getElementById('focusCopyBtn');
+            if (copyBtn) {
+                const icon = copyBtn.querySelector('i');
+                const originalClass = icon?.className;
+
+                // Change to check icon and add 'copied' class
+                if (icon) icon.className = 'fas fa-check';
+                copyBtn.classList.add('copied');
+
+                // Reset after delay
+                setTimeout(() => {
+                    if (icon && originalClass) icon.className = originalClass;
+                    copyBtn.classList.remove('copied');
+                }, 1500);
+            }
+
+            UI.showNotification('Prompt copié dans le presse-papier', 'success');
+        } catch (err) {
+            console.error('Failed to copy prompt:', err);
+            UI.showNotification('Échec de la copie du prompt', 'error');
+        }
     },
 
     /**

@@ -252,6 +252,7 @@ export function initDOM() {
     DOM.loadingText = document.getElementById('loadingText');
     DOM.pwaInstallBanner = document.getElementById('pwaInstallBanner');
     DOM.pwaInstallBtn = document.getElementById('pwaInstallBtn');
+    DOM.pwaLaterBtn = document.getElementById('pwaLaterBtn');
     DOM.pwaDismissBtn = document.getElementById('pwaDismissBtn');
     DOM.emptyStateCard = document.getElementById('empty-state-card');
     DOM.noResultsMessage = document.getElementById('noResultsMessage');

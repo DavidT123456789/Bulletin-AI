@@ -23,6 +23,7 @@ import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ListViewManager } from './ListViewManager.js';
+import { PwaInstallManager } from './PwaInstallManager.js';
 
 
 
@@ -192,17 +193,8 @@ export const App = {
     setupAutoSave() { setInterval(() => StorageManager.saveAppState(), CONFIG.AUTO_SAVE_INTERVAL_MS); },
 
     setupPWA() {
-        // PWA Install Prompt
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            if (DOM.installPwaBtn) {
-                DOM.installPwaBtn.style.display = 'block';
-                DOM.installPwaBtn.addEventListener('click', () => {
-                    e.prompt();
-                    e.userChoice.then((choiceResult) => { DOM.installPwaBtn.style.display = 'none'; });
-                });
-            }
-        });
+        // Initialize PWA Install Manager (handles banner + menu button)
+        PwaInstallManager.init();
 
         // Offline Detection - Silent state update (visual feedback via .is-offline class and disabled buttons is sufficient)
         const updateOnlineStatus = () => {

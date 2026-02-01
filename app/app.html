@@ -650,11 +650,12 @@
                 </div> <!-- End focus-content -->
                 <!-- Footer Page 1 -->
                 <div class="focus-footer">
-                    <button id="focusCopyBtn" class="btn btn-secondary" disabled>
+                    <button id="focusCopyBtn" class="btn btn-secondary tooltip" disabled
+                        data-tooltip="Copier l'appréciation<br><i style='opacity:0.7'>Clic droit : copier le prompt</i>">
                         <i class="fas fa-copy"></i> Copier
                     </button>
-                    <button id="focusGenerateBtn" class="btn btn-ai"
-                        data-tooltip="Générer l'appréciation (Ctrl + Entrée)">
+                    <button id="focusGenerateBtn" class="btn btn-ai tooltip"
+                        data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
                         <i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">T2</span>
                     </button>
                     <button id="focusAnalyzeBtn" class="btn btn-secondary">
@@ -2867,6 +2868,43 @@
 
     <!-- Legacy classAnalysisModal ID kept for backward compatibility -->
     <div id="classAnalysisModal" style="display: none;"></div>
+
+    <!-- ==================================================================== -->
+    <!-- PWA INSTALL BANNER - Smart install prompt                             -->
+    <!-- ==================================================================== -->
+    <div id="pwaInstallBanner" class="pwa-install-banner" role="alert" aria-live="polite">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <img src="./assets/icon-192.png" alt="Bulletin AI">
+            </div>
+            <div class="pwa-banner-text">
+                <h4 class="pwa-banner-title">Installer Bulletin AI</h4>
+                <p class="pwa-banner-subtitle">Accès rapide depuis votre écran d'accueil</p>
+            </div>
+            <div class="pwa-banner-actions">
+                <button id="pwaInstallBtn" class="btn-install">
+                    <i class="fas fa-download"></i> Installer
+                </button>
+                <button id="pwaLaterBtn" class="btn-dismiss" aria-label="Plus tard" title="Plus tard">
+                    <i class="fas fa-clock"></i>
+                </button>
+                <button id="pwaDismissBtn" class="btn-dismiss" aria-label="Ne plus afficher" title="Ne plus afficher">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <!-- iOS Safari manual instructions (shown only on iOS) -->
+        <div class="pwa-ios-guide">
+            <div class="pwa-ios-step">
+                <i class="fas fa-arrow-up-from-bracket"></i>
+                <span>Appuyez sur <strong>Partager</strong></span>
+            </div>
+            <div class="pwa-ios-step">
+                <i class="fas fa-plus-square"></i>
+                <span>Puis <strong>Sur l'écran d'accueil</strong></span>
+            </div>
+        </div>
+    </div>
 
     <!-- Hidden file inputs -->
     <input type="file" id="importSettingsInput" accept=".json" style="display: none;">
