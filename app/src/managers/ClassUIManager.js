@@ -712,6 +712,10 @@ export const ClassUIManager = {
                                     </div>
                                 </div>
                                 <div class="class-management-actions">
+                                    <button class="btn-icon-small manage-duplicate-btn" data-class-id="${cls.id}" 
+                                            title="Dupliquer">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
                                     <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
                                             title="Renommer">
                                         <i class="fas fa-pencil"></i>
@@ -1164,6 +1168,42 @@ export const ClassUIManager = {
         };
 
         modalEl.querySelectorAll('.manage-delete-btn').forEach(btn => bindDeleteHandler(btn));
+
+        // Duplicate buttons handler
+        const bindDuplicateHandler = (btn) => {
+            btn.addEventListener('click', async () => {
+                const classId = btn.dataset.classId;
+                if (!classId) return;
+
+                // Visual feedback - button loading state
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+
+                try {
+                    await ClassManager.duplicateClass(classId);
+
+                    // Refresh dropdown and header
+                    this.updateHeaderDisplay();
+                    this.renderClassList();
+                    this.updateStudentCount();
+
+                    // Refresh modal to show the new class
+                    UI?.closeModal(modalEl);
+                    setTimeout(() => {
+                        modalEl.remove();
+                        this.showManageClassesModal();
+                    }, 300);
+                } catch (error) {
+                    console.error('[ClassUIManager] Duplicate failed:', error);
+                    UI?.showNotification('Erreur lors de la duplication', 'error');
+                    btn.innerHTML = originalIcon;
+                    btn.disabled = false;
+                }
+            });
+        };
+
+        modalEl.querySelectorAll('.manage-duplicate-btn').forEach(btn => bindDuplicateHandler(btn));
     },
 
     /**

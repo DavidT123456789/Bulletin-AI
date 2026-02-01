@@ -384,6 +384,67 @@ export const ClassManager = {
         return importedClass;
     },
 
+    /**
+     * Duplique une classe existante avec tous ses élèves
+     * @param {string} classId - ID de la classe à dupliquer
+     * @param {string} [newName] - Nouveau nom (optionnel, sinon "Nom (copie)")
+     * @returns {Object} La classe dupliquée
+     */
+    async duplicateClass(classId, newName = null) {
+        const sourceClass = this.getClassById(classId);
+        if (!sourceClass) {
+            throw new Error('Classe source non trouvée');
+        }
+
+        // Générer le nouveau nom
+        const duplicateName = newName || `${sourceClass.name} (copie)`;
+
+        // Créer la nouvelle classe
+        const duplicatedClass = this.createClass(
+            duplicateName,
+            sourceClass.year,
+            sourceClass.subject
+        );
+
+        // Dupliquer les élèves depuis la mémoire (plus rapide, cohérent avec le reste du code)
+        const sourceStudents = (appState.generatedResults || []).filter(r => r.classId === classId);
+        let studentCount = 0;
+
+        if (sourceStudents.length > 0) {
+            const duplicatedStudents = sourceStudents.map(student => ({
+                ...student,
+                id: generateUUID(),
+                classId: duplicatedClass.id
+            }));
+
+            try {
+                // Mettre à jour la mémoire d'abord (atomic)
+                const updatedResults = [...appState.generatedResults, ...duplicatedStudents];
+
+                // Persister en DB
+                await DBService.putAll('generatedResults', updatedResults);
+
+                // Commit en mémoire seulement si DB OK
+                appState.generatedResults = updatedResults;
+                studentCount = duplicatedStudents.length;
+            } catch (error) {
+                // Rollback: supprimer la classe créée
+                const classes = userSettings.academic.classes || [];
+                const idx = classes.findIndex(c => c.id === duplicatedClass.id);
+                if (idx !== -1) classes.splice(idx, 1);
+                StorageManager?.saveAppState();
+                throw error;
+            }
+        }
+
+        UI?.showNotification(
+            `Classe "${sourceClass.name}" dupliquée${studentCount > 0 ? ` (${studentCount} élève${studentCount > 1 ? 's' : ''})` : ''}`,
+            'success'
+        );
+
+        return duplicatedClass;
+    },
+
     // ============================================
     // Méthodes privées
     // ============================================
