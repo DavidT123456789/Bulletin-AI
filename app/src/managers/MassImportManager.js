@@ -227,8 +227,9 @@ export const MassImportManager = {
      * Crée des cartes "pending" qui pourront être générées plus tard
      * @param {Array} studentsToProcess - Liste des données élèves à importer
      * @param {number} ignoredCount - Nombre de lignes ignorées
+     * @param {Map} [preservedPhotos] - Map des photos à restaurer (nom normalisé -> photo object)
      */
-    async importStudentsOnly(studentsToProcess, ignoredCount) {
+    async importStudentsOnly(studentsToProcess, ignoredCount, preservedPhotos = null) {
         const { StudentDataManager } = await import('./StudentDataManager.js');
         const { StorageManager } = await import('./StorageManager.js');
         const { ClassManager } = await import('./ClassManager.js');
@@ -236,6 +237,7 @@ export const MassImportManager = {
         // Compteurs
         let newCount = 0;
         let updatedCount = 0;
+        let photosRestored = 0;
 
         for (const studentData of studentsToProcess) {
             const normalizedKey = Utils.normalizeName(studentData.nom, studentData.prenom);
@@ -260,6 +262,17 @@ export const MassImportManager = {
             } else {
                 // Créer un nouvel élève en attente
                 const pendingResult = StudentDataManager.createPendingResult(studentData);
+
+                // SMART REPLACE: Restore photo if name matches
+                if (preservedPhotos && preservedPhotos.size > 0) {
+                    const photoKey = `${(studentData.nom || '').toUpperCase().trim()}|${(studentData.prenom || '').trim().toLowerCase()}`;
+                    const savedPhoto = preservedPhotos.get(photoKey);
+                    if (savedPhoto) {
+                        pendingResult.studentPhoto = savedPhoto;
+                        photosRestored++;
+                    }
+                }
+
                 appState.generatedResults.push(pendingResult);
                 newCount++;
             }
@@ -278,6 +291,7 @@ export const MassImportManager = {
         let message = '';
         if (newCount > 0) message += `${newCount} élève(s) importé(s)`;
         if (updatedCount > 0) message += `${newCount > 0 ? ', ' : ''}${updatedCount} mis à jour`;
+        if (photosRestored > 0) message += ` (📷 ${photosRestored} photo(s) restaurées)`;
         if (ignoredCount > 0) message += ` (${ignoredCount} ignoré(s))`;
 
         UI?.showNotification(message || 'Import terminé', 'success');

@@ -1241,11 +1241,17 @@ export const ImportWizardManager = {
 
             if (currentCount > 0) {
                 const className = ClassManager.getCurrentClass()?.name || 'cette classe';
+                // Count students with photos
+                const photosCount = currentClassStudents.filter(s => s.studentPhoto?.data).length;
+                const photoWarning = photosCount > 0
+                    ? `\n📷 ${photosCount} photo(s) seront préservées si les noms correspondent.`
+                    : '';
+
                 const confirmed = await new Promise(resolve => {
                     UI.showCustomConfirm(
                         `⚠️ Mode "Remplacer" sélectionné\n\n` +
-                        `Cette action va SUPPRIMER les ${currentCount} élève(s) de "${className}" avant d'importer.\n` +
-                        `Les autres classes ne seront pas affectées.\n\n` +
+                        `Cette action va remplacer les ${currentCount} élève(s) de "${className}" par les données importées.\n` +
+                        `Les autres classes ne seront pas affectées.${photoWarning}\n\n` +
                         `Continuer ?`,
                         () => resolve(true),
                         () => resolve(false)
@@ -1257,13 +1263,31 @@ export const ImportWizardManager = {
                     return;
                 }
             }
+
+            // SMART REPLACE: Preserve photos by matching student names
+            // Build a map of existing photos by normalized name
+            const photoMap = new Map();
+            for (const student of currentClassStudents) {
+                if (student.studentPhoto?.data) {
+                    // Normalize name: UPPERCASE + trim for matching
+                    const normalizedName = `${(student.nom || '').toUpperCase().trim()}|${(student.prenom || '').trim().toLowerCase()}`;
+                    photoMap.set(normalizedName, student.studentPhoto);
+                }
+            }
+
+            // Store photo map in state for MassImportManager to use
+            this.state._preservedPhotos = photoMap;
+
             // CRITICAL: Only remove students from CURRENT class, keep other classes intact
             appState.generatedResults = appState.generatedResults.filter(r =>
                 r.classId !== currentClassId
             );
         }
 
-        await MassImportManager.importStudentsOnly(this.state.studentsToProcess, this.state.ignoredCount || 0);
+        await MassImportManager.importStudentsOnly(this.state.studentsToProcess, this.state.ignoredCount || 0, this.state._preservedPhotos);
+
+        // Clean up
+        delete this.state._preservedPhotos;
 
         this.close();
     },
