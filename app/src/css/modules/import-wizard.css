@@ -1762,7 +1762,7 @@
 /* [Duplicate column styles removed for cleanup] */
 
 .import-wizard-modal .import-mapping-table th {
-    background: var(--surface-color);
+    background: var(--bg-secondary);
     /* Distinct header background for better hierarchy */
     vertical-align: top;
     min-width: 190px;
@@ -1940,7 +1940,7 @@
     padding: 6px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: var(--bg-color);
+    background: var(--surface-color);
     /* Lighter background for better contrast against table row */
     color: var(--text-primary);
     font-size: 0.85rem;
@@ -1956,11 +1956,19 @@
 }
 
 .import-wizard-modal .import-mapping-table select:focus {
-    background: var(--bg-color);
+    background: var(--surface-color);
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
     outline: none;
     transform: none;
+}
+
+/* Style native options to avoid harsh black on Windows/Chrome */
+/* Style native options to avoid harsh black on Windows/Chrome */
+.import-wizard-modal .import-mapping-table select option {
+    background-color: var(--surface-color);
+    color: var(--text-primary);
+    padding: 12px;
 }
 
 /* === STEP 3 - CONFIRMATION LAYOUT === */
