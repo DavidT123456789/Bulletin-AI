@@ -5,9 +5,7 @@
 
 /* === MODAL CONTAINER === */
 .import-wizard-modal .modal-content {
-    width: 900px;
-    max-width: 95vw;
-    width: 900px;
+    width: 1000px;
     max-width: 95vw;
     /* Fixed height for stability across steps */
     height: 680px;
@@ -36,6 +34,243 @@
     background: var(--bg-color);
 }
 
+/* === SPLIT LAYOUT: Guide Panel + Main Content === */
+.import-wizard-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* === GUIDE PANEL (Left Sidebar) === */
+.wizard-guide-panel {
+    width: 260px;
+    min-width: 260px;
+    background: rgba(var(--primary-color-rgb), 0.04);
+    border-right: 1px solid var(--border-color);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.guide-header i {
+    color: #fbbf24;
+    /* Amber-400 - Jaune doré lumineux (maquette) */
+    font-size: 0.9rem;
+}
+
+/* Guide content sections - show/hide based on step */
+.guide-content {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    animation: guideContentFadeIn 0.3s ease-out;
+}
+
+.guide-content.active {
+    display: flex;
+}
+
+@keyframes guideContentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.guide-section {
+    padding: 12px 0;
+}
+
+.guide-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.guide-section-title i {
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    width: 16px;
+    text-align: center;
+}
+
+.guide-period-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    border-radius: var(--radius-pill);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.guide-text {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 6px 0;
+}
+
+.guide-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.guide-hint.warning {
+    color: var(--warning-color);
+    font-style: normal;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-hint.warning i {
+    font-size: 0.7rem;
+}
+
+.guide-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* Guide source list (Step 1) */
+.guide-source-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.guide-source-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.guide-source-list li i {
+    width: 14px;
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 0.7rem;
+}
+
+/* Guide sample button */
+.guide-sample-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    margin-top: 8px;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+    border-radius: var(--radius-md);
+    color: var(--primary-color);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.guide-sample-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.18);
+    border-color: var(--primary-color);
+}
+
+.guide-sample-btn i {
+    font-size: 0.85rem;
+}
+
+/* Textarea clear button - positioned inside */
+.import-input-container {
+    position: relative;
+}
+
+.textarea-clear-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.1);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--danger-color, #ef4444);
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all var(--transition-fast);
+}
+
+.textarea-clear-btn:hover {
+    opacity: 1;
+    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.2);
+}
+
+/* === MAIN CONTENT AREA === */
+.wizard-main-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .wizard-guide-panel {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .guide-format-chip {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* === RESPONSIVE: Hide guide panel on mobile === */
+@media (max-width: 768px) {
+    .wizard-guide-panel {
+        display: none;
+    }
+
+    .import-wizard-layout {
+        flex-direction: column;
+    }
+}
+
 /* === UNIFIED HEADER === */
 .import-wizard-header-unified {
     display: flex;
@@ -59,6 +294,28 @@
 .wizard-header-title i {
     color: var(--primary-color);
     font-size: 1.2rem;
+}
+
+/* Class name badge in header */
+.wizard-class-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 4px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wizard-class-badge:empty {
+    display: none;
 }
 
 /* === COMPACT STEPPER === */
@@ -440,6 +697,93 @@
     gap: 8px;
     text-align: center;
     z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* === DROP ZONE LOADING STATE === */
+.import-drop-zone.loading .drop-zone-content {
+    opacity: 0.15;
+    pointer-events: none;
+}
+
+.drop-zone-status {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 10;
+    background: rgba(var(--bg-color-rgb, 255, 255, 255), 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: var(--radius-lg);
+}
+
+.import-drop-zone.loading .drop-zone-status {
+    display: flex;
+    animation: fade-in 0.3s ease;
+}
+
+.status-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.status-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* === FOOTER CENTER LAYOUT === */
+/* Use position absolute for true centering between buttons */
+.wizard-footer-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Footer needs relative positioning for absolute child */
+.import-wizard-footer {
+    position: relative;
+}
+
+/* Hide empty badge slot */
+#wizardFormatBadgeSlot:empty {
+    display: none;
+}
+
+/* Compact format badge in footer */
+.wizard-footer-center .format-detection-badge {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    margin: 0;
+    animation: badge-appear 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .drop-zone-icon {
@@ -501,44 +845,6 @@
     color: var(--primary-color);
     text-decoration: none;
     border-bottom: 1px dashed var(--primary-color);
-}
-
-/* Format chips positioned in bottom-left corner of drop zone */
-/* Format chips positioned in bottom-RIGHT corner for better balance */
-.drop-zone-formats {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    left: auto;
-    display: flex;
-    gap: 6px;
-    opacity: 0.9;
-    /* Improved visibility */
-    transition: opacity 0.2s ease;
-}
-
-.import-drop-zone:hover .drop-zone-formats {
-    opacity: 0.9;
-}
-
-.format-chip {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    padding: 4px 10px;
-    background: var(--surface-color);
-    /* Solid background for readability */
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.format-chip i {
-    font-size: 0.65rem;
-    opacity: 0.8;
 }
 
 /* Subtle divider - more minimal */
@@ -736,7 +1042,7 @@
     background-clip: initial !important;
 }
 
-/* Custom Scrollbar for Textarea */
+/* Custom Scrollbar for Textarea - Stays inside rounded border */
 .import-textarea::-webkit-scrollbar {
     width: var(--scrollbar-width);
     height: var(--scrollbar-width);
@@ -744,15 +1050,18 @@
 
 .import-textarea::-webkit-scrollbar-track {
     background: transparent;
+    /* Push track inside the border-radius */
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-right: 4px;
 }
 
 .import-textarea::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
     border-radius: var(--radius-xs);
-    border-radius: var(--radius-xs);
-    /* Removed Floating Effect to match standard width and base.css */
-    border: none;
-    background-clip: border-box;
+    /* Transparent border creates spacing from edge */
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 .import-textarea::-webkit-scrollbar-thumb:hover {
@@ -772,16 +1081,15 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 10px;
+    padding: 6px 14px;
     /* Use --surface-color for consistency with search bar and other interactive elements */
     background: var(--surface-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     border: 1px solid var(--border-color);
 
     /* Centering logic */
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: center;
-    max-width: 200px;
     margin: 0 auto;
 
     /* Enhanced visibility */
@@ -796,12 +1104,12 @@
     background: var(--primary-color);
     color: white;
     font-weight: 600;
-    padding: 2px 6px;
-    min-width: 18px;
+    padding: 2px 8px;
+    min-width: 22px;
     text-align: center;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     font-size: 0.75rem;
-    line-height: 1;
+    line-height: 1.2;
 }
 
 .import-wizard-modal .import-separator-row {
@@ -2948,18 +3256,6 @@
         font-size: 0.9rem;
     }
 
-    /* Format chips: Smaller */
-    .drop-zone-formats {
-        position: static;
-        margin-top: 8px;
-        justify-content: center;
-    }
-
-    .format-chip {
-        padding: 3px 8px;
-        font-size: 0.7rem;
-    }
-
     /* Textarea: Smaller */
     .import-input-container {
         min-height: 120px;
@@ -3263,4 +3559,37 @@
 .mapping-select.mapping-duplicate:focus {
     border-color: var(--warning-color) !important;
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+/* === OPTGROUP STYLING FOR MAPPING SELECTS === */
+/* Visual separators for better UX in column type dropdowns */
+.mapping-select optgroup {
+    font-weight: 600;
+    font-style: normal;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.8em;
+    background: var(--bg-secondary);
+    padding: 8px 0 4px 0;
+}
+
+.mapping-select optgroup option {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.92em;
+    color: var(--text-primary);
+    padding: 6px 12px;
+    background: var(--bg-color);
+}
+
+/* Dark theme enhancements for optgroups */
+[data-theme="dark"] .mapping-select optgroup {
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .mapping-select optgroup option {
+    background: var(--bg-color);
 }

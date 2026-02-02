@@ -201,8 +201,8 @@ export const ImportWizardManager = {
         document.getElementById('wizardDataTextarea')?.addEventListener('input',
             Utils.debounce(() => this._processData(), 300));
 
-        // Step 1: Sample data
-        document.getElementById('wizardSampleBtn')?.addEventListener('click', () => this._loadSample());
+        // Step 1: Sample data (button in guide panel)
+        document.getElementById('guideSampleBtn')?.addEventListener('click', () => this._loadSample());
 
         // Step 1: Clear data
         document.getElementById('wizardClearBtn')?.addEventListener('click', () => {
@@ -256,8 +256,43 @@ export const ImportWizardManager = {
         if (modal) {
             this.currentStep = 1;
             this._updateUI();
+            this._updateHeaderPeriodBadge(); // Show current period in guide
+            this._updateClassBadge(); // Show current class name in header
             UI.openModal(modal);
         }
+    },
+
+    /**
+     * Update the class name badge in the wizard header
+     * @private
+     */
+    _updateClassBadge() {
+        const badge = document.getElementById('wizardClassBadge');
+        if (!badge) return;
+
+        const currentClass = ClassManager.getCurrentClass();
+        badge.textContent = currentClass?.name || '';
+    },
+
+    /**
+     * Update the period badge in the guide panel
+     * Shows the full period label (Semestre 1, Trimestre 2, etc.) for clarity
+     * @private
+     */
+    _updateHeaderPeriodBadge() {
+        const periodCode = appState.currentPeriod || 'S1';
+        let label = periodCode;
+
+        // Convert short codes to full labels
+        if (periodCode.startsWith('S')) {
+            label = `Semestre ${periodCode.substring(1)}`;
+        } else if (periodCode.startsWith('T')) {
+            label = `Trimestre ${periodCode.substring(1)}`;
+        }
+
+        // Update guide panel badge
+        const guideBadge = document.getElementById('guidePeriodBadge');
+        if (guideBadge) guideBadge.textContent = label;
     },
 
     /**
@@ -399,6 +434,9 @@ export const ImportWizardManager = {
             step3Actions.style.display = this.currentStep === 3 ? 'flex' : 'none';
         }
 
+        // Update guide panel content based on current step
+        this._updateGuidePanel();
+
         // Update preview if on step 3
         if (this.currentStep === 3) {
             this._updatePreview();
@@ -406,22 +444,45 @@ export const ImportWizardManager = {
     },
 
     /**
+     * Update the guide panel to show contextual content for current step
+     * @private
+     */
+    _updateGuidePanel() {
+        const guideContents = document.querySelectorAll('.guide-content');
+        guideContents.forEach(content => {
+            const step = parseInt(content.dataset.guideStep);
+            content.classList.toggle('active', step === this.currentStep);
+        });
+    },
+
+    /**
      * Handle file drop/select
      */
     async _handleFile(file) {
+        const dropZone = document.getElementById('wizardDropZone');
+        const statusText = document.getElementById('wizardStatusText');
+
+        // Helper to show/hide loading state
+        const setLoading = (loading, text = 'Extraction du PDF...') => {
+            if (dropZone) dropZone.classList.toggle('loading', loading);
+            if (statusText) statusText.textContent = text;
+        };
+
         // Gestion des PDFs avec extraction de texte
         if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
             try {
-                UI.showNotification('Extraction du texte PDF...', 'info');
+                setLoading(true, 'Extraction du PDF...');
 
                 const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
                 const textContent = await extractTextFromPdf(file);
 
                 document.getElementById('wizardDataTextarea').value = textContent;
+                setLoading(false);
                 this._processData();
-                UI.showNotification('PDF importé', 'success');
+                // No success notification - badge in footer provides feedback
             } catch (error) {
                 console.error('Erreur extraction PDF:', error);
+                setLoading(false);
                 UI.showNotification('Erreur PDF: ' + error.message, 'error');
             }
             return;
@@ -462,11 +523,12 @@ export const ImportWizardManager = {
             text = pdfResult.data;
             const textarea = document.getElementById('wizardDataTextarea');
             if (textarea) textarea.value = text;
-            UI.showNotification(`Format "${pdfResult.description}" détecté et converti`, 'info');
-            // Store detected format for badge
+            // No notification - badge in footer provides visual feedback
+            // Store detected format for badge AND for format-aware column detection
             this.state.detectedFormat = {
                 type: pdfResult.name.includes('mbn') ? 'mbn' : 'pronote',
-                name: pdfResult.description
+                name: pdfResult.description,
+                parserName: pdfResult.name // Full parser name for intelligent mapping
             };
         }
         // Auto-détection et conversion du format vertical multi-lignes
@@ -474,7 +536,7 @@ export const ImportWizardManager = {
             text = convertVerticalToTabular(text);
             const textarea = document.getElementById('wizardDataTextarea');
             if (textarea) textarea.value = text;
-            UI.showNotification('Format vertical détecté et converti', 'info');
+            // No notification - badge provides feedback
             this.state.detectedFormat = { type: 'vertical', name: 'Format vertical Pronote' };
         }
 
@@ -557,11 +619,12 @@ export const ImportWizardManager = {
     /**
      * Update the visual format detection badge
      * Shows when MBN, Pronote or other formats are detected
+     * Badge is now displayed in the footer for better UX
      * @private
      */
     _updateFormatBadge() {
         let badge = document.getElementById('wizardFormatBadge');
-        const container = document.getElementById('modalStep1');
+        const footerSlot = document.getElementById('wizardFormatBadgeSlot');
 
         if (!this.state.detectedFormat) {
             // Hide badge if exists
@@ -569,14 +632,12 @@ export const ImportWizardManager = {
             return;
         }
 
-        // Create badge if doesn't exist
-        if (!badge && container) {
+        // Create badge if doesn't exist - now in footer slot
+        if (!badge && footerSlot) {
             badge = document.createElement('div');
             badge.id = 'wizardFormatBadge';
             badge.className = 'format-detection-badge';
-            // Insert after the textarea container
-            const inputContainer = container.querySelector('.import-input-container');
-            inputContainer?.insertAdjacentElement('afterend', badge);
+            footerSlot.appendChild(badge);
         }
 
         if (badge) {
@@ -729,21 +790,47 @@ export const ImportWizardManager = {
         }
 
         const cols = this.state.columnCount;
-        const periods = Utils.getPeriods();
 
-        // Options with internal value and display text
-        const options = [
-            { v: 'IGNORE', t: 'Ignorer' },
-            { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
-            { v: 'STATUT', t: 'Statut' },
-            ...periods.flatMap(p => [
-                { v: `DEV_${p}`, t: `Nb éval. ${p}` },
-                { v: `MOY_${p}`, t: `Moy. ${p}` },
-                { v: `APP_${p}`, t: `Appr. ${p}` },
-                { v: `CTX_${p}`, t: `Contexte ${p}` }
-            ]),
-            { v: 'INSTRUCTIONS', t: 'Contexte (global)' }
-        ];
+        // Build options dynamically based on CURRENT period only
+        // This simplifies the dropdown significantly - no need to show all periods
+        const currentPeriod = appState.currentPeriod || 'S1';
+        const periodLabel = currentPeriod.startsWith('S')
+            ? `Semestre ${currentPeriod.slice(1)}`
+            : `Trimestre ${currentPeriod.slice(1)}`;
+
+        const buildOptionsHtml = (selectedValue) => {
+            let html = '';
+
+            // General options (no group)
+            const generalOptions = [
+                { v: 'IGNORE', t: 'Ignorer' },
+                { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
+                { v: 'STATUT', t: 'Statut' }
+            ];
+            html += generalOptions.map(o =>
+                `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
+            ).join('');
+
+            // Current period options only (in optgroup for visual clarity)
+            html += `<optgroup label="${periodLabel}">`;
+            const periodOptions = [
+                { v: `DEV_${currentPeriod}`, t: `Nb éval.` },
+                { v: `MOY_${currentPeriod}`, t: `Moyenne` },
+                { v: `APP_${currentPeriod}`, t: `Appréciation` },
+                { v: `CTX_${currentPeriod}`, t: `Contexte` }
+            ];
+            html += periodOptions.map(o =>
+                `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
+            ).join('');
+            html += '</optgroup>';
+
+            // Global context (used for instructions that apply across all periods)
+            html += `<optgroup label="Général">`;
+            html += `<option value="INSTRUCTIONS" ${selectedValue === 'INSTRUCTIONS' ? 'selected' : ''}>Instructions (global)</option>`;
+            html += '</optgroup>';
+
+            return html;
+        };
 
         // Try to load saved format (only if not forcing auto and column count matches)
         const savedFormat = forceAuto ? null : this._loadSavedFormat();
@@ -772,7 +859,7 @@ export const ImportWizardManager = {
 
             html += `<th>
                 <select class="mapping-select" data-col-index="${i}">
-                    ${options.map(o => `<option value="${o.v}" ${o.v === initialValue ? 'selected' : ''}>${o.t}</option>`).join('')}
+                    ${buildOptionsHtml(initialValue)}
                 </select>
             </th>`;
         }
@@ -871,13 +958,26 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Guess column type using PATTERN-BASED detection
-     * Pattern: Nom | Statut | [Moy, Appr] × N périodes | Contexte
+     * Guess column type using FORMAT-AWARE detection
+     * Uses the detected PDF format for smarter mapping:
+     * - MBN: Nom | Nb notes | Moy | Appréciation
+     * - Pronote: Nom | Nb notes | Moy | (empty)
+     * - Generic: Nom | Statut | [Moy, Appr] × N périodes | Contexte
      * @private
      */
     _guessTypeTag(sample, index) {
-        const periods = Utils.getPeriods();
         const totalCols = this.state.columnCount;
+        const periods = Utils.getPeriods(); // Needed for generic multi-period data
+        // CRITICAL: Use the CURRENT period selected by user, not periods[0]
+        const currentPeriod = appState.currentPeriod || 'S1';
+
+        // Format-specific detection for PDF sources
+        const format = this.state.detectedFormat;
+        if (format?.parserName) {
+            return this._guessTypeTagForFormat(format.parserName, index, totalCols, currentPeriod, sample);
+        }
+
+        // === GENERIC FALLBACK for non-PDF data ===
 
         // Col 0: ALWAYS Name
         if (index === 0) return 'NOM_PRENOM';
@@ -901,6 +1001,71 @@ export const ImportWizardManager = {
 
         // Fallback
         return 'IGNORE';
+    },
+
+    /**
+     * Format-specific column type detection for known PDF formats
+     * Each parser has a known output structure - use that knowledge!
+     * @private
+     * @param {string} parserName - The PDF parser that was used (e.g., 'mbn-bilan')
+     * @param {number} index - Column index
+     * @param {number} totalCols - Total number of columns
+     * @param {string} currentPeriod - Current period (S1, T1, etc.)
+     * @param {string} sample - Sample value from first data row for this column
+     */
+    _guessTypeTagForFormat(parserName, index, totalCols, currentPeriod, sample = '') {
+        // MBN Bilan Appréciations: NOM Prénom | Dev | Moy | Appréciation
+        // Output structure from convertMbnBilan: exactly 4 columns
+        if (parserName === 'mbn-bilan') {
+            switch (index) {
+                case 0: return 'NOM_PRENOM';
+                case 1: return `DEV_${currentPeriod}`;  // Nombre d'évaluations
+                case 2: return `MOY_${currentPeriod}`;  // Moyenne
+                case 3: {
+                    // Smart detection: if ALL appreciation values are empty, set to IGNORE
+                    const isColumnEmpty = this._isColumnEmpty(index);
+                    return isColumnEmpty ? 'IGNORE' : `APP_${currentPeriod}`;
+                }
+                default: return 'IGNORE';
+            }
+        }
+
+        // Pronote Bilan: NOM Prénom | Dev | Moy | (empty for context)
+        // Output structure from convertPronoteReport: 4 columns, last often empty
+        if (parserName === 'pronote-bilan') {
+            switch (index) {
+                case 0: return 'NOM_PRENOM';
+                case 1: return `DEV_${currentPeriod}`;  // Nombre d'évaluations
+                case 2: return `MOY_${currentPeriod}`;  // Moyenne
+                case 3: return 'IGNORE';  // Usually empty in Pronote PDF
+                default: return 'IGNORE';
+            }
+        }
+
+        // Unknown format - use generic detection
+        if (index === 0) return 'NOM_PRENOM';
+        if (index === 1) return 'STATUT';
+        if (index === totalCols - 1) return 'INSTRUCTIONS';
+        return 'IGNORE';
+    },
+
+    /**
+     * Check if a column is entirely empty across all data rows
+     * Used to detect columns that should be ignored (e.g., unfilled appreciations)
+     * @private
+     * @param {number} colIndex - Column index to check
+     * @returns {boolean} True if all values in this column are empty
+     */
+    _isColumnEmpty(colIndex) {
+        if (!this.state.lines || this.state.lines.length === 0) return true;
+
+        // Check all rows (or up to first 20 for performance)
+        const linesToCheck = this.state.lines.slice(0, 20);
+
+        return linesToCheck.every(line => {
+            const value = line[colIndex];
+            return !value || value.trim() === '';
+        });
     },
 
     /**
@@ -1306,13 +1471,27 @@ export const ImportWizardManager = {
             studentsToProcess: [],
             newStudents: [],
             updatedStudents: [],
-            departedStudents: []
+            departedStudents: [],
+            detectedFormat: null,
+            _formatNotificationShown: false
         };
         document.getElementById('wizardDataTextarea').value = '';
 
         // Clean up dynamically created warning elements
         document.getElementById('wizardMappingWarning')?.remove();
         document.getElementById('wizardSingleColumnWarning')?.remove();
+
+        // Clean up format badge
+        const formatBadge = document.getElementById('wizardFormatBadge');
+        if (formatBadge) formatBadge.remove();
+
+        // Hide line count
+        const lineCount = document.getElementById('wizardStep1LineCount');
+        if (lineCount) lineCount.style.display = 'none';
+
+        // Hide clear button
+        const clearBtn = document.getElementById('wizardClearBtn');
+        if (clearBtn) clearBtn.style.display = 'none';
 
         this._updateUI();
     }

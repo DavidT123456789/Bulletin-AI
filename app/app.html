@@ -738,7 +738,8 @@
             <!-- Unified Header & Stepper -->
             <div class="import-wizard-header-unified">
                 <div class="wizard-header-title">
-                    <i class="fas fa-download"></i> <span>Importer des élèves</span>
+                    <i class="fas fa-download"></i> <span>Import</span>
+                    <span class="wizard-class-badge" id="wizardClassBadge"></span>
                 </div>
 
                 <div class="import-wizard-stepper compact">
@@ -763,132 +764,232 @@
                 </button>
             </div>
 
-            <div class="modal-body import-wizard-body">
-                <!-- Step 1: Data Input -->
-                <!-- Step 1: Data Input -->
-                <div class="wizard-step-content active" id="modalStep1" style="display: block;">
-                    <div class="step-one-layout">
-                        <!-- Enhanced Drop Zone -->
-                        <div class="import-drop-zone" id="wizardDropZone">
-                            <div class="drop-zone-content">
-                                <div class="drop-zone-icon">
-                                    <i class="fas fa-cloud-arrow-up"></i>
+            <div class="import-wizard-layout">
+                <!-- LEFT: Guide Panel -->
+                <aside class="wizard-guide-panel" id="wizardGuidePanel">
+                    <div class="guide-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Guide</span>
+                    </div>
+
+                    <!-- Step 1 Guide Content -->
+                    <div class="guide-content active" data-guide-step="1">
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-calendar-alt"></i>
+                                Période active
+                            </div>
+                            <span class="guide-period-badge" id="guidePeriodBadge">Semestre 2</span>
+                            <p class="guide-text">Les données seront importées pour cette période.</p>
+                            <p class="guide-hint">Pour changer, fermez et sélectionnez une autre période.</p>
+                        </div>
+                        <div class="guide-divider"></div>
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-file-import"></i>
+                                Sources acceptées
+                            </div>
+                            <p class="guide-text">Glissez un fichier ou collez des données depuis :</p>
+                            <ul class="guide-source-list">
+                                <li><i class="fas fa-file-pdf"></i> PDF MBN / Pronote</li>
+                                <li><i class="fas fa-file-excel"></i> Excel / CSV</li>
+                                <li><i class="fas fa-table"></i> Copier-coller depuis un tableur</li>
+                            </ul>
+                        </div>
+                        <div class="guide-divider"></div>
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-flask"></i>
+                                Découvrir le fonctionnement
+                            </div>
+                            <p class="guide-text">Testez l'import avec des données fictives :</p>
+                            <button class="guide-sample-btn" id="guideSampleBtn">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                Charger un exemple
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 Guide Content -->
+                    <div class="guide-content" data-guide-step="2">
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-columns"></i>
+                                Mapping des colonnes
+                            </div>
+                            <p class="guide-text">Associez chaque colonne de vos données à un champ de l'application.
+                            </p>
+                        </div>
+                        <div class="guide-divider"></div>
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-magic"></i>
+                                Détection automatique
+                            </div>
+                            <p class="guide-text">Les colonnes sont pré-remplies automatiquement. Ajustez si nécessaire.
+                            </p>
+                            <p class="guide-hint">Le bouton "Détection auto" réinitialise les choix.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 Guide Content -->
+                    <div class="guide-content" data-guide-step="3">
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-check-circle"></i>
+                                Vérification finale
+                            </div>
+                            <p class="guide-text">Vérifiez les élèves avant de confirmer l'import.</p>
+                        </div>
+                        <div class="guide-divider"></div>
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-code-merge"></i>
+                                Fusionner
+                            </div>
+                            <p class="guide-text">Ajoute les nouveaux et met à jour les existants. Conserve les absents.
+                            </p>
+                        </div>
+                        <div class="guide-divider"></div>
+                        <div class="guide-section">
+                            <div class="guide-section-title">
+                                <i class="fas fa-arrows-rotate"></i>
+                                Remplacer
+                            </div>
+                            <p class="guide-text">Remplace toute la liste. Les absents du fichier seront supprimés.</p>
+                            <p class="guide-hint warning"><i class="fas fa-exclamation-triangle"></i> Action
+                                irréversible</p>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- RIGHT: Main Content -->
+                <div class="wizard-main-content">
+                    <div class="modal-body import-wizard-body">
+                        <!-- Step 1: Data Input -->
+                        <div class="wizard-step-content active" id="modalStep1" style="display: block;">
+                            <div class="step-one-layout">
+                                <!-- Enhanced Drop Zone -->
+                                <div class="import-drop-zone" id="wizardDropZone">
+                                    <div class="drop-zone-content">
+                                        <div class="drop-zone-icon">
+                                            <i class="fas fa-cloud-arrow-up"></i>
+                                        </div>
+                                        <div class="drop-zone-text">
+                                            <span class="drop-zone-title">Glisser-déposer un fichier</span>
+                                            <span class="drop-zone-hint">ou <u>cliquer pour parcourir</u></span>
+                                        </div>
+                                    </div>
+                                    <!-- Loading status overlay -->
+                                    <div class="drop-zone-status" id="wizardDropZoneStatus">
+                                        <div class="status-spinner"></div>
+                                        <span class="status-text" id="wizardStatusText">Extraction du PDF...</span>
+                                    </div>
+                                    <input type="file" id="wizardFileInput" accept=".csv,.xlsx,.xls,.txt,.pdf"
+                                        style="display: none;">
                                 </div>
-                                <div class="drop-zone-text">
-                                    <span class="drop-zone-title">Glisser-déposer un fichier</span>
-                                    <span class="drop-zone-hint">ou <u>cliquer pour parcourir</u></span>
+
+                                <div class="import-divider-horizontal">
+                                    <span>ou coller les données</span>
                                 </div>
-                                <div class="drop-zone-formats">
-                                    <span class="format-chip"><i class="fas fa-file-pdf"></i> PDF</span>
-                                    <span class="format-chip"><i class="fas fa-file-excel"></i> Excel</span>
-                                    <span class="format-chip"><i class="fas fa-file-csv"></i> CSV</span>
-                                    <span class="format-chip"><i class="fas fa-file-lines"></i> TXT</span>
+
+                                <!-- Textarea with clear button -->
+                                <div class="import-input-container">
+                                    <textarea id="wizardDataTextarea" class="import-textarea" rows="6"
+                                        placeholder="NOM Prénom      Moy.    Appréciation...&#10;MARTIN Lucas    12,5    Bon travail..."></textarea>
+                                    <button class="btn-text-action textarea-clear-btn tooltip" id="wizardClearBtn"
+                                        data-tooltip="Effacer les données" aria-label="Effacer les données"
+                                        style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <input type="file" id="wizardFileInput" accept=".csv,.xlsx,.xls,.txt,.pdf"
-                                style="display: none;">
                         </div>
 
-                        <div class="import-divider-horizontal">
-                            <span>ou coller les données</span>
-                        </div>
+                        <!-- Step 2: Mapping -->
+                        <div class="wizard-step-content" id="modalStep2">
+                            <div class="wizard-step-header-group">
+                                <div class="import-separator-row">
+                                    <label style="white-space:nowrap">Séparateur :</label>
+                                    <select id="wizardSeparatorSelect" class="import-separator-select">
+                                        <option value="tab">Tabulation</option>
+                                        <option value=";">Point-virgule</option>
+                                        <option value=",">Virgule</option>
+                                        <option value="|">Barre (|)</option>
+                                    </select>
+                                </div>
 
-                        <!-- Textarea with integrated sample button -->
-                        <div class="import-input-container">
-                            <textarea id="wizardDataTextarea" class="import-textarea" rows="6"
-                                placeholder="NOM Prénom      Moy. T1    Appréciation T1...&#10;MARTIN Lucas    12,5       Bon travail..."></textarea>
-                            <div class="step-actions-row">
-                                <button class="btn-text-action" id="wizardClearBtn" style="display: none;">
-                                    <i class="fas fa-trash-alt"></i> Vider
+                                <button class="btn btn-ghost btn-sm" id="wizardAutoDetectBtn"
+                                    title="Relancer la détection automatique des colonnes">
+                                    <i class="fas fa-wand-magic-sparkles"></i> Détection auto
                                 </button>
-                                <button class="btn-text-action" id="wizardSampleBtn">
-                                    <i class="fas fa-file-lines"></i> Exemple
-                                </button>
+                            </div>
+
+                            <div class="import-mapping-table-container" id="wizardMappingContainer">
+                                <!-- Generated by JS: mapping table -->
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Step 2: Mapping -->
-                <div class="wizard-step-content" id="modalStep2">
-                    <div class="wizard-step-header-group">
-                        <div class="import-separator-row">
-                            <label style="white-space:nowrap">Séparateur :</label>
-                            <select id="wizardSeparatorSelect" class="import-separator-select">
-                                <option value="tab">Tabulation</option>
-                                <option value=";">Point-virgule</option>
-                                <option value=",">Virgule</option>
-                                <option value="|">Barre (|)</option>
-                            </select>
-                        </div>
-
-                        <button class="btn btn-ghost btn-sm" id="wizardAutoDetectBtn"
-                            title="Relancer la détection automatique des colonnes">
-                            <i class="fas fa-wand-magic-sparkles"></i> Détection auto
-                        </button>
-                    </div>
-
-                    <div class="import-mapping-table-container" id="wizardMappingContainer">
-                        <!-- Generated by JS: mapping table -->
-                    </div>
-                </div>
-
-                <!-- Step 3: Confirm -->
-                <div class="wizard-step-content" id="modalStep3">
-                    <div class="wizard-step3-header">
-                        <h4 class="wizard-step-title">Vérifiez avant d'importer</h4>
-                        <span class="period-badge-pill" id="wizardPeriodBadge">Trimestre 1</span>
-                    </div>
-
-                    <div class="import-preview-grid" id="wizardPreviewGrid">
-                        <div class="import-preview-col import-col-new">
-                            <div class="import-col-header">
-                                <i class="fas fa-user-plus"></i>
-                                <span>Nouveaux</span>
-                                <span class="import-col-count" id="wizardNewCount">0</span>
+                        <!-- Step 3: Confirm -->
+                        <div class="wizard-step-content" id="modalStep3">
+                            <div class="wizard-step3-header">
+                                <h4 class="wizard-step-title">Vérifiez avant d'importer</h4>
+                                <span class="period-badge-pill" id="wizardPeriodBadge">Trimestre 1</span>
                             </div>
-                            <ul class="import-col-list" id="wizardNewList"></ul>
-                        </div>
-                        <div class="import-preview-col import-col-updated">
-                            <div class="import-col-header">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Mis à jour</span>
-                                <span class="import-col-count" id="wizardUpdatedCount">0</span>
-                            </div>
-                            <ul class="import-col-list" id="wizardUpdatedList"></ul>
-                        </div>
-                        <div class="import-preview-col import-col-departed">
-                            <div class="import-col-header">
-                                <i class="fas fa-user-minus"></i>
-                                <span>Départs</span>
-                                <span class="import-col-count" id="wizardDepartedCount">0</span>
-                            </div>
-                            <ul class="import-col-list" id="wizardDepartedList"></ul>
-                        </div>
-                    </div>
 
-                    <!-- Strategy Options - Card Style with Checkmark -->
-                    <div class="import-strategy-section">
-                        <label class="import-strategy-radio">
-                            <input type="radio" name="wizardStrategy" value="merge" checked>
-                            <i class="fas fa-code-merge strategy-icon"></i>
-                            <span class="strategy-radio-content">
-                                <strong>Fusionner</strong>
-                                <span class="strategy-desc">Ajoute les nouveaux élèves et met à jour les informations
-                                    des élèves existants. Les absents sont conservés.</span>
-                            </span>
-                            <span class="strategy-check"><i class="fas fa-check"></i></span>
-                        </label>
-                        <label class="import-strategy-radio">
-                            <input type="radio" name="wizardStrategy" value="replace">
-                            <i class="fas fa-arrows-rotate strategy-icon"></i>
-                            <span class="strategy-radio-content">
-                                <strong>Remplacer tout</strong>
-                                <span class="strategy-desc">Remplace la liste actuelle par ce fichier. Attention : les
-                                    élèves non présents dans ce fichier seront supprimés.</span>
-                            </span>
-                            <span class="strategy-check"><i class="fas fa-check"></i></span>
-                        </label>
+                            <div class="import-preview-grid" id="wizardPreviewGrid">
+                                <div class="import-preview-col import-col-new">
+                                    <div class="import-col-header">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span>Nouveaux</span>
+                                        <span class="import-col-count" id="wizardNewCount">0</span>
+                                    </div>
+                                    <ul class="import-col-list" id="wizardNewList"></ul>
+                                </div>
+                                <div class="import-preview-col import-col-updated">
+                                    <div class="import-col-header">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>Mis à jour</span>
+                                        <span class="import-col-count" id="wizardUpdatedCount">0</span>
+                                    </div>
+                                    <ul class="import-col-list" id="wizardUpdatedList"></ul>
+                                </div>
+                                <div class="import-preview-col import-col-departed">
+                                    <div class="import-col-header">
+                                        <i class="fas fa-user-minus"></i>
+                                        <span>Départs</span>
+                                        <span class="import-col-count" id="wizardDepartedCount">0</span>
+                                    </div>
+                                    <ul class="import-col-list" id="wizardDepartedList"></ul>
+                                </div>
+                            </div>
+
+                            <!-- Strategy Options - Card Style with Checkmark -->
+                            <div class="import-strategy-section">
+                                <label class="import-strategy-radio">
+                                    <input type="radio" name="wizardStrategy" value="merge" checked>
+                                    <i class="fas fa-code-merge strategy-icon"></i>
+                                    <span class="strategy-radio-content">
+                                        <strong>Fusionner</strong>
+                                        <span class="strategy-desc">Ajoute les nouveaux élèves et met à jour les
+                                            informations
+                                            des élèves existants. Les absents sont conservés.</span>
+                                    </span>
+                                    <span class="strategy-check"><i class="fas fa-check"></i></span>
+                                </label>
+                                <label class="import-strategy-radio">
+                                    <input type="radio" name="wizardStrategy" value="replace">
+                                    <i class="fas fa-arrows-rotate strategy-icon"></i>
+                                    <span class="strategy-radio-content">
+                                        <strong>Remplacer tout</strong>
+                                        <span class="strategy-desc">Remplace la liste actuelle par ce fichier. Attention
+                                            : les
+                                            élèves non présents dans ce fichier seront supprimés.</span>
+                                    </span>
+                                    <span class="strategy-check"><i class="fas fa-check"></i></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -897,9 +998,14 @@
             <!-- Step 1 Footer -->
             <div class="import-wizard-footer" id="wizardStep1Footer">
                 <button class="btn btn-ghost" id="wizardStep1CancelBtn">Annuler</button>
-                <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
-                    <span class="import-count-badge" id="wizardLineCountBadge">0</span>
-                    <span>lignes détectées</span>
+                <div class="wizard-footer-center">
+                    <!-- Format badge slot (populated dynamically) -->
+                    <div id="wizardFormatBadgeSlot"></div>
+                    <!-- Line count -->
+                    <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
+                        <span class="import-count-badge" id="wizardLineCountBadge">0</span>
+                        <span>lignes détectées</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary" id="wizardStep1NextBtn" disabled>
                     Suivant <i class="fas fa-arrow-right"></i>

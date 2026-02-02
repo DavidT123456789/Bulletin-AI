@@ -3,29 +3,33 @@
  * @module data/SampleData
  * 
  * Single source of truth for all sample/demo data in the application.
- * Uses pipe (|) separator for better readability in demos.
+ * Simplified to single-period format for clarity and consistency.
  */
 
 /**
  * Sample student data for import demonstrations
- * Format: NOM Prénom | STATUT | MOY T1 | APP T1 | MOY T2 | APP T2 | MOY T3 | CONTEXTE
+ * Format: NOM Prénom | STATUT | MOYENNE | APPRECIATION | CONTEXTE
  * 
- * Note: Always include the STATUT column (empty string for students without status)
- * to maintain consistent column count for proper auto-mapping.
+ * This is a single-period template matching the current wizard behavior.
  */
-export const SAMPLE_IMPORT_DATA = `MARTIN Lucas |  | 12.5 | Élève sérieux et appliqué. | 14 | Continuez ainsi, très bonne progression. | 14.5 | Participation active, élève moteur de la classe.
-DURAND Sophie | PPRE | 9 | Difficultés persistantes. | 10 | Légers progrès, à encourager. | 11 | Efforts notables, continuez sur cette lancée.
-BERNARD Thomas |  | 15 | Très bon trimestre. | 15.5 | Excellente attitude en classe. | 16 | Maintien des efforts, félicitations.
-PETIT Emma |  | 12 | Convenable, peut mieux faire. | 13 | En hausse, bravo ! | 13.5 | Travail régulier et soigné.
-ROBERT Antoine |  | 10 | Doit s'investir davantage. | 9.5 | Baisse d'attention inquiétante. | 9 | Manque d'investissement, ressaisissez-vous.
-MOREAU Julie |  | 17 | Excellent travail. | 17.5 | Parfait, rien à redire. | 17.5 | Toujours au top, bravo !
-LEFEVRE Hugo | Délégué | 11 | Moyen mais potentiel présent. | 11.5 | Du mieux, continuez. | 12 | Bon potentiel à exploiter pleinement.
-SIMON Clara | ULIS | 14 | Bien intégrée, bon travail. | 14.5 | Très bonne progression. | 15 | Élève en progression constante, félicitations.`;
+const SAMPLE_STUDENTS = [
+    { nom: "MARTIN Lucas", statut: "", moy: "12.5", app: "Élève sérieux et appliqué.", ctx: "Participation active, élève moteur de la classe." },
+    { nom: "DURAND Sophie", statut: "PPRE", moy: "9", app: "Difficultés persistantes mais efforts visibles.", ctx: "Accompagnement suivi, encourager les petits progrès." },
+    { nom: "BERNARD Thomas", statut: "", moy: "15", app: "Très bon travail, résultats excellents.", ctx: "Maintien des efforts, félicitations." },
+    { nom: "PETIT Emma", statut: "", moy: "12", app: "Convenable, peut mieux faire avec plus de régularité.", ctx: "Travail régulier et soigné." },
+    { nom: "ROBERT Antoine", statut: "", moy: "10", app: "Doit travailler davantage pour progresser.", ctx: "Manque de travail, ressaisissez-vous." },
+    { nom: "MOREAU Julie", statut: "", moy: "17", app: "Excellent travail, félicitations.", ctx: "Toujours au top, bravo !" },
+    { nom: "LEFEVRE Hugo", statut: "Délégué", moy: "11", app: "Moyen mais bon potentiel à exploiter.", ctx: "Bon potentiel à exploiter pleinement." },
+    { nom: "SIMON Clara", statut: "ULIS", moy: "14", app: "Bien intégrée, travail de qualité.", ctx: "Élève en progression constante, félicitations." }
+];
 
 /**
- * Gets the sample data string
+ * Gets the sample data string for import wizard
  * @returns {string} The sample data with pipe separator
  */
 export function getSampleImportData() {
-    return SAMPLE_IMPORT_DATA;
+    // Format: NOM Prénom | STATUT | MOYENNE | APPRECIATION | CONTEXTE
+    return SAMPLE_STUDENTS.map(s =>
+        `${s.nom} | ${s.statut} | ${s.moy} | ${s.app} | ${s.ctx}`
+    ).join('\n');
 }
