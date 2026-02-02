@@ -879,7 +879,8 @@
                             <div class="step-one-layout">
                                 <!-- Enhanced Drop Zone -->
                                 <div class="import-drop-zone" id="wizardDropZone">
-                                    <div class="drop-zone-content">
+                                    <!-- STATE 1: EMPTY -->
+                                    <div class="drop-zone-content drop-zone-empty" id="wizardDropZoneEmpty">
                                         <div class="drop-zone-icon">
                                             <i class="fas fa-cloud-arrow-up"></i>
                                         </div>
@@ -888,6 +889,28 @@
                                             <span class="drop-zone-hint">ou <u>cliquer pour parcourir</u></span>
                                         </div>
                                     </div>
+
+                                    <!-- STATE 2: FILLED (File visualization) -->
+                                    <div class="drop-zone-content drop-zone-filled" id="wizardDropZoneFilled"
+                                        style="display: none;">
+                                        <div class="file-preview-card">
+                                            <div class="file-preview-icon" id="wizardFileIcon">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </div>
+                                            <div class="file-preview-info">
+                                                <span class="file-preview-name"
+                                                    id="wizardFileName">mon_fichier_notes.pdf</span>
+                                                <div id="wizardFileBadgeSlot">
+                                                    <!-- Badge inserted here by JS -->
+                                                </div>
+                                            </div>
+                                            <button class="file-remove-btn" id="wizardRemoveFileBtn"
+                                                aria-label="Supprimer le fichier">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- Loading status overlay -->
                                     <div class="drop-zone-status" id="wizardDropZoneStatus">
                                         <div class="status-spinner"></div>
@@ -898,18 +921,13 @@
                                 </div>
 
                                 <div class="import-divider-horizontal">
-                                    <span>ou coller les données</span>
+                                    <span>ou</span>
                                 </div>
 
                                 <!-- Textarea with clear button -->
                                 <div class="import-input-container">
                                     <textarea id="wizardDataTextarea" class="import-textarea" rows="6"
-                                        placeholder="NOM Prénom      Moy.    Appréciation...&#10;MARTIN Lucas    12,5    Bon travail..."></textarea>
-                                    <button class="btn-text-action textarea-clear-btn tooltip" id="wizardClearBtn"
-                                        data-tooltip="Effacer les données" aria-label="Effacer les données"
-                                        style="display: none;">
-                                        <i class="fas fa-times"></i>
-                                    </button>
+                                        placeholder="Collez vos données ici (Excel, CSV, Pronote...)&#10;&#10;Exemple :&#10;NOM Prénom      Moy.    Appréciation...&#10;MARTIN Lucas    12,5    Bon travail..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1007,8 +1025,7 @@
             <div class="import-wizard-footer" id="wizardStep1Footer">
                 <button class="btn btn-ghost" id="wizardStep1CancelBtn">Annuler</button>
                 <div class="wizard-footer-center">
-                    <!-- Format badge slot (populated dynamically) -->
-                    <div id="wizardFormatBadgeSlot"></div>
+                    <!-- Format badge slot moved to drop zone -->
                     <!-- Line count -->
                     <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
                         <span class="import-count-badge" id="wizardLineCountBadge">0</span>

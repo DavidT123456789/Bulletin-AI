@@ -25,7 +25,8 @@ export const ImportWizardManager = {
         newStudents: [],
         updatedStudents: [],
         departedStudents: [],
-        hasHeader: false
+        hasHeader: false,
+        currentSource: null // 'file', 'text', 'sample'
     },
 
     /**
@@ -199,19 +200,26 @@ export const ImportWizardManager = {
 
         // Step 1: Textarea
         document.getElementById('wizardDataTextarea')?.addEventListener('input',
-            Utils.debounce(() => this._processData(), 300));
+            Utils.debounce(() => {
+                // Determine if this is a manual paste/edit
+                const currentText = document.getElementById('wizardDataTextarea')?.value;
+                if (currentText && !this.state.currentSource) {
+                    this._setDropZone('text');
+                } else if (!currentText) {
+                    this._resetFile();
+                }
+                this._processData();
+            }, 300));
 
         // Step 1: Sample data (button in guide panel)
         document.getElementById('guideSampleBtn')?.addEventListener('click', () => this._loadSample());
 
-        // Step 1: Clear data
-        document.getElementById('wizardClearBtn')?.addEventListener('click', () => {
-            const textarea = document.getElementById('wizardDataTextarea');
-            if (textarea) {
-                textarea.value = '';
-                textarea.focus();
-                this._processData();
-            }
+
+
+        // Step 1: Remove file button
+        document.getElementById('wizardRemoveFileBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drop zone click
+            this._resetFile();
         });
 
         // Step 2: Separator change - reparse with user-selected separator
@@ -285,9 +293,9 @@ export const ImportWizardManager = {
 
         // Convert short codes to full labels
         if (periodCode.startsWith('S')) {
-            label = `Semestre ${periodCode.substring(1)}`;
+            label = `Semestre ${periodCode.substring(1)} (${periodCode})`;
         } else if (periodCode.startsWith('T')) {
-            label = `Trimestre ${periodCode.substring(1)}`;
+            label = `Trimestre ${periodCode.substring(1)} (${periodCode})`;
         }
 
         // Update guide panel badge
@@ -462,6 +470,10 @@ export const ImportWizardManager = {
         const dropZone = document.getElementById('wizardDropZone');
         const statusText = document.getElementById('wizardStatusText');
 
+
+        // Update file info in UI
+        this._setDropZone('file', file.name, file);
+
         // Helper to show/hide loading state
         const setLoading = (loading, text = 'Extraction du PDF...') => {
             if (dropZone) dropZone.classList.toggle('loading', loading);
@@ -477,6 +489,7 @@ export const ImportWizardManager = {
                 const textContent = await extractTextFromPdf(file);
 
                 document.getElementById('wizardDataTextarea').value = textContent;
+                this._animateTextUpdate();
                 setLoading(false);
                 this._processData();
                 // No success notification - badge in footer provides feedback
@@ -488,13 +501,126 @@ export const ImportWizardManager = {
             return;
         }
 
+
         // Fichiers texte standard
         const reader = new FileReader();
         reader.onload = e => {
             document.getElementById('wizardDataTextarea').value = e.target.result;
+            this._animateTextUpdate();
             this._processData();
         };
         reader.readAsText(file);
+    },
+
+    /**
+     * Update drop zone UI state 
+     * @param {string} type - 'file' | 'text' | 'sample'
+     * @param {string} name - Display name
+     * @param {File} file - Optional file object for icon detection
+     */
+    _setDropZone(type, name = null, file = null) {
+        const dropZoneEmpty = document.getElementById('wizardDropZoneEmpty');
+        const dropZoneFilled = document.getElementById('wizardDropZoneFilled');
+        const fileNameEl = document.getElementById('wizardFileName');
+        const fileIconEl = document.getElementById('wizardFileIcon');
+
+        this.state.currentSource = type;
+
+        if (dropZoneFilled) {
+            dropZoneEmpty.style.display = 'none';
+            dropZoneFilled.style.display = 'block';
+
+            // Set Drop Zone State Class
+            const dropZone = document.getElementById('wizardDropZone');
+            if (dropZone) dropZone.classList.add('has-file');
+
+            // Set Name
+            let displayName = name;
+            if (!displayName) {
+                if (type === 'text') displayName = 'Saisie manuelle / Coller';
+                if (type === 'sample') displayName = 'Données d\'exemple';
+            }
+            if (fileNameEl) fileNameEl.textContent = displayName;
+
+            // Set Icon
+            if (fileIconEl) {
+                fileIconEl.className = 'file-preview-icon'; // Reset class
+                fileIconEl.innerHTML = ''; // Reset content
+
+                if (type === 'file' && file) {
+                    // File Logic
+                    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                        fileIconEl.classList.add('type-pdf');
+                        fileIconEl.innerHTML = '<i class="fas fa-file-pdf"></i>';
+                    } else if (file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                        fileIconEl.classList.add('type-excel');
+                        fileIconEl.innerHTML = '<i class="fas fa-file-excel"></i>';
+                    } else {
+                        fileIconEl.innerHTML = '<i class="fas fa-file-alt"></i>';
+                    }
+                } else if (type === 'text') {
+                    // Text Logic
+                    fileIconEl.classList.add('type-text');
+                    fileIconEl.innerHTML = '<i class="fas fa-keyboard"></i>';
+                } else if (type === 'sample') {
+                    // Sample logic
+                    fileIconEl.classList.add('type-sample');
+                    fileIconEl.innerHTML = '<i class="fas fa-table"></i>';
+                }
+            }
+        }
+    },
+
+    /**
+     * Reset file UI to empty state
+     */
+    _resetFileUI() {
+        const dropZoneEmpty = document.getElementById('wizardDropZoneEmpty');
+        const dropZoneFilled = document.getElementById('wizardDropZoneFilled');
+        const fileInput = document.getElementById('wizardFileInput');
+        const dropZone = document.getElementById('wizardDropZone');
+        const badgeSlot = document.getElementById('wizardFileBadgeSlot');
+
+        // Check if we need to animate exit (only if filled is currently visible)
+        if (dropZoneFilled && dropZoneFilled.style.display !== 'none') {
+            dropZoneFilled.classList.add('is-exiting');
+
+            // Wait for animation (250ms)
+            setTimeout(() => {
+                if (dropZoneEmpty) dropZoneEmpty.style.display = 'flex';
+                if (dropZoneFilled) {
+                    dropZoneFilled.style.display = 'none';
+                    dropZoneFilled.classList.remove('is-exiting');
+                }
+                // Remove class from parent
+                if (dropZone) dropZone.classList.remove('has-file');
+                if (badgeSlot) badgeSlot.innerHTML = '';
+            }, 250);
+        } else {
+            // Instant reset (initial state or already hidden)
+            if (dropZoneEmpty) dropZoneEmpty.style.display = 'flex';
+            if (dropZoneFilled) dropZoneFilled.style.display = 'none';
+            if (dropZone) dropZone.classList.remove('has-file');
+            if (badgeSlot) badgeSlot.innerHTML = '';
+        }
+
+        if (fileInput) fileInput.value = '';
+    },
+
+    /**
+     * Full reset of file and data
+     */
+    _resetFile() {
+        // Clear textarea
+        const textarea = document.getElementById('wizardDataTextarea');
+        if (textarea) textarea.value = '';
+
+        // Reset UI
+        this._resetFileUI();
+
+        // Process empty data to clear state
+        this.state.currentSource = null;
+        this._processData();
     },
 
     /**
@@ -503,9 +629,34 @@ export const ImportWizardManager = {
     _loadSample() {
         import('../data/SampleData.js').then(({ getSampleImportData }) => {
             const sample = getSampleImportData();
-            document.getElementById('wizardDataTextarea').value = sample;
+
+            // Set UI state first
+            this._setDropZone('sample');
+
+            const textarea = document.getElementById('wizardDataTextarea');
+            if (textarea) {
+                textarea.value = sample;
+                this._animateTextUpdate();
+            }
+
             this._processData();
         });
+    },
+
+    /**
+     * Trigger text arrival animation
+     * Uses standard 'text-blur-reveal' from animations.css
+     * @private
+     */
+    _animateTextUpdate() {
+        const textarea = document.getElementById('wizardDataTextarea');
+
+        if (textarea) {
+            textarea.classList.remove('text-blur-reveal'); // Reset
+            // Force reflow to restart animation
+            void textarea.offsetWidth;
+            textarea.classList.add('text-blur-reveal');
+        }
     },
 
     /**
@@ -622,37 +773,37 @@ export const ImportWizardManager = {
      * Badge is now displayed in the footer for better UX
      * @private
      */
+    /**
+     * Update the visual format detection badge
+     * Shows when MBN, Pronote or other formats are detected
+     * Badge is now displayed in the drop zone
+     * @private
+     */
     _updateFormatBadge() {
-        let badge = document.getElementById('wizardFormatBadge');
-        const footerSlot = document.getElementById('wizardFormatBadgeSlot');
+        // Reuse existing slot in drop zone if available, else create new one there
+        const badgeSlot = document.getElementById('wizardFileBadgeSlot');
 
-        if (!this.state.detectedFormat) {
-            // Hide badge if exists
-            if (badge) badge.style.display = 'none';
+        // Clear existing badge
+        if (badgeSlot) badgeSlot.innerHTML = '';
+
+        if (!this.state.detectedFormat || !badgeSlot) {
             return;
         }
 
-        // Create badge if doesn't exist - now in footer slot
-        if (!badge && footerSlot) {
-            badge = document.createElement('div');
-            badge.id = 'wizardFormatBadge';
-            badge.className = 'format-detection-badge';
-            footerSlot.appendChild(badge);
-        }
+        const format = this.state.detectedFormat;
+        const badge = document.createElement('div');
 
-        if (badge) {
-            const format = this.state.detectedFormat;
-            const icons = {
-                'mbn': 'fa-school',
-                'pronote': 'fa-graduation-cap',
-                'vertical': 'fa-list'
-            };
-            const icon = icons[format.type] || 'fa-file-lines';
+        const icons = {
+            'mbn': 'fa-school',
+            'pronote': 'fa-graduation-cap',
+            'vertical': 'fa-list'
+        };
+        const icon = icons[format.type] || 'fa-file-lines';
 
-            badge.innerHTML = `<i class="fas ${icon}"></i> ${format.name}`;
-            badge.className = `format-detection-badge format-${format.type}`;
-            badge.style.display = 'inline-flex';
-        }
+        badge.innerHTML = `<i class="fas ${icon}"></i> ${format.name}`;
+        badge.className = `format-detection-badge format-${format.type}`;
+
+        badgeSlot.appendChild(badge);
     },
 
     /**
@@ -811,23 +962,24 @@ export const ImportWizardManager = {
                 `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
             ).join('');
 
-            // Current period options only (in optgroup for visual clarity)
-            html += `<optgroup label="${periodLabel}">`;
+            // Current period options (highlighted)
             const periodOptions = [
-                { v: `DEV_${currentPeriod}`, t: `Nb éval.` },
-                { v: `MOY_${currentPeriod}`, t: `Moyenne` },
-                { v: `APP_${currentPeriod}`, t: `Appréciation` },
-                { v: `CTX_${currentPeriod}`, t: `Contexte` }
+                { v: `DEV_${currentPeriod}`, t: `Nb éval. (${currentPeriod})` },
+                { v: `MOY_${currentPeriod}`, t: `Moyenne (${currentPeriod})` },
+                { v: `APP_${currentPeriod}`, t: `Appréciation (${currentPeriod})` },
+                { v: `CTX_${currentPeriod}`, t: `Contexte (${currentPeriod})` }
             ];
+
+            // Add separator for clarity
+            html += `<option disabled>──────</option>`;
+
             html += periodOptions.map(o =>
                 `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
             ).join('');
-            html += '</optgroup>';
 
-            // Global context (used for instructions that apply across all periods)
-            html += `<optgroup label="Général">`;
-            html += `<option value="INSTRUCTIONS" ${selectedValue === 'INSTRUCTIONS' ? 'selected' : ''}>Instructions (global)</option>`;
-            html += '</optgroup>';
+            // Global context
+            html += `<option disabled>──────</option>`;
+            html += `<option value="INSTRUCTIONS" ${selectedValue === 'INSTRUCTIONS' ? 'selected' : ''}>Instructions (Global)</option>`;
 
             return html;
         };

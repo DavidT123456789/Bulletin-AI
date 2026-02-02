@@ -528,3 +528,30 @@ body.is-transitioning-in .main-content {
 body.preload-transition {
     opacity: 0;
 }
+
+/* ====================================================================
+   TEXT REVEAL ANIMATIONS
+   Standard AI Text Reveal (Progressive Blur)
+   ==================================================================== */
+
+@keyframes text-blur-reveal {
+    0% {
+        opacity: 0.4;
+        filter: blur(4px);
+        clip-path: inset(0 0 100% 0);
+        transform: translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+        clip-path: inset(0 0 0 0);
+        transform: translateY(0);
+    }
+}
+
+.text-blur-reveal {
+    /* Slower duration to emphasize the 'reading/streaming' effect */
+    animation: text-blur-reveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    will-change: transform, opacity, filter, clip-path;
+}
