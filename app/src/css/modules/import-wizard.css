@@ -42,12 +42,16 @@
     overflow: hidden;
 }
 
-/* === GUIDE PANEL (Left Sidebar) === */
+/* === GUIDE PANEL (Left Sidebar) - Glassmorphism 2026 === */
 .wizard-guide-panel {
     width: 260px;
     min-width: 260px;
-    background: rgba(var(--primary-color-rgb), 0.04);
-    border-right: 1px solid var(--border-color);
+    /* Glass effect with subtle primary tint */
+    background: rgba(var(--primary-color-rgb), 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    /* Luminous border instead of solid */
+    border-right: 1px solid rgba(var(--primary-color-rgb), 0.15);
     padding: 20px 18px;
     display: flex;
     flex-direction: column;
@@ -164,53 +168,104 @@
     margin: 4px 0;
 }
 
-/* Guide source list (Step 1) */
-.guide-source-list {
-    list-style: none;
-    padding: 0;
-    margin: 8px 0 0 0;
+/* === FORMAT CHIPS (Visual format indicators) === */
+.guide-format-chips {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
 }
 
-.guide-source-list li {
+.guide-format-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    cursor: help;
+    transition: all var(--transition-fast);
+}
+
+.guide-format-chip i {
+    font-size: 1rem;
+}
+
+/* Hide text span if present in older markup */
+.guide-format-chip span {
+    display: none;
+}
+
+/* Format-specific colors */
+.guide-format-chip[data-format="pdf"] i {
+    color: var(--error-color);
+    /* Red */
+}
+
+.guide-format-chip[data-format="excel"] i {
+    color: var(--grade-range-16-20);
+    /* Green */
+}
+
+.guide-format-chip[data-format="csv"] i {
+    color: var(--success-color);
+    /* Emerald */
+}
+
+.guide-format-chip[data-format="clipboard"] i {
     color: var(--text-secondary);
 }
 
-.guide-source-list li i {
-    width: 14px;
-    text-align: center;
-    color: var(--primary-color);
-    font-size: 0.7rem;
+.guide-format-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .guide-format-chip {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .guide-format-chip:hover {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* Guide sample button */
 .guide-sample-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    width: 100%;
-    padding: 10px 14px;
-    margin-top: 8px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+    width: auto;
+    /* Aligned left with text for better flow */
+    align-self: flex-start;
+    /* Compact styling */
+    padding: 6px 16px;
+    min-height: 30px;
+    margin-top: 12px;
+    /* Ghost / Dashed style with Primary Tint */
+    background: rgba(var(--primary-color-rgb), 0.03);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.4);
     border-radius: var(--radius-md);
     color: var(--primary-color);
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .guide-sample-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.18);
+    background: rgba(var(--primary-color-rgb), 0.05);
     border-color: var(--primary-color);
+    /* Becoming solid and colored on hover to invite click */
+    border-style: solid;
+    color: var(--primary-color);
+    transform: translateY(-1px);
 }
 
 .guide-sample-btn i {
@@ -251,13 +306,15 @@
     overflow: hidden;
 }
 
-/* Dark theme adjustments */
+/* Dark theme adjustments - Enhanced glass */
 [data-theme="dark"] .wizard-guide-panel {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.35);
+    border-right-color: rgba(var(--primary-color-rgb), 0.25);
 }
 
 [data-theme="dark"] .guide-format-chip {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* === RESPONSIVE: Hide guide panel on mobile === */
@@ -276,152 +333,158 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    padding: 12px 24px;
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
-    height: 58px;
+    height: auto;
+    min-height: 72px;
+    overflow: visible;
+    /* CRITICAL: Allow stepper labels and glow to spill out */
+    z-index: 10;
 }
 
 .wizard-header-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
+    /* No gap needed as pill handles it */
 }
 
-.wizard-header-title i {
-    color: var(--primary-color);
-    font-size: 1.2rem;
-}
-
-/* Class name badge in header */
-.wizard-class-badge {
+/* New Pill Container */
+.wizard-title-pill {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
     border-radius: var(--radius-pill);
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-left: 4px;
-    max-width: 150px;
+    color: var(--primary-color);
+    transition: all var(--transition-base);
+}
+
+.wizard-title-pill:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.wizard-title-pill i {
+    font-size: 1.1rem;
+}
+
+/* Class Name Text inside Pill */
+#wizardClassBadge {
+    font-size: 1rem;
+    font-weight: 700;
+    max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.wizard-class-badge:empty {
-    display: none;
-}
-
-/* === COMPACT STEPPER === */
-.import-wizard-stepper.compact {
+/* === VISUAL TIMELINE STEPPER === */
+/* === COMPACT PILL STEPPER (Compromise Design) === */
+/* === CLEANER STEPPER (No Pill Box) === */
+.import-wizard-stepper {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 0;
     padding: 0;
     background: transparent;
     border: none;
-    margin: 0;
-}
-
-.import-wizard-stepper.compact .wizard-step {
-    padding: 6px 12px;
-    gap: 8px;
-    background: transparent;
-    color: var(--text-tertiary);
-    font-size: 0.85rem;
-}
-
-.import-wizard-stepper.compact .wizard-step.active {
-    /* Reset background color as we use layered images */
-    background-color: transparent;
-    color: var(--primary-color);
-
-    /* Transparent border handles the spacing for the gradient border */
-    border: 1.5px solid transparent;
-
-    /* 
-       Layer 1: The Blue Tint (Visual requirement) - clipped to padding
-       Layer 2: The Surface Color (Opaque blocker) - clipped to padding
-       Layer 3: The Conic Gradient (Border) - clipped to border
-    */
-    background-image:
-        linear-gradient(rgba(var(--primary-color-rgb), 0.1), rgba(var(--primary-color-rgb), 0.1)),
-        linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: padding-box, padding-box, border-box;
-
-    /* Animation */
-    animation: rotate-gradient 10s linear infinite;
-
-    /* Box Shadow from inputs */
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08), 0 2px 8px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* Fix for completed state overlay issue (legacy conflict) */
-.import-wizard-stepper.compact .wizard-step.completed {
-    color: var(--success-color);
-    background: transparent;
+    border-radius: 0;
+    margin: 0 auto;
+    height: 48px;
     box-shadow: none;
 }
 
-.import-wizard-stepper.compact .wizard-step-number {
-    width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: var(--text-tertiary);
-    color: white;
-    border-radius: 50%;
-    position: relative;
-    /* For absolute checkmark */
+/* FORCE RESET for Artifacts */
+.wizard-step,
+.wizard-step:active,
+.wizard-step:focus,
+.wizard-step:focus-visible,
+.wizard-step.active {
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Step Container (Horizontal Layout) */
+.wizard-step {
     display: flex;
-    /* Ensure centering */
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    background: transparent !important;
+    border: none;
+    padding: 0;
+    min-width: auto;
+}
+
+/* Circle Node - Smaller */
+.wizard-step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    color: var(--text-tertiary);
+    display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: none;
+    /* Clean start */
 }
 
-.import-wizard-stepper.compact .wizard-step.active .wizard-step-number {
+/* Label - Side by side */
+.wizard-step-label {
+    margin-top: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+
+/* --- ACTIVE STATE --- */
+.wizard-step.active .wizard-step-number {
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    /* Soft glow for emphasis */
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.15);
+    transform: scale(1.1);
+}
+
+.wizard-step.active .wizard-step-label {
+    color: var(--primary-color);
+    opacity: 1;
+    font-weight: 700;
+}
+
+/* --- COMPLETED STATE --- */
+.wizard-step.completed .wizard-step-number {
     background: var(--primary-color);
-    color: white;
-}
-
-.import-wizard-stepper.compact .wizard-step.completed .wizard-step-number {
-    background: var(--success-color);
+    border-color: var(--primary-color);
     color: transparent;
-    /* Hide number */
+    transform: scale(1);
+    box-shadow: none;
+    /* No shadow for clean circle */
 }
 
-/* Kill legacy before if present */
-.import-wizard-stepper.compact .wizard-step.completed .wizard-step-number::before {
-    content: none !important;
-}
-
-/* Add clean checkmark centered */
-.import-wizard-stepper.compact .wizard-step.completed .wizard-step-number::after {
+.wizard-step.completed .wizard-step-number::after {
     content: '\f00c';
-    /* FA Check */
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: white;
     position: absolute;
     top: 50%;
@@ -429,132 +492,47 @@
     transform: translate(-50%, -50%);
 }
 
-.import-wizard-stepper.compact .wizard-step-connector {
-    width: 24px;
-    height: 1px;
-    background: var(--border-color);
-}
-
-/* Hide label on small screens for compact stepper */
-@media (max-width: 800px) {
-    .import-wizard-stepper.compact .wizard-step-label {
-        display: none;
-    }
-}
-
-/* === NAVIGATION ARROWS IN STEPPER === */
-.wizard-nav-arrow {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-}
-
-.wizard-nav-arrow:hover:not(:disabled) {
-    background: var(--primary-color);
-    color: white;
-    transform: scale(1.1);
-}
-
-.wizard-nav-arrow:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.wizard-nav-arrow i {
-    font-size: 0.85rem;
-}
-
-/* Make steps clickable */
-.import-wizard-stepper.compact .wizard-step[role="button"] {
-    cursor: pointer;
-}
-
-.import-wizard-stepper.compact .wizard-step[role="button"]:hover:not(.active) {
-    background: rgba(var(--primary-color-rgb), 0.05);
-    color: var(--text-secondary);
-}
-
-/* === STEPPER === */
-.import-wizard-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    background: var(--surface-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.wizard-step {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: var(--radius-pill);
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
-    font-size: 0.9rem;
+.wizard-step.completed .wizard-step-label {
+    color: var(--text-primary);
+    /* High contrast */
     font-weight: 500;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: default;
 }
 
-.wizard-step.active {
-    background: var(--primary-color);
-    color: white;
-}
-
-.wizard-step.completed {
-    background: rgba(34, 197, 94, 0.15);
-    color: var(--success-color);
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-}
-
-.wizard-step-number {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 700;
-}
-
-.wizard-step.active .wizard-step-number {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.wizard-step.completed .wizard-step-number {
-    background: var(--success-color);
-    color: white;
-}
-
-.wizard-step-label {
-    display: none;
-}
-
-@media (min-width: 500px) {
-    .wizard-step-label {
-        display: inline;
-    }
-}
-
+/* --- CONNECTOR LINES --- */
+/* --- CONNECTOR LINES --- */
 .wizard-step-connector {
     width: 32px;
     height: 2px;
     background: var(--border-color);
-    border-radius: 1px;
+    margin: 0 12px;
+    flex: none;
+    align-self: center;
+    border-radius: 2px;
+    opacity: 0.3;
+    transition: background 0.3s ease;
+}
+
+/* Connector Coloring Logic */
+.wizard-step.completed+.wizard-step-connector {
+    background: var(--primary-color);
+    opacity: 1;
+}
+
+/* Hover effects */
+.wizard-step:hover:not(.active):not(.completed) .wizard-step-number {
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+/* Media Query: Hide labels only on very small screens */
+@media (max-width: 700px) {
+    .wizard-step-label {
+        display: none;
+    }
+
+    .wizard-step {
+        gap: 0;
+    }
 }
 
 /* === BODY === */
@@ -778,12 +756,19 @@
     display: none;
 }
 
-/* Compact format badge in footer */
+/* Compact format badge in footer - More subtle version */
 .wizard-footer-center .format-detection-badge {
-    padding: 6px 14px;
-    font-size: 0.8rem;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
     margin: 0;
     animation: badge-appear 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Subtle look overriding default badge styles */
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2) !important;
+    color: var(--primary-color) !important;
+    box-shadow: none !important;
 }
 
 .drop-zone-icon {
@@ -1075,41 +1060,59 @@
 }
 
 /* === HEADER CONTROLS (Step 2) === */
+/* === CENTERED STATS PILL (Glassmorphism) === */
 .import-wizard-modal .import-detected-info {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    /* Use --surface-color for consistency with search bar and other interactive elements */
-    background: var(--surface-color);
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border-color);
-
-    /* Centering logic */
-    flex: 0 0 auto;
-    justify-content: center;
-    margin: 0 auto;
-
-    /* Enhanced visibility */
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-primary);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 6px 16px;
+    margin: 0 auto;
+
+    /* Glass Effect 2026 */
+    background: rgba(var(--primary-color-rgb), 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    border-radius: var(--radius-pill);
+
+    /* Depth */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+    /* Layout */
+    flex: 0 0 auto;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.import-wizard-modal .import-detected-info:hover {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .import-wizard-modal .import-count-badge {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     color: white;
-    font-weight: 600;
-    padding: 2px 8px;
-    min-width: 22px;
-    text-align: center;
-    border-radius: var(--radius-pill);
+    font-weight: 700;
+    padding: 0 8px;
+    min-width: 24px;
+    height: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
     font-size: 0.75rem;
-    line-height: 1.2;
+    line-height: 1;
+
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
 }
 
 .import-wizard-modal .import-separator-row {
@@ -1332,6 +1335,17 @@
     min-height: 50px;
 }
 
+/* Premium Primary Button (Suivant) - Gradient style */
+/* Premium Primary Button (Suivant) - Inherits standard interactions */
+.import-wizard-footer .btn-primary {
+    /* Harmonization: Inherit standard button styles (components.css) */
+    /* No local overrides to prevent animation conflicts (black flash) */
+    min-width: 120px;
+    /* Minimal width for better touch target */
+}
+
+/* Local specifity only for button layout/spacing, not Visuals */
+
 /* Show footer based on active step */
 .import-wizard-modal:has(#modalStep1.active) #wizardStep1Footer {
     display: flex;
@@ -1492,13 +1506,14 @@
 }
 
 /* Fix close button style - Harmonized with design tokens (Single Source of Truth) */
+/* Fix close button style - Harmonized with design tokens (Single Source of Truth) */
 .import-wizard-modal .close-modal-btn {
-    background: var(--close-btn-bg);
+    background: transparent;
     border: none;
-    color: var(--close-btn-color);
-    font-size: 1.2rem;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
     cursor: pointer;
-    padding: 8px;
+    padding: 0;
     border-radius: 50%;
     transition: all var(--transition-fast);
     display: flex;
@@ -1506,12 +1521,14 @@
     justify-content: center;
     width: 36px;
     height: 36px;
+    opacity: 0.8;
 }
 
 .import-wizard-modal .close-modal-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
-    transform: rotate(90deg);
+    /* Standard hover effect (no scale) to match icon-button pattern */
+    opacity: 1;
 }
 
 .import-wizard-modal .import-mapping-table th:last-child,
