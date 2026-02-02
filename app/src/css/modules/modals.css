@@ -104,7 +104,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
+    padding: var(--modal-bar-padding-compact);
     /* Compact Optimization (User Request) */
     border-bottom: 1px solid var(--border-color);
     background: var(--surface-color);
@@ -171,8 +171,8 @@
     background: transparent;
     /* Harmonization: Transparent by default like sidebar */
     border: none;
-    font-size: 14px;
-    /* Slightly smaller icon for minimalist look */
+    font-size: var(--close-btn-icon-size);
+    /* Icon size from design tokens */
     color: var(--text-secondary);
     /* Secondary text color (softer) */
     cursor: pointer;
@@ -183,15 +183,15 @@
     justify-content: center;
     border-radius: 50%;
     /* Circular */
-    min-width: 32px;
-    min-height: 32px;
-    width: 32px;
-    height: 32px;
+    min-width: var(--close-btn-size);
+    min-height: var(--close-btn-size);
+    width: var(--close-btn-size);
+    height: var(--close-btn-size);
     flex-shrink: 0;
 }
 
 .close-button i {
-    font-size: 1rem;
+    font-size: var(--close-btn-icon-size);
     line-height: 1;
 }
 
@@ -245,7 +245,7 @@
 }
 
 .modal-footer {
-    padding: 8px 16px;
+    padding: var(--modal-bar-padding-compact);
     /* Compact Optimization */
     border-top: 1px solid var(--border-color);
     display: flex;

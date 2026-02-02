@@ -87,26 +87,48 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: var(--modal-bar-padding-spacious);
     border-bottom: 1px solid var(--border-color);
     background: var(--surface-color);
-    height: 64px;
+    min-height: var(--modal-bar-height-header);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.trombi-wizard-header h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
+/* Title Pill Container - Harmonized with Import Wizard */
+.trombi-header-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--text-primary);
-    margin: 0;
 }
 
-.trombi-wizard-header h2 i {
+.trombi-title-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    border-radius: var(--radius-pill);
     color: var(--primary-color);
-    font-size: 1.2rem;
+    transition: all var(--transition-base);
+}
+
+.trombi-title-pill:hover {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.trombi-title-pill i {
+    font-size: 1.1rem;
+}
+
+/* Class Name Text inside Pill */
+#trombiClassBadge {
+    font-size: 1rem;
+    font-weight: 700;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Stepper - Harmonized with compact stepper style */
@@ -226,27 +248,26 @@
     background: var(--border-color);
 }
 
-/* Close button - Matching modal-header-actions style */
+/* Close button - Harmonized with global design tokens */
 .trombi-close-btn {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
+    width: var(--close-btn-size);
+    height: var(--close-btn-size);
+    min-width: var(--close-btn-size);
+    min-height: var(--close-btn-size);
     border-radius: 50%;
     border: none;
-    background: var(--surface-color);
+    background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-size: var(--close-btn-icon-size);
 }
 
 .trombi-close-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
     box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);

@@ -195,6 +195,21 @@
     /* --- Global Component Variables --- */
     --scrollbar-width: 8px;
     /* Standard OS-like width */
+
+    /* --- Modal Bar Tokens (Single Source of Truth) --- */
+    /* Compact: Default for simple modals (settings, confirm, help) */
+    --modal-bar-padding-compact: 8px 16px;
+    /* Spacious: For wizard modals with steppers or prominent actions */
+    --modal-bar-padding-spacious: 10px 24px;
+    /* Height hierarchy: Header > Footer (iOS/macOS pattern) */
+    --modal-bar-height-header: 60px;
+    /* Accommodates stepper + title */
+    --modal-bar-height-footer: 52px;
+    /* Compact, action-oriented */
+
+    /* --- Close Button Tokens (Single Source of Truth) --- */
+    --close-btn-size: 32px;
+    --close-btn-icon-size: 1rem;
 }
 
 [data-theme="dark"] {

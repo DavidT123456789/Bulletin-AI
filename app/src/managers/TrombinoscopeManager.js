@@ -7,6 +7,7 @@
 import { appState } from '../state/State.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
+import { ClassManager } from './ClassManager.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -141,6 +142,13 @@ export const TrombinoscopeManager = {
         this._reset();
         const modal = document.getElementById('trombiWizardModal');
         if (modal) modal.classList.add('visible');
+
+        // Update class badge in header
+        const classBadge = document.getElementById('trombiClassBadge');
+        if (classBadge) {
+            const currentClass = ClassManager.getCurrentClass();
+            classBadge.textContent = currentClass?.name || 'Classe';
+        }
     },
 
     close() {

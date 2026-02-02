@@ -333,11 +333,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: var(--modal-bar-padding-spacious);
     background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
     height: auto;
-    min-height: 72px;
+    min-height: var(--modal-bar-height-header);
     overflow: visible;
     /* CRITICAL: Allow stepper labels and glow to spill out */
     z-index: 10;
@@ -1327,12 +1327,12 @@
     /* Hidden by default */
     justify-content: space-between;
     align-items: center;
-    padding: 10px 24px;
+    padding: var(--modal-bar-padding-spacious);
     background: var(--surface-color);
     border-top: 1px solid var(--border-color);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     gap: 16px;
-    min-height: 50px;
+    min-height: var(--modal-bar-height-footer);
 }
 
 /* Premium Primary Button (Suivant) - Gradient style */
@@ -1506,12 +1506,11 @@
 }
 
 /* Fix close button style - Harmonized with design tokens (Single Source of Truth) */
-/* Fix close button style - Harmonized with design tokens (Single Source of Truth) */
 .import-wizard-modal .close-modal-btn {
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: var(--close-btn-icon-size);
     cursor: pointer;
     padding: 0;
     border-radius: 50%;
@@ -1519,15 +1518,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: var(--close-btn-size);
+    height: var(--close-btn-size);
     opacity: 0.8;
 }
 
 .import-wizard-modal .close-modal-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
-    /* Standard hover effect (no scale) to match icon-button pattern */
+    transform: scale(1.08);
     opacity: 1;
 }
 
