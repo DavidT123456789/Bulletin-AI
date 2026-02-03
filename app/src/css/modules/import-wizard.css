@@ -1762,22 +1762,27 @@
 /* [Duplicate column styles removed for cleanup] */
 
 .import-wizard-modal .import-mapping-table th {
-    background: var(--bg-secondary);
-    /* Distinct header background for better hierarchy */
-    vertical-align: top;
+    /* Header Distinction: Surface color for elevation */
+    background: var(--surface-color);
+    /* Make text more label-like */
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+
+    vertical-align: middle;
     min-width: 190px;
-    padding: 16px;
+    padding: 12px 16px;
     position: sticky;
     top: 0;
     z-index: 10;
-    border-bottom: 1px solid var(--border-color);
-    /* Removing backdrop-filter to prevent corner rendering artifacts */
 
-    /* Shadow for depth */
-    /* Shadow removed to fix GPU performance issues during scroll */
-    box-shadow: none;
+    /* Stronger separator */
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
     justify-content: flex-start;
-    /* Left-align content (student count) */
 }
 
 /* Fix sticky header corners not clipping correctly - REVERTED */
@@ -1811,82 +1816,120 @@
 }
 
 /* === CUSTOM DROPDOWN SELECT (Harmonized with dropdown.css) === */
+/* === CUSTOM DROPDOWN SELECT (Harmonized with dropdown.css) === */
 .custom-select-wrapper {
     position: relative;
     width: 100%;
     font-family: inherit;
 }
 
-.custom-select-trigger {
+/* Minimalist Trigger 2026 - Fixed & Stable */
+/* Minimalist Trigger 2026 - Fixed & Stable */
+/* Specificity bumped (0-3-0) to override global dropdown.css without !important */
+.import-wizard-modal .custom-select-trigger,
+.import-wizard-modal .custom-dropdown .custom-dropdown-trigger {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    padding: 10px 12px;
-    /* Closer to standard 12.5px but slightly compact for table */
-    font-size: 14px;
-    /* Standardize font size */
+    padding: 0 16px;
+    height: 40px;
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-primary);
-    background: var(--bg-color);
-    border: 1.5px solid var(--border-color);
-    /* Match standard border thickness */
-    border-radius: var(--radius-md);
+
+    /* Pure Glass */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    /* Pill Shape Enforced */
+
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    /* Reset Global Styles */
+    animation: none;
+    background-image: none;
+    transform: none;
+
     user-select: none;
-    min-height: 42px;
-    /* Match standard height */
     white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-/* Ensure text truncates properly */
-.custom-select-trigger span {
+/* Dark mode overrides */
+[data-theme="dark"] .import-wizard-modal .custom-select-trigger,
+[data-theme="dark"] .import-wizard-modal .custom-dropdown .custom-dropdown-trigger {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Truncation */
+.import-wizard-modal .custom-select-trigger span,
+.import-wizard-modal .custom-dropdown-trigger span {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-right: 6px;
     flex: 1;
-    /* Take available space */
+    opacity: 0.9;
 }
 
-.custom-select-trigger:hover {
-    border-color: transparent;
-    /* Subtle primary tint + gradient border (consistent with inputs) */
-    background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
-        linear-gradient(var(--bg-color), var(--bg-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: padding-box, padding-box, border-box;
-    /* Copied from dropdown.css hover effect for consistency */
+/* Hover - Higher Specificity to beat global :hover:not(.disabled) */
+.import-wizard-modal .custom-select-trigger:hover,
+.import-wizard-modal .custom-dropdown .custom-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.08);
+    /* Lighter Glass */
+    border-color: var(--text-secondary);
+    /* Stable Grey */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: none;
+    background-image: none;
 }
 
-.custom-select-trigger.active {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+/* Active/Open State */
+.import-wizard-modal .custom-select-trigger.active,
+.import-wizard-modal .custom-select-wrapper.open .custom-select-trigger,
+.import-wizard-modal .custom-dropdown.open .custom-dropdown-trigger {
+    border-color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    animation: none;
+    background-image: none;
 }
 
-.custom-select-trigger i {
-    font-size: 12px;
-    color: var(--text-secondary);
-    transition: transform 0.2s ease;
+/* Chevron - Static */
+.import-wizard-modal .custom-select-trigger i,
+.import-wizard-modal .custom-dropdown .custom-dropdown-arrow {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    transition: color 0.2s ease;
     flex-shrink: 0;
+    opacity: 0.7;
+    transform: none;
 }
 
-.custom-select-wrapper.open .custom-select-trigger i {
-    transform: rotate(180deg);
+.import-wizard-modal .custom-select-trigger:hover i,
+.import-wizard-modal .custom-dropdown .custom-dropdown-trigger:hover .custom-dropdown-arrow {
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+/* Open state chevron */
+.import-wizard-modal .custom-select-wrapper.open .custom-select-trigger i,
+.import-wizard-modal .custom-dropdown.open .custom-dropdown-arrow {
+    transform: none;
     color: var(--primary-color);
+    opacity: 1;
 }
 
-/* Note: The options menu is now handled via JS Portal (appended to body), 
-   but we keep styles here for the portal element which will use these classes */
+/* Portal element styles - ensure they match the trigger's glass feel */
 .custom-select-options {
-    /* Base styles for the portal element */
     background: var(--surface-color);
+    /* Keep surface for readability, or use glass if supported */
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    /* Deep shadow for elevation */
     z-index: 9999;
-    /* Very high for portal */
     max-height: 300px;
     overflow-y: auto;
     padding: 6px;
@@ -1895,7 +1938,8 @@
 @keyframes slideDownFade {
     from {
         opacity: 0;
-        transform: translateY(-5px);
+        transform: translateY(-2px);
+        /* Minimal movement */
     }
 
     to {
@@ -1935,32 +1979,56 @@
 }
 
 /* Elegant selects in headers */
+/* Elegant selects in headers - Minimalist 2026 */
 .import-wizard-modal .import-mapping-table select {
     width: 100%;
-    padding: 6px 10px;
+    height: 40px;
+    /* Consistent height */
+    padding: 0 32px 0 12px;
+    /* Space for chevron */
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: var(--surface-color);
-    /* Lighter background for better contrast against table row */
+
+    /* Glass Base - Transparent to blend with header */
+    background-color: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
     font-size: 0.85rem;
     cursor: pointer;
     font-family: inherit;
-    transition: all var(--transition-fast);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    /* Stable transitions */
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+
+    /* Native appearance adjustments if needed */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+/* Dark mode adjustment */
+[data-theme="dark"] .import-wizard-modal .import-mapping-table select {
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .import-wizard-modal .import-mapping-table select:hover {
-    border-color: var(--text-tertiary);
-    transform: translateY(-1px);
+    border-color: var(--text-secondary);
+    background-color: var(--surface-color);
+    /* Subtle shadow, no movement */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .import-wizard-modal .import-mapping-table select:focus {
-    background: var(--surface-color);
+    /* Elegant Focus - No harsh violet border */
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    /* Kept for accessibility but make it subtle */
+    background-color: var(--surface-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
     outline: none;
-    transform: none;
+
+    /* Update Chevron Color on Focus */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 /* Style native options to avoid harsh black on Windows/Chrome */

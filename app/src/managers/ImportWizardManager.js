@@ -1625,9 +1625,13 @@ export const ImportWizardManager = {
             updatedStudents: [],
             departedStudents: [],
             detectedFormat: null,
-            _formatNotificationShown: false
+            _formatNotificationShown: false,
+            currentSource: null
         };
         document.getElementById('wizardDataTextarea').value = '';
+
+        // Reset Drop Zone UI
+        this._resetFileUI();
 
         // Clean up dynamically created warning elements
         document.getElementById('wizardMappingWarning')?.remove();
