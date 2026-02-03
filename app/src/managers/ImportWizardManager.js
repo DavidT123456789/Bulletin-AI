@@ -293,9 +293,9 @@ export const ImportWizardManager = {
 
         // Convert short codes to full labels
         if (periodCode.startsWith('S')) {
-            label = `Semestre ${periodCode.substring(1)} (${periodCode})`;
+            label = `Semestre ${periodCode.substring(1)}`;
         } else if (periodCode.startsWith('T')) {
-            label = `Trimestre ${periodCode.substring(1)} (${periodCode})`;
+            label = `Trimestre ${periodCode.substring(1)}`;
         }
 
         // Update guide panel badge
@@ -1131,24 +1131,62 @@ export const ImportWizardManager = {
 
         // === GENERIC FALLBACK for non-PDF data ===
 
+        // 1. Try to guess from header first if we have one
+        if (this.state.lines.length > 0) {
+            const headerLine = this.state.lines[0];
+            // Only use header logic if we actually detected a header row
+            if (this.state.hasHeader) {
+                const headerTag = this._detectTypeFromHeader(index, headerLine);
+                if (headerTag) return headerTag;
+            }
+        }
+
+        // 2. Structural Guessing (based on column position)
+
         // Col 0: ALWAYS Name
         if (index === 0) return 'NOM_PRENOM';
 
-        // Col 1: ALWAYS Status (short text or empty after name)
-        if (index === 1) return 'STATUT';
+        // Col 1: Status OR Grade depending on content
+        if (index === 1) {
+            // If it's a number, it's likely the first grade, not status
+            if (Utils.isNumeric(sample)) {
+                return `MOY_${currentPeriod}`;
+            }
+            return 'STATUT';
+        }
 
-        // Last column: ALWAYS Context (instructions/remarques)
-        if (index === totalCols - 1) return 'INSTRUCTIONS';
+        // Last column: Context, unless it's a number
+        if (index === totalCols - 1 && !Utils.isNumeric(sample)) return 'INSTRUCTIONS';
 
-        // Remaining columns (index 2 to totalCols-2): alternating Moy/Appr pairs
-        // Pattern: [Moy.T1, Appr.T1, Moy.T2, Appr.T2, ...]
-        const dataColIndex = index - 2; // 0-based index in the data zone
-        const periodIndex = Math.floor(dataColIndex / 2);
-        const isGradeCol = dataColIndex % 2 === 0; // Even = grade, Odd = appreciation
+        // Remaining columns: Heuristic based on total width
+        // If we have few columns (e.g., 3-5), we probably have [Name, (Status), Grade, App, (Context)]
+        // This is a SINGLE PERIOD import -> Use currentPeriod
+        const isSinglePeriod = totalCols <= 6;
 
-        if (periodIndex < periods.length) {
-            const period = periods[periodIndex];
-            return isGradeCol ? `MOY_${period}` : `APP_${period}`;
+        if (isSinglePeriod) {
+            // Find grade column (numeric)
+            if (Utils.isNumeric(sample)) {
+                return `MOY_${currentPeriod}`;
+            }
+            // Find appreciation column (long text)
+            if (sample.length > 5) {
+                return `APP_${currentPeriod}`;
+            }
+        } else {
+            // MULTI-PERIOD import (wide structure) -> Use sequential mapping
+            const dataColIndex = index - 2; // Offset for Name + Status
+            const periodIndex = Math.floor(dataColIndex / 2);
+            /* 
+               Note: This sequential mapping might still be imperfect if periods aren't perfectly aligned, 
+               but it's better than nothing for bulk historical imports. 
+               Ideally, we rely on headers for multi-period files.
+            */
+            const isGradeCol = dataColIndex % 2 === 0;
+
+            if (periodIndex < periods.length) {
+                const period = periods[periodIndex];
+                return isGradeCol ? `MOY_${period}` : `APP_${period}`;
+            }
         }
 
         // Fallback
@@ -1237,89 +1275,54 @@ export const ImportWizardManager = {
     /**
      * Guess column type with improved logic (ported from ImportUIManager)
      */
-    _guessType(sample, index, headerLine = null) {
+    /**
+     * Try to detect column type from header text
+     * Returns internal TAG or null if no match found
+     * @private
+     */
+    _detectTypeFromHeader(index, headerLine) {
+        if (!headerLine || headerLine.length <= index) return null;
+
         const periods = Utils.getPeriods();
+        const title = headerLine[index].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-        // 1. Try keyword matching if headerLine is provided and looks like a header
-        if (headerLine && headerLine.length > index) {
-            const h = headerLine[index].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        // 1. Check exact/keyword matches for standard columns
+        const keywords = {
+            'NOM_PRENOM': ['nom', 'prenom', 'eleve', 'etudiant'],
+            'STATUT': ['statut'],
+            'INSTRUCTIONS': ['contexte', 'instruction', 'observation']
+        };
 
-            // Logique plus stricte : le mot-clé doit être au début du mot ou être le titre entier
-            const matchKeyword = (title, kw) => {
-                const regex = new RegExp(`(^|\\s)${kw}(\\s|$)`, 'i');
-                return regex.test(title);
-            };
+        const matchKeyword = (t, kw) => new RegExp(`(^|\\s)${kw}(\\s|$)`, 'i').test(t);
 
-            const headerKeywordMap = {
-                'Nom & Prénom': ['nom', 'prenom', 'eleve', 'étudiant'],
-                'Statut': ['statut'],
-            };
+        for (const [tag, kws] of Object.entries(keywords)) {
+            if (kws.some(kw => matchKeyword(title, kw))) return tag;
+        }
 
-            for (const [friendly, keywords] of Object.entries(headerKeywordMap)) {
-                if (keywords.some(kw => matchKeyword(h, kw))) return friendly;
-            }
+        // 2. Check for Period-specific columns (Moy, App, Ctx)
+        // Patterns to look for: "Moyenne T1", "App S2", "Note T3"
+        const periodPrefixes = {
+            'MOY_': ['moy', 'note'],
+            'APP_': ['app', 'com', 'obs'],
+            'CTX_': ['contexte', 'ctx']
+        };
 
-            // Period specific keywords (Moy. T1, Appr. T1, Contexte T1)
-            const periodKeyboards = {
-                'Moy. ': ['moy', 'note', 'moyenne'],
-                'Appréciation ': ['app', 'commentaire', 'appreciation'],
-                'Contexte ': ['contexte', 'ctx', 'observation', 'remarque', 'instruction']
-            };
-            for (const [prefix, keywords] of Object.entries(periodKeyboards)) {
-                if (keywords.some(kw => matchKeyword(h, kw))) {
-                    // Try to find period in header (T1, T2, S1...)
-                    const match = h.match(/([ts])\s?(\d)/i); // Adjusted regex to capture both letter and digit
-                    if (match) {
-                        const p = (match[1] + match[2]).toUpperCase();
-                        if (periods.includes(p)) return prefix + p;
-                    }
+        for (const [prefix, kws] of Object.entries(periodPrefixes)) {
+            if (kws.some(kw => title.includes(kw))) {
+                // Try to find period code (T1, S2...)
+                const periodMatch = title.match(/([ts])\s?(\d)/i);
+                if (periodMatch) {
+                    const p = (periodMatch[1] + periodMatch[2]).toUpperCase();
+                    if (periods.includes(p)) return prefix + p;
                 }
+
+                // If no specific period found in header, but we found "Moyenne", "Note", etc.
+                // We could infer it matches the current period, but that's risky for headers.
+                // Better to return null and let structural guessing handle it.
             }
         }
 
-        // 2. Fallback to content-based guessing
-
-        // Index 0 is always Name
-        if (index === 0) return 'Nom & Prénom';
-
-        // Statut en 2ème position (index 1) - short text or empty
-        if (index === 1 && (sample === '' || (sample.length < 10 && !Utils.isNumeric(sample)))) return 'Statut';
-
-        // Contexte à la fin - long text, not a number
-        if (index === this.state.columnCount - 1 && !Utils.isNumeric(sample) && sample.length > 15) return 'Contexte';
-
-        // Content-based detection for remaining columns
-        // If it's a number, it's a grade
-        if (Utils.isNumeric(sample)) {
-            // Determine which period based on position
-            const gradeColumns = [];
-            for (let i = 0; i < this.state.columnCount; i++) {
-                const colSample = this.state.lines[0]?.[i] || '';
-                if (Utils.isNumeric(colSample)) gradeColumns.push(i);
-            }
-            const gradeIndex = gradeColumns.indexOf(index);
-            if (gradeIndex >= 0 && gradeIndex < periods.length) {
-                return `Moy. ${periods[gradeIndex]}`;
-            }
-            return `Moy. ${periods[0]}`;
-        }
-
-        // Long text (>15 chars) is likely an appreciation
-        if (sample.length > 15) {
-            // Find which appreciation this is by counting text columns before it
-            const textColumns = [];
-            for (let i = 2; i < this.state.columnCount; i++) {
-                const colSample = this.state.lines[0]?.[i] || '';
-                if (!Utils.isNumeric(colSample) && colSample.length > 15) textColumns.push(i);
-            }
-            const appIndex = textColumns.indexOf(index);
-            if (appIndex >= 0 && appIndex < periods.length) {
-                return `Appréciation ${periods[appIndex]}`;
-            }
-            return `Appréciation ${periods[0]}`;
-        }
-
-        return 'Ignorer';
+        return null;
     },
 
     /**

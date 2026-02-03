@@ -1341,6 +1341,21 @@
     background: var(--bg-secondary);
 }
 
+/* Guide Panel Separator Styles */
+.import-separator-row-guide {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.import-separator-select.full-width {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 12px;
+    /* Slightly taller for better touch target in sidebar */
+}
+
 /* === AUTO-DETECT BUTTON - Format Applied Highlight === */
 #wizardAutoDetectBtn.format-applied {
     background: rgba(var(--primary-color-rgb), 0.1);
@@ -1450,13 +1465,11 @@
     position: relative;
     /* CRITICAL: Must be hidden - only .table-scroll-wrapper handles scrolling */
     overflow: hidden !important;
-    margin-top: 12px;
     border-radius: var(--radius-lg);
     background: var(--bg-secondary);
     box-shadow: var(--shadow-sm);
     /* Margin for potential focus rings/shadows */
     margin: 4px;
-    margin-top: 12px;
     /* Flex Growth: Fill available space to fix gap issues */
     flex: 1;
     display: flex;
