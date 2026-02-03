@@ -65,13 +65,17 @@ export const ImportWizardManager = {
                 const action = card.dataset.action;
                 this.closeHub();
 
-                if (action === 'individual') {
-                    // Open Focus Panel in creation mode
-                    FocusPanelManager.openNew();
-                } else if (action === 'mass') {
-                    // Open Import Wizard
-                    this.open();
-                }
+                // Delay to allow Hub closing animation to complete (400ms + buffer)
+                // Prevents Focus Panel from appearing under the closing backdrop on mobile
+                const delay = action === 'individual' ? 450 : 0;
+
+                setTimeout(() => {
+                    if (action === 'individual') {
+                        FocusPanelManager.openNew();
+                    } else if (action === 'mass') {
+                        this.open();
+                    }
+                }, delay);
             });
 
             // Keyboard support
