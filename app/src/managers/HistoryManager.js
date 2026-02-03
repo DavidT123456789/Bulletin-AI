@@ -3,9 +3,9 @@
  * Permet de gérer le bouton "Retour" (Back) sur mobile pour fermer les modales, menus et dropdowns.
  * Supporte les états empilés (ex: Modale Aide par dessus Modale Paramètres).
  * 
- * CRITICAL: This module protects against navigating back to the landing page when users
- * close modals or use browser back button. It replaces the initial history entry with
- * an "app base" state and monitors all popstate events.
+ * PROTECTION CRITIQUE: Ce module empêche la navigation vers la landing page quand
+ * l'utilisateur ferme des modales ou utilise le bouton retour. Il remplace l'entrée
+ * d'historique initiale par un état "appBase" et surveille tous les événements popstate.
  * 
  * @module managers/HistoryManager
  */
@@ -17,72 +17,54 @@ export const HistoryManager = {
     /** @type {boolean} Listener déjà attaché */
     _listenerAttached: false,
 
-    /** @type {number} Nombre de popstate à ignorer (gère les appels multiples de history.back()) */
-    _popStatesToIgnore: 0,
-
     /** @type {boolean} État de base initialisé */
     _baseStateInitialized: false,
 
-    /** @type {number} Initial history length when app started (used to detect if we can go back) */
-    _initialHistoryLength: 0,
-
-    /** @type {number} Count of states we've pushed */
+    /** @type {number} Compteur d'états poussés */
     _pushedStatesCount: 0,
 
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
      * Crée également un état de base pour éviter de retourner à la landing page.
      * 
-     * MUST be called early in app initialization (before any UI interactions).
+     * DOIT être appelé tôt dans l'initialisation de l'app (avant toute interaction UI).
      */
     init() {
         if (this._listenerAttached) return;
 
-        // Track initial history length - we should never go below this
-        this._initialHistoryLength = history.length;
-
-        // CRITICAL FIX: Replace current history entry with our app's base state
-        // This prevents the browser's back button from returning to landing page
+        // Remplacer l'entrée d'historique actuelle par notre état de base
+        // Cela empêche le bouton retour du navigateur de retourner à la landing page
         if (!this._baseStateInitialized) {
             history.replaceState({ appBase: true, timestamp: Date.now() }, '', '');
             this._baseStateInitialized = true;
         }
 
         window.addEventListener('popstate', (event) => {
-            // CRITICAL PROTECTION: Check if we're about to leave the app
-            // If the state doesn't have our markers, we've navigated to an external page
-            // (like the landing page). We MUST immediately push a state to return to the app.
+            // PROTECTION CRITIQUE: Vérifier si on quitte l'app
+            // Si l'état n'a pas nos marqueurs, on a navigué vers une page externe
             const isOurState = event.state?.appBase || event.state?.uiOpen ||
                 event.state?.focusPanel || event.state?.inlineSearch;
 
             if (!isOurState) {
-                // EMERGENCY: We've navigated outside our app's history!
-                // Push a new state immediately to go "forward" and stay in the app
+                // URGENCE: On a quitté l'historique de l'app!
+                // Pousser un nouvel état immédiatement pour revenir dans l'app
                 history.pushState({ appBase: true, recovered: true, timestamp: Date.now() }, '', '');
 
-                // Reset our counter since we're now at base state
+                // Réinitialiser le compteur et la pile
                 this._pushedStatesCount = 0;
                 this._stack = [];
                 return;
             }
 
-            // If this popstate should be ignored (triggered by our own safeBack call)
-            if (this._popStatesToIgnore > 0) {
-                this._popStatesToIgnore--;
-                return;
-            }
-
-            // Decrement our pushed states count when going back
+            // Décrémenter le compteur d'états poussés
             if (this._pushedStatesCount > 0) {
                 this._pushedStatesCount--;
             }
 
-            // Close the topmost UI element if any
+            // Fermer l'élément UI au sommet de la pile
             if (this._stack.length > 0) {
                 const top = this._stack.pop();
-                if (top?.closeCallback) {
-                    top.closeCallback({ causedByHistory: true });
-                }
+                top?.closeCallback?.({ causedByHistory: true });
             }
         });
 
@@ -106,17 +88,9 @@ export const HistoryManager = {
     /**
      * Signale la fermeture manuelle d'un élément (bouton X, backdrop click).
      * 
-     * CRITICAL FIX: We NO LONGER call history.back() here!
-     * 
-     * Reason: When the user came from the landing page, calling history.back()
-     * can cause a FULL PAGE NAVIGATION (browser loads index.html) BEFORE our
-     * popstate listener can intercept. This happens because the previous entry
-     * in history points to a different URL, not just a different state.
-     * 
-     * Instead, we use replaceState to "neutralize" the current history entry
-     * without navigating. The history entry remains, but it's now a base state.
-     * If the user presses the native back button later, the popstate listener
-     * will handle it safely.
+     * NOTE: On n'appelle PAS history.back() ici pour éviter de naviguer vers
+     * la landing page. On utilise replaceState pour "neutraliser" l'entrée
+     * d'historique actuelle sans naviguer.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
      */
@@ -128,20 +102,17 @@ export const HistoryManager = {
         if (top.id === id) {
             this._stack.pop();
 
-            // Decrement counter since we're "consuming" this state
             if (this._pushedStatesCount > 0) {
                 this._pushedStatesCount--;
             }
 
-            // SAFE APPROACH: Replace the current state instead of going back
-            // This prevents the risk of navigating to landing page
+            // Remplacer l'état actuel au lieu de naviguer en arrière
             history.replaceState({ appBase: true, consumed: true, timestamp: Date.now() }, '', '');
         } else {
-            // Fermeture désordonnée: on nettoie la pile sans toucher à l'historique
+            // Fermeture désordonnée: nettoyer la pile sans toucher à l'historique
             const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
-                // Also decrement counter for out-of-order closes
                 if (this._pushedStatesCount > 0) {
                     this._pushedStatesCount--;
                 }
@@ -150,59 +121,24 @@ export const HistoryManager = {
     },
 
     /**
-     * SAFE BACK: Go back in history ONLY if we have pushed states to go back to.
-     * This prevents navigating to landing page or other external pages.
+     * Pousse un état personnalisé (pour les composants qui gèrent leur propre historique).
      * 
-     * Other components (FocusPanelManager, ListViewManager) should use this
-     * instead of calling history.back() directly.
-     * 
-     * @returns {boolean} True if back was executed, false if blocked
-     */
-    safeBack() {
-        // Initialize if not already done
-        this.init();
-
-        // Only go back if we have pushed states to consume
-        if (this._pushedStatesCount > 0) {
-            this._pushedStatesCount--;
-            history.back();
-            return true;
-        }
-
-        // Cannot go back - would leave the app
-        return false;
-    },
-
-    /**
-     * Push a custom state (for components that manage their own history like FocusPanel).
-     * This allows them to participate in the safe-back system.
-     * 
-     * @param {Object} state - The state object to push
+     * @param {Object} state - L'objet état à pousser
      */
     pushCustomState(state) {
         this.init();
-        const enrichedState = { ...state, timestamp: Date.now() };
-        history.pushState(enrichedState, '', '');
+        history.pushState({ ...state, timestamp: Date.now() }, '', '');
         this._pushedStatesCount++;
     },
 
     /**
-     * Replace current state (for components that want to update without adding history).
+     * Remplace l'état actuel (pour les composants qui veulent mettre à jour sans ajouter d'historique).
      * 
-     * @param {Object} state - The state object to set
+     * @param {Object} state - L'objet état à définir
      */
     replaceCurrentState(state) {
         this.init();
-        const enrichedState = { ...state, timestamp: Date.now() };
-        history.replaceState(enrichedState, '', '');
-    },
-
-    /**
-     * Check if it's safe to go back (without leaving the app).
-     * 
-     * @returns {boolean} True if we have pushed states that can be consumed
-     */
-    canGoBack() {
-        return this._pushedStatesCount > 0;
+        history.replaceState({ ...state, timestamp: Date.now() }, '', '');
     }
 };
+
