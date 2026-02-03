@@ -105,7 +105,18 @@ export const HistoryManager = {
 
     /**
      * Signale la fermeture manuelle d'un élément (bouton X, backdrop click).
-     * Fait reculer l'historique pour nettoyer l'état poussé.
+     * 
+     * CRITICAL FIX: We NO LONGER call history.back() here!
+     * 
+     * Reason: When the user came from the landing page, calling history.back()
+     * can cause a FULL PAGE NAVIGATION (browser loads index.html) BEFORE our
+     * popstate listener can intercept. This happens because the previous entry
+     * in history points to a different URL, not just a different state.
+     * 
+     * Instead, we use replaceState to "neutralize" the current history entry
+     * without navigating. The history entry remains, but it's now a base state.
+     * If the user presses the native back button later, the popstate listener
+     * will handle it safely.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
      */
@@ -116,14 +127,24 @@ export const HistoryManager = {
 
         if (top.id === id) {
             this._stack.pop();
-            this._popStatesToIgnore++;
-            // Use safeBack to prevent landing page navigation
-            this.safeBack();
+
+            // Decrement counter since we're "consuming" this state
+            if (this._pushedStatesCount > 0) {
+                this._pushedStatesCount--;
+            }
+
+            // SAFE APPROACH: Replace the current state instead of going back
+            // This prevents the risk of navigating to landing page
+            history.replaceState({ appBase: true, consumed: true, timestamp: Date.now() }, '', '');
         } else {
             // Fermeture désordonnée: on nettoie la pile sans toucher à l'historique
             const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
+                // Also decrement counter for out-of-order closes
+                if (this._pushedStatesCount > 0) {
+                    this._pushedStatesCount--;
+                }
             }
         }
     },

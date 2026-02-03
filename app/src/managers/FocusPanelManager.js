@@ -636,9 +636,10 @@ export const FocusPanelManager = {
         // _originalHeaderValues managed by FocusPanelHeader
 
         // [UX Mobile] History Cleanup
-        // If closed via UI (button/backdrop) and we have a history state, go back safely
+        // CRITICAL: Do NOT call history.back() here! It can navigate to landing page.
+        // Instead, replace the current state to "neutralize" it.
         if (wasOpen && !options.causedByHistory && history.state?.focusPanel) {
-            HistoryManager.safeBack();
+            HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
         }
     },
 

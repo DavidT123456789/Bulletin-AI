@@ -2054,11 +2054,10 @@ export const ListViewManager = {
         const deactivateSearch = () => {
             _performDeactivateUI();
 
-            // HISTORY BACK: Use HistoryManager for safe navigation
-            // Si l'état courant indique qu'on est en recherche, on revient en arrière
-            // pour garder l'historique propre
+            // CRITICAL: Do NOT call history.back() here! It can navigate to landing page.
+            // Instead, replace the current state to "neutralize" it.
             if (history.state && history.state.inlineSearch) {
-                HistoryManager.safeBack();
+                HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
             }
         };
 
