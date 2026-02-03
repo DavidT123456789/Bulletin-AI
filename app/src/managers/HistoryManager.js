@@ -16,13 +16,31 @@ export const HistoryManager = {
     /** @type {number} Nombre de popstate à ignorer (gère les appels multiples de history.back()) */
     _popStatesToIgnore: 0,
 
+    /** @type {boolean} État de base initialisé */
+    _baseStateInitialized: false,
+
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
+     * Crée également un état de base pour éviter de retourner à la landing page.
      */
     init() {
         if (this._listenerAttached) return;
 
-        window.addEventListener('popstate', () => {
+        // CRITICAL FIX: Initialize base state to prevent going back to landing page
+        // This replaces the current history entry with our app's base state
+        if (!this._baseStateInitialized) {
+            history.replaceState({ appBase: true, timestamp: Date.now() }, '', '');
+            this._baseStateInitialized = true;
+        }
+
+        window.addEventListener('popstate', (event) => {
+            // If we somehow get to a state without our markers, push a new base state
+            // This prevents accidental navigation to landing page
+            if (!event.state?.appBase && !event.state?.uiOpen) {
+                history.pushState({ appBase: true, timestamp: Date.now() }, '', '');
+                return;
+            }
+
             if (this._popStatesToIgnore > 0) {
                 this._popStatesToIgnore--;
                 return;
