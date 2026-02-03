@@ -24,6 +24,7 @@ import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ModalUI } from './ModalUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -488,10 +489,10 @@ export const FocusPanelManager = {
         const state = { focusPanel: true, studentId: studentId };
         if (this.isOpen() && history.state?.focusPanel) {
             // Already open, switching student -> Replace state to keep history clean (prevent needing 50 back clicks)
-            history.replaceState(state, '');
+            HistoryManager.replaceCurrentState(state);
         } else {
             // Opening from closed -> Push state
-            history.pushState(state, '');
+            HistoryManager.pushCustomState(state);
         }
 
         this.currentStudentId = studentId;
@@ -553,7 +554,7 @@ export const FocusPanelManager = {
         const currentPeriod = appState.currentPeriod;
 
         // [UX Mobile] Push history state for creation mode
-        history.pushState({ focusPanel: true, mode: 'creation' }, '');
+        HistoryManager.pushCustomState({ focusPanel: true, mode: 'creation' });
 
         // Create a dummy result for the new student
         const dummyResult = {
@@ -635,9 +636,9 @@ export const FocusPanelManager = {
         // _originalHeaderValues managed by FocusPanelHeader
 
         // [UX Mobile] History Cleanup
-        // If closed via UI (button/backdrop) and we have a history state, go back
+        // If closed via UI (button/backdrop) and we have a history state, go back safely
         if (wasOpen && !options.causedByHistory && history.state?.focusPanel) {
-            history.back();
+            HistoryManager.safeBack();
         }
     },
 

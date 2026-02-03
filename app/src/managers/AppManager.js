@@ -24,11 +24,16 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { PwaInstallManager } from './PwaInstallManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 
 
 export const App = {
     async init() {
+        // CRITICAL: Initialize history protection FIRST to prevent navigation to landing page
+        // This must happen before any UI component can push/pop history states
+        HistoryManager.init();
+
         UI.init(this);
         AppreciationsManager.init(this, UI);
         EventListenersManager.init(this);

@@ -12,6 +12,7 @@ import { StudentPhotoManager } from './StudentPhotoManager.js';
 // ResultCardsUI removed - logic moved to Utils
 import { ClassUIManager } from './ClassUIManager.js';
 import { StatsUI } from './StatsUIManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Module de gestion de la vue Liste (tableau des Ã©lÃ¨ves)
@@ -2044,21 +2045,20 @@ export const ListViewManager = {
 
             _performActivateUI();
 
-            // HISTORY PUSH [NEW]
+            // HISTORY PUSH: Use HistoryManager for safe navigation
             // Permet de fermer la recherche avec le bouton retour du mobile
-            const state = { inlineSearch: true };
-            history.pushState(state, '', '');
+            HistoryManager.pushCustomState({ inlineSearch: true });
         };
 
         // Helper to deactivate search mode (With History Check)
         const deactivateSearch = () => {
             _performDeactivateUI();
 
-            // HISTORY BACK [NEW]
+            // HISTORY BACK: Use HistoryManager for safe navigation
             // Si l'état courant indique qu'on est en recherche, on revient en arrière
             // pour garder l'historique propre
             if (history.state && history.state.inlineSearch) {
-                history.back();
+                HistoryManager.safeBack();
             }
         };
 

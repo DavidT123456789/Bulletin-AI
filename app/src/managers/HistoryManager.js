@@ -3,6 +3,10 @@
  * Permet de gérer le bouton "Retour" (Back) sur mobile pour fermer les modales, menus et dropdowns.
  * Supporte les états empilés (ex: Modale Aide par dessus Modale Paramètres).
  * 
+ * CRITICAL: This module protects against navigating back to the landing page when users
+ * close modals or use browser back button. It replaces the initial history entry with
+ * an "app base" state and monitors all popstate events.
+ * 
  * @module managers/HistoryManager
  */
 
@@ -19,24 +23,35 @@ export const HistoryManager = {
     /** @type {boolean} État de base initialisé */
     _baseStateInitialized: false,
 
+    /** @type {number} Initial history length when app started (used to detect if we can go back) */
+    _initialHistoryLength: 0,
+
+    /** @type {number} Count of states we've pushed */
+    _pushedStatesCount: 0,
+
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
      * Crée également un état de base pour éviter de retourner à la landing page.
+     * 
+     * MUST be called early in app initialization (before any UI interactions).
      */
     init() {
         if (this._listenerAttached) return;
 
-        // CRITICAL FIX: Initialize base state to prevent going back to landing page
-        // This replaces the current history entry with our app's base state
+        // Track initial history length - we should never go below this
+        this._initialHistoryLength = history.length;
+
+        // CRITICAL FIX: Replace current history entry with our app's base state
+        // This prevents the browser's back button from returning to landing page
         if (!this._baseStateInitialized) {
             history.replaceState({ appBase: true, timestamp: Date.now() }, '', '');
             this._baseStateInitialized = true;
         }
 
         window.addEventListener('popstate', (event) => {
-            // If we somehow get to a state without our markers, push a new base state
-            // This prevents accidental navigation to landing page
-            if (!event.state?.appBase && !event.state?.uiOpen) {
+            // PROTECTION: If we somehow get to a state without our markers,
+            // push a new base state immediately to prevent landing page navigation
+            if (!event.state?.appBase && !event.state?.uiOpen && !event.state?.focusPanel && !event.state?.inlineSearch) {
                 history.pushState({ appBase: true, timestamp: Date.now() }, '', '');
                 return;
             }
@@ -44,6 +59,11 @@ export const HistoryManager = {
             if (this._popStatesToIgnore > 0) {
                 this._popStatesToIgnore--;
                 return;
+            }
+
+            // Decrement our pushed states count when going back
+            if (this._pushedStatesCount > 0) {
+                this._pushedStatesCount--;
             }
 
             if (this._stack.length > 0) {
@@ -67,6 +87,7 @@ export const HistoryManager = {
     pushState(id, closeCallback) {
         this.init();
         history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+        this._pushedStatesCount++;
         this._stack.push({ id, closeCallback });
     },
 
@@ -84,7 +105,8 @@ export const HistoryManager = {
         if (top.id === id) {
             this._stack.pop();
             this._popStatesToIgnore++;
-            history.back();
+            // Use safeBack to prevent landing page navigation
+            this.safeBack();
         } else {
             // Fermeture désordonnée: on nettoie la pile sans toucher à l'historique
             const index = this._stack.findIndex(item => item.id === id);
@@ -92,5 +114,62 @@ export const HistoryManager = {
                 this._stack.splice(index, 1);
             }
         }
+    },
+
+    /**
+     * SAFE BACK: Go back in history ONLY if we have pushed states to go back to.
+     * This prevents navigating to landing page or other external pages.
+     * 
+     * Other components (FocusPanelManager, ListViewManager) should use this
+     * instead of calling history.back() directly.
+     * 
+     * @returns {boolean} True if back was executed, false if blocked
+     */
+    safeBack() {
+        // Initialize if not already done
+        this.init();
+
+        // Only go back if we have pushed states to consume
+        if (this._pushedStatesCount > 0) {
+            this._pushedStatesCount--;
+            history.back();
+            return true;
+        }
+
+        // Cannot go back - would leave the app
+        return false;
+    },
+
+    /**
+     * Push a custom state (for components that manage their own history like FocusPanel).
+     * This allows them to participate in the safe-back system.
+     * 
+     * @param {Object} state - The state object to push
+     */
+    pushCustomState(state) {
+        this.init();
+        const enrichedState = { ...state, timestamp: Date.now() };
+        history.pushState(enrichedState, '', '');
+        this._pushedStatesCount++;
+    },
+
+    /**
+     * Replace current state (for components that want to update without adding history).
+     * 
+     * @param {Object} state - The state object to set
+     */
+    replaceCurrentState(state) {
+        this.init();
+        const enrichedState = { ...state, timestamp: Date.now() };
+        history.replaceState(enrichedState, '', '');
+    },
+
+    /**
+     * Check if it's safe to go back (without leaving the app).
+     * 
+     * @returns {boolean} True if we have pushed states that can be consumed
+     */
+    canGoBack() {
+        return this._pushedStatesCount > 0;
     }
 };
