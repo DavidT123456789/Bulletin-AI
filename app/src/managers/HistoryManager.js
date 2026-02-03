@@ -49,13 +49,24 @@ export const HistoryManager = {
         }
 
         window.addEventListener('popstate', (event) => {
-            // PROTECTION: If we somehow get to a state without our markers,
-            // push a new base state immediately to prevent landing page navigation
-            if (!event.state?.appBase && !event.state?.uiOpen && !event.state?.focusPanel && !event.state?.inlineSearch) {
-                history.pushState({ appBase: true, timestamp: Date.now() }, '', '');
+            // CRITICAL PROTECTION: Check if we're about to leave the app
+            // If the state doesn't have our markers, we've navigated to an external page
+            // (like the landing page). We MUST immediately push a state to return to the app.
+            const isOurState = event.state?.appBase || event.state?.uiOpen ||
+                event.state?.focusPanel || event.state?.inlineSearch;
+
+            if (!isOurState) {
+                // EMERGENCY: We've navigated outside our app's history!
+                // Push a new state immediately to go "forward" and stay in the app
+                history.pushState({ appBase: true, recovered: true, timestamp: Date.now() }, '', '');
+
+                // Reset our counter since we're now at base state
+                this._pushedStatesCount = 0;
+                this._stack = [];
                 return;
             }
 
+            // If this popstate should be ignored (triggered by our own safeBack call)
             if (this._popStatesToIgnore > 0) {
                 this._popStatesToIgnore--;
                 return;
@@ -66,6 +77,7 @@ export const HistoryManager = {
                 this._pushedStatesCount--;
             }
 
+            // Close the topmost UI element if any
             if (this._stack.length > 0) {
                 const top = this._stack.pop();
                 if (top?.closeCallback) {
