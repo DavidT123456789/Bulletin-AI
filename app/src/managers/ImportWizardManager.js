@@ -1273,9 +1273,6 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Guess column type with improved logic (ported from ImportUIManager)
-     */
-    /**
      * Try to detect column type from header text
      * Returns internal TAG or null if no match found
      * @private

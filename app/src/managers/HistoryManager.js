@@ -9,8 +9,12 @@
 export const HistoryManager = {
     /** @type {Array<{id: string, closeCallback: Function}>} Pile des éléments UI ouverts */
     _stack: [],
+
+    /** @type {boolean} Listener déjà attaché */
     _listenerAttached: false,
-    _ignoreNextPopState: false,
+
+    /** @type {number} Nombre de popstate à ignorer (gère les appels multiples de history.back()) */
+    _popStatesToIgnore: 0,
 
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
@@ -18,20 +22,15 @@ export const HistoryManager = {
     init() {
         if (this._listenerAttached) return;
 
-        window.addEventListener('popstate', (e) => {
-            if (this._ignoreNextPopState) {
-                this._ignoreNextPopState = false;
+        window.addEventListener('popstate', () => {
+            if (this._popStatesToIgnore > 0) {
+                this._popStatesToIgnore--;
                 return;
             }
 
             if (this._stack.length > 0) {
-                // Le bouton retour a été pressé par l'utilisateur
-                // On dépile le dernier élément ouvert
                 const top = this._stack.pop();
-
-                // console.log('[HistoryManager] Back detected, closing:', top.id);
-                // On ferme l'UI (le callback doit gérer la fermeture visuelle)
-                if (top && typeof top.closeCallback === 'function') {
+                if (top?.closeCallback) {
                     top.closeCallback({ causedByHistory: true });
                 }
             }
@@ -49,46 +48,30 @@ export const HistoryManager = {
      */
     pushState(id, closeCallback) {
         this.init();
-
-        const state = { uiOpen: true, uiId: id, timestamp: Date.now() };
-        history.pushState(state, '', '');
-
+        history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
         this._stack.push({ id, closeCallback });
-        // console.log('[HistoryManager] Pushed state for:', id, '(Stack size:', this._stack.length, ')');
     },
 
     /**
      * Signale la fermeture manuelle d'un élément (bouton X, backdrop click).
      * Fait reculer l'historique pour nettoyer l'état poussé.
-     * À appeler LORS de la fermeture manuelle.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
      */
     handleManualClose(id) {
         if (this._stack.length === 0) return;
 
-        // On vérifie si l'élément qu'on ferme est bien le dernier empilé
-        // (Pour éviter des incohérences si on ferme un élément qui n'est pas au sommet)
         const top = this._stack[this._stack.length - 1];
 
         if (top.id === id) {
-            // console.log('[HistoryManager] Manual close for:', id);
-
-            // On le retire de notre pile locale
             this._stack.pop();
-
-            // On signale qu'on va déclencher un popstate nous-mêmes, qu'il faut ignorer
-            this._ignoreNextPopState = true;
+            this._popStatesToIgnore++;
             history.back();
         } else {
-            console.warn('[HistoryManager] Manual close requested for', id, 'but top of stack is', top.id);
-            // Cas rare: fermeture désordonnée. On nettoie quand même si présent
-            const index = this._stack.findIndex(req => req.id === id);
+            // Fermeture désordonnée: on nettoie la pile sans toucher à l'historique
+            const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
-                // On ne fait pas history.back() ici car on casserait la navigation pour les éléments au dessus.
-                // C'est un cas limite (ex: fermer programmatiquement une modale "en dessous").
-                // Idéalement, on ne devrait fermer que le sommet.
             }
         }
     }
