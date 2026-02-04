@@ -415,22 +415,11 @@
     <div id="focusPanelBackdrop" class="focus-panel-backdrop"></div>
     <div id="focusPanel" class="focus-panel" role="dialog" aria-modal="true" aria-labelledby="focusStudentName">
         <div class="focus-header">
-            <!-- LEFT ZONE: Avatar (always visible) + Edit actions overlay -->
+            <!-- LEFT ZONE: Avatar (always visible) -->
             <div class="focus-header-left">
-                <!-- AVATAR: Always visible, now part of left zone -->
+                <!-- AVATAR: Always visible, editable in edit mode -->
                 <div id="focusAvatarContainer" class="focus-panel-avatar-container">
                     <!-- Populated by FocusPanelManager -->
-                </div>
-                <!-- Edit mode: Save/Cancel buttons (overlay on avatar) -->
-                <div class="focus-edit-actions">
-                    <button id="focusEditSaveBtn" class="btn-edit-action save tooltip" data-tooltip="Valider"
-                        aria-label="Valider">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button id="focusEditCancelBtn" class="btn-edit-action cancel tooltip" data-tooltip="Annuler"
-                        aria-label="Annuler">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
             </div>
 
@@ -477,6 +466,10 @@
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 <div class="focus-nav-divider"></div>
+                <!-- Edit mode: Save button (hidden in read mode, visible in edit mode) -->
+                <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
+                    <i class="fas fa-check"></i>
+                </button>
                 <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
                     <i class="fas fa-times"></i>
                 </button>

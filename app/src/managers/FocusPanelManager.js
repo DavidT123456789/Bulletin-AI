@@ -136,7 +136,33 @@ export const FocusPanelManager = {
 
         // Close panel
         if (backdrop) backdrop.addEventListener('click', () => this.close());
-        if (backBtn) backBtn.addEventListener('click', () => this.close());
+
+        // Back button: Cancel edit mode if active, otherwise close panel
+        // Special case: In creation mode, always close the panel
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                const header = document.querySelector('.focus-header');
+                const isEditing = header?.classList.contains('editing');
+
+                // In creation mode: always close the panel (nothing to go back to)
+                if (this.isCreationMode) {
+                    // Clear any pending photo
+                    FocusPanelHeader.clearPendingAvatarData();
+                    // Close without saving (close() handles UI cleanup for creation mode)
+                    this.close();
+                    return;
+                }
+
+                // Existing student: toggle edit mode or close
+                if (isEditing) {
+                    // Cancel edit mode without saving
+                    FocusPanelHeader.toggleEditMode(false, true);
+                } else {
+                    // Normal close
+                    this.close();
+                }
+            });
+        }
 
         // Navigation delegated to FocusPanelNavigation
         if (prevBtn) prevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
@@ -611,14 +637,25 @@ export const FocusPanelManager = {
         const backdrop = document.getElementById('focusPanelBackdrop');
         const wasOpen = this.isOpen();
 
-        // Exit edit mode if active (cancel, don't save)
+        // Check if we're in creation mode BEFORE clearing state
+        const wasCreationMode = this.isCreationMode;
+
+        // Exit edit mode if active (only for existing students, not creation)
         const header = document.querySelector('.focus-header');
-        if (header && header.classList.contains('editing')) {
+        if (!wasCreationMode && header && header.classList.contains('editing')) {
             FocusPanelHeader.toggleEditMode(false, true); // Cancel without saving
+        } else if (wasCreationMode && header?.classList.contains('editing')) {
+            // In creation mode: just clean up UI without triggering any save logic
+            header.classList.remove('editing');
+            document.querySelector('.focus-header-read')?.classList.remove('hidden');
+            document.querySelector('.focus-header-edit')?.classList.remove('visible');
+            document.querySelector('.focus-nav-buttons')?.classList.remove('editing');
         }
 
-        // Save context and identity changes before closing
-        this._saveContext();
+        // Save context and identity changes before closing (NOT in creation mode)
+        if (!wasCreationMode) {
+            this._saveContext();
+        }
 
         // Cancel any in-progress generation
         if (this.currentStudentId) this._cancelGenerationForStudent(this.currentStudentId);
@@ -1239,26 +1276,18 @@ export const FocusPanelManager = {
         // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
 
         // === 0. HEADER: Avatar ===
+        // Avatar is now ONLY editable in edit mode (toggled by FocusPanelHeader)
+        // In read mode, avatar is display-only
         const avatarContainer = document.getElementById('focusAvatarContainer');
         if (avatarContainer) {
             avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
             avatarContainer.classList.add('focus-panel-avatar-container');
 
-            // Add click handler for photo upload
-            const avatarEl = avatarContainer.querySelector('.student-avatar');
-            if (avatarEl) {
-                if (result.id) {
-                    // Existing student: enable photo upload
-                    avatarEl.classList.add('student-avatar--editable');
-                    avatarEl.onclick = () => FocusPanelHeader.handleAvatarClick(result.id);
-                } else {
-                    // Creation mode: show as editable but with tooltip + click feedback
-                    avatarEl.classList.add('student-avatar--editable-pending');
-                    avatarEl.setAttribute('data-tooltip', 'Enregistrez l\'élève pour ajouter une photo');
-                    avatarEl.classList.add('tooltip');
-                    avatarEl.onclick = () => UI.showNotification('Enregistrez l\'élève pour ajouter une photo', 'info');
-                }
-            }
+            // Store result ID for later reference by edit mode
+            avatarContainer.dataset.studentId = result.id || '';
+
+            // Avatar is NOT editable in read mode - just display
+            // Edit mode will enable interactivity via FocusPanelHeader.toggleEditMode()
         }
 
         // === 1. HEADER: Student Name ===

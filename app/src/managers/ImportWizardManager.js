@@ -115,6 +115,7 @@ export const ImportWizardManager = {
 
             backdrop.classList.add('active');
             document.body.style.overflow = 'hidden';
+
             // Focus first card for accessibility
             setTimeout(() => {
                 backdrop.querySelector('.import-hub-card')?.focus();

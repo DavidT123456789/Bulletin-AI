@@ -56,7 +56,6 @@ export const FocusPanelHeader = {
     _setupEventListeners() {
         const studentName = document.getElementById('focusStudentName');
         const focusEditSaveBtn = document.getElementById('focusEditSaveBtn');
-        const focusEditCancelBtn = document.getElementById('focusEditCancelBtn');
         const nomInput = document.getElementById('headerNomInput');
         const prenomInput = document.getElementById('headerPrenomInput');
         const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes');
@@ -71,13 +70,7 @@ export const FocusPanelHeader = {
                 this.toggleEditMode(false); // Validates and closes
             });
         }
-
-        if (focusEditCancelBtn) {
-            focusEditCancelBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleEditMode(false, true); // Cancel without saving
-            });
-        }
+        // Note: Cancel is now handled by the close button (×) in focus-nav-buttons
 
         if (nomInput) nomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
         if (prenomInput) prenomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
@@ -102,11 +95,45 @@ export const FocusPanelHeader = {
         const currentStudentId = this.callbacks.getCurrentStudentId();
         const isCreationMode = this.callbacks.getIsCreationMode();
 
+        // Avatar element reference
+        const avatarContainer = document.getElementById('focusAvatarContainer');
+        const avatarEl = avatarContainer?.querySelector('.student-avatar');
+
         if (show) {
             // Enter Edit Mode
             header.classList.add('editing');
             readMode.classList.add('hidden');
             editMode.classList.add('visible');
+
+            // Add editing class to nav buttons for styling
+            const navButtons = document.querySelector('.focus-nav-buttons');
+            if (navButtons) navButtons.classList.add('editing');
+
+            // Update tooltips for edit mode
+            const saveBtn = document.getElementById('focusEditSaveBtn');
+            const closeBtn = document.getElementById('focusBackBtn');
+            if (saveBtn) {
+                saveBtn.setAttribute('data-tooltip', 'Valider les modifications');
+                saveBtn.classList.add('tooltip');
+            }
+            if (closeBtn) {
+                closeBtn.setAttribute('data-tooltip', 'Annuler les modifications');
+                closeBtn.classList.add('tooltip');
+            }
+
+            // === ENABLE avatar editing ===
+            if (avatarEl) {
+                const studentId = avatarContainer.dataset.studentId;
+                if (studentId) {
+                    // Existing student: enable photo upload
+                    avatarEl.classList.add('student-avatar--editable');
+                    avatarEl.onclick = () => this.handleAvatarClick(studentId);
+                } else {
+                    // Creation mode: allow photo upload with temporary storage
+                    avatarEl.classList.add('student-avatar--editable');
+                    avatarEl.onclick = () => this._handlePendingAvatarClick(avatarEl);
+                }
+            }
 
             // Populate Inputs
             // FORCE null result if in creation mode to ensure we don't load a previous student
@@ -167,6 +194,10 @@ export const FocusPanelHeader = {
             }
         } else {
             // Exit Edit Mode
+
+            // Check if we're in creation mode (no existing student)
+            const isCreationMode = this.callbacks.getIsCreationMode();
+
             if (cancel && this._originalHeaderValues) {
                 // RESTORE original values to inputs (for visual consistency)
                 const nomInput = document.getElementById('headerNomInput');
@@ -180,17 +211,55 @@ export const FocusPanelHeader = {
                     cb.checked = this._originalHeaderValues.statuses.includes(cb.value);
                 });
 
-                // Clear stored values
+                // Clear stored values and pending photo
                 this._originalHeaderValues = null;
+                this.clearPendingAvatarData();
+            } else if (cancel && isCreationMode) {
+                // Cancel in creation mode: clean up and close panel
+                this.clearPendingAvatarData();
+                this._exitEditModeUI(header, readMode, editMode, avatarEl);
+
+                // Close the panel
+                if (typeof FocusPanelManager !== 'undefined') {
+                    FocusPanelManager.close();
+                }
+                return;
             } else if (!cancel) {
                 this._saveHeaderChanges();
                 this._originalHeaderValues = null;
             }
 
-            header.classList.remove('editing');
-            readMode.classList.remove('hidden');
-            editMode.classList.remove('visible');
+            // Clean up UI
+            this._exitEditModeUI(header, readMode, editMode, avatarEl);
         }
+    },
+
+    /**
+     * Clean up UI state when exiting edit mode
+     * @private
+     */
+    _exitEditModeUI(header, readMode, editMode, avatarEl) {
+        // Disable avatar editing
+        if (avatarEl) {
+            avatarEl.classList.remove('student-avatar--editable', 'student-avatar--editable-pending', 'tooltip');
+            avatarEl.removeAttribute('data-tooltip');
+            avatarEl.onclick = null;
+        }
+
+        // Remove editing state from header
+        header?.classList.remove('editing');
+        readMode?.classList.remove('hidden');
+        editMode?.classList.remove('visible');
+
+        // Remove editing state from nav buttons
+        const navButtons = document.querySelector('.focus-nav-buttons');
+        navButtons?.classList.remove('editing');
+
+        // Restore original tooltips
+        const saveBtn = document.getElementById('focusEditSaveBtn');
+        const closeBtn = document.getElementById('focusBackBtn');
+        saveBtn?.classList.remove('tooltip');
+        closeBtn?.setAttribute('data-tooltip', 'Fermer');
     },
 
     /**
@@ -257,6 +326,12 @@ export const FocusPanelHeader = {
             // Add to app state
             appState.generatedResults.push(result);
             appState.filteredResults.push(result);
+
+            // Apply pending avatar photo if any
+            if (this._pendingAvatarData) {
+                result.studentData.photo = this._pendingAvatarData;
+                this.clearPendingAvatarData();
+            }
 
             // Update tracking via callbacks
             this.callbacks.setCurrentStudentId(newId);
@@ -429,6 +504,72 @@ export const FocusPanelHeader = {
         };
 
         input.click();
+    },
+
+    /**
+     * Handles avatar click in creation mode (no student ID yet)
+     * Stores the photo temporarily until the student is saved
+     * @param {HTMLElement} avatarEl - The avatar element to update visually
+     */
+    _handlePendingAvatarClick(avatarEl) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.className = 'student-avatar__input';
+
+        input.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                UI.showNotification('Image trop volumineuse (max 2 Mo)', 'warning');
+                return;
+            }
+
+            // Read file as base64 and store temporarily
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64Data = event.target.result;
+                this._pendingAvatarData = base64Data;
+
+                // Update avatar visually immediately
+                if (avatarEl) {
+                    // Create or update the image
+                    let imgEl = avatarEl.querySelector('.student-avatar__img');
+                    const initialsEl = avatarEl.querySelector('.student-avatar__initials');
+
+                    if (!imgEl) {
+                        imgEl = document.createElement('img');
+                        imgEl.className = 'student-avatar__img';
+                        avatarEl.appendChild(imgEl);
+                    }
+
+                    imgEl.src = base64Data;
+                    if (initialsEl) initialsEl.style.display = 'none';
+                }
+
+                UI.showNotification('Photo ajoutée (sera enregistrée avec l\'élève)', 'success');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        input.click();
+    },
+
+    /**
+     * Gets the pending avatar data (for use when saving a new student)
+     * @returns {string|null} Base64 image data or null
+     */
+    getPendingAvatarData() {
+        return this._pendingAvatarData || null;
+    },
+
+    /**
+     * Clears pending avatar data
+     */
+    clearPendingAvatarData() {
+        this._pendingAvatarData = null;
     },
 
     /**

@@ -1450,6 +1450,41 @@
     transform: scale(1.1);
 }
 
+/* Save button: Hidden by default, shown in edit mode with animation */
+.focus-nav-btn.focus-save-btn {
+    opacity: 0;
+    width: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--success-color, #22c55e);
+    transition: opacity 0.25s ease, width 0.25s ease, transform 0.2s ease;
+}
+
+/* EDIT MODE: Show save button with smooth animation */
+.focus-nav-buttons.editing .focus-save-btn {
+    opacity: 1;
+    width: 28px;
+    pointer-events: auto;
+}
+
+.focus-nav-buttons.editing .focus-save-btn:hover {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success-color, #22c55e);
+    transform: scale(1.1);
+}
+
+/* Close button: Changes to Cancel style in edit mode */
+.focus-nav-buttons.editing .focus-close-btn {
+    color: var(--error-color);
+}
+
+.focus-nav-buttons.editing .focus-close-btn:hover {
+    background: rgba(var(--error-color-rgb), 0.15);
+    color: var(--error-color);
+}
+
 .focus-nav-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -4088,6 +4123,10 @@
     flex-direction: column;
     justify-content: center;
     min-height: 40px;
+    min-width: 0;
+    /* Allow flexbox to shrink below content size */
+    overflow: hidden;
+    /* Contain overflow for scroll */
 }
 
 /* Add class to header when editing */
@@ -4103,11 +4142,14 @@
 }
 
 /* ============================
-   LEFT ZONE: Avatar + Edit actions overlay
+   LEFT ZONE: Avatar + Edit actions
    ============================ */
 .focus-header-left {
     position: relative;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -4116,75 +4158,12 @@
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-/* Hide avatar in edit mode to show edit actions */
+/* KEEP avatar visible in edit mode - only add editable styling */
 .focus-header.editing .focus-header-left .focus-panel-avatar-container {
-    opacity: 0;
-    transform: scale(0.8);
-    pointer-events: none;
-}
-
-/* Edit Actions - visible in edit mode (Vertical Layout) */
-.focus-edit-actions {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.8);
-    transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-
-.focus-header.editing .focus-edit-actions {
+    /* No longer hidden - avatar stays visible */
     opacity: 1;
-    pointer-events: auto;
     transform: scale(1);
-}
-
-/* Edit Action Buttons */
-.btn-edit-action {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.btn-edit-action.cancel {
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
-    border: 1px solid var(--border-color);
-}
-
-.btn-edit-action.cancel:hover {
-    background: rgba(var(--error-color-rgb), 0.1);
-    color: var(--error-color);
-    border-color: rgba(var(--error-color-rgb), 0.3);
-    transform: scale(1.08);
-}
-
-.btn-edit-action.save {
-    background: var(--primary-color);
-    color: white;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
-}
-
-.btn-edit-action.save:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.35);
-}
-
-.btn-edit-action:active {
-    transform: scale(0.95);
+    pointer-events: auto;
 }
 
 /* Read Mode (Default) */
@@ -4231,41 +4210,58 @@
     display: flex;
     gap: 12px;
     width: 100%;
+    align-items: center;
 }
 
 .focus-input-header {
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: 100px;
-    /* Pill shape inputs */
-    padding: 8px 16px;
-    font-size: 16px;
+    padding: 10px 20px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--text-primary);
     width: 100%;
     outline: none;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.focus-input-header::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 500;
 }
 
 .focus-input-header:focus {
     border-color: var(--primary-color);
     background: var(--surface-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.12),
+        inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    transform: scale(1.01);
 }
 
-/* Status Selection in Header (Chips) */
+/* Status Selection in Header (Chips) - Single line on PC */
 .focus-status-selection {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
+    max-width: 100%;
+}
+
+.focus-status-selection::-webkit-scrollbar {
+    display: none;
 }
 
 .status-pill-check {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
+    gap: 6px;
+    padding: 7px 14px;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: 100px;
@@ -4274,37 +4270,47 @@
     color: var(--text-secondary);
     cursor: pointer;
     user-select: none;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .status-pill-check input {
     display: none;
-    /* Hide actual checkbox */
 }
 
 .status-pill-check:hover {
-    background: rgba(var(--primary-color-rgb), 0.05);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
     color: var(--primary-color);
+    transform: translateY(-1px);
 }
 
 /* Selected State */
 .status-pill-check:has(input:checked) {
-    background: rgba(var(--primary-color-rgb), 0.1);
+    background: rgba(var(--primary-color-rgb), 0.12);
     border-color: var(--primary-color);
     color: var(--primary-color);
-    box-shadow: 0 2px 5px rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.status-pill-check:has(input:checked):hover {
+    background: rgba(var(--primary-color-rgb), 0.18);
 }
 
 /* Dark Mode Adjustments */
 [data-theme="dark"] .focus-input-header {
-    background: rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .focus-input-header:focus {
+    background: rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .status-pill-check {
-    background: rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* ============================
@@ -4990,6 +4996,100 @@
         margin: 0 4px;
     }
 
+    /* ============================================
+       MOBILE EDIT MODE - Optimized vertical layout
+       ============================================ */
+
+    /* Header becomes a structured vertical layout in edit mode */
+    .focus-header.editing {
+        position: relative;
+        /* Required for absolute children */
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 16px 16px;
+        gap: 12px;
+    }
+
+    /* Top bar: Avatar + Edit buttons on the left */
+    .focus-header.editing .focus-header-left {
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        width: auto;
+        /* Allow flex content */
+        height: 40px;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Ensure avatar is sized correctly */
+    .focus-header.editing .focus-panel-avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Nav buttons stay at top-right in edit mode */
+    .focus-header.editing .focus-nav-buttons {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        margin-left: 0;
+    }
+
+    /* Content area - push down below the avatar/nav row */
+    .focus-header.editing .focus-header-content {
+        margin-top: 48px;
+        /* Space for avatar + nav row */
+        width: 100%;
+    }
+
+    /* Edit form takes full width */
+    .focus-header.editing .focus-header-edit {
+        width: 100%;
+    }
+
+    /* Stack inputs vertically on narrow screens */
+    .focus-header.editing .focus-edit-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .focus-header.editing .focus-input-header {
+        font-size: 15px;
+        padding: 10px 14px;
+    }
+
+    /* Status selection: horizontal scroll on mobile */
+    .focus-header.editing .focus-status-selection,
+    .focus-header.editing .status-checkboxes {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        margin: 0 -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+        gap: 6px;
+    }
+
+    .focus-header.editing .status-pill-check {
+        flex-shrink: 0;
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+
+    /* Edit action buttons: smaller on mobile */
+    .focus-header.editing .focus-edit-actions {
+        gap: 3px;
+    }
+
+    .focus-header.editing .btn-edit-action {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
     /* Content: Full width, less padding */
     .focus-content {
         padding: 12px 16px;
@@ -5185,6 +5285,44 @@
 
     .student-name-cell {
         min-width: 100px;
+    }
+
+    /* EDIT MODE: Ultra-compact adjustments */
+    .focus-header.editing {
+        padding: 10px 12px 14px;
+    }
+
+    .focus-header.editing .focus-header-left {
+        top: 10px;
+        left: 12px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .focus-header.editing .focus-nav-buttons {
+        top: 10px;
+        right: 12px;
+    }
+
+    .focus-header.editing .focus-header-content {
+        margin-top: 44px;
+    }
+
+    .focus-header.editing .focus-input-header {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .focus-header.editing .status-checkboxes {
+        margin: 0 -12px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .focus-header.editing .btn-edit-action {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
     }
 
     /* Hide appreciation column on very small screens */

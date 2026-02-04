@@ -13,7 +13,10 @@
     z-index: 9999;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        backdrop-filter 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-theme="dark"] .import-hub-backdrop {
@@ -23,6 +26,7 @@
 .import-hub-backdrop.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* === MODAL CONTAINER === */
@@ -136,8 +140,12 @@
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg, 16px);
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     overflow: hidden;
+    will-change: transform;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-color 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Dark mode card - Gradient + Glow */
@@ -166,6 +174,7 @@
     pointer-events: none;
 }
 
+/* Hover state */
 .import-hub-card:hover {
     transform: translateY(-6px);
     border-color: var(--primary-color);
@@ -399,31 +408,29 @@
 
 /* === ENTRANCE ANIMATIONS === */
 .import-hub-backdrop.active .import-hub-card {
-    animation: hub-card-entrance 0.6s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    animation: hub-card-entrance 0.5s cubic-bezier(0.32, 0.72, 0, 1) backwards;
 }
 
 .import-hub-backdrop.active .import-hub-card:nth-child(1) {
-    animation-delay: 0.08s;
+    animation-delay: 0.05s;
 }
 
 .import-hub-backdrop.active .import-hub-card:nth-child(2) {
-    animation-delay: 0.16s;
+    animation-delay: 0.1s;
 }
 
 .import-hub-backdrop.active .import-hub-card:nth-child(3) {
-    animation-delay: 0.24s;
+    animation-delay: 0.15s;
 }
 
 @keyframes hub-card-entrance {
     from {
         opacity: 0;
-        transform: translateY(24px) scale(0.92);
         filter: blur(4px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
         filter: blur(0);
     }
 }
