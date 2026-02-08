@@ -2797,6 +2797,14 @@ img {
         white-space: normal
     }
 
+    .lp-faq__header {
+        margin-bottom: 32px
+    }
+
+    #specs.lp-section {
+        padding: 40px 0
+    }
+
     .lp-faq__question {
         padding: 16px;
         font-size: .95rem
