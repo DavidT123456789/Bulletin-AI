@@ -365,18 +365,24 @@
     <section class="lp-section" id="specs">
         <div class="lp-container">
             <div class="lp-faq__header lp-reveal">
+                <span class="lp-tag">SPÉCIFICATIONS</span>
                 <h2 class="lp-faq__title">Spécifications & Confidentialité</h2>
                 <p class="lp-faq__subtitle">Détails techniques et fonctionnement de l'application.</p>
             </div>
 
             <div class="lp-faq__list">
-                <!-- Q1 -->
+                <!-- Q1: Architecture -->
                 <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" onclick="toggleFaq(this)">
-                        Architecture Local-First & Confidentialité
-                        <span class="lp-faq__icon"><i class="fas fa-chevron-down"></i></span>
+                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-1">
+                        <div class="lp-faq__question-content">
+                            <div class="lp-faq__icon-wrapper" data-color="green">
+                                <i class="fas fa-server" aria-hidden="true"></i>
+                            </div>
+                            <span class="lp-faq__item-title">Architecture Local-First & Confidentialité</span>
+                        </div>
+                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
                     </button>
-                    <div class="lp-faq__answer">
+                    <div class="lp-faq__answer" id="faq-answer-1">
                         <div class="lp-faq__answer-content">
                             Les données sensibles (identités des élèves, notes brutes) sont stockées exclusivement dans
                             le <strong>LocalStorage</strong> du navigateur.
@@ -386,13 +392,18 @@
                     </div>
                 </div>
 
-                <!-- Q2 -->
+                <!-- Q2: Models -->
                 <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" onclick="toggleFaq(this)">
-                        Modèles IA & Haute Disponibilité
-                        <span class="lp-faq__icon"><i class="fas fa-chevron-down"></i></span>
+                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-2">
+                        <div class="lp-faq__question-content">
+                            <div class="lp-faq__icon-wrapper" data-color="blue">
+                                <i class="fas fa-brain" aria-hidden="true"></i>
+                            </div>
+                            <span class="lp-faq__item-title">Modèles IA & Haute Disponibilité</span>
+                        </div>
+                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
                     </button>
-                    <div class="lp-faq__answer">
+                    <div class="lp-faq__answer" id="faq-answer-2">
                         <div class="lp-faq__answer-content">
                             <strong>Support Multi-Provider :</strong> Compatible nativement avec Mistral AI, Google
                             Gemini et OpenRouter.<br>
@@ -404,13 +415,18 @@
                     </div>
                 </div>
 
-                <!-- Q3 (NEW) -->
+                <!-- Q3: Prompts -->
                 <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" onclick="toggleFaq(this)">
-                        Ingénierie des Prompts (System Prompts)
-                        <span class="lp-faq__icon"><i class="fas fa-chevron-down"></i></span>
+                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-3">
+                        <div class="lp-faq__question-content">
+                            <div class="lp-faq__icon-wrapper" data-color="purple">
+                                <i class="fas fa-terminal" aria-hidden="true"></i>
+                            </div>
+                            <span class="lp-faq__item-title">Ingénierie des Prompts (System Prompts)</span>
+                        </div>
+                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
                     </button>
-                    <div class="lp-faq__answer">
+                    <div class="lp-faq__answer" id="faq-answer-3">
                         <div class="lp-faq__answer-content">
                             L'application utilise des <strong>System Prompts calibrés</strong> pour garantir un ton
                             professionnel et pédagogique.<br>
@@ -421,13 +437,18 @@
                     </div>
                 </div>
 
-                <!-- Q4 -->
+                <!-- Q4: Standards -->
                 <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" onclick="toggleFaq(this)">
-                        Standards de Données & Interopérabilité
-                        <span class="lp-faq__icon"><i class="fas fa-chevron-down"></i></span>
+                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-4">
+                        <div class="lp-faq__question-content">
+                            <div class="lp-faq__icon-wrapper" data-color="cyan">
+                                <i class="fas fa-file-code" aria-hidden="true"></i>
+                            </div>
+                            <span class="lp-faq__item-title">Standards de Données & Interopérabilité</span>
+                        </div>
+                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
                     </button>
-                    <div class="lp-faq__answer">
+                    <div class="lp-faq__answer" id="faq-answer-4">
                         <div class="lp-faq__answer-content">
                             <strong>Import Agnostique :</strong> Algorithme de détection automatique de colonnes
                             compatible avec tout tableur (Excel, CSV, Pronote).<br>
@@ -437,13 +458,18 @@
                     </div>
                 </div>
 
-                <!-- Q5 -->
+                <!-- Q5: Licence -->
                 <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" onclick="toggleFaq(this)">
-                        Licence & Contribution
-                        <span class="lp-faq__icon"><i class="fas fa-chevron-down"></i></span>
+                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-5">
+                        <div class="lp-faq__question-content">
+                            <div class="lp-faq__icon-wrapper" data-color="orange">
+                                <i class="fas fa-balance-scale" aria-hidden="true"></i>
+                            </div>
+                            <span class="lp-faq__item-title">Licence & Contribution</span>
+                        </div>
+                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
                     </button>
-                    <div class="lp-faq__answer">
+                    <div class="lp-faq__answer" id="faq-answer-5">
                         <div class="lp-faq__answer-content">
                             Code source distribué sous licence <strong>CC BY-NC-SA 4.0</strong>.<br>
                             Le projet encourage la transparence totale : le code est auditable sur GitHub pour vérifier
@@ -553,21 +579,38 @@
             }
         });
 
-        // FAQ Toggle
-        function toggleFaq(button) {
-            const item = button.parentElement;
-            const isOpen = item.classList.contains('is-open');
+        // FAQ Toggle System (A11y Compliant)
+        function initFaq() {
+            const questions = document.querySelectorAll('.lp-faq__question');
 
-            // Close all others
-            document.querySelectorAll('.lp-faq__item').forEach(i => {
-                i.classList.remove('is-open');
+            questions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const item = question.closest('.lp-faq__item');
+                    const isOpen = item.classList.contains('is-open');
+
+                    // Close all other items
+                    document.querySelectorAll('.lp-faq__item').forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('is-open');
+                            const btn = otherItem.querySelector('.lp-faq__question');
+                            if (btn) btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    // Toggle current item
+                    if (isOpen) {
+                        item.classList.remove('is-open');
+                        question.setAttribute('aria-expanded', 'false');
+                    } else {
+                        item.classList.add('is-open');
+                        question.setAttribute('aria-expanded', 'true');
+                    }
+                });
             });
-
-            // Toggle current
-            if (!isOpen) {
-                item.classList.add('is-open');
-            }
         }
+
+        // Initialize FAQ
+        initFaq();
 
         // Scroll Reveal Animation
         const observerOptions = {
