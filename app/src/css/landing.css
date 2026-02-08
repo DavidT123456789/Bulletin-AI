@@ -2793,6 +2793,10 @@ img {
         font-size: .9rem
     }
 
+    .lp-faq__title {
+        white-space: normal
+    }
+
     .lp-faq__question {
         padding: 16px;
         font-size: .95rem
