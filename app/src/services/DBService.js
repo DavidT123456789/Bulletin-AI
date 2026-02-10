@@ -96,8 +96,9 @@ export const DBService = {
 
     /**
      * Sauvegarde plusieurs objets dans un store (transaction unique).
-     * IMPORTANT: Cette fonction REMPLACE entièrement le contenu du store.
-     * Elle vide d'abord le store puis insère tous les éléments.
+     * Utilise un upsert non-destructif : insère ou met à jour chaque item
+     * sans vider le store au préalable. Pour les suppressions, utiliser
+     * delete() ou clear() explicitement.
      * @param {string} storeName 
      * @param {Array<Object>} items 
      */
@@ -110,12 +111,24 @@ export const DBService = {
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
 
-            // CORRECTIF: Vider le store d'abord pour que les suppressions soient prises en compte
-            const clearRequest = store.clear();
-            clearRequest.onsuccess = () => {
-                // Puis insérer tous les éléments actuels
-                items.forEach(item => store.put(item));
-            };
+            items.forEach(item => store.put(item));
+        });
+    },
+
+    /**
+     * Supprime un enregistrement d'un store par sa clé.
+     * @param {string} storeName 
+     * @param {string} key 
+     */
+    async delete(storeName, key) {
+        await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.delete(key);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
         });
     },
 

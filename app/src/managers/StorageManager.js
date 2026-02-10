@@ -7,6 +7,7 @@ let UI;
 let App;
 
 export const StorageManager = {
+    _savePromise: null,
     init(ui, app) {
         UI = ui;
         App = app;
@@ -259,22 +260,29 @@ export const StorageManager = {
     },
 
     async saveAppState() {
-        // Sauvegarde simplifiée utilisant les nouvelles structures
+        while (this._savePromise) {
+            await this._savePromise;
+        }
+        this._savePromise = this._doSaveAppState();
+        try {
+            await this._savePromise;
+        } finally {
+            this._savePromise = null;
+        }
+    },
+
+    async _doSaveAppState() {
         const settings = {
-            // Paramètres utilisateur (structure complète aplatie)
             theme: userSettings.ui.theme,
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
 
-            // Configuration académique
             useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
             periodSystem: userSettings.academic.periodSystem,
             subjects: userSettings.academic.subjects,
             evolutionThresholds: userSettings.academic.evolutionThresholds,
-            // Multi-class support
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId || null,
 
-            // Configuration API
             currentAIModel: userSettings.api.currentAIModel,
             enableApiFallback: userSettings.api.enableApiFallback,
             openaiApiKey: userSettings.api.openaiApiKey,
@@ -285,28 +293,22 @@ export const StorageManager = {
             apiKeyStatus: runtimeState.apiStatus || {},
             validatedApiKeys: runtimeState.validatedApiKeys || {},
 
-            // Ollama Settings
             ollamaEnabled: userSettings.api.ollamaEnabled,
             ollamaBaseUrl: userSettings.api.ollamaBaseUrl,
             ollamaInstalledModels: userSettings.api.ollamaInstalledModels,
 
-            // Configuration import
             massImportFormats: userSettings.import.massImportFormats,
 
-            // Privacy
             privacy: userSettings.privacy,
 
-            // État de navigation (persisté)
             currentPeriod: runtimeState.navigation.currentPeriod,
             currentSubject: runtimeState.navigation.currentSubject,
 
             currentInputMode: runtimeState.navigation.currentInputMode,
             activeStatFilter: runtimeState.navigation.activeStatFilter,
 
-            // Données de travail persistées
             refinementEdits: runtimeState.data.refinementEdits,
 
-            // Journal threshold
             journalThreshold: userSettings.academic.journalThreshold,
         };
 

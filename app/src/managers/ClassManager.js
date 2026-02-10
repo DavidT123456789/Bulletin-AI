@@ -418,14 +418,11 @@ export const ClassManager = {
             }));
 
             try {
-                // Mettre à jour la mémoire d'abord (atomic)
-                const updatedResults = [...appState.generatedResults, ...duplicatedStudents];
-
-                // Persister en DB
-                await DBService.putAll('generatedResults', updatedResults);
+                // Persister les nouveaux élèves en DB (upsert non-destructif)
+                await DBService.putAll('generatedResults', duplicatedStudents);
 
                 // Commit en mémoire seulement si DB OK
-                appState.generatedResults = updatedResults;
+                appState.generatedResults = [...appState.generatedResults, ...duplicatedStudents];
                 studentCount = duplicatedStudents.length;
             } catch (error) {
                 // Rollback: supprimer la classe créée
@@ -491,7 +488,8 @@ export const ClassManager = {
         });
 
         try {
-            // putAll handles clear internally - single atomic operation
+            // Clear then re-insert (putAll is non-destructive upsert)
+            await DBService.clear('generatedResults');
             await DBService.putAll('generatedResults', resultsToKeep);
 
             // CRITICAL: Synchroniser la mémoire pour éviter les données orphelines

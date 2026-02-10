@@ -1,5 +1,6 @@
 import { appState, userSettings } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
+import { DBService } from '../services/DBService.js';
 
 export const StudentDataManager = {
     createResultObject(nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage = null, modelUsed = null) {
@@ -247,6 +248,9 @@ export const StudentDataManager = {
         // Filtrer l'état
         appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
         appState.filteredResults = appState.filteredResults.filter(r => r.id !== id);
+
+        // Supprimer immédiatement d'IndexedDB (putAll ne fait plus de clear)
+        DBService.delete('generatedResults', id);
 
         // Enregistrer le tombstone pour la synchro cloud
         try {
