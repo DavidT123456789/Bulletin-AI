@@ -218,7 +218,18 @@ export const StorageManager = {
             if (result.strengthsWeaknesses === undefined) result.strengthsWeaknesses = null;
             if (result.nextSteps === undefined) result.nextSteps = null;
             if (result.tokenUsage === undefined || result.tokenUsage === null || !result.tokenUsage.appreciation) result.tokenUsage = { appreciation: result.tokenUsage || null, sw: null, ns: null };
-            if (sd.negativeInstructions === undefined) sd.negativeInstructions = '';
+            // Migration: negativeInstructions → periods[].context
+            if (sd.negativeInstructions) {
+                const hasAnyPeriodContext = Object.values(sd.periods || {}).some(p => p?.context);
+                if (!hasAnyPeriodContext) {
+                    const targetPeriod = sd.currentPeriod || Object.keys(sd.periods || {})[0];
+                    if (targetPeriod && sd.periods?.[targetPeriod]) {
+                        sd.periods[targetPeriod].context = sd.negativeInstructions;
+                        migrationNeeded = true;
+                    }
+                }
+            }
+            delete sd.negativeInstructions;
             if (sd.prompts === undefined) { sd.prompts = { appreciation: sd.promptUsed || null, sw: null, ns: null }; delete sd.promptUsed; }
             if (result.copied === undefined) result.copied = false;
 

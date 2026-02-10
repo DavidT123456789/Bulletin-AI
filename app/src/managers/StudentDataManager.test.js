@@ -48,7 +48,6 @@ describe('StudentDataManager', () => {
                 nom: 'MARTIN',
                 prenom: 'Lucas',
                 periods: { T1: { grade: 15 } },
-                negativeInstructions: 'Test instructions',
                 currentPeriod: 'T1'
             };
 

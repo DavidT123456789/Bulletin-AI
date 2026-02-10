@@ -83,7 +83,6 @@ describe('SingleStudentManager', () => {
                     periods: { T1: { grade: 12 } },
                     currentPeriod: 'T1',
                     subject: 'Français',
-                    negativeInstructions: '',
                     statuses: [],
                     prompts: {}
                 },
@@ -173,7 +172,7 @@ describe('SingleStudentManager', () => {
 
             expect(data.nom).toBe('MARTIN');
             expect(data.prenom).toBe('Lucas');
-            expect(data.negativeInstructions).toBe('Test instructions');
+            expect(data.periods.T1.context).toBe('Test instructions');
             expect(data.currentPeriod).toBe('T1');
         });
 
@@ -302,9 +301,8 @@ describe('SingleStudentManager', () => {
             prenom: 'Lucas',
             studentData: {
                 statuses: ['Félicitations'],
-                negativeInstructions: 'Test',
                 periods: {
-                    T1: { grade: 15, appreciation: 'Excellent' }
+                    T1: { grade: 15, appreciation: 'Excellent', context: 'Test' }
                 }
             }
         };
@@ -343,7 +341,7 @@ describe('SingleStudentManager', () => {
                 id: 'test-id',
                 nom: 'MARTIN',
                 prenom: 'Lucas',
-                studentData: { statuses: [], negativeInstructions: '', periods: {} }
+                studentData: { statuses: [], periods: {} }
             }];
 
             SingleStudentManager.edit('test-id');

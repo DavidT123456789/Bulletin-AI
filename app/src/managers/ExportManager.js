@@ -174,7 +174,7 @@ export const ExportManager = {
                 Utils.stripMarkdown(r.appreciation),
                 r.studentData.currentPeriod,
                 r.studentData.subject,
-                r.studentData.negativeInstructions,
+                r.studentData.periods?.[r.studentData.currentPeriod]?.context || '',
                 r.strengthsWeaknesses,
                 r.nextSteps?.join('; '),
                 new Date(r.timestamp).toLocaleString(),

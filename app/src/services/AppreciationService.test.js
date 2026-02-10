@@ -330,8 +330,7 @@ describe('AppreciationService', () => {
                 prenom: 'Marie',
                 periods: { T1: { grade: 14, appreciation: '' } },
                 currentPeriod: 'T1',
-                statuses: [],
-                negativeInstructions: ''
+                statuses: []
             };
 
             const result = AppreciationService.getAllPrompts(studentData);
@@ -385,14 +384,13 @@ describe('AppreciationService', () => {
             expect(result.appreciation).toContain('très encourageant');
         });
 
-        it('should include negative instructions if provided', () => {
+        it('should include context from periods if provided', () => {
             const studentData = {
                 nom: 'Test',
                 prenom: 'User',
-                periods: { T1: { grade: 12 } },
+                periods: { T1: { grade: 12, context: 'Élève en difficulté' } },
                 currentPeriod: 'T1',
-                statuses: [],
-                negativeInstructions: 'Élève en difficulté'
+                statuses: []
             };
 
             const result = AppreciationService.getAllPrompts(studentData);

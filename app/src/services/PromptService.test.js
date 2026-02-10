@@ -94,12 +94,12 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain("première personne du pluriel"); // voice nous
         });
 
-        it('should include negative instructions/constraints', () => {
-            const dataWithInstructions = {
+        it('should include context from periods', () => {
+            const dataWithContext = {
                 ...mockStudentData,
-                negativeInstructions: "Ne pas mentionner le bavardage."
+                periods: { 'T1': { grade: 12, appreciation: 'Good', context: 'Ne pas mentionner le bavardage.' } },
             };
-            const prompts = PromptService.getAllPrompts(dataWithInstructions);
+            const prompts = PromptService.getAllPrompts(dataWithContext);
             expect(prompts.appreciation).toContain("Prends en compte cette information spécifique à l'élève");
             expect(prompts.appreciation).toContain("Ne pas mentionner le bavardage");
         });

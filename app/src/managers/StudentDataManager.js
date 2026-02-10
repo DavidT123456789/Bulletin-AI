@@ -18,7 +18,6 @@ export const StudentDataManager = {
                 ...newStudentData,
                 currentPeriod: appState.currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
-                negativeInstructions: studentData.negativeInstructions || '',
                 currentAIModel: modelUsed || appState.currentAIModel,
                 prompts: prompts || { appreciation: null, sw: null, ns: null }
             },
@@ -104,7 +103,6 @@ export const StudentDataManager = {
             existingResult.studentData.subject = newResult.studentData.subject;
             existingResult.studentData.currentAIModel = newResult.studentData.currentAIModel;
             existingResult.studentData.prompts = newResult.studentData.prompts;
-            existingResult.studentData.negativeInstructions = newResult.studentData.negativeInstructions;
             existingResult.studentData.statuses = newResult.studentData.statuses;
         }
 
@@ -149,7 +147,6 @@ export const StudentDataManager = {
                 ...newStudentData,
                 currentPeriod: currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
-                negativeInstructions: studentData.negativeInstructions || '',
                 prompts: { appreciation: null, sw: null, ns: null }
             },
             errorMessage: null,

@@ -1162,10 +1162,9 @@
     width: 100%;
     padding: 6px 8px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background-color: var(--surface-color);
     background-image: none !important;
-    /* Remove global SVG arrow */
     color: var(--text-primary);
     font-size: 13px;
     font-weight: 500;
@@ -1175,18 +1174,14 @@
     -moz-appearance: none;
     text-align: left;
     text-align-last: left;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.assignment-select:hover {
-    border-color: var(--primary-color);
-    background-color: var(--primary-color);
-    color: white;
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
-    transform: translateY(-1px);
+.assignment-select:hover:not(:focus) {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 .assignment-select:focus {

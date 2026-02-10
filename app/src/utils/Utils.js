@@ -15,7 +15,6 @@ import { MODEL_SHORT_NAMES } from '../config/models.js';
  * @property {string[]} statuses - Statuts (Nouveau, Départ, PPRE, etc.)
  * @property {Object.<string, StudentPeriodData>} periods - Données par période
  * @property {string} currentPeriod - Période actuelle (T1, T2, T3 ou S1, S2)
- * @property {string} negativeInstructions - Instructions/contexte négatif
  */
 
 /**
@@ -156,11 +155,10 @@ export const Utils = {
         for (const [key, index] of Object.entries(formatMap)) mappedData[key] = lineValues[index] || '';
         const { nom, prenom } = this.parseNomPrenom(mappedData['NOM_PRENOM'] || '');
         if (!nom && !prenom) return null;
-        const studentData = { nom, prenom, statuses: mappedData['STATUT'] ? [mappedData['STATUT']] : [], periods: {}, currentPeriod, negativeInstructions: mappedData['INSTRUCTIONS'] || '' };
+        const studentData = { nom, prenom, statuses: mappedData['STATUT'] ? [mappedData['STATUT']] : [], periods: {}, currentPeriod };
         this.getPeriods().forEach(p => {
             const gradeStr = (mappedData[`MOY_${p}`] || '').replace(',', '.');
-            // Get context for this period (CTX_T1, CTX_S1, etc.) or fallback to global INSTRUCTIONS for current period
-            const periodContext = mappedData[`CTX_${p}`] || (p === currentPeriod ? mappedData['INSTRUCTIONS'] : '') || '';
+            const periodContext = mappedData[`CTX_${p}`] || '';
             // Parse evaluation count (DEV_T1, DEV_S1, etc.)
             const evalCountStr = mappedData[`DEV_${p}`] || '';
             const evalCount = this._parseEvaluationCount(evalCountStr);
@@ -171,8 +169,11 @@ export const Utils = {
                 evaluationCount: evalCount
             };
         });
-        // NOTE: We no longer erase the current period appreciation here.
-        // The appreciation is kept as imported; isPending is set based on whether it exists.
+        // Fallback: INSTRUCTIONS (global) → periods[currentPeriod].context
+        const globalContext = mappedData['INSTRUCTIONS']?.trim();
+        if (globalContext && !studentData.periods[currentPeriod]?.context) {
+            studentData.periods[currentPeriod].context = globalContext;
+        }
         return studentData;
     },
 
@@ -285,20 +286,11 @@ export const Utils = {
                     existing.studentData.statuses = [...existingStatuses];
                 }
 
-                // Prendre les instructions négatives les plus récentes si non vides
-                if (result.studentData?.negativeInstructions?.trim()) {
-                    existing.studentData.negativeInstructions = result.studentData.negativeInstructions;
-                }
-
                 // Conserver classId si présent
                 if (result.classId) {
                     existing.classId = result.classId;
                 }
             }
-        }
-
-        if (mergeCount > 0) {
-            console.warn(`[Utils.deduplicateResults] ${mergeCount} entrée(s) fusionnée(s). Résultat : ${studentMap.size} élèves uniques.`);
         }
 
         return Array.from(studentMap.values());

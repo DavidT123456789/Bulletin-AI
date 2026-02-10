@@ -41,9 +41,15 @@
     pointer-events: none;
 }
 
-/* Animation douce du select de tri au clic */
+/* Sort select: compact toolbar styling */
+#sortSelect {
+    padding: 8px 36px 8px 12px;
+    font-size: 13px;
+}
+
 #sortSelect:focus {
-    transform: scale(1.02);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .output-header {

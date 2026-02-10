@@ -408,18 +408,19 @@
 
 .import-separator-select {
     padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--bg-color);
     color: var(--text-primary);
     font-size: 0.9rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .import-custom-separator {
     width: 50px;
     padding: 8px;
     text-align: center;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--bg-color);
     color: var(--text-primary);
@@ -483,10 +484,11 @@
 .import-mapping-table select {
     width: 100%;
     padding: 6px 8px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--bg-color);
     font-size: 0.85rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .import-save-format-label {

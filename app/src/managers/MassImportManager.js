@@ -144,7 +144,7 @@ export const MassImportManager = {
                     existingResult.appreciation = newResultObject.appreciation;
                     existingResult.studentData.currentPeriod = newResultObject.studentData.currentPeriod;
                     existingResult.studentData.subject = newResultObject.studentData.subject;
-                    existingResult.studentData.negativeInstructions = newResultObject.studentData.negativeInstructions;
+
                     existingResult.studentData.statuses = newResultObject.studentData.statuses;
                     existingResult.timestamp = newResultObject.timestamp;
                     existingResult.errorMessage = newResultObject.errorMessage;
@@ -393,7 +393,7 @@ export const MassImportManager = {
             prenom: r.prenom,
             periods: r.studentData?.periods || {},
             statuses: r.studentData?.statuses || [],
-            negativeInstructions: r.studentData?.negativeInstructions || '',
+
             currentPeriod: targetPeriod,  // Toujours utiliser la période affichée
             // Garder référence à l'ID existant pour mise à jour
             existingId: r.id,

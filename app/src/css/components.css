@@ -641,10 +641,9 @@ select {
     font-size: 14px;
     background-color: var(--bg-color);
     color: var(--text-primary);
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
     font-family: inherit;
     width: 100%;
-    /* Ombre interne subtile pour la profondeur */
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
@@ -657,6 +656,7 @@ select {
     background-repeat: no-repeat;
     background-position: right 16px center;
     background-size: 1.2em 1.2em;
+    cursor: pointer;
 }
 
 /* Style pour les options désactivées (modèles sans clé API) */
@@ -725,18 +725,10 @@ textarea:hover:not(:disabled):not(:focus) {
     background-clip: padding-box, padding-box, border-box;
 }
 
+/* --- Select Hover: Clean border transition --- */
 select:hover:not(:disabled):not(:focus) {
-    border: 1.5px solid transparent !important;
-    /* Subtle primary tint + gradient border (consistent with list hover) */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"),
-        linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
-        linear-gradient(var(--bg-color), var(--bg-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, padding-box, border-box;
-    background-clip: border-box, padding-box, padding-box, border-box;
-    background-repeat: no-repeat;
-    background-position: right 12px center, center, center, center;
-    background-size: 1.2em 1.2em, auto, auto, auto;
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* --- Focus State: Dynamic rotating gradient (signature effect) --- */
@@ -744,7 +736,6 @@ input:not([type="range"]):focus,
 textarea:focus {
     outline: none;
     border: 1.5px solid transparent !important;
-    /* Use original bg-color for focus - the animated border is the main feedback */
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
@@ -765,36 +756,16 @@ textarea:focus {
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
+/* --- Select Focus: Clean ring (no animated gradient — selects close on click) --- */
 select:focus {
     outline: none;
-    border: 1.5px solid transparent !important;
-    /* Use original bg-color for focus - the animated border is the main feedback */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"),
-        linear-gradient(var(--bg-color), var(--bg-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: border-box, padding-box, border-box;
-    background-repeat: no-repeat;
-    background-position: right 12px center, center, center;
-    background-size: 1.2em 1.2em, auto, auto;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 input,
-textarea {
+textarea,
+select {
     border: 1.5px solid var(--border-color);
 }
 
@@ -1053,8 +1024,6 @@ input[type="number"]::-webkit-outer-spin-button {
     font-weight: 500;
 }
 
-
-/* Note: le hover spécifique a été supprimé pour éviter le conflit avec select:hover:not(:disabled):not(:focus) qui gère l'effet de bordure dégradée */
 
 textarea {
     min-height: 100px;

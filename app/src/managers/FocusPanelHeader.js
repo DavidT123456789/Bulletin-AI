@@ -291,8 +291,7 @@ export const FocusPanelHeader = {
                 classId: userSettings.academic.currentClassId || null,
                 studentData: {
                     statuses: [],
-                    periods: {},
-                    negativeInstructions: ''
+                    periods: {}
                 },
                 appreciation: '',
                 isPending: false,

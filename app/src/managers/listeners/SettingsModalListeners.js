@@ -606,7 +606,7 @@ export const SettingsModalListeners = {
 
         if (studentDataEl) {
             // Prepare new content
-            const instructions = data.negativeInstructions || data.instructions || '';
+            const instructions = data.periods?.[currentPeriod]?.context || '';
             const statusBadges = data.statuses?.map(s => {
                 const info = Utils.getStatusBadgeInfo(s);
                 return `<span class="${info.className}">${info.label}</span>`;

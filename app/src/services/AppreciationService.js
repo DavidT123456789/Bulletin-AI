@@ -31,7 +31,6 @@ export const AppreciationService = {
                 ...newStudentData,
                 currentPeriod: appState.currentPeriod,
                 subject: appState.useSubjectPersonalization ? appState.currentSubject : 'Générique',
-                negativeInstructions: studentData.negativeInstructions || '',
                 currentAIModel: appState.currentAIModel,
                 prompts: prompts || { appreciation: null, sw: null, ns: null }
             },

@@ -307,7 +307,6 @@ describe('ExportManager', () => {
                     currentPeriod: 'T1',
                     subject: 'Français',
                     statuses: [],
-                    negativeInstructions: '',
                     periods: {
                         T1: { grade: 12.5, appreciation: '' },
                         T2: { grade: null, appreciation: '' },
@@ -337,7 +336,6 @@ describe('ExportManager', () => {
                     currentPeriod: 'T1',
                     subject: 'Français',
                     statuses: [],
-                    negativeInstructions: '',
                     periods: { T1: {}, T2: {}, T3: {} }
                 }
             }];

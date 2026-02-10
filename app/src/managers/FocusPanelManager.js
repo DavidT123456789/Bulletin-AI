@@ -589,8 +589,7 @@ export const FocusPanelManager = {
             prenom: '',
             studentData: {
                 statuses: [],
-                periods: {},
-                negativeInstructions: ''
+                periods: {}
             },
             appreciation: '',
             isPending: false,
@@ -934,7 +933,6 @@ export const FocusPanelManager = {
             nom: result.nom,
             prenom: result.prenom,
             statuses: result.studentData.statuses || [],
-            negativeInstructions: result.studentData.periods?.[period]?.context || '',
             periods: result.studentData.periods,
             currentPeriod: period
         };

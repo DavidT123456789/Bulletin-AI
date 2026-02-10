@@ -13,9 +13,8 @@ export const PromptService = {
     PRENOM_PLACEHOLDER: '[PRÉNOM]',
 
     getAllPrompts(studentData, overrideConfig = null) {
-        const { nom, prenom, statuses, periods, currentPeriod, negativeInstructions } = studentData;
+        const { nom, prenom, statuses, periods, currentPeriod } = studentData;
 
-        // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
         // Si l'utilisateur a modifié le style, il s'attend à ce qu'il soit appliqué partout
@@ -134,10 +133,8 @@ export const PromptService = {
         // On n'inclut la ligne Statuts que si l'élève a des statuts
         const statusLine = (statuses && statuses.length > 0) ? `\nStatuts : ${statuses.join(', ')}` : '';
 
-        // NOUVEAU: Utiliser le contexte de la période courante avec fallback sur negativeInstructions (legacy)
         const periodContext = periods?.[currentPeriod]?.context;
-        const contextToUse = periodContext ?? negativeInstructions;
-        const specificInfoLine = contextToUse ? `\nContexte : "${contextToUse}"` : '';
+        const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
         // === JOURNAL DE BORD: Synthesis for prompt ===
         // Injects tag counts and recent notes to enrich AI context

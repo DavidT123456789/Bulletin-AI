@@ -655,42 +655,19 @@
     color: var(--text-primary);
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.inline-model-select:hover {
-    border-color: var(--primary-color);
-    background-color: var(--bg-color);
+.inline-model-select:hover:not(:focus) {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 .inline-model-select:focus {
     outline: none;
-    /* Style dynamique harmonisé - focus signature */
-    border: 2px solid transparent !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"),
-        linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: border-box, padding-box, border-box;
-    background-repeat: no-repeat;
-    background-position: right 12px center, center, center;
-    background-size: 1.2em 1.2em, auto, auto;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 /* Badge "+X" pour l'ordre de secours */
@@ -1310,15 +1287,15 @@
     font-size: 0.95em;
     font-weight: 500;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     background-color: var(--bg-color);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.compact-model-select:hover {
-    border-color: var(--primary-color);
+.compact-model-select:hover:not(:focus) {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 .btn-icon-only {

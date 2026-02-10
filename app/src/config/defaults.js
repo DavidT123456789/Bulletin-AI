@@ -97,15 +97,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Lucas',
             periods: {
                 'T1': { grade: 12.5, appreciation: 'Bon début.' },
-                'T2': { grade: 13.2, appreciation: '' },
+                'T2': { grade: 13.2, appreciation: '', context: 'Participe bien.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 12.5, appreciation: 'Bon début.' },
-                'S2': { grade: 13.2, appreciation: '' }
+                'S2': { grade: 13.2, appreciation: '', context: 'Participe bien.' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Participe bien.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -119,15 +118,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Sophie',
             periods: {
                 'T1': { grade: 9.1, appreciation: 'Doit s\'investir.' },
-                'T2': { grade: 10.5, appreciation: '' },
+                'T2': { grade: 10.5, appreciation: '', context: 'Élève discrète.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 9.1, appreciation: 'Doit s\'investir.' },
-                'S2': { grade: 10.5, appreciation: '' }
+                'S2': { grade: 10.5, appreciation: '', context: 'Élève discrète.' }
             },
             statuses: ['PPRE'],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Élève discrète.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -141,15 +139,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Thomas',
             periods: {
                 'T1': { grade: 15.0, appreciation: 'Très bonne participation.' },
-                'T2': { grade: 14.5, appreciation: '' },
+                'T2': { grade: 14.5, appreciation: '', context: 'Maintenir le cap.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 15.0, appreciation: 'Très bonne participation.' },
-                'S2': { grade: 14.5, appreciation: '' }
+                'S2': { grade: 14.5, appreciation: '', context: 'Maintenir le cap.' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Maintenir le cap.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -163,15 +160,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Camille',
             periods: {
                 'T1': { grade: 8.2, appreciation: 'Difficultés persistantes.' },
-                'T2': { grade: 7.0, appreciation: '' },
+                'T2': { grade: 7.0, appreciation: '', context: 'Besoins spécifiques.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 8.2, appreciation: 'Difficultés persistantes.' },
-                'S2': { grade: 7.0, appreciation: '' }
+                'S2': { grade: 7.0, appreciation: '', context: 'Besoins spécifiques.' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Besoins spécifiques.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -185,15 +181,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Emma',
             periods: {
                 'T1': { grade: 17.1, appreciation: 'Excellents résultats.' },
-                'T2': { grade: 18.0, appreciation: '' },
+                'T2': { grade: 18.0, appreciation: '', context: 'Rôle moteur.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 17.1, appreciation: 'Excellents résultats.' },
-                'S2': { grade: 18.0, appreciation: '' }
+                'S2': { grade: 18.0, appreciation: '', context: 'Rôle moteur.' }
             },
             statuses: ['Délégué'],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Rôle moteur.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -207,15 +202,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Axel',
             periods: {
                 'T1': { grade: 10.5, appreciation: 'Résultats corrects mais bavardages inacceptables.' },
-                'T2': { grade: 11.2, appreciation: '' },
+                'T2': { grade: 11.2, appreciation: '', context: 'Trop de bavardages, concentration à revoir.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 10.5, appreciation: 'Résultats corrects mais bavardages.' },
-                'S2': { grade: 11.2, appreciation: '' }
+                'S2': { grade: 11.2, appreciation: '', context: 'Trop de bavardages, concentration à revoir.' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Trop de bavardages, concentration à revoir.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -229,15 +223,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Léa',
             periods: {
                 'T1': { grade: 8.5, appreciation: 'Des difficultés malgré du sérieux.' },
-                'T2': { grade: 9.8, appreciation: '' },
+                'T2': { grade: 9.8, appreciation: '', context: 'Poursuivre les efforts, ne pas se décourager.' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 8.5, appreciation: 'Des difficultés malgré du sérieux.' },
-                'S2': { grade: 9.8, appreciation: '' }
+                'S2': { grade: 9.8, appreciation: '', context: 'Poursuivre les efforts, ne pas se décourager.' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Poursuivre les efforts, ne pas se décourager.'
+            subject: 'Générique'
         },
         isDemo: true
     },
@@ -251,15 +244,14 @@ export const DEMO_STUDENT_PROFILES = [
             prenom: 'Hugo',
             periods: {
                 'T1': { grade: 11.0, appreciation: 'Ensemble fragile.' },
-                'T2': { grade: 14.5, appreciation: '' },
+                'T2': { grade: 14.5, appreciation: '', context: 'Progression spectaculaire, bravo !' },
                 'T3': { grade: null, appreciation: '' },
                 'S1': { grade: 11.0, appreciation: 'Ensemble fragile.' },
-                'S2': { grade: 14.5, appreciation: '' }
+                'S2': { grade: 14.5, appreciation: '', context: 'Progression spectaculaire, bravo !' }
             },
             statuses: [],
             currentPeriod: 'T2',
-            subject: 'Générique',
-            negativeInstructions: 'Progression spectaculaire, bravo !'
+            subject: 'Générique'
         },
         isDemo: true
     }

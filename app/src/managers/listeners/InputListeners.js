@@ -41,7 +41,7 @@ export const InputListeners = {
             });
         }
 
-        const inputs = [DOM.nomInput, DOM.prenomInput, DOM.negativeInstructions];
+        const inputs = [DOM.nomInput, DOM.prenomInput];
 
         Utils.getPeriods().forEach(p => {
             const gInput = document.getElementById(`moy${p}`);

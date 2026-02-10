@@ -303,9 +303,9 @@ export const ImportWizardManager = {
             label = `Trimestre ${periodCode.substring(1)}`;
         }
 
-        // Update guide panel badge
-        const guideBadge = document.getElementById('guidePeriodBadge');
-        if (guideBadge) guideBadge.textContent = label;
+        // Update header period badge
+        const headerBadge = document.getElementById('wizardPeriodBadge');
+        if (headerBadge) headerBadge.textContent = label;
     },
 
     /**
@@ -775,12 +775,6 @@ export const ImportWizardManager = {
     /**
      * Update the visual format detection badge
      * Shows when MBN, Pronote or other formats are detected
-     * Badge is now displayed in the footer for better UX
-     * @private
-     */
-    /**
-     * Update the visual format detection badge
-     * Shows when MBN, Pronote or other formats are detected
      * Badge is now displayed in the drop zone
      * @private
      */
@@ -914,7 +908,7 @@ export const ImportWizardManager = {
         // Convert internal TAG to display label and CSS class
         if (tag === 'NOM_PRENOM') return { label: 'Nom', cssClass: 'type-name' };
         if (tag === 'STATUT') return { label: 'Statut', cssClass: 'type-status' };
-        if (tag === 'INSTRUCTIONS') return { label: 'Contexte', cssClass: 'type-context' };
+
         if (tag.startsWith('MOY_')) return { label: 'Note', cssClass: 'type-grade' };
         if (tag.startsWith('APP_')) return { label: 'Appr.', cssClass: 'type-app' };
         if (tag.startsWith('CTX_')) return { label: 'Ctx.', cssClass: 'type-context' };
@@ -947,12 +941,7 @@ export const ImportWizardManager = {
 
         const cols = this.state.columnCount;
 
-        // Build options dynamically based on CURRENT period only
-        // This simplifies the dropdown significantly - no need to show all periods
         const currentPeriod = appState.currentPeriod || 'S1';
-        const periodLabel = currentPeriod.startsWith('S')
-            ? `Semestre ${currentPeriod.slice(1)}`
-            : `Trimestre ${currentPeriod.slice(1)}`;
 
         const buildOptionsHtml = (selectedValue) => {
             let html = '';
@@ -960,7 +949,7 @@ export const ImportWizardManager = {
             // General options (no group)
             const generalOptions = [
                 { v: 'IGNORE', t: 'Ignorer' },
-                { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
+                { v: 'NOM_PRENOM', t: 'Élève' },
                 { v: 'STATUT', t: 'Statut' }
             ];
             html += generalOptions.map(o =>
@@ -969,10 +958,10 @@ export const ImportWizardManager = {
 
             // Current period options (highlighted)
             const periodOptions = [
-                { v: `DEV_${currentPeriod}`, t: `Nb éval. (${currentPeriod})` },
-                { v: `MOY_${currentPeriod}`, t: `Moyenne (${currentPeriod})` },
-                { v: `APP_${currentPeriod}`, t: `Appréciation (${currentPeriod})` },
-                { v: `CTX_${currentPeriod}`, t: `Contexte (${currentPeriod})` }
+                { v: `DEV_${currentPeriod}`, t: `Nb notes ${currentPeriod}` },
+                { v: `MOY_${currentPeriod}`, t: `Moy. ${currentPeriod}` },
+                { v: `APP_${currentPeriod}`, t: `Appréciation ${currentPeriod}` },
+                { v: `CTX_${currentPeriod}`, t: `Contexte ${currentPeriod}` }
             ];
 
             // Add separator for clarity
@@ -981,10 +970,6 @@ export const ImportWizardManager = {
             html += periodOptions.map(o =>
                 `<option value="${o.v}" ${o.v === selectedValue ? 'selected' : ''}>${o.t}</option>`
             ).join('');
-
-            // Global context
-            html += `<option disabled>──────</option>`;
-            html += `<option value="INSTRUCTIONS" ${selectedValue === 'INSTRUCTIONS' ? 'selected' : ''}>Instructions (Global)</option>`;
 
             return html;
         };
@@ -1022,6 +1007,12 @@ export const ImportWizardManager = {
         }
         html += `</tr></thead><tbody>`;
 
+        // Collect initial column mappings for cell-level styling
+        const initialMappings = [];
+        for (let i = 0; i < cols; i++) {
+            initialMappings[i] = useSavedFormat ? (savedFormat[i] || 'IGNORE') : this._guessTypeTag(this.state.lines[0]?.[i] || '', i);
+        }
+
         // Show ALL lines (container has max-height with scroll)
         const previewLines = this.state.lines;
         previewLines.forEach(line => {
@@ -1031,11 +1022,9 @@ export const ImportWizardManager = {
                 const cellContent = fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent;
                 const needsTooltip = fullContent.length > 50;
 
-                // Special styling for status column (column 1 typically)
-                const isStatusCol = i === 1; // Statut is typically column 1
+                const isStatusCol = initialMappings[i] === 'STATUT';
 
                 if (isStatusCol && cellContent.trim()) {
-                    // Determine status type for CSS class
                     const statusLower = cellContent.toLowerCase();
                     let statusType = 'default';
                     if (statusLower.includes('ppre')) statusType = 'ppre';
@@ -1044,7 +1033,6 @@ export const ImportWizardManager = {
                     else if (statusLower.includes('nouveau')) statusType = 'nouveau';
                     else if (statusLower.includes('départ') || statusLower.includes('depart')) statusType = 'depart';
 
-                    // Render as colored badge (with tooltip if truncated)
                     html += `<td${needsTooltip ? ` title="${fullContent}"` : ''}><span class="status-badge-cell status-${statusType}" data-status="${cellContent}">${cellContent}</span></td>`;
                 } else {
                     html += `<td${needsTooltip ? ` class="has-tooltip" title="${fullContent}"` : ''}>${cellContent}</td>`;
@@ -1062,12 +1050,14 @@ export const ImportWizardManager = {
         // Bind change events to native selects with duplicate validation
         container.querySelectorAll('.mapping-select').forEach(select => {
             select.addEventListener('change', () => {
+                this._applyColumnClasses();
                 this._validateMappings();
                 this._updatePreview();
             });
         });
 
-        // Initial validation and preview
+        // Initial column classes, validation and preview
+        this._applyColumnClasses();
         this._validateMappings();
         this._updatePreview();
     },
@@ -1115,11 +1105,55 @@ export const ImportWizardManager = {
     },
 
     /**
+     * Apply semantic col-* CSS classes to th/td based on current select values
+     * Enables column-type-aware styling (color, width, alignment)
+     * @private
+     */
+    _applyColumnClasses() {
+        const table = document.querySelector('.import-mapping-table');
+        if (!table) return;
+
+        const tagToClass = {
+            IGNORE: 'col-ignore',
+            NOM_PRENOM: 'col-name',
+            STATUT: 'col-status'
+        };
+        const prefixToClass = {
+            MOY: 'col-grade',
+            DEV: 'col-count',
+            APP: 'col-appreciation',
+            CTX: 'col-context'
+        };
+
+        const allClasses = ['col-name', 'col-status', 'col-grade', 'col-count', 'col-appreciation', 'col-context', 'col-ignore'];
+        const selects = table.querySelectorAll('.mapping-select');
+        const colClasses = [];
+
+        selects.forEach((select, i) => {
+            const val = select.value;
+            const cls = tagToClass[val] ?? prefixToClass[val?.split('_')[0]] ?? null;
+            colClasses[i] = cls;
+
+            const th = select.closest('th');
+            th?.classList.remove(...allClasses);
+            if (cls) th?.classList.add(cls);
+        });
+
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((td, i) => {
+                td.classList.remove(...allClasses);
+                if (colClasses[i]) td.classList.add(colClasses[i]);
+            });
+        });
+    },
+
+    /**
      * Guess column type using FORMAT-AWARE detection
      * Uses the detected PDF format for smarter mapping:
      * - MBN: Nom | Nb notes | Moy | Appréciation
      * - Pronote: Nom | Nb notes | Moy | (empty)
-     * - Generic: Nom | Statut | [Moy, Appr] × N périodes | Contexte
+     * - Generic: Nom | Statut | [Moy, Appr] × N periods | Contexte
      * @private
      */
     _guessTypeTag(sample, index) {
@@ -1161,7 +1195,7 @@ export const ImportWizardManager = {
         }
 
         // Last column: Context, unless it's a number
-        if (index === totalCols - 1 && !Utils.isNumeric(sample)) return 'INSTRUCTIONS';
+        if (index === totalCols - 1 && !Utils.isNumeric(sample)) return `CTX_${currentPeriod}`;
 
         // Remaining columns: Heuristic based on total width
         // If we have few columns (e.g., 3-5), we probably have [Name, (Status), Grade, App, (Context)]
@@ -1240,7 +1274,7 @@ export const ImportWizardManager = {
         // Unknown format - use generic detection
         if (index === 0) return 'NOM_PRENOM';
         if (index === 1) return 'STATUT';
-        if (index === totalCols - 1) return 'INSTRUCTIONS';
+        if (index === totalCols - 1) return `CTX_${currentPeriod}`;
         return 'IGNORE';
     },
 
@@ -1292,7 +1326,7 @@ export const ImportWizardManager = {
         const keywords = {
             'NOM_PRENOM': ['nom', 'prenom', 'eleve', 'etudiant'],
             'STATUT': ['statut'],
-            'INSTRUCTIONS': ['contexte', 'instruction', 'observation']
+
         };
 
         const matchKeyword = (t, kw) => new RegExp(`(^|\\s)${kw}(\\s|$)`, 'i').test(t);
@@ -1306,7 +1340,7 @@ export const ImportWizardManager = {
         const periodPrefixes = {
             'MOY_': ['moy', 'note'],
             'APP_': ['app', 'com', 'obs'],
-            'CTX_': ['contexte', 'ctx']
+            'CTX_': ['contexte', 'ctx', 'instruction', 'observation']
         };
 
         for (const [prefix, kws] of Object.entries(periodPrefixes)) {
@@ -1349,10 +1383,10 @@ export const ImportWizardManager = {
     _mapTagToFriendly(tag) {
         if (tag === 'NOM_PRENOM') return 'Nom & Prénom';
         if (tag === 'STATUT') return 'Statut';
-        if (tag === 'INSTRUCTIONS') return 'Contexte (global)';
         if (tag.startsWith('MOY_')) return `Moy. ${tag.split('_')[1]}`;
         if (tag.startsWith('APP_')) return `Appréciation ${tag.split('_')[1]}`;
         if (tag.startsWith('CTX_')) return `Contexte ${tag.split('_')[1]}`;
+        if (tag.startsWith('DEV_')) return `Nb notes ${tag.split('_')[1]}`;
         return 'Ignorer';
     },
 
@@ -1363,10 +1397,10 @@ export const ImportWizardManager = {
     _mapFriendlyToTag(friendly) {
         if (friendly === 'Nom & Prénom') return 'NOM_PRENOM';
         if (friendly === 'Statut') return 'STATUT';
-        if (friendly === 'Contexte (global)' || friendly === 'Contexte') return 'INSTRUCTIONS';
         if (friendly.startsWith('Moy. ')) return `MOY_${friendly.split(' ')[1]}`;
         if (friendly.startsWith('Appréciation ')) return `APP_${friendly.split(' ')[1]}`;
         if (friendly.startsWith('Contexte ')) return `CTX_${friendly.split(' ')[1]}`;
+        if (friendly.startsWith('Nb notes ')) return `DEV_${friendly.split(' ')[2]}`; // "Nb notes S1"
         return 'IGNORE';
     },
 
@@ -1409,40 +1443,28 @@ export const ImportWizardManager = {
     },
 
     /**
-     * Update preview for step 3
+     * Update preview for step 3 — builds unified data table with column checkboxes
      */
     async _updatePreview() {
         const { AppreciationsManager } = await import('./AppreciationsManager.js');
 
-        // Build format map from NATIVE Selects (direct value reading - much simpler!)
+        // Build format map from NATIVE Selects
         const formatMap = {};
         document.querySelectorAll('.mapping-select').forEach(select => {
             const col = parseInt(select.dataset.colIndex);
             const val = select.value;
-
             if (!val || val === 'IGNORE') return;
             formatMap[val] = col;
         });
 
         this.state.formatMap = formatMap;
 
-        // Update period badge
-        const periodBadge = document.getElementById('wizardPeriodBadge');
-        if (periodBadge) {
-            const period = appState.currentPeriod || 'T1';
-            const periodNumber = period.replace(/\D/g, ''); // Extract number (1, 2, 3)
-            const periodType = period.startsWith('S') ? 'Semestre' : 'Trimestre';
-            periodBadge.textContent = `${periodType} ${periodNumber}`;
-        }
-
-        const strategy = document.querySelector('input[name="wizardStrategy"]:checked')?.value || 'merge';
-        // Use auto-detected hasHeader from state
+        // Always merge mode
         const skipHeader = this.state.hasHeader || false;
-
         const linesToProcess = skipHeader ? this.state.lines.slice(1) : this.state.lines;
 
         const preview = AppreciationsManager._prepareStudentListForImport(
-            linesToProcess, formatMap, strategy
+            linesToProcess, formatMap, 'merge'
         );
 
         this.state.studentsToProcess = preview.studentsToProcess;
@@ -1451,99 +1473,247 @@ export const ImportWizardManager = {
         this.state.departedStudents = preview.departedStudents;
         this.state.ignoredCount = preview.ignoredCount;
 
-        // Update lists with type-specific rendering
-        this._populateList('wizardNewList', 'wizardNewCount', preview.newStudents, 'new');
-        this._populateList('wizardUpdatedList', 'wizardUpdatedCount', preview.updatedStudents, 'updated');
-        this._populateList('wizardDepartedList', 'wizardDepartedCount', preview.departedStudents, 'departed');
+        // Build the new data table
+        this._buildPreviewTable(preview, formatMap);
 
-        // Hide/show strategy section based on whether there are existing students
-        // If no existing students, strategy options (Merge/Replace) are irrelevant
-        const strategySection = document.querySelector('.import-strategy-section');
-        const hasExistingStudentsInClass = preview.updatedStudents.length > 0 || preview.departedStudents.length > 0;
-        if (strategySection) {
-            strategySection.style.display = hasExistingStudentsInClass ? '' : 'none';
-        }
+        // Update legend counts
+        const updateCount = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        updateCount('wizardNewCount', preview.newStudents.length);
+        updateCount('wizardUpdatedCount', preview.updatedStudents.length);
+        updateCount('wizardDepartedCount', preview.departedStudents.length);
 
-        // Hide "Updated" column header if empty (first import scenario)
-        const updatedCol = document.getElementById('wizardUpdatedList')?.closest('.import-preview-col');
-        if (updatedCol) {
-            updatedCol.style.display = preview.updatedStudents.length > 0 ? '' : 'none';
+        // Update footer info
+        const mappedCols = Object.keys(formatMap).filter(k => k !== 'NOM_PRENOM');
+        const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
+        if (colsInfoEl) {
+            colsInfoEl.textContent = `${mappedCols.length} colonne${mappedCols.length > 1 ? 's' : ''} de données`;
         }
 
         // Update import button count
+        const totalToImport = preview.studentsToProcess?.length || 0;
         const importCountEl = document.getElementById('wizardImportCount');
         const importBtn = document.getElementById('wizardImportOnlyBtn');
-        const totalToImport = preview.studentsToProcess?.length || 0;
-
-        if (importCountEl) {
-            importCountEl.textContent = totalToImport;
-        }
-        if (importBtn) {
-            importBtn.disabled = totalToImport === 0;
-        }
+        if (importCountEl) importCountEl.textContent = totalToImport;
+        if (importBtn) importBtn.disabled = totalToImport === 0;
     },
 
     /**
-     * Populate a preview list with enhanced student info
-     * @param {string} listId - DOM element ID for the list
-     * @param {string} countId - DOM element ID for the count badge
-     * @param {Array} students - Array of student objects
-     * @param {string} type - List type: 'new', 'updated', or 'departed'
+     * Build the unified preview data table with column checkboxes
+     * @param {Object} preview - Result from _prepareStudentListForImport
+     * @param {Object} formatMap - Column format mapping { tag: colIndex }
      */
-    _populateList(listId, countId, students, type = 'new') {
-        const list = document.getElementById(listId);
-        const count = document.getElementById(countId);
+    _buildPreviewTable(preview, formatMap) {
+        const container = document.getElementById('wizardPreviewTableContainer');
+        if (!container) return;
 
-        // Animate count update if changed
-        if (count) {
-            const oldVal = parseInt(count.textContent || '0');
-            const newVal = students.length;
-            count.textContent = newVal;
+        const currentPeriod = appState.currentPeriod || 'T1';
 
-            if (oldVal !== newVal) {
-                count.classList.remove('pop');
-                void count.offsetWidth; // Trigger reflow
-                count.classList.add('pop');
+        // Determine which data columns to show (exclude NOM_PRENOM, it's always the first col)
+        const dataColumns = Object.entries(formatMap)
+            .filter(([tag]) => tag !== 'NOM_PRENOM')
+            .sort(([, a], [, b]) => a - b)
+            .map(([tag]) => ({ tag, label: this._getColumnLabel(tag, currentPeriod) }));
+
+        // Build status lookup maps (name → type)
+        const newSet = new Set(preview.newStudents.map(s => `${s.nom}|${s.prenom}`));
+        const updatedSet = new Set(preview.updatedStudents.map(s => `${s.nom}|${s.prenom}`));
+        const departedSet = new Set(preview.departedStudents.map(s => `${s.nom}|${s.prenom}`));
+
+        // Build rows: merge studentsToProcess + departed
+        const allRows = [];
+
+        // Add imported students (new + updated)
+        for (const s of preview.studentsToProcess) {
+            const key = `${s.nom}|${s.prenom}`;
+            const type = newSet.has(key) ? 'new' : updatedSet.has(key) ? 'updated' : 'new';
+            allRows.push({ student: s, type, hasData: true });
+        }
+
+        // Add departed students (not in file)
+        for (const s of preview.departedStudents) {
+            allRows.push({ student: s, type: 'departed', hasData: false });
+        }
+
+        // Sort: new first, then updated, then departed
+        const typeOrder = { 'new': 0, 'updated': 1, 'departed': 2 };
+        allRows.sort((a, b) => typeOrder[a.type] - typeOrder[b.type]);
+
+        // Build HTML
+        let html = '<table class="import-preview-table"><thead><tr>';
+
+        // First column: student name (always present, locked checkbox)
+        html += `<th class="col-name">
+            <label class="preview-col-header locked">
+                <input type="checkbox" checked disabled data-col-tag="NOM_PRENOM">
+                <span>Élève</span>
+            </label>
+        </th>`;
+
+        // Data columns with checkboxes
+        for (const col of dataColumns) {
+            html += `<th class="${this._getColClass(col.tag)}">
+                <label class="preview-col-header">
+                    <input type="checkbox" checked data-col-tag="${col.tag}">
+                    <span>${col.label}</span>
+                </label>
+            </th>`;
+        }
+
+        html += '</tr></thead><tbody>';
+
+        if (allRows.length === 0) {
+            html += `<tr><td colspan="${dataColumns.length + 1}" class="preview-empty-cell" style="text-align:center;padding:32px;">Aucun élève détecté</td></tr>`;
+        } else {
+            for (const row of allRows) {
+                const s = row.student;
+                const rowClass = row.type === 'departed' ? ' class="row-departed"' : '';
+
+                html += `<tr${rowClass}>`;
+
+                // Name cell with status dot
+                html += `<td>
+                    <div class="preview-student-cell">
+                        <span class="preview-status-dot dot-${row.type}"></span>
+                        <span class="preview-student-name">${s.prenom || ''} <strong>${s.nom || ''}</strong></span>
+                    </div>
+                </td>`;
+
+                // Data cells
+                for (const col of dataColumns) {
+                    const value = row.hasData ? this._extractCellValue(s, col.tag, currentPeriod) : '';
+                    html += `<td class="${this._getColClass(col.tag)}">${this._formatCellValue(value, col.tag)}</td>`;
+                }
+
+                html += '</tr>';
             }
         }
 
-        if (list) {
-            if (students.length === 0) {
-                list.innerHTML = `<li class="empty-state-li">Aucun élève</li>`;
-            } else {
-                list.innerHTML = students.map((s, index) => {
-                    if (!s) return '';
+        html += '</tbody></table>';
+        container.innerHTML = `<div class="table-scroll-wrapper">${html}</div>`;
 
-                    const initials = `${(s.prenom && s.prenom[0] ? s.prenom[0] : '').toUpperCase()}${(s.nom && s.nom[0] ? s.nom[0] : '').toUpperCase()}`;
-                    const fullName = `${s.prenom || ''} <strong>${s.nom || ''}</strong>`;
+        // Bind checkbox toggles
+        container.querySelectorAll('.preview-col-header input[type="checkbox"]:not(:disabled)').forEach(cb => {
+            cb.addEventListener('change', () => this._toggleColumn(cb));
+        });
 
-                    // Generate secondary info based on list type
-                    let secondaryInfo = '';
-                    if (type === 'new' && s.email) {
-                        secondaryInfo = `<span class="li-secondary">${s.email}</span>`;
-                    } else if (type === 'updated' && s._changeInfo) {
-                        secondaryInfo = `<span class="li-change"><i class="fas fa-arrow-right"></i> ${s._changeInfo}</span>`;
-                    } else if (type === 'departed') {
-                        secondaryInfo = `<span class="li-secondary">Absent du fichier</span>`;
-                    }
+        // Store columns state
+        this.state._enabledColumns = new Set(dataColumns.map(c => c.tag));
+    },
 
-                    return `
-                    <li>
-                        <div class="li-avatar">
-                            <span>${initials}</span>
-                        </div>
-                        <div class="li-info">
-                            <span class="li-name">${fullName}</span>
-                            ${secondaryInfo}
-                        </div>
-                    </li>
-                `}).join('');
-            }
+    /**
+     * Toggle a data column on/off in the preview table
+     * @param {HTMLInputElement} checkbox
+     */
+    _toggleColumn(checkbox) {
+        const tag = checkbox.dataset.colTag;
+        const table = document.querySelector('.import-preview-table');
+        if (!table) return;
+
+        const colIndex = Array.from(table.querySelectorAll('thead th')).findIndex(
+            th => th.querySelector(`input[data-col-tag="${tag}"]`)
+        );
+        if (colIndex < 0) return;
+
+        const isEnabled = checkbox.checked;
+        table.querySelectorAll(`tr`).forEach(tr => {
+            const cell = tr.children[colIndex];
+            if (cell) cell.classList.toggle('col-disabled', !isEnabled);
+        });
+
+        // Update enabled columns set
+        if (isEnabled) {
+            this.state._enabledColumns?.add(tag);
+        } else {
+            this.state._enabledColumns?.delete(tag);
+        }
+
+        // Update footer info
+        const count = this.state._enabledColumns?.size || 0;
+        const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
+        if (colsInfoEl) {
+            colsInfoEl.textContent = `${count} colonne${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
         }
     },
 
     /**
-     * Import students only (no AI)
+ * Get human-readable label for a column tag
+ * Uses same naming as Step 2 select options for consistency
+ */
+    _getColumnLabel(tag, period) {
+        const p = tag.includes('_') ? tag.split('_')[1] : period;
+        if (tag === 'STATUT') return 'Statut';
+        if (tag.startsWith('MOY_')) return `Moy. ${p}`;
+        if (tag.startsWith('DEV_')) return `Nb notes ${p}`;
+        if (tag.startsWith('APP_')) return `Appréciation ${p}`;
+        if (tag.startsWith('CTX_')) return `Contexte ${p}`;
+        return tag;
+    },
+
+    /**
+     * Map a column tag to its CSS class for consistent styling across tables
+     * @private
+     */
+    _getColClass(tag) {
+        if (tag === 'NOM_PRENOM') return 'col-name';
+        if (tag === 'STATUT') return 'col-status';
+        if (tag === 'IGNORE') return 'col-ignore';
+        const prefix = tag?.split('_')[0];
+        if (prefix === 'MOY') return 'col-grade';
+        if (prefix === 'DEV') return 'col-count';
+        if (prefix === 'APP') return 'col-appreciation';
+        if (prefix === 'CTX') return 'col-context';
+        return '';
+    },
+    /**
+     * Extract cell value from student data for a given column tag
+     */
+    _extractCellValue(student, tag, currentPeriod) {
+        if (tag === 'STATUT') return student.statuses?.join(', ') || '';
+        const periodData = student.periods?.[currentPeriod];
+        if (!periodData) return '';
+
+        if (tag.startsWith('MOY_')) return periodData.grade ?? '';
+        if (tag.startsWith('DEV_')) return periodData.evaluationCount ?? '';
+        if (tag.startsWith('APP_')) return periodData.appreciation || '';
+        if (tag.startsWith('CTX_')) return periodData.context || '';
+        return '';
+    },
+
+    /**
+     * Format a cell value for display in the preview table
+     */
+    _formatCellValue(value, tag) {
+        if (value === '' || value === null || value === undefined) {
+            return '<span class="preview-empty-cell">—</span>';
+        }
+
+        // Status badge
+        if (tag === 'STATUT' && value) {
+            const statusLower = value.toLowerCase();
+            let statusType = 'default';
+            if (statusLower.includes('ppre')) statusType = 'ppre';
+            else if (statusLower.includes('pap')) statusType = 'pap';
+            else if (statusLower.includes('ulis')) statusType = 'ulis';
+            else if (statusLower.includes('nouveau')) statusType = 'nouveau';
+            else if (statusLower.includes('départ') || statusLower.includes('depart')) statusType = 'depart';
+            return `<span class="preview-status-badge status-${statusType}">${value}</span>`;
+        }
+
+        // Truncate long text (appreciation, context)
+        const str = String(value);
+        if (str.length > 60) {
+            const escaped = str.substring(0, 57).replace(/</g, '&lt;');
+            return `<span title="${str.replace(/"/g, '&quot;')}">${escaped}…</span>`;
+        }
+
+        return str.replace(/</g, '&lt;');
+    },
+
+    /**
+     * Import students — always merge mode, respects column checkboxes
      */
     async _importOnly() {
         if (this.state.studentsToProcess.length === 0) return;
@@ -1551,67 +1721,47 @@ export const ImportWizardManager = {
         this._saveFormat();
 
         const { MassImportManager } = await import('./MassImportManager.js');
-        const strategy = document.querySelector('input[name="wizardStrategy"]:checked')?.value || 'merge';
+        const currentPeriod = appState.currentPeriod || 'T1';
 
-        // FIX: Confirmation before destructive replace operation
-        if (strategy === 'replace') {
-            const currentClassId = appState.currentClassId;
-            const currentClassStudents = appState.generatedResults?.filter(r =>
-                r.classId === currentClassId
-            ) || [];
-            const currentCount = currentClassStudents.length;
+        // Read enabled columns from checkboxes
+        const enabledTags = new Set();
+        document.querySelectorAll('.preview-col-header input[type="checkbox"]:checked').forEach(cb => {
+            enabledTags.add(cb.dataset.colTag);
+        });
 
-            if (currentCount > 0) {
-                const className = ClassManager.getCurrentClass()?.name || 'cette classe';
-                // Count students with photos
-                const photosCount = currentClassStudents.filter(s => s.studentPhoto?.data).length;
-                const photoWarning = photosCount > 0
-                    ? `\n📷 ${photosCount} photo(s) seront préservées si les noms correspondent.`
-                    : '';
+        // Filter student data: strip disabled columns before import
+        const filteredStudents = this.state.studentsToProcess.map(s => {
+            const filtered = JSON.parse(JSON.stringify(s));
 
-                const confirmed = await new Promise(resolve => {
-                    UI.showCustomConfirm(
-                        `⚠️ Mode "Remplacer" sélectionné\n\n` +
-                        `Cette action va remplacer les ${currentCount} élève(s) de "${className}" par les données importées.\n` +
-                        `Les autres classes ne seront pas affectées.${photoWarning}\n\n` +
-                        `Continuer ?`,
-                        () => resolve(true),
-                        () => resolve(false)
-                    );
-                });
-
-                if (!confirmed) {
-                    UI.showNotification('Import annulé', 'info');
-                    return;
-                }
+            // Strip status if unchecked
+            if (!enabledTags.has('STATUT')) {
+                filtered.statuses = [];
             }
 
-            // SMART REPLACE: Preserve photos by matching student names
-            // Build a map of existing photos by normalized name
-            const photoMap = new Map();
-            for (const student of currentClassStudents) {
-                if (student.studentPhoto?.data) {
-                    // Normalize name: UPPERCASE + trim for matching
-                    const normalizedName = `${(student.nom || '').toUpperCase().trim()}|${(student.prenom || '').trim().toLowerCase()}`;
-                    photoMap.set(normalizedName, student.studentPhoto);
-                }
+            // Strip period-specific fields if unchecked
+            const period = filtered.periods?.[currentPeriod];
+            if (period) {
+                if (!this._isTagEnabled(enabledTags, 'MOY_')) period.grade = undefined;
+                if (!this._isTagEnabled(enabledTags, 'DEV_')) period.evaluationCount = undefined;
+                if (!this._isTagEnabled(enabledTags, 'APP_')) period.appreciation = '';
+                if (!this._isTagEnabled(enabledTags, 'CTX_')) period.context = '';
             }
 
-            // Store photo map in state for MassImportManager to use
-            this.state._preservedPhotos = photoMap;
+            return filtered;
+        });
 
-            // CRITICAL: Only remove students from CURRENT class, keep other classes intact
-            appState.generatedResults = appState.generatedResults.filter(r =>
-                r.classId !== currentClassId
-            );
-        }
-
-        await MassImportManager.importStudentsOnly(this.state.studentsToProcess, this.state.ignoredCount || 0, this.state._preservedPhotos);
-
-        // Clean up
-        delete this.state._preservedPhotos;
-
+        await MassImportManager.importStudentsOnly(filteredStudents, this.state.ignoredCount || 0);
         this.close();
+    },
+
+    /**
+     * Check if any tag with the given prefix is enabled
+     */
+    _isTagEnabled(enabledTags, prefix) {
+        for (const tag of enabledTags) {
+            if (tag.startsWith(prefix)) return true;
+        }
+        return false;
     },
 
     /**

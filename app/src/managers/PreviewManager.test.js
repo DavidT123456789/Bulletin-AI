@@ -87,7 +87,6 @@ describe('PreviewManager', () => {
             expect(data).toHaveProperty('periods');
             expect(data).toHaveProperty('currentPeriod');
             expect(data).toHaveProperty('subject');
-            expect(data).toHaveProperty('negativeInstructions');
             expect(data).toHaveProperty('statuses');
             expect(data).toHaveProperty('prompts');
         });

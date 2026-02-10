@@ -43,10 +43,9 @@ export const PreviewManager = {
         return {
             nom: "TEST",
             prenom: "Élève",
-            periods: { [appState.currentPeriod]: { grade: profile.grade, appreciation: '' } },
+            periods: { [appState.currentPeriod]: { grade: profile.grade, appreciation: '', context: profile.context } },
             currentPeriod: appState.currentPeriod,
             subject: appState.currentSettingsSubject,
-            negativeInstructions: profile.context,
             statuses: [],
             prompts: {}
         };

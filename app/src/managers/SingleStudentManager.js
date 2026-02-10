@@ -82,8 +82,6 @@ export const SingleStudentManager = {
             nom: DOM.nomInput?.value?.trim()?.toUpperCase() || '',
             prenom: DOM.prenomInput?.value?.trim() || '',
             statuses: statuses,
-            // DEPRECATED: garder pour rétrocompatibilité mais utiliser periods.context
-            negativeInstructions: contextValue,
             periods: {},
             currentPeriod: currentPeriod
         };
@@ -159,7 +157,7 @@ export const SingleStudentManager = {
                 existingResult.appreciation = newResult.appreciation;
                 existingResult.studentData.currentPeriod = newResult.studentData.currentPeriod;
                 existingResult.studentData.subject = newResult.studentData.subject;
-                existingResult.studentData.negativeInstructions = newResult.studentData.negativeInstructions;
+
                 existingResult.studentData.statuses = newResult.studentData.statuses;
                 existingResult.timestamp = newResult.timestamp;
                 existingResult.errorMessage = newResult.errorMessage;
@@ -226,7 +224,6 @@ export const SingleStudentManager = {
                 existingResult.appreciation = newResult.appreciation;
                 existingResult.studentData.currentPeriod = newResult.studentData.currentPeriod;
                 existingResult.studentData.subject = newResult.studentData.subject;
-                existingResult.studentData.negativeInstructions = newResult.studentData.negativeInstructions;
                 existingResult.studentData.statuses = newResult.studentData.statuses;
                 existingResult.timestamp = newResult.timestamp;
                 existingResult.errorMessage = newResult.errorMessage;
@@ -279,7 +276,7 @@ export const SingleStudentManager = {
 
         if (DOM.nomInput) DOM.nomInput.value = '';
         if (DOM.prenomInput) DOM.prenomInput.value = '';
-        if (DOM.negativeInstructions) DOM.negativeInstructions.value = '';
+
 
         // Option G: Clear current period grade field
         if (DOM.currentPeriodGrade) {
@@ -362,9 +359,8 @@ export const SingleStudentManager = {
         document.querySelectorAll('input[name="statuses"]').forEach(checkbox => {
             checkbox.checked = statuses.includes(checkbox.value);
         });
-        // NOUVEAU: Charger le contexte de la période courante (fallback sur negativeInstructions pour rétrocompatibilité)
         const periodContext = result.studentData.periods?.[appState.currentPeriod]?.context;
-        if (DOM.negativeInstructions) DOM.negativeInstructions.value = periodContext ?? result.studentData.negativeInstructions ?? '';
+        if (DOM.negativeInstructions) DOM.negativeInstructions.value = periodContext ?? '';
 
         Utils.getPeriods().forEach(p => {
             const d = result.studentData.periods[p];

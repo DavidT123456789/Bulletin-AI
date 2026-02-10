@@ -102,7 +102,7 @@ export function initDOM() {
     DOM.nomError = document.getElementById('nomError');
     DOM.prenomError = document.getElementById('prenomError');
     DOM.singleStudentPeriodInputs = document.getElementById('singleStudentPeriodInputs');
-    DOM.negativeInstructions = document.getElementById('negativeInstructions');
+
 
     // Option G: Période courante + Accordéon Historique
     DOM.currentPeriodLabel = document.getElementById('currentPeriodLabel');

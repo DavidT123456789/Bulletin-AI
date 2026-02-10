@@ -44,8 +44,8 @@
 
 /* === GUIDE PANEL (Left Sidebar) - Glassmorphism 2026 === */
 .wizard-guide-panel {
-    width: 260px;
-    min-width: 260px;
+    width: 240px;
+    min-width: 240px;
     /* Glass effect with subtle primary tint */
     background: rgba(var(--primary-color-rgb), 0.06);
     backdrop-filter: blur(16px);
@@ -346,39 +346,41 @@
 .wizard-header-title {
     display: flex;
     align-items: center;
-    /* No gap needed as pill handles it */
+    gap: 10px;
 }
 
-/* New Pill Container */
-.wizard-title-pill {
+/* Fused context pill: Class · Period */
+.wizard-context-pill {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
     border-radius: var(--radius-pill);
     color: var(--primary-color);
-    transition: all var(--transition-base);
+    white-space: nowrap;
 }
 
-.wizard-title-pill:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-}
-
-.wizard-title-pill i {
-    font-size: 1.1rem;
-}
-
-/* Class Name Text inside Pill */
-#wizardClassBadge {
-    font-size: 1rem;
+.wizard-context-class {
+    font-size: 0.9rem;
     font-weight: 700;
-    max-width: 250px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+}
+
+.wizard-context-sep {
+    font-size: 1.1rem;
+    opacity: 0.5;
+    font-weight: 300;
+    user-select: none;
+}
+
+.wizard-context-period {
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0.75;
 }
 
 /* === VISUAL TIMELINE STEPPER === */
@@ -1256,59 +1258,41 @@
 
 /* === HEADER CONTROLS (Step 2) === */
 /* === CENTERED STATS PILL (Glassmorphism) === */
-.import-wizard-modal .import-detected-info {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-primary);
-
+/* Footer info — shared minimalist style (icon + badge + text) */
+.import-wizard-modal .import-detected-info,
+.import-wizard-modal .step3-footer-info {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-
-    padding: 6px 16px;
-    margin: 0 auto;
-
-    /* Glass Effect 2026 */
-    background: rgba(var(--primary-color-rgb), 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    border-radius: var(--radius-pill);
-
-    /* Depth */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-
-    /* Layout */
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
     flex: 0 0 auto;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.import-wizard-modal .import-detected-info:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.1);
+.import-wizard-modal .import-detected-info i,
+.import-wizard-modal .step3-footer-info i {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    opacity: 0.7;
 }
 
-.import-wizard-modal .import-count-badge {
+.import-wizard-modal .import-detected-info .import-count-badge {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     color: white;
     font-weight: 700;
     padding: 0 8px;
     min-width: 24px;
     height: 24px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border-radius: 12px;
     font-size: 0.75rem;
     line-height: 1;
-
     box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
 }
+
 
 .import-wizard-modal .import-separator-row {
     display: flex;
@@ -1322,23 +1306,22 @@
     padding: 6px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    /* Use --surface-color for consistency with search bar */
     background: var(--surface-color);
     color: var(--text-primary);
     font-size: 0.85rem;
     cursor: pointer;
     min-width: 130px;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .import-wizard-modal .import-separator-select:focus {
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
     outline: none;
 }
 
-.import-wizard-modal .import-separator-select:hover {
-    border-color: var(--text-tertiary);
-    background: var(--bg-secondary);
+.import-wizard-modal .import-separator-select:hover:not(:focus) {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 /* Guide Panel Separator Styles */
@@ -1617,84 +1600,71 @@
     /* Fill corners to prevent gray artifacts */
 }
 
-/* === AUTO-SIZED COLUMNS === */
+/* === COLUMN STYLES === */
 .import-wizard-modal .import-mapping-table th,
 .import-wizard-modal .import-mapping-table td {
-    padding: 10px 16px;
-    /* More breathing room */
+    padding: 10px 10px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
     border-right: none;
-    /* Removed vertical borders for cleaner look */
-    vertical-align: middle;
-    white-space: nowrap;
-    /* Keep content on one line */
-}
-
-/* === COLUMN WIDTHS (Millimetric Precision) === */
-.import-wizard-modal .import-mapping-table th,
-.import-wizard-modal .import-mapping-table td {
-    padding: 12px 16px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    border-right: none;
-    /* Removed vertical borders */
     vertical-align: middle;
 }
 
-.import-wizard-modal .import-mapping-table th:last-child,
-.import-wizard-modal .import-mapping-table td:last-child {
-    border-right: none;
-}
-
-/* Rounded Corners - Using container overflow instead of individual cell radius */
-/* Removed individual cell border-radius to prevent gray corner artifacts */
-/* The container (.import-mapping-table-container) already has border-radius: var(--radius-lg) and overflow is handled */
-
-/* IMPORTANT: Headers must allow dropdown overflow */
-.import-wizard-modal .import-mapping-table th {
-    overflow: visible;
-}
-
-/* Name: Narrower as requested (~150px is usually enough for truncated names) */
+/* === COLUMN WIDTHS (Single Source of Truth) === */
 .import-wizard-modal .import-mapping-table th.col-name,
 .import-wizard-modal .import-mapping-table td.col-name {
-    width: 130px;
-    /* Reduced from 140px */
-    min-width: 120px;
-    max-width: 140px;
+    min-width: 130px;
+    max-width: 180px;
     font-weight: 600;
-    /* Retain font-weight from original .col-name rule */
 }
 
-/* Status: Very narrow (~60-70px) */
 .import-wizard-modal .import-mapping-table th.col-status,
 .import-wizard-modal .import-mapping-table td.col-status {
-    width: 60px;
-    /* Reduced from 70px */
-    min-width: 50px;
-    max-width: 70px;
+    min-width: 80px;
+    max-width: 110px;
     text-align: center;
-    /* Retain text-align from original .col-status rule */
 }
 
-/* Grade: Wider to show "Moy. T1" (prevent "M..") */
 .import-wizard-modal .import-mapping-table th.col-grade,
 .import-wizard-modal .import-mapping-table td.col-grade {
-    width: 115px;
-    /* Increased from 110px */
-    min-width: 105px;
-    max-width: 125px;
+    min-width: 100px;
+    max-width: 120px;
     text-align: center;
-    /* Retain text-align from original .col-grade rule */
+    color: var(--primary-color);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Text/Appreciation: Flexible but constrained */
-.import-wizard-modal .import-mapping-table th.col-text,
-.import-wizard-modal .import-mapping-table td.col-text {
-    width: 250px;
-    min-width: 200px;
-    max-width: 350px;
+.import-wizard-modal .import-mapping-table th.col-count,
+.import-wizard-modal .import-mapping-table td.col-count {
+    min-width: 80px;
+    max-width: 100px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.import-wizard-modal .import-mapping-table th.col-appreciation,
+.import-wizard-modal .import-mapping-table td.col-appreciation {
+    min-width: 120px;
+    max-width: 220px;
+    color: hsl(270, 40%, 72%);
+    font-style: italic;
+}
+
+.import-wizard-modal .import-mapping-table th.col-context,
+.import-wizard-modal .import-mapping-table td.col-context {
+    min-width: 120px;
+    max-width: 220px;
+    color: hsl(180, 40%, 60%);
+    font-style: italic;
+}
+
+.import-wizard-modal .import-mapping-table th.col-ignore,
+.import-wizard-modal .import-mapping-table td.col-ignore {
+    max-width: 100px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
 }
 
 /* Truncate long content with ellipsis (only for data cells) */
@@ -1702,6 +1672,19 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Compact custom arrow for mapping selects — saves ~12px vs native arrow */
+.import-wizard-modal .import-mapping-table .mapping-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+    cursor: pointer;
 }
 
 /* === HEADER & CLOSE BUTTON === */
@@ -1740,21 +1723,7 @@
     opacity: 1;
 }
 
-.import-wizard-modal .import-mapping-table th:last-child,
-.import-wizard-modal .import-mapping-table td:last-child {
-    border-right: none;
-}
 
-/* === COMPACT HEADER CONTROLS === */
-/* ... existing styles ... */
-
-.import-wizard-modal .import-separator-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
 
 .import-wizard-modal .import-separator-row label {
     margin: 0;
@@ -1762,40 +1731,21 @@
     /* Fix vertical alignment */
 }
 
-/* ... existing styles ... */
-
-/* === MAPPING TABLE COLUMN WIDTHS === */
-.import-wizard-modal .import-mapping-table th.col-name,
-.import-wizard-modal .import-mapping-table td.col-name {
-    min-width: 140px;
-    max-width: 180px;
-    font-weight: 600;
-}
-
-/* [Duplicate column styles removed for cleanup] */
 
 .import-wizard-modal .import-mapping-table th {
-    /* Header Distinction: Surface color for elevation */
     background: var(--surface-color);
-    /* Make text more label-like */
     color: var(--text-secondary);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 700;
-
     vertical-align: middle;
-    min-width: 190px;
-    padding: 12px 16px;
+    padding: 8px 10px;
     position: sticky;
     top: 0;
     z-index: 10;
-
-    /* Stronger separator */
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-
-    justify-content: flex-start;
 }
 
 /* Fix sticky header corners not clipping correctly - REVERTED */
@@ -1829,14 +1779,12 @@
 }
 
 /* === CUSTOM DROPDOWN SELECT (Harmonized with dropdown.css) === */
-/* === CUSTOM DROPDOWN SELECT (Harmonized with dropdown.css) === */
 .custom-select-wrapper {
     position: relative;
     width: 100%;
     font-family: inherit;
 }
 
-/* Minimalist Trigger 2026 - Fixed & Stable */
 /* Minimalist Trigger 2026 - Fixed & Stable */
 /* Specificity bumped (0-3-0) to override global dropdown.css without !important */
 .import-wizard-modal .custom-select-trigger,
@@ -1991,61 +1939,40 @@
     border-radius: 4px;
 }
 
-/* Elegant selects in headers */
-/* Elegant selects in headers - Minimalist 2026 */
+/* Harmonized selects in table headers */
 .import-wizard-modal .import-mapping-table select {
     width: 100%;
-    height: 40px;
-    /* Consistent height */
-    padding: 0 32px 0 12px;
-    /* Space for chevron */
+    height: 34px;
+    padding: 0 26px 0 8px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-
-    /* Glass Base - Transparent to blend with header */
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: var(--surface-color);
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     font-family: inherit;
-
-    /* Stable transitions */
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-
-    /* Native appearance adjustments if needed */
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 12px center;
+    background-position: right 8px center;
 }
 
-/* Dark mode adjustment */
 [data-theme="dark"] .import-wizard-modal .import-mapping-table select {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-.import-wizard-modal .import-mapping-table select:hover {
-    border-color: var(--text-secondary);
-    background-color: var(--surface-color);
-    /* Subtle shadow, no movement */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+.import-wizard-modal .import-mapping-table select:hover:not(:focus) {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 .import-wizard-modal .import-mapping-table select:focus {
-    /* Elegant Focus - No harsh violet border */
     border-color: var(--primary-color);
-    /* Kept for accessibility but make it subtle */
-    background-color: var(--surface-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
     outline: none;
-
-    /* Update Chevron Color on Focus */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
-/* Style native options to avoid harsh black on Windows/Chrome */
-/* Style native options to avoid harsh black on Windows/Chrome */
 .import-wizard-modal .import-mapping-table select option {
     background-color: var(--surface-color);
     color: var(--text-primary);
@@ -2061,34 +1988,6 @@
     flex: 1;
     min-height: 0;
     height: 100%;
-}
-
-.wizard-step3-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-    padding: 0 8px;
-}
-
-.wizard-step3-header .wizard-step-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.period-badge-pill {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    padding: 6px 14px;
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 500;
-    white-space: nowrap;
 }
 
 /* === PREVIEW GRID - ULTIMA DESIGN === */
@@ -2477,33 +2376,6 @@
     box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
 }
 
-/* Close button already defined above - this block is duplicate and should be removed */
-/* See line ~993 for the Single Source of Truth */
-
-/* === MAPPING TABLE COLUMN WIDTHS === */
-.import-wizard-modal .import-mapping-table th.col-grade,
-.import-wizard-modal .import-mapping-table td.col-grade {
-    min-width: 70px;
-    max-width: 90px;
-    text-align: center;
-    color: var(--primary-color);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.import-wizard-modal .import-mapping-table th.col-status,
-.import-wizard-modal .import-mapping-table td.col-status {
-    min-width: 120px;
-}
-
-.import-wizard-modal .import-mapping-table th.col-text,
-.import-wizard-modal .import-mapping-table td.col-text {
-    min-width: 250px;
-    width: auto;
-    color: var(--text-secondary);
-    font-style: italic;
-    font-size: 0.8rem;
-}
 
 /* === ADDITIONAL PILL COLORS === */
 .mapping-pill.type-status {
@@ -2925,273 +2797,354 @@
 }
 
 /* ====================================================================
-   STEP 3 REDESIGN - Matching Mockup Design
+   STEP 3 REDESIGN — Unified Data Table
    ==================================================================== */
 
-/* === STEP 3 HEADER === */
-.wizard-step3-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    gap: 16px;
-}
-
-.wizard-step3-header-left {
+/* === PREVIEW DATA TABLE === */
+.import-preview-table-container {
+    position: relative;
+    overflow: hidden !important;
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+    margin: 4px;
     flex: 1;
-}
-
-.wizard-step3-header .wizard-step-title {
-    margin: 0 0 4px 0;
-}
-
-.wizard-step-subtitle {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-}
-
-/* Period Badge Pill */
-.period-badge-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 14px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-/* === ENHANCED PREVIEW COLUMNS === */
-.import-wizard-modal .import-preview-col {
-    min-height: 200px;
-    /* max-height removed to allow columns to expand */
-}
-
-.import-wizard-modal .import-col-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-}
-
-/* Enhanced List Items with Secondary Info */
-.import-wizard-modal .import-col-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    background: var(--bg-color);
-    border-radius: var(--radius-md);
-    margin-bottom: 6px;
-    min-height: auto;
-}
-
-.import-wizard-modal .li-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    font-size: 0.7rem;
-}
-
-.import-wizard-modal .li-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    min-height: 200px;
+    transform: translateZ(0);
+    isolation: isolate;
+    z-index: 0;
+    animation: table-fade-in 0.4s ease-out;
+}
+
+/* Inner scroll wrapper — mirrors Step 2 pattern */
+.import-preview-table-container>.table-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
     flex: 1;
-    min-width: 0;
+    max-height: none;
+    border-radius: calc(var(--radius-lg) - 1px);
+    padding-right: 4px;
+    padding-bottom: 4px;
 }
 
-.import-wizard-modal .li-name {
+/* Border overlay: sits ABOVE scrollbars to clip at rounded corners */
+.import-preview-table-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    z-index: 20;
+    pointer-events: none;
+}
+
+.import-preview-table-container .import-preview-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.85rem;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    table-layout: auto;
+    background: var(--bg-secondary);
 }
 
-.import-wizard-modal .li-secondary {
+.import-preview-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.import-preview-table th {
+    background: var(--surface-color);
+    color: var(--text-secondary);
     font-size: 0.75rem;
-    color: var(--text-tertiary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 10px;
+    height: 50px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
     white-space: nowrap;
+    user-select: none;
+    overflow: visible;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    vertical-align: middle;
+}
+
+.import-preview-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* Change indicator for updated students */
-.import-wizard-modal .li-change {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.7rem;
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    padding: 2px 6px;
-    border-radius: var(--radius-sm);
     white-space: nowrap;
+    vertical-align: middle;
 }
 
-.import-wizard-modal .li-change i {
-    font-size: 0.6rem;
+.import-preview-table tbody tr {
+    transition: background 0.15s ease;
 }
 
-/* Departure reason styling */
-.import-wizard-modal .import-col-departed .li-secondary {
-    color: var(--warning-color);
+.import-preview-table tbody tr:nth-child(even) td {
+    background: rgba(var(--surface-color-rgb), 0.3);
+}
+
+.import-preview-table tbody tr:hover td {
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.import-preview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* === Preview table column semantic styles (mirrors mapping table) === */
+.import-preview-table .col-grade {
+    text-align: center;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.import-preview-table .col-count {
+    text-align: center;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.import-preview-table .col-status {
+    text-align: center;
+}
+
+.import-preview-table .col-appreciation {
+    color: hsl(270, 40%, 72%);
     font-style: italic;
 }
 
-/* === STRATEGY SECTION - RADIO STYLE === */
-.import-strategy-section {
-    display: flex;
-    gap: 16px;
-    margin-top: 20px;
-    flex-shrink: 0;
+.import-preview-table .col-context {
+    color: hsl(180, 40%, 60%);
+    font-style: italic;
 }
 
-.import-strategy-radio {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    background: var(--surface-color);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-fast);
+.import-preview-table .col-ignore {
+    color: var(--text-tertiary);
+    opacity: 0.6;
 }
 
-.import-strategy-radio input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-/* Radio Indicator */
-.strategy-radio-indicator {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid var(--border-color);
-    background: var(--bg-color);
+/* Column checkbox header */
+.preview-col-header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+    line-height: 1;
+}
+
+.preview-col-header input[type="checkbox"] {
+    accent-color: var(--primary-color);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
     flex-shrink: 0;
-    transition: all var(--transition-fast);
-    margin-top: 2px;
 }
 
-.import-strategy-radio:hover .strategy-radio-indicator {
-    border-color: var(--primary-color);
+.preview-col-header.locked {
+    cursor: default;
+    opacity: 0.7;
 }
 
-.import-strategy-radio:has(input:checked) .strategy-radio-indicator {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
+.preview-col-header.locked input[type="checkbox"] {
+    cursor: not-allowed;
 }
 
-.import-strategy-radio:has(input:checked) .strategy-radio-indicator::after {
-    content: '';
+/* Unchecked column dim effect */
+.import-preview-table th.col-disabled {
+    opacity: 0.4;
+}
+
+.import-preview-table td.col-disabled {
+    opacity: 0.25;
+}
+
+/* Student name cell with status dot */
+.preview-student-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preview-status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: white;
-}
-
-/* Strategy Icon */
-.import-strategy-radio .strategy-icon {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    margin-top: 2px;
     flex-shrink: 0;
-    transition: color 0.2s ease;
 }
 
-.import-strategy-radio:has(input:checked) .strategy-icon {
+.preview-status-dot.dot-new {
+    background: var(--success-color);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.preview-status-dot.dot-updated {
+    background: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.preview-status-dot.dot-departed {
+    background: var(--warning-color);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.preview-student-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-student-name strong {
+    font-weight: 700;
+}
+
+/* Empty cell */
+.preview-empty-cell {
+    color: var(--text-tertiary);
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+/* Departed row styling — soft dim, NO strikethrough (they are preserved, not deleted) */
+.import-preview-table tbody tr.row-departed {
+    opacity: 0.45;
+}
+
+.import-preview-table tbody tr.row-departed .preview-student-name {
+    font-style: italic;
+}
+
+
+/* === STATUS BADGES (Shared — Step 2 & 3) === */
+.status-badge-cell,
+.preview-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    background: rgba(107, 114, 128, 0.12);
+    color: rgb(107, 114, 128);
+}
+
+.status-badge-cell:empty {
+    display: none;
+}
+
+.status-badge-cell.status-ppre,
+.preview-status-badge.status-ppre {
+    background: rgba(16, 185, 129, 0.12);
+    color: rgb(16, 185, 129);
+}
+
+.status-badge-cell.status-pap,
+.preview-status-badge.status-pap {
+    background: rgba(139, 92, 246, 0.12);
+    color: rgb(139, 92, 246);
+}
+
+.status-badge-cell.status-ulis,
+.preview-status-badge.status-ulis {
+    background: rgba(245, 158, 11, 0.12);
+    color: rgb(245, 158, 11);
+}
+
+.status-badge-cell.status-nouveau,
+.preview-status-badge.status-nouveau {
+    background: rgba(59, 130, 246, 0.12);
+    color: rgb(59, 130, 246);
+}
+
+.status-badge-cell.status-depart,
+.preview-status-badge.status-depart {
+    background: rgba(249, 115, 22, 0.12);
+    color: rgb(249, 115, 22);
+}
+
+.status-badge-cell.status-default,
+.preview-status-badge.status-default {
+    background: rgba(107, 114, 128, 0.12);
+    color: rgb(107, 114, 128);
+}
+
+
+.guide-legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.guide-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.guide-legend-count {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    min-width: 16px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.guide-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.guide-legend-dot.dot-new {
+    background: var(--success-color);
+}
+
+.guide-legend-dot.dot-updated {
+    background: var(--primary-color);
+}
+
+.guide-legend-dot.dot-departed {
+    background: var(--warning-color);
+}
+
+.guide-legend-count.count-new {
+    color: var(--success-color);
+}
+
+.guide-legend-count.count-updated {
     color: var(--primary-color);
 }
 
-/* Strategy Content */
-.strategy-radio-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
+.guide-legend-count.count-departed {
+    color: var(--warning-color);
 }
 
-.strategy-radio-content strong {
-    font-size: 0.95rem;
-    color: var(--text-primary);
-}
-
-.strategy-desc {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-/* Check indicator */
-.strategy-check {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    opacity: 0;
-    transform: scale(0);
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.import-strategy-radio:has(input:checked) .strategy-check {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* Selected state */
-.import-strategy-radio:has(input:checked) {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.03);
-}
-
-.import-strategy-radio:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-}
 
 /* Hide body bottom radius when any footer is visible (handled by unified footer) */
 .import-wizard-modal:has(.import-wizard-footer:not([style*="display: none"])) .import-wizard-body {
     border-radius: 0;
-}
-
-.step3-footer-warning {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--text-tertiary);
-}
-
-.step3-footer-warning i {
-    font-size: 0.9rem;
-    color: var(--warning-color);
-}
-
-.step3-footer-warning span {
-    color: var(--text-tertiary);
 }
 
 /* Précédent button with icon */
@@ -3201,35 +3154,12 @@
     gap: 8px;
 }
 
-/* Ghost button - hérite de components.css */
-
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-    .import-strategy-section {
-        flex-direction: column;
-    }
-
-    .wizard-step3-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
     .import-wizard-footer {
         flex-direction: column;
         gap: 12px;
         align-items: stretch;
-    }
-
-    .step3-footer-warning {
-        justify-content: center;
-    }
-
-    .step3-footer-actions {
-        justify-content: stretch;
-    }
-
-    .step3-footer-actions .btn {
-        flex: 1;
     }
 }
 
@@ -3237,60 +3167,6 @@
    STEP 2 MAPPING IMPROVEMENTS
    ==================================================================== */
 
-/* === STATUS BADGE CELLS === */
-.status-badge-cell {
-    display: inline-block;
-    padding: 3px 10px;
-    background: rgba(16, 185, 129, 0.15);
-    color: rgb(16, 185, 129);
-    border-radius: var(--radius-pill);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-/* Different status colors */
-.status-badge-cell:empty {
-    display: none;
-}
-
-/* Nouveau status - Blue */
-.status-badge-cell.status-nouveau {
-    background: rgba(59, 130, 246, 0.15);
-    color: rgb(59, 130, 246);
-}
-
-/* Départ status - Orange */
-.status-badge-cell.status-depart {
-    background: rgba(249, 115, 22, 0.15);
-    color: rgb(249, 115, 22);
-}
-
-/* PPRE - Green */
-.status-badge-cell.status-ppre {
-    background: rgba(16, 185, 129, 0.15);
-    color: rgb(16, 185, 129);
-}
-
-/* PAP - Purple */
-.status-badge-cell.status-pap {
-    background: rgba(139, 92, 246, 0.15);
-    color: rgb(139, 92, 246);
-}
-
-/* ULIS - Amber */
-.status-badge-cell.status-ulis {
-    background: rgba(245, 158, 11, 0.15);
-    color: rgb(245, 158, 11);
-}
-
-/* Default status */
-.status-badge-cell.status-default {
-    background: rgba(107, 114, 128, 0.15);
-    color: rgb(107, 114, 128);
-}
 
 /* === SEPARATOR DROPDOWN ENHANCEMENT === */
 .import-wizard-modal .import-separator-select {
@@ -3312,98 +3188,6 @@
     min-height: 200px;
 }
 
-/* === SMART COLUMN WIDTHS === */
-
-/* Base table layout - auto columns by content type */
-.import-wizard-modal .import-mapping-table {
-    table-layout: auto;
-    width: 100%;
-}
-
-/* 1. Name column - flexible but minimum width */
-.import-wizard-modal .import-mapping-table th:first-child,
-.import-wizard-modal .import-mapping-table td:first-child {
-    font-weight: 500;
-    min-width: 140px;
-    width: auto;
-    white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
-}
-
-/* 2. Status column - compact */
-.import-wizard-modal .import-mapping-table th:nth-child(2),
-.import-wizard-modal .import-mapping-table td:nth-child(2) {
-    text-align: center;
-    width: 110px;
-    min-width: 100px;
-    max-width: 140px;
-}
-
-/* 3+ Columns: Dynamic based on content type */
-/* Use select value to style headers */
-.import-wizard-modal .import-mapping-table th {
-    padding: 10px 8px;
-}
-
-/* Grade/Note columns - very compact (numeric values) */
-.import-wizard-modal .import-mapping-table select[value^="MOY_"]~td,
-.import-wizard-modal .import-mapping-table td.col-grade {
-    width: 70px;
-    min-width: 60px;
-    max-width: 80px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    color: var(--primary-color);
-    font-weight: 500;
-}
-
-/* Force compact width on grade cells via nth-child pattern (Moy is typically col 3, 5, 7...) */
-.import-wizard-modal .import-mapping-table td:nth-child(3),
-.import-wizard-modal .import-mapping-table td:nth-child(5),
-.import-wizard-modal .import-mapping-table td:nth-child(7) {
-    width: 70px;
-    min-width: 55px;
-    max-width: 85px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    color: var(--primary-color);
-    font-weight: 500;
-}
-
-/* Header cells for grade columns - compact */
-.import-wizard-modal .import-mapping-table th:nth-child(3),
-.import-wizard-modal .import-mapping-table th:nth-child(5),
-.import-wizard-modal .import-mapping-table th:nth-child(7) {
-    width: 100px;
-    min-width: 90px;
-}
-
-/* Appreciation columns - wider, flexible (col 4, 6, 8...) */
-.import-wizard-modal .import-mapping-table td:nth-child(4),
-.import-wizard-modal .import-mapping-table td:nth-child(6),
-.import-wizard-modal .import-mapping-table td:nth-child(8) {
-    color: var(--text-secondary);
-    font-style: italic;
-    min-width: 120px;
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Header cells for appreciation columns */
-.import-wizard-modal .import-mapping-table th:nth-child(4),
-.import-wizard-modal .import-mapping-table th:nth-child(6),
-.import-wizard-modal .import-mapping-table th:nth-child(8) {
-    min-width: 130px;
-}
-
-/* Last column (Context) - wider */
-.import-wizard-modal .import-mapping-table th:last-child,
-.import-wizard-modal .import-mapping-table td:last-child {
-    min-width: 150px;
-    max-width: 250px;
-}
 
 /* ====================================================================
    STEP 1 FOOTER
@@ -3625,138 +3409,33 @@
 
     /* === STEP 3: VERIFICATION - Mobile Redesign === */
 
-    /* Header: Stack on mobile */
-    .wizard-step3-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 12px;
-        padding: 0;
+    /* Preview Table: Compact for mobile */
+    .import-preview-table-container {
+        min-height: 150px;
+        border-radius: var(--radius-md);
     }
 
-    .wizard-step3-header .wizard-step-title {
-        font-size: 0.95rem;
-    }
-
-    .period-badge-pill {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-    }
-
-    /* Preview Grid: Horizontal scroll with snap */
-    .import-wizard-modal .import-preview-grid {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        gap: 12px;
-        padding: 8px 4px;
-        margin: 0 -16px;
-        padding-left: 16px;
-        padding-right: 16px;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        min-height: 180px;
-        flex: 0 0 auto;
-        /* CRITICAL: flex-start prevents left clipping when content overflows */
-        justify-content: flex-start;
-    }
-
-    .import-wizard-modal .import-preview-grid::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* Columns: Fixed width for horizontal scroll - WIDER to prevent truncation */
-    .import-wizard-modal .import-preview-col {
-        flex: 0 0 85%;
-        min-width: 280px;
-        max-width: 320px;
-        scroll-snap-align: center;
-    }
-
-    /* Column header: More compact */
-    .import-wizard-modal .import-col-header {
-        padding: 10px 12px;
-        font-size: 0.8rem;
-    }
-
-    .import-wizard-modal .import-col-header i {
-        font-size: 0.85rem;
-    }
-
-    .import-wizard-modal .import-col-count {
-        padding: 2px 6px;
-        font-size: 0.7rem;
-    }
-
-    /* List items: More compact */
-    .import-wizard-modal .import-col-list {
+    .import-preview-table th {
         padding: 8px;
-        gap: 4px;
-        max-height: 120px;
+        font-size: 0.72rem;
     }
 
-    .import-wizard-modal .import-col-list li {
-        padding: 8px 10px;
-        gap: 8px;
+    .import-preview-table td {
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        max-width: 140px;
     }
 
-    .import-wizard-modal .li-avatar {
-        width: 22px;
-        height: 22px;
-        font-size: 0.6rem;
+    .preview-col-header input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
     }
 
-    .import-wizard-modal .li-name {
-        font-size: 0.75rem;
-        /* Allow wrapping on mobile instead of truncating */
-        white-space: normal;
-        word-break: break-word;
+    .preview-status-dot {
+        width: 6px;
+        height: 6px;
     }
 
-    .import-wizard-modal .empty-state-li {
-        padding: 16px 12px;
-        font-size: 0.75rem;
-        min-height: 60px;
-    }
-
-    /* Strategy section: Vertical stack, more compact */
-    .import-strategy-section {
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .import-strategy-radio {
-        padding: 10px 12px;
-        gap: 10px;
-    }
-
-    .import-strategy-radio .strategy-icon {
-        font-size: 1rem;
-        width: 32px;
-        height: 32px;
-    }
-
-    .import-strategy-radio strong {
-        font-size: 0.85rem;
-    }
-
-    .import-strategy-radio .strategy-desc {
-        font-size: 0.7rem;
-        /* Show full text on mobile - don't truncate */
-        display: block;
-        line-height: 1.4;
-    }
-
-    .strategy-check {
-        width: 20px;
-        height: 20px;
-        font-size: 0.6rem;
-    }
 
     /* Step 3 Footer adjustments */
     #wizardStep3Footer {
@@ -3770,9 +3449,10 @@
         justify-content: center;
     }
 
-    .step3-footer-warning {
+    .step3-footer-info {
         order: 2;
-        font-size: 0.7rem;
+        font-size: 0.75rem;
+        justify-content: center;
     }
 
     #wizardStep3PrevBtn {
@@ -3781,12 +3461,6 @@
 
     #wizardImportOnlyBtn {
         order: 3;
-    }
-
-    /* "Absent du fichier" badge style for departed students */
-    .import-wizard-modal .import-col-departed .li-status {
-        font-size: 0.65rem;
-        padding: 2px 6px;
     }
 }
 
@@ -3812,21 +3486,6 @@
 
     .drop-zone-formats {
         gap: 4px;
-    }
-
-    /* Step 3: Even more compact */
-    .import-wizard-modal .import-preview-col {
-        flex: 0 0 85%;
-        min-width: 200px;
-        max-width: 260px;
-    }
-
-    .import-wizard-modal .import-col-list {
-        max-height: 100px;
-    }
-
-    .import-strategy-radio .strategy-desc {
-        -webkit-line-clamp: 1;
     }
 }
 

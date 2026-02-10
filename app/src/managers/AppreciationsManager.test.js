@@ -422,8 +422,7 @@ describe('AppreciationsManager', () => {
                 prenom: 'Marie',
                 periods: { T1: { grade: 14, appreciation: '' } },
                 currentPeriod: 'T1',
-                statuses: [],
-                negativeInstructions: ''
+                statuses: []
             };
 
             const result = AppreciationsManager.getAllPrompts(studentData);
