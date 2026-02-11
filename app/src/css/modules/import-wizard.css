@@ -43,15 +43,16 @@
 }
 
 /* === GUIDE PANEL (Left Sidebar) - Glassmorphism 2026 === */
+/* === GUIDE PANEL (Left Sidebar) - Glassmorphism 2026 === */
 .wizard-guide-panel {
     width: 240px;
     min-width: 240px;
-    /* Glass effect with subtle primary tint */
-    background: rgba(var(--primary-color-rgb), 0.06);
+    /* Glass effect with subtle neutral tint (matched with Table Header) */
+    background: rgba(0, 0, 0, 0.02);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    /* Luminous border instead of solid */
-    border-right: 1px solid rgba(var(--primary-color-rgb), 0.15);
+    /* Standard border to match header */
+    border-right: 1px solid var(--border-color);
     padding: 20px 18px;
     display: flex;
     flex-direction: column;
@@ -182,11 +183,12 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-color);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
     border-radius: var(--radius-md);
     cursor: help;
     transition: all var(--transition-fast);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .guide-format-chip i {
@@ -219,21 +221,14 @@
 }
 
 .guide-format-chip:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--surface-color);
+    border-color: var(--primary-color);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
 }
 
 /* Light theme adjustments */
-[data-theme="light"] .guide-format-chip {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .guide-format-chip:hover {
-    background: rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.15);
-}
+/* Light theme adjustments handled in base style (default) */
 
 /* Guide sample button */
 .guide-sample-btn {
@@ -308,13 +303,20 @@
 
 /* Dark theme adjustments - Enhanced glass */
 [data-theme="dark"] .wizard-guide-panel {
-    background: rgba(0, 0, 0, 0.35);
-    border-right-color: rgba(var(--primary-color-rgb), 0.25);
+    background: rgba(255, 255, 255, 0.03);
+    border-right-color: var(--border-color);
 }
 
 [data-theme="dark"] .guide-format-chip {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .guide-format-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
 }
 
 /* === RESPONSIVE: Hide guide panel on mobile === */
