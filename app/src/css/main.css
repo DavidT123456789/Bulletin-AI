@@ -42,5 +42,6 @@
 @import './modules/theme-control.css';
 @import './modules/selection-toolbar.css';
 @import './modules/pwa-install.css';
+@import './modules/pwa-update.css';
 @import './utilities.css';
 @import './accessibility.css';
