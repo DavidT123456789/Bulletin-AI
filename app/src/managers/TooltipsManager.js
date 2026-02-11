@@ -28,7 +28,7 @@ const getCommonTippyConfig = () => {
         theme: 'custom-theme',
         animation: 'shift-away',
         arrow: false,
-        delay: [400, 0],
+        delay: [200, 0],
         duration: [300, 200],
         allowHTML: true,
         interactive: false,

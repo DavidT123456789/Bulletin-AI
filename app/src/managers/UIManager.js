@@ -44,6 +44,13 @@ import { ThemeManager } from './ThemeManager.js';
 /** @type {import('./AppManager.js').App|null} */
 let App;
 
+const NOTIF_ICONS = {
+    success: '<i class="fas fa-check"></i>',
+    error: '<i class="fas fa-times"></i>',
+    warning: '<i class="fas fa-exclamation"></i>',
+    info: '<i class="fas fa-info"></i>'
+};
+
 /**
  * Module de gestion de l'interface utilisateur.
  * @namespace UI
@@ -114,14 +121,7 @@ export const UI = {
         const notif = document.createElement('div');
         notif.className = `notification ${type}`;
 
-        // Use FontAwesome icons matching badge style
-        const iconMap = {
-            success: '<i class="fas fa-check"></i>',
-            error: '<i class="fas fa-times"></i>',
-            warning: '<i class="fas fa-exclamation"></i>',
-            info: '<i class="fas fa-info"></i>'
-        };
-        notif.innerHTML = `${iconMap[type] || iconMap.info} <span>${message}</span>`;
+        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
 
         // Interaction: Click to dismiss
         notif.style.cursor = 'pointer';
@@ -178,14 +178,7 @@ export const UI = {
         const notif = document.createElement('div');
         notif.className = `notification ${type} actionable`;
 
-        // Use FontAwesome icons matching badge style
-        const iconMap = {
-            success: '<i class="fas fa-check"></i>',
-            error: '<i class="fas fa-times"></i>',
-            warning: '<i class="fas fa-exclamation"></i>',
-            info: '<i class="fas fa-info"></i>'
-        };
-        notif.innerHTML = `${iconMap[type] || iconMap.info} <span>${message}</span>`;
+        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
         notif.style.cursor = 'pointer';
         container.appendChild(notif);
 
@@ -208,6 +201,102 @@ export const UI = {
                 if (container.children.length === 0 && container.parentNode === document.body) document.body.removeChild(container);
             }, 300);
         }, duration);
+    },
+
+    /**
+     * Affiche une notification avec bouton d'annulation et barre de progression.
+     * L'action est déjà exécutée ; si l'utilisateur clique "Annuler", le callback onUndo est appelé.
+     * @param {string} message - Message affiché dans le toast
+     * @param {Function} onUndo - Callback appelé si l'utilisateur annule
+     * @param {Object} [options] - Options
+     * @param {number} [options.duration=8000] - Durée avant disparition (ms)
+     * @param {string} [options.type='warning'] - Type de notification
+     * @returns {{ cancel: Function }} Objet avec méthode cancel pour annuler programmatiquement
+     */
+    showUndoNotification(message, onUndo, options = {}) {
+        const { duration = 8000, type = 'warning' } = options;
+
+        const container = document.getElementById('notification-container') || (() => {
+            const c = document.createElement('div');
+            c.id = 'notification-container';
+            document.body.appendChild(c);
+            return c;
+        })();
+
+        const notif = document.createElement('div');
+        notif.className = `notification ${type} notification-undo`;
+
+        notif.innerHTML = `
+            ${NOTIF_ICONS[type] || NOTIF_ICONS.warning}
+            <span class="notification-undo-message">${message}</span>
+            <button class="notification-undo-btn">Annuler</button>
+            <div class="notification-undo-progress">
+                <div class="notification-undo-progress-fill"></div>
+            </div>
+        `;
+
+        container.appendChild(notif);
+
+        const progressFill = notif.querySelector('.notification-undo-progress-fill');
+        let undone = false;
+        let timeoutId;
+        let startTime;
+        let remaining = duration;
+
+        const removeNotification = () => {
+            if (notif.dataset.removing) return;
+            notif.dataset.removing = 'true';
+            notif.classList.remove('show');
+            setTimeout(() => {
+                if (notif.parentNode === container) container.removeChild(notif);
+                if (container.children.length === 0 && container.parentNode === document.body) {
+                    if (document.body.contains(container)) document.body.removeChild(container);
+                }
+            }, 300);
+        };
+
+        const startCountdown = () => {
+            startTime = Date.now();
+            progressFill.style.transition = `width ${remaining}ms linear`;
+            progressFill.style.width = '0%';
+            timeoutId = setTimeout(() => {
+                if (!undone) removeNotification();
+            }, remaining);
+        };
+
+        const pauseCountdown = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            const elapsed = Date.now() - startTime;
+            remaining = Math.max(0, remaining - elapsed);
+            const pct = (remaining / duration) * 100;
+            progressFill.style.transition = 'none';
+            progressFill.style.width = `${pct}%`;
+        };
+
+        const handleUndo = () => {
+            if (undone) return;
+            undone = true;
+            if (timeoutId) clearTimeout(timeoutId);
+            removeNotification();
+            onUndo();
+        };
+
+        // Events
+        notif.querySelector('.notification-undo-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleUndo();
+        });
+        notif.addEventListener('mouseenter', pauseCountdown);
+        notif.addEventListener('mouseleave', startCountdown);
+
+        // Launch
+        requestAnimationFrame(() => {
+            progressFill.style.width = '100%';
+            notif.classList.add('show');
+            requestAnimationFrame(() => startCountdown());
+        });
+
+        return { cancel: handleUndo };
     },
     /**
      * Affiche une modale de confirmation personnalisée.

@@ -490,13 +490,16 @@ export const ListViewManager = {
                 <button class="action-dropdown-item" data-action="regenerate-student">
                     <i class="fas fa-sync-alt"></i> Régénérer
                 </button>
-                <button class="action-dropdown-item danger" data-action="clear-appreciation">
-                    <i class="fas fa-eraser"></i> Effacer
+                <button class="action-dropdown-item" data-action="copy-appreciation">
+                    <i class="fas fa-copy"></i> Copier
                 </button>
                 
                 <h5 class="dropdown-header"><i class="fas fa-user-graduate"></i> ÉLÈVE</h5>
                 <button class="action-dropdown-item" data-action="move-student">
                     <i class="fas fa-arrow-right-arrow-left"></i> Déplacer
+                </button>
+                <button class="action-dropdown-item" data-action="reset-student">
+                    <i class="fas fa-rotate-left"></i> Réinitialiser
                 </button>
                 <button class="action-dropdown-item danger" data-action="delete-student">
                     <i class="fas fa-trash"></i> Supprimer
@@ -1300,15 +1303,28 @@ export const ListViewManager = {
                 return;
             }
 
-            // Clear Appreciation Action (effacer uniquement le texte sans supprimer l'élève)
-            const clearAppBtn = target.closest('[data-action="clear-appreciation"]');
-            if (clearAppBtn) {
+            // Copy Appreciation action
+            const copyAppBtn = target.closest('[data-action="copy-appreciation"]');
+            if (copyAppBtn) {
                 e.stopPropagation();
                 closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
-                    this._clearAppreciation(studentId, row);
+                    this._copySingleAppreciation(studentId);
+                }
+                return;
+            }
+
+            // Reset Student action (modal with choices)
+            const resetBtn = target.closest('[data-action="reset-student"]');
+            if (resetBtn) {
+                e.stopPropagation();
+                closeAllMenus();
+                const row = target.closest('.student-row');
+                const studentId = row?.dataset.studentId;
+                if (studentId) {
+                    this._bulkReset([studentId]);
                 }
                 return;
             }
@@ -1655,7 +1671,7 @@ export const ListViewManager = {
         if (count > 0) {
             if (!toolbar) {
                 toolbar = this._createSelectionToolbar();
-                document.querySelector('.student-list-view').prepend(toolbar);
+                document.body.appendChild(toolbar);
 
                 // Initialize tooltips for the new toolbar
                 // Import dynamically to avoid circular dependencies or load order issues
@@ -1669,11 +1685,17 @@ export const ListViewManager = {
 
             const countLabel = toolbar.querySelector('#selectionCount');
             if (countLabel) countLabel.textContent = `${count} ${count > 1 ? 'élèves sélectionnés' : 'élève sélectionné'}`;
+
+            const selectAllLink = toolbar.querySelector('#btnSelectAllLink');
+            if (selectAllLink) {
+                const totalVisible = document.querySelectorAll('.student-row').length;
+                selectAllLink.style.display = count >= totalVisible ? 'none' : '';
+            }
         } else if (toolbar) {
             toolbar.classList.remove('active');
             setTimeout(() => {
                 if (toolbar) toolbar.remove();
-            }, 400); // Wait for animation
+            }, 500);
         }
     },
 
@@ -1694,6 +1716,7 @@ export const ListViewManager = {
                         <i class="fas fa-times"></i>
                     </button>
                     <span id="selectionCount">0 élève sélectionné</span>
+                    <button class="btn-select-all-link" id="btnSelectAllLink">Tout sélectionner</button>
                 </div>
                 <div class="selection-actions">
                     <button class="btn-selection-action tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
@@ -1702,18 +1725,13 @@ export const ListViewManager = {
                     <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations (Presse-papier)">
                         <i class="fas fa-copy"></i> <span>Copier</span>
                     </button>
-                    <button class="btn-selection-action tooltip" data-bulk-action="clear" data-tooltip="Effacer les appréciations (conserve la fiche élève)">
-                        <i class="fas fa-eraser"></i> <span>Effacer</span>
-                    </button>
                     <div class="selection-action-separator"></div>
                     <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
                         <i class="fas fa-arrow-right-arrow-left"></i> <span>Déplacer</span>
                     </button>
-                    
-                     <button class="btn-selection-action tooltip" data-bulk-action="reset-context" data-tooltip="Réinitialiser le Journal de bord et les observations">
-                        <i class="fas fa-history"></i> <span>Vider contexte</span>
+                    <button class="btn-selection-action tooltip" data-bulk-action="reset" data-tooltip="Choisir les données à réinitialiser">
+                        <i class="fas fa-rotate-left"></i> <span>Réinitialiser</span>
                     </button>
-
                     <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves">
                         <i class="fas fa-trash"></i> <span>Supprimer</span>
                     </button>
@@ -1725,6 +1743,11 @@ export const ListViewManager = {
         div.querySelector('#btnDeselectAll').onclick = (e) => {
             e.stopPropagation();
             this.toggleSelectVisible(false);
+        };
+
+        div.querySelector('#btnSelectAllLink').onclick = (e) => {
+            e.stopPropagation();
+            this.toggleSelectVisible(true);
         };
 
         div.querySelectorAll('[data-bulk-action]').forEach(btn => {
@@ -1756,26 +1779,53 @@ export const ListViewManager = {
             case 'copy':
                 await this._bulkCopy(ids);
                 break;
-            case 'clear':
-                await this._bulkClearAppreciation(ids);
-                break;
             case 'move':
                 await this._bulkMove(ids);
                 break;
-            case 'reset-context':
-                await this._bulkClearJournals(ids);
+            case 'reset':
+                await this._bulkReset(ids);
                 break;
         }
     },
 
     async _bulkDelete(ids) {
+        const results = appState.generatedResults || [];
+        const students = ids.map(id => results.find(r => r.id === id)).filter(Boolean);
+        const currentPeriod = appState.currentPeriod;
+
+        // Build smart summary
+        const namesPreview = students.slice(0, 5).map(s => `<strong>${s.prenom} ${s.nom}</strong>`);
+        const remaining = students.length - namesPreview.length;
+        const namesList = namesPreview.join(', ') + (remaining > 0 ? ` et <strong>${remaining} autre${remaining > 1 ? 's' : ''}</strong>` : '');
+
+        // Count data that will be lost
+        const withAppreciation = students.filter(s => {
+            const app = s.studentData?.periods?.[currentPeriod]?.appreciation || s.appreciation;
+            return app && app.replace(/<[^>]*>/g, '').trim().length > 0;
+        }).length;
+        const withJournal = students.filter(s => s.journal?.length > 0).length;
+        const withPhoto = students.filter(s => s.studentPhoto?.data).length;
+
+        const dataLines = [
+            withAppreciation > 0 ? `<li>${withAppreciation} appréciation${withAppreciation > 1 ? 's' : ''} générée${withAppreciation > 1 ? 's' : ''}</li>` : '',
+            withJournal > 0 ? `<li>${withJournal} journal${withJournal > 1 ? 'x' : ''} de bord</li>` : '',
+            withPhoto > 0 ? `<li>${withPhoto} photo${withPhoto > 1 ? 's' : ''}</li>` : ''
+        ].filter(Boolean).join('');
+
+        const dataSection = dataLines
+            ? `<p class="modal-confirm-detail-label">Données perdues :</p><ul class="modal-confirm-detail-list">${dataLines}</ul>`
+            : '';
+
         const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
         const confirmed = await ModalUIManager.showCustomConfirm(
-            `Êtes-vous sûr de vouloir supprimer les ${ids.length} élèves sélectionnés ? Cette action est irréversible.`,
+            `<div>
+                <p>Supprimer définitivement ${namesList} ?</p>
+                ${dataSection}
+            </div>`,
             null,
             null,
             {
-                title: 'Supprimer les élèves sélectionnés',
+                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`,
                 confirmText: 'Supprimer',
                 isDanger: true
             }
@@ -1784,26 +1834,21 @@ export const ListViewManager = {
         if (confirmed) {
             const { StudentDataManager } = await import('./StudentDataManager.js');
             for (const id of ids) {
-                // [FIX] Await deletion to ensure state is updated before render
                 await StudentDataManager.deleteStudent(id);
             }
 
-            // Persist changes
             const { StorageManager } = await import('./StorageManager.js');
             await StorageManager.saveAppState();
 
             this.clearSelections();
-            // Re-render
             this.render(appState.filteredResults, document.getElementById('outputList'));
 
-            // Use standard UI notification
             const { UI } = await import('./UIManager.js');
-            UI?.showNotification(`${ids.length} élèves supprimés.`, 'success');
+            UI?.showNotification(`${ids.length} élève${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}.`, 'success');
         }
     },
 
     async _bulkMove(ids) {
-        // Use ClassUIManager to show modal
         ClassUIManager.showMoveStudentsModal(ids, () => {
             this.clearSelections();
         });
@@ -1815,7 +1860,6 @@ export const ListViewManager = {
 
         UI?.showNotification(`Lancement de la régénération pour ${ids.length} élèves...`, 'info');
 
-        // Parallel execution
         const promises = ids.map(id => AppreciationsManager.regenerateFailedAppreciation(id));
         await Promise.all(promises);
 
@@ -1829,125 +1873,227 @@ export const ListViewManager = {
         if (count > 0) {
             this.clearSelections();
             const { UI } = await import('./UIManager.js');
-            UI?.showNotification(`${count} appréciation(s) copiée(s).`, 'success');
+            UI?.showNotification(`${count} appréciation${count > 1 ? 's' : ''} copiée${count > 1 ? 's' : ''}.`, 'success');
         }
     },
 
-    async _bulkClearAppreciation(ids) {
-        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
-        const confirmed = await ModalUIManager.showCustomConfirm(
-            `Effacer le texte des appréciations pour les ${ids.length} élèves sélectionnés ? (Les données seront conservées)`,
-            null,
-            null,
-            {
-                title: 'Effacer les appréciations',
-                confirmText: 'Effacer',
-                isDanger: true
-            }
-        );
-
-        if (confirmed) {
-            const { StudentDataManager } = await import('./StudentDataManager.js');
-            for (const id of ids) {
-                StudentDataManager.clearStudentAppreciation(id);
-                // [FIX] Update row directly to ensure UI reflects change immediately
-                this.updateStudentRow(id);
-            }
-
-            // Persist changes
-            const { StorageManager } = await import('./StorageManager.js');
-            await StorageManager.saveAppState();
-
-            this.clearSelections();
-
-            const { UI } = await import('./UIManager.js');
-            UI?.showNotification(`${ids.length} appréciations effacées.`, 'success');
+    /**
+     * Copie l'appréciation d'un seul élève dans le presse-papier
+     * @param {string} studentId
+     * @private
+     */
+    async _copySingleAppreciation(studentId) {
+        const { ExportManager } = await import('./ExportManager.js');
+        const count = await ExportManager.copyBulkAppreciations([studentId]);
+        const { UI } = await import('./UIManager.js');
+        if (count > 0) {
+            UI?.showNotification('Appréciation copiée.', 'success');
+        } else {
+            UI?.showNotification('Aucune appréciation à copier.', 'info');
         }
     },
 
-    async _bulkClearJournals(ids) {
+    /**
+     * Réinitialisation sélective via modale à choix multiples
+     * Fusionne les anciennes actions Effacer + Vider contexte
+     * @param {Array<string>} ids - IDs des élèves
+     * @private
+     */
+    async _bulkReset(ids) {
         const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
+        const results = appState.generatedResults || [];
+        const currentPeriod = appState.currentPeriod;
+        const isSingle = ids.length === 1;
+
+        // Count existing data for dynamic sublabels
+        const students = ids.map(id => results.find(r => r.id === id)).filter(Boolean);
+        const withAppreciation = students.filter(s => {
+            const app = s.studentData?.periods?.[currentPeriod]?.appreciation || s.appreciation;
+            return app && app.replace(/<[^>]*>/g, '').trim().length > 0;
+        }).length;
+        const withJournal = students.filter(s => s.journal?.length > 0).length;
+        const withContext = students.filter(s => s.studentData?.periods?.[currentPeriod]?.context).length;
+        const withPhoto = students.filter(s => s.studentPhoto?.data).length;
 
         const choices = [
             {
+                id: 'appreciation',
+                label: 'Appréciations',
+                sublabel: withAppreciation > 0
+                    ? `Efface le texte généré (${withAppreciation} élève${withAppreciation > 1 ? 's' : ''} concerné${withAppreciation > 1 ? 's' : ''}). Notes et données conservées.`
+                    : 'Aucune appréciation à effacer.',
+                checked: withAppreciation > 0,
+                disabled: withAppreciation === 0
+            },
+            {
                 id: 'journal',
                 label: 'Journal de bord',
-                sublabel: 'Efface les observations (gommettes/remarques). Conserve le champ Contexte.',
-                checked: true
+                sublabel: withJournal > 0
+                    ? `Efface les observations et gommettes (${withJournal} élève${withJournal > 1 ? 's' : ''}).`
+                    : 'Aucun journal à effacer.',
+                checked: false,
+                disabled: withJournal === 0
             },
             {
                 id: 'context',
                 label: 'Notes de contexte',
-                sublabel: 'Efface le texte que vous avez saisi dans le champ "Contexte" pour ce trimestre.',
-                checked: false
+                sublabel: withContext > 0
+                    ? `Efface le texte du champ « Contexte » pour ${appState.currentPeriod} (${withContext} élève${withContext > 1 ? 's' : ''}).`
+                    : 'Aucune note de contexte.',
+                checked: false,
+                disabled: withContext === 0
+            },
+            {
+                id: 'photo',
+                label: 'Photos',
+                sublabel: withPhoto > 0
+                    ? `Supprime ${withPhoto} photo${withPhoto > 1 ? 's' : ''} de profil.`
+                    : 'Aucune photo à supprimer.',
+                checked: false,
+                disabled: withPhoto === 0
             }
         ];
 
+        const studentLabel = isSingle
+            ? `<strong>${students[0]?.prenom} ${students[0]?.nom}</strong>`
+            : `<strong>${ids.length} élèves</strong>`;
+
         const { confirmed, values } = await ModalUIManager.showChoicesModal(
-            'Réinitialiser le contexte',
-            `Vous êtes sur le point de réinitialiser les données pour <strong>${ids.length} élèves</strong>.<br>Choisissez les éléments à effacer :`,
+            'Réinitialiser',
+            `Choisissez les données à effacer pour ${studentLabel} :`,
             choices,
             {
                 confirmText: 'Réinitialiser',
                 cancelText: 'Annuler',
                 isDanger: true,
-                iconClass: 'fa-history'
+                iconClass: 'fa-rotate-left'
             }
         );
 
-        if (confirmed) {
-            const clearJournal = values.journal;
-            const clearContext = values.context;
+        if (!confirmed) return;
 
-            if (!clearJournal && !clearContext) return;
+        const clearAppreciation = values.appreciation;
+        const clearJournal = values.journal;
+        const clearContext = values.context;
+        const clearPhoto = values.photo;
 
-            const currentPeriod = appState.currentPeriod;
-            const results = appState.generatedResults || [];
-            let journalCount = 0;
-            let contextCount = 0;
+        if (!clearAppreciation && !clearJournal && !clearContext && !clearPhoto) return;
 
-            ids.forEach(id => {
-                const student = results.find(r => r.id === id);
-                if (student) {
-                    // Clear Journal
-                    if (clearJournal && student.journal && student.journal.length > 0) {
-                        student.journal = [];
-                        journalCount++;
-                    }
-
-                    // Clear Context
-                    if (clearContext) {
-                        // Check if context exists in current period
-                        if (student.studentData &&
-                            student.studentData.periods &&
-                            student.studentData.periods[currentPeriod] &&
-                            student.studentData.periods[currentPeriod].context) {
-
-                            student.studentData.periods[currentPeriod].context = '';
-                            contextCount++;
-                        }
-                    }
-
-                    // [FIX] Update row to reflect changes (e.g. dirty status might change)
-                    this.updateStudentRow(id);
-                }
+        // Snapshot data before mutation (for undo)
+        const snapshots = new Map();
+        ids.forEach(id => {
+            const student = results.find(r => r.id === id);
+            if (!student) return;
+            snapshots.set(id, {
+                appreciation: student.appreciation,
+                periodAppreciation: student.studentData?.periods?.[currentPeriod]?.appreciation,
+                periodLastModified: student.studentData?.periods?.[currentPeriod]?._lastModified,
+                lastModified: student._lastModified,
+                copied: student.copied,
+                journal: student.journal ? [...student.journal] : [],
+                context: student.studentData?.periods?.[currentPeriod]?.context,
+                studentPhoto: student.studentPhoto ? { ...student.studentPhoto } : null
             });
+        });
 
-            if (journalCount > 0 || contextCount > 0) {
-                const { StorageManager } = await import('./StorageManager.js');
-                await StorageManager.saveAppState();
+        // Execute mutation
+        const now = Date.now();
+        const counts = { appreciation: 0, journal: 0, context: 0, photo: 0 };
 
-                const { UI } = await import('./UIManager.js');
-                let msg = '';
-                if (journalCount > 0 && contextCount > 0) msg = `${journalCount} élèves réinitialisés (Journal + Contexte).`;
-                else if (journalCount > 0) msg = `${journalCount} journaux réinitialisés.`;
-                else if (contextCount > 0) msg = `${contextCount} contextes effacés.`;
+        ids.forEach(id => {
+            const student = results.find(r => r.id === id);
+            if (!student) return;
 
-                UI?.showNotification(msg, 'success');
+            if (clearAppreciation) {
+                const app = student.studentData?.periods?.[currentPeriod]?.appreciation || student.appreciation;
+                if (app && app.replace(/<[^>]*>/g, '').trim().length > 0) {
+                    student.appreciation = '';
+                    if (student.studentData?.periods?.[currentPeriod]) {
+                        student.studentData.periods[currentPeriod].appreciation = '';
+                        student.studentData.periods[currentPeriod]._lastModified = now;
+                    }
+                    student._lastModified = now;
+                    student.copied = false;
+                    counts.appreciation++;
+                }
             }
 
-            this.clearSelections();
+            if (clearJournal && student.journal?.length > 0) {
+                student.journal = [];
+                counts.journal++;
+            }
+
+            if (clearContext && student.studentData?.periods?.[currentPeriod]?.context) {
+                student.studentData.periods[currentPeriod].context = '';
+                counts.context++;
+            }
+
+            if (clearPhoto && student.studentPhoto?.data) {
+                student.studentPhoto = null;
+                student._lastModified = now;
+                counts.photo++;
+            }
+
+            this.updateStudentRow(id);
+        });
+
+        const totalCleared = Object.values(counts).reduce((sum, c) => sum + c, 0);
+
+        if (totalCleared > 0) {
+            const { StorageManager } = await import('./StorageManager.js');
+            const { UI } = await import('./UIManager.js');
+            await StorageManager.saveAppState();
+            UI?.updateStats?.();
+            const parts = [];
+            if (counts.appreciation > 0) parts.push(`${counts.appreciation} appréciation${counts.appreciation > 1 ? 's' : ''}`);
+            if (counts.journal > 0) parts.push(`${counts.journal} journal${counts.journal > 1 ? 'x' : ''}`);
+            if (counts.context > 0) parts.push(`${counts.context} contexte${counts.context > 1 ? 's' : ''}`);
+            if (counts.photo > 0) parts.push(`${counts.photo} photo${counts.photo > 1 ? 's' : ''}`);
+
+            // Show undo toast instead of simple notification
+            UI?.showUndoNotification(
+                `Réinitialisé : ${parts.join(', ')}.`,
+                async () => {
+                    // Restore snapshot
+                    for (const [id, snap] of snapshots) {
+                        const student = results.find(r => r.id === id);
+                        if (!student) continue;
+
+                        if (clearAppreciation) {
+                            student.appreciation = snap.appreciation;
+                            if (student.studentData?.periods?.[currentPeriod]) {
+                                student.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
+                                student.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
+                            }
+                            student._lastModified = snap.lastModified;
+                            student.copied = snap.copied;
+                        }
+
+                        if (clearJournal) {
+                            student.journal = snap.journal;
+                        }
+
+                        if (clearContext && student.studentData?.periods?.[currentPeriod]) {
+                            student.studentData.periods[currentPeriod].context = snap.context;
+                        }
+
+                        if (clearPhoto) {
+                            student.studentPhoto = snap.studentPhoto;
+                            student._lastModified = snap.lastModified;
+                        }
+
+                        this.updateStudentRow(id);
+                    }
+
+                    await StorageManager.saveAppState();
+                    UI?.updateStats?.();
+                    UI?.showNotification('Réinitialisation annulée.', 'success');
+                },
+                { type: 'warning' }
+            );
         }
+
+        if (ids.length > 1) this.clearSelections();
     },
 
     /**
@@ -2223,78 +2369,6 @@ export const ListViewManager = {
 
         // Notify user
         UI?.showNotification(`${studentName} supprimé`, 'success');
-    },
-
-    /**
-     * Efface l'appréciation d'un élève sans supprimer l'élève
-     * @param {string} studentId - ID de l'élève
-     * @param {HTMLElement} row - Ligne DOM de l'élève
-     * @private
-     */
-    async _clearAppreciation(studentId, row) {
-        const student = appState.generatedResults.find(r => r.id === studentId);
-        if (!student) return;
-
-        const studentName = `${student.prenom} ${student.nom}`;
-        const currentPeriod = appState.currentPeriod;
-
-        // Vérifier s'il y a une appréciation à effacer
-        const currentAppreciation = student.studentData?.periods?.[currentPeriod]?.appreciation || student.appreciation;
-        if (!currentAppreciation) {
-            const { UI } = await import('./UIManager.js');
-            UI?.showNotification(`Aucune appréciation à effacer pour ${studentName}`, 'info');
-            return;
-        }
-
-        // Confirmation via modale personnalisée
-        const { ModalUI } = await import('./ModalUIManager.js');
-        const confirmed = await ModalUI.showCustomConfirm(
-            `Effacer l'appréciation de <strong>${studentName}</strong> ?<br>L'élève sera conservé mais passera en statut "En attente".`,
-            null,
-            null,
-            {
-                title: 'Effacer l\'appréciation ?',
-                confirmText: 'Effacer',
-                cancelText: 'Annuler',
-                isDanger: true
-            }
-        );
-
-        if (!confirmed) return;
-
-        // Effacer l'appréciation via le Manager (Single Source of Truth)
-        const { StudentDataManager } = await import('./StudentDataManager.js');
-        StudentDataManager.clearStudentAppreciation(studentId);
-
-        // Animation de mise à jour
-        const appreciationCell = row.querySelector('.appreciation-cell');
-        if (appreciationCell) {
-            appreciationCell.style.transition = 'opacity 0.2s ease-out';
-            appreciationCell.style.opacity = '0.5';
-
-            setTimeout(() => {
-                // Update the cell content
-                const status = this._getStatus(student);
-                appreciationCell.innerHTML = this._getAppreciationCell(student, status);
-                appreciationCell.style.opacity = '1';
-            }, 200);
-        }
-
-        // Persist to storage
-
-        const { StorageManager } = await import('./StorageManager.js');
-        await StorageManager.saveAppState();
-
-        // Update UI elements
-        const { UI } = await import('./UIManager.js');
-        UI?.updateStats();
-
-        // Update generate button state (now has pending appreciation)
-        const { ResultsUIManager } = await import('./ResultsUIManager.js');
-        ResultsUIManager.updateGenerateButtonState();
-
-        // Notify user
-        UI?.showNotification(`Appréciation de ${studentName} effacée`, 'success');
     },
 
     /**

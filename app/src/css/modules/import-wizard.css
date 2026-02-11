@@ -1507,11 +1507,15 @@
     content: '';
     position: absolute;
     inset: 0;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(214, 211, 209, 0.55);
     border-radius: var(--radius-lg);
     z-index: 20;
     /* Higher than sticky th (z-index: 10) and scrollbars */
     pointer-events: none;
+}
+
+[data-theme="dark"] .import-wizard-modal .import-mapping-table-container::after {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* === UNIFIED FOOTER - Single source of truth === */
@@ -2702,11 +2706,7 @@
 }
 
 /* === MAPPING TABLE SCROLL SHADOW === */
-.import-mapping-table-container {
-    position: relative;
-}
-
-.import-mapping-table-container::after {
+.import-mapping-table-container::before {
     content: '';
     position: absolute;
     top: 0;
@@ -2717,9 +2717,10 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s ease;
+    z-index: 15;
 }
 
-.import-mapping-table-container.has-scroll::after {
+.import-mapping-table-container.has-scroll::before {
     opacity: 1;
 }
 
@@ -2814,6 +2815,7 @@
     min-height: 200px;
     transform: translateZ(0);
     isolation: isolate;
+    backface-visibility: hidden;
     z-index: 0;
     animation: table-fade-in 0.4s ease-out;
 }
@@ -2834,10 +2836,14 @@
     content: '';
     position: absolute;
     inset: 0;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(214, 211, 209, 0.55);
     border-radius: var(--radius-lg);
     z-index: 20;
     pointer-events: none;
+}
+
+[data-theme="dark"] .import-preview-table-container::after {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .import-preview-table-container .import-preview-table {
@@ -2940,26 +2946,61 @@
 .preview-col-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
     margin: 0;
     line-height: 1;
 }
 
+/* Hide native checkbox */
 .preview-col-header input[type="checkbox"] {
-    accent-color: var(--primary-color);
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    flex-shrink: 0;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
 }
 
+/* Custom checkbox via span::before */
+.preview-col-header span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.preview-col-header span::before {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--text-tertiary);
+    border-radius: 4px;
+    background: transparent;
+    margin-right: 8px;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.preview-col-header:hover span::before {
+    border-color: var(--primary-color);
+}
+
+/* Checked state — white check on primary background */
+.preview-col-header input[type="checkbox"]:checked+span::before {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 6l2 2 4-4' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px;
+}
+
+/* Locked (disabled) state */
 .preview-col-header.locked {
     cursor: default;
     opacity: 0.7;
 }
 
-.preview-col-header.locked input[type="checkbox"] {
+.preview-col-header.locked span::before {
     cursor: not-allowed;
 }
 
@@ -3141,6 +3182,81 @@
     color: var(--warning-color);
 }
 
+/* Departed action toggle */
+.guide-departed-action {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    transition: background 0.2s ease, border-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.guide-departed-action:has(input:checked) {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.guide-toggle-row {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1;
+    margin: 0;
+}
+
+/* Hide the real checkbox */
+.guide-toggle-row input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Span as flex container for proper alignment */
+.guide-toggle-row span {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Custom checkbox via pseudo-element */
+.guide-toggle-row span::before {
+    content: '';
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--text-tertiary);
+    border-radius: 3px;
+    background: transparent;
+    margin-right: 8px;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.guide-toggle-row:hover span::before {
+    border-color: var(--warning-color);
+}
+
+.guide-toggle-row input[type="checkbox"]:checked+span::before {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+    content: '';
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 6l2 2 4-4' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px;
+}
+
+.guide-toggle-row strong {
+    color: var(--warning-color);
+    font-weight: 700;
+}
+
 
 /* Hide body bottom radius when any footer is visible (handled by unified footer) */
 .import-wizard-modal:has(.import-wizard-footer:not([style*="display: none"])) .import-wizard-body {
@@ -3178,14 +3294,6 @@
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 12px;
-}
-
-/* === IMPROVED TABLE FOR ALL ROWS === */
-.import-wizard-modal .import-mapping-table-container {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: auto;
-    min-height: 200px;
 }
 
 

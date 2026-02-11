@@ -1485,6 +1485,12 @@ export const ImportWizardManager = {
         updateCount('wizardUpdatedCount', preview.updatedStudents.length);
         updateCount('wizardDepartedCount', preview.departedStudents.length);
 
+        // Show/hide departed toggle
+        const departedAction = document.getElementById('wizardDepartedAction');
+        if (departedAction) {
+            departedAction.style.display = preview.departedStudents.length > 0 ? '' : 'none';
+        }
+
         // Update footer info
         const mappedCols = Object.keys(formatMap).filter(k => k !== 'NOM_PRENOM');
         const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
@@ -1750,6 +1756,32 @@ export const ImportWizardManager = {
             return filtered;
         });
 
+        // Smart Replace: delete departed students if toggle is checked
+        const deleteDeparted = document.getElementById('wizardDeleteDepartedToggle')?.checked;
+
+        if (deleteDeparted && this.state.departedStudents?.length > 0) {
+            const currentClassId = appState.currentClassId;
+            const departedKeys = new Set(
+                this.state.departedStudents.map(s => Utils.normalizeName(s.nom, s.prenom))
+            );
+
+            // Collect IDs of records to delete from IndexedDB
+            const idsToDelete = appState.generatedResults
+                .filter(r => r.classId === currentClassId && departedKeys.has(Utils.normalizeName(r.nom, r.prenom)))
+                .map(r => r.id);
+
+            // Remove from in-memory state
+            appState.generatedResults = appState.generatedResults.filter(
+                r => !(r.classId === currentClassId && departedKeys.has(Utils.normalizeName(r.nom, r.prenom)))
+            );
+
+            // Delete from IndexedDB (putAll is non-destructive upsert, won't remove records)
+            if (idsToDelete.length > 0) {
+                const { DBService } = await import('../services/DBService.js');
+                await Promise.all(idsToDelete.map(id => DBService.delete('generatedResults', id)));
+            }
+        }
+
         await MassImportManager.importStudentsOnly(filteredStudents, this.state.ignoredCount || 0);
         this.close();
     },
@@ -1787,6 +1819,12 @@ export const ImportWizardManager = {
 
         // Reset Drop Zone UI
         this._resetFileUI();
+
+        // Reset departed toggle
+        const departedToggle = document.getElementById('wizardDeleteDepartedToggle');
+        if (departedToggle) departedToggle.checked = false;
+        const departedAction = document.getElementById('wizardDepartedAction');
+        if (departedAction) departedAction.style.display = 'none';
 
         // Clean up dynamically created warning elements
         document.getElementById('wizardMappingWarning')?.remove();

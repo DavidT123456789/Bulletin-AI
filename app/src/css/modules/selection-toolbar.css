@@ -1,56 +1,78 @@
 /* ====================================================================
-   SELECTION TOOLBAR - Dynamic Contextual Bar for Bulk Actions
-   Gmail-inspired design with premium animations
+   SELECTION TOOLBAR - Floating Action Bar (Gmail-inspired)
+   Detached from table, fixed at viewport bottom
    ==================================================================== */
 
 .selection-toolbar {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: var(--surface-color);
-    border-bottom: 1px solid var(--border-color);
-    height: 0;
-    overflow: hidden;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    z-index: var(--z-modal-backdrop, 500);
+    background: var(--glass-surface);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-pill, 50px);
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    margin-bottom: 0;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.3s ease;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+    max-width: calc(100vw - 32px);
 }
 
 .selection-toolbar.active {
-    height: 60px;
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
-    margin-bottom: 0;
-    background: var(--glass-surface);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    pointer-events: auto;
 }
 
 .selection-toolbar-content {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    height: 100%;
-    padding: 0 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+    gap: 6px;
+    height: 56px;
+    padding: 0 12px 0 16px;
 }
 
 .selection-info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     color: var(--primary-color);
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
+    white-space: nowrap;
+    padding-right: 4px;
+}
+
+.btn-select-all-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+}
+
+.btn-select-all-link:hover {
+    opacity: 1;
+    background: rgba(var(--primary-color-rgb), 0.08);
 }
 
 .btn-deselect {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     border: none;
     background: rgba(var(--primary-color-rgb), 0.1);
@@ -60,6 +82,8 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+    font-size: 12px;
 }
 
 .btn-deselect:hover {
@@ -67,33 +91,45 @@
     transform: rotate(90deg);
 }
 
+/* Separator between info and actions */
+.selection-info::after {
+    content: '';
+    width: 1px;
+    height: 28px;
+    background: var(--border-color);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
 .selection-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 
 .btn-selection-action {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: 6px;
+    padding: 7px 14px;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    white-space: nowrap;
 }
 
 .btn-selection-action:hover {
-    background: var(--surface-hover);
-    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
     color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.btn-selection-action:active {
+    transform: scale(0.95);
 }
 
 .btn-selection-action.danger {
@@ -101,8 +137,7 @@
 }
 
 .btn-selection-action.danger:hover {
-    background: rgba(var(--error-color-rgb), 0.05);
-    border-color: var(--error-color);
+    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.08);
     color: var(--error-color);
 }
 
@@ -110,7 +145,8 @@
     width: 1px;
     height: 24px;
     background: var(--border-color);
-    margin: 0 8px;
+    margin: 0 4px;
+    flex-shrink: 0;
 }
 
 /* === Avatar Selection Overlay === */
@@ -153,10 +189,8 @@
 }
 
 .student-avatar.is-selected {
-    /* Verrouiller le zoom (Lock Zoom) au lieu du cercle extérieur */
     transform: scale(1.18);
     z-index: 5;
-    /* Ombre améliorée pour l'état sélectionné "flottant" */
     box-shadow: 0 8px 16px rgba(var(--primary-color-rgb), 0.25);
 }
 
@@ -177,20 +211,56 @@
     color: var(--primary-color);
 }
 
-/* Responsive adjustment for toolbar */
+/* === Responsive === */
 @media (max-width: 768px) {
+    .selection-toolbar {
+        bottom: 16px;
+        border-radius: var(--radius-lg);
+    }
+
+    .selection-toolbar-content {
+        padding: 0 10px;
+        height: 50px;
+        gap: 4px;
+    }
+
     .btn-selection-action span {
         display: none;
     }
 
     .btn-selection-action {
         padding: 8px;
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         justify-content: center;
+        border-radius: 50%;
     }
 
+    .selection-info {
+        font-size: 13px;
+        gap: 8px;
+    }
+
+    .btn-select-all-link {
+        display: none;
+    }
+
+    .selection-info::after {
+        height: 24px;
+    }
+}
+
+@media (max-width: 480px) {
     .selection-toolbar-content {
-        padding: 0 12px;
+        padding: 0 8px;
+        height: 48px;
+    }
+
+    #selectionCount {
+        display: none;
+    }
+
+    .selection-info::after {
+        display: none;
     }
 }

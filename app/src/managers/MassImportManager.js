@@ -227,71 +227,49 @@ export const MassImportManager = {
      * Crée des cartes "pending" qui pourront être générées plus tard
      * @param {Array} studentsToProcess - Liste des données élèves à importer
      * @param {number} ignoredCount - Nombre de lignes ignorées
-     * @param {Map} [preservedPhotos] - Map des photos à restaurer (nom normalisé -> photo object)
      */
-    async importStudentsOnly(studentsToProcess, ignoredCount, preservedPhotos = null) {
+    async importStudentsOnly(studentsToProcess, ignoredCount) {
         const { StudentDataManager } = await import('./StudentDataManager.js');
         const { StorageManager } = await import('./StorageManager.js');
         const { ClassManager } = await import('./ClassManager.js');
 
-        // Compteurs
         let newCount = 0;
         let updatedCount = 0;
-        let photosRestored = 0;
 
         for (const studentData of studentsToProcess) {
             const normalizedKey = Utils.normalizeName(studentData.nom, studentData.prenom);
             const currentClassId = appState.currentClassId;
 
-            // CORRECTIF: Chercher seulement dans la classe courante
             const existingResult = appState.generatedResults.find(r =>
                 Utils.normalizeName(r.nom, r.prenom) === normalizedKey &&
                 r.classId === currentClassId
             );
 
             if (existingResult) {
-                // Mettre à jour les données existantes (fusionner les périodes)
                 const currentPeriod = appState.currentPeriod;
                 if (!existingResult.studentData.periods) {
                     existingResult.studentData.periods = {};
                 }
                 existingResult.studentData.periods[currentPeriod] = studentData.periods[currentPeriod];
                 existingResult.studentData.statuses = studentData.statuses || existingResult.studentData.statuses;
-                // Les évolutions seront recalculées lors de la génération
                 updatedCount++;
             } else {
-                // Créer un nouvel élève en attente
                 const pendingResult = StudentDataManager.createPendingResult(studentData);
-
-                // SMART REPLACE: Restore photo if name matches
-                if (preservedPhotos && preservedPhotos.size > 0) {
-                    const photoKey = `${(studentData.nom || '').toUpperCase().trim()}|${(studentData.prenom || '').trim().toLowerCase()}`;
-                    const savedPhoto = preservedPhotos.get(photoKey);
-                    if (savedPhoto) {
-                        pendingResult.studentPhoto = savedPhoto;
-                        photosRestored++;
-                    }
-                }
-
                 appState.generatedResults.push(pendingResult);
                 newCount++;
             }
         }
 
-        // Filtrer par classe et sauvegarder
         await ClassManager._filterResultsByClass(appState.currentClassId);
         await StorageManager.saveAppState();
 
-        // Rafraîchir l'affichage
         Am?.renderResults?.();
         UI?.updateStats?.();
         UI?.updateControlButtons?.();
 
-        // Notification de succès
         let message = '';
         if (newCount > 0) message += `${newCount} élève(s) importé(s)`;
         if (updatedCount > 0) message += `${newCount > 0 ? ', ' : ''}${updatedCount} mis à jour`;
-        if (photosRestored > 0) message += ` (📷 ${photosRestored} photo(s) restaurées)`;
         if (ignoredCount > 0) message += ` (${ignoredCount} ignoré(s))`;
 
         UI?.showNotification(message || 'Import terminé', 'success');

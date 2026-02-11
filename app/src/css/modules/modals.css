@@ -780,7 +780,20 @@
 }
 
 
-/* === Modal Choices (Checkbox Group) === */
+
+/* === Modal Confirm Detail (data loss summary) === */
+.modal-confirm-detail-label {
+    margin-top: 12px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.modal-confirm-detail-list {
+    margin: 4px 0 8px 20px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
 /* === Modal Choices (Checkbox Group) === */
 .modal-choices-container {
     padding: 0;
@@ -914,6 +927,22 @@
 
 .modal-choice-item.checked .modal-choice-title {
     color: var(--primary-color);
+}
+
+/* Disabled state - no data to clear */
+.modal-choice-item.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.modal-choice-item.disabled .modal-choice-label-wrapper {
+    cursor: not-allowed;
+}
+
+.modal-choice-item.disabled .custom-checkbox-display {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
 }
 
 .api-status-item.pending .api-status-icon {

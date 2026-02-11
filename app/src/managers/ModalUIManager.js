@@ -361,11 +361,14 @@ export const ModalUI = {
             const iconColorVar = isDanger ? 'var(--warning-color)' : 'var(--primary-color)';
 
             // Generate checkboxes HTML
-            const choicesHTML = choices.map(choice => `
-                <div class="modal-choice-item ${choice.checked ? 'checked' : ''}">
+            const choicesHTML = choices.map(choice => {
+                const isDisabled = choice.disabled;
+                const checkedState = isDisabled ? false : choice.checked;
+                return `
+                <div class="modal-choice-item ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}">
                     <label class="modal-choice-label-wrapper" for="choice_${choice.id}">
                         <div class="modal-choice-checkbox-wrapper">
-                            <input type="checkbox" id="choice_${choice.id}" ${choice.checked ? 'checked' : ''}>
+                            <input type="checkbox" id="choice_${choice.id}" ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                             <div class="custom-checkbox-display">
                                 <i class="fas fa-check"></i>
                             </div>
@@ -375,8 +378,8 @@ export const ModalUI = {
                             ${choice.sublabel ? `<span class="modal-choice-subtitle">${choice.sublabel}</span>` : ''}
                         </div>
                     </label>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
 
             modal.innerHTML = `
                 <div class="modal-content modal-content-confirm">

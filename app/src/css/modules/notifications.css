@@ -136,6 +136,69 @@
     text-decoration-style: dotted;
 }
 
+/* Undo Notification - Action toast with countdown */
+.notification.notification-undo {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding-bottom: 10px;
+    min-width: 320px;
+    cursor: default;
+}
+
+.notification-undo-message {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-undo-btn {
+    background: none;
+    border: 1.5px solid currentColor;
+    color: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notification-undo-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+
+[data-theme="light"] .notification-undo-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.notification-undo-btn:active {
+    transform: scale(0.95);
+}
+
+.notification-undo-progress {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    order: 99;
+}
+
+[data-theme="light"] .notification-undo-progress {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.notification-undo-progress-fill {
+    height: 100%;
+    width: 100%;
+    background: currentColor;
+    border-radius: 2px;
+    opacity: 0.6;
+}
+
 #mass-import-progress-output-area {
     position: relative;
     background: var(--surface-color);
