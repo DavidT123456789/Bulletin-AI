@@ -1746,45 +1746,32 @@
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-pill);
     font-size: var(--font-sm);
-    font-weight: 600;
-
-    /* Brand Gradient */
-    background: var(--gradient-primary);
-    color: white;
-
-    border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    /* Soft shadow */
-    white-space: nowrap;
-    transition: all 0.2s;
+    /* Remove conflicting overrides to restore standard btn-primary animation */
 }
 
-.pwa-update-banner .btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
-    transform: translateY(-1px);
-    opacity: 0.95;
-    filter: brightness(1.05);
-}
-
-/* Close Button */
+/* Close Button - Standardized */
 .pwa-update-banner .pwa-close-btn {
-    width: 24px;
-    height: 24px;
+    width: var(--close-btn-size);
+    height: var(--close-btn-size);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
+    background: var(--close-btn-bg);
     border: none;
-    color: var(--text-tertiary);
+    color: var(--close-btn-color);
+    font-size: var(--close-btn-icon-size);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-fast);
     margin-left: 2px;
+    border-radius: 50%;
+    opacity: 0.8;
 }
 
 .pwa-update-banner .pwa-close-btn:hover {
-    color: var(--text-primary);
-    background: var(--bg-hover);
-    border-radius: 50%;
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
+    transform: scale(1.08);
+    opacity: 1;
 }
 
 /* Mobile adjustments for PWA Banner to prevent truncation */
