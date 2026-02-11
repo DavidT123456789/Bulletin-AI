@@ -1731,7 +1731,7 @@
 }
 
 .pwa-update-banner .pwa-info-btn i {
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
     transition: transform 0.3s ease;
 }
 
@@ -1742,9 +1742,9 @@
 
 /* Update Button - Primary Action */
 .pwa-update-banner .btn-primary {
-    padding: 6px 16px;
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-pill);
-    font-size: 0.85rem;
+    font-size: var(--font-sm);
     font-weight: 600;
 
     /* Brand Gradient */
@@ -1789,7 +1789,7 @@
 /* Mobile adjustments for PWA Banner to prevent truncation */
 @media (max-width: 480px) {
     .pwa-update-banner {
-        width: calc(100vw - 24px);
+        width: calc(100vw - var(--space-6));
         bottom: var(--space-4);
         transform: translateX(-50%) translateY(120px);
     }
@@ -1834,7 +1834,7 @@
         display: flex;
         height: 40px;
         align-items: center;
-        font-size: 1rem;
+        font-size: var(--font-base);
         /* Larger text for tap info */
     }
 
@@ -1844,7 +1844,7 @@
         height: 40px;
         background: var(--bg-secondary);
         /* More visible tap targets */
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         /* Squircle for mobile actions */
     }
 }
