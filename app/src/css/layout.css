@@ -1563,11 +1563,12 @@
     padding: 0;
 
     /* Premium Neutral Glass - Matches iOS/macOS notification style */
-    background: var(--glass-surface-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Premium Neutral Glass - Harmonized with Cards */
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur, 20px)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--glass-surface-blur, 20px)) saturate(180%);
 
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-lg);
 
     box-shadow:
@@ -1581,9 +1582,7 @@
 }
 
 [data-theme="dark"] .pwa-update-banner {
-    background: rgba(30, 30, 35, 0.85);
-    /* Darker, slightly tinted background */
-    border-color: rgba(255, 255, 255, 0.12);
+    /* Background & Border handled by tokens */
     box-shadow:
         0 14px 44px -10px rgba(0, 0, 0, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.08);

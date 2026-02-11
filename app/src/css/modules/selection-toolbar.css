@@ -10,12 +10,12 @@
     transform: translateX(-50%) translateY(100px);
     z-index: var(--z-modal-backdrop, 500);
 
-    /* Harmonized Glass Material */
-    background: var(--glass-surface-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    /* Harmonized Glass Material (Card Style) */
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur, 20px)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--glass-surface-blur, 20px)) saturate(180%);
 
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-pill, 50px);
 
     opacity: 0;
@@ -32,8 +32,7 @@
 }
 
 [data-theme="dark"] .selection-toolbar {
-    background: rgba(30, 30, 35, 0.85);
-    border-color: rgba(255, 255, 255, 0.12);
+    /* Background & Border handled by tokens */
     box-shadow:
         0 14px 44px -10px rgba(0, 0, 0, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -90,8 +89,8 @@
     height: 30px;
     border-radius: 50%;
     border: none;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -102,7 +101,8 @@
 }
 
 .btn-deselect:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
+    background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+    color: var(--text-primary);
     transform: rotate(90deg);
 }
 
@@ -139,7 +139,7 @@
 }
 
 .btn-selection-action:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--bg-secondary);
     color: var(--primary-color);
 }
 
@@ -152,7 +152,7 @@
 }
 
 .btn-selection-action.danger:hover {
-    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.08);
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
     color: var(--error-color);
 }
 
