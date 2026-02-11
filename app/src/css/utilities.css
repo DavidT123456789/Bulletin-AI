@@ -151,3 +151,37 @@ body.side-panel-open {
     margin-top: 4px;
     display: inline-block;
 }
+
+/* ============================
+   Custom Animation: Organic Scale
+   ============================ */
+.tippy-box[data-animation='organic-scale'] {
+    transform-origin: bottom center;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tippy-box[data-animation='organic-scale'][data-placement^='top'] {
+    transform-origin: bottom center;
+}
+
+.tippy-box[data-animation='organic-scale'][data-placement^='bottom'] {
+    transform-origin: top center;
+}
+
+.tippy-box[data-animation='organic-scale'][data-placement^='left'] {
+    transform-origin: right center;
+}
+
+.tippy-box[data-animation='organic-scale'][data-placement^='right'] {
+    transform-origin: left center;
+}
+
+.tippy-box[data-animation='organic-scale'][data-state='hidden'] {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+}
+
+.tippy-box[data-animation='organic-scale'][data-state='visible'] {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}

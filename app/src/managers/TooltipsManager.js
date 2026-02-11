@@ -26,10 +26,10 @@ const getCommonTippyConfig = () => {
     return {
         appendTo: () => document.body,
         theme: 'custom-theme',
-        animation: 'shift-away',
+        animation: 'organic-scale',
         arrow: false,
-        delay: [200, 0],
-        duration: [300, 200],
+        delay: [150, 0],
+        duration: [250, 150],
         allowHTML: true,
         interactive: false,
         hideOnClick: true,
@@ -129,9 +129,7 @@ export const TooltipsUI = {
 
             const instance = window.tippy(element, {
                 ...commonConfig,
-                content: content,
-                animation: 'fade',
-                duration: 200
+                content: content
             });
             _tippyInstances.push(instance);
         }
