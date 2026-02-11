@@ -1576,18 +1576,17 @@
         0 0 0 1px rgba(255, 255, 255, 0.1);
 
     animation: pwa-toast-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    width: min(400px, 92vw);
+    width: min(600px, 92vw);
     overflow: hidden;
     /* For accordion expansion */
 }
 
 [data-theme="dark"] .pwa-update-banner {
-    /* Enhanced Glass for Dark Mode */
-    background: rgba(30, 30, 35, 0.70);
-    border-color: rgba(255, 255, 255, 0.15);
+    /* Harmonized with Floating Toolbar */
+    background: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03)), rgba(var(--surface-color-rgb), 0.80);
+    border-color: rgba(255, 255, 255, 0.1);
     box-shadow:
-        0 14px 44px -10px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.1);
+        0 10px 30px -5px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes pwa-toast-enter {
