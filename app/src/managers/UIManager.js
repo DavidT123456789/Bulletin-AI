@@ -26,6 +26,7 @@ import { StatsUI } from './StatsUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ThemeManager } from './ThemeManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -1665,36 +1666,10 @@ export const UI = {
     //  Initialisation Tippy.js et animations d'accordéon
     // ====================================================================
 
-    _tippyInstances: [],
+    // _tippyInstances removed as it caused duplicates with TooltipsManager
     initTooltips() {
-        if (this._tippyInstances) {
-            this._tippyInstances.forEach(instance => instance.destroy());
-        }
-        if (window.tippy) {
-            this._tippyInstances = window.tippy('[data-tooltip]', {
-                content(reference) {
-                    return reference.getAttribute('data-tooltip');
-                },
-                appendTo: () => document.body,
-                theme: 'custom-theme',
-                animation: 'fade',
-                duration: 200,
-                allowHTML: true,
-                interactive: false,
-                hideOnClick: true,
-
-                onShow(instance) {
-                    if (UI._isIgnoringTooltips) {
-                        return false;
-                    }
-
-                    if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) {
-                        return false;
-                    }
-                    return true;
-                }
-            });
-        }
+        // Delegate to the specialized manager to avoid duplicates
+        TooltipsUI.initTooltips();
     },
 
     /**
@@ -1703,38 +1678,8 @@ export const UI = {
      * @param {string} content - Le texte du tooltip
      */
     updateTooltip(element, content) {
-        if (!element) return;
-
-        element.setAttribute('data-tooltip', content);
-
-        if (element._tippy) {
-            element._tippy.setContent(content);
-        } else if (window.tippy) {
-            // Créer une nouvelle instance si elle n'existe pas
-            const instances = window.tippy([element], {
-                content: content,
-                appendTo: () => document.body,
-                theme: 'custom-theme',
-                animation: 'fade',
-                duration: 200,
-                allowHTML: true,
-                interactive: false,
-                hideOnClick: true,
-                trigger: 'mouseenter',
-                onShow(instance) {
-                    if (UI._isIgnoringTooltips) return false;
-                    if (instance.state.isFocused && !instance.reference.matches(':focus-visible')) return false;
-                    return true;
-                }
-            });
-
-            if (instances && instances.length > 0) {
-                // Ajouter à la liste globale pour nettoyage futur
-                if (this._tippyInstances) {
-                    this._tippyInstances.push(instances[0]);
-                }
-            }
-        }
+        // Delegate to the specialized manager to avoid duplicates
+        TooltipsUI.updateTooltip(element, content);
     },
 
     /**

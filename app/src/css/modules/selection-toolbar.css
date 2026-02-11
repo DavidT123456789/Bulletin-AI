@@ -40,6 +40,19 @@
         0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
+/* Dark Mode Actions Overrides */
+[data-theme="dark"] .btn-deselect {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn-deselect:hover,
+[data-theme="dark"] .btn-selection-action:hover {
+    background: rgba(var(--primary-color-rgb), 0.25);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
 .selection-toolbar.active {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
@@ -91,7 +104,7 @@
     height: 30px;
     border-radius: 50%;
     border: none;
-    background: var(--bg-secondary);
+    background: rgba(var(--primary-color-rgb), 0.08);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -103,8 +116,8 @@
 }
 
 .btn-deselect:hover {
-    background: var(--bg-hover, rgba(0, 0, 0, 0.05));
-    color: var(--text-primary);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
     transform: rotate(90deg);
 }
 
@@ -141,7 +154,7 @@
 }
 
 .btn-selection-action:hover {
-    background: var(--bg-secondary);
+    background: rgba(var(--primary-color-rgb), 0.12);
     color: var(--primary-color);
 }
 

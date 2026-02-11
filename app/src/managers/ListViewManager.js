@@ -533,7 +533,16 @@ export const ListViewManager = {
         // Update Identity (Name + Avatar)
         const identityWrapper = row.querySelector('.student-identity-wrapper');
         if (identityWrapper) {
-            const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+            const isSelected = this._selectedIds.has(result.id);
+            const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
+
+            // Update wrapper class for selection state
+            if (isSelected) {
+                identityWrapper.classList.add('selected');
+            } else {
+                identityWrapper.classList.remove('selected');
+            }
+
             identityWrapper.innerHTML = `
                 ${avatarHTML}
                 <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
@@ -744,13 +753,14 @@ export const ListViewManager = {
                 const status = this._getStatus(result);
                 const appreciationCell = this._getAppreciationCell(result, status);
 
-                // Generate avatar HTML
-                const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm');
+                const isSelected = this._selectedIds.has(result.id);
+                // Generate avatar HTML with selection state
+                const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
 
                 html += `
                     <tr data-student-id="${result.id}" class="student-row" tabindex="0">
                         <td class="student-name-cell">
-                            <div class="student-identity-wrapper">
+                            <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}
                                 <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
                             </div>
