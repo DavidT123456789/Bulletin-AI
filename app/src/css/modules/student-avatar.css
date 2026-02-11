@@ -158,9 +158,10 @@
 }
 
 /* Hover zoom triggered by entire row hover - better UX ergonomics */
-/* Also maintain zoom when student is focused (panel open) */
+/* Also maintain zoom when student is focused (panel open) OR selected via checkbox */
 .student-list-table tbody tr:hover .student-avatar,
-.student-list-table tbody tr.focus-active .student-avatar {
+.student-list-table tbody tr.focus-active .student-avatar,
+.student-list-table tbody tr .student-avatar.is-selected {
     transform: scale(1.18);
     z-index: 10;
 }
@@ -213,7 +214,8 @@
 
 /* Hover zoom in expanded view - triggered by row hover or focus state */
 .appreciation-full-view tbody tr:hover .student-avatar,
-.appreciation-full-view tbody tr.focus-active .student-avatar {
+.appreciation-full-view tbody tr.focus-active .student-avatar,
+.appreciation-full-view tbody tr .student-avatar.is-selected {
     transform: scale(1.1) !important;
     /* Slightly less zoom as avatar is bigger */
     z-index: 10;
