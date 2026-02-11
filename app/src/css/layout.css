@@ -1547,6 +1547,10 @@
 /* ====================================================================
    PWA UPDATE TOAST (Premium Glassmorphism + Accordion Info)
    ==================================================================== */
+
+/* ====================================================================
+   PWA UPDATE TOAST (Premium Glassmorphism + Accordion Info)
+   ==================================================================== */
 .pwa-update-banner {
     position: fixed;
     bottom: 24px;
@@ -1558,37 +1562,30 @@
     flex-direction: column;
     padding: 0;
 
-    /* Premium Golden Sand Gradient matching Light Theme - Adjusted for Vibrancy */
-    background: linear-gradient(135deg,
-            rgba(200, 150, 75, 0.94) 0%,
-            rgba(215, 165, 85, 0.92) 50%,
-            rgba(230, 180, 100, 0.94) 100%);
-
+    /* Premium Neutral Glass - Matches iOS/macOS notification style */
+    background: var(--glass-surface-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
 
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
 
     box-shadow:
-        0 20px 50px -12px rgba(200, 150, 75, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.15);
+        0 10px 40px -10px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
 
-    animation: pwa-toast-enter 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-    width: min(420px, 90vw);
+    animation: pwa-toast-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    width: min(400px, 92vw);
     overflow: hidden;
     /* For accordion expansion */
 }
 
 [data-theme="dark"] .pwa-update-banner {
-    /* Refined Blue-Violet Gradient for Dark Theme */
-    background: linear-gradient(135deg,
-            rgba(85, 60, 180, 0.92) 0%,
-            rgba(100, 75, 190, 0.9) 50%,
-            rgba(75, 55, 160, 0.92) 100%);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(30, 30, 35, 0.85);
+    /* Darker, slightly tinted background */
+    border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
-        0 24px 60px -12px rgba(75, 55, 160, 0.5),
+        0 14px 44px -10px rgba(0, 0, 0, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -1599,116 +1596,124 @@
 }
 
 /* --- Main Banner Row --- */
-.pwa-banner-main {
+.pwa-update-banner .pwa-banner-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px 14px 20px;
-    gap: 12px;
+    padding: 12px 16px;
+    gap: 16px;
     width: 100%;
 }
 
-.pwa-banner-text {
+.pwa-update-banner .pwa-banner-text {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     flex-grow: 1;
+    min-width: 0;
+    /* Text truncation fix */
 }
 
-.pwa-gift-icon {
-    font-size: 1.5rem;
-    color: white;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+.pwa-update-banner .pwa-gift-icon {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    /* Subtle glow behind icon */
+    filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.25));
+    flex-shrink: 0;
 }
 
-.pwa-text-col {
+.pwa-update-banner .pwa-text-col {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    min-width: 0;
 }
 
-.pwa-title {
-    font-weight: 700;
-    color: white;
-    font-size: 0.95rem;
-    line-height: 1.2;
+.pwa-update-banner .pwa-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.3;
     margin-bottom: 2px;
 }
 
-.pwa-subtitle {
+.pwa-update-banner .pwa-subtitle {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.85);
-    font-weight: 500;
+    color: var(--text-secondary);
+    font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
+    max-width: 100%;
 }
 
-.pwa-banner-actions {
+.pwa-update-banner .pwa-banner-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    /* Increased gap */
     flex-shrink: 0;
 }
 
 /* --- Details Section (Accordion) --- */
-.pwa-banner-details {
+.pwa-update-banner .pwa-banner-details {
     max-height: 0;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.15);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    transition: max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    background: var(--bg-secondary);
+    /* Slight contrast for details */
+    border-top: 1px solid var(--border-color);
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.pwa-banner-details.expanded {
+.pwa-update-banner .pwa-banner-details.expanded {
     max-height: 200px;
-    /* Allow enough space for content */
 }
 
-.pwa-details-content {
-    padding: 12px 20px;
+.pwa-update-banner .pwa-details-content {
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
-.pwa-detail-row {
+.pwa-update-banner .pwa-detail-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-secondary);
 }
 
-.pwa-detail-label {
+.pwa-update-banner .pwa-detail-label {
     font-weight: 600;
     min-width: 70px;
-    opacity: 0.8;
+    color: var(--text-primary);
 }
 
-.pwa-detail-value {
-    opacity: 0.95;
+.pwa-update-banner .pwa-detail-value {
+    color: var(--text-secondary);
     line-height: 1.4;
 }
 
-.pwa-detail-code {
+.pwa-update-banner .pwa-detail-code {
     font-family: 'JetBrains Mono', 'Menlo', monospace;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     padding: 1px 6px;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     letter-spacing: 0.5px;
+    border: 1px solid var(--border-color);
 }
 
 /* --- Buttons --- */
-.pwa-info-btn {
+.pwa-update-banner .pwa-info-btn {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    border: 1px solid transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1716,106 +1721,128 @@
     transition: all 0.2s;
 }
 
-.pwa-info-btn:hover,
-.pwa-info-btn.active {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
+.pwa-update-banner .pwa-info-btn:hover,
+.pwa-update-banner .pwa-info-btn.active {
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
-.pwa-info-btn i {
+.pwa-update-banner .pwa-info-btn i {
     font-size: 0.8rem;
     transition: transform 0.3s ease;
 }
 
-/* Update Button */
-#pwaUpdateBanner .btn-primary {
-    padding: 6px 14px;
+.pwa-update-banner .pwa-info-btn.active i {
+    transform: rotate(180deg);
+}
+
+
+/* Update Button - Primary Action */
+.pwa-update-banner .btn-primary {
+    padding: 6px 16px;
     border-radius: var(--radius-pill);
     font-size: 0.85rem;
     font-weight: 600;
-    background: white;
-    color: var(--primary-color);
+
+    /* Brand Gradient */
+    background: var(--gradient-primary);
+    color: white;
+
     border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    /* Soft shadow */
     white-space: nowrap;
     transition: all 0.2s;
 }
 
-#pwaUpdateBanner .btn-primary:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+.pwa-update-banner .btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
     transform: translateY(-1px);
     opacity: 0.95;
+    filter: brightness(1.05);
 }
 
 /* Close Button */
-.pwa-close-btn {
-    width: 28px;
-    height: 28px;
+.pwa-update-banner .pwa-close-btn {
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-tertiary);
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    margin-left: 2px;
 }
 
-.pwa-close-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
+.pwa-update-banner .pwa-close-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
     border-radius: 50%;
 }
-
-
 
 /* Mobile adjustments for PWA Banner to prevent truncation */
 @media (max-width: 480px) {
     .pwa-update-banner {
         width: calc(100vw - 24px);
-        /* Maximize width with small margin */
-        bottom: 12px;
+        bottom: 16px;
+        transform: translateX(-50%) translateY(120px);
     }
 
-    .pwa-banner-main {
+    .pwa-update-banner .pwa-banner-main {
         flex-direction: column;
         align-items: stretch;
         padding: 16px;
-        gap: 12px;
+        gap: 16px;
     }
 
-    .pwa-banner-text {
+    .pwa-update-banner .pwa-banner-text {
         width: 100%;
+        justify-content: center;
+        /* Center text on mobile */
+        text-align: center;
+        flex-direction: column;
+        /* Stack icon and text */
+        gap: 8px;
     }
 
-    .pwa-subtitle {
-        max-width: 100%;
-        /* Allow full width text */
+    .pwa-update-banner .pwa-gift-icon {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+
+    .pwa-update-banner .pwa-subtitle {
         white-space: normal;
-        /* Allow wrapping if needed */
+        margin-top: 2px;
     }
 
-    .pwa-banner-actions {
+    .pwa-update-banner .pwa-banner-actions {
         width: 100%;
         justify-content: space-between;
         padding-top: 4px;
+        gap: 12px;
     }
 
-    #pwaUpdateBanner .btn-primary {
+    .pwa-update-banner .btn-primary {
         flex-grow: 1;
-        margin: 0 12px;
         justify-content: center;
         display: flex;
-        height: 36px;
-        /* Taller touch target */
+        height: 40px;
         align-items: center;
+        font-size: 1rem;
+        /* Larger text for tap info */
     }
 
-    .pwa-info-btn,
-    .pwa-close-btn {
-        width: 36px;
-        /* Larger touch targets */
-        height: 36px;
+    .pwa-update-banner .pwa-info-btn,
+    .pwa-update-banner .pwa-close-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-secondary);
+        /* More visible tap targets */
+        border-radius: 8px;
+        /* Squircle for mobile actions */
     }
 }
 
