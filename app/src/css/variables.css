@@ -210,6 +210,9 @@
     /* --- Close Button Tokens (Single Source of Truth) --- */
     --close-btn-size: 32px;
     --close-btn-icon-size: 1rem;
+
+    /* --- Guide Panel Tokens (Single Source of Truth) --- */
+    --guide-panel-bg: rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="dark"] {
@@ -260,4 +263,7 @@
     /* --- Universal Card Style (Single Source of Truth) --- */
     --card-glass-bg: #111827;
     --card-glass-border: rgba(255, 255, 255, 0.12);
+
+    /* --- Guide Panel Tokens (Single Source of Truth) --- */
+    --guide-panel-bg: rgba(255, 255, 255, 0.03);
 }

@@ -48,7 +48,7 @@
     width: 240px;
     min-width: 240px;
     /* Glass effect with subtle neutral tint (matched with Table Header) */
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--guide-panel-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     /* Standard border to match header */
@@ -1751,7 +1751,7 @@
     top: 0;
     z-index: 10;
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 /* Fix sticky header corners not clipping correctly - REVERTED */
@@ -2874,7 +2874,7 @@
     height: 50px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     white-space: nowrap;
     user-select: none;
     overflow: visible;

@@ -1123,35 +1123,66 @@
 
             <div class="trombi-wizard-body">
                 <!-- Step 1: Upload trombinoscope image -->
-                <div class="trombi-step-content" id="trombiStep1" style="display: block;">
-                    <div class="trombi-drop-zone" id="trombiDropZone">
-                        <!-- Placeholder content (shown when no image) -->
-                        <div class="drop-zone-content" id="trombiDropPlaceholder">
-                            <div class="drop-zone-icon">
-                                <i class="fas fa-cloud-arrow-up"></i>
+                <div class="trombi-step-content" id="trombiStep1" style="display: flex;">
+                    <div class="import-wizard-layout">
+                        <!-- Left Guide Panel -->
+                        <aside class="wizard-guide-panel" id="trombiGuidePanel">
+                            <div class="guide-content active" style="display: flex;">
+                                <div class="guide-section">
+                                    <div class="guide-section-title">
+                                        <i class="fas fa-info-circle"></i>
+                                        Bon à savoir
+                                    </div>
+                                    <p class="guide-text">Importez une photo de classe pour générer un trombinoscope
+                                        interactif.</p>
+                                    <p class="guide-hint">Formats acceptés : JPG, PNG, WebP.</p>
+                                </div>
+                                <div class="guide-divider"></div>
+                                <div class="guide-section">
+                                    <div class="guide-section-title">
+                                        <i class="fas fa-flask"></i>
+                                        Tester
+                                    </div>
+                                    <p class="guide-text">Utilisez une image d'exemple pour tester la détection :</p>
+                                    <button class="guide-sample-btn" id="trombiSampleBtn">
+                                        <i class="fas fa-image"></i>
+                                        Charger un exemple
+                                    </button>
+                                </div>
                             </div>
-                            <div class="drop-zone-text">
-                                <span class="drop-zone-title">Glissez ou Collez (Ctrl+V) le trombinoscope ici</span>
-                                <span class="drop-zone-hint">ou <u>cliquez pour parcourir</u></span>
+                        </aside>
+
+                        <!-- Main Content -->
+                        <div class="wizard-main-content" style="padding: 16px;">
+                            <div class="trombi-drop-zone" id="trombiDropZone">
+                                <!-- Placeholder content (shown when no image) -->
+                                <div class="drop-zone-content" id="trombiDropPlaceholder">
+                                    <div class="drop-zone-icon">
+                                        <i class="fas fa-cloud-arrow-up"></i>
+                                    </div>
+                                    <div class="drop-zone-text">
+                                        <span class="drop-zone-title">Glissez ou Collez (Ctrl+V) le trombinoscope
+                                            ici</span>
+                                        <span class="drop-zone-hint">ou <u>cliquez pour parcourir</u></span>
+                                    </div>
+                                </div>
+                                <!-- Preview content (shown when image loaded) -->
+                                <div class="drop-zone-preview" id="trombiDropPreview">
+                                    <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
+                                    <div class="drop-zone-overlay">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Cliquez pour changer l'image</span>
+                                    </div>
+                                </div>
+                                <!-- Sample button moved to sidebar -->
                             </div>
+                            <input type="file" id="trombiFileInput" accept="image/*" style="display: none;">
                         </div>
-                        <!-- Preview content (shown when image loaded) -->
-                        <div class="drop-zone-preview" id="trombiDropPreview">
-                            <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
-                            <div class="drop-zone-overlay">
-                                <i class="fas fa-camera"></i>
-                                <span>Cliquez pour changer l'image</span>
-                            </div>
-                        </div>
-                        <button class="btn-text-action trombi-floating-sample-btn" id="trombiSampleBtn">
-                            <i class="fas fa-image"></i> Exemple
-                        </button>
                     </div>
-                    <input type="file" id="trombiFileInput" accept="image/*" style="display: none;">
                 </div>
 
                 <!-- Step 2: Assign students to zones -->
-                <div class="trombi-step-content" id="trombiStep2" style="display: none;">
+                <div class="trombi-step-content trombi-step-padded" id="trombiStep2" style="display: none;">
                     <div class="trombi-split-view">
                         <div class="trombi-image-panel">
                             <div id="trombiImageWithZones" class="trombi-image-wrapper">
@@ -1171,7 +1202,7 @@
                 </div>
 
                 <!-- Step 3: Preview and confirm -->
-                <div class="trombi-step-content" id="trombiStep3" style="display: none;">
+                <div class="trombi-step-content trombi-step-padded" id="trombiStep3" style="display: none;">
                     <div id="trombiPreviewGrid" class="trombi-preview-grid">
                         <!-- Preview generated by JS -->
                     </div>

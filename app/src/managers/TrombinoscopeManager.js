@@ -212,7 +212,7 @@ export const TrombinoscopeManager = {
             const footer = document.getElementById(`trombiStep${n}Footer`);
             if (step) {
                 step.style.cssText = '';
-                step.style.display = n === 1 ? 'block' : 'none';
+                step.style.display = n === 1 ? 'flex' : 'none';
             }
             if (footer) footer.style.display = n === 1 ? 'flex' : 'none';
         });
