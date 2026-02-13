@@ -1,1126 +1,1156 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bulletin AI | L'assistant de rédaction pour enseignants</title>
     <meta name="description"
-        content="Assistant intelligent pour enseignants. Importez vos notes, générez des appréciations personnalisées par IA et exportez vos bulletins en quelques clics.">
+        content="Assistant intelligent pour enseignants (beta). Importez vos notes, générez des appréciations personnalisées par IA et exportez vos bulletins. Gratuit et respectueux de vos données.">
 
-    <!-- Fonts -->
+    <meta property="og:title" content="Bulletin AI | Assistant de rédaction pour enseignants">
+    <meta property="og:description"
+        content="Assistant intelligent pour enseignants. Importez vos notes, générez des appréciations par IA et exportez vos bulletins. Gratuit et respectueux de vos données.">
+    <meta property="og:image" content="https://bulletin-ai.app/assets/og-image.png">
+    <meta property="og:url" content="https://bulletin-ai.app">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_FR">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Bulletin AI | Assistant de rédaction pour enseignants">
+    <meta name="twitter:description"
+        content="Assistant intelligent pour enseignants. Importez vos notes, générez des appréciations par IA et exportez vos bulletins. Gratuit et respectueux de vos données.">
+    <meta name="twitter:image" content="https://bulletin-ai.app/assets/og-image.png">
+
+    <link rel="canonical" href="https://bulletin-ai.app">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32.png">
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" defer></script>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="./src/css/landing.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#3b82f6',
+                        surface: '#ffffff',
+                        subtle: '#F7F7F8',
+                    },
+                    letterSpacing: { tightest: '-.04em', tighter: '-.02em' },
+                    transitionTimingFunction: { 'organic': 'cubic-bezier(0.25, 1, 0.5, 1)' }
+                }
+            }
+        }
+    </script>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/svg+xml" href="./assets/icon-dark-mode.svg" media="(prefers-color-scheme: dark)">
+    <style>
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: orbFloat 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(30px, -30px);
+            }
+        }
+
+        .perspective-container {
+            perspective: 1000px;
+        }
+
+        .carousel-card {
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+        }
+
+        .carousel-card[data-pos="center"] {
+            z-index: 10;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            filter: blur(0);
+            cursor: default;
+        }
+
+        .carousel-card[data-pos="left"] {
+            transform: translate(calc(-50% - 320px), -50%) scale(0.85);
+            z-index: 5;
+            opacity: 0.6;
+            filter: blur(1px);
+            cursor: pointer;
+        }
+
+        .carousel-card[data-pos="left"]:hover {
+            opacity: 0.8;
+        }
+
+        .carousel-card[data-pos="right"] {
+            transform: translate(calc(-50% + 320px), -50%) scale(0.85);
+            z-index: 5;
+            opacity: 0.6;
+            filter: blur(1px);
+            cursor: pointer;
+        }
+
+        .carousel-card[data-pos="right"]:hover {
+            opacity: 0.8;
+        }
+
+        .carousel-card[data-pos="far-left"] {
+            transform: translate(calc(-50% - 600px), -50%) scale(0.7);
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .carousel-card[data-pos="far-right"] {
+            transform: translate(calc(-50% + 600px), -50%) scale(0.7);
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .carousel-card[data-pos="hidden-left"] {
+            transform: translate(-1000px, -50%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .carousel-card[data-pos="hidden-right"] {
+            transform: translate(1000px, -50%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @media (max-width: 768px) {
+            .carousel-card[data-pos="left"] {
+                transform: translate(calc(-50% - 200px), -50%) scale(0.8);
+            }
+
+            .carousel-card[data-pos="right"] {
+                transform: translate(calc(-50% + 200px), -50%) scale(0.8);
+            }
+
+            .carousel-card[data-pos="far-left"],
+            .carousel-card[data-pos="far-right"] {
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .carousel-card {
+                width: 260px !important;
+                height: 340px !important;
+            }
+
+            .carousel-card[data-pos="left"] {
+                transform: translate(calc(-50% - 150px), -50%) scale(0.75);
+                opacity: 0.4;
+            }
+
+            .carousel-card[data-pos="right"] {
+                transform: translate(calc(-50% + 150px), -50%) scale(0.75);
+                opacity: 0.4;
+            }
+
+            .carousel-card[data-pos="far-left"],
+            .carousel-card[data-pos="far-right"] {
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+
+        .mockup-3d {
+            transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease;
+        }
+
+        .mockup-3d:hover {
+            transform: perspective(1200px) rotateY(0) rotateX(0);
+        }
+
+        .blur-word {
+            display: inline-block;
+            opacity: 0;
+            filter: blur(4px);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            margin-right: 0.25em;
+        }
+
+        .blur-word.is-visible {
+            opacity: 1;
+            filter: blur(0);
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.02) 25%, rgba(0, 0, 0, 0.06) 50%, rgba(0, 0, 0, 0.02) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .reveal-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mobile-menu-enter {
+            transform: translateX(100%);
+        }
+
+        .mobile-menu-active {
+            transform: translateX(0);
+        }
+
+        .accordion-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .accordion-item.is-open .accordion-content {
+            grid-template-rows: 1fr;
+        }
+
+        .accordion-icon {
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .accordion-item.is-open .accordion-icon {
+            transform: rotate(180deg);
+            color: #3b82f6;
+        }
+
+        .accordion-item.is-open .accordion-title {
+            color: #3b82f6;
+        }
+
+        .scroll-top-btn {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .scroll-top-btn.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .nav-link.active {
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .shine-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shine-effect::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.7s ease;
+        }
+
+        .shine-effect:hover::after {
+            transform: translateX(100%);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blur-word {
+                transition: none !important;
+                opacity: 1 !important;
+                filter: none !important;
+            }
+
+            .carousel-card {
+                transition-duration: 0.1s !important;
+            }
+
+            .bg-orb {
+                animation: none !important;
+            }
+
+            .mockup-3d {
+                transform: none !important;
+            }
+
+            .mockup-3d:hover {
+                transform: none !important;
+            }
+
+            .reveal-on-scroll {
+                opacity: 1 !important;
+                transform: none !important;
+                transition: none !important;
+            }
+
+            .shimmer {
+                animation: none !important;
+            }
+
+            .accordion-content {
+                transition: none !important;
+            }
+
+            .accordion-icon {
+                transition: none !important;
+            }
+
+            .scroll-top-btn {
+                transition: none !important;
+            }
+
+            .shine-effect::after {
+                transition: none !important;
+            }
+        }
+    </style>
 </head>
 
-<body>
+<body
+    class="bg-[#F5F5F7] text-slate-900 font-sans antialiased overflow-x-hidden selection:bg-blue-100 selection:text-blue-700">
 
-    <!-- Background Elements -->
-    <div class="lp-bg-gradient">
-        <div class="lp-bg-orb lp-bg-orb--primary"></div>
-        <div class="lp-bg-orb lp-bg-orb--accent"></div>
-        <div class="lp-bg-orb lp-bg-orb--secondary"></div>
-    </div>
+    <a href="#hero"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:rounded-lg focus:shadow-lg focus:text-slate-900 focus:text-sm focus:font-medium">
+        Aller au contenu principal
+    </a>
 
-    <!-- Navigation -->
-    <nav class="lp-nav" id="navbar">
-        <div class="lp-container lp-nav__inner">
-            <a href="#" class="lp-nav__brand">
-                <img src="./assets/logo.png" alt="Logo" class="lp-nav__logo">
-                Bulletin AI
-                <span class="lp-nav__badge">
-                    <i class="fas fa-flask"></i> v0.1.0 Beta Public
+    <div class="bg-orb w-[600px] h-[600px] bg-blue-400/10 -top-20 -right-20"></div>
+    <div class="bg-orb w-[500px] h-[500px] bg-purple-400/10 bottom-0 left-0"></div>
+
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent"
+        aria-label="Navigation principale">
+        <div class="absolute inset-0 bg-white/70 backdrop-blur-xl transition-opacity duration-300"></div>
+        <div class="relative max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
+                <img src="./assets/logo.png" alt="" class="w-9 h-9 object-contain" width="36" height="36">
+                <span class="font-semibold text-base tracking-tight text-slate-800">Bulletin AI</span>
+                <span
+                    class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-medium tracking-wide uppercase border border-slate-200/60">
+                    <iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v0.1.0
+                    Beta
                 </span>
             </a>
-
-            <div class="lp-nav__links">
-                <a href="#how-it-works" class="lp-nav__link">Flux de travail</a>
-                <a href="#features" class="lp-nav__link">Fonctionnalités</a>
-                <a href="#specs" class="lp-nav__link">Spécifications</a>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#how-it-works"
+                    class="nav-link text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                    data-target="how-it-works">Flux de travail</a>
+                <a href="#features"
+                    class="nav-link text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                    data-target="features">Fonctionnalités</a>
+                <a href="#specs"
+                    class="nav-link text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                    data-target="specs">Spécifications</a>
             </div>
-
-            <div class="lp-nav__cta">
-
-
-                <a href="./app.html" class="lp-btn lp-btn--primary lp-btn--sm">
-                    Lancer l'App
+            <div class="flex items-center gap-3">
+                <a href="./app.html"
+                    class="hidden md:inline-flex h-8 items-center justify-center px-4 rounded-full text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shine-effect">
+                    Ouvrir l'App
                 </a>
-                <button class="lp-nav__toggle" aria-label="Menu" onclick="toggleMobileMenu()">
-                    <span class="lp-nav__toggle-icon"></span>
+                <button onclick="toggleMenu()" class="md:hidden w-8 h-8 flex items-center justify-center text-slate-600"
+                    aria-label="Ouvrir le menu" aria-expanded="false" id="menuToggleBtn">
+                    <iconify-icon icon="solar:hamburger-menu-linear" width="24" height="24"></iconify-icon>
                 </button>
             </div>
         </div>
     </nav>
 
-    <!-- Mobile Menu -->
-    <div class="lp-mobile-menu" id="mobileMenu">
-        <div class="lp-mobile-menu__backdrop" onclick="toggleMobileMenu()"></div>
-        <div class="lp-mobile-menu__panel">
-            <nav class="lp-mobile-menu__links">
-                <a href="#how-it-works" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Flux de travail</a>
-                <a href="#features" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Fonctionnalités</a>
-                <a href="#specs" class="lp-mobile-menu__link" onclick="toggleMobileMenu()">Spécifications</a>
-            </nav>
-            <div class="lp-mobile-menu__cta">
-                <a href="./app.html" class="lp-btn lp-btn--primary">
-                    <i class="fas fa-wand-magic-sparkles"></i> Lancer l'App
+    <div id="mobile-menu" class="fixed inset-0 z-[60] pointer-events-none" role="dialog" aria-modal="true"
+        aria-label="Menu de navigation">
+        <div id="mobile-backdrop" class="absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300"
+            onclick="toggleMenu()"></div>
+        <div id="mobile-panel"
+            class="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 mobile-menu-enter transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-auto flex flex-col">
+            <div class="flex justify-between items-center mb-8">
+                <span class="font-semibold text-sm">Menu</span>
+                <button onclick="toggleMenu()"
+                    class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-900"
+                    aria-label="Fermer le menu">
+                    <iconify-icon icon="solar:close-circle-linear" width="24" height="24"></iconify-icon>
+                </button>
+            </div>
+            <div class="flex flex-col gap-1">
+                <a href="#how-it-works" onclick="toggleMenu()"
+                    class="py-3 text-sm font-medium text-slate-600 border-b border-slate-50">Flux de travail</a>
+                <a href="#features" onclick="toggleMenu()"
+                    class="py-3 text-sm font-medium text-slate-600 border-b border-slate-50">Fonctionnalités</a>
+                <a href="#specs" onclick="toggleMenu()"
+                    class="py-3 text-sm font-medium text-slate-600 border-b border-slate-50">Spécifications</a>
+            </div>
+            <div class="mt-auto">
+                <a href="./app.html"
+                    class="flex w-full h-10 items-center justify-center rounded-lg bg-slate-900 text-white text-sm font-medium">
+                    <iconify-icon icon="solar:magic-stick-3-bold" class="mr-2"></iconify-icon> Ouvrir l'App
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Hero Section -->
-    <header class="lp-section lp-section--hero" id="hero">
-        <div class="lp-container">
-            <div class="lp-hero__content">
-                <div class="lp-hero__text-column">
-                    <!-- Badge moved to navbar -->
-
-                    <h1 class="lp-hero__title">
-                        <span class="lp-hero__title-gradient">Assistant Numérique</span> <br>
-                        pour la rédaction des bulletins scolaires.
+    <main>
+        <header id="hero" class="relative pt-32 pb-12 lg:pt-48 lg:pb-20 overflow-hidden">
+            <div class="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                <div class="text-center lg:text-left z-10">
+                    <div
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[11px] font-semibold tracking-wide uppercase mb-6">
+                        <iconify-icon icon="solar:stars-minimalistic-linear" width="14"></iconify-icon>
+                        Assistant Numérique
+                    </div>
+                    <h1 class="text-5xl lg:text-6xl font-semibold tracking-tightest text-slate-900 leading-[1.1] mb-6">
+                        Assistant de rédaction
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">pour
+                            bulletins scolaires.</span>
                     </h1>
-
-                    <p class="lp-hero__subtitle">
-                        Une aide à la rédaction assistée par IA, conçue pour les enseignants.
+                    <p class="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+                        Transformez vos notes en appréciations. Une IA conçue pour simplifier vos fins de trimestre.
                     </p>
-
-                    <div class="lp-hero__actions">
-                        <a href="./app.html" class="lp-btn lp-btn--primary lp-btn--lg">
-                            <i class="fas fa-wand-magic-sparkles"></i> Lancer l'application
+                    <div class="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                        <a href="./app.html"
+                            class="h-12 px-8 rounded-full bg-slate-900 text-white text-sm font-medium flex items-center gap-2 hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto justify-center shine-effect">
+                            <iconify-icon icon="solar:rocket-2-linear" width="18"></iconify-icon>
+                            Commencer maintenant
+                        </a>
+                        <a href="#how-it-works"
+                            class="h-12 px-6 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition-all w-full sm:w-auto justify-center shadow-sm">
+                            <iconify-icon icon="solar:play-circle-linear" width="18"></iconify-icon>
+                            Voir comment ça marche
                         </a>
                     </div>
-
-                    <div class="lp-hero__stats">
-                        <div class="lp-hero__stat">
-                            <div class="lp-hero__stat-icon"><i class="fas fa-code-branch"></i></div>
-                            <span>Open Source</span>
-                        </div>
-                        <div class="lp-hero__stat">
-                            <div class="lp-hero__stat-icon"><i class="fas fa-check"></i></div>
-                            <span>Gratuit</span>
-                        </div>
-                        <div class="lp-hero__stat">
-                            <div class="lp-hero__stat-icon"><i class="fas fa-user-shield"></i></div>
-                            <span>Données anonymisées</span>
-                        </div>
-                        <div class="lp-hero__stat">
-                            <div class="lp-hero__stat-icon"><i class="fas fa-bolt"></i></div>
-                            <span>Sans installation</span>
-                        </div>
-                    </div>
+                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-medium text-slate-400 list-none p-0"
+                        aria-label="Points clés">
+                        <li class="flex items-center gap-1.5">
+                            <iconify-icon icon="solar:shield-check-linear" class="text-green-500"></iconify-icon>
+                            Données anonymisées
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                            <iconify-icon icon="solar:code-square-linear" class="text-slate-900"></iconify-icon> Code
+                            source auditable
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                            <iconify-icon icon="solar:check-circle-linear" class="text-blue-500"></iconify-icon> Gratuit
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                            <iconify-icon icon="solar:bolt-linear" class="text-amber-500"></iconify-icon> Sans
+                            installation
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Integrated Demo Mockup -->
-                <div class="lp-hero__visual lp-reveal">
-                    <div class="lp-hero__mockup">
-                        <div class="lp-hero__mockup-header">
-                            <div class="lp-hero__mockup-title">
-                                <i class="fas fa-bolt"></i> Assistant de rédaction
+                <div class="relative perspective-container z-0 reveal-on-scroll" aria-hidden="true">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-tr from-blue-100 to-purple-100 rounded-full filter blur-3xl opacity-30 transform translate-y-10 scale-90">
+                    </div>
+                    <div
+                        class="mockup-3d bg-white rounded-2xl shadow-2xl border border-slate-200/60 overflow-hidden relative max-w-md mx-auto">
+                        <div
+                            class="h-12 border-b border-slate-100 bg-white/80 backdrop-blur-sm flex items-center justify-between px-4">
+                            <div class="font-semibold text-xs tracking-tight text-slate-500 flex items-center gap-2">
+                                <iconify-icon icon="solar:bolt-linear"></iconify-icon> Assistant de rédaction
                             </div>
-                            <div class="lp-hero__mockup-status" id="mockup-status-badge">
-                                <i class="fas fa-spinner fa-spin lp-hero__status-spinner"></i>
-                                <i class="fas fa-check lp-hero__status-check"></i>
+                            <div class="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                <iconify-icon icon="solar:lock-keyhole-linear" width="10"></iconify-icon>
+                                local_storage
                             </div>
                         </div>
-                        <div class="lp-hero__mockup-content">
-                            <!-- Left: Input/Problem -->
-                            <div class="lp-hero__mockup-before">
-                                <div class="lp-hero__mockup-label">
-                                    <i class="fas fa-file-excel"></i> Données brutes
-                                </div>
-                                <div class="lp-hero__mockup-text">
-                                    <strong>Mathéo D.</strong><br>
-                                    Moyenne : 8.5/20<br>
-                                    <em>"Bavardages incessants, passif en cours, résultats en baisse..."</em>
-                                </div>
-                            </div>
-
-                            <!-- Middle: Analysis -->
-                            <div class="lp-hero__mockup-middle" id="mockup-analysis-card">
-                                <div class="lp-hero__mockup-label">
-                                    <i class="fas fa-chart-pie"></i> Analyse IA
-                                </div>
-                                <div class="lp-hero__mockup-text" id="mockup-analysis-content">
-                                    <!-- Content injected by JS -->
-                                </div>
-                            </div>
-
-                            <!-- Right: Output/Solution -->
-                            <div class="lp-hero__mockup-after" id="mockup-ai-card">
-                                <div class="lp-hero__mockup-label">
-                                    <i class="fas fa-robot"></i> Appréciation
-                                </div>
-                                <div class="lp-hero__mockup-text-container">
-                                    <div class="lp-hero__mockup-text-ghost">
-                                        Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement
-                                        et des bavardages perturbent sa progression. Il est impératif qu'il se recentre
-                                        et adopte une attitude plus studieuse pour redresser la barre.
+                        <div class="p-5 grid gap-4 bg-[#FAFAFA]">
+                            <div
+                                class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-start gap-4">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-semibold shadow-blue-200 shadow-lg flex-shrink-0">
+                                    MD</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-slate-900">Mathéo D.</h3>
+                                            <p class="text-[10px] text-slate-400 font-medium">Données brutes</p>
+                                        </div>
+                                        <div class="text-right flex-shrink-0">
+                                            <div class="text-lg font-semibold text-amber-500 tracking-tight">8.5<span
+                                                    class="text-xs text-slate-300 font-normal">/20</span></div>
+                                        </div>
                                     </div>
-                                    <div class="lp-hero__mockup-text lp-hero__mockup-text-absolute" id="mockup-ai-text">
-                                        <!-- Text will be injected by JS -->
+                                    <div class="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div id="mockup-bar"
+                                            class="h-full bg-amber-400 rounded-full w-0 transition-all duration-1000 ease-out">
+                                        </div>
                                     </div>
+                                    <div class="mt-2 text-[10px] text-slate-500 italic">"Bavardages incessants, passif
+                                        en cours..."</div>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm ring-2 ring-blue-50 relative overflow-hidden group">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div
+                                        class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                        <iconify-icon icon="solar:magic-stick-3-linear" width="14"></iconify-icon>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-700">Analyse & Appréciation</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <div id="mockup-analysis" class="text-[10px] mb-2 flex gap-2"></div>
+                                    <p id="mockup-text" class="text-xs text-slate-600 leading-relaxed min-h-[60px]"></p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
+        <section id="how-it-works" class="py-24 bg-white border-b border-slate-100">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="text-center mb-20 reveal-on-scroll">
+                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900 mb-4">Flux de travail
+                    </h2>
+                    <p class="text-slate-500">Import des notes, analyse du contexte et génération par IA.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
+                    <div class="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-slate-200 via-blue-100 to-slate-200 z-0"
+                        aria-hidden="true"></div>
 
-
-    <!-- How it Works -->
-    <section class="lp-section" id="how-it-works">
-        <div class="lp-container lp-steps">
-            <div class="lp-steps__header lp-reveal">
-                <h2 class="lp-steps__title">Flux de travail</h2>
-                <p class="lp-steps__subtitle">Import des notes, analyse du contexte et génération d'appréciations par
-                    IA.
-                </p>
-            </div>
-
-            <div class="lp-steps__grid">
-                <!-- Step 1 -->
-                <div class="lp-step lp-reveal lp-reveal--delay-1">
-                    <div class="lp-step__number">1</div>
-                    <div class="lp-step__icon">
-                        <i class="fas fa-file-import"></i>
+                    <div class="relative z-10 group reveal-on-scroll">
+                        <div class="relative w-24 h-24 mx-auto mb-6">
+                            <div
+                                class="absolute inset-0 bg-blue-50 rounded-2xl border border-blue-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-blue-600">
+                                    <iconify-icon icon="solar:import-linear" width="28" height="28"></iconify-icon>
+                                </div>
+                            </div>
+                            <div
+                                class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 border-4 border-white text-white flex items-center justify-center text-xs font-bold z-10">
+                                1</div>
+                        </div>
+                        <div class="text-center px-4">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-2">Importez vos données</h3>
+                            <p class="text-sm text-slate-500 leading-relaxed">Copier-coller depuis n'importe quel
+                                tableur. Les colonnes sont détectées automatiquement.</p>
+                        </div>
                     </div>
-                    <h3 class="lp-step__title">Importez vos données</h3>
-                    <div class="lp-step__badge"><i class="fas fa-bolt"></i> 30 secondes</div>
-                    <p class="lp-step__text">
-                        Un simple copier-coller depuis n'importe quel tableur. Les colonnes sont détectées
-                        automatiquement.
+
+                    <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 100ms;">
+                        <div class="relative w-24 h-24 mx-auto mb-6">
+                            <div
+                                class="absolute inset-0 bg-purple-50 rounded-2xl border border-purple-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-purple-600">
+                                    <iconify-icon icon="solar:magic-stick-3-linear" width="28"
+                                        height="28"></iconify-icon>
+                                </div>
+                            </div>
+                            <div
+                                class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 border-4 border-white text-white flex items-center justify-center text-xs font-bold z-10">
+                                2</div>
+                        </div>
+                        <div class="text-center px-4">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-2">Générez en un clic</h3>
+                            <p class="text-sm text-slate-500 leading-relaxed">L'IA analyse et génère points forts, axes
+                                d'amélioration et appréciation pour chaque élève.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 200ms;">
+                        <div class="relative w-24 h-24 mx-auto mb-6">
+                            <div
+                                class="absolute inset-0 bg-green-50 rounded-2xl border border-green-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-green-600">
+                                    <iconify-icon icon="solar:export-linear" width="28" height="28"></iconify-icon>
+                                </div>
+                            </div>
+                            <div
+                                class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900 border-4 border-white text-white flex items-center justify-center text-xs font-bold z-10">
+                                3</div>
+                        </div>
+                        <div class="text-center px-4">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-2">Supervisez et exportez</h3>
+                            <p class="text-sm text-slate-500 leading-relaxed">Relisez, ajustez si besoin, puis copiez
+                                directement dans votre logiciel scolaire.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="py-24 overflow-hidden bg-[#F5F5F7]">
+            <div class="max-w-6xl mx-auto px-6 mb-16 reveal-on-scroll text-center">
+                <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900 mb-2">Fonctionnalités</h2>
+                <p class="text-slate-500">Une suite d'outils conçue pour la productivité et la confidentialité.</p>
+            </div>
+            <div class="h-[420px] sm:h-[450px] relative w-full perspective-container reveal-on-scroll"
+                id="carousel-track" role="region" aria-label="Fonctionnalités de Bulletin AI"
+                aria-roledescription="carousel" aria-live="off" tabindex="0"></div>
+            <div class="flex justify-center items-center gap-6 mt-6 reveal-on-scroll">
+                <button id="prevBtn"
+                    class="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
+                    aria-label="Slide précédente">
+                    <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon>
+                </button>
+                <div id="carousel-dots" class="flex gap-2" role="tablist" aria-label="Navigation du carousel"></div>
+                <button id="nextBtn"
+                    class="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
+                    aria-label="Slide suivante">
+                    <iconify-icon icon="solar:arrow-right-linear" width="18"></iconify-icon>
+                </button>
+            </div>
+        </section>
+
+        <section id="specs" class="py-24 bg-white border-t border-slate-100">
+            <div class="max-w-3xl mx-auto px-6">
+                <div class="text-center mb-12 reveal-on-scroll">
+                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">Spécifications</h2>
+                    <p class="text-slate-500 mt-2">Détails techniques et fonctionnement.</p>
+                </div>
+                <div class="space-y-4 reveal-on-scroll" role="region" aria-label="Détails techniques">
+
+                    <div
+                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/60 overflow-hidden group">
+                        <button
+                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-1">
+                            <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
+                                <iconify-icon icon="solar:server-square-linear"
+                                    class="text-green-500 text-lg"></iconify-icon>
+                                Architecture Local-First & Confidentialité
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear"
+                                class="accordion-icon text-slate-400 flex-shrink-0 ml-4"></iconify-icon>
+                        </button>
+                        <div class="accordion-content" id="acc-panel-1" role="region" aria-hidden="true">
+                            <div class="overflow-hidden">
+                                <div
+                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                    Les données sensibles (identités des élèves, notes brutes) sont stockées
+                                    <strong>exclusivement dans le LocalStorage</strong> du navigateur. L'application
+                                    applique une anonymisation stricte à la volée avant tout envoi vers les API
+                                    d'inférence.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/60 overflow-hidden group">
+                        <button
+                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-2">
+                            <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
+                                <iconify-icon icon="solar:stars-minimalistic-linear"
+                                    class="text-blue-500 text-lg"></iconify-icon>
+                                Modèles IA & Haute Disponibilité
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear"
+                                class="accordion-icon text-slate-400 flex-shrink-0 ml-4"></iconify-icon>
+                        </button>
+                        <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
+                            <div class="overflow-hidden">
+                                <div
+                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                    Compatible nativement avec <strong>Mistral AI</strong> (gratuit), Google Gemini et
+                                    OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
+                                    100% hors ligne (Air-Gapped).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/60 overflow-hidden group">
+                        <button
+                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-3">
+                            <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
+                                <iconify-icon icon="solar:tuning-square-linear"
+                                    class="text-purple-500 text-lg"></iconify-icon>
+                                Ingénierie des Prompts
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear"
+                                class="accordion-icon text-slate-400 flex-shrink-0 ml-4"></iconify-icon>
+                        </button>
+                        <div class="accordion-content" id="acc-panel-3" role="region" aria-hidden="true">
+                            <div class="overflow-hidden">
+                                <div
+                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                    L'application utilise des System Prompts calibrés pour garantir un ton
+                                    professionnel. Les commandes (Concis, Détaillé, Encourageant) modifient
+                                    dynamiquement les paramètres de génération.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/60 overflow-hidden group">
+                        <button
+                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-4">
+                            <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
+                                <iconify-icon icon="solar:file-check-linear"
+                                    class="text-cyan-500 text-lg"></iconify-icon>
+                                Standards & Interopérabilité
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear"
+                                class="accordion-icon text-slate-400 flex-shrink-0 ml-4"></iconify-icon>
+                        </button>
+                        <div class="accordion-content" id="acc-panel-4" role="region" aria-hidden="true">
+                            <div class="overflow-hidden">
+                                <div
+                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                    Algorithme de détection automatique de colonnes compatible avec tout tableur (Excel,
+                                    CSV, Pronote). Export en format texte brut formaté pour les logiciels de vie
+                                    scolaire.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/60 overflow-hidden group">
+                        <button
+                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                            onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-5">
+                            <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
+                                <iconify-icon icon="solar:copyright-linear"
+                                    class="text-orange-500 text-lg"></iconify-icon>
+                                Licence & Contribution
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear"
+                                class="accordion-icon text-slate-400 flex-shrink-0 ml-4"></iconify-icon>
+                        </button>
+                        <div class="accordion-content" id="acc-panel-5" role="region" aria-hidden="true">
+                            <div class="overflow-hidden">
+                                <div
+                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                    Code source distribué sous licence <strong>CC BY-NC-SA 4.0</strong>. Auditable sur
+                                    GitHub pour vérifier l'absence de télémétrie cachée. Les dons via Ko-fi servent
+                                    exclusivement à financer l'hébergement et le développement.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="relative bg-[#F5F5F7] pt-12 pb-10 border-t border-slate-200">
+        <div class="max-w-6xl mx-auto px-6">
+
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
+                        <img src="./assets/logo.png" alt="" class="w-6 h-6 object-contain opacity-80" width="24"
+                            height="24">
+                        <span class="font-semibold text-slate-700 tracking-tight">Bulletin AI</span>
+                    </div>
+                    <p class="text-sm text-slate-400">
+                        Développé avec <iconify-icon icon="solar:heart-bold"
+                            class="text-rose-400 align-middle mx-0.5"></iconify-icon> par un prof, pour les profs.
                     </p>
                 </div>
 
-                <!-- Step 2 -->
-                <div class="lp-step lp-reveal lp-reveal--delay-2">
-                    <div class="lp-step__number">2</div>
-                    <div class="lp-step__icon">
-                        <i class="fas fa-wand-magic-sparkles"></i>
-                    </div>
-                    <h3 class="lp-step__title">Générez en un clic</h3>
-                    <div class="lp-step__badge"><i class="fas fa-robot"></i> Automatique</div>
-                    <p class="lp-step__text">
-                        L'IA analyse et génère points forts, axes d'amélioration et appréciation pour chaque élève.
-                    </p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="lp-step lp-reveal lp-reveal--delay-3">
-                    <div class="lp-step__number">3</div>
-                    <div class="lp-step__icon">
-                        <i class="fas fa-check-double"></i>
-                    </div>
-                    <h3 class="lp-step__title">Supervisez et exportez</h3>
-                    <div class="lp-step__badge"><i class="fas fa-check-circle"></i> Export direct</div>
-                    <p class="lp-step__text">
-                        Relisez, ajustez si besoin, puis copiez directement dans votre logiciel scolaire.
-                    </p>
+                <div class="flex items-center gap-5">
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
+                        target="_blank" class="text-slate-400 hover:text-blue-500 transition-colors"
+                        aria-label="Donner son avis" title="Donner son avis">
+                        <iconify-icon icon="solar:chat-round-dots-linear" width="22"></iconify-icon>
+                    </a>
+                    <a href="https://ko-fi.com/profassistant" target="_blank"
+                        class="text-slate-400 hover:text-rose-500 transition-colors" aria-label="Soutenir sur Ko-fi"
+                        title="Soutenir le projet">
+                        <iconify-icon icon="simple-icons:kofi" width="22"></iconify-icon>
+                    </a>
+                    <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank"
+                        class="text-slate-400 hover:text-slate-900 transition-colors" aria-label="GitHub"
+                        title="Voir sur GitHub">
+                        <iconify-icon icon="mdi:github" width="24"></iconify-icon>
+                    </a>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Bento Grid Features -->
-    <section class="lp-section" id="features">
-        <div class="lp-container">
-            <div class="lp-features__header lp-reveal">
-                <h2 class="lp-features__title">Fonctionnalités</h2>
-                <p class="lp-features__subtitle">Une suite d'outils conçue pour la productivité et la confidentialité.
-                </p>
-            </div>
-
-            <!-- Opal-Style Fan Deck Carousel -->
-            <div class="lp-features-carousel-wrapper lp-reveal">
-                <div class="lp-features-carousel" id="featuresCarousel">
-                    <!-- Card 1: Formats - Green -->
-                    <div class="lp-feature-card" data-color="green">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-file-csv"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Formats Universels</h3>
-                                <p class="lp-feature-card__text">
-                                    Compatible CSV, Excel, et copier-coller direct depuis les principaux logiciels
-                                    scolaires.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 2: Personnalisation - Blue -->
-                    <div class="lp-feature-card" data-color="blue">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-sliders-h"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Personnalisation</h3>
-                                <p class="lp-feature-card__text">
-                                    Définissez des règles précises : vouvoiement, tutoiement, structure des phrases.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 3: Multi-Modèles IA - Amber -->
-                    <div class="lp-feature-card" data-color="amber">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-brain"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Multi-Modèles IA</h3>
-                                <p class="lp-feature-card__text">
-                                    Mistral AI 🇫🇷 gratuit (1Md tokens/mois), Google Gemini, ou Ollama en local.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 4: Anonymisation - Rose -->
-                    <div class="lp-feature-card" data-color="rose">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Anonymisation Auto</h3>
-                                <p class="lp-feature-card__text">
-                                    Les noms sont anonymisés avant envoi. Données stockées localement.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 5: Journal - Purple -->
-                    <div class="lp-feature-card" data-color="purple">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-book-open"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Journal de Bord</h3>
-                                <p class="lp-feature-card__text">
-                                    Notes et observations au fil du trimestre pour enrichir l'appréciation.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 6: Cloud Sync - Cyan -->
-                    <div class="lp-feature-card" data-color="cyan">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Sauvegarde Cloud</h3>
-                                <p class="lp-feature-card__text">
-                                    Archivez vos bulletins sur votre Cloud personnel. 100% manuel, zéro synchronisation
-                                    cachée.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 7: Photos - Orange -->
-                    <div class="lp-feature-card" data-color="orange">
-                        <div class="lp-feature-card__inner">
-                            <div class="lp-feature-card__illustration">
-                                <i class="fas fa-camera"></i>
-                            </div>
-                            <div class="lp-feature-card__content">
-                                <h3 class="lp-feature-card__title">Photos Élèves</h3>
-                                <p class="lp-feature-card__text">
-                                    Importez le trombinoscope pour visualiser vos élèves facilement.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            <div
+                class="mt-8 pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-400">
+                <p>© <span id="currentYear"></span> David Trafial. Tous droits réservés.</p>
+                <div class="flex gap-4">
+                    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank"
+                        class="hover:text-slate-600 transition-colors">Licence CC BY-NC-SA 4.0</a>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Specifications / FAQ -->
-    <section class="lp-section" id="specs">
-        <div class="lp-container">
-            <div class="lp-faq__header lp-reveal">
-                <span class="lp-tag">SPÉCIFICATIONS</span>
-                <h2 class="lp-faq__title">Spécifications & Confidentialité</h2>
-                <p class="lp-faq__subtitle">Détails techniques et fonctionnement de l'application.</p>
-            </div>
-
-            <div class="lp-faq__list">
-                <!-- Q1: Architecture -->
-                <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-1">
-                        <div class="lp-faq__question-content">
-                            <div class="lp-faq__icon-wrapper" data-color="green">
-                                <i class="fas fa-server" aria-hidden="true"></i>
-                            </div>
-                            <span class="lp-faq__item-title">Architecture Local-First & Confidentialité</span>
-                        </div>
-                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                    </button>
-                    <div class="lp-faq__answer" id="faq-answer-1">
-                        <div class="lp-faq__answer-content">
-                            Les données sensibles (identités des élèves, notes brutes) sont stockées exclusivement dans
-                            le <strong>LocalStorage</strong> du navigateur.
-                            L'application applique une <strong>anonymisation stricte</strong> à la volée avant tout
-                            envoi de contexte (prénom, bulletins précédents) vers les API d'inférence.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Q2: Models -->
-                <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-2">
-                        <div class="lp-faq__question-content">
-                            <div class="lp-faq__icon-wrapper" data-color="blue">
-                                <i class="fas fa-brain" aria-hidden="true"></i>
-                            </div>
-                            <span class="lp-faq__item-title">Modèles IA & Haute Disponibilité</span>
-                        </div>
-                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                    </button>
-                    <div class="lp-faq__answer" id="faq-answer-2">
-                        <div class="lp-faq__answer-content">
-                            <strong>Support Multi-Provider :</strong> Compatible nativement avec Mistral AI, Google
-                            Gemini et OpenRouter.<br>
-                            <strong>Support Local (Air-Gapped) :</strong> Intégration complète avec Ollama pour une
-                            exécution 100% hors ligne.<br>
-                            <strong>Relais Automatique :</strong> Système de basculement intelligent (fallback) assurant
-                            la continuité du service en cas d'indisponibilité d'une API.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Q3: Prompts -->
-                <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-3">
-                        <div class="lp-faq__question-content">
-                            <div class="lp-faq__icon-wrapper" data-color="purple">
-                                <i class="fas fa-terminal" aria-hidden="true"></i>
-                            </div>
-                            <span class="lp-faq__item-title">Ingénierie des Prompts (System Prompts)</span>
-                        </div>
-                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                    </button>
-                    <div class="lp-faq__answer" id="faq-answer-3">
-                        <div class="lp-faq__answer-content">
-                            L'application utilise des <strong>System Prompts calibrés</strong> pour garantir un ton
-                            professionnel et pédagogique.<br>
-                            Les commandes (Concis, Détaillé, Encourageant) modifient dynamiquement les paramètres de
-                            génération (température, pénalité de fréquence) pour produire des résultats déterministes et
-                            adaptés au contexte scolaire.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Q4: Standards -->
-                <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-4">
-                        <div class="lp-faq__question-content">
-                            <div class="lp-faq__icon-wrapper" data-color="cyan">
-                                <i class="fas fa-file-code" aria-hidden="true"></i>
-                            </div>
-                            <span class="lp-faq__item-title">Standards de Données & Interopérabilité</span>
-                        </div>
-                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                    </button>
-                    <div class="lp-faq__answer" id="faq-answer-4">
-                        <div class="lp-faq__answer-content">
-                            <strong>Import Agnostique :</strong> Algorithme de détection automatique de colonnes
-                            compatible avec tout tableur (Excel, CSV, Pronote).<br>
-                            <strong>Export :</strong> Les données sont exportables en format JSON ouvert pour la
-                            sauvegarde, ou en texte brut formaté pour l'intégration dans les logiciels de vie scolaire.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Q5: Licence -->
-                <div class="lp-faq__item lp-reveal">
-                    <button class="lp-faq__question" aria-expanded="false" aria-controls="faq-answer-5">
-                        <div class="lp-faq__question-content">
-                            <div class="lp-faq__icon-wrapper" data-color="orange">
-                                <i class="fas fa-balance-scale" aria-hidden="true"></i>
-                            </div>
-                            <span class="lp-faq__item-title">Licence & Contribution</span>
-                        </div>
-                        <span class="lp-faq__chevron"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>
-                    </button>
-                    <div class="lp-faq__answer" id="faq-answer-5">
-                        <div class="lp-faq__answer-content">
-                            Code source distribué sous licence <strong>CC BY-NC-SA 4.0</strong>.<br>
-                            Le projet encourage la transparence totale : le code est auditable sur GitHub pour vérifier
-                            l'absence de télémétrie cachée ou de traitements de données tiers non déclarés.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="lp-section lp-cta">
-        <div class="lp-container lp-reveal">
-            <!-- Commercial CTA removed by user request -->
-            <!-- <div class="lp-cta__content">...</div> -->
-
-            <!-- Glass Project Open Source Section (Merged) -->
-            <div class="lp-cta__contribute-glass">
-                <div class="lp-contribute__content">
-                    <div class="lp-contribute__icon">
-                        <i class="fas fa-code-branch"></i>
-                    </div>
-                    <div class="lp-contribute__text">
-                        <h3 class="lp-contribute__title">Projet Open Source</h3>
-                        <p>Contribuez au code ou soutenez le projet.</p>
-                    </div>
-                    <div class="lp-contribute__actions">
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScMfb2MVugiZpgq-ITF5RxG8dKQAd8zKvHuTHHIfhN18Ucmag/viewform"
-                            target="_blank" class="lp-btn lp-btn--secondary lp-btn--sm">
-                            <i class="fas fa-comment-dots"></i> Avis
-                        </a>
-                        <a href="https://github.com/davidt123456789/Bulletin-AI" target="_blank"
-                            class="lp-btn lp-btn--secondary lp-btn--sm">
-                            <i class="fab fa-github"></i> GitHub
-                        </a>
-                        <a href="https://ko-fi.com/profassistant" target="_blank"
-                            class="lp-btn lp-btn--accent lp-btn--sm">
-                            <i class="fas fa-heart"></i> Soutenir
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="lp-footer lp-footer--wide">
-        <div class="lp-container">
-            <div class="lp-footer__wide">
-                <div class="lp-footer__brand-inline">
-                    <img src="./assets/logo.png" alt="Logo" class="lp-footer__logo-sm">
-                    <span>Bulletin AI</span>
-                </div>
-                <div class="lp-footer__links-inline">
-                    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank">CC BY-NC-SA</a>
-                </div>
-                <div class="lp-footer__copyright">
-                    © 2026 — Développé par un prof, pour les profs 🎓
-                </div>
-            </div>
         </div>
     </footer>
 
-    <!-- Scripts -->
+    <button id="scrollTopBtn"
+        class="scroll-top-btn fixed bottom-8 right-8 w-12 h-12 rounded-full bg-white border border-slate-200 shadow-xl flex items-center justify-center text-slate-600 hover:bg-slate-900 hover:text-white hover:-translate-y-1 transition-all z-40"
+        aria-label="Retour en haut">
+        <iconify-icon icon="solar:alt-arrow-up-linear" width="24"></iconify-icon>
+    </button>
+
     <script>
-        // Navbar Scroll Effect
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
         const navbar = document.getElementById('navbar');
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        const sections = document.querySelectorAll("section[id], header[id]");
+        const navLinks = document.querySelectorAll(".nav-link");
+
+        let scrollTicking = false;
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('is-scrolled');
-            } else {
-                navbar.classList.remove('is-scrolled');
+            if (!scrollTicking) {
+                requestAnimationFrame(() => {
+                    const scrollY = window.scrollY;
+                    navbar.classList.toggle('border-slate-200/60', scrollY > 20);
+                    scrollTopBtn.classList.toggle('is-visible', scrollY > 500);
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
             }
-        });
+        }, { passive: true });
 
-        // Mobile Menu Toggle
-        function toggleMobileMenu() {
-            const toggle = document.querySelector('.lp-nav__toggle');
-            const mobileMenu = document.getElementById('mobileMenu');
-
-            if (mobileMenu && toggle) {
-                const isOpen = mobileMenu.classList.contains('is-open');
-
-                if (isOpen) {
-                    mobileMenu.classList.remove('is-open');
-                    toggle.classList.remove('is-open');
-                    document.body.style.overflow = '';
-                } else {
-                    mobileMenu.classList.add('is-open');
-                    toggle.classList.add('is-open');
-                    document.body.style.overflow = 'hidden';
-                }
-            }
-        }
-
-        // Close mobile menu on resize to desktop
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                const mobileMenu = document.getElementById('mobileMenu');
-                const toggle = document.querySelector('.lp-nav__toggle');
-                if (mobileMenu && mobileMenu.classList.contains('is-open')) {
-                    mobileMenu.classList.remove('is-open');
-                    toggle?.classList.remove('is-open');
-                    document.body.style.overflow = '';
-                }
-            }
-        });
-
-        // FAQ Toggle System (A11y Compliant)
-        function initFaq() {
-            const questions = document.querySelectorAll('.lp-faq__question');
-
-            questions.forEach(question => {
-                question.addEventListener('click', () => {
-                    const item = question.closest('.lp-faq__item');
-                    const isOpen = item.classList.contains('is-open');
-
-                    // Close all other items
-                    document.querySelectorAll('.lp-faq__item').forEach(otherItem => {
-                        if (otherItem !== item) {
-                            otherItem.classList.remove('is-open');
-                            const btn = otherItem.querySelector('.lp-faq__question');
-                            if (btn) btn.setAttribute('aria-expanded', 'false');
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const activeId = entry.target.id;
+                    navLinks.forEach(link => {
+                        link.classList.remove('active', 'text-slate-900');
+                        link.classList.add('text-slate-500');
+                        if (link.getAttribute('data-target') === activeId) {
+                            link.classList.add('active', 'text-slate-900');
+                            link.classList.remove('text-slate-500');
                         }
                     });
-
-                    // Toggle current item
-                    if (isOpen) {
-                        item.classList.remove('is-open');
-                        question.setAttribute('aria-expanded', 'false');
-                    } else {
-                        item.classList.add('is-open');
-                        question.setAttribute('aria-expanded', 'true');
-                    }
-                });
+                }
             });
+        }, { root: null, rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+        sections.forEach(section => sectionObserver.observe(section));
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileBackdrop = document.getElementById('mobile-backdrop');
+        const mobilePanel = document.getElementById('mobile-panel');
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        let isMenuOpen = false;
+
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+            menuToggleBtn.setAttribute('aria-expanded', isMenuOpen);
+            if (isMenuOpen) {
+                mobileMenu.classList.remove('pointer-events-none');
+                mobileBackdrop.classList.remove('opacity-0');
+                mobilePanel.classList.remove('mobile-menu-enter');
+                mobilePanel.classList.add('mobile-menu-active');
+                document.body.style.overflow = 'hidden';
+                const firstLink = mobilePanel.querySelector('a');
+                if (firstLink) setTimeout(() => firstLink.focus(), 350);
+            } else {
+                mobileMenu.classList.add('pointer-events-none');
+                mobileBackdrop.classList.add('opacity-0');
+                mobilePanel.classList.remove('mobile-menu-active');
+                mobilePanel.classList.add('mobile-menu-enter');
+                document.body.style.overflow = '';
+                menuToggleBtn.focus();
+            }
         }
 
-        // Initialize FAQ
-        initFaq();
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isMenuOpen) toggleMenu();
+        });
 
-        // Scroll Reveal Animation
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: "0px 0px -50px 0px"
-        };
+        function toggleAccordion(button) {
+            const item = button.parentElement;
+            const isOpen = item.classList.contains('is-open');
+            document.querySelectorAll('.accordion-item').forEach(other => {
+                other.classList.remove('is-open');
+                const btn = other.querySelector('button');
+                const panel = other.querySelector('.accordion-content');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                if (panel) panel.setAttribute('aria-hidden', 'true');
+            });
+            if (!isOpen) {
+                item.classList.add('is-open');
+                button.setAttribute('aria-expanded', 'true');
+                const panel = item.querySelector('.accordion-content');
+                if (panel) panel.setAttribute('aria-hidden', 'false');
+            }
+        }
 
-        const observer = new IntersectionObserver((entries) => {
+        const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target); // Only animate once
+                    revealObserver.unobserve(entry.target);
                 }
             });
-        }, observerOptions);
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObserver.observe(el));
 
-        document.querySelectorAll('.lp-reveal').forEach(el => {
-            observer.observe(el);
+        /* ── Carousel ── */
+        const carouselData = [
+            { icon: 'solar:file-text-linear', color: 'bg-blue-50 text-blue-600', title: 'Formats Universels', desc: 'Compatible Excel, CSV et copier-coller depuis Pronote.', label: 'Import' },
+            { icon: 'solar:tuning-2-linear', color: 'bg-purple-50 text-purple-600', title: 'Personnalisation', desc: 'Définissez des règles : vouvoiement, tutoiement, structure.', label: 'Réglages' },
+            { icon: 'solar:shield-keyhole-linear', color: 'bg-green-50 text-green-600', title: 'Anonymisation Auto', desc: 'Les noms sont retirés avant l\'envoi. Données stockées localement.', label: 'Sécurité' },
+            { icon: 'solar:server-square-linear', color: 'bg-amber-50 text-amber-600', title: 'Multi-Modèles IA', desc: 'Mistral AI, Google Gemini, ou Ollama en local.', label: 'Flexible' },
+            { icon: 'solar:notebook-linear', color: 'bg-rose-50 text-rose-600', title: 'Journal de Bord', desc: 'Notes et observations au fil du trimestre pour enrichir l\'appréciation.', label: 'Suivi' },
+            { icon: 'solar:camera-linear', color: 'bg-orange-50 text-orange-600', title: 'Photos Élèves', desc: 'Importez le trombinoscope pour visualiser vos élèves.', label: 'Visuel' },
+            { icon: 'solar:archive-linear', color: 'bg-cyan-50 text-cyan-600', title: 'Sauvegarde Cloud', desc: 'Archivez vos bulletins (manuel). Zéro synchronisation cachée.', label: 'Stockage' }
+        ];
+
+        const track = document.getElementById('carousel-track');
+        const dotsContainer = document.getElementById('carousel-dots');
+
+        carouselData.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.addEventListener('click', () => {
+                centerIndex = index;
+                updateCarousel();
+            });
+            card.className = 'carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 flex flex-col items-center text-center select-none';
+            card.setAttribute('role', 'tabpanel');
+            card.setAttribute('aria-label', item.title);
+            card.innerHTML = `
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${item.color} flex items-center justify-center text-2xl sm:text-3xl mb-5 sm:mb-6 flex-shrink-0">
+                    <iconify-icon icon="${item.icon}" stroke-width="1.5"></iconify-icon>
+                </div>
+                <h3 class="text-base sm:text-lg font-semibold text-slate-900 mb-2 sm:mb-3">${item.title}</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">${item.desc}</p>
+                <div class="mt-auto pt-4 sm:pt-6">
+                    <span class="px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-[10px] font-bold tracking-widest uppercase border border-slate-100">${item.label}</span>
+                </div>
+            `;
+            track.appendChild(card);
+
+            const dot = document.createElement('button');
+            dot.className = 'h-1.5 rounded-full transition-all duration-300 bg-slate-300 hover:bg-slate-400';
+            dot.style.width = '6px';
+            dot.setAttribute('role', 'tab');
+            dot.setAttribute('aria-label', `Voir slide ${index + 1}: ${item.title}`);
+            dot.setAttribute('aria-selected', 'false');
+            dot.addEventListener('click', () => {
+                centerIndex = index;
+                updateCarousel();
+            });
+            dotsContainer.appendChild(dot);
         });
 
-        // ============================================
-        // PAGE TRANSITION (iOS 2025 Style)
-        // ============================================
+        const cards = Array.from(document.querySelectorAll('.carousel-card'));
+        const dots = Array.from(dotsContainer.children);
+        let centerIndex = 0;
+        let autoPlay = null;
+        let isHovering = false;
+        let isFocused = false;
+        let isVisible = false;
 
-        /**
-         * Creates an elegant zoom-out + fade transition when navigating to the app
-         * Uses View Transitions API where available, with CSS fallback
-         */
-        function initPageTransition() {
-            // Create transition overlay element
-            const overlay = document.createElement('div');
-            overlay.className = 'lp-transition-overlay';
-            document.body.appendChild(overlay);
-
-            // Find all links to app.html
-            const appLinks = document.querySelectorAll('a[href="./app.html"], a[href="app.html"]');
-
-            appLinks.forEach(link => {
-                link.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    const targetUrl = link.href;
-
-                    // Add transitioning state to clicked button
-                    link.classList.add('is-transitioning');
-
-                    // Check if View Transitions API is supported
-                    if (document.startViewTransition) {
-                        // Modern browsers: Use native View Transitions
-                        document.startViewTransition(() => {
-                            window.location.href = targetUrl;
-                        });
-                    } else {
-                        // Fallback: CSS-based transition
-                        // 1. Activate overlay (subtle white flash)
-                        overlay.classList.add('is-active');
-
-                        // 2. Trigger exit animation on body
-                        document.body.classList.add('is-transitioning-out');
-
-                        // 3. Navigate after animation completes
-                        // Mark navigation timestamp for app to detect
-                        sessionStorage.setItem('landingTransition', Date.now().toString());
-
-                        setTimeout(() => {
-                            window.location.href = targetUrl;
-                        }, 500); // Match animation duration
-                    }
-                });
-            });
-        }
-
-        // Initialize transition system
-        initPageTransition();
-
-        // ============================================
-        // FEATURES CAROUSEL (Opal Style - Step by Step)
-        // ============================================
-
-        /**
-         * Arc carousel with step-by-step navigation
-         * Cards rotate into position with center card highlighted
-         */
-        /**
-         * Arc carousel with step-by-step navigation
-         * Cards rotate into position with center card highlighted
-         */
-        function initFeaturesCarousel() {
-            const carousel = document.getElementById('featuresCarousel');
-            if (!carousel) return;
-
-            const cards = carousel.querySelectorAll('.lp-feature-card');
-            const cardCount = cards.length;
-            let currentCenter = 3; // Start with middle card (index 3 for 7 cards)
-            let autoPlayInterval = null;
-            let isPaused = false;
-            let isAnimating = false;
-            const AUTO_ADVANCE_DELAY = 3500; // 3.5 seconds
-
-            // Position names for 5 visible slots
-            const positions = ['far-left', 'left', 'center', 'right', 'far-right'];
-
-            /**
-             * Update card positions based on current center index
-             * Simple rule: any card crossing from left side to right side (or vice versa) is a wrap
-             */
-            function updatePositions() {
-                // Helper to determine which side a position is on
-                const getSide = (pos) => {
-                    if (!pos) return null;
-                    if (pos.includes('left')) return 'left';
-                    if (pos.includes('right')) return 'right';
-                    return 'center';
-                };
-
-                cards.forEach((card, index) => {
-                    const prevPos = card.getAttribute('data-pos');
-                    const prevSide = getSide(prevPos);
-
-                    // Calculate relative position from center
-                    let relativePos = index - currentCenter;
-
-                    // Handle wrapping for infinite loop
-                    if (relativePos > Math.floor(cardCount / 2)) {
-                        relativePos -= cardCount;
-                    } else if (relativePos < -Math.floor(cardCount / 2)) {
-                        relativePos += cardCount;
-                    }
-
-                    // Map relative position to actual position name
-                    let posName;
-                    if (relativePos === 0) {
-                        posName = 'center';
-                    } else if (relativePos === -1) {
-                        posName = 'left';
-                    } else if (relativePos === 1) {
-                        posName = 'right';
-                    } else if (relativePos === -2) {
-                        posName = 'far-left';
-                    } else if (relativePos === 2) {
-                        posName = 'far-right';
-                    } else if (relativePos < -2) {
-                        posName = 'hidden-left';
-                    } else {
-                        posName = 'hidden-right';
-                    }
-
-                    const newSide = getSide(posName);
-
-                    // WRAP: card crosses from left to right or right to left (excluding center)
-                    const isWrap = prevSide && newSide &&
-                        prevSide !== 'center' && newSide !== 'center' &&
-                        prevSide !== newSide;
-
-                    if (isWrap) {
-                        // Teleport: instant move to hidden position on destination side
-                        const hiddenPos = newSide === 'right' ? 'hidden-right' : 'hidden-left';
-
-                        card.style.transition = 'none';
-                        card.setAttribute('data-pos', hiddenPos);
-                        card.offsetHeight; // Force reflow
-                        card.style.transition = '';
-
-                        // Then animate to final position
-                        requestAnimationFrame(() => {
-                            card.setAttribute('data-pos', posName);
-                        });
-                    } else {
-                        card.setAttribute('data-pos', posName);
-                    }
-                });
-            }
-
-            /**
-             * Advance to next card
-             */
-            function nextCard() {
-                currentCenter = (currentCenter + 1) % cardCount;
-                updatePositions();
-            }
-
-            /**
-             * Go to previous card
-             */
-            function prevCard() {
-                currentCenter = (currentCenter - 1 + cardCount) % cardCount;
-                updatePositions();
-            }
-
-            /**
-             * Move multiple steps sequentially
-             * @param {number} steps - Number of steps (positive = next, negative = prev)
-             */
-            function moveSteps(steps) {
-                if (steps === 0 || isAnimating) return;
-
-                isAnimating = true;
-                const direction = steps > 0 ? 1 : -1;
-                let remaining = Math.abs(steps);
-
-                // Determine shortest path (wrap around if needed)
-                if (remaining > cardCount / 2) {
-                    remaining = cardCount - remaining;
-                    // Invert direction if we found a shorter path wrapping around
-                    // logic: steps was e.g. 6 (go right), wrap is 1 (go left)
-                    // But effectively we just use next/prev logic
-                }
-
-                // For simplicity in this fan, we just execute sequential moves
-                // If the user clicked something 2 steps away, we do 2 steps.
-
-                function step() {
-                    if (remaining <= 0) {
-                        isAnimating = false;
-                        return;
-                    }
-
-                    if (direction > 0) nextCard();
-                    else prevCard();
-
-                    remaining--;
-
-                    if (remaining > 0) {
-                        setTimeout(step, 150); // fast delay between steps
-                    } else {
-                        isAnimating = false;
-                    }
-                }
-
-                step();
-            }
-
-            /**
-             * Start auto-advance timer
-             */
-            function startAutoPlay() {
-                if (autoPlayInterval) clearInterval(autoPlayInterval);
-                autoPlayInterval = setInterval(() => {
-                    if (!isPaused && !isAnimating && !document.hidden) {
-                        nextCard();
-                    }
-                }, AUTO_ADVANCE_DELAY);
-            }
-
-            /**
-             * Pause/resume on hover
-             */
-            carousel.addEventListener('mouseenter', () => {
-                isPaused = true;
-            });
-
-            carousel.addEventListener('mouseleave', () => {
-                isPaused = false;
-            });
-
-            /**
-             * Handle Visibility Change (Tab Switch Bug)
-             */
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    // Pause definitely
-                    if (autoPlayInterval) clearInterval(autoPlayInterval);
-                } else {
-                    // Resume checking
-                    startAutoPlay();
-                }
-            });
-
-            /**
-             * Click on card to bring it to center
-             */
+        function updateCarousel() {
+            const count = cards.length;
             cards.forEach((card, index) => {
-                card.addEventListener('click', () => {
-                    if (isAnimating) return;
-
-                    // Reset autoplay timer manually
-                    startAutoPlay();
-
-                    // Calculate shortest distance
-                    let diff = index - currentCenter;
-
-                    // Normalize diff to -cardCount/2 to cardCount/2
-                    if (diff > cardCount / 2) diff -= cardCount;
-                    if (diff < -cardCount / 2) diff += cardCount;
-
-                    if (diff !== 0) {
-                        moveSteps(diff);
-                    }
-                });
+                let offset = index - centerIndex;
+                if (offset > count / 2) offset -= count;
+                if (offset < -count / 2) offset += count;
+                let pos = 'hidden-right';
+                if (offset === 0) pos = 'center';
+                else if (offset === -1) pos = 'left';
+                else if (offset === 1) pos = 'right';
+                else if (offset === -2) pos = 'far-left';
+                else if (offset === 2) pos = 'far-right';
+                else if (offset < -2) pos = 'hidden-left';
+                card.setAttribute('data-pos', pos);
             });
-
-            // Initialize positions
-            updatePositions();
-
-            // Start autoplay
-            startAutoPlay();
+            dots.forEach((dot, index) => {
+                if (index === centerIndex) {
+                    dot.classList.remove('bg-slate-300');
+                    dot.classList.add('bg-slate-800');
+                    dot.style.width = '24px';
+                    dot.setAttribute('aria-selected', 'true');
+                } else {
+                    dot.classList.add('bg-slate-300');
+                    dot.classList.remove('bg-slate-800');
+                    dot.style.width = '6px';
+                    dot.setAttribute('aria-selected', 'false');
+                }
+            });
         }
 
-        // Initialize features carousel
-        initFeaturesCarousel();
+        function shouldAutoPlay() {
+            return isVisible && !isHovering && !isFocused;
+        }
 
-
-
-        // ============================================
-        // HERO MOCKUP TYPING ANIMATION
-        // ============================================
-        function initMockupAnimation() {
-            const aiTextElement = document.getElementById('mockup-ai-text');
-            const aiCard = document.getElementById('mockup-ai-card');
-            const analysisCard = document.getElementById('mockup-analysis-card');
-            const analysisContent = document.getElementById('mockup-analysis-content');
-            const statusBadge = document.getElementById('mockup-status-badge');
-
-            if (!aiTextElement || !aiCard) return;
-
-            const fullText = "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des bavardages perturbent sa progression. Il est impératif qu'il se recentre et adopte une attitude plus studieuse pour redresser la barre.";
-
-            // Define analysis HTML blocks
-            const blockPointsForts = `
-                <div style="margin-bottom: 12px; opacity: 0; transform: translateY(10px); transition: all 0.5s ease" id="anim-pf">
-                    <div style="color: #65a30d; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
-                        <i class="fas fa-check-circle"></i> Points forts
-                    </div>
-                    <div style="font-size: 0.85rem;">Curiosité intellectuelle, Participation orale</div>
-                </div>`;
-
-            const blockToImprove = `
-                <div style="opacity: 0; transform: translateY(10px); transition: all 0.5s ease" id="anim-ti">
-                    <div style="color: #c2785c; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
-                        <i class="fas fa-exclamation-circle"></i> À améliorer
-                    </div>
-                    <div style="font-size: 0.85rem;">Concentration, Bavardages fréquents</div>
-                </div>`;
-
-            // Split text into word chunks for natural typing
-            const words = fullText.split(' ');
-            let currentWordIndex = 0;
-
-            function typeWords() {
-                if (currentWordIndex < words.length) {
-                    // Create word span
-                    const span = document.createElement('span');
-                    span.textContent = words[currentWordIndex] + ' ';
-                    span.style.opacity = '0';
-                    span.style.filter = 'blur(4px)';
-                    span.style.transition = 'all 0.4s ease';
-
-                    aiTextElement.appendChild(span);
-
-                    // Trigger reflow
-                    span.offsetHeight;
-
-                    // Animate in
-                    span.style.opacity = '1';
-                    span.style.filter = 'blur(0)';
-
-                    currentWordIndex++;
-
-                    // Random typing speed
-                    const delay = Math.random() * 50 + 30;
-                    setTimeout(typeWords, delay);
-                } else {
-                    // Done typing - morph badge to "done" state
-                    aiCard.classList.remove('is-generating');
-                    if (analysisCard) analysisCard.classList.remove('is-generating');
-                    if (statusBadge) statusBadge.classList.add('is-done');
-                    setTimeout(resetAnimation, 5000); // Wait 5s before restart
+        function syncAutoPlay() {
+            if (shouldAutoPlay()) {
+                if (!autoPlay) {
+                    autoPlay = setInterval(() => {
+                        centerIndex = (centerIndex + 1) % cards.length;
+                        updateCarousel();
+                    }, 4000);
+                    track.setAttribute('aria-live', 'off');
+                }
+            } else {
+                if (autoPlay) {
+                    clearInterval(autoPlay);
+                    autoPlay = null;
+                    track.setAttribute('aria-live', 'polite');
                 }
             }
-
-            function resetAnimation() {
-                // Clear contents
-                aiTextElement.innerHTML = '';
-                if (analysisContent) analysisContent.innerHTML = ''; // Clear analysis
-
-                currentWordIndex = 0;
-
-                // Reset badge to "generating" state (spinner)
-                if (statusBadge) statusBadge.classList.remove('is-done');
-
-                // Start "Thinking" phase (border animation)
-                aiCard.classList.add('is-generating');
-                if (analysisCard) analysisCard.classList.add('is-generating');
-
-                // Simulate processing time then start generation
-                setTimeout(() => {
-                    // 1. Start typing appreciation
-                    typeWords();
-
-                    // 2. Inject and Animate Analysis (staggered)
-                    if (analysisContent) {
-                        analysisContent.innerHTML = blockPointsForts + blockToImprove;
-
-                        // Animate Points Forts immediately
-                        setTimeout(() => {
-                            const pf = document.getElementById('anim-pf');
-                            if (pf) { pf.style.opacity = '1'; pf.style.transform = 'translateY(0)'; }
-                        }, 100);
-
-                        // Animate Improve after 1.2s
-                        setTimeout(() => {
-                            const ti = document.getElementById('anim-ti');
-                            if (ti) { ti.style.opacity = '1'; ti.style.transform = 'translateY(0)'; }
-                        }, 1200);
-                    }
-                }, 800);
-            }
-
-            // Start initial animation after a small delay
-            setTimeout(resetAnimation, 1000);
         }
 
-        initMockupAnimation();
+        const featuresSection = document.getElementById('features');
+        featuresSection.addEventListener('mouseenter', () => { isHovering = true; syncAutoPlay(); });
+        featuresSection.addEventListener('mouseleave', () => { isHovering = false; syncAutoPlay(); });
 
-        // ============================================
-        // SCROLLSPY (Dynamic Header)
-        // ============================================
-        function initScrollSpy() {
-            // Include the header (hero) in the observed sections
-            const sections = document.querySelectorAll('section[id], header[id]');
-            const navLinks = document.querySelectorAll('.lp-nav__links a');
+        featuresSection.addEventListener('focusin', () => { isFocused = true; syncAutoPlay(); });
+        featuresSection.addEventListener('focusout', (e) => {
+            if (!featuresSection.contains(e.relatedTarget)) {
+                isFocused = false;
+                syncAutoPlay();
+            }
+        });
 
-            // Options to trigger when section is in the middle of viewport
-            const observerOptions = {
-                rootMargin: '-20% 0px -60% 0px',
-                threshold: 0
-            };
+        const carouselObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                isVisible = entry.isIntersecting;
+                syncAutoPlay();
+            });
+        }, { threshold: 0.3 });
+        carouselObserver.observe(featuresSection);
 
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        // Clean all active classes
-                        navLinks.forEach(link => link.classList.remove('is-active'));
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            centerIndex = (centerIndex + 1) % cards.length;
+            updateCarousel();
+        });
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            centerIndex = (centerIndex - 1 + cards.length) % cards.length;
+            updateCarousel();
+        });
 
-                        const id = entry.target.getAttribute('id');
+        track.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                centerIndex = (centerIndex + 1) % cards.length;
+                updateCarousel();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                centerIndex = (centerIndex - 1 + cards.length) % cards.length;
+                updateCarousel();
+            }
+        });
 
-                        // If we are in the Hero section, keep all links inactive
-                        if (id === 'hero') return;
+        let touchStartX = 0;
+        track.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            isHovering = true;
+            syncAutoPlay();
+        }, { passive: true });
+        track.addEventListener('touchend', (e) => {
+            const diff = touchStartX - e.changedTouches[0].screenX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) centerIndex = (centerIndex + 1) % cards.length;
+                else centerIndex = (centerIndex - 1 + cards.length) % cards.length;
+                updateCarousel();
+            }
+            setTimeout(() => { isHovering = false; syncAutoPlay(); }, 3000);
+        });
 
-                        // Add active class to corresponding link
-                        const activeLink = document.querySelector(`.lp-nav__links a[href="#${id}"]`);
-                        if (activeLink) {
-                            activeLink.classList.add('is-active');
-                        }
-                    }
-                });
-            }, observerOptions);
+        updateCarousel();
 
-            sections.forEach(section => {
-                observer.observe(section);
+        /* ── Mockup Hero ── */
+        const mockupText = document.getElementById('mockup-text');
+        const mockupBar = document.getElementById('mockup-bar');
+        const mockupAnalysis = document.getElementById('mockup-analysis');
+        const fullText = "Les résultats de Mathéo sont fragiles ce trimestre. Un manque d'investissement et des bavardages perturbent sa progression. Il est impératif qu'il se recentre.";
+
+        let mockupActiveTimeouts = [];
+        let mockupLoopTimeout = null;
+
+        function clearMockupTimeouts() {
+            mockupActiveTimeouts.forEach(clearTimeout);
+            mockupActiveTimeouts = [];
+            if (mockupLoopTimeout) { clearTimeout(mockupLoopTimeout); mockupLoopTimeout = null; }
+        }
+
+        function typeWriter() {
+            const words = fullText.split(' ');
+            let html = '';
+            words.forEach((word, index) => {
+                html += `<span class="blur-word" style="transition-delay: ${index * 80}ms">${word}</span> `;
+            });
+            mockupText.innerHTML = html;
+            requestAnimationFrame(() => {
+                mockupText.querySelectorAll('.blur-word').forEach(span => span.classList.add('is-visible'));
             });
         }
 
-        initScrollSpy();
+        function startMockupLoop() {
+            clearMockupTimeouts();
+            mockupText.innerHTML = '<div class="shimmer h-2 w-3/4 rounded mb-2"></div><div class="shimmer h-2 w-1/2 rounded"></div>';
+            mockupBar.style.width = '0%';
+            mockupAnalysis.innerHTML = '';
 
-        // ============================================
-        // STEP CARDS SEQUENTIAL ACTIVATION
-        // Badge fills organically, then moves to next step
-        // ============================================
-        function initStepActivation() {
-            const steps = document.querySelectorAll('.lp-step');
-            if (steps.length === 0) return;
+            const t1 = setTimeout(() => { mockupBar.style.width = '42%'; }, 500);
+            mockupActiveTimeouts.push(t1);
 
-            // Duration synced EXACTLY with CSS liquid fill animation (4.5s)
-            // Transition happens the moment the fill completes = visual timer
-            const STEP_DURATION = 4500;
-            let currentStep = 0;
-            let isAnimating = false;
+            const t2 = setTimeout(() => {
+                mockupAnalysis.innerHTML = `
+                    <span class="px-1.5 py-0.5 rounded bg-green-50 text-green-600 font-medium animate-pulse">Curiosité</span>
+                    <span class="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-medium animate-pulse">Bavardages</span>
+                `;
+            }, 1200);
+            mockupActiveTimeouts.push(t2);
 
-            function activateStep() {
-                // Mark previous step as "was-active" for smooth reset
-                steps.forEach(s => {
-                    if (s.classList.contains('is-active')) {
-                        s.classList.add('was-active');
-                    }
-                    s.classList.remove('is-active');
-                });
-
-                // Activate current step
-                steps[currentStep].classList.remove('was-active');
-                steps[currentStep].classList.add('is-active');
-
-                // Next step
-                currentStep = (currentStep + 1) % steps.length;
-            }
-
-            // Only start animation when section is visible
-            const howItWorksSection = document.getElementById('how-it-works');
-            if (!howItWorksSection) {
-                // Fallback: start immediately
-                activateStep();
-                setInterval(activateStep, STEP_DURATION);
-                return;
-            }
-
-            const sectionObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !isAnimating) {
-                        isAnimating = true;
-                        // Reset to first step when section comes into view
-                        currentStep = 0;
-                        activateStep();
-                        setInterval(activateStep, STEP_DURATION);
-                    }
-                });
-            }, { threshold: 0.3 });
-
-            sectionObserver.observe(howItWorksSection);
+            const t3 = setTimeout(() => {
+                typeWriter();
+                mockupLoopTimeout = setTimeout(startMockupLoop, 8000);
+            }, 2000);
+            mockupActiveTimeouts.push(t3);
         }
 
-        initStepActivation();
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) startMockupLoop();
+                else clearMockupTimeouts();
+            });
+        }, { threshold: 0.2 });
+        heroObserver.observe(document.getElementById('hero'));
     </script>
 </body>
 
