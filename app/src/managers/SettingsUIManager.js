@@ -230,7 +230,7 @@ export const SettingsUIManager = {
         // Keep header simple - no lock icon needed as the toggle is right there
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            iaStyleHeader.innerHTML = `<i class="fas fa-sliders-h"></i> Style de Rédaction`;
+            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-bold"></iconify-icon> Style de Rédaction`;
         }
     },
 
@@ -534,7 +534,7 @@ export const SettingsUIManager = {
         const refreshBtn = document.getElementById('refreshPreviewBtn');
 
         if (previewStatus) {
-            previewStatus.innerHTML = `<i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Réglages modifiés. Cliquez sur <strong>Générer</strong> pour voir l'aperçu.`;
+            previewStatus.innerHTML = `<iconify-icon icon="solar:refresh-bold" style="margin-right: 6px;"></iconify-icon> Réglages modifiés. Cliquez sur <strong>Générer</strong> pour voir l'aperçu.`;
             previewStatus.style.display = 'block';
         }
 
@@ -635,7 +635,7 @@ export const SettingsUIManager = {
             return `<span style="opacity:0.8">${name}</span>`;
         });
 
-        fallbackOrderText.innerHTML = displayQueue.join(' <i class="fas fa-chevron-right" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></i> ');
+        fallbackOrderText.innerHTML = displayQueue.join(' <iconify-icon icon="solar:alt-arrow-right-bold" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></iconify-icon> ');
 
         // Badge "+X" avec tooltip pour voir le reste
         const moreBadge = document.getElementById('fallbackOrderMore');
@@ -701,11 +701,11 @@ export const SettingsUIManager = {
 
         // Afficher le spinner
         if (DOM.validateOllamaBtn) {
-            DOM.validateOllamaBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>';
             DOM.validateOllamaBtn.disabled = true;
         }
         if (DOM.ollamaValidationIcon) {
-            DOM.ollamaValidationIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>';
         }
 
         try {
@@ -730,7 +730,7 @@ export const SettingsUIManager = {
                 // Bouton reste en état validé
                 if (DOM.validateOllamaBtn) {
                     DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<i class="fas fa-check"></i> OK';
+                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
                     DOM.validateOllamaBtn.disabled = false;
                 }
 
@@ -793,7 +793,7 @@ export const SettingsUIManager = {
                 // Pour Ollama, on n'affiche pas l'icône dans l'input car on a déjà le bouton OK et les badges
                 validationIcon.innerHTML = '';
             } else if (status === 'error') {
-                validationIcon.innerHTML = '<i class="fas fa-times-circle" style="color: var(--error-color);"></i>';
+                validationIcon.innerHTML = '<iconify-icon icon="solar:close-circle-bold" style="color: var(--error-color);"></iconify-icon>';
             } else {
                 validationIcon.innerHTML = '';
             }
@@ -844,7 +844,7 @@ export const SettingsUIManager = {
                 const shortName = MODEL_SHORT_NAMES[modelKey]?.replace('🏠 ', '') || modelName;
 
                 const color = isInstalled ? 'var(--success-color)' : 'var(--text-tertiary)';
-                const icon = isInstalled ? 'check' : 'times';
+                const iconName = isInstalled ? 'solar:check-circle-bold' : 'solar:close-circle-bold';
                 const opacity = isInstalled ? '1' : '0.6';
                 const decoration = isInstalled ? 'none' : 'line-through';
 
@@ -855,7 +855,7 @@ export const SettingsUIManager = {
                         background:rgba(var(--background-rgb), 0.5); 
                         border:1px solid ${color}; color:${isInstalled ? 'var(--text-primary)' : 'var(--text-secondary)'};
                         font-size:0.85em; opacity:${opacity};">
-                        <i class="fas fa-${icon}" style="color:${color}; font-size:0.9em;"></i>
+                        <iconify-icon icon="${iconName}" style="color:${color}; font-size:0.9em;"></iconify-icon>
                         ${shortName}
                     </span>
                 `;

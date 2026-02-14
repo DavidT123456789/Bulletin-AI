@@ -36,9 +36,9 @@
     align-items: center;
     gap: 4px;
     font-size: 0.85em;
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    /* Amber 600 */
+    background: rgba(var(--warning-rgb), 0.1);
+    color: var(--warning-hover);
+    /* Amber/Warning */
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: 500;
@@ -47,9 +47,9 @@
 }
 
 [data-theme="dark"] .privacy-warning-badge {
-    color: #fbbf24;
-    /* Amber 400 */
-    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning-light-text);
+    /* Warning Light */
+    background: rgba(var(--warning-rgb), 0.15);
 }
 
 .privacy-footer-note {

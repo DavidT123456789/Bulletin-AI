@@ -123,17 +123,17 @@
 
 /* Fallback active state - orange warning color */
 .header-gen-dashboard.fallback-active {
-    border-color: rgba(251, 146, 60, 0.5);
-    box-shadow: 0 0 12px rgba(251, 146, 60, 0.25);
+    border-color: rgba(var(--warning-rgb), 0.5);
+    box-shadow: 0 0 12px rgba(var(--warning-rgb), 0.25);
 }
 
 .header-gen-dashboard.fallback-active .dash-model-label {
-    background: rgba(251, 146, 60, 0.15);
-    color: #fb923c;
+    background: rgba(var(--warning-rgb), 0.15);
+    color: var(--warning-color);
 }
 
 .header-gen-dashboard.fallback-active .dash-model-label i {
-    color: #fb923c;
+    color: var(--warning-color);
 }
 
 /* Divider */
@@ -322,6 +322,9 @@
         linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
     animation: rotate-gradient 2s linear infinite;
     pointer-events: none;
     z-index: 2;

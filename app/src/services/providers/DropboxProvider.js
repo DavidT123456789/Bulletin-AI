@@ -17,7 +17,7 @@ const SYNC_FILENAME = '/bulletin-ai-sync.json';
 export const DropboxProvider = {
     name: 'dropbox',
     displayName: 'Dropbox',
-    icon: 'fab fa-dropbox',
+    icon: 'logos:dropbox',
 
     /** @type {string|null} Access token */
     _token: null,

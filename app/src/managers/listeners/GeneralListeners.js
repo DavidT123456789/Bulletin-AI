@@ -405,13 +405,24 @@ export const GeneralListeners = {
             const reconnectBtn = document.getElementById('cloudReconnectBtn');
             if (reconnectBtn) {
                 reconnectBtn.addEventListener('click', async () => {
-                    const iconEl = reconnectBtn.querySelector('i');
-                    const originalIconClass = iconEl?.className || 'fas fa-plug';
+                    // Support both new iconify-icon and legacy i tags
+                    const iconEl = reconnectBtn.querySelector('iconify-icon') || reconnectBtn.querySelector('i');
+                    const isIconify = iconEl?.tagName.toLowerCase() === 'iconify-icon';
+
+                    // Capture original state
+                    const originalState = isIconify ? iconEl.getAttribute('icon') : (iconEl?.className || 'fas fa-plug');
 
                     try {
                         // Show loading state on THIS button
                         reconnectBtn.classList.add('saving');
-                        if (iconEl) iconEl.className = 'fas fa-spinner fa-spin';
+                        if (iconEl) {
+                            if (isIconify) {
+                                iconEl.setAttribute('icon', 'solar:spinner-bold-duotone');
+                                iconEl.classList.add('icon-spin');
+                            } else {
+                                iconEl.className = 'fas fa-spinner fa-spin';
+                            }
+                        }
 
                         const { SyncService } = await import('../../services/SyncService.js');
                         const success = await SyncService.reconnect({ skipIndicator: true });
@@ -427,7 +438,14 @@ export const GeneralListeners = {
                         UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
                     } finally {
                         reconnectBtn.classList.remove('saving');
-                        if (iconEl) iconEl.className = originalIconClass;
+                        if (iconEl) {
+                            if (isIconify) {
+                                iconEl.setAttribute('icon', originalState);
+                                iconEl.classList.remove('icon-spin');
+                            } else {
+                                iconEl.className = originalState;
+                            }
+                        }
                     }
                 });
             }

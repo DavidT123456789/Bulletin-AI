@@ -155,7 +155,7 @@ export const App = {
                 }
 
                 buttonMap[provider].classList.add('btn-validated');
-                buttonMap[provider].innerHTML = '<i class="fas fa-check"></i> OK';
+                buttonMap[provider].innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
             }
         }
     },
@@ -173,7 +173,7 @@ export const App = {
                 // Ollama est accessible, restaurer l'état "validé"
                 if (DOM.validateOllamaBtn) {
                     DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<i class="fas fa-check"></i> OK';
+                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
                 }
                 SettingsUIManager.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
             } else {

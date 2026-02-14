@@ -428,7 +428,7 @@ export const FocusPanelHeader = {
             }
         }
 
-        nameEl.innerHTML = `${prenom} ${nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+        nameEl.innerHTML = `${prenom} ${nom} <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>`;
     },
 
     /**

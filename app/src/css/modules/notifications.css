@@ -88,19 +88,19 @@
 
 /* Warning - Pastel Orange */
 .notification.warning {
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: rgba(var(--warning-rgb), 0.12);
+    border: 1px solid rgba(var(--warning-rgb), 0.25);
     color: #92400e;
 }
 
 .notification.warning i:first-child {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(var(--warning-rgb), 0.2);
+    color: var(--warning-color);
 }
 
 [data-theme="dark"] .notification.warning {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(var(--warning-rgb), 0.15);
+    border-color: rgba(var(--warning-rgb), 0.3);
     color: #fcd34d;
 }
 

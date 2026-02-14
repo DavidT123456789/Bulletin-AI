@@ -423,11 +423,10 @@ export const ImportWizardManager = {
         if (nextArrow) {
             nextArrow.disabled = this.currentStep >= 3;
             // Change icon on last step to show it's the end
-            const icon = nextArrow.querySelector('i');
-            if (icon && this.currentStep >= 3) {
-                icon.className = 'fas fa-check';
-            } else if (icon) {
-                icon.className = 'fas fa-chevron-right';
+            if (this.currentStep >= 3) {
+                nextArrow.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
+            } else {
+                nextArrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>';
             }
         }
 
@@ -556,21 +555,21 @@ export const ImportWizardManager = {
                     // File Logic
                     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
                         fileIconEl.classList.add('type-pdf');
-                        fileIconEl.innerHTML = '<i class="fas fa-file-pdf"></i>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-text-bold"></iconify-icon>';
                     } else if (file.name.match(/\.(xlsx|xls|csv)$/i)) {
                         fileIconEl.classList.add('type-excel');
-                        fileIconEl.innerHTML = '<i class="fas fa-file-excel"></i>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-right-bold"></iconify-icon>';
                     } else {
-                        fileIconEl.innerHTML = '<i class="fas fa-file-alt"></i>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:document-bold"></iconify-icon>';
                     }
                 } else if (type === 'text') {
                     // Text Logic
                     fileIconEl.classList.add('type-text');
-                    fileIconEl.innerHTML = '<i class="fas fa-keyboard"></i>';
+                    fileIconEl.innerHTML = '<iconify-icon icon="solar:keyboard-bold"></iconify-icon>';
                 } else if (type === 'sample') {
                     // Sample logic
                     fileIconEl.classList.add('type-sample');
-                    fileIconEl.innerHTML = '<i class="fas fa-table"></i>';
+                    fileIconEl.innerHTML = '<iconify-icon icon="solar:list-bold"></iconify-icon>';
                 }
             }
         }
@@ -765,7 +764,7 @@ export const ImportWizardManager = {
                 const preview = document.getElementById('wizardStep1Preview');
                 preview?.insertAdjacentElement('afterend', warningEl);
             }
-            warningEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Une seule colonne détectée. Essayez un autre séparateur.`;
+            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Une seule colonne détectée. Essayez un autre séparateur.`;
             warningEl.style.display = 'flex';
         } else if (warningEl) {
             warningEl.style.display = 'none';
@@ -793,13 +792,13 @@ export const ImportWizardManager = {
         const badge = document.createElement('div');
 
         const icons = {
-            'mbn': 'fa-school',
-            'pronote': 'fa-graduation-cap',
-            'vertical': 'fa-list'
+            'mbn': 'solar:square-academic-cap-bold',
+            'pronote': 'solar:mortarboard-bold',
+            'vertical': 'solar:list-bold'
         };
-        const icon = icons[format.type] || 'fa-file-lines';
+        const icon = icons[format.type] || 'solar:document-text-bold';
 
-        badge.innerHTML = `<i class="fas ${icon}"></i> ${format.name}`;
+        badge.innerHTML = `<iconify-icon icon="${icon}"></iconify-icon> ${format.name}`;
         badge.className = `format-detection-badge format-${format.type}`;
 
         badgeSlot.appendChild(badge);
@@ -1097,7 +1096,7 @@ export const ImportWizardManager = {
                 const container = document.getElementById('wizardMappingContainer');
                 container?.parentNode.insertBefore(warningEl, container);
             }
-            warningEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Colonnes en doublon : plusieurs colonnes ont le même type`;
+            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Colonnes en doublon : plusieurs colonnes ont le même type`;
             warningEl.style.display = 'flex';
         } else if (warningEl) {
             warningEl.style.display = 'none';

@@ -132,13 +132,13 @@ export class RefinementModal extends Component {
 
         // Reset Apply/Swap buttons to default state
         this.elements.applyBtn.disabled = true;
-        this.elements.applyBtn.innerHTML = '<i class="fas fa-save"></i> Appliquer et fermer';
+        this.elements.applyBtn.innerHTML = '<iconify-icon icon="solar:disk-bold"></iconify-icon> Appliquer et fermer';
         this.elements.applyBtn.classList.remove('btn-success');
         this.elements.applyBtn.classList.add('btn-primary');
 
         const swapBtn = document.getElementById('swapRefinementBtn');
         if (swapBtn) {
-            swapBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Accepter';
+            swapBtn.innerHTML = '<iconify-icon icon="solar:arrow-left-bold"></iconify-icon> Accepter';
             swapBtn.setAttribute('data-tooltip', 'Accepter cette suggestion et l\'éditer');
         }
 

@@ -513,7 +513,7 @@ export const SettingsModalListeners = {
                 };
                 const { tooltip } = Utils.getGenerationModeInfo(mockResult);
 
-                modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelName}`;
+                modelBadgeEl.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> ${modelName}`;
                 modelBadgeEl.setAttribute('data-tooltip', tooltip);
                 modelBadgeEl.removeAttribute('title');
                 modelBadgeEl.style.display = 'flex';
@@ -524,7 +524,7 @@ export const SettingsModalListeners = {
 
             // Restore Button Style (Regenerate)
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Régénérer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer';
                 DOM.refreshPreviewBtn.classList.add('btn-regenerate');
             }
 
@@ -541,7 +541,7 @@ export const SettingsModalListeners = {
             }
 
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
         }
@@ -615,7 +615,7 @@ export const SettingsModalListeners = {
             const newContent = `
                 <div class="preview-context-header" style="margin-bottom:15px;">
                     ${statusBadges ? `<div class="preview-statuses" style="margin-bottom:8px;">${statusBadges}</div>` : ''}
-                    ${instructions ? `<div class="preview-instructions-full"><i class="fas fa-info-circle"></i> ${instructions}</div>` : ''}
+                    ${instructions ? `<div class="preview-instructions-full"><iconify-icon icon="solar:info-circle-bold"></iconify-icon> ${instructions}</div>` : ''}
                 </div>
                 
                 <div class="preview-history-section">
@@ -691,7 +691,7 @@ export const SettingsModalListeners = {
 
         if (!studentId) {
             if (previewResult) {
-                previewResult.innerHTML = '<span style="color:var(--warning-color);"><i class="fas fa-exclamation-triangle"></i> Sélectionnez un profil dans la liste.</span>';
+                previewResult.innerHTML = '<span style="color:var(--warning-color);"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Sélectionnez un profil dans la liste.</span>';
             }
             return;
         }
@@ -700,7 +700,7 @@ export const SettingsModalListeners = {
         const studentResult = DEMO_STUDENT_PROFILES.find(r => r.id === studentId);
         if (!studentResult) {
             if (previewResult) {
-                previewResult.innerHTML = '<span style="color:var(--error-color);"><i class="fas fa-exclamation-circle"></i> Profil introuvable. Veuillez en sélectionner un autre.</span>';
+                previewResult.innerHTML = '<span style="color:var(--error-color);"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon> Profil introuvable. Veuillez en sélectionner un autre.</span>';
             }
             return;
         }
@@ -735,9 +735,9 @@ export const SettingsModalListeners = {
         if (!hasApiKey) {
             if (previewResult) {
                 if (isOllama) {
-                    previewResult.innerHTML = `< span style = "color:var(--error-color);" ><i class="fas fa-server"></i> <strong>Ollama non activé</strong><br><br>Activez Ollama dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu avec ce modèle local.</span>`;
+                    previewResult.innerHTML = `<span style="color:var(--error-color);"><iconify-icon icon="solar:server-square-bold"></iconify-icon> <strong>Ollama non activé</strong><br><br>Activez Ollama dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu avec ce modèle local.</span>`;
                 } else {
-                    previewResult.innerHTML = `<span style="color:var(--error-color);"><i class="fas fa-key"></i> <strong>Clé API manquante</strong><br><br>Configurez une clé API dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu.</span>`;
+                    previewResult.innerHTML = `<span style="color:var(--error-color);"><iconify-icon icon="solar:key-minimalistic-square-bold"></iconify-icon> <strong>Clé API manquante</strong><br><br>Configurez une clé API dans l'onglet <strong>Avancé</strong> pour utiliser le laboratoire d'aperçu.</span>`;
                 }
             }
             const notifMsg = isOllama
@@ -747,15 +747,15 @@ export const SettingsModalListeners = {
             SettingsUIManager.showPreviewRefreshHint();
             if (previewStatus) {
                 const statusMsg = isOllama
-                    ? '<i class="fas fa-server" style="margin-right: 6px;"></i> Activez Ollama puis réessayez.'
-                    : '<i class="fas fa-key" style="margin-right: 6px;"></i> Configurez une clé API puis réessayez.';
+                    ? '<iconify-icon icon="solar:server-square-bold" style="margin-right: 6px;"></iconify-icon> Activez Ollama puis réessayez.'
+                    : '<iconify-icon icon="solar:key-minimalistic-square-bold" style="margin-right: 6px;"></iconify-icon> Configurez une clé API puis réessayez.';
                 previewStatus.innerHTML = statusMsg;
             }
             return;
         }
 
         // Afficher le loading
-        DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+        DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Génération...';
         DOM.refreshPreviewBtn.disabled = true;
         if (previewResult) {
             previewResult.innerHTML = '<div class="loading-state-centered"><div class="loading-spinner"></div><span>Génération en cours...</span></div>';
@@ -829,7 +829,7 @@ export const SettingsModalListeners = {
                 // Get standardized tooltip
                 const { tooltip } = Utils.getGenerationModeInfo(mockResult);
 
-                modelBadgeEl.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> ${modelDisplayName}`;
+                modelBadgeEl.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> ${modelDisplayName}`;
                 modelBadgeEl.setAttribute('data-tooltip', tooltip);
                 modelBadgeEl.removeAttribute('title'); // Remove native tooltip
                 modelBadgeEl.style.display = 'flex';
@@ -862,7 +862,7 @@ export const SettingsModalListeners = {
             if (previewResult) {
                 previewResult.innerHTML = `
                     <div class="preview-error-message">
-                        <strong><i class="fas fa-exclamation-circle"></i> Échec de la génération</strong>
+                        <strong><iconify-icon icon="solar:danger-circle-bold"></iconify-icon> Échec de la génération</strong>
                         <p>${errorMessage}</p>
                         <small>${errorExplanation}</small>
                     </div>`;
@@ -873,15 +873,15 @@ export const SettingsModalListeners = {
             UI.showNotification(`Erreur de génération : ${errorMessage}`, 'error');
             SettingsUIManager.showPreviewRefreshHint();
             if (previewStatus) {
-                previewStatus.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right: 6px; color: var(--error-color);"></i> Échec. Corrigez le problème et réessayez.';
+                previewStatus.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="margin-right: 6px; color: var(--error-color);"></iconify-icon> Échec. Corrigez le problème et réessayez.';
             }
 
         } finally {
             if (generationSuccess) {
-                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Régénérer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer';
                 DOM.refreshPreviewBtn.classList.add('btn-regenerate');
             } else {
-                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
             DOM.refreshPreviewBtn.disabled = false;
@@ -1020,7 +1020,7 @@ export const SettingsModalListeners = {
             addClickListener(checkUpdatesBtn, async () => {
                 checkUpdatesBtn.disabled = true;
                 const originalContent = checkUpdatesBtn.innerHTML;
-                checkUpdatesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification...';
+                checkUpdatesBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Vérification...';
 
                 try {
                     if (window.checkForUpdates) {
@@ -1057,7 +1057,7 @@ export const SettingsModalListeners = {
         if (DOM.connectGoogleBtn) {
             DOM.connectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+                    DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Connexion...';
                     DOM.connectGoogleBtn.disabled = true;
 
                     // Dynamic import of SyncService
@@ -1077,7 +1077,7 @@ export const SettingsModalListeners = {
                         if (actionsBar) actionsBar.style.display = 'flex';
 
                         // Update UI to show connected state with disconnect button
-                        DOM.connectGoogleBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
+                        DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Connecté';
                         DOM.connectGoogleBtn.classList.add('btn-success');
                         DOM.connectGoogleBtn.style.display = 'none';
                         if (DOM.disconnectGoogleBtn) {
@@ -1104,7 +1104,7 @@ export const SettingsModalListeners = {
         if (cloudSaveBtn) {
             cloudSaveBtn.addEventListener('click', async () => {
                 try {
-                    cloudSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Sauvegarde...';
                     cloudSaveBtn.disabled = true;
 
                     const { SyncService } = await import('../../services/SyncService.js');
@@ -1122,7 +1122,7 @@ export const SettingsModalListeners = {
                     console.error('Cloud save error:', error);
                     UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
                 } finally {
-                    cloudSaveBtn.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Sauvegarder';
+                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:upload-minimalistic-bold"></iconify-icon> Sauvegarder';
                     cloudSaveBtn.disabled = false;
                 }
             });
@@ -1137,7 +1137,7 @@ export const SettingsModalListeners = {
                     'Charger les données depuis Google Drive ? Vos données locales seront remplacées.',
                     async () => {
                         try {
-                            cloudLoadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chargement...';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Chargement...';
                             cloudLoadBtn.disabled = true;
 
                             const { SyncService } = await import('../../services/SyncService.js');
@@ -1154,7 +1154,7 @@ export const SettingsModalListeners = {
                             console.error('Cloud load error:', error);
                             UI.showNotification('Erreur de chargement : ' + error.message, 'error');
                         } finally {
-                            cloudLoadBtn.innerHTML = '<i class="fas fa-cloud-arrow-down"></i> Charger';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Charger';
                             cloudLoadBtn.disabled = false;
                         }
                     }
@@ -1166,7 +1166,7 @@ export const SettingsModalListeners = {
         if (DOM.disconnectGoogleBtn) {
             DOM.disconnectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon>';
                     DOM.disconnectGoogleBtn.disabled = true;
 
                     const { SyncService } = await import('../../services/SyncService.js');
@@ -1183,7 +1183,7 @@ export const SettingsModalListeners = {
                     DOM.connectGoogleBtn.classList.remove('btn-success');
                     DOM.connectGoogleBtn.disabled = false;
                     DOM.connectGoogleBtn.style.display = 'inline-flex';
-                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-bold"></iconify-icon>';
                     DOM.disconnectGoogleBtn.disabled = false;
                     DOM.disconnectGoogleBtn.style.display = 'none';
 
@@ -1197,7 +1197,7 @@ export const SettingsModalListeners = {
                     UI.showNotification('Déconnecté de Google Drive.', 'info');
                 } catch (error) {
                     console.error('Google sync disconnection error:', error);
-                    DOM.disconnectGoogleBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-bold"></iconify-icon>';
                     DOM.disconnectGoogleBtn.disabled = false;
                     UI.showNotification('Erreur de déconnexion : ' + error.message, 'error');
                 }

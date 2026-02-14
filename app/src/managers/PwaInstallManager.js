@@ -376,7 +376,7 @@ export const PwaInstallManager = {
                             <div class="pwa-step-number">1</div>
                             <div class="pwa-step-content">
                                 <span class="pwa-step-text">Appuyez sur</span>
-                                <span class="pwa-step-icon"><i class="fas fa-arrow-up-from-bracket"></i></span>
+                                <span class="pwa-step-icon"><iconify-icon icon="solar:upload-square-bold"></iconify-icon></span>
                                 <span class="pwa-step-label">Partager</span>
                             </div>
                         </div>
@@ -384,7 +384,7 @@ export const PwaInstallManager = {
                             <div class="pwa-step-number">2</div>
                             <div class="pwa-step-content">
                                 <span class="pwa-step-text">Puis sur</span>
-                                <span class="pwa-step-icon"><i class="fas fa-plus-square"></i></span>
+                                <span class="pwa-step-icon"><iconify-icon icon="solar:add-square-bold"></iconify-icon></span>
                                 <span class="pwa-step-label">Sur l'écran d'accueil</span>
                             </div>
                         </div>

@@ -14,18 +14,18 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
  */
 const PREDEFINED_TAGS = [
     // POSITIF (vert) - 4 items
-    { id: 'participation+', label: 'Participe', icon: 'fa-hand', color: 'var(--success-color)', category: 'positive' },
-    { id: 'travail+', label: 'Travail sérieux', icon: 'fa-book-open', color: 'var(--success-color)', category: 'positive' },
-    { id: 'progres', label: 'Progrès', icon: 'fa-arrow-trend-up', color: 'var(--success-color)', category: 'positive' },
-    { id: 'attitude+', label: 'Attitude +', icon: 'fa-face-smile', color: 'var(--success-color)', category: 'positive' },
+    { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-bold', color: 'var(--success-color)', category: 'positive' },
+    { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-bold', color: 'var(--success-color)', category: 'positive' },
+    { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-bold', color: 'var(--success-color)', category: 'positive' },
+    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-bold', color: 'var(--success-color)', category: 'positive' },
     // NÉGATIF (rouge) - 4 items
-    { id: 'bavardage', label: 'Bavardage', icon: 'fa-comments', color: 'var(--error-color)', category: 'negative' },
-    { id: 'travail-', label: 'Travail insuffisant', icon: 'fa-book', color: 'var(--error-color)', category: 'negative' },
-    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'fa-bag-shopping', color: 'var(--error-color)', category: 'negative' },
-    { id: 'attitude-', label: 'Attitude -', icon: 'fa-face-frown', color: 'var(--error-color)', category: 'negative' },
+    { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-bold', color: 'var(--error-color)', category: 'negative' },
+    { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-bold', color: 'var(--error-color)', category: 'negative' },
+    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-bold', color: 'var(--error-color)', category: 'negative' },
+    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-bold', color: 'var(--error-color)', category: 'negative' },
     // NEUTRE (orange/gris) - 2 direct buttons
-    { id: 'difficulte', label: 'Difficulté', icon: 'fa-triangle-exclamation', color: 'var(--warning-color)', category: 'neutral' },
-    { id: 'remarque', label: 'Remarque', icon: 'fa-comment', color: 'var(--text-secondary)', category: 'neutral' }
+    { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-bold', color: 'var(--warning-color)', category: 'neutral' },
+    { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-bold', color: 'var(--text-secondary)', category: 'neutral' }
 ];
 
 /**
@@ -379,7 +379,7 @@ export const JournalManager = {
         if (entries.length === 0) {
             return `
                 <div class="journal-empty">
-                    <i class="fas fa-book-open"></i>
+                    <iconify-icon icon="solar:book-2-bold"></iconify-icon>
                     <span>Aucune observation</span>
                 </div>
             `;
@@ -411,7 +411,7 @@ export const JournalManager = {
                 // MODIFIED: Badge removed as per new design (detailed header)
                 // const countBadge = count >= threshold ? ` <small style="opacity:0.7">×${count}</small>` : '';
                 return `<span class="journal-tag" style="--tag-color: ${tag.color}">
-                    <i class="fas ${tag.icon}"></i> ${tag.label}
+                    <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
                 </span>`;
             }).join('');
 
@@ -421,7 +421,7 @@ export const JournalManager = {
 
             // New design: Tooltip is only on the small 'i' icon, not the whole row
             const infoIcon = isIsolated
-                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><i class="fas fa-info-circle"></i></div>`
+                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-bold"></iconify-icon></div>`
                 : '';
 
             return `
@@ -433,7 +433,7 @@ export const JournalManager = {
                     </div>
                     ${infoIcon}
                     <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                        <i class="fas fa-times"></i>
+                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -455,7 +455,7 @@ export const JournalManager = {
         const formattedDate = this.formatDate(dateStr);
 
         // Header Label
-        const labelIcon = isEdit ? 'fa-pen-to-square' : 'fa-pencil';
+        const labelIcon = isEdit ? 'solar:pen-new-square-bold' : 'solar:pen-bold';
         const labelText = isEdit ? 'Modifier' : 'Brouillon';
 
         // Pre-render selected tags if editing
@@ -468,10 +468,10 @@ export const JournalManager = {
                 // We just render the structure here to avoid layout shifts
                 return `
                     <span class="journal-selected-chip" style="--tag-color: ${tag.color}" data-tag-id="${tagId}">
-                        <i class="fas ${tag.icon}"></i>
+            <iconify-icon icon="${tag.icon}"></iconify-icon>
                         <span>${tag.label}</span>
                         <button class="journal-chip-remove" aria-label="Retirer">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                         </button>
                     </span>
                 `;
@@ -489,10 +489,10 @@ export const JournalManager = {
                     </div>
                     <div class="journal-draft-actions header-actions">
                         <button class="btn-icon-ghost" id="journalDraftCancelBtn" aria-label="Annuler">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                         </button>
                         <button class="btn-icon-primary" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer">
-                            <i class="fas fa-check"></i>
+                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -523,7 +523,7 @@ export const JournalManager = {
         const renderPillDropdown = (category, label, icon, tags, color) => {
             const optionsHTML = tags.map(tag => `
                 <button class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
-                    <i class="fas ${tag.icon}"></i>
+                    <iconify-icon icon="${tag.icon}"></iconify-icon>
                     <span>${tag.label}</span>
                 </button>
             `).join('');
@@ -531,9 +531,9 @@ export const JournalManager = {
             return `
                 <div class="journal-pill-dropdown" data-category="${category}">
                     <button class="journal-pill-btn" style="--pill-color: ${color}">
-                        <i class="fas ${icon}"></i>
+                        <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
-                        <i class="fas fa-chevron-down journal-pill-arrow"></i>
+                        <iconify-icon icon="solar:alt-arrow-down-bold" class="journal-pill-arrow"></iconify-icon>
                     </button>
                     <div class="journal-pill-menu">
                         ${optionsHTML}
@@ -545,14 +545,14 @@ export const JournalManager = {
         // Neutral tags are rendered as direct buttons (no dropdown)
         const neutralBtnsHTML = neutralTags.map(tag => `
             <button class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}">
-                <i class="fas ${tag.icon}"></i>
+                <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
             </button>
         `).join('');
 
         return `
-            ${renderPillDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, 'var(--success-color)')}
-            ${renderPillDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, 'var(--error-color)')}
+            ${renderPillDropdown('positive', 'Positif', 'solar:add-circle-bold', positiveTags, 'var(--success-color)')}
+            ${renderPillDropdown('negative', 'Négatif', 'solar:minus-circle-bold', negativeTags, 'var(--error-color)')}
             ${neutralBtnsHTML}
         `;
     },
@@ -568,7 +568,7 @@ export const JournalManager = {
         const renderDropdown = (category, label, icon, tags, color) => {
             const optionsHTML = tags.map(tag => `
                 <button class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
-                    <i class="fas ${tag.icon}"></i>
+                    <iconify-icon icon="${tag.icon}"></iconify-icon>
                     <span>${tag.label}</span>
                 </button>
             `).join('');
@@ -576,9 +576,9 @@ export const JournalManager = {
             return `
                 <div class="journal-tag-dropdown" data-category="${category}">
                     <button class="journal-dropdown-trigger" style="--dropdown-color: ${color}">
-                        <i class="fas ${icon}"></i>
+                        <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
-                        <i class="fas fa-chevron-down journal-dropdown-arrow"></i>
+                        <iconify-icon icon="solar:alt-arrow-down-bold" class="journal-dropdown-arrow"></iconify-icon>
                     </button>
                     <div class="journal-dropdown-menu">
                         ${optionsHTML}
@@ -588,8 +588,8 @@ export const JournalManager = {
         };
 
         return `
-            ${renderDropdown('positive', 'Positif', 'fa-plus-circle', positiveTags, 'var(--success-color)')}
-            ${renderDropdown('negative', 'Négatif', 'fa-minus-circle', negativeTags, 'var(--error-color)')}
+            ${renderDropdown('positive', 'Positif', 'solar:add-circle-bold', positiveTags, 'var(--success-color)')}
+            ${renderDropdown('negative', 'Négatif', 'solar:minus-circle-bold', negativeTags, 'var(--error-color)')}
         `;
     }
 };

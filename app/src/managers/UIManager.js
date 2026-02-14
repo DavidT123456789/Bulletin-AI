@@ -46,10 +46,10 @@ import { TooltipsUI } from './TooltipsManager.js';
 let App;
 
 const NOTIF_ICONS = {
-    success: '<i class="fas fa-check"></i>',
-    error: '<i class="fas fa-times"></i>',
-    warning: '<i class="fas fa-exclamation"></i>',
-    info: '<i class="fas fa-info"></i>'
+    success: '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>',
+    error: '<iconify-icon icon="solar:close-circle-bold"></iconify-icon>',
+    warning: '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>',
+    info: '<iconify-icon icon="solar:info-circle-bold"></iconify-icon>'
 };
 
 /**
@@ -396,7 +396,7 @@ export const UI = {
                     const generateBtn = document.getElementById('focusGenerateBtn');
                     if (generateBtn) {
                         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                        generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer ${periodLabel}`;
+                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${periodLabel}`;
                     }
 
                     // Update Previous Grades chips (force refresh for creation mode)
@@ -542,7 +542,7 @@ export const UI = {
                 `).join('');
 
                 formHtml += `<div class="period-input-group">
-                    <h3><i class="fas fa-calendar-check"></i> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
+                    <h3><iconify-icon icon="solar:calendar-mark-bold"></iconify-icon> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
                     <div class="form-row period-main-row">
                         <div class="form-group current-grade-group">
                             <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
@@ -561,7 +561,7 @@ export const UI = {
             } else {
                 formHtml += `<div class="period-input-group previous-period-group">
                     <h4>
-                        <i class="fas fa-history"></i> ${Utils.getPeriodLabel(p, true)} 
+                        <iconify-icon icon="solar:history-bold"></iconify-icon> ${Utils.getPeriodLabel(p, true)} 
                         <span class="detail-chip-small">(Période précédente)</span>
                     </h4>
                     <div class="form-row">
@@ -666,7 +666,7 @@ export const UI = {
         if (DOM.generateAppreciationBtn) DOM.generateAppreciationBtn.style.display = 'none';
         if (DOM.generateAndNextBtn) {
             DOM.generateAndNextBtn.style.display = 'inline-flex';
-            DOM.generateAndNextBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAndNextBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
             DOM.generateAndNextBtn.className = 'btn btn-ai';
             DOM.generateAndNextBtn.setAttribute('data-tooltip', 'Génère l\'appréciation et prépare le formulaire pour l\'élève suivant. Raccourci : Ctrl+Enter');
         }
@@ -676,7 +676,7 @@ export const UI = {
     switchToEditModeUI() {
         if (DOM.generateAppreciationBtn) {
             DOM.generateAppreciationBtn.style.display = 'inline-flex';
-            DOM.generateAppreciationBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAppreciationBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
             DOM.generateAppreciationBtn.className = 'btn btn-ai';
             DOM.generateAppreciationBtn.setAttribute('data-tooltip', 'Regénère l\'appréciation avec les données modifiées. Raccourci : Ctrl+Enter');
         }
@@ -910,12 +910,12 @@ export const UI = {
         }
 
         // Use consistent icon for all providers (model NAME provides differentiation)
-        const providerIcon = 'fas fa-microchip';
+        const providerIcon = 'solar:cpu-bold';
 
         // Update icon in DOM
         if (DOM.dashModelLabel) {
-            const iconEl = DOM.dashModelLabel.querySelector('i');
-            if (iconEl) iconEl.className = providerIcon;
+            const iconEl = DOM.dashModelLabel.querySelector('iconify-icon');
+            if (iconEl) iconEl.setAttribute('icon', providerIcon);
         }
 
         if (DOM.dashModelLabel) {
@@ -1277,7 +1277,7 @@ export const UI = {
     updateCopyAllButton() {
         const total = appState.generatedResults.length, filtered = appState.filteredResults.length;
         if (DOM.copyAllBtn) {
-            DOM.copyAllBtn.innerHTML = `<i class="fas fa-copy"></i> Copier les visibles`;
+            DOM.copyAllBtn.innerHTML = `<iconify-icon icon="solar:copy-bold"></iconify-icon> Copier les visibles`;
             DOM.copyAllBtn.disabled = filtered === 0;
         }
     },
@@ -1336,7 +1336,7 @@ export const UI = {
             const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
 
             // Show overlay banner
-            DOM.activeFilterInfo.innerHTML = `<p><i class="fas fa-filter"></i> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><i class="fas fa-times"></i> Retirer</button>`;
+            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-bold"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="solar:close-circle-bold"></iconify-icon> Retirer</button>`;
             DOM.activeFilterInfo.classList.add('show');
 
             // Also add close button on the active element
@@ -1344,7 +1344,7 @@ export const UI = {
             if (activeElement) {
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'filter-close-btn';
-                closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                closeBtn.innerHTML = '<iconify-icon icon="solar:close-circle-bold"></iconify-icon>';
                 closeBtn.setAttribute('aria-label', 'Retirer le filtre');
                 activeElement.style.position = 'relative';
                 activeElement.appendChild(closeBtn);
@@ -1369,7 +1369,7 @@ export const UI = {
             const isCopied = buttonEl.closest('.appreciation-result')?.querySelector('.copy-btn.was-copied');
             if (!isCopied) {
                 buttonEl.classList.remove('copied');
-                buttonEl.innerHTML = '<i class="fas fa-copy"></i>';
+                buttonEl.innerHTML = '<iconify-icon icon="solar:copy-bold"></iconify-icon>';
             }
         }
     },
@@ -1452,7 +1452,7 @@ export const UI = {
         if (!card) return;
         const badge = card.querySelector('.generating-badge');
         if (badge) {
-            badge.innerHTML = '<i class="fas fa-spinner"></i> Génération...';
+            badge.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Génération...';
             badge.classList.remove('pending');
             badge.classList.add('active');
         }

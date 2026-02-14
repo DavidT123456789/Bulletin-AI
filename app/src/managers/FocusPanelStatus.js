@@ -307,19 +307,19 @@ export const FocusPanelStatus = {
 
         switch (state) {
             case 'pending':
-                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon>';
                 badge.classList.add('visible', 'pending');
                 break;
             case 'dirty':
-                badge.innerHTML = '<i class="fas fa-sync-alt"></i><span class="badge-text">Mettre à jour</span>';
+                badge.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon><span class="badge-text">Mettre à jour</span>';
                 badge.classList.add('visible', 'modified');
                 break;
             case 'empty':
-                badge.innerHTML = '<i class="fas fa-clock"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:clock-circle-bold"></iconify-icon>';
                 badge.classList.add('visible', 'empty', 'icon-only');
                 break;
             case 'saved':
-                badge.innerHTML = '<i class="fas fa-check"></i><span class="badge-text">Enregistré</span>';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon><span class="badge-text">Enregistré</span>';
                 badge.classList.add('visible', 'saved');
                 setTimeout(() => {
                     if (badge.classList.contains('saved')) {
@@ -328,16 +328,16 @@ export const FocusPanelStatus = {
                 }, 2000);
                 break;
             case 'dictating':
-                badge.innerHTML = '<i class="fas fa-microphone"></i><span class="badge-text">Dictée...</span>';
+                badge.innerHTML = '<iconify-icon icon="solar:microphone-bold"></iconify-icon><span class="badge-text">Dictée...</span>';
                 badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':
-                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span class="badge-text">Erreur</span>';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span class="badge-text">Erreur</span>';
                 badge.classList.add('visible', 'error');
                 break;
             case 'generated':
                 // Success state after generation - show brief confirmation then hide
-                badge.innerHTML = '<i class="fas fa-check"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
                 badge.classList.add('visible', 'generated', 'icon-only');
                 setTimeout(() => {
                     if (badge.classList.contains('generated')) {
@@ -504,7 +504,7 @@ export const FocusPanelStatus = {
                 sourceIndicator.setAttribute('data-tooltip', tooltip || 'Généré par IA');
                 break;
             case 'manual':
-                sourceIndicator.innerHTML = '<i class="fas fa-pen"></i>';
+                sourceIndicator.innerHTML = '<iconify-icon icon="solar:pen-bold"></iconify-icon>';
                 sourceIndicator.style.display = 'inline-flex';
                 sourceIndicator.classList.add('source-manual');
                 sourceIndicator.setAttribute('data-tooltip', 'Édité manuellement');
@@ -593,16 +593,16 @@ export const FocusPanelStatus = {
 
         switch (state) {
             case 'pending':
-                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon>';
                 break;
             case 'done':
-                badge.innerHTML = '<i class="fas fa-check"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
                 break;
             case 'error':
-                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>';
                 break;
             case 'saved':
-                badge.innerHTML = '<i class="fas fa-check"></i> Enregistré';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Enregistré';
                 setTimeout(() => {
                     if (badge.classList.contains('saved')) {
                         badge.classList.remove('visible', 'saved');
@@ -610,7 +610,7 @@ export const FocusPanelStatus = {
                 }, 2000);
                 break;
             case 'modified':
-                badge.innerHTML = '<i class="fas fa-sync-alt"></i> Données modifiées';
+                badge.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Données modifiées';
                 badge.setAttribute('data-tooltip', 'Le contexte ou la note ont changé<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer sur Générer pour mettre à jour</i>');
                 badge.classList.add('tooltip');
                 UI.initTooltips();

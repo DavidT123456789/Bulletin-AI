@@ -326,7 +326,7 @@ export const FocusPanelJournal = {
                     const belowClass = isBelow ? 'below-threshold' : '';
                     return `
                     <span class="journal-tag ${belowClass}" style="--tag-color: ${item.color}; margin-right: 0; cursor: help;" data-tooltip="${item.label} : ${item.count}">
-                        <i class="fas ${item.icon}"></i> ${item.count}
+                        <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
 
@@ -433,10 +433,10 @@ export const FocusPanelJournal = {
             chip.style.setProperty('--tag-color', tag.color);
             chip.dataset.tagId = tagId;
             chip.innerHTML = `
-                <i class="fas ${tag.icon}"></i>
+                <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
                 <button class="journal-chip-remove" aria-label="Retirer">
-                    <i class="fas fa-times"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             `;
 
@@ -528,12 +528,12 @@ export const FocusPanelJournal = {
                             const tag = JournalManager.getTag(tagId);
                             if (!tag) return '';
                             return `<span class="journal-tag" style="--tag-color: ${tag.color}">
-                                <i class="fas ${tag.icon}"></i> ${tag.label}
+                            <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
                             </span>`;
                         }).join('');
 
                         const infoIcon = isIsolated
-                            ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><i class="fas fa-info-circle"></i></div>`
+                            ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-bold"></iconify-icon></div>`
                             : '';
 
                         const entryHTML = `
@@ -545,7 +545,7 @@ export const FocusPanelJournal = {
                                 </div>
                                 ${infoIcon}
                                 <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                                    <i class="fas fa-times"></i>
+                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
                                 </button>
                             </div>
                         `;
@@ -591,7 +591,7 @@ export const FocusPanelJournal = {
                 // Reset header title
                 const headerLabel = document.querySelector('.journal-draft-label');
                 if (headerLabel) {
-                    headerLabel.innerHTML = `<i class="fas fa-pencil"></i> Brouillon`;
+                    headerLabel.innerHTML = `<iconify-icon icon="solar:pen-bold"></iconify-icon> Brouillon`;
                 }
 
                 if (noteInput) noteInput.value = '';

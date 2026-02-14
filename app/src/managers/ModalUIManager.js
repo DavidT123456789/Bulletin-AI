@@ -227,7 +227,7 @@ export const ModalUI = {
                 <div class="modal-content modal-content-confirm modal-compact">
                     <div class="modal-compact-body">
                         <div class="modal-icon-wrapper">
-                             <i class="fas fa-question-circle" style="color: var(--warning-color); font-size: 24px;"></i>
+                             <iconify-icon icon="solar:question-circle-bold" style="color: var(--warning-color); font-size: 24px;"></iconify-icon>
                         </div>
                         <div class="modal-text-wrapper">
                             <p>${message}</p>
@@ -242,11 +242,11 @@ export const ModalUI = {
                 <div class="modal-content modal-content-confirm">
                     <div class="modal-header">
                         <h3 class="modal-title">
-                            <i class="fas fa-question-circle modal-title-icon" style="color: var(--warning-color);"></i>
+                            <iconify-icon icon="solar:question-circle-bold" class="modal-title-icon" style="color: var(--warning-color);"></iconify-icon>
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">
@@ -346,7 +346,7 @@ export const ModalUI = {
                 confirmText = 'Confirmer',
                 cancelText = 'Annuler',
                 isDanger = true,
-                iconClass = 'fa-tasks'
+                iconClass = 'solar:checklist-minimalistic-bold'
             } = options;
 
             const modalId = 'customChoicesModal';
@@ -370,7 +370,7 @@ export const ModalUI = {
                         <div class="modal-choice-checkbox-wrapper">
                             <input type="checkbox" id="choice_${choice.id}" ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                             <div class="custom-checkbox-display">
-                                <i class="fas fa-check"></i>
+                                <iconify-icon icon="solar:check-bold"></iconify-icon>
                             </div>
                         </div>
                         <div class="modal-choice-text">
@@ -386,12 +386,12 @@ export const ModalUI = {
                     <div class="modal-header">
                         <h3 class="modal-title">
                             <div class="modal-title-icon" style="color: ${iconColorVar}; background: rgba(var(--${isDanger ? 'warning' : 'primary'}-rgb), 0.1);">
-                                <i class="fas ${iconClass}"></i>
+                                <iconify-icon icon="${iconClass}"></iconify-icon>
                             </div>
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">

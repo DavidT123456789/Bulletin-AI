@@ -190,7 +190,8 @@
     flex-shrink: 0;
 }
 
-.close-button i {
+.close-button i,
+.close-button iconify-icon {
     font-size: var(--close-btn-icon-size);
     line-height: 1;
 }
@@ -396,7 +397,8 @@
     margin-top: 0;
 }
 
-#helpModal .details-accordion summary .fas {
+#helpModal .details-accordion summary .fas,
+#helpModal .details-accordion summary iconify-icon {
     width: 20px;
     text-align: center;
 }
@@ -761,7 +763,7 @@
 
 .api-status-item.warning .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
-    color: #d97706;
+    color: var(--warning-hover);
     /* Garder foncé pour contraste sur fond clair, mais idéalement var(--warning-dark) */
 }
 
@@ -776,7 +778,7 @@
 }
 
 .api-status-item.pending:hover {
-    background: rgba(245, 158, 11, 0.08);
+    background: rgba(var(--warning-rgb), 0.08);
 }
 
 

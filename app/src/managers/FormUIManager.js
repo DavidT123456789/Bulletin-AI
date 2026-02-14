@@ -87,9 +87,9 @@ export const FormUI = {
 
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            let headerText = `<i class="fas fa-sliders-h" aria-hidden="true"></i> Style de Rédaction`;
+            let headerText = `<iconify-icon icon="solar:tuning-2-bold-duotone"></iconify-icon> Style de Rédaction`;
             if (isGenericMode) {
-                headerText += ` <span class="generic-lock-icon tooltip" data-tooltip="Les réglages sont verrouillés sur les valeurs par défaut lorsque la personnalisation est désactivée."><i class="fas fa-lock"></i></span>`;
+                headerText += ` <span class="generic-lock-icon tooltip" data-tooltip="Les réglages sont verrouillés sur les valeurs par défaut lorsque la personnalisation est désactivée."><iconify-icon icon="solar:lock-keyhole-bold"></iconify-icon></span>`;
             }
             iaStyleHeader.innerHTML = headerText;
         }
@@ -214,7 +214,7 @@ export const FormUI = {
                 if (status === 'valid' || status === 'quota') {
                     btn.classList.add('btn-validated');
                     btn.classList.remove('btn-needs-validation');
-                    btn.innerHTML = '<i class="fas fa-check"></i> OK';
+                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
                 } else {
                     btn.classList.remove('btn-validated');
                     // btn-needs-validation is handled by input listener, 

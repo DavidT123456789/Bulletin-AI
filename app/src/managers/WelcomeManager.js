@@ -87,7 +87,7 @@ export const WelcomeManager = {
                 validateBtn.classList.remove('ready', 'validated');
 
                 if (existingKey) {
-                    validateBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    validateBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
                     validateBtn.classList.add('validated');
                     validateBtn.disabled = true;
                     DOM.welcomeNextBtn.disabled = false;
@@ -110,17 +110,17 @@ export const WelcomeManager = {
             mistral: {
                 placeholder: "Collez votre clé API Mistral ici...",
                 linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<i class="fas fa-cat"></i>'
+                linkIcon: '<iconify-icon icon="solar:cat-bold"></iconify-icon>'
             },
             google: {
                 placeholder: "Collez votre clé API Google ici (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
-                linkIcon: '<i class="fab fa-google"></i>'
+                linkIcon: '<iconify-icon icon="logos:google-icon"></iconify-icon>'
             },
             openrouter: {
                 placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
-                linkIcon: '<i class="fas fa-bolt"></i>'
+                linkIcon: '<iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon>'
             }
         };
 
@@ -321,7 +321,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -334,7 +334,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingGoogleKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -347,7 +347,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<i class="fas fa-check"></i> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -426,7 +426,7 @@ export const WelcomeManager = {
             AppreciationsManager.loadSampleData();
             DOM.welcomeNextStepInfo.style.display = 'block';
             DOM.welcomeLoadSampleBtn.disabled = true;
-            DOM.welcomeLoadSampleBtn.innerHTML = '<i class="fas fa-check"></i> Données chargées !';
+            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Données chargées !';
             // User needs to click Terminer to finish
             UI.showNotification('Données exemple prêtes ! Cliquez sur "Terminer" pour continuer.', 'success');
         });

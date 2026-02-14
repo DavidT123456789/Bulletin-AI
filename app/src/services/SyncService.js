@@ -183,25 +183,26 @@ export const SyncService = {
             // Labels and icons map
             const config = {
                 connected: {
-                    icon: 'fa-cloud-arrow-up',
+                    icon: 'solar:cloud-check-bold',
                     label: 'Enregistrer (Cloud)',
                     class: 'status-connected',
                     disabled: false
                 },
                 expired: {
-                    icon: 'fa-cloud-arrow-up',
+                    icon: 'solar:cloud-warning-bold',
                     label: 'Enregistrer (Cloud)',
                     class: 'status-expired',
                     disabled: true
                 },
                 syncing: {
-                    icon: 'fa-spinner fa-spin',
+                    icon: 'solar:spinner-bold-duotone',
                     label: 'Enregistrement...',
                     class: 'status-syncing',
-                    disabled: false
+                    disabled: false,
+                    spin: true
                 },
                 local: {
-                    icon: 'fa-cloud-arrow-up',
+                    icon: 'solar:cloud-upload-bold',
                     label: 'Enregistrer (Cloud)',
                     class: '',
                     disabled: false
@@ -221,9 +222,14 @@ export const SyncService = {
             if (loadBtn) loadBtn.style.display = 'grid';
 
             // Update Icon
-            const iconEl = saveBtn.querySelector('i');
+            const iconEl = saveBtn.querySelector('iconify-icon');
             if (iconEl) {
-                iconEl.className = `fas ${currentConfig.icon}`;
+                iconEl.setAttribute('icon', currentConfig.icon);
+                if (currentConfig.spin) {
+                    iconEl.classList.add('rotate-icon');
+                } else {
+                    iconEl.classList.remove('rotate-icon');
+                }
                 iconEl.style.color = '';
             }
 
@@ -358,7 +364,7 @@ export const SyncService = {
                     statusEl.classList.add('connected');
                 }
                 if (connectBtn) {
-                    connectBtn.innerHTML = '<i class="fas fa-check"></i> Connecté';
+                    connectBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Connecté';
                     connectBtn.classList.add('btn-success');
                     connectBtn.style.display = 'none';
                 }

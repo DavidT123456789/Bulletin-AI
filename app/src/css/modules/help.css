@@ -180,15 +180,16 @@
 .help-btn-badge.rainbow-border {
     border-color: transparent;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6);
+        linear-gradient(135deg, #06b6d4, #ec4899, #8b5cf6);
     background-origin: border-box;
     background-clip: padding-box, border-box;
     position: relative;
 }
 
 .help-btn-badge.rainbow-border i {
-    background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6);
+    background: linear-gradient(135deg, #06b6d4, #ec4899, #8b5cf6);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

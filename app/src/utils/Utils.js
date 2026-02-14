@@ -530,10 +530,11 @@ export const Utils = {
     getSkeletonHTML(compact = false, label = 'Génération...', pending = false) {
         const compactClass = compact ? ' compact' : '';
         const badgeClass = pending ? 'pending' : 'active';
-        const iconClass = pending ? 'fa-clock' : 'fa-spinner';
+        const iconName = pending ? 'solar:clock-circle-bold' : 'solar:spinner-bold-duotone';
+        const spinClass = pending ? '' : 'rotate-icon';
 
         // HTML minifié pour éviter les nœuds de texte (whitespace) qui causent des espacements
-        return `<div class="appreciation-skeleton${compactClass}"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><span class="generating-badge ${badgeClass}"><i class="fas ${iconClass}"></i> ${label}</span></div>`;
+        return `<div class="appreciation-skeleton${compactClass}"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><span class="generating-badge ${badgeClass}"><iconify-icon icon="${iconName}" class="${spinClass}"></iconify-icon> ${label}</span></div>`;
     },
 
     /**

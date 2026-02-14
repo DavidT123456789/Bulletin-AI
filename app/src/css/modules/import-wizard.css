@@ -75,8 +75,8 @@
 }
 
 .guide-header i {
-    color: #fbbf24;
-    /* Amber-400 - Jaune doré lumineux (maquette) */
+    color: var(--primary-color);
+    /* Unified Blue/Purple Theme */
     font-size: 0.9rem;
 }
 

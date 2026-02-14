@@ -179,12 +179,12 @@ export const FocusPanelAnalysis = {
             // Régénérer mode: outline style + sync icon
             generateBtn.classList.remove('btn-ai');
             generateBtn.classList.add('btn-ai-outline');
-            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
         } else {
             // Générer mode: standard AI button + sparkles icon
             generateBtn.classList.remove('btn-ai-outline');
             generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer`;
         }
     },
 
@@ -198,15 +198,15 @@ export const FocusPanelAnalysis = {
         const suggestionsContent = document.getElementById('analysisSuggestionsContent');
 
         const placeholderForces = `<div class="analysis-placeholder">
-            <i class="fas fa-lightbulb"></i>
+            <iconify-icon icon="solar:lightbulb-bolt-bold"></iconify-icon>
             <span>Cliquez sur "Générer l'analyse" pour découvrir les points forts</span>
         </div>`;
         const placeholderWeaknesses = `<div class="analysis-placeholder">
-            <i class="fas fa-lightbulb"></i>
+            <iconify-icon icon="solar:lightbulb-bolt-bold"></iconify-icon>
             <span>Cliquez sur "Générer l'analyse" pour identifier les faiblesses</span>
         </div>`;
         const placeholderSuggestions = `<div class="analysis-placeholder">
-            <i class="fas fa-lightbulb"></i>
+            <iconify-icon icon="solar:lightbulb-bolt-bold"></iconify-icon>
             <span>Cliquez sur "Générer l'analyse" pour des conseils personnalisés</span>
         </div>`;
 
@@ -273,19 +273,19 @@ export const FocusPanelAnalysis = {
         switch (state) {
             case 'loading':
                 badge.classList.add('loading');
-                badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon>';
                 break;
             case 'done':
                 badge.classList.add('done');
-                badge.innerHTML = '<i class="fas fa-check"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
                 break;
             case 'error':
                 badge.classList.add('error');
-                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>';
                 break;
             case 'modified':
                 badge.classList.add('modified');
-                badge.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                badge.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon>';
                 badge.setAttribute('title', 'L\'appréciation a changé. Régénérez l\'analyse.');
                 break;
         }
@@ -565,8 +565,8 @@ export const FocusPanelAnalysis = {
      * @private
      */
     _showError(message) {
-        const errorHtml = `<span style="color:var(--error-color); font-size: 12px;">
-            <i class="fas fa-exclamation-circle"></i> ${message.substring(0, 60)}...
+        const errorHtml = `<span style="color:var(--error-color); font-size: 12px; display: flex; align-items: center; gap: 4px;">
+            <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${message.substring(0, 60)}...
         </span>`;
 
         const forcesContent = document.getElementById('analysisForcesContent');

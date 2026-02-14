@@ -897,16 +897,16 @@ export const FocusPanelManager = {
             // Visual feedback on Copy button
             const copyBtn = document.getElementById('focusCopyBtn');
             if (copyBtn) {
-                const icon = copyBtn.querySelector('i');
-                const originalClass = icon?.className;
+                const icon = copyBtn.querySelector('iconify-icon');
+                const originalIcon = icon?.getAttribute('icon');
 
                 // Change to check icon and add 'copied' class
-                if (icon) icon.className = 'fas fa-check';
+                if (icon) icon.setAttribute('icon', 'solar:check-circle-bold');
                 copyBtn.classList.add('copied');
 
                 // Reset after delay
                 setTimeout(() => {
-                    if (icon && originalClass) icon.className = originalClass;
+                    if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
                     copyBtn.classList.remove('copied');
                 }, 1500);
             }
@@ -1199,19 +1199,19 @@ export const FocusPanelManager = {
         if (!hasAppreciation) {
             // STATE 1: No appreciation yet → Bold primary style (action needed)
             generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
         } else if (isDirty) {
             // STATE 2: Data modified since generation → Warning style (action recommended)
             generateBtn.classList.add('btn-ai', 'btn-regenerate-warning');
-            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
         } else if (isRegenerate) {
             // STATE 3: Already generated and up to date → Neutral style (optional)
             generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Régénérer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
         } else {
             // Fallback: Has appreciation but not AI-generated (manual) → Neutral
             generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
         }
     },
 
@@ -1240,16 +1240,16 @@ export const FocusPanelManager = {
 
             // Visual feedback on button
             if (copyBtn) {
-                const icon = copyBtn.querySelector('i');
-                const originalClass = icon?.className;
+                const icon = copyBtn.querySelector('iconify-icon');
+                const originalIcon = icon?.getAttribute('icon');
 
                 // Change to check icon and add 'copied' class
-                if (icon) icon.className = 'fas fa-check';
+                if (icon) icon.setAttribute('icon', 'solar:check-circle-bold');
                 copyBtn.classList.add('copied');
 
                 // Reset after delay
                 setTimeout(() => {
-                    if (icon && originalClass) icon.className = originalClass;
+                    if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
                     copyBtn.classList.remove('copied');
                 }, 1500);
             }
@@ -1291,7 +1291,7 @@ export const FocusPanelManager = {
         // === 1. HEADER: Student Name ===
         const nameEl = document.getElementById('focusStudentName');
         if (nameEl) {
-            nameEl.innerHTML = `${result.prenom} ${result.nom} <i class="fas fa-pen focus-name-edit-icon"></i>`;
+            nameEl.innerHTML = `${result.prenom} ${result.nom} <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>`;
         }
 
         // === 2. HEADER: Status Badges ===

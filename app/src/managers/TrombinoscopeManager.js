@@ -535,7 +535,7 @@ export const TrombinoscopeManager = {
         // Display info message in footer
         const footerInfo = document.getElementById('trombiImageInfo');
         if (footerInfo) {
-            footerInfo.innerHTML = `<i class="fas fa-check-circle"></i> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
+            footerInfo.innerHTML = `<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
         }
     },
 
@@ -612,7 +612,7 @@ export const TrombinoscopeManager = {
             <div class="grid-control-panel">
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><i class="fas fa-columns"></i> Colonnes</label>
+                        <label><iconify-icon icon="solar:gallery-vertical-bold"></iconify-icon> Colonnes</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="colsSlider" 
@@ -622,7 +622,7 @@ export const TrombinoscopeManager = {
                         </div>
                     </div>
                     <div class="control-row">
-                        <label><i class="fas fa-bars"></i> Lignes</label>
+                        <label><iconify-icon icon="solar:gallery-horizontal-bold"></iconify-icon> Lignes</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="rowsSlider" 
@@ -634,7 +634,7 @@ export const TrombinoscopeManager = {
                 </div>
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><i class="fas fa-arrows-left-right-to-line"></i> Écart H</label>
+                        <label><iconify-icon icon="solar:sort-horizontal-bold"></iconify-icon> Écart H</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="gapHSlider" 
@@ -644,7 +644,7 @@ export const TrombinoscopeManager = {
                         </div>
                     </div>
                     <div class="control-row">
-                        <label><i class="fas fa-arrows-up-down-left-right"></i> Écart V</label>
+                        <label><iconify-icon icon="solar:sort-vertical-bold"></iconify-icon> Écart V</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="gapVSlider" 
@@ -656,7 +656,7 @@ export const TrombinoscopeManager = {
                 </div>
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><i class="fas fa-expand-alt"></i> Taille</label>
+                        <label><iconify-icon icon="solar:maximize-square-3-bold"></iconify-icon> Taille</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="sizeSlider" 
@@ -667,7 +667,7 @@ export const TrombinoscopeManager = {
                     </div>
                     <div class="control-row">
                         <label class="sync-toggle-label">
-                            <span class="toggle-text"><i class="fas fa-object-group"></i> Groupé</span>
+                            <span class="toggle-text"><iconify-icon icon="solar:layers-bold-duotone"></iconify-icon> Groupé</span>
                             <span class="toggle-wrapper">
                                 <input type="checkbox" id="groupedDragToggle" class="sync-toggle-checkbox" checked>
                                 <span class="sync-toggle-switch"></span>
@@ -1038,7 +1038,7 @@ export const TrombinoscopeManager = {
                         height: ${deleteSize}px;
                         font-size: ${deleteFontSize}px;
                     ">
-                        <i class="fas fa-times"></i>
+                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -1287,7 +1287,7 @@ export const TrombinoscopeManager = {
 
         const sliderHtml = `
             <div class="size-slider-container">
-                <label><i class="fas fa-expand-alt"></i> Taille</label>
+                <label><iconify-icon icon="solar:maximize-square-3-bold"></iconify-icon> Taille</label>
                 <input type="range" class="size-slider" 
                        min="${minR}" max="${maxR}" value="${currentR}" step="1">
             </div>
@@ -1315,7 +1315,7 @@ export const TrombinoscopeManager = {
         if (this._zones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-hand-pointer"></i>
+                    <iconify-icon icon="solar:cursor-bold"></iconify-icon>
                     <p>Cliquez sur l'image pour ajouter des zones</p>
                 </div>
             `;
@@ -1527,7 +1527,7 @@ export const TrombinoscopeManager = {
         if (assignedZones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-exclamation-circle"></i>
+                    <iconify-icon icon="solar:danger-circle-bold"></iconify-icon>
                     <p>Aucune photo assignée. Retournez à l'étape précédente.</p>
                 </div>
             `;

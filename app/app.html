@@ -35,7 +35,7 @@
     <link rel="icon" type="image/svg+xml" href="assets/icon-dark-mode.svg" media="(prefers-color-scheme: dark)">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
     <link rel="stylesheet" href="src/css/main.css">
@@ -84,19 +84,19 @@
                 <div class="class-selector-wrapper">
                     <div id="headerClassChip" class="header-context-chip class-chip tooltip" role="button" tabindex="0"
                         data-tooltip="Changer de classe">
-                        <span class="icon"><i class="fas fa-users"></i></span>
+                        <span class="icon"><iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon></span>
                         <span id="headerClassName">Ma Classe</span>
                         <span id="headerStudentCount" class="student-count-badge">0</span>
-                        <i class="fas fa-chevron-down class-chevron"></i>
+                        <iconify-icon icon="solar:alt-arrow-down-bold" class="class-chevron"></iconify-icon>
                     </div>
                     <div id="classDropdown" class="class-dropdown" style="display: none;">
                         <div class="class-dropdown-header">
                             <button id="manageClassesBtn" class="class-dropdown-title-btn" title="Gérer les classes">
-                                <i class="fas fa-cog"></i>
+                                <iconify-icon icon="solar:settings-bold"></iconify-icon>
                                 <span>Mes Classes</span>
                             </button>
                             <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe">
-                                <i class="fas fa-plus"></i>
+                                <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
                             </button>
                         </div>
                         <div id="classDropdownList" class="class-dropdown-list">
@@ -116,25 +116,25 @@
                         <!-- Model indicator (subtle, clickable) -->
                         <button class="dash-model-label tooltip" id="dashModelLabel"
                             data-tooltip="Changer de modèle IA">
-                            <i class="fas fa-microchip"></i>
+                            <iconify-icon icon="solar:cpu-bold"></iconify-icon>
                             <span id="dashModelName">Gemini</span>
                         </button>
                         <div class="dash-divider"></div>
                         <!-- Validated count -->
                         <button class="dash-badge dash-validated" id="dashValidated"
                             data-tooltip="Appréciations validées">
-                            <i class="fas fa-check"></i>
+                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                             <span class="dash-count" id="dashValidatedCount">0</span>
                         </button>
                         <!-- Error count (hidden if 0) -->
                         <button class="dash-badge dash-errors" id="dashErrors" data-tooltip="Erreurs de génération">
-                            <i class="fas fa-exclamation-triangle"></i>
+                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                             <span class="dash-count" id="dashErrorCount">0</span>
                         </button>
                         <!-- Pending count -->
                         <button class="dash-badge dash-pending" id="dashPending"
                             data-tooltip="En attente de génération">
-                            <i class="fas fa-hourglass-half"></i>
+                            <iconify-icon icon="solar:hourglass-line-bold"></iconify-icon>
                             <span class="dash-count" id="dashPendingCount">0</span>
                         </button>
                         <!-- Generating state overlay -->
@@ -144,7 +144,7 @@
                             </div>
                             <span class="dash-progress-text" id="dashProgressText">0/0</span>
                             <button class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler">
-                                <i class="fas fa-xmark"></i>
+                                <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                             </button>
                         </div>
                     </div>
@@ -153,7 +153,7 @@
 
                         <div class="dropdown-wrapper">
                             <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu">
-                                <i class="fas fa-ellipsis-vertical"></i>
+                                <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
                             </button>
 
                             <div id="headerMenuDropdown" class="header-dropdown-menu">
@@ -161,55 +161,56 @@
                                     <div class="theme-segmented-control" id="themeSegmentedControl" data-active="light">
                                         <button class="theme-segment" data-value="light" aria-label="Mode clair"
                                             title="Mode clair">
-                                            <i class="fas fa-sun"></i>
+                                            <iconify-icon icon="solar:sun-bold"></iconify-icon>
                                         </button>
                                         <button class="theme-segment" data-value="system" aria-label="Mode système"
                                             title="Mode système">
-                                            <i class="fas fa-desktop"></i>
+                                            <iconify-icon icon="solar:monitor-bold"></iconify-icon>
                                         </button>
                                         <button class="theme-segment" data-value="dark" aria-label="Mode sombre"
                                             title="Mode sombre">
-                                            <i class="fas fa-moon"></i>
+                                            <iconify-icon icon="solar:moon-bold"></iconify-icon>
                                         </button>
                                         <div class="theme-glider"></div>
                                     </div>
                                 </div>
                                 <button id="updateMenuItem" class="menu-item update-item" style="display: none;">
-                                    <i class="fas fa-gift" style="color: var(--primary-color);"></i>
+                                    <iconify-icon icon="solar:gift-bold"
+                                        style="color: var(--primary-color);"></iconify-icon>
                                     <span style="color: var(--primary-color); font-weight: 600;">Mise à jour
                                         disponible</span>
                                 </button>
                                 <div class="menu-separator"></div>
                                 <button id="personalizationBtn" class="menu-item">
-                                    <i class="fas fa-wand-magic-sparkles"></i> Personnalisation
+                                    <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Personnalisation
                                 </button>
                                 <button id="settingsButton" class="menu-item">
-                                    <i class="fas fa-cog"></i> Paramètres
+                                    <iconify-icon icon="solar:settings-bold"></iconify-icon> Paramètres
                                 </button>
                                 <button id="helpButton" class="menu-item">
-                                    <i class="fas fa-circle-question"></i> Aide
+                                    <iconify-icon icon="solar:question-circle-bold"></iconify-icon> Aide
                                 </button>
                                 <div class="menu-separator"></div>
                                 <button id="cloudReconnectBtn" class="menu-item cloud-reconnect-item"
                                     style="display: none;">
-                                    <i class="fas fa-plug"></i>
+                                    <iconify-icon icon="solar:plug-bold"></iconify-icon>
                                     <span>Reconnecter Google Drive</span>
                                 </button>
                                 <button id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item"
                                     style="display: none;">
-                                    <i class="fas fa-cloud-arrow-up"></i>
+                                    <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
                                     <span class="cloud-save-label">Enregistrer (Cloud)</span>
                                     <span class="cloud-save-time" id="cloudSaveTimeHint"></span>
                                 </button>
                                 <button id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item"
                                     style="display: none;">
-                                    <i class="fas fa-cloud-arrow-down"></i>
+                                    <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
                                     <span class="cloud-save-label">Récupérer (Cloud)</span>
                                     <span class="cloud-save-time" id="cloudLoadTimeHint"></span>
                                 </button>
                                 <div class="menu-separator"></div>
                                 <button id="installPwaBtn" class="menu-item" style="display: none;">
-                                    <i class="fas fa-download"></i> Installer
+                                    <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Installer
                                 </button>
                             </div>
                         </div>
@@ -221,7 +222,7 @@
             <div id="pwaUpdateBanner" class="pwa-update-banner" style="display: none;">
                 <div class="pwa-banner-main">
                     <div class="pwa-banner-text">
-                        <i class="fas fa-gift pwa-gift-icon"></i>
+                        <iconify-icon icon="solar:gift-bold" class="pwa-gift-icon"></iconify-icon>
                         <div class="pwa-text-col">
                             <span class="pwa-title">Mise à jour disponible</span>
                             <span class="pwa-subtitle" id="pwaUpdateMeta">Version plus récente détectée</span>
@@ -229,11 +230,11 @@
                     </div>
                     <div class="pwa-banner-actions">
                         <button id="pwaInfoBtn" class="pwa-info-btn tooltip" data-tooltip="Nouveautés">
-                            <i class="fas fa-chevron-down"></i>
+                            <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
                         </button>
                         <button id="pwaUpdateBtn" class="btn btn-sm btn-primary">Installer</button>
                         <button id="pwaUpdateDismissBtn" class="pwa-close-btn" aria-label="Fermer">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -372,11 +373,11 @@
                         <div class="output-toolbar">
                             <!-- Recherche à gauche -->
                             <div class="search-container">
-                                <i class="fas fa-search search-icon"></i>
+                                <iconify-icon icon="solar:magnifer-bold" class="search-icon"></iconify-icon>
                                 <input type="text" class="search-input" id="searchInput" placeholder="Rechercher...">
                                 <button type="button" class="search-clear-btn" id="searchClearBtn"
                                     aria-label="Effacer la recherche">
-                                    <i class="fas fa-times"></i>
+                                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                                 </button>
                             </div>
                             <!-- Active filter badge - inline in toolbar -->
@@ -385,7 +386,7 @@
                             <div class="toolbar-actions">
                                 <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
                                     data-tooltip="Analyse IA de la classe">
-                                    <i class="fas fa-chart-pie"></i> Analyser
+                                    <iconify-icon icon="solar:chart-2-bold"></iconify-icon> Analyser
                                 </button>
                             </div>
                         </div>
@@ -403,7 +404,7 @@
                 <!-- Floating Action Button for Adding Student -->
                 <button id="addStudentFab" class="fab-add-student" data-tooltip="Ajouter un nouvel élève"
                     aria-label="Ajouter un élève">
-                    <i class="fas fa-plus"></i>
+                    <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
                 </button>
             </main>
         </div>
@@ -430,7 +431,7 @@
                     <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
                         data-tooltip="Cliquez pour éditer l'identité et les statuts">
                         Sophie DURAND
-                        <i class="fas fa-pen focus-name-edit-icon"></i>
+                        <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>
                     </h2>
                     <div id="focusStatusBadges" class="focus-status-badges">
                         <!-- Badges générés dynamiquement -->
@@ -459,19 +460,19 @@
             <!-- RIGHT ZONE: Unified Navigation Pill (Close + Prev/Next) -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
-                    <i class="fas fa-chevron-left"></i>
+                    <iconify-icon icon="solar:alt-arrow-left-bold"></iconify-icon>
                 </button>
                 <span id="focusPosition" class="focus-position">3/25</span>
                 <button id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
-                    <i class="fas fa-chevron-right"></i>
+                    <iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>
                 </button>
                 <div class="focus-nav-divider"></div>
                 <!-- Edit mode: Save button (hidden in read mode, visible in edit mode) -->
                 <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
-                    <i class="fas fa-check"></i>
+                    <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                 </button>
                 <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
-                    <i class="fas fa-times"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             </div>
         </div>
@@ -488,13 +489,13 @@
                             <div class="focus-context-label">
                                 <span class="tooltip focus-context-info-trigger"
                                     data-tooltip="Un contexte relatif au travail, comportement et implication dans les projets de l'élève, permet d'obtenir des appréciations plus précises.">
-                                    <i class="fas fa-info-circle"></i>
+                                    <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                     Contexte
                                 </span>
                                 <!-- Voice Dictation Button -->
                                 <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter le contexte">
-                                    <i class="fas fa-microphone"></i>
+                                    <iconify-icon icon="solar:microphone-bold"></iconify-icon>
                                 </button>
                             </div>
 
@@ -519,14 +520,14 @@
                         <div class="journal-header" id="focusJournalHeader">
                             <div class="journal-header-left">
                                 <div class="journal-title-group">
-                                    <i class="fas fa-book"></i>
+                                    <iconify-icon icon="solar:notebook-bold"></iconify-icon>
                                     <span>Journal de bord</span>
                                 </div>
                                 <div class="journal-controls-group">
                                     <!-- Manual note button (Pen icon) -->
                                     <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
                                         data-tooltip="Ajouter une note">
-                                        <i class="fas fa-pen"></i>
+                                        <iconify-icon icon="solar:pen-bold"></iconify-icon>
                                     </button>
 
                                     <!-- Tag dropdowns (Always visible) -->
@@ -538,7 +539,7 @@
                                     <div class="journal-threshold-control" id="journalThresholdControl">
                                         <button class="journal-threshold-btn journal-header-btn tooltip"
                                             id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
-                                            <i class="fas fa-filter"></i>
+                                            <iconify-icon icon="solar:filter-bold"></iconify-icon>
                                             <span id="journalThresholdValue">≥2</span>
                                         </button>
                                         <div class="journal-threshold-popover" id="journalThresholdPopover">
@@ -570,19 +571,19 @@
                     <div class="focus-appreciation">
                         <div class="focus-appreciation-header">
                             <div class="focus-appreciation-label">
-                                <i class="fas fa-comment-dots"></i>
+                                <iconify-icon icon="solar:chat-line-bold"></iconify-icon>
                                 Appréciation
                                 <!-- Voice Dictation Button for Appreciation -->
                                 <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
-                                    <i class="fas fa-microphone"></i>
+                                    <iconify-icon icon="solar:microphone-bold"></iconify-icon>
                                 </button>
                                 <!-- History Navigation Group (Segmented) -->
                                 <div class="history-navigation-group" id="historyNavigationGroup"
                                     style="display: none;">
                                     <button id="focusHistoryPrevBtn" class="history-nav-btn tooltip"
                                         data-tooltip="Version précédente (Ctrl+Z)" disabled>
-                                        <i class="fas fa-chevron-left"></i>
+                                        <iconify-icon icon="solar:alt-arrow-left-bold"></iconify-icon>
                                     </button>
 
                                     <!-- Central Indicator (Existing) -->
@@ -593,7 +594,7 @@
 
                                     <button id="focusHistoryNextBtn" class="history-nav-btn tooltip"
                                         data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" disabled>
-                                        <i class="fas fa-chevron-right"></i>
+                                        <iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
@@ -615,24 +616,24 @@
                         <div class="focus-refinement-options" id="focusRefinementOptions">
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
                                 data-tooltip="Réduit d'environ 20%">
-                                <i class="fas fa-compress-alt"></i> Concise
+                                <iconify-icon icon="solar:minimize-square-bold"></iconify-icon> Concise
                             </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="detailed"
                                 data-tooltip="Développe d'environ 20%">
-                                <i class="fas fa-expand-alt"></i> Détaillée
+                                <iconify-icon icon="solar:maximize-square-bold"></iconify-icon> Détaillée
                             </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
                                 data-tooltip="Ton plus positif et bienveillant">
-                                <i class="fas fa-heart"></i> Encourageante
+                                <iconify-icon icon="solar:heart-bold"></iconify-icon> Encourageante
                             </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="variations"
                                 data-tooltip="Reformulation complète, même sens">
-                                <i class="fas fa-sync-alt"></i> Variation
+                                <iconify-icon icon="solar:restart-bold"></iconify-icon> Variation
                             </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
                                 data-tooltip="Corrige et améliore le style">
                                 <span class="polish-icon-wrapper">
-                                    <i class="fas fa-wand-magic polish-wand"></i>
+                                    <iconify-icon icon="solar:magic-stick-3-bold" class="polish-wand"></iconify-icon>
                                     <span class="polish-sparkle s1">✦</span>
                                     <span class="polish-sparkle s2">✦</span>
                                     <span class="polish-sparkle s3">✧</span>
@@ -646,14 +647,15 @@
                 <div class="focus-footer">
                     <button id="focusCopyBtn" class="btn btn-secondary tooltip" disabled
                         data-tooltip="Copier l'appréciation<br><i style='opacity:0.7'>Clic droit : copier le prompt</i>">
-                        <i class="fas fa-copy"></i> Copier
+                        <iconify-icon icon="solar:copy-bold"></iconify-icon> Copier
                     </button>
                     <button id="focusGenerateBtn" class="btn btn-ai tooltip"
                         data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
-                        <i class="fas fa-wand-magic-sparkles"></i> Générer <span id="focusGeneratePeriod">T2</span>
+                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer <span
+                            id="focusGeneratePeriod">T2</span>
                     </button>
                     <button id="focusAnalyzeBtn" class="btn btn-secondary">
-                        <i class="fas fa-chart-pie"></i> Analyser
+                        <iconify-icon icon="solar:chart-2-bold"></iconify-icon> Analyser
                     </button>
                 </div>
             </div>
@@ -662,14 +664,14 @@
             <div class="focus-page focus-analysis-page" id="focusAnalysisPage">
                 <div class="focus-analysis-header">
                     <button id="focusAnalysisBackBtn" class="focus-back-btn" aria-label="Fermer l'analyse">
-                        <i class="fas fa-chevron-down"></i>
+                        <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
                     </button>
                     <h3 class="focus-analysis-title">
-                        <i class="fas fa-chart-pie"></i>
+                        <iconify-icon icon="solar:chart-2-bold"></iconify-icon>
                         Analyse IA
                     </h3>
                     <button id="focusGenerateAnalysisBtn" class="btn btn-ai btn-sm">
-                        <i class="fas fa-wand-magic-sparkles"></i> Générer
+                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer
                     </button>
                 </div>
 
@@ -677,12 +679,13 @@
                     <!-- Forces Card -->
                     <div class="analysis-card analysis-forces" id="analysisForces">
                         <div class="analysis-card-header">
-                            <span class="analysis-icon forces"><i class="fas fa-trophy"></i></span>
+                            <span class="analysis-icon forces"><iconify-icon
+                                    icon="solar:cup-bold"></iconify-icon></span>
                             <h4>Forces</h4>
                         </div>
                         <div class="analysis-card-body" id="analysisForcesContent">
                             <div class="analysis-placeholder">
-                                <i class="fas fa-lightbulb"></i>
+                                <iconify-icon icon="solar:lightbulb-bold"></iconify-icon>
                                 <span>Cliquez sur "Générer" pour analyser les points forts.</span>
                             </div>
                         </div>
@@ -691,12 +694,13 @@
                     <!-- Faiblesses Card -->
                     <div class="analysis-card analysis-weaknesses" id="analysisWeaknesses">
                         <div class="analysis-card-header">
-                            <span class="analysis-icon weaknesses"><i class="fas fa-exclamation-circle"></i></span>
+                            <span class="analysis-icon weaknesses"><iconify-icon
+                                    icon="solar:danger-circle-bold"></iconify-icon></span>
                             <h4>Points de vigilance</h4>
                         </div>
                         <div class="analysis-card-body" id="analysisWeaknessesContent">
                             <div class="analysis-placeholder">
-                                <i class="fas fa-microscope"></i>
+                                <iconify-icon icon="solar:magnifer-zoom-in-bold"></iconify-icon>
                                 <span>Analyse des difficultés potentielles...</span>
                             </div>
                         </div>
@@ -705,12 +709,13 @@
                     <!-- Pistes Card -->
                     <div class="analysis-card analysis-suggestions" id="analysisSuggestions">
                         <div class="analysis-card-header">
-                            <span class="analysis-icon suggestions"><i class="fas fa-rocket"></i></span>
+                            <span class="analysis-icon suggestions"><iconify-icon
+                                    icon="solar:rocket-2-bold"></iconify-icon></span>
                             <h4>Pistes de progrès</h4>
                         </div>
                         <div class="analysis-card-body" id="analysisSuggestionsContent">
                             <div class="analysis-placeholder">
-                                <i class="fas fa-road"></i>
+                                <iconify-icon icon="solar:signpost-bold"></iconify-icon>
                                 <span>Suggestions pour la progression...</span>
                             </div>
                         </div>
@@ -756,7 +761,7 @@
                 </div>
 
                 <button class="close-modal-btn" id="closeImportWizardBtn" aria-label="Fermer">
-                    <i class="fas fa-times"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             </div>
 
@@ -767,7 +772,7 @@
                     <div class="guide-content active" data-guide-step="1">
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <i class="fas fa-info-circle"></i>
+                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                 Bon à savoir
                             </div>
                             <p class="guide-text">Les données seront importées pour la période affichée en en-tête.</p>
@@ -776,23 +781,23 @@
                         <div class="guide-divider"></div>
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <i class="fas fa-file-import"></i>
+                                <iconify-icon icon="solar:import-bold"></iconify-icon>
                                 Sources acceptées
                             </div>
                             <div class="guide-format-chips">
                                 <div class="guide-format-chip tooltip" data-format="pdf"
                                     data-tooltip="PDF MBN / Pronote">
-                                    <i class="fas fa-file-pdf"></i>
+                                    <iconify-icon icon="solar:file-text-bold"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="excel" data-tooltip="Fichier Excel">
-                                    <i class="fas fa-file-excel"></i>
+                                    <iconify-icon icon="solar:file-text-bold"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="csv" data-tooltip="Fichier CSV">
-                                    <i class="fas fa-file-csv"></i>
+                                    <iconify-icon icon="solar:file-text-bold"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="clipboard"
                                     data-tooltip="Copier-coller depuis tableur">
-                                    <i class="fas fa-clipboard"></i>
+                                    <iconify-icon icon="solar:clipboard-bold"></iconify-icon>
                                 </div>
                             </div>
                             <p class="guide-hint" style="margin-top: 8px;">Compatible PDF MBN / Pronote</p>
@@ -805,7 +810,7 @@
                             </div>
                             <p class="guide-text">Testez l'import avec des données fictives :</p>
                             <button class="guide-sample-btn" id="guideSampleBtn">
-                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                                 Charger un exemple
                             </button>
                         </div>
@@ -851,7 +856,7 @@
                             <!-- Moved Auto-detect Button -->
                             <button class="guide-sample-btn" id="wizardAutoDetectBtn"
                                 style="margin-top: 8px; width: 100%;">
-                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                                 Relancer la détection
                             </button>
                         </div>
@@ -901,7 +906,7 @@
                         <div class="guide-divider"></div>
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <i class="fas fa-info-circle"></i>
+                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                 Bon à savoir
                             </div>
                             <p class="guide-text">Les élèves absents du fichier sont conservés.
@@ -922,7 +927,7 @@
                                     <!-- STATE 1: EMPTY -->
                                     <div class="drop-zone-content drop-zone-empty" id="wizardDropZoneEmpty">
                                         <div class="drop-zone-icon">
-                                            <i class="fas fa-cloud-arrow-up"></i>
+                                            <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
                                         </div>
                                         <div class="drop-zone-text">
                                             <span class="drop-zone-title">Glisser-déposer un fichier</span>
@@ -935,7 +940,7 @@
                                         style="display: none;">
                                         <div class="file-preview-card">
                                             <div class="file-preview-icon" id="wizardFileIcon">
-                                                <i class="fas fa-file-pdf"></i>
+                                                <iconify-icon icon="solar:file-text-bold"></iconify-icon>
                                             </div>
                                             <div class="file-preview-info">
                                                 <span class="file-preview-name"
@@ -946,7 +951,7 @@
                                             </div>
                                             <button class="file-remove-btn" id="wizardRemoveFileBtn"
                                                 aria-label="Supprimer le fichier">
-                                                <i class="fas fa-times"></i>
+                                                <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                                             </button>
                                         </div>
                                     </div>
@@ -1016,7 +1021,7 @@
                     <i class="fas fa-arrow-left"></i> Précédent
                 </button>
                 <div class="import-detected-info">
-                    <i class="fas fa-users"></i>
+                    <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
                     <span class="import-count-badge" id="wizardCountBadge2">0</span>
                     <span>élèves détectés</span>
                 </div>
@@ -1035,7 +1040,8 @@
                     <span id="wizardSelectedColsInfo"></span>
                 </div>
                 <button class="btn btn-organic btn-import-confirm" id="wizardImportOnlyBtn">
-                    <i class="fas fa-check"></i> Importer <span id="wizardImportCount">0</span> élèves
+                    <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Importer <span
+                        id="wizardImportCount">0</span> élèves
                 </button>
             </div>
         </div>
@@ -1049,7 +1055,7 @@
         aria-labelledby="importHubTitle">
         <div class="import-hub-modal">
             <button class="import-hub-close" id="importHubCloseBtn" aria-label="Fermer">
-                <i class="fas fa-times"></i>
+                <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
             </button>
 
             <div class="import-hub-header">
@@ -1069,7 +1075,7 @@
                 <!-- Mass Import Card -->
                 <div class="import-hub-card" data-action="mass" tabindex="0" role="button">
                     <div class="import-hub-icon">
-                        <i class="fas fa-users"></i>
+                        <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
                     </div>
                     <h3 class="import-hub-card-title">Classe entière</h3>
                     <p class="import-hub-card-desc">Fichier ou copier-coller</p>
@@ -1117,7 +1123,7 @@
                     </div>
                 </div>
                 <button class="trombi-close-btn" id="closeTrombiWizardBtn" aria-label="Fermer">
-                    <i class="fas fa-times"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             </div>
 
@@ -1130,7 +1136,7 @@
                             <div class="guide-content active" style="display: flex;">
                                 <div class="guide-section">
                                     <div class="guide-section-title">
-                                        <i class="fas fa-info-circle"></i>
+                                        <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                         Bon à savoir
                                     </div>
                                     <p class="guide-text">Importez une photo de classe pour générer un trombinoscope
@@ -1158,7 +1164,7 @@
                                 <!-- Placeholder content (shown when no image) -->
                                 <div class="drop-zone-content" id="trombiDropPlaceholder">
                                     <div class="drop-zone-icon">
-                                        <i class="fas fa-cloud-arrow-up"></i>
+                                        <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
                                     </div>
                                     <div class="drop-zone-text">
                                         <span class="drop-zone-title">Glissez ou Collez (Ctrl+V) le trombinoscope
@@ -1233,7 +1239,7 @@
                     <i class="fas fa-arrow-left"></i> Précédent
                 </button>
                 <button class="btn btn-primary" id="trombiConfirmBtn">
-                    <i class="fas fa-check"></i> Importer les photos
+                    <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Importer les photos
                 </button>
             </div>
         </div>
@@ -1244,7 +1250,8 @@
         aria-labelledby="personalizationModalTitle">
         <div class="modal-content personalization-modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="personalizationModalTitle"><i class="fas fa-wand-magic-sparkles"></i>
+                <h2 class="modal-title" id="personalizationModalTitle"><iconify-icon
+                        icon="solar:magic-stick-3-bold"></iconify-icon>
                     Personnalisation</h2>
                 <div class="modal-header-actions spaced">
                     <button type="button" class="btn-icon-small inspector-toggle-btn tooltip" id="toggleInspectorBtn"
@@ -1276,7 +1283,7 @@
 
                             <p id="genericSubjectInfo" class="generic-info-card"
                                 style="margin-top: 0; margin-bottom: 20px;">
-                                <i class="fas fa-info-circle"></i>
+                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                 Activez "Mon Style" pour modifier ces paramètres. Sinon, les réglages par défaut
                                 s'appliquent.
                             </p>
@@ -1379,13 +1386,13 @@
                                         </div>
                                         <button type="button" class="nav-arrow-custom" id="previewPrevStudentBtn"
                                             aria-label="Élève précédent">
-                                            <i class="fas fa-chevron-left"></i>
+                                            <iconify-icon icon="solar:alt-arrow-left-bold"></iconify-icon>
                                         </button>
                                         <div class="header-student-name" id="previewStudentNameDisplay">
                                             Chargement...</div>
                                         <button type="button" class="nav-arrow-custom" id="previewNextStudentBtn"
                                             aria-label="Élève suivant">
-                                            <i class="fas fa-chevron-right"></i>
+                                            <iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>
                                         </button>
                                     </div>
 
@@ -1411,7 +1418,7 @@
                                     <div class="preview-meta-container" id="previewMetaContainer"
                                         style="display: none;">
                                         <div class="preview-model-badge" id="previewModelBadge" style="display: none;">
-                                            <i class="fas fa-wand-magic-sparkles"></i> —
+                                            <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> —
                                         </div>
                                         <div class="word-count" id="settingsPreviewTokenCount"></div>
                                         <div class="word-count" id="settingsPreviewWordCount">0 mots • 0 car.</div>
@@ -1430,7 +1437,7 @@
                                 </h3>
                                 <button type="button" class="btn-icon-small tooltip" id="copyPromptBtn"
                                     data-tooltip="Copier le prompt" aria-label="Copier le prompt">
-                                    <i class="fas fa-copy"></i>
+                                    <iconify-icon icon="solar:copy-bold"></iconify-icon>
                                 </button>
                             </div>
                             <div class="settings-card-content">
@@ -1444,7 +1451,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelPersonalizationBtn">Fermer</button>
-                <button class="btn btn-primary" id="savePersonalizationBtn"><i class="fas fa-check"></i>
+                <button class="btn btn-primary" id="savePersonalizationBtn"><iconify-icon
+                        icon="solar:check-circle-bold"></iconify-icon>
                     Enregistrer</button>
             </div>
         </div>
@@ -1471,7 +1479,8 @@
                     <!-- CARTE 1: MOTEUR IA -->
                     <div class="settings-card">
                         <div class="settings-card-header-row">
-                            <h3 class="settings-card-title"><i class="fas fa-microchip"></i> Moteur d'Intelligence</h3>
+                            <h3 class="settings-card-title"><iconify-icon icon="solar:cpu-bold"></iconify-icon> Moteur
+                                d'Intelligence</h3>
                             <div class="session-cost-label tooltip"
                                 data-tooltip="Tokens utilisés depuis l'ouverture de l'application (Session). Réinitialisé au rechargement."
                                 style="cursor: help;">
@@ -1533,7 +1542,7 @@
                                     </div>
                                     <button id="testAllConnectionsBtn" class="btn btn-secondary btn-icon-only tooltip"
                                         data-tooltip="Vérifier la connexion">
-                                        <i class="fas fa-sync-alt"></i>
+                                        <iconify-icon icon="solar:restart-bold"></iconify-icon>
                                     </button>
                                 </div>
                                 <div class="api-status-pills-row">
@@ -1584,7 +1593,7 @@
 
                                 <div id="missingApiKeyWarning" class="missing-key-warning compact"
                                     style="display: none;">
-                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                                     <span id="missingKeyText">Clé manquante.</span>
                                     <button type="button" class="btn-link"
                                         id="openApiKeysAccordionBtn">Configurer</button>
@@ -1744,7 +1753,7 @@
                                                 </div>
                                             </div>
                                             <div class="api-key-info">
-                                                <i class="fas fa-info-circle"></i>
+                                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
                                                 Ollama permet d'exécuter des IA sur votre PC. <strong>Gratuit et
                                                     illimité</strong>, sans envoyer vos données sur internet.
                                             </div>
@@ -1824,7 +1833,8 @@
                                                     <input type="number" id="evolutionThresholdPositive" step="0.1"
                                                         min="0" value="0.5">
                                                     <button type="button" class="number-spinner-btn increment"
-                                                        aria-label="Incrémenter"><i class="fas fa-plus"></i></button>
+                                                        aria-label="Incrémenter"><iconify-icon
+                                                            icon="solar:add-circle-bold"></iconify-icon></button>
                                                 </div>
                                             </div>
                                             <div class="threshold-item-compact tooltip"
@@ -1839,7 +1849,8 @@
                                                     <input type="number" id="evolutionThresholdNegative" step="0.1"
                                                         max="0" value="-0.5">
                                                     <button type="button" class="number-spinner-btn increment"
-                                                        aria-label="Incrémenter"><i class="fas fa-plus"></i></button>
+                                                        aria-label="Incrémenter"><iconify-icon
+                                                            icon="solar:add-circle-bold"></iconify-icon></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1862,7 +1873,8 @@
                                             <span class="option-label">Activé :</span>
                                             <span class="option-desc">Remplace le prénom par un placeholder.</span>
                                             <span class="privacy-warning-badge" title="Peut causer des répétitions">
-                                                <i class="fas fa-exclamation-triangle"></i> Rédaction moins fluide
+                                                <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
+                                                Rédaction moins fluide
                                             </span>
                                         </div>
                                         <div class="privacy-option">
@@ -1893,14 +1905,15 @@
                             <!-- Section Sauvegarde Complète -->
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <h4 class="setting-subtitle"><i class="fas fa-cloud-arrow-down"></i> Sauvegarde
+                                    <h4 class="setting-subtitle"><iconify-icon
+                                            icon="solar:cloud-download-bold"></iconify-icon> Sauvegarde
                                         complète</h4>
                                     <p class="setting-description">Exportez toutes vos données (élèves, appréciations,
                                         classes) pour les restaurer sur un autre appareil ou en cas de problème.</p>
                                 </div>
                                 <div class="setting-actions-group">
                                     <button class="btn btn-primary btn-small" id="exportFullBackupBtn">
-                                        <i class="fas fa-download"></i> Exporter
+                                        <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Exporter
                                     </button>
                                     <button class="btn btn-secondary btn-small" id="importFullBackupBtn">
                                         <i class="fas fa-upload"></i> Restaurer
@@ -1924,7 +1937,7 @@
                                         <i class="fas fa-file-export"></i> Exporter
                                     </button>
                                     <button class="btn btn-secondary btn-small" id="importSettingsBtn">
-                                        <i class="fas fa-file-import"></i> Importer
+                                        <iconify-icon icon="solar:import-bold"></iconify-icon> Importer
                                     </button>
                                 </div>
                             </div>
@@ -1977,10 +1990,10 @@
                                 <!-- Save/Load Actions (visible when connected) -->
                                 <div class="cloud-actions-bar" id="cloudActionsBar" style="display: none;">
                                     <button class="btn btn-primary btn-small" id="cloudSaveBtn">
-                                        <i class="fas fa-cloud-arrow-up"></i> Sauvegarder
+                                        <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon> Sauvegarder
                                     </button>
                                     <button class="btn btn-secondary btn-small" id="cloudLoadBtn">
-                                        <i class="fas fa-cloud-arrow-down"></i> Charger
+                                        <iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Charger
                                     </button>
                                     <span class="cloud-last-save" id="cloudLastSave"></span>
                                 </div>
@@ -1999,7 +2012,8 @@
                             <!-- Section Application Update -->
                             <div class="setting-row">
                                 <div class="setting-info">
-                                    <h4 class="setting-subtitle"><i class="fas fa-sync-alt"></i> Mises à jour</h4>
+                                    <h4 class="setting-subtitle"><iconify-icon icon="solar:restart-bold"></iconify-icon>
+                                        Mises à jour</h4>
                                     <p class="setting-description">Vérifiez si une nouvelle version de l'application est
                                         disponible.</p>
                                 </div>
@@ -2015,7 +2029,8 @@
                             <!-- Section Zone de Danger -->
                             <div class="danger-zone-details">
                                 <details class="details-accordion danger-accordion">
-                                    <summary><i class="fas fa-exclamation-triangle"></i> Zone de Danger</summary>
+                                    <summary><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Zone de
+                                        Danger</summary>
                                     <div class="details-content">
                                         <div class="details-content-inner">
                                             <div class="danger-action-row">
@@ -2052,7 +2067,8 @@
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelSettingsBtn" tabindex="0">Annuler</button>
-                <button class="btn" id="saveSettingsBtn" tabindex="0"><i class="fas fa-check"></i>
+                <button class="btn" id="saveSettingsBtn" tabindex="0"><iconify-icon
+                        icon="solar:check-circle-bold"></iconify-icon>
                     Enregistrer</button>
             </div>
         </div>
@@ -2160,7 +2176,7 @@
                 </div>
                 <button class="btn btn-secondary" id="cancelImportPreviewBtn">Annuler</button>
                 <button class="btn btn-primary" id="importOnlyBtn">
-                    <i class="fas fa-download"></i> Importer les données
+                    <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Importer les données
                 </button>
             </div>
         </div>
@@ -2438,7 +2454,7 @@
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <i class="fas fa-compress-alt"></i> Concise
+                                                <iconify-icon icon="solar:minimize-square-bold"></iconify-icon> Concise
                                             </div>
                                         </td>
                                         <td>Réduire (~20%)</td>
@@ -2449,7 +2465,8 @@
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <i class="fas fa-expand-alt"></i> Détaillée
+                                                <iconify-icon icon="solar:maximize-square-bold"></iconify-icon>
+                                                Détaillée
                                             </div>
                                         </td>
                                         <td>Développer (~20%)</td>
@@ -2459,7 +2476,7 @@
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <i class="fas fa-heart"></i> Encourageante
+                                                <iconify-icon icon="solar:heart-bold"></iconify-icon> Encourageante
                                             </div>
                                         </td>
                                         <td>Ton positif</td>
@@ -2469,7 +2486,7 @@
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <i class="fas fa-sync-alt"></i> Variation
+                                                <iconify-icon icon="solar:restart-bold"></iconify-icon> Variation
                                             </div>
                                         </td>
                                         <td>Reformuler</td>
@@ -2540,7 +2557,7 @@
                                     </a>
                                     <a id="linkFeedback" href="#" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-secondary btn-small">
-                                        <i class="fas fa-comment-dots"></i> Avis
+                                        <iconify-icon icon="solar:chat-line-bold"></iconify-icon> Avis
                                     </a>
                                 </div>
                             </div>
@@ -2591,7 +2608,7 @@
             <div class="modal-header">
                 <h2 class="modal-title" id="welcomeModalTitle">🎉 Bienvenue dans Bulletin AI !</h2>
                 <button class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
-                    <i class="fas fa-xmark"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             </div>
             <div class="modal-body">
@@ -2713,7 +2730,7 @@
                                 value="trimestres" checked>
                             <div class="period-card-content">
                                 <div class="period-card-icon">
-                                    <i class="fas fa-chart-pie"></i>
+                                    <iconify-icon icon="solar:chart-2-bold"></iconify-icon>
                                 </div>
                                 <div class="period-card-text">
                                     <span class="period-card-title">Trimestres</span>
@@ -2803,7 +2820,7 @@
                 </div>
                 <div class="appreciation-text-container" role="button" data-action="refine">
                     <p data-template="appreciation" class="appreciation-text"></p>
-                    <span class="refine-on-hover-label"><i class="fas fa-wand-magic-sparkles"></i>
+                    <span class="refine-on-hover-label"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                         Raffinement</span>
                 </div>
                 <div class="card-footer">
@@ -2863,7 +2880,7 @@
             </div>
             <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button">
                 <div class="empty-state-hub-icon">
-                    <i class="fas fa-file-csv"></i>
+                    <iconify-icon icon="solar:file-text-bold"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Classe entière</h4>
@@ -2916,7 +2933,7 @@
             <div class="modal-footer modal-footer-buttons">
                 <button class="btn btn-secondary" id="cancelCreateClassBtn">Annuler</button>
                 <button class="btn btn-organic" id="confirmCreateClassBtn" disabled>
-                    <i class="fas fa-check"></i> Créer
+                    <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Créer
                 </button>
             </div>
         </div>
@@ -2936,10 +2953,11 @@
                     </span>
                 </div>
                 <span class="dashboard-student-count" id="dashboardStudentCount">
-                    <i class="fas fa-users"></i> <strong>0</strong> élèves analysés
+                    <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon> <strong>0</strong> élèves
+                    analysés
                 </span>
                 <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
-                    <i class="fas fa-xmark"></i>
+                    <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                 </button>
             </div>
 
@@ -2968,7 +2986,8 @@
                     </div>
                     <div class="highlight-card">
                         <div class="highlight-card-header">
-                            <div class="highlight-icon warning"><i class="fas fa-exclamation-circle"></i></div>
+                            <div class="highlight-icon warning"><iconify-icon
+                                    icon="solar:danger-circle-bold"></iconify-icon></div>
                             <span class="highlight-card-title">À surveiller</span>
                         </div>
                         <div class="highlight-list" id="highlightRiskList">
@@ -2980,16 +2999,18 @@
                 <!-- AI Synthesis Section -->
                 <div class="dashboard-ai-section">
                     <div class="ai-section-header">
-                        <h3 class="ai-section-title"><i class="fas fa-wand-magic-sparkles"></i> Synthèse IA</h3>
+                        <h3 class="ai-section-title"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                            Synthèse IA</h3>
                         <div class="ai-section-actions">
                             <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
-                                <i class="fas fa-wand-magic-sparkles"></i> Générer la synthèse
+                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer la synthèse
                             </button>
                         </div>
                     </div>
                     <div class="ai-section-content" id="aiSynthesisContent">
                         <div class="ai-placeholder">
-                            <div class="ai-placeholder-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                            <div class="ai-placeholder-icon"><iconify-icon
+                                    icon="solar:magic-stick-3-bold"></iconify-icon></div>
                             <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA
                                 contextuelle de votre classe.</p>
                         </div>

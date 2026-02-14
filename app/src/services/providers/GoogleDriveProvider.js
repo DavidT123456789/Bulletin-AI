@@ -21,7 +21,7 @@ const DEBUG = false;
 export const GoogleDriveProvider = {
     name: 'google',
     displayName: 'Google Drive',
-    icon: 'fab fa-google-drive',
+    icon: 'logos:google-drive',
 
     /** @type {Object|null} Google token */
     _token: null,

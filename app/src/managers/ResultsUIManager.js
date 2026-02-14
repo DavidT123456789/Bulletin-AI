@@ -334,11 +334,20 @@ export const ResultsUIManager = {
             btn.classList.remove('btn-neutral');
             btn.classList.add('btn-primary');
 
-            const icon = btn.querySelector('i');
+            const icon = btn.querySelector('i, iconify-icon');
             const label = btn.querySelector('span:not(.pending-badge)');
             const badge = btn.querySelector('.pending-badge');
 
-            if (icon) icon.className = 'fas fa-wand-magic-sparkles';
+            if (icon) {
+                if (icon.tagName === 'I') {
+                    // Replace with iconify-icon
+                    const newIcon = document.createElement('iconify-icon');
+                    newIcon.setAttribute('icon', 'solar:magic-stick-3-bold-duotone');
+                    icon.replaceWith(newIcon);
+                } else {
+                    icon.setAttribute('icon', 'solar:magic-stick-3-bold-duotone');
+                }
+            }
             if (label) label.textContent = 'Générer';
             if (badge) {
                 badge.style.display = hasContent ? 'inline-flex' : 'none';

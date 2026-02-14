@@ -32,6 +32,27 @@
     gap: var(--space-6);
 }
 
+/* Premium Glass Sheen Effect */
+.nebula-card::after,
+.card-content-wrapper::after,
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+[data-theme="dark"] .nebula-card::after,
+[data-theme="dark"] .card-content-wrapper::after,
+[data-theme="dark"] .stat-card::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
 /* Micro-interaction universelle : Shadow Only (Plus professionnel) */
 .nebula-card:hover,
 .card-content-wrapper:hover,
@@ -427,25 +448,31 @@
     width: 20px;
 }
 
-.grade-arrow i {
+.grade-arrow i,
+.grade-arrow iconify-icon {
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
 .grade-arrow.evolution-positive i,
-.grade-arrow.evolution-very-positive i {
+.grade-arrow.evolution-positive iconify-icon,
+.grade-arrow.evolution-very-positive i,
+.grade-arrow.evolution-very-positive iconify-icon {
     transform: rotate(-45deg);
     color: var(--success-color);
     opacity: 1;
 }
 
 .grade-arrow.evolution-negative i,
-.grade-arrow.evolution-very-negative i {
+.grade-arrow.evolution-negative iconify-icon,
+.grade-arrow.evolution-very-negative i,
+.grade-arrow.evolution-very-negative iconify-icon {
     transform: rotate(45deg);
     color: var(--error-color);
     opacity: 1;
 }
 
-.grade-arrow.evolution-stable i {
+.grade-arrow.evolution-stable i,
+.grade-arrow.evolution-stable iconify-icon {
     color: var(--text-tertiary);
     opacity: 0.4;
     transform: rotate(0deg);

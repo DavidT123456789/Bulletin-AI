@@ -80,12 +80,12 @@ export const ApiValidationManager = {
                         UI.hideInlineSpinner(btnEl);
                         btnEl.classList.remove('btn-needs-validation');
                         btnEl.classList.add('btn-validated');
-                        btnEl.innerHTML = '<i class="fas fa-check"></i> OK';
+                        btnEl.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
                         // Bouton reste validé - pas de contour sur l'input, le bouton OK suffit
                         inputEl.classList.remove('input-error', 'input-warning', 'input-success');
 
                         // Message bref - le bandeau intelligent affiche déjà le détail
-                        errorEl.innerHTML = `✓ <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
+                        errorEl.innerHTML = `<iconify-icon icon="solar:check-circle-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
 
@@ -106,7 +106,7 @@ export const ApiValidationManager = {
                     // Si la validation réussit, on vérifie les crédits
                     const credits = await AIService.getOpenRouterCredits();
                     if (credits !== null) {
-                        errorEl.innerHTML = `✓ <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${credits.toFixed(3)}$</strong>`;
+                        errorEl.innerHTML = `<iconify-icon icon="solar:check-circle-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${credits.toFixed(3)}$</strong>`;
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
                     }
@@ -132,7 +132,7 @@ export const ApiValidationManager = {
             // Bouton reste en état "validé" tant que la clé n'est pas modifiée
             btnEl.classList.remove('btn-needs-validation');
             btnEl.classList.add('btn-validated');
-            btnEl.innerHTML = '<i class="fas fa-check"></i> OK';
+            btnEl.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
             // Note: handleApiKeyInput() réinitialisera le bouton si la clé est modifiée
             // Pas de contour sur l'input, le bouton OK suffit
             inputEl.classList.remove('input-error', 'input-warning', 'input-success');
@@ -215,7 +215,7 @@ export const ApiValidationManager = {
                             // Le modèle n'est pas disponible - ce n'est pas un problème de quota
                             appState.apiKeyStatus[provider] = 'invalid';
                             SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `❌ <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-2.0-flash".`;
+                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-2.0-flash".`;
                             errorEl.style.display = 'block';
                             errorEl.style.color = 'var(--error-color)';
                             inputEl.classList.add('input-error');
@@ -238,7 +238,7 @@ export const ApiValidationManager = {
                 inputEl.classList.remove('input-error', 'input-warning', 'input-success');
 
                 // Message bref - le bandeau intelligent affiche déjà le détail
-                errorEl.innerHTML = `✓ <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
+                errorEl.innerHTML = `<iconify-icon icon="solar:check-circle-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
                 errorEl.style.display = 'block';
                 errorEl.style.color = 'var(--success-color)';
 

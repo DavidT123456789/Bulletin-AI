@@ -59,7 +59,7 @@ export const DropdownManager = {
 
         const arrow = document.createElement('span');
         arrow.className = 'custom-dropdown-arrow';
-        arrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        arrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>';
 
         trigger.appendChild(valueSpan);
         trigger.appendChild(arrow);
@@ -114,18 +114,18 @@ export const DropdownManager = {
         // Mapping des emojis vers des icônes Font Awesome avec classes pour le styling
         const iconMappings = [
             // Google Gemini - utilise le logo Google officiel
-            { pattern: /💚\s*Google Gemini/i, icon: '<i class="fab fa-google provider-icon provider-google"></i>', text: 'Google Gemini' },
+            { pattern: /💚\s*Google Gemini/i, icon: '<iconify-icon icon="logos:google-icon" class="provider-icon provider-google"></iconify-icon>', text: 'Google Gemini' },
             // OpenRouter - utilise un éclair stylisé
-            { pattern: /💚\s*OpenRouter/i, icon: '<i class="fas fa-bolt provider-icon provider-openrouter"></i>', text: 'OpenRouter' },
-            { pattern: /💰\s*OpenRouter/i, icon: '<i class="fas fa-bolt provider-icon provider-openrouter-paid"></i>', text: 'OpenRouter' },
+            { pattern: /💚\s*OpenRouter/i, icon: '<iconify-icon icon="solar:bolt-bold-duotone" class="provider-icon provider-openrouter"></iconify-icon>', text: 'OpenRouter' },
+            { pattern: /💰\s*OpenRouter/i, icon: '<iconify-icon icon="solar:bolt-bold-duotone" class="provider-icon provider-openrouter-paid"></iconify-icon>', text: 'OpenRouter' },
             // OpenAI - utilise le robot
-            { pattern: /💰\s*OpenAI/i, icon: '<i class="fas fa-robot provider-icon provider-openai"></i>', text: 'OpenAI' },
+            { pattern: /💰\s*OpenAI/i, icon: '<iconify-icon icon="logos:openai-icon" class="provider-icon provider-openai"></iconify-icon>', text: 'OpenAI' },
             // Anthropic Claude
-            { pattern: /💰\s*Anthropic Claude/i, icon: '<i class="fas fa-brain provider-icon provider-anthropic"></i>', text: 'Anthropic Claude' },
+            { pattern: /💰\s*Anthropic Claude/i, icon: '<iconify-icon icon="logos:anthropic-icon" class="provider-icon provider-anthropic"></iconify-icon>', text: 'Anthropic Claude' },
             // Mistral AI
-            { pattern: /🐱\s*Mistral AI/i, icon: '<i class="fas fa-cat provider-icon provider-mistral"></i>', text: 'Mistral AI' },
+            { pattern: /🐱\s*Mistral AI/i, icon: '<iconify-icon icon="solar:cat-bold" class="provider-icon provider-mistral"></iconify-icon>', text: 'Mistral AI' },
             // Ollama - maison pour local
-            { pattern: /🏠\s*Ollama/i, icon: '<i class="fas fa-home provider-icon provider-ollama"></i>', text: 'Ollama' },
+            { pattern: /🏠\s*Ollama/i, icon: '<iconify-icon icon="solar:server-square-bold" class="provider-icon provider-ollama"></iconify-icon>', text: 'Ollama' },
         ];
 
         for (const mapping of iconMappings) {
@@ -206,7 +206,7 @@ export const DropdownManager = {
 
         const check = document.createElement('span');
         check.className = 'custom-dropdown-option-check';
-        check.innerHTML = '<i class="fas fa-check"></i>';
+        check.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
 
         const text = document.createElement('span');
         text.textContent = optionEl.textContent;

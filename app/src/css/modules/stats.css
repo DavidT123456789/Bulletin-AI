@@ -532,16 +532,16 @@
     background-clip: text;
 }
 
-/* Range 4-8: Orange gradient */
+/* Range 4-8: Warning gradient */
 .performance-card .main-average-value.grade-range-4-8 {
-    background: linear-gradient(135deg, var(--grade-range-4-8) 0%, #ea580c 100%);
+    background: linear-gradient(135deg, var(--grade-range-4-8) 0%, var(--warning-color) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
-/* Range 8-12: Yellow/Amber gradient */
+/* Range 8-12: Yellow gradient */
 .performance-card .main-average-value.grade-range-8-12 {
-    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, #ca8a04 100%);
+    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, #d97706 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }

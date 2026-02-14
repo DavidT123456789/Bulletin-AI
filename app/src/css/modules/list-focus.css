@@ -499,7 +499,7 @@
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
-    box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);
+    box-shadow: 0 1px 3px rgba(var(--warning-rgb), 0.25);
     /* CRITICAL: High z-index to be above header overlay and content */
     z-index: 10;
     /* Ensure button captures pointer events */
@@ -508,7 +508,7 @@
 
 .btn-update-inline:hover {
     background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+    box-shadow: 0 2px 8px rgba(var(--warning-rgb), 0.35);
     transform: translateY(-50%) scale(1.05);
 }
 

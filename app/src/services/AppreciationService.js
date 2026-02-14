@@ -201,8 +201,8 @@ export const AppreciationService = {
 
         let html = '';
         const sections = [
-            { key: 'strength', class: 'strengths-title', icon: '<i class="fas fa-thumbs-up"></i>' },
-            { key: 'weakness', class: 'weaknesses-title', icon: '<i class="fas fa-thumbs-down"></i>' }
+            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-bold"></iconify-icon>' },
+            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-bold"></iconify-icon>' }
         ];
 
         sections.forEach(sectionInfo => {

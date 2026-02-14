@@ -181,10 +181,10 @@ export const ClassUIManager = {
                            maxlength="50"
                            name="newClassName_ignore">
                     <button type="button" class="btn btn-primary btn-small inline-create-btn" style="padding: 10px 14px;" disabled>
-                        <i class="fas fa-check"></i>
+                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                     </button>
                     <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
-                        <i class="fas fa-times"></i>
+                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
                     </button>
                 </div>
             </form>
@@ -264,10 +264,10 @@ export const ClassUIManager = {
         if (classes.length === 0) {
             DOM.classDropdownList.innerHTML = `
                 <div class="class-dropdown-empty">
-                    <i class="fas fa-graduation-cap"></i>
+                    <iconify-icon icon="solar:mortarboard-bold" style="font-size: 24px; color: var(--text-tertiary);"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
-                        <i class="fas fa-plus"></i> Créer ma première classe
+                        <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Créer ma première classe
                     </button>
                 </div>
             `;
@@ -284,7 +284,7 @@ export const ClassUIManager = {
                 <div class="class-info">
                     <span class="class-name">${this._escapeHtml(cls.name)}</span>
                     <span class="class-meta">
-                        <i class="fas fa-calendar"></i> ${cls.year || 'Non définie'}
+                        <iconify-icon icon="solar:calendar-bold"></iconify-icon> ${cls.year || 'Non définie'}
                     </span>
                 </div>
                 <div class="class-progress-badge" data-class-id="${cls.id}">
@@ -316,7 +316,7 @@ export const ClassUIManager = {
         const row = document.querySelector(`.class-management-item[data-class-id="${classId}"]`);
         if (row) {
             const btn = row.querySelector('.confirm-delete-btn');
-            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (btn) btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="spin"></iconify-icon>';
         }
 
         try {
@@ -591,17 +591,17 @@ export const ClassUIManager = {
         });
 
         // Determine icon and status class
-        let icon = 'fa-clock';
+        let icon = 'solar:clock-circle-bold';
         let statusClass = 'status-pending';
 
         if (errors > 0) {
-            icon = 'fa-exclamation-triangle';
+            icon = 'solar:danger-triangle-bold';
             statusClass = 'status-error';
         } else if (total > 0 && completed === total) {
-            icon = 'fa-check';
+            icon = 'solar:check-circle-bold';
             statusClass = 'status-complete';
         } else if (completed > 0) {
-            icon = 'fa-spinner';
+            icon = 'solar:pie-chart-2-bold'; // Or spinner if you prefer
             statusClass = 'status-partial';
         }
 
@@ -687,7 +687,7 @@ export const ClassUIManager = {
             return `
                             <div class="class-management-item" data-class-id="${cls.id}" draggable="true">
                                 <div class="class-drag-handle" title="Glisser pour réorganiser">
-                                    <i class="fas fa-grip-vertical"></i>
+                                    <iconify-icon icon="solar:hamburger-menu-bold"></iconify-icon>
                                 </div>
                                 <div class="class-management-info">
                                     <div class="class-info-header">
@@ -696,17 +696,17 @@ export const ClassUIManager = {
                                     </div>
                                     <div class="class-management-meta">
                                         <span class="meta-item">
-                                            <i class="fas fa-calendar"></i>
+                                            <iconify-icon icon="solar:calendar-bold"></iconify-icon>
                                             ${cls.year || 'Non définie'}
                                         </span>
                                         <span class="meta-separator">•</span>
                                         <span class="meta-item">
-                                            <i class="fas fa-users"></i>
+                                            <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
                                             ${stats.total} élève${stats.total > 1 ? 's' : ''}
                                         </span>
                                         <span class="meta-separator">•</span>
                                         <span class="meta-item ${stats.statusClass}">
-                                            <i class="fas ${stats.icon}"></i>
+                                            <iconify-icon icon="${stats.icon}"></iconify-icon>
                                             ${stats.completed}/${stats.total}
                                         </span>
                                     </div>
@@ -714,15 +714,15 @@ export const ClassUIManager = {
                                 <div class="class-management-actions">
                                     <button class="btn-icon-small manage-duplicate-btn" data-class-id="${cls.id}" 
                                             title="Dupliquer">
-                                        <i class="fas fa-copy"></i>
+                                        <iconify-icon icon="solar:copy-bold"></iconify-icon>
                                     </button>
                                     <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
                                             title="Renommer">
-                                        <i class="fas fa-pencil"></i>
+                                        <iconify-icon icon="solar:pen-bold"></iconify-icon>
                                     </button>
                                     <button class="btn-icon-small manage-delete-btn" data-class-id="${cls.id}" 
                                             title="Supprimer">
-                                        <i class="fas fa-trash"></i>
+                                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
@@ -741,18 +741,18 @@ export const ClassUIManager = {
             <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
                     <div class="modal-title-group">
-                        <span class="modal-title-icon"><i class="fas fa-layer-group"></i></span>
+                        <span class="modal-title-icon"><iconify-icon icon="solar:layers-bold"></iconify-icon></span>
                         <div class="modal-title-text-col">
                             <h2 class="modal-title-main">Vue d'ensemble des classes</h2>
                             <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
                         </div>
                     </div>
-                    <button class="close-button close-manage-modal"><i class="fas fa-xmark"></i></button>
+                    <button class="close-button close-manage-modal"><iconify-icon icon="solar:close-circle-bold"></iconify-icon></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
                         <button class="btn btn-primary btn-small" id="addClassFromModalBtn">
-                            <i class="fas fa-plus"></i> Nouvelle classe
+                            <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Nouvelle classe
                         </button>
                     </div>
                     ${modalContent}

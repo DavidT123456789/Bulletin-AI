@@ -320,7 +320,7 @@ export class Sidebar extends Component {
 
                 group = DOMHelper.createElement('div', { className: 'period-input-group' }, [
                     DOMHelper.createElement('h3', {}, [
-                        DOMHelper.createElement('i', { className: 'fas fa-calendar-check' }),
+                        DOMHelper.createElement('iconify-icon', { icon: 'solar:calendar-check-bold' }),
                         ` ${Utils.getPeriodLabel(p, true)} `,
                         DOMHelper.createElement('span', { className: 'detail-chip-small' }, ['(Période Actuelle)'])
                     ]),
@@ -339,7 +339,7 @@ export class Sidebar extends Component {
             } else {
                 group = DOMHelper.createElement('div', { className: 'period-input-group previous-period-group' }, [
                     DOMHelper.createElement('h4', {}, [
-                        DOMHelper.createElement('i', { className: 'fas fa-history' }),
+                        DOMHelper.createElement('iconify-icon', { icon: 'solar:history-bold' }),
                         ` ${Utils.getPeriodLabel(p, true)} `,
                         DOMHelper.createElement('span', { className: 'detail-chip-small' }, ['(Période précédente)'])
                     ]),

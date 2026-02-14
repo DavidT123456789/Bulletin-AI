@@ -22,7 +22,8 @@
 }
 
 /* Harmonization: Icons inherit text color */
-.btn i {
+.btn i,
+.btn iconify-icon {
     color: inherit;
     opacity: 0.95;
 }
@@ -169,10 +170,7 @@
 .btn-ai,
 .btn-organic {
     /* Couleur et apparence */
-    background: linear-gradient(135deg,
-            var(--primary-color) 0%,
-            var(--primary-hover) 50%,
-            var(--primary-color) 100%);
+    background: var(--gradient-primary);
     background-size: 200% auto;
     color: white;
     border: none;
