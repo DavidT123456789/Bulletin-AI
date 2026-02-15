@@ -1078,9 +1078,11 @@
     /* "Active Glass" - More opaque and glowing */
     background: rgba(var(--primary-color-rgb), 0.9);
     backdrop-filter: blur(16px);
-    box-shadow: 0 12px 32px rgba(var(--primary-color-rgb), 0.4);
+    /* Single smooth shadow, no border artifacts */
+    box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.35);
     color: white;
     border-color: transparent;
+    outline: none;
 }
 
 .fab-add-student:active {

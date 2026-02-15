@@ -15,6 +15,7 @@ import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { DropdownManager } from './DropdownManager.js';
+import { PROVIDER_CONFIG } from '../config/providers.js';
 
 /**
  * Module de gestion de l'interface des paramètres.
@@ -235,28 +236,55 @@ export const SettingsUIManager = {
     },
 
     /**
+     * Injecte les icônes des providers dans le DOM depuis la config centralisée.
+     * Assure la cohérence visuelle entre le dropdown et l'accordéon.
+     */
+    injectProviderIcons() {
+        const groupIds = {
+            'google': 'googleApiKeyGroup',
+            'openrouter': 'openrouterApiKeyGroup',
+            'openai': 'openaiApiKeyGroup',
+            'anthropic': 'anthropicApiKeyGroup',
+            'mistral': 'mistralApiKeyGroup',
+            'ollama': 'ollamaConfigGroup'
+        };
+
+        Object.entries(PROVIDER_CONFIG).forEach(([id, config]) => {
+            const groupId = groupIds[id];
+            if (!groupId) return;
+
+            const group = document.getElementById(groupId);
+            if (!group) return;
+
+            const iconEl = group.querySelector('.api-key-header .api-key-provider iconify-icon');
+            if (iconEl) {
+                iconEl.setAttribute('icon', config.icon);
+
+                // Appliquer la classe du provider
+                iconEl.className = `iconify-inline ${config.class || ''}`;
+
+                // Appliquer le style spécifique (couleur) si défini
+                if (config.style) {
+                    iconEl.setAttribute('style', config.style);
+                } else {
+                    iconEl.removeAttribute('style');
+                }
+            }
+        });
+    },
+
+    /**
      * Met à jour l'affichage du récapitulatif des APIs configurées.
      * Utilise les pills visuels et le bandeau intelligent pour les alertes.
      */
     updateApiStatusDisplay() {
+        // Injecter les icônes à jour avant d'afficher le statut
+        this.injectProviderIcons();
+
         const model = appState.currentAIModel || '';
 
-        // Déterminer le provider du modèle actif
-        // IMPORTANT: Les modèles -free passent par OpenRouter, même gemini-*-free !
-        let activeProvider = 'openrouter';
-        if (model.endsWith('-free')) {
-            activeProvider = 'openrouter'; // Priorité aux modèles gratuits OpenRouter
-        } else if (model.startsWith('gemini')) {
-            activeProvider = 'google';
-        } else if (model.startsWith('openai')) {
-            activeProvider = 'openai';
-        } else if (model.startsWith('ollama')) {
-            activeProvider = 'ollama';
-        } else if (model.startsWith('anthropic')) {
-            activeProvider = 'anthropic';
-        } else if (model.startsWith('mistral-direct')) {
-            activeProvider = 'mistral';
-        }
+        // Déterminer le provider du modèle actif via le helper centralisé
+        const activeProvider = this._getProviderIdForModel(model);
 
         // Check values from DOM if available (live typing) or fall back to state
         const providers = [
@@ -402,6 +430,50 @@ export const SettingsUIManager = {
 
         // Mettre à jour la disponibilité des options dans le menu déroulant
         this.updateModelSelectorAvailability();
+
+        // Mettre à jour les icônes des boutons de génération (Mistral Cat etc.)
+        this.updateGenerationButtonIcons();
+    },
+
+    /**
+     * Met à jour les icônes des boutons de génération pour refléter le provider actif.
+     * Spécifiquement demandé pour Mistral (Chat).
+     */
+    updateGenerationButtonIcons() {
+        const model = appState.currentAIModel || '';
+        const providerId = this._getProviderIdForModel(model);
+
+        const buttons = [
+            document.getElementById('focusGenerateBtn'),
+            document.getElementById('refreshPreviewBtn'),
+            document.getElementById('focusGenerateAnalysisBtn')
+        ];
+
+        buttons.forEach(btn => {
+            if (!btn) return;
+            const iconEl = btn.querySelector('iconify-icon');
+            if (!iconEl) return;
+
+            if (providerId === 'mistral') {
+                // Mistral branding - Consistent with Settings & Dropdown
+                const config = PROVIDER_CONFIG.mistral;
+                iconEl.setAttribute('icon', config.icon);
+
+                // Apply specific style (color) and class (scale)
+                if (config.style) {
+                    iconEl.setAttribute('style', config.style);
+                }
+                if (config.class) {
+                    iconEl.classList.add(config.class);
+                }
+            } else {
+                // Reset to generic Magic Stick for others (logos don't fit well on buttons)
+                iconEl.setAttribute('icon', 'solar:magic-stick-3-bold');
+                // Remove Mistral specific styles/classes
+                iconEl.removeAttribute('style');
+                iconEl.classList.remove('provider-mistral');
+            }
+        });
     },
 
     /**
@@ -422,22 +494,10 @@ export const SettingsUIManager = {
             // Utiliser le helper centralisé pour vérifier la disponibilité
             isAvailable = this._isModelAvailable(model);
 
-            // Déterminer le provider requis pour le message d'aide
-            if (model.endsWith('-free')) {
-                requiredProvider = 'OpenRouter';
-            } else if (model.startsWith('gemini')) {
-                requiredProvider = 'Google Gemini';
-            } else if (model.startsWith('openai')) {
-                requiredProvider = 'OpenAI';
-            } else if (model.startsWith('ollama')) {
-                requiredProvider = 'Ollama';
-            } else if (model.startsWith('anthropic')) {
-                requiredProvider = 'Claude (Anthropic)';
-            } else if (model.startsWith('mistral-direct')) {
-                requiredProvider = 'Mistral';
-            } else {
-                requiredProvider = 'OpenRouter';
-            }
+            // Déterminer le provider requis pour le message d'aide (plus lisible)
+            const providerId = this._getProviderIdForModel(model);
+            const providerConfig = PROVIDER_CONFIG[providerId];
+            requiredProvider = providerConfig ? providerConfig.name : 'OpenRouter';
 
             // Appliquer l'état disabled - les options désactivées seront naturellement grisées par le navigateur
             opt.disabled = !isAvailable;
@@ -476,15 +536,59 @@ export const SettingsUIManager = {
      * @private
      */
     _getProviderName(providerId) {
-        const names = {
-            'google': 'Google Gemini',
-            'openai': 'OpenAI',
-            'openrouter': 'OpenRouter',
-            'anthropic': 'Claude (Anthropic)',
-            'mistral': 'Mistral AI',
-            'ollama': 'Ollama'
-        };
-        return names[providerId] || providerId;
+        const config = PROVIDER_CONFIG[providerId];
+        return config ? config.name : providerId;
+    },
+
+    /**
+     * Identifie le fournisseur (ID) associé à un modèle donné.
+     * Centralise la logique de détection pour éviter la duplication.
+     * @param {string} model - ID du modèle (ex: 'gemini-1.5-pro', 'ollama-llama3')
+     * @returns {string} ID du provider (ex: 'google', 'ollama', 'openrouter')
+     * @private
+     */
+    _getProviderIdForModel(model) {
+        if (!model) return 'openrouter';
+
+        // Cas spéciaux
+        if (model.endsWith('-free')) return 'openrouter'; // Priorité aux modèles gratuits OpenRouter
+
+        // Détection par préfixe/mot-clé
+        if (model.startsWith('gemini')) return 'google';
+        if (model.startsWith('openai') || model.startsWith('gpt')) return 'openai';
+        if (model.startsWith('anthropic') || model.startsWith('claude')) return 'anthropic';
+        if (model.startsWith('ollama')) return 'ollama';
+        if (model.startsWith('mistral') || model.includes('ministral') || model.includes('devstral') || model.startsWith('codestral')) return 'mistral'; // Mistral Direct
+
+        // Par défaut (DeepSeek, Llama via OpenRouter, etc.)
+        return 'openrouter';
+    },
+
+    /**
+     * Vérifie si un modèle spécifique est installé dans Ollama.
+     * Gère la correspondance flexible des tags (ex: 'llama3:latest' vs 'llama3').
+     * @param {string} modelKey - Clé du modèle (ex: 'ollama-llama3')
+     * @returns {boolean}
+     * @private
+     */
+    _isOllamaModelInstalled(modelKey) {
+        const installed = appState.ollamaInstalledModels || [];
+        if (installed.length === 0) return false;
+
+        const modelName = modelKey.replace('ollama-', '');
+        return installed.some(installedModel => {
+            if (installedModel === modelName) return true;
+            if (installedModel.startsWith(modelName)) return true; // ex: llama3 matches llama3:8b
+
+            const [baseName, tag] = modelName.split(':');
+            const [installedBase, installedTag] = installedModel.split(':');
+
+            // Match base name AND tag prefix if present
+            if (baseName === installedBase) {
+                return !tag || (installedTag && installedTag.startsWith(tag));
+            }
+            return false;
+        });
     },
 
     /**
@@ -600,9 +704,7 @@ export const SettingsUIManager = {
         const model = appState.currentAIModel;
 
         // Déterminer le provider du modèle actuel
-        let currentProvider = 'openrouter';
-        if (model.startsWith('gemini')) currentProvider = 'google';
-        else if (model.startsWith('openai')) currentProvider = 'openai';
+        const currentProvider = this._getProviderIdForModel(model);
 
         // Construire la liste complète de fallback en commençant par le modèle actuel
         const rawQueue = [model];
@@ -662,34 +764,24 @@ export const SettingsUIManager = {
      * @private
      */
     _isModelAvailable(model) {
-        // Les modèles gratuits OpenRouter (suffixe -free) utilisent la clé OpenRouter
-        if (model.endsWith('-free')) {
-            return !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
-        } else if (model.startsWith('gemini')) {
-            return !!appState.googleApiKey && appState.googleApiKey.length > 5;
-        } else if (model.startsWith('openai')) {
-            return !!appState.openaiApiKey && appState.openaiApiKey.length > 5;
-        } else if (model.startsWith('ollama')) {
+        // 1. Vérifier si c'est un modèle Ollama
+        if (model.startsWith('ollama')) {
             if (!appState.ollamaEnabled) return false;
-            const installed = appState.ollamaInstalledModels || [];
-            if (installed.length === 0) return false; // Ollama activé mais aucun modèle détecté
-            const modelName = model.replace('ollama-', '');
-            return installed.some(installedModel => {
-                if (installedModel === modelName) return true;
-                if (installedModel.startsWith(modelName)) return true;
-                const [baseName, tag] = modelName.split(':');
-                const [installedBase, installedTag] = installedModel.split(':');
-                if (baseName === installedBase && installedTag && installedTag.startsWith(tag || '')) return true;
-                return false;
-            });
-        } else if (model.startsWith('anthropic')) {
-            return !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
-        } else if (model.startsWith('mistral-direct')) {
-            return !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
-        } else {
-            // OpenRouter (DeepSeek, Mistral, Qwen, etc.)
-            return !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
+            return this._isOllamaModelInstalled(model);
         }
+
+        // 2. Pour les autres, vérifier la clé API du provider associé
+        const providerId = this._getProviderIdForModel(model);
+        const apiKeyMap = {
+            'google': appState.googleApiKey,
+            'openai': appState.openaiApiKey,
+            'anthropic': appState.anthropicApiKey,
+            'mistral': appState.mistralApiKey,
+            'openrouter': appState.openrouterApiKey
+        };
+
+        const key = apiKeyMap[providerId];
+        return !!key && key.length > 5;
     },
 
     /**
@@ -793,7 +885,7 @@ export const SettingsUIManager = {
                 // Pour Ollama, on n'affiche pas l'icône dans l'input car on a déjà le bouton OK et les badges
                 validationIcon.innerHTML = '';
             } else if (status === 'error') {
-                validationIcon.innerHTML = '<iconify-icon icon="solar:close-circle-bold" style="color: var(--error-color);"></iconify-icon>';
+                validationIcon.innerHTML = '<iconify-icon icon="ph:x" style="color: var(--error-color);"></iconify-icon>';
             } else {
                 validationIcon.innerHTML = '';
             }
@@ -833,18 +925,12 @@ export const SettingsUIManager = {
             supportedModels.forEach(modelKey => {
                 const modelName = modelKey.replace('ollama-', '');
                 // Vérification flexible pour gérer les variations de nommage Ollama
-                const isInstalled = models.some(installedModel => {
-                    if (installedModel === modelName) return true;
-                    if (installedModel.startsWith(modelName)) return true;
-                    const [baseName, tag] = modelName.split(':');
-                    const [installedBase, installedTag] = installedModel.split(':');
-                    if (baseName === installedBase && installedTag && installedTag.startsWith(tag || '')) return true;
-                    return false;
-                });
+                // Vérification via le helper centralisé
+                const isInstalled = this._isOllamaModelInstalled(modelKey);
                 const shortName = MODEL_SHORT_NAMES[modelKey]?.replace('🏠 ', '') || modelName;
 
                 const color = isInstalled ? 'var(--success-color)' : 'var(--text-tertiary)';
-                const iconName = isInstalled ? 'solar:check-circle-bold' : 'solar:close-circle-bold';
+                const iconName = isInstalled ? 'solar:check-circle-bold' : 'ph:x';
                 const opacity = isInstalled ? '1' : '0.6';
                 const decoration = isInstalled ? 'none' : 'line-through';
 

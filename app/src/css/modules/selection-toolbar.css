@@ -101,10 +101,8 @@
 .btn-deselect {
     width: 30px;
     height: 30px;
-    border-radius: 50%;
     border: none;
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--text-secondary);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;

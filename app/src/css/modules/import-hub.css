@@ -1,15 +1,16 @@
 /* ====================================================================
    MODULE: Import Hub Modal
-   iOS 2025 Premium Design - Unified import entry point
+   iOS 2026 Premium Design - Neutral / Clean / Modern
    ==================================================================== */
 
 /* === MODAL BACKDROP === */
 .import-hub-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.4);
+    /* Lighter backdrop for cleaner feel */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     z-index: 9999;
     opacity: 0;
     visibility: hidden;
@@ -36,13 +37,15 @@
     left: 50%;
     transform: translate(-50%, -50%) scale(0.95);
     width: 90vw;
-    max-width: 680px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl, 20px);
+    max-width: 720px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    /* Slate-200 neutral border */
+    border-radius: 32px;
     box-shadow:
-        0 25px 50px -12px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        0 25px 50px -12px rgba(0, 0, 0, 0.08),
+        /* Very soft shadow */
+        0 0 0 1px rgba(0, 0, 0, 0.02);
     z-index: 10000;
     opacity: 0;
     visibility: hidden;
@@ -50,16 +53,36 @@
     overflow: hidden;
 }
 
-/* Dark mode - Premium glass effect */
+/* Neutral subtle ambient glow instead of colored orb */
+.import-hub-modal::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%,
+            rgba(248, 250, 252, 0.6),
+            /* Slate-50 very subtle */
+            transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Dark mode - Neutral gray glass */
 [data-theme="dark"] .import-hub-modal {
-    background: linear-gradient(165deg,
-            rgba(31, 41, 55, 0.95) 0%,
-            rgba(17, 24, 39, 0.98) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #111827;
+    /* Gray-900 solid */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* Thinner border */
     box-shadow:
-        0 25px 60px -12px rgba(0, 0, 0, 0.7),
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        0 25px 60px -12px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .import-hub-modal::before {
+    display: none;
+    /* No glow in dark mode for cleaner look */
 }
 
 .import-hub-backdrop.active .import-hub-modal {
@@ -71,14 +94,15 @@
 /* === CLOSE BUTTON === */
 .import-hub-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 24px;
+    right: 24px;
     width: 36px;
     height: 36px;
     border: none;
-    background: var(--bg-secondary);
-    border-radius: 50%;
+    background: rgba(241, 245, 249, 0.5);
+    /* Slate-100/50 */
     color: var(--text-tertiary);
+    /* Slate-400 */
     font-size: 1rem;
     cursor: pointer;
     display: flex;
@@ -86,46 +110,56 @@
     justify-content: center;
     transition: all var(--transition-fast);
     z-index: 10;
+    border-radius: 50%;
 }
 
 [data-theme="dark"] .import-hub-close {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
 }
 
+/* RED HOVER STATE FOR CLOSE BUTTON */
 .import-hub-close:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-    transform: scale(1.08);
+    background: #fee2e2;
+    /* Red-100 */
+    color: #ef4444;
+    /* Red-500 */
+    transform: scale(1.05);
+}
+
+[data-theme="dark"] .import-hub-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    /* Red-500 with opacity */
+    color: #f87171;
+    /* Red-400 */
 }
 
 /* === HEADER === */
 .import-hub-header {
     text-align: center;
-    padding: 32px 16px 20px;
+    padding: 48px 24px 32px;
 }
 
 .import-hub-title {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #1e293b;
+    /* Slate-800 solid neutral */
     margin: 0;
     letter-spacing: -0.02em;
 }
 
 [data-theme="dark"] .import-hub-title {
-    background: linear-gradient(135deg, #f9fafb 0%, #d1d5db 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #f3f4f6;
+    /* Gray-100 */
 }
 
 /* === CHOICES CONTAINER === */
 .import-hub-choices {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    padding: 0 16px 24px;
+    gap: 24px;
+    padding: 0 40px 48px;
 }
 
 /* === CHOICE CARD === */
@@ -134,244 +168,175 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 28px 16px;
-    background: var(--surface-color);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg, 16px);
+    gap: 16px;
+    padding: 32px 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    /* Slate-200 */
+    border-radius: 24px;
+    /* Squircle card */
     cursor: pointer;
     overflow: hidden;
     will-change: transform;
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        border-color 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        background 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Dark mode card - Gradient + Glow */
-[data-theme="dark"] .import-hub-card {
-    background: linear-gradient(160deg,
-            rgba(55, 65, 81, 0.5) 0%,
-            rgba(31, 41, 55, 0.6) 50%,
-            rgba(17, 24, 39, 0.7) 100%);
-    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
     box-shadow:
-        0 4px 16px -4px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* Subtle shimmer effect for dark mode cards */
-[data-theme="dark"] .import-hub-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.02) 50%,
-            transparent 100%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
+/* Dark mode card */
+[data-theme="dark"] .import-hub-card {
+    background: #1f2937;
+    /* Gray-800 */
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Hover state */
+/* Hover state - Generic Lift & Shadow */
 .import-hub-card:hover {
-    transform: translateY(-6px);
-    border-color: var(--primary-color);
-    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    /* Border color is now handled specifically per card below */
+    box-shadow:
+        0 12px 24px -6px rgba(0, 0, 0, 0.05),
+        0 4px 6px -4px rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="dark"] .import-hub-card:hover {
-    background: linear-gradient(160deg,
-            rgba(99, 102, 241, 0.12) 0%,
-            rgba(55, 65, 81, 0.5) 40%,
-            rgba(31, 41, 55, 0.6) 100%);
-    border-color: rgba(129, 140, 248, 0.4);
-    box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .import-hub-card:hover::before {
-    opacity: 1;
+    background: #262f3d;
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
 }
 
 .import-hub-card:active {
-    transform: translateY(-3px) scale(0.98);
+    transform: translateY(-2px) scale(0.98);
 }
 
 /* Focus state for accessibility */
 .import-hub-card:focus-visible {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
 }
 
 /* === CARD ICON === */
 .import-hub-icon {
     width: 64px;
     height: 64px;
-    border-radius: 50%;
-    background: var(--bg-secondary);
+    border-radius: 18px;
+    /* Squircle Icon */
+    background: #f8fafc;
+    /* Slate-50 default */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
-    color: var(--primary-color);
-    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    font-size: 1.6rem;
+    color: #64748b;
+    /* Slate-500 default */
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+[data-theme="dark"] .import-hub-icon {
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
 }
 
 /* Base hover transform */
-.import-hub-card:hover .import-hub-icon {
-    transform: scale(1.1);
+.import-hub-icon:hover {
+    transform: scale(1.05);
 }
 
 /* ====================================================================
-   CARD-SPECIFIC ACCENT COLORS - Theme-consistent across light/dark
+   CARD-SPECIFIC ACCENT COLORS - PERMANENT COLOR & BORDER ON HOVER
    ==================================================================== */
 
-/* === INDIVIDUAL CARD - Indigo/Blue accent === */
-/* Light mode - Individual */
+/* === INDIVIDUAL CARD === */
+/* Color: Blue-600 (#2563eb) */
 .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(99, 102, 241, 0.12) 0%,
-            rgba(129, 140, 248, 0.06) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    color: #6366f1;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="individual"] .import-hub-icon {
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
 }
 
 .import-hub-card[data-action="individual"]:hover {
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: #2563eb;
 }
 
-.import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(99, 102, 241, 0.2) 0%,
-            rgba(129, 140, 248, 0.12) 100%);
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #4f46e5;
-}
-
-/* Dark mode - Individual (override) */
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover {
-    border-color: rgba(129, 140, 248, 0.4);
+    border-color: rgba(37, 99, 235, 0.5);
 }
 
-/* === MASS IMPORT CARD - Emerald/Green accent === */
-/* Light mode - Mass */
+
+/* === MASS IMPORT CARD === */
+/* Color: Purple-600 (#9333ea) */
 .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(16, 185, 129, 0.12) 0%,
-            rgba(52, 211, 153, 0.06) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    color: #10b981;
-}
-
-.import-hub-card[data-action="mass"]:hover {
-    border-color: rgba(16, 185, 129, 0.5);
-}
-
-.import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(16, 185, 129, 0.2) 0%,
-            rgba(52, 211, 153, 0.12) 100%);
-    border-color: rgba(16, 185, 129, 0.4);
-    color: #059669;
-}
-
-/* === PHOTOS CARD - Amber/Orange accent === */
-/* Light mode - Photos (Purple/Accent) */
-.import-hub-card[data-action="photos"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(147, 51, 234, 0.12) 0%,
-            rgba(168, 85, 247, 0.06) 100%);
-    border: 1px solid rgba(147, 51, 234, 0.2);
+    background: #fdf4ff;
     color: #9333ea;
 }
 
-.import-hub-card[data-action="photos"]:hover {
+[data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
+    background: rgba(147, 51, 234, 0.15);
+    color: #c084fc;
+}
+
+.import-hub-card[data-action="mass"]:hover {
+    border-color: #9333ea;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
     border-color: rgba(147, 51, 234, 0.5);
 }
 
-.import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(147, 51, 234, 0.2) 0%,
-            rgba(168, 85, 247, 0.12) 100%);
-    border-color: rgba(147, 51, 234, 0.4);
-    color: #7e22ce;
-}
 
-/* Dark mode overrides - Enhanced glow effects */
-[data-theme="dark"] .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(99, 102, 241, 0.18) 0%,
-            rgba(129, 140, 248, 0.08) 100%);
-    border-color: rgba(129, 140, 248, 0.2);
-    box-shadow: inset 0 0 10px rgba(129, 140, 248, 0.08);
-    color: #a5b4fc;
-}
-
-[data-theme="dark"] .import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(99, 102, 241, 0.28) 0%,
-            rgba(129, 140, 248, 0.15) 100%);
-    border-color: rgba(129, 140, 248, 0.4);
-    box-shadow: inset 0 0 14px rgba(129, 140, 248, 0.12);
-    color: #c7d2fe;
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(16, 185, 129, 0.18) 0%,
-            rgba(52, 211, 153, 0.08) 100%);
-    border-color: rgba(52, 211, 153, 0.2);
-    box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.08);
-    color: #6ee7b7;
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(16, 185, 129, 0.28) 0%,
-            rgba(52, 211, 153, 0.15) 100%);
-    border-color: rgba(52, 211, 153, 0.4);
-    box-shadow: inset 0 0 14px rgba(52, 211, 153, 0.1);
-    color: #a7f3d0;
+/* === PHOTOS CARD === */
+/* Color: Emerald-600 (#059669) */
+.import-hub-card[data-action="photos"] .import-hub-icon {
+    background: #ecfdf5;
+    color: #059669;
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"] .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(147, 51, 234, 0.18) 0%,
-            rgba(168, 85, 247, 0.08) 100%);
-    border-color: rgba(147, 51, 234, 0.2);
-    box-shadow: inset 0 0 10px rgba(147, 51, 234, 0.08);
-    color: #d8b4fe;
+    background: rgba(5, 150, 105, 0.15);
+    color: #34d399;
 }
 
-[data-theme="dark"] .import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: linear-gradient(145deg,
-            rgba(147, 51, 234, 0.28) 0%,
-            rgba(168, 85, 247, 0.15) 100%);
-    border-color: rgba(147, 51, 234, 0.4);
-    box-shadow: inset 0 0 14px rgba(147, 51, 234, 0.1);
-    color: #e9d5ff;
+.import-hub-card[data-action="photos"]:hover {
+    border-color: #059669;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
+    border-color: rgba(5, 150, 105, 0.5);
 }
 
 /* === CARD TEXT === */
 .import-hub-card-title {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #1e293b;
+    /* Slate-800 */
     margin: 0;
     text-align: center;
+    transition: color 0.3s ease;
 }
 
 [data-theme="dark"] .import-hub-card-title {
-    color: #f3f4f6;
+    color: #e5e7eb;
+}
+
+.import-hub-card:hover .import-hub-card-title {
+    color: #0f172a;
+    /* Black/Slate-900 on hover */
+}
+
+[data-theme="dark"] .import-hub-card:hover .import-hub-card-title {
+    color: #ffffff;
 }
 
 .import-hub-card-desc {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
+    font-size: 0.85rem;
+    color: #64748b;
+    /* Slate-500 */
     margin: 0;
     text-align: center;
     line-height: 1.4;
@@ -385,30 +350,38 @@
 @media (max-width: 600px) {
     .import-hub-choices {
         grid-template-columns: 1fr;
+        padding: 0 24px 32px;
     }
 
     .import-hub-card {
         flex-direction: row;
-        padding: 16px 20px;
-        gap: 16px;
+        padding: 20px;
+        gap: 20px;
         text-align: left;
     }
 
     .import-hub-card .import-hub-icon {
         width: 52px;
         height: 52px;
+        border-radius: 14px;
+        font-size: 1.4rem;
         flex-shrink: 0;
     }
 
     .import-hub-card-title,
     .import-hub-card-desc {
         text-align: left;
+        align-items: flex-start;
+    }
+
+    .import-hub-card-title {
+        margin-bottom: 2px;
     }
 }
 
 /* === ENTRANCE ANIMATIONS === */
 .import-hub-backdrop.active .import-hub-card {
-    animation: hub-card-entrance 0.5s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+    animation: hub-card-fade-up 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .import-hub-backdrop.active .import-hub-card:nth-child(1) {
@@ -423,14 +396,14 @@
     animation-delay: 0.15s;
 }
 
-@keyframes hub-card-entrance {
+@keyframes hub-card-fade-up {
     from {
         opacity: 0;
-        filter: blur(4px);
+        transform: translateY(20px);
     }
 
     to {
         opacity: 1;
-        filter: blur(0);
+        transform: translateY(0);
     }
 }

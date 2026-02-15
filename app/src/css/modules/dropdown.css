@@ -136,53 +136,49 @@
 
 /* === Icônes des providers dans les labels de groupe === */
 .provider-icon {
-    font-size: 12px;
-    width: 16px;
-    height: 16px;
+    font-size: 14px;
+    /* Un peu plus grand pour lisibilité */
+    width: 18px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-xs);
+    background: transparent !important;
+    /* Force la suppression de tout fond */
 }
 
-/* Google - Couleurs officielles multi-chromiques */
-.provider-google {
-    color: #4285F4;
-    /* Bleu Google */
-}
+/* Google - Logo officiel (couleurs d'origine) */
+/* .provider-google: Pas de couleur forcée */
 
 /* OpenRouter gratuit - Accent primaire pour le "gratuit" */
 .provider-openrouter {
     color: var(--success-color);
+    transform: scale(1.3);
 }
 
 /* OpenRouter payant */
 .provider-openrouter-paid {
     color: var(--purple-color);
-    /* Premium/Purple */
+    transform: scale(1.3);
 }
 
-/* OpenAI */
-.provider-openai {
-    color: #10a37f;
-    /* Vert OpenAI */
-}
+/* OpenAI - Logo officiel (couleurs d'origine) */
+/* .provider-openai: Pas de couleur forcée */
 
 /* Ollama (local) */
 .provider-ollama {
     color: var(--primary-color);
+    transform: scale(1.3);
 }
 
-/* Anthropic (Claude) */
-.provider-anthropic {
-    color: #cc785c;
-    /* Couleur cuivre/terracotta d'Anthropic */
-}
+/* Anthropic (Claude) - Logo officiel (couleurs d'origine) */
+/* .provider-anthropic: Pas de couleur forcée */
 
-/* Mistral */
+/* Mistral - Icône Solar donc on garde la couleur */
 .provider-mistral {
     color: #ff7000;
-    /* Orange Mistral */
+    transform: scale(1.3);
 }
 
 /* === Badges de suffix (GRATUIT, PAYANT, LOCAL) === */
@@ -217,9 +213,10 @@
     /* Bleu Google plus clair en dark mode */
 }
 
-[data-theme="dark"] .provider-openai {
-    color: #50d9a7;
-    /* Vert OpenAI plus clair */
+[data-theme="dark"] .provider-openai,
+[data-theme="dark"] .provider-anthropic {
+    filter: brightness(0) invert(1);
+    /* Force les icônes en blanc pour une visibilité maximale sur fond sombre */
 }
 
 

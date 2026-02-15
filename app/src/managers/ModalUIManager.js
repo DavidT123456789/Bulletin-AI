@@ -246,7 +246,7 @@ export const ModalUI = {
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">
@@ -391,7 +391,7 @@ export const ModalUI = {
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">

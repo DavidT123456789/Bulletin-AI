@@ -121,9 +121,7 @@
     width: 20px;
     height: 20px;
     border: none;
-    background: var(--bg-tertiary);
-    color: var(--bg-color);
-    border-radius: 50%;
+    background: transparent;
     cursor: pointer;
     font-size: 10px;
     transition: all var(--transition-fast);

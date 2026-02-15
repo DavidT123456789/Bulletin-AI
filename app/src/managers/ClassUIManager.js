@@ -184,7 +184,7 @@ export const ClassUIManager = {
                         <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                     </button>
                     <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
-                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             </form>
@@ -747,7 +747,7 @@ export const ClassUIManager = {
                             <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
                         </div>
                     </div>
-                    <button class="close-button close-manage-modal"><iconify-icon icon="solar:close-circle-bold"></iconify-icon></button>
+                    <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">

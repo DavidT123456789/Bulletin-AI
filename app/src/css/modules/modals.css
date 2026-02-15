@@ -200,6 +200,9 @@
     background-color: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
     transform: scale(1.08);
+    box-shadow: none;
+    border: none;
+    outline: none;
 }
 
 .close-button:active {
@@ -533,14 +536,15 @@
 }
 
 .details-accordion summary::before {
-    content: '\f054';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 0.7em;
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-color: var(--text-secondary);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M10.586 6.343a2 2 0 0 0 0 2.828L14.172 12l-3.586 2.828a2 2 0 1 0 2.828 2.828l5-4.242a2 2 0 0 0 0-2.828l-5-4.242a2 2 0 0 0-2.828 0Z'/%3E%3C/svg%3E") no-repeat center center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M10.586 6.343a2 2 0 0 0 0 2.828L14.172 12l-3.586 2.828a2 2 0 1 0 2.828 2.828l5-4.242a2 2 0 0 0 0-2.828l-5-4.242a2 2 0 0 0-2.828 0Z'/%3E%3C/svg%3E") no-repeat center center / contain;
     transition: transform var(--transition-fast);
     margin-left: auto;
     flex-shrink: 0;
-    color: var(--text-secondary);
     order: 1;
 }
 
@@ -1254,11 +1258,20 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    color: var(--text-primary);
+    /* Force text color to avoid blue tint */
 }
 
-.api-key-provider i {
+.api-key-provider i,
+.api-key-provider iconify-icon {
     font-size: 1.1em;
-    opacity: 0.8;
+    opacity: 1;
+    /* Fix 'icone atténuée' */
+}
+
+.api-key-header .btn-link {
+    font-size: 0.85em;
+    font-weight: 500;
 }
 
 .api-key-section .api-key-actions {

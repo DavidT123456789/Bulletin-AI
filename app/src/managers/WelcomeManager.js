@@ -110,7 +110,7 @@ export const WelcomeManager = {
             mistral: {
                 placeholder: "Collez votre clé API Mistral ici...",
                 linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<iconify-icon icon="solar:cat-bold"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>'
             },
             google: {
                 placeholder: "Collez votre clé API Google ici (AIzaSy...)",
@@ -120,7 +120,7 @@ export const WelcomeManager = {
             openrouter: {
                 placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
-                linkIcon: '<iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="solar:bolt-bold-duotone" style="color: var(--secondary-color);"></iconify-icon>'
             }
         };
 

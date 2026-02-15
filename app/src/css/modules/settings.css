@@ -370,7 +370,7 @@
 }
 
 .settings-tab.active {
-    color: var(--primary-color);
+    color: var(--text-primary);
     border-bottom-color: var(--primary-color);
 }
 
@@ -726,7 +726,7 @@
 .slider-value-display {
     font-size: 0.9em;
     font-weight: 500;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-family: monospace;
     opacity: 0.9;
 }
@@ -884,7 +884,7 @@
 .generation-mode-selector.has-glider input[type="radio"]:checked+label {
     background: transparent !important;
     box-shadow: none !important;
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .generation-mode-selector.has-glider input[type="radio"]:checked+label:hover {
@@ -931,20 +931,20 @@
 .generation-mode-selector.header-style.has-glider input[type="radio"]:checked+label {
     background: transparent !important;
     box-shadow: none !important;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 600;
 }
 
 /* Fallback si pas de glider */
 .generation-mode-selector.header-style:not(.has-glider) input[type="radio"]:checked+label {
     background: var(--surface-color);
-    color: var(--primary-color);
+    color: var(--text-primary);
     box-shadow: var(--shadow-sm);
     font-weight: 600;
 }
 
 .generation-mode-selector.header-style input[type="radio"]:checked+label:hover {
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .settings-subject-header {
@@ -1756,4 +1756,19 @@
 
 #settingsPreviewRefreshBtn.btn-regenerate:active {
     transform: translateY(0);
+}
+
+/* ====================================================================
+   GENERATION MODE SELECTOR (Period & Generic Segmented Controls)
+   Explicitly override active text color to avoid blue tint
+   ==================================================================== */
+.generation-mode-selector input:checked+label,
+.segmented-control input:checked+label {
+    color: var(--text-primary) !important;
+}
+
+/* Ensure hovered labels are also consistent (optional, based on pref) */
+.generation-mode-selector label:hover,
+.segmented-control label:hover {
+    color: var(--text-primary);
 }

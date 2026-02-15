@@ -1742,8 +1742,10 @@
 }
 
 /* Single source of truth for mic icon size - prevents inheritance from parent labels */
-.focus-mic-btn i {
-    font-size: 12px;
+.focus-mic-btn i,
+.focus-mic-btn iconify-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .focus-mic-btn:hover {

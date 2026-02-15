@@ -94,7 +94,7 @@ export const FALLBACK_CONFIG = {
 
     // Ordre inter-providers (priorité : local > gratuits > payants)
     // Mistral avant Anthropic car plan gratuit généreux (1B tokens/mois)
-    providerOrder: ['ollama', 'google', 'mistral', 'openrouter', 'anthropic', 'openai'],
+    providerOrder: ['google', 'openrouter', 'openai', 'anthropic', 'mistral', 'ollama'],
 };
 
 /**

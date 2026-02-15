@@ -5,6 +5,7 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { PROVIDER_CONFIG } from '../config/providers.js';
 
 /**
  * Module de gestion des dropdowns custom.
@@ -106,44 +107,53 @@ export const DropdownManager = {
     },
 
     /**
+     * Identifie le provider associé à un label de groupe.
+     * @param {string} labelText 
+     * @returns {Object|null} Configuration du provider ou null
+     */
+    getProviderFromLabel(labelText) {
+        if (!labelText) return null;
+        const mappings = [
+            { pattern: /Google Gemini/i, id: 'google' },
+            { pattern: /OpenRouter/i, id: 'openrouter' },
+            { pattern: /OpenAI/i, id: 'openai' },
+            { pattern: /Anthropic Claude/i, id: 'anthropic' },
+            { pattern: /Mistral AI/i, id: 'mistral' },
+            { pattern: /Ollama/i, id: 'ollama' },
+        ];
+
+        for (const m of mappings) {
+            if (m.pattern.test(labelText)) {
+                return PROVIDER_CONFIG[m.id];
+            }
+        }
+        return null;
+    },
+
+    /**
      * Transforme un label de groupe avec emojis en HTML avec icônes professionnelles.
      * @param {string} labelText - Le texte du label original
      * @returns {string} Le HTML avec des icônes Font Awesome
      */
     formatGroupLabel(labelText) {
-        // Mapping des emojis vers des icônes Font Awesome avec classes pour le styling
-        const iconMappings = [
-            // Google Gemini - utilise le logo Google officiel
-            { pattern: /💚\s*Google Gemini/i, icon: '<iconify-icon icon="logos:google-icon" class="provider-icon provider-google"></iconify-icon>', text: 'Google Gemini' },
-            // OpenRouter - utilise un éclair stylisé
-            { pattern: /💚\s*OpenRouter/i, icon: '<iconify-icon icon="solar:bolt-bold-duotone" class="provider-icon provider-openrouter"></iconify-icon>', text: 'OpenRouter' },
-            { pattern: /💰\s*OpenRouter/i, icon: '<iconify-icon icon="solar:bolt-bold-duotone" class="provider-icon provider-openrouter-paid"></iconify-icon>', text: 'OpenRouter' },
-            // OpenAI - utilise le robot
-            { pattern: /💰\s*OpenAI/i, icon: '<iconify-icon icon="logos:openai-icon" class="provider-icon provider-openai"></iconify-icon>', text: 'OpenAI' },
-            // Anthropic Claude
-            { pattern: /💰\s*Anthropic Claude/i, icon: '<iconify-icon icon="logos:anthropic-icon" class="provider-icon provider-anthropic"></iconify-icon>', text: 'Anthropic Claude' },
-            // Mistral AI
-            { pattern: /🐱\s*Mistral AI/i, icon: '<iconify-icon icon="solar:cat-bold" class="provider-icon provider-mistral"></iconify-icon>', text: 'Mistral AI' },
-            // Ollama - maison pour local
-            { pattern: /🏠\s*Ollama/i, icon: '<iconify-icon icon="solar:server-square-bold" class="provider-icon provider-ollama"></iconify-icon>', text: 'Ollama' },
-        ];
+        const config = this.getProviderFromLabel(labelText);
 
-        for (const mapping of iconMappings) {
-            if (mapping.pattern.test(labelText)) {
-                // Extraire la partie après le nom du provider (ex: "— GRATUIT", "— PAYANT (économique)", "— LOCAL")
-                const suffixMatch = labelText.match(/—\s*(.+)$/);
-                let suffix = '';
-                if (suffixMatch) {
-                    const fullSuffix = suffixMatch[1];
-                    // Extraire le premier mot pour la classe CSS (GRATUIT, PAYANT, LOCAL)
-                    const firstWord = fullSuffix.split(/[\s(]/)[0].toLowerCase();
-                    suffix = ` <span class="provider-suffix provider-suffix-${firstWord}">${fullSuffix}</span>`;
-                }
-                return `${mapping.icon} ${mapping.text}${suffix}`;
+        if (config) {
+            // Extraire la partie après le nom du provider
+            const suffixMatch = labelText.match(/—\s*(.+)$/);
+            let suffix = '';
+            if (suffixMatch) {
+                const fullSuffix = suffixMatch[1];
+                const firstWord = fullSuffix.split(/[\s(]/)[0].toLowerCase();
+                suffix = ` <span class="provider-suffix provider-suffix-${firstWord}">${fullSuffix}</span>`;
             }
+
+            // Construction de l'icône via la config
+            const styleAttr = config.style ? ` style="${config.style}"` : '';
+            return `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}"${styleAttr}></iconify-icon> ${config.name}${suffix}`;
         }
 
-        // Fallback: retourner le texte original si pas de pattern trouvé
+        // Fallback
         return labelText;
     },
 
@@ -225,7 +235,19 @@ export const DropdownManager = {
         const selectedOption = selectEl.options[selectEl.selectedIndex];
 
         if (selectedOption) {
-            valueSpan.textContent = selectedOption.textContent;
+            // Check if we should inject a provider icon (Premium UX)
+            let iconHtml = '';
+            if (selectedOption.parentNode && selectedOption.parentNode.tagName === 'OPTGROUP') {
+                const config = this.getProviderFromLabel(selectedOption.parentNode.label);
+                if (config) {
+                    // Combine styles: margin-right for spacing + provider specific style (color)
+                    const baseStyle = config.style || '';
+                    const combinedStyle = `margin-right: 8px; ${baseStyle}`;
+                    iconHtml = `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}" style="${combinedStyle}"></iconify-icon>`;
+                }
+            }
+
+            valueSpan.innerHTML = iconHtml + selectedOption.textContent;
             valueSpan.classList.remove('placeholder');
         } else {
             valueSpan.textContent = 'Sélectionner...';

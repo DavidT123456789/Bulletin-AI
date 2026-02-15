@@ -201,22 +201,27 @@
 }
 
 /* Format-specific colors */
-.guide-format-chip[data-format="pdf"] i {
+/* Format-specific colors */
+.guide-format-chip[data-format="pdf"] i,
+.guide-format-chip[data-format="pdf"] iconify-icon {
     color: var(--error-color);
     /* Red */
 }
 
-.guide-format-chip[data-format="excel"] i {
+.guide-format-chip[data-format="excel"] i,
+.guide-format-chip[data-format="excel"] iconify-icon {
     color: var(--grade-range-16-20);
     /* Green */
 }
 
-.guide-format-chip[data-format="csv"] i {
+.guide-format-chip[data-format="csv"] i,
+.guide-format-chip[data-format="csv"] iconify-icon {
     color: var(--success-color);
     /* Emerald */
 }
 
-.guide-format-chip[data-format="clipboard"] i {
+.guide-format-chip[data-format="clipboard"] i,
+.guide-format-chip[data-format="clipboard"] iconify-icon {
     color: var(--text-secondary);
 }
 
@@ -2466,7 +2471,7 @@
 }
 
 .format-toggle input:checked~.format-toggle-label {
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 600;
 }
 

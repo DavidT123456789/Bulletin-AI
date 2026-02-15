@@ -679,7 +679,7 @@ export const ListViewManager = {
                                     <iconify-icon icon="solar:magnifer-bold" class="search-icon"></iconify-icon>
                                     <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                                     <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
-                                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                                        <iconify-icon icon="ph:x"></iconify-icon>
                                     </button>
                                 </div>
                             </th>
@@ -714,12 +714,12 @@ export const ListViewManager = {
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                                         <!-- SECTION SELECTION -->
                                         <button class="action-dropdown-item" id="selectAllBtn-global">
-                                            <iconify-icon icon="solar:checklist-minimalistic-bold"></iconify-icon> Tout sélectionner
+                                            <iconify-icon icon="solar:check-read-linear"></iconify-icon> Tout sélectionner
                                         </button>
                                         
                                         <!-- SECTION VUE -->
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
-                                            <iconify-icon icon="solar:chart-2-bold"></iconify-icon> Analyser la classe
+                                            <iconify-icon icon="solar:pie-chart-2-linear"></iconify-icon> Analyser la classe
                                         </button>
 
 
@@ -727,13 +727,13 @@ export const ListViewManager = {
                                         <!-- SECTION EXPORT -->
                                         <h5 class="dropdown-header"><iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
-                                            <iconify-icon icon="solar:file-code-bold"></iconify-icon> Données (JSON)
+                                            <iconify-icon icon="fa6-solid:file-code"></iconify-icon> Données (JSON)
                                         </button>
                                         <button class="action-dropdown-item" id="exportCsvBtn">
-                                            <iconify-icon icon="solar:file-text-bold"></iconify-icon> Tableau (CSV)
+                                            <iconify-icon icon="fa6-solid:file-csv"></iconify-icon> Tableau (CSV)
                                         </button>
                                         <button class="action-dropdown-item" id="exportPdfBtn">
-                                            <iconify-icon icon="solar:file-text-bold"></iconify-icon> Imprimer / PDF
+                                            <iconify-icon icon="fa6-solid:file-pdf"></iconify-icon> Imprimer / PDF
                                         </button>
                                     </div>
                                 </div>
@@ -1724,7 +1724,7 @@ export const ListViewManager = {
             <div class="selection-toolbar-content">
                 <div class="selection-info">
                     <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection">
-                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                     <span id="selectionCount">0 élève sélectionné</span>
                     <button class="btn-select-all-link" id="btnSelectAllLink">Tout sélectionner</button>

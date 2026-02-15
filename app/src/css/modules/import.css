@@ -228,11 +228,33 @@
 }
 
 /* Container pour les steps - hauteur fixe pour éviter le redimensionnement */
+/* Container pour les steps - hauteur fixe pour éviter le redimensionnement */
 #welcomeModal .modal-body {
     position: relative;
     overflow: hidden;
     /* Hauteur fixe pour que toutes les pages occupent le même espace */
     min-height: 280px;
+}
+
+/* === WELCOME MODAL IMMERSIVE OVERRIDES === */
+#welcomeModal .modal-header {
+    background: transparent;
+    border-bottom: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+#welcomeModal .modal-title {
+    display: none;
+}
+
+#welcomeModal .close-button {
+    margin-left: auto;
+    background: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(4px);
 }
 
 .welcome-step {
@@ -329,21 +351,22 @@
 }
 
 .welcome-icon {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    /* Subtle entrance animation */
-    animation: welcome-icon-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    font-size: 4.5rem;
+    margin-bottom: 24px;
+    /* Floating & Glow Animation */
+    filter: drop-shadow(0 0 20px rgba(var(--primary-color-rgb), 0.15));
+    animation: welcome-float 3s ease-in-out infinite both;
 }
 
-@keyframes welcome-icon-bounce {
-    0% {
-        opacity: 0;
-        transform: scale(0.5) translateY(20px);
+@keyframes welcome-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
     }
 
-    100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+    50% {
+        transform: translateY(-10px);
     }
 }
 
@@ -351,9 +374,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-top: 1px solid var(--border-color);
+    padding: 24px 32px;
+    border-top: 1px solid transparent;
+    /* Removed border */
     background: var(--surface-color);
+    /* Kept for contrast */
+}
+
+#welcomeNextBtn {
+    border-radius: 100px;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+#welcomeNextBtn::after {
+    content: ' →';
+    display: inline-block;
+    margin-left: 6px;
+    transition: transform 0.2s ease;
+}
+
+#welcomeNextBtn:hover::after {
+    transform: translateX(4px);
 }
 
 #welcome-dots {
@@ -397,11 +439,7 @@
     position: relative;
 }
 
-/* État hover/focus - pas d'effet spécial pour un look clean */
-.welcome-api-key-group:hover:not(:focus-within),
-.welcome-api-key-group:focus-within {
-    /* Intentionally no visual changes - keep it simple */
-}
+/* État hover/focus - pas d'effet spécial pour un look clean (Supprimé pour éviter lint) */
 
 /* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input,
@@ -596,11 +634,21 @@
     line-height: 1.5;
 }
 
-/* Harmonized h3 size across all welcome steps */
+/* Harmonized h3 size across all welcome steps with Gradient */
 .welcome-step h3 {
-    font-size: 1.5em;
-    color: var(--text-primary);
-    margin-bottom: 12px;
+    font-size: 1.8em;
+    font-weight: 800;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--primary-color), var(--purple-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+}
+
+/* Step 1 Specific: Add breathing room after title (since subtitle was removed) */
+#welcome-step-1 h3 {
+    margin-bottom: 40px;
 }
 
 .welcome-features-list {
@@ -617,15 +665,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 15px;
+    gap: 12px;
+    padding: 20px;
     flex: 1;
-    background: var(--surface-color);
+    /* Glassmorphism */
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur));
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-lg);
-    transition: all var(--transition-fast);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid transparent;
-    /* Prepare for border transition */
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .welcome-feature:hover {
@@ -634,15 +683,17 @@
 }
 
 .feature-icon {
-    font-size: 1.75em;
-    min-width: 48px;
-    height: 48px;
+    font-size: 2em;
+    min-width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-radius: var(--radius-md);
-    margin-bottom: 5px;
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1), rgba(156, 39, 176, 0.1));
+    color: var(--primary-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: 8px;
+    box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .feature-text {
@@ -783,8 +834,10 @@
     margin: 0;
 }
 
-.provider-selector-compact label i {
-    font-size: 0.95em;
+.provider-selector-compact label i,
+.provider-selector-compact label iconify-icon {
+    font-size: 1.1em;
+    /* Increased for better visibility/consistency */
     transition: color 0.25s ease;
 }
 
@@ -795,15 +848,43 @@
 /* État sélectionné : le glider gère le fond */
 .provider-selector-compact.has-glider input[type="radio"]:checked+label {
     background: transparent;
-    color: var(--primary-color);
+    color: var(--text-primary) !important;
     font-weight: 600;
     box-shadow: none;
+}
+
+/* === PROVIDER ICONS STATE MANAGEMENT === */
+.provider-selector-compact label iconify-icon {
+    transition: all 0.25s ease;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    color: var(--text-secondary);
+}
+
+/* Reveal color on hover or active */
+.provider-selector-compact label:hover iconify-icon,
+.provider-selector-compact input[type="radio"]:checked+label iconify-icon {
+    filter: none;
+    opacity: 1;
+}
+
+/* Specific Brand Colors */
+/* Mistral */
+.provider-selector-compact input[value="mistral"]+label:hover iconify-icon,
+.provider-selector-compact input[value="mistral"]:checked+label iconify-icon {
+    color: #fd6f00;
+}
+
+/* OpenRouter */
+.provider-selector-compact input[value="openrouter"]+label:hover iconify-icon,
+.provider-selector-compact input[value="openrouter"]:checked+label iconify-icon {
+    color: var(--secondary-color);
 }
 
 /* Fallback sans glider */
 .provider-selector-compact:not(.has-glider) input[type="radio"]:checked+label {
     background: var(--surface-color);
-    color: var(--primary-color);
+    color: var(--text-primary) !important;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
@@ -966,20 +1047,29 @@
 
 .security-note-left {
     display: flex;
-    gap: 10px;
-    font-size: 0.8em;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
     color: var(--text-secondary);
-    background: var(--bg-secondary);
-    padding: 12px;
-    border-radius: var(--radius-md);
+    /* Lighter, Glass-like Pill */
+    background: rgba(var(--primary-color-rgb), 0.04);
+    backdrop-filter: blur(4px);
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
     line-height: 1.4;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.1);
+    margin: 10px auto 0 auto;
+    max-width: fit-content;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
-.security-note-left i {
-    color: var(--success-color);
-    margin-top: 2px;
-    flex-shrink: 0;
+.security-note-left i,
+.security-note-left iconify-icon {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+    opacity: 0.8;
 }
 
 .welcome-split-action {

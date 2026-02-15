@@ -41,7 +41,7 @@ export const userSettings = {
 
     /** Configuration API */
     api: {
-        currentAIModel: 'gemini-3-flash-preview',
+        currentAIModel: 'mistral-direct-small-latest',
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',

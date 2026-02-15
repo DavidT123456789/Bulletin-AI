@@ -1038,7 +1038,7 @@ export const TrombinoscopeManager = {
                         height: ${deleteSize}px;
                         font-size: ${deleteFontSize}px;
                     ">
-                        <iconify-icon icon="solar:close-circle-bold"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             `;

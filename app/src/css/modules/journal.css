@@ -501,9 +501,11 @@
     font-size: 13px;
 }
 
-.journal-empty i {
-    font-size: 24px;
-    opacity: 0.5;
+.journal-empty iconify-icon {
+    font-size: 32px;
+    opacity: 0.4;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
 }
 
 /* === Timeline === */

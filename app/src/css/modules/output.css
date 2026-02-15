@@ -215,9 +215,7 @@
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    background: var(--bg-tertiary);
-    border: none;
-    border-radius: 50%;
+    background: transparent;
     width: 20px;
     height: 20px;
     display: flex;

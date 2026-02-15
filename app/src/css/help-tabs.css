@@ -15,7 +15,7 @@
 
 /* Sidebar: Fond Blanc (Surface), Border Right */
 .modal-tabs-sidebar {
-    width: 260px;
+    width: 210px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -42,7 +42,7 @@
     background: transparent;
     color: var(--text-secondary);
     font-weight: 500;
-    font-size: 0.95em;
+    font-size: 1em;
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: left;
@@ -58,10 +58,17 @@
     background: var(--bg-color);
     border-color: transparent;
     box-shadow: none;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 700;
     position: relative;
     /* For pseudo-element */
+}
+
+/* Ensure icons are vibrant in active state */
+.modal-tab-btn.active iconify-icon,
+.modal-tab-btn.active i {
+    opacity: 1;
+    filter: brightness(1.1);
 }
 
 .modal-tab-btn.active::before {
@@ -97,14 +104,16 @@
     color: var(--info-color);
 }
 
-.modal-tab-btn i {
-    width: 24px;
+
+.modal-tab-btn iconify-icon {
+    width: 28px;
     text-align: center;
-    font-size: 1.1em;
+    font-size: 1.3em;
     transition: transform var(--transition-fast);
 }
 
-.modal-tab-btn:hover i {
+.modal-tab-btn:hover iconify-icon,
+.modal-tab-btn.active iconify-icon {
     transform: scale(1.1);
 }
 
@@ -400,6 +409,7 @@
     margin: 0 0 2px 0;
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

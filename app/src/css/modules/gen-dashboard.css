@@ -48,8 +48,8 @@
     /* Transparent by default - background appears only during generation */
     background: transparent;
     border: none;
-    color: var(--primary-color);
     font-size: 0.8rem;
+    color: var(--text-primary);
     font-weight: 600;
     letter-spacing: 0.01em;
     cursor: pointer;
