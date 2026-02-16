@@ -136,9 +136,9 @@
 
 /* === Icônes des providers dans les labels de groupe === */
 .provider-icon {
-    font-size: 14px;
+    font-size: 18px;
     /* Un peu plus grand pour lisibilité */
-    width: 18px;
+    width: 20px;
     height: 18px;
     display: inline-flex;
     align-items: center;

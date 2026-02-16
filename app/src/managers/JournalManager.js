@@ -491,8 +491,8 @@ export const JournalManager = {
                         <button class="btn-icon-ghost" id="journalDraftCancelBtn" aria-label="Annuler">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
-                        <button class="btn-icon-primary" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer">
-                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                        <button class="btn-icon-ghost" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer" style="color: var(--primary-color);">
+                            <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -551,8 +551,8 @@ export const JournalManager = {
         `).join('');
 
         return `
-            ${renderPillDropdown('positive', 'Positif', 'solar:add-circle-bold', positiveTags, 'var(--success-color)')}
-            ${renderPillDropdown('negative', 'Négatif', 'solar:minus-circle-bold', negativeTags, 'var(--error-color)')}
+            ${renderPillDropdown('positive', 'Positif', 'ph:plus-bold', positiveTags, 'var(--success-color)')}
+            ${renderPillDropdown('negative', 'Négatif', 'ph:minus-bold', negativeTags, 'var(--error-color)')}
             ${neutralBtnsHTML}
         `;
     },
@@ -588,8 +588,8 @@ export const JournalManager = {
         };
 
         return `
-            ${renderDropdown('positive', 'Positif', 'solar:add-circle-bold', positiveTags, 'var(--success-color)')}
-            ${renderDropdown('negative', 'Négatif', 'solar:minus-circle-bold', negativeTags, 'var(--error-color)')}
+            ${renderDropdown('positive', 'Positif', 'ph:plus-bold', positiveTags, 'var(--success-color)')}
+            ${renderDropdown('negative', 'Négatif', 'ph:minus-bold', negativeTags, 'var(--error-color)')}
         `;
     }
 };

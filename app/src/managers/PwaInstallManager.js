@@ -297,6 +297,7 @@ export const PwaInstallManager = {
         if (!btn) return;
 
         btn.style.display = 'flex';
+        if (DOM.pwaInstallSeparator) DOM.pwaInstallSeparator.style.display = 'block';
 
         // Update text based on platform
         if (Platform.needsManualInstall()) {
@@ -317,6 +318,9 @@ export const PwaInstallManager = {
         }
         if (DOM.installPwaBtn) {
             DOM.installPwaBtn.style.display = 'none';
+        }
+        if (DOM.pwaInstallSeparator) {
+            DOM.pwaInstallSeparator.style.display = 'none';
         }
     },
 

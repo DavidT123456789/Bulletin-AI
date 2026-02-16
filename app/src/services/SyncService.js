@@ -173,6 +173,7 @@ export const SyncService = {
             const saveBtn = document.getElementById('cloudSaveMenuBtn');
             const loadBtn = document.getElementById('cloudLoadMenuBtn');
             const reconnectBtn = document.getElementById('cloudReconnectBtn');
+            const separator = document.getElementById('cloudSeparator');
 
             if (!saveBtn) return;
 
@@ -215,8 +216,11 @@ export const SyncService = {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
                 if (reconnectBtn) reconnectBtn.style.display = 'none';
+                if (separator) separator.style.display = 'none';
                 return;
             }
+
+            if (separator) separator.style.display = 'block';
 
             saveBtn.style.display = 'grid'; // Maintain grid layout defined in CSS
             if (loadBtn) loadBtn.style.display = 'grid';

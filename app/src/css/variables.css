@@ -195,7 +195,7 @@
 
     /* --- Close Button Tokens --- */
     --close-btn-size: 32px;
-    --close-btn-icon-size: 1rem;
+    --close-btn-icon-size: 18px;
 
     /* --- Guide Panel Tokens --- */
     --guide-panel-bg: rgba(241, 245, 249, 0.5);

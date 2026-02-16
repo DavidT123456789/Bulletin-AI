@@ -472,7 +472,7 @@
     transition: all var(--transition-fast);
     position: relative;
     /* Context for dropdown */
-    height: 38px;
+    height: 40px;
 }
 
 /* Separator between AI Dashboard and Actions */
@@ -665,8 +665,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: none;
     background: transparent;
@@ -675,9 +675,10 @@
     transition: all var(--transition-fast);
 }
 
-.menu-btn i {
-    font-size: 16px;
-    /* Ensure 16px */
+.menu-btn i,
+.menu-btn iconify-icon {
+    font-size: 24px;
+    /* Ensure 24px */
 }
 
 .menu-btn:hover,
@@ -719,7 +720,8 @@
 /* Shared logic for all 3 dots */
 .menu-btn.has-update::before,
 .menu-btn.has-update::after,
-.menu-btn.has-update i {
+.menu-btn.has-update i,
+.menu-btn.has-update iconify-icon {
     content: '';
     display: block;
     width: 3.5px;
@@ -740,9 +742,16 @@
 }
 
 /* Specific overrides to hide the original font icon glyph */
-.menu-btn.has-update i::before {
-    content: none !important;
+.menu-btn.has-update i::before,
+.menu-btn.has-update iconify-icon::part(svg) {
     display: none !important;
+}
+
+/* For iconify-icon, we might need to hide the content differently since it uses Shadow DOM or direct SVG */
+.menu-btn.has-update iconify-icon {
+    /* When active, we actually want to turn the ELEMENT ITSELF into a dot, ignoring its SVG content */
+    background: transparent;
+    /* Reset background */
 }
 
 /* Stagger delay for wave effect (Top -> Bottom) */
@@ -750,7 +759,8 @@
     animation-delay: 0s;
 }
 
-.menu-btn.has-update i {
+.menu-btn.has-update i,
+.menu-btn.has-update iconify-icon {
     animation-delay: 0.15s;
 }
 
@@ -874,17 +884,19 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.menu-item i {
-    font-size: 14px;
+.menu-item i,
+.menu-item iconify-icon {
+    font-size: 18px;
     color: var(--text-secondary);
-    min-width: 18px;
+    min-width: 24px;
     /* Alignment */
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.menu-item:hover i {
+.menu-item:hover i,
+.menu-item:hover iconify-icon {
     color: var(--text-primary);
 }
 
@@ -892,8 +904,8 @@
 .cloud-save-menu-item {
     display: grid !important;
     /* Override flex */
-    grid-template-columns: 18px 1fr;
-    /* 18px matches .menu-item i min-width */
+    grid-template-columns: 24px 1fr;
+    /* 24px matches .menu-item i min-width */
     grid-template-rows: auto auto;
     column-gap: 10px;
     /* Matches .menu-item gap */
@@ -909,7 +921,7 @@
     grid-column: 1;
     position: static;
     transform: none;
-    font-size: 14px;
+    font-size: 18px;
     /* Matches .menu-item i size */
     justify-self: start;
     /* Left align like others */
@@ -1005,8 +1017,15 @@
     color: var(--warning-color) !important;
 }
 
-.cloud-reconnect-item i {
+.cloud-reconnect-item i,
+.cloud-reconnect-item iconify-icon {
     color: var(--warning-color) !important;
+    font-size: 18px;
+    /* Slightly larger for clarity */
+    display: inline-flex;
+    /* Ensure visibility */
+    min-width: 24px;
+    justify-content: center;
 }
 
 /* Separator Line */
@@ -1422,8 +1441,8 @@
     }
 
     .pill-segment {
-        width: 32px;
-        height: 28px;
+        width: 36px;
+        height: 36px;
     }
 
     .pill-segment i {

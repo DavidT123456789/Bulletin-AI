@@ -180,8 +180,8 @@ export const ClassUIManager = {
                            autocomplete="off"
                            maxlength="50"
                            name="newClassName_ignore">
-                    <button type="button" class="btn btn-primary btn-small inline-create-btn" style="padding: 10px 14px;" disabled>
-                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" style="padding: 10px 14px; color: var(--primary-color);" disabled>
+                        <iconify-icon icon="ph:check-bold"></iconify-icon>
                     </button>
                     <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
                         <iconify-icon icon="ph:x"></iconify-icon>
@@ -267,7 +267,7 @@ export const ClassUIManager = {
                     <iconify-icon icon="solar:mortarboard-bold" style="font-size: 24px; color: var(--text-tertiary);"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
-                        <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Créer ma première classe
+                        <iconify-icon icon="ph:plus-bold"></iconify-icon> Créer ma première classe
                     </button>
                 </div>
             `;
@@ -338,8 +338,7 @@ export const ClassUIManager = {
             // Proceed to delete
             await ClassManager.deleteClass(classId, true);
 
-        } catch (error) {
-            console.error('[ClassUIManager] Delete failed:', error);
+        } catch {
             UI?.showNotification("Erreur lors de la suppression de la classe.", "error");
         } finally {
             // Always refresh UI state
@@ -485,27 +484,16 @@ export const ClassUIManager = {
             let errorCount = 0;
 
             classResults.forEach(result => {
-                // Check if has error
                 if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
                     errorCount++;
                     return;
                 }
 
-                // Check appreciation for current period
                 const periodData = result.studentData?.periods?.[currentPeriod];
                 const appreciation = periodData?.appreciation || result.appreciation;
 
-                if (appreciation && typeof appreciation === 'string') {
-                    const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-                    const isPlaceholder = textOnly === '' ||
-                        textOnly.includes('en attente') ||
-                        textOnly.includes('aucune appréciation') ||
-                        textOnly.includes('cliquez sur') ||
-                        textOnly.startsWith('remplissez');
-
-                    if (!isPlaceholder) {
-                        completedCount++;
-                    }
+                if (!this._isPlaceholderAppreciation(appreciation)) {
+                    completedCount++;
                 }
             });
 
@@ -531,23 +519,17 @@ export const ClassUIManager = {
     },
 
     /**
-     * Met à jour les compteurs d'élèves dans le dropdown (legacy)
+     * Vérifie si un texte d'appréciation est un placeholder vide
      * @private
      */
-    _updateClassStudentCounts(classes) {
-        const allResults = appState.generatedResults || [];
-
-        for (const cls of classes) {
-            const countBadge = DOM.classDropdownList?.querySelector(
-                `.class-student-count[data-class-id="${cls.id}"]`
-            );
-            if (countBadge) {
-                const classStudentCount = allResults.filter(
-                    r => r.classId === cls.id
-                ).length;
-                countBadge.textContent = classStudentCount;
-            }
-        }
+    _isPlaceholderAppreciation(appreciation) {
+        if (!appreciation || typeof appreciation !== 'string') return true;
+        const text = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
+        return text === '' ||
+            text.includes('en attente') ||
+            text.includes('aucune appréciation') ||
+            text.includes('cliquez sur') ||
+            text.startsWith('remplissez');
     },
 
     /**
@@ -566,27 +548,16 @@ export const ClassUIManager = {
         let errors = 0;
 
         classResults.forEach(result => {
-            // Check errors
             if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
                 errors++;
                 return;
             }
 
-            // Check appreciation
             const periodData = result.studentData?.periods?.[currentPeriod];
             const appreciation = periodData?.appreciation || result.appreciation;
 
-            if (appreciation && typeof appreciation === 'string') {
-                const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
-                const isPlaceholder = textOnly === '' ||
-                    textOnly.includes('en attente') ||
-                    textOnly.includes('aucune appréciation') ||
-                    textOnly.includes('cliquez sur') ||
-                    textOnly.startsWith('remplissez');
-
-                if (!isPlaceholder) {
-                    completed++;
-                }
+            if (!this._isPlaceholderAppreciation(appreciation)) {
+                completed++;
             }
         });
 
@@ -649,11 +620,13 @@ export const ClassUIManager = {
         const modalContent = `
             <div class="class-management-content">
                 ${classes.length === 0 ? `
-                    <p style="color: var(--text-secondary); text-align: center; padding: 20px;">
-                        Aucune classe créée.
-                    </p>
+                    <div class="class-management-empty">
+                        <iconify-icon icon="solar:layers-minimalistic-bold-duotone"></iconify-icon>
+                        <p class="empty-title">Aucune classe créée</p>
+                        <p class="empty-subtitle">Commencez par ajouter votre première classe.</p>
+                    </div>
                 ` : `
-                    <div class="class-management-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="class-management-list">
                         ${classes.map(cls => {
             const stats = this._getClassStats(cls.id);
             // Get pedagogical stats (Average, Evolution)
@@ -670,59 +643,60 @@ export const ClassUIManager = {
                     const trend = pedagoStats.avgEvolution;
                     const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
                     const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
-                    trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution par rapport au trimestre précédent">${trendArrow}</span>`;
+                    trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution trimestrielle">${trendArrow}</span>`;
                 }
 
                 averageBadge = `
-                    <div class="class-stat-badge ${colorClass}" title="Moyenne de classe">
+                    <div class="class-stat-badge ${colorClass}" title="Moyenne générale de la classe">
                         <span class="stat-value">${avg}</span>
                         <span class="stat-suffix">/20</span>
                         ${trendIcon}
                     </div>
                 `;
             } else {
-                averageBadge = `<span class="class-no-data">Sans notes</span>`;
+                averageBadge = `<div class="class-stat-badge no-data"><span class="stat-value">--/20</span></div>`;
             }
 
             return `
                             <div class="class-management-item" data-class-id="${cls.id}" draggable="true">
-                                <div class="class-drag-handle" title="Glisser pour réorganiser">
-                                    <iconify-icon icon="solar:hamburger-menu-bold"></iconify-icon>
+                                <div class="class-drag-handle" title="Réorganiser">
+                                    <iconify-icon icon="solar:hamburger-menu-linear"></iconify-icon>
                                 </div>
+                                
                                 <div class="class-management-info">
                                     <div class="class-info-header">
                                         <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
                                         ${averageBadge}
                                     </div>
+                                    
                                     <div class="class-management-meta">
-                                        <span class="meta-item">
-                                            <iconify-icon icon="solar:calendar-bold"></iconify-icon>
-                                            ${cls.year || 'Non définie'}
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item">
-                                            <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
-                                            ${stats.total} élève${stats.total > 1 ? 's' : ''}
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item ${stats.statusClass}">
+                                        <div class="meta-item" title="Année scolaire">
+                                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                                            ${cls.year || '2025-2026'}
+                                        </div>
+                                        <div class="meta-item" title="Nombre d'élèves">
+                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                            ${stats.total} élèves
+                                        </div>
+                                        <div class="meta-item ${stats.statusClass}" title="Appréciations complétées">
                                             <iconify-icon icon="${stats.icon}"></iconify-icon>
                                             ${stats.completed}/${stats.total}
-                                        </span>
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div class="class-management-actions">
                                     <button class="btn-icon-small manage-duplicate-btn" data-class-id="${cls.id}" 
-                                            title="Dupliquer">
-                                        <iconify-icon icon="solar:copy-bold"></iconify-icon>
+                                            title="Dupliquer la classe">
+                                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
                                     <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
                                             title="Renommer">
-                                        <iconify-icon icon="solar:pen-bold"></iconify-icon>
+                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
                                     <button class="btn-icon-small manage-delete-btn" data-class-id="${cls.id}" 
-                                            title="Supprimer">
-                                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
+                                            title="Supprimer la classe">
+                                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
@@ -738,23 +712,23 @@ export const ClassUIManager = {
         modalEl.className = 'modal modal-small';
         modalEl.id = 'classManagementModal';
         modalEl.innerHTML = `
-            <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-content" style="max-width: 650px;">
                 <div class="modal-header">
                     <div class="modal-title-group">
                         <span class="modal-title-icon"><iconify-icon icon="solar:layers-bold"></iconify-icon></span>
                         <div class="modal-title-text-col">
-                            <h2 class="modal-title-main">Vue d'ensemble des classes</h2>
+                            <h2 class="modal-title-main">Mes classes</h2>
                             <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
                         </div>
                     </div>
-                    <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
+                    <div class="modal-header-actions">
+                        <button class="btn btn-secondary btn-small" id="addClassFromModalBtn" title="Créer une nouvelle classe">
+                            <iconify-icon icon="ph:plus-bold" style="color: var(--primary-color);"></iconify-icon> <span>Nouvelle classe</span>
+                        </button>
+                        <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
+                    </div>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-                        <button class="btn btn-primary btn-small" id="addClassFromModalBtn">
-                            <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Nouvelle classe
-                        </button>
-                    </div>
                     ${modalContent}
                 </div>
             </div>
@@ -912,33 +886,35 @@ export const ClassUIManager = {
             const formHtml = `
                 <div class="inline-create-class-form" style="
                     display: flex;
-                    gap: 8px;
+                    gap: 12px;
                     align-items: center;
-                    padding: 12px 16px;
-                    background: rgba(var(--primary-color-rgb), 0.08);
-                    border: 2px solid var(--primary-color);
-                    border-radius: var(--radius-md);
-                    margin-bottom: 12px;
-                    animation: slideDownExpand 0.25s ease-out;
+                    padding: 6px; 
+                    background: var(--surface-color);
+                    border: 1px solid var(--primary-color);
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    border-radius: var(--radius-lg);
+                    margin-bottom: 16px;
+                    animation: slideDownExpand 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
                 ">
                     <input type="text" class="new-class-input" 
                            placeholder="Nom de la nouvelle classe..." 
                            maxlength="50"
                            style="
                                flex: 1;
-                               padding: 10px 14px;
-                               border: 1px solid var(--border-color);
-                               border-radius: var(--radius-sm);
-                               background: var(--surface-color);
-                               font-size: 0.95em;
+                               padding: 12px 16px;
+                               border: none;
+                               background: transparent;
+                               font-size: 1rem;
+                               font-weight: 500;
+                               color: var(--text-primary);
                                outline: none;
                            "
                            autocomplete="off">
-                    <button class="btn btn-primary btn-small create-class-confirm" style="padding: 10px 14px;" disabled>
-                        <i class="fas fa-check"></i>
+                    <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 10px 14px; color: var(--primary-color);" disabled>
+                        <iconify-icon icon="ph:check-bold"></iconify-icon>
                     </button>
                     <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 10px 14px;">
-                        <i class="fas fa-times"></i>
+                        <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -977,7 +953,7 @@ export const ClassUIManager = {
                 if (className) {
                     confirmBtn.disabled = true;
                     input.disabled = true;
-                    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    confirmBtn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
 
                     await this._createAndSwitchClass(className);
 
@@ -1023,11 +999,11 @@ export const ClassUIManager = {
                                    font-size: 0.95em;
                                    font-weight: 500;
                                ">
-                        <button class="btn btn-primary btn-small save-rename-btn" style="padding: 8px 12px;">
-                            <i class="fas fa-check"></i>
+                        <button class="btn btn-secondary btn-small save-rename-btn" style="padding: 8px 12px; color: var(--primary-color);">
+                            <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
                         <button class="btn btn-secondary btn-small cancel-rename-btn" style="padding: 8px 12px;">
-                            <i class="fas fa-times"></i>
+                            <iconify-icon icon="ph:x-bold"></iconify-icon>
                         </button>
                     </div>
                 `;
@@ -1105,14 +1081,14 @@ export const ClassUIManager = {
                         animation: slideInConfirm 0.2s ease-out;
                     ">
                         <span style="color: var(--error-color); font-weight: 500; font-size: 0.9em;">
-                            <i class="fas fa-exclamation-triangle"></i> Supprimer "${this._escapeHtml(cls?.name || '')}" ?
+                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Supprimer "${this._escapeHtml(cls?.name || '')}" ?
                         </span>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-secondary btn-small cancel-delete-btn" style="padding: 6px 12px; font-size: 0.85em;">
                                 Annuler
                             </button>
                             <button class="btn btn-danger btn-small confirm-delete-btn" style="padding: 6px 12px; font-size: 0.85em; background: var(--error-color); color: white; border: none;">
-                                <i class="fas fa-trash"></i> Supprimer
+                                <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
                             </button>
                         </div>
                     </div>
@@ -1177,7 +1153,7 @@ export const ClassUIManager = {
 
                 // Visual feedback - button loading state
                 const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
                 btn.disabled = true;
 
                 try {
@@ -1194,8 +1170,7 @@ export const ClassUIManager = {
                         modalEl.remove();
                         this.showManageClassesModal();
                     }, 300);
-                } catch (error) {
-                    console.error('[ClassUIManager] Duplicate failed:', error);
+                } catch {
                     UI?.showNotification('Erreur lors de la duplication', 'error');
                     btn.innerHTML = originalIcon;
                     btn.disabled = false;
@@ -1262,10 +1237,10 @@ export const ClassUIManager = {
             <div class="modal-content" style="max-width: 400px;">
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <span class="modal-title-icon"><i class="fas fa-arrow-right-arrow-left"></i></span>
+                        <span class="modal-title-icon"><iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon></span>
                         <span class="modal-title-text">${title}</span>
                     </h2>
-                    <button class="close-button close-move-modal"><i class="fas fa-xmark"></i></button>
+                    <button class="close-button close-move-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
                     <p style="margin-bottom: 16px; color: var(--text-secondary);">
@@ -1278,7 +1253,7 @@ export const ClassUIManager = {
                                 padding: 12px 16px;
                                 text-align: left;
                             ">
-                                <i class="fas fa-graduation-cap" style="margin-right: 10px; opacity: 0.7;"></i>
+                                <iconify-icon icon="solar:mortarboard-bold" style="margin-right: 10px; opacity: 0.7;"></iconify-icon>
                                 ${this._escapeHtml(cls.name)}
                                 <span style="margin-left: auto; font-size: 0.85em; opacity: 0.6;">${cls.year || ''}</span>
                             </button>
@@ -1305,7 +1280,7 @@ export const ClassUIManager = {
 
                 // Confirm action
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Déplacement...';
+                btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon> Déplacement...';
 
                 // Move students
                 let movedCount = 0;

@@ -51,20 +51,15 @@
 .class-dropdown {
     position: absolute;
     top: calc(100% + 12px);
-    /* Plus d'espace */
     left: 0;
     min-width: 280px;
-    /* Plus large */
     max-width: 340px;
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    /* Coins plus arrondis */
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.1);
-    /* Ombre plus douce et large */
     z-index: var(--z-dropdown);
     overflow: hidden;
-    /* Animation */
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
     transform-origin: top left;
@@ -219,14 +214,13 @@
     color: var(--primary-color);
 }
 
-/* Ensure badge contrast on hover */
 .class-dropdown-item:hover .class-student-count {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
 }
 
 /* ====================================================================
-   PROGRESS BADGE (Class dropdown indicators) - Minimaliste
+   PROGRESS BADGE (Class dropdown indicators)
    ==================================================================== */
 
 .class-progress-badge {
@@ -253,7 +247,6 @@
     }
 }
 
-/* Base count - Neutral, minimal */
 .progress-count {
     display: inline-flex;
     align-items: center;
@@ -273,7 +266,6 @@
     font-size: 0.65rem;
 }
 
-/* Complete state - Green accent */
 .progress-count.is-complete {
     background: rgba(34, 197, 94, 0.15);
     color: #16a34a;
@@ -284,7 +276,6 @@
     color: #4ade80;
 }
 
-/* Alert/Error state - Red accent */
 .progress-count.has-alert {
     background: rgba(239, 68, 68, 0.15);
     color: #dc2626;
@@ -295,12 +286,10 @@
     color: #f87171;
 }
 
-/* Hover effect on badge - shows tooltip hint */
 .class-progress-badge:hover .progress-count {
     transform: scale(1.05);
 }
 
-/* Active class item adjustments */
 .class-dropdown-item.active .progress-count {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
@@ -331,13 +320,14 @@
     gap: 8px;
 }
 
-/* Delete button */
+/* Delete button (dropdown) */
 .class-delete-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
     background: transparent;
     border: none;
     border-radius: var(--radius-sm);
@@ -381,6 +371,34 @@
     text-align: center;
     color: var(--text-secondary);
     font-size: 0.9em;
+}
+
+/* Empty state for management modal */
+.class-management-empty {
+    padding: 40px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.class-management-empty iconify-icon {
+    font-size: 48px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+}
+
+.class-management-empty .empty-title {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0 0 8px;
+}
+
+.class-management-empty .empty-subtitle {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    margin: 0;
 }
 
 .class-dropdown-empty i {
@@ -483,13 +501,10 @@
 }
 
 /* ====================================================================
-   RESPONSIVE
+   RESPONSIVE - DROPDOWN
    ==================================================================== */
 
 @media (max-width: 768px) {
-    /* Class name keeps full size - header is scrollable */
-
-    /* Full-width fixed dropdown on tablet/mobile */
     .class-dropdown {
         position: fixed !important;
         top: 56px !important;
@@ -520,9 +535,6 @@
 }
 
 @media (max-width: 480px) {
-    /* All header elements keep fixed size - header is scrollable */
-
-    /* Full-width centered dropdown on mobile */
     .class-dropdown {
         position: fixed !important;
         top: 56px !important;
@@ -561,8 +573,9 @@
 }
 
 /* ====================================================================
-   MODAL MINI - Style iOS 2025 pour création de classe
+   MODAL MINI - Style iOS pour création de classe
    ==================================================================== */
+
 .modal-mini .modal-mini-content {
     max-width: 420px;
     border-radius: var(--radius-xl);
@@ -637,7 +650,6 @@
 .premium-input:focus {
     outline: none;
     background: var(--bg-color);
-    /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
@@ -690,11 +702,10 @@
     border-radius: var(--radius-lg);
 }
 
-
-
 /* ====================================================================
-   INLINE DELETE CONFIRMATION ANIMATIONS
+   INLINE CONFIRMATION ANIMATIONS
    ==================================================================== */
+
 @keyframes slideInConfirm {
     from {
         opacity: 0;
@@ -718,54 +729,65 @@
     }
 }
 
-/* Style pour confirmation inline */
 .delete-confirm-inline {
     animation: slideInConfirm 0.2s ease-out;
 }
 
 /* ====================================================================
-   NEBULA CARD STYLE FOR CLASS MANAGEMENT
+   CLASS MANAGEMENT LIST - PREMIUM GLASS CARDS
    ==================================================================== */
 
-.class-management-item {
+.class-management-list {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 8px;
+    position: relative;
+}
+
+.class-management-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    /* More breathing room */
-
-    /* NEBULA CARD VISUALS */
-    background: var(--card-glass-bg);
-    backdrop-filter: blur(var(--glass-surface-blur));
-    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-
-    transition: all var(--transition-base);
+    gap: 16px;
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    margin-bottom: 8px;
-    /* Ensure spacing between cards */
 }
 
-/* Dark mode override handled by var(--card-glass-bg) usually, but ensuring consistency */
 [data-theme="dark"] .class-management-item {
-    /* Variables should handle this, but if not: */
-    /* background: rgba(30, 30, 35, 0.6); */
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .class-management-item:hover {
-    /* NEBULA HOVER */
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+    transform: translateY(-2px) scale(1.005);
     border-color: rgba(var(--primary-color-rgb), 0.3);
-    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
+}
+
+[data-theme="dark"] .class-management-item:hover {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .class-management-item.active-switch {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
+[data-theme="dark"] .class-management-item.active-switch {
+    background: rgba(var(--primary-color-rgb), 0.15);
 }
 
 /* Drag Handle */
@@ -773,15 +795,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    margin-right: 14px;
+    width: 36px;
+    height: 36px;
     color: var(--text-tertiary);
     cursor: grab;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
     opacity: 0.5;
+    font-size: 1.25rem;
 }
 
 .class-management-item:hover .class-drag-handle {
@@ -790,22 +811,208 @@
 
 .class-drag-handle:hover {
     color: var(--text-secondary);
-    background: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.class-drag-handle:active {
-    cursor: grabbing;
+/* Content Area */
+.class-management-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Header: Name + Grade Badge */
+.class-info-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.class-management-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+}
+
+/* Grade Badge */
+.class-stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.class-stat-badge.good {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+[data-theme="dark"] .class-stat-badge.good {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+.class-stat-badge.average {
+    background: rgba(234, 179, 8, 0.1);
+    color: #ca8a04;
+    border-color: rgba(234, 179, 8, 0.2);
+}
+
+[data-theme="dark"] .class-stat-badge.average {
+    background: rgba(234, 179, 8, 0.15);
+    color: #facc15;
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+.class-stat-badge.risk {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="dark"] .class-stat-badge.risk {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.stat-value {
+    font-weight: 700;
+}
+
+.stat-suffix {
+    opacity: 0.6;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+/* Trend Indicators */
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    font-size: 1em;
+    line-height: 1;
+}
+
+.trend-indicator.positive {
+    color: var(--success-color);
+    transform: translateY(-1px);
+}
+
+.trend-indicator.negative {
+    color: var(--error-color);
+    transform: translateY(1px);
+}
+
+.trend-indicator.neutral {
+    color: var(--text-tertiary);
+    opacity: 0.5;
+    font-size: 0.9em;
+}
+
+.class-no-data {
+    font-size: 0.75em;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.class-stat-badge.no-data {
+    opacity: 0.5;
+    background: var(--bg-secondary);
+}
+
+.class-stat-badge.no-data .stat-value {
+    font-weight: 500;
+    font-size: 0.8em;
+}
+
+/* Meta Info Row */
+.class-management-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.meta-item iconify-icon {
+    font-size: 1.1em;
+    opacity: 0.7;
+}
+
+.meta-separator {
+    display: none;
+}
+
+/* Status colors for progress */
+.class-management-meta .status-complete {
+    color: #16a34a;
+}
+
+[data-theme="dark"] .class-management-meta .status-complete {
+    color: #4ade80;
+}
+
+.class-management-meta .status-error {
+    color: #dc2626;
+}
+
+[data-theme="dark"] .class-management-meta .status-error {
+    color: #f87171;
+}
+
+.class-management-meta .status-partial {
     color: var(--primary-color);
 }
 
+.class-management-meta .status-pending {
+    color: var(--text-tertiary);
+}
+
 /* ====================================================================
-   ACTIONS BUTTONS
+   CLASS MANAGEMENT ACTIONS
    ==================================================================== */
+
 .class-management-actions {
     display: flex;
-    gap: 8px;
-    opacity: 0.8;
-    transition: opacity var(--transition-fast);
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
 }
 
 .class-management-item:hover .class-management-actions {
@@ -818,19 +1025,16 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.95em;
 }
-
-/* Minimalist default: Transparent */
-/* Colored on Hover - All with same subtle style */
 
 .manage-rename-btn:hover {
     background: rgba(var(--primary-color-rgb), 0.15);
@@ -861,12 +1065,6 @@
    RAIL-STYLE DRAG & DROP
    ==================================================================== */
 
-/* Smooth transitions for all items during drag */
-.class-management-list {
-    position: relative;
-}
-
-/* Dragging state - the item being dragged */
 .class-management-item.dragging {
     opacity: 0.6;
     transform: scale(0.96);
@@ -877,7 +1075,6 @@
     transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
-/* Items slide smoothly when reordering - iOS spring effect */
 .class-management-item:not(.dragging) {
     transition:
         transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -885,87 +1082,15 @@
         opacity 0.2s ease;
 }
 
-/* Subtle lift effect on items near the dragged one */
 .class-management-list:has(.dragging) .class-management-item:not(.dragging):hover {
     transform: scale(1.01);
     background: rgba(var(--primary-color-rgb), 0.04);
 }
 
-/* Class info section */
-.class-management-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-}
-
-.class-management-name {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-}
-
-.class-management-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    font-size: 0.8rem;
-}
-
-.class-management-meta .meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-}
-
-.class-management-meta .meta-item i {
-    font-size: 0.75em;
-    opacity: 0.7;
-}
-
-.class-management-meta .meta-separator {
-    color: var(--text-tertiary);
-    font-size: 0.7em;
-}
-
-/* Status colors for progress */
-.class-management-meta .status-complete {
-    color: #16a34a;
-}
-
-[data-theme="dark"] .class-management-meta .status-complete {
-    color: #4ade80;
-}
-
-.class-management-meta .status-error {
-    color: #dc2626;
-}
-
-[data-theme="dark"] .class-management-meta .status-error {
-    color: #f87171;
-}
-
-.class-management-meta .status-partial {
-    color: var(--primary-color);
-}
-
-.class-management-meta .status-pending {
-    color: var(--text-tertiary);
-}
-
-/* Actions section */
-.class-management-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: 12px;
-}
-
 /* ====================================================================
-   INLINE CREATE FORM ANIMATIONS (Dropdown)
+   INLINE CREATE FORM ANIMATIONS
    ==================================================================== */
+
 @keyframes slideDownExpand {
     from {
         opacity: 0;
@@ -999,7 +1124,6 @@
     }
 }
 
-/* Inline create form styling */
 .inline-create-form {
     overflow: hidden;
 }
@@ -1020,7 +1144,6 @@
     color: var(--text-tertiary);
 }
 
-/* Hover state - subtle border preview (harmonized with context/appreciation textareas) */
 .inline-class-input:hover:not(:focus) {
     background: var(--bg-color);
     border-color: transparent;
@@ -1032,7 +1155,6 @@
 
 .inline-class-input:focus {
     outline: none;
-    /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
@@ -1052,177 +1174,4 @@
     animation: rotate-gradient 10s linear infinite;
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* ====================================================================
-   CLASS MANAGEMENT ITEM ACTIONS
-   ==================================================================== */
-
-/* Harmonized action buttons - All use the same subtle hover style */
-.class-management-item .manage-duplicate-btn,
-.class-management-item .manage-rename-btn,
-.class-management-item .manage-delete-btn {
-    width: 36px;
-    height: 36px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95em;
-}
-
-/* Duplicate button - Cyan accent */
-.class-management-item .manage-duplicate-btn:hover {
-    background: rgba(6, 182, 212, 0.15);
-    color: #0891b2;
-}
-
-[data-theme="dark"] .class-management-item .manage-duplicate-btn:hover {
-    background: rgba(34, 211, 238, 0.2);
-    color: #22d3ee;
-}
-
-/* Rename button - Primary color accent (same subtle style) */
-.class-management-item .manage-rename-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
-}
-
-/* Delete button - Error color accent */
-.class-management-item .manage-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
-}
-
-[data-theme="dark"] .class-management-item .manage-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-}
-
-/* ====================================================================
-   CLASS OVERVIEW STATS (Enhanced Management)
-   ==================================================================== */
-
-.class-info-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 4px;
-}
-
-.class-management-name {
-    margin: 0;
-    line-height: 1.2;
-}
-
-/* Performance Badge */
-.class-stat-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 0.85em;
-    font-weight: 600;
-    transition: all var(--transition-fast);
-}
-
-.class-stat-badge.good {
-    background: rgba(34, 197, 94, 0.1);
-    color: #16a34a;
-    border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.class-stat-badge.average {
-    background: rgba(234, 179, 8, 0.1);
-    color: #ca8a04;
-    border: 1px solid rgba(234, 179, 8, 0.2);
-}
-
-.class-stat-badge.risk {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-/* Dark Mode Stats */
-[data-theme="dark"] .class-stat-badge.good {
-    color: #4ade80;
-    background: rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.3);
-}
-
-[data-theme="dark"] .class-stat-badge.average {
-    color: #facc15;
-    background: rgba(234, 179, 8, 0.15);
-    border-color: rgba(234, 179, 8, 0.3);
-}
-
-[data-theme="dark"] .class-stat-badge.risk {
-    color: #f87171;
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.stat-value {
-    font-weight: 700;
-}
-
-.stat-suffix {
-    font-size: 0.85em;
-    opacity: 0.7;
-    font-weight: 500;
-}
-
-.class-no-data {
-    font-size: 0.75em;
-    color: var(--text-tertiary);
-    background: var(--bg-tertiary);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-style: italic;
-}
-
-/* Trend Indicator */
-.trend-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    margin-left: 4px;
-    font-size: 1.1em;
-}
-
-.trend-indicator.positive {
-    color: inherit;
-    transform: translateY(-1px);
-}
-
-.trend-indicator.negative {
-    color: inherit;
-    transform: translateY(1px);
-}
-
-.trend-indicator.neutral {
-    opacity: 0.5;
-    font-size: 0.9em;
-}
-
-/* Dashboard Action Button & Separator */
-.class-management-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Active switch state for feedback */
-.class-management-item.active-switch {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    border-color: var(--primary-color);
 }

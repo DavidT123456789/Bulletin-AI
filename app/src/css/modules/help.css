@@ -40,10 +40,10 @@
 }
 
 .modal-tab-btn iconify-icon {
-    font-size: 1.3em;
-    width: 28px;
+    font-size: 1.2em;
+    width: 24px;
     text-align: center;
-    opacity: 0.7;
+    opacity: 0.65;
     transition: opacity var(--transition-fast);
 }
 
@@ -126,10 +126,9 @@
 }
 
 .help-table tbody tr {
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm);
+    background: var(--bg-secondary);
     border-radius: var(--radius-md);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: background var(--transition-fast);
 }
 
 /* Astuce pour border-radius sur tr avec border-collapse: separate */
@@ -143,10 +142,7 @@
     border-bottom-right-radius: var(--radius-md);
 }
 
-.help-table tbody tr:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
+
 
 .help-table td {
     padding: 16px 12px;
@@ -161,15 +157,14 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-weight: 600;
     color: var(--text-primary);
-    font-size: 0.85em;
+    font-size: 0.82em;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .help-btn-badge i {
@@ -224,10 +219,48 @@
 
 /* --- Intro Text --- */
 .help-intro-text p {
-    font-size: 1em;
-    color: var(--text-primary);
-    margin: 0 0 20px 0;
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    margin: 0 0 16px 0;
     line-height: 1.5;
+}
+
+/* --- Section Header (centered intro) --- */
+.help-section-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.help-section-header p {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    font-size: 0.92em;
+    line-height: 1.5;
+}
+
+/* --- Tip / Info Box --- */
+.help-tip-box {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    margin-top: 20px;
+    font-size: 0.88em;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: var(--radius-md);
+}
+
+.help-tip-box iconify-icon,
+.help-tip-box i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text-secondary);
+    /* Subtle monochrome */
+    opacity: 0.8;
+    font-size: 1.1em;
 }
 
 /* --- Responsive Mobile --- */

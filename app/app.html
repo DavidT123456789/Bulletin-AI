@@ -96,7 +96,7 @@
                                 <span>Mes Classes</span>
                             </button>
                             <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe">
-                                <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
+                                <iconify-icon icon="ph:plus-bold"></iconify-icon>
                             </button>
                         </div>
                         <div id="classDropdownList" class="class-dropdown-list">
@@ -153,7 +153,7 @@
 
                         <div class="dropdown-wrapper">
                             <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu">
-                                <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
+                                <iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon>
                             </button>
 
                             <div id="headerMenuDropdown" class="header-dropdown-menu">
@@ -190,10 +190,10 @@
                                 <button id="helpButton" class="menu-item">
                                     <iconify-icon icon="solar:question-circle-bold"></iconify-icon> Aide
                                 </button>
-                                <div class="menu-separator"></div>
+                                <div id="cloudSeparator" class="menu-separator"></div>
                                 <button id="cloudReconnectBtn" class="menu-item cloud-reconnect-item"
                                     style="display: none;">
-                                    <iconify-icon icon="solar:plug-bold"></iconify-icon>
+                                    <iconify-icon icon="solar:plug-circle-bold"></iconify-icon>
                                     <span>Reconnecter Google Drive</span>
                                 </button>
                                 <button id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item"
@@ -208,7 +208,7 @@
                                     <span class="cloud-save-label">Récupérer (Cloud)</span>
                                     <span class="cloud-save-time" id="cloudLoadTimeHint"></span>
                                 </button>
-                                <div class="menu-separator"></div>
+                                <div id="pwaInstallSeparator" class="menu-separator" style="display: none;"></div>
                                 <button id="installPwaBtn" class="menu-item" style="display: none;">
                                     <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Installer
                                 </button>
@@ -404,7 +404,7 @@
                 <!-- Floating Action Button for Adding Student -->
                 <button id="addStudentFab" class="fab-add-student" data-tooltip="Ajouter un nouvel élève"
                     aria-label="Ajouter un élève">
-                    <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
+                    <iconify-icon icon="ph:plus-bold"></iconify-icon>
                 </button>
             </main>
         </div>
@@ -1854,12 +1854,12 @@
                                                 <div class="number-input-wrapper">
                                                     <button type="button" class="number-spinner-btn decrement"
                                                         aria-label="Décrémenter"><iconify-icon class="iconify-inline"
-                                                            icon="solar:minus-circle-bold"></iconify-icon></button>
+                                                            icon="ph:minus-bold"></iconify-icon></button>
                                                     <input type="number" id="evolutionThresholdPositive" step="0.1"
                                                         min="0" value="0.5">
                                                     <button type="button" class="number-spinner-btn increment"
                                                         aria-label="Incrémenter"><iconify-icon
-                                                            icon="solar:add-circle-bold"></iconify-icon></button>
+                                                            icon="ph:plus-bold"></iconify-icon></button>
                                                 </div>
                                             </div>
                                             <div class="threshold-item-compact tooltip"
@@ -1872,12 +1872,12 @@
                                                 <div class="number-input-wrapper">
                                                     <button type="button" class="number-spinner-btn decrement"
                                                         aria-label="Décrémenter"><iconify-icon class="iconify-inline"
-                                                            icon="solar:minus-circle-bold"></iconify-icon></button>
+                                                            icon="ph:minus-bold"></iconify-icon></button>
                                                     <input type="number" id="evolutionThresholdNegative" step="0.1"
                                                         max="0" value="-0.5">
                                                     <button type="button" class="number-spinner-btn increment"
                                                         aria-label="Incrémenter"><iconify-icon
-                                                            icon="solar:add-circle-bold"></iconify-icon></button>
+                                                            icon="ph:plus-bold"></iconify-icon></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -2281,53 +2281,65 @@
                         <!-- Tab 1: Connecter l'IA -->
                         <!-- Tab 1: Connecter l'IA -->
                         <div id="help-apikey" class="help-tab-content active">
-                            <div class="help-section-header" style="text-align: center; margin-bottom: 25px;">
-                                <p style="margin-bottom: 15px; color: var(--text-secondary);">
+                            <div class="help-section-header">
+                                <p>
                                     L'application a besoin d'un "cerveau" IA. Choisissez votre fournisseur pour voir la
                                     marche à suivre.
                                 </p>
-                                <div class="provider-selector-compact has-glider" id="helpProviderSelector"
-                                    style="margin: 0 auto;">
-                                    <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral"
-                                        checked>
-                                    <label for="helpProviderMistral">
-                                        <iconify-icon class="iconify-inline" icon="solar:cat-bold"></iconify-icon>
-                                        <span>Mistral <small class="provider-tag">🇫🇷</small></span>
-                                    </label>
-                                    <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google">
-                                    <label for="helpProviderGoogle">
-                                        <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                        <span>Google</span>
-                                    </label>
-                                    <input type="radio" id="helpProviderOpenRouter" name="helpProvider"
-                                        value="openrouter">
-                                    <label for="helpProviderOpenRouter">
-                                        <iconify-icon class="iconify-inline"
-                                            icon="solar:bolt-bold-duotone"></iconify-icon>
-                                        <span>OpenRouter</span>
-                                    </label>
-                                    <div class="selector-glider"></div>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Choisir votre fournisseur</strong>
+                                        <div class="help-provider-hero">
+                                            <div class="provider-selector-compact has-glider" id="helpProviderSelector">
+                                                <input type="radio" id="helpProviderMistral" name="helpProvider"
+                                                    value="mistral" checked>
+                                                <label for="helpProviderMistral">
+                                                    <iconify-icon class="iconify-inline"
+                                                        icon="solar:cat-bold"></iconify-icon>
+                                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                                </label>
+                                                <input type="radio" id="helpProviderGoogle" name="helpProvider"
+                                                    value="google">
+                                                <label for="helpProviderGoogle">
+                                                    <iconify-icon class="iconify-inline"
+                                                        icon="logos:google-icon"></iconify-icon>
+                                                    <span>Google</span>
+                                                </label>
+                                                <input type="radio" id="helpProviderOpenRouter" name="helpProvider"
+                                                    value="openrouter">
+                                                <label for="helpProviderOpenRouter">
+                                                    <iconify-icon class="iconify-inline"
+                                                        icon="solar:bolt-bold-duotone"></iconify-icon>
+                                                    <span>OpenRouter</span>
+                                                </label>
+                                                <div class="selector-glider"></div>
+                                            </div>
+                                            <p class="provider-desc" id="helpProviderDesc"><strong>Mistral AI</strong>
+                                                est une solution française, performante et <strong>gratuite</strong> (1
+                                                milliard de tokens/mois).</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- MISTRAL CONTENT (Default) -->
                             <div id="helpContentMistral" class="provider-help-content">
-                                <p><strong>Mistral AI</strong> est une solution française, performante et
-                                    <strong>gratuite</strong> (1 milliard de tokens/mois).
-                                </p>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">1</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">2</div>
+                                        <div class="help-step-body">
                                             <strong>Récupérer votre clé (Gratuit)</strong>
-                                            <p style="margin: 5px 0 10px 0; font-size: 0.9em;">Créez un compte sur
+                                            <p>Créez un compte sur
                                                 Mistral AI et générez votre clé API.</p>
                                             <a href="https://console.mistral.ai/api-keys/" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
-                                                style="width: 100%; justify-content: center; margin-top: 5px;">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"
-                                                    style="margin-right:8px"></iconify-icon> Ouvrir
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline"
+                                                    icon="solar:link-circle-bold"></iconify-icon> Ouvrir
                                                 Mistral Console
                                             </a>
                                         </div>
@@ -2335,11 +2347,11 @@
                                 </div>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">2</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">3</div>
+                                        <div class="help-step-body">
                                             <strong>Copier / Coller</strong>
-                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                            <p>
                                                 Copiez la clé générée et collez-la dans les <a href="#"
                                                     class="link-to-settings btn-link" data-target-tab="advanced"
                                                     data-target-element="mistralApiKey">Paramètres</a>.
@@ -2351,20 +2363,18 @@
 
                             <!-- GOOGLE CONTENT -->
                             <div id="helpContentGoogle" class="provider-help-content" style="display: none;">
-                                <p><strong>Google Gemini</strong> est une alternative gratuite et très performante.</p>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">1</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">2</div>
+                                        <div class="help-step-body">
                                             <strong>Créer une clé API</strong>
-                                            <p style="margin: 5px 0 10px 0; font-size: 0.9em;">Connectez-vous avec votre
+                                            <p>Connectez-vous avec votre
                                                 compte Google et cliquez sur "Create API key".</p>
                                             <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
-                                                style="width: 100%; justify-content: center; margin-top: 5px;">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"
-                                                    style="margin-right:8px"></iconify-icon> Ouvrir
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline"
+                                                    icon="solar:link-circle-bold"></iconify-icon> Ouvrir
                                                 Google AI Studio
                                             </a>
                                         </div>
@@ -2372,11 +2382,11 @@
                                 </div>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">2</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">3</div>
+                                        <div class="help-step-body">
                                             <strong>Copier / Coller</strong>
-                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                            <p>
                                                 Copiez la clé et collez-la dans les <a href="#"
                                                     class="link-to-settings btn-link" data-target-tab="advanced"
                                                     data-target-element="googleApiKey">Paramètres</a> section Google.
@@ -2388,26 +2398,17 @@
 
                             <!-- OPENROUTER CONTENT -->
                             <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
-                                <p><strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les
-                                    meilleurs modèles (DeepSeek, Claude, GPT-4, Llama 3...).</p>
 
-                                <ul
-                                    style="background: var(--card-bg-secondary); padding: 15px 15px 15px 35px; border-radius: 8px; font-size: 0.9em; margin: 15px 0;">
-                                    <li>Accès centralisé à +100 modèles</li>
-                                    <li>Tarification à l'usage (souvent moins cher)</li>
-                                    <li>Modèles "Free" disponibles (parfois limités)</li>
-                                </ul>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">1</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">2</div>
+                                        <div class="help-step-body">
                                             <strong>Obtenir une clé</strong>
                                             <a href="https://openrouter.ai/keys" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small"
-                                                style="width: 100%; justify-content: center; margin-top: 10px;">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"
-                                                    style="margin-right:8px"></iconify-icon> Site
+                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline"
+                                                    icon="solar:link-circle-bold"></iconify-icon> Site
                                                 OpenRouter
                                             </a>
                                         </div>
@@ -2415,11 +2416,11 @@
                                 </div>
 
                                 <div class="help-step-card">
-                                    <div style="display: flex; gap: 10px;">
-                                        <div class="help-step-number">2</div>
-                                        <div style="flex: 1;">
+                                    <div class="help-step-layout">
+                                        <div class="help-step-number">3</div>
+                                        <div class="help-step-body">
                                             <strong>Configurer</strong>
-                                            <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                                            <p>
                                                 Collez la clé dans les <a href="#" class="link-to-settings btn-link"
                                                     data-target-tab="advanced"
                                                     data-target-element="openrouterApiKey">Paramètres</a> section
@@ -2431,10 +2432,8 @@
                             </div>
 
                             <!-- Common Footer -->
-                            <div class="help-tip-box"
-                                style="margin-top: 25px; font-size: 0.9em; color: var(--text-secondary); display: flex; gap: 10px; align-items: flex-start; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                                <iconify-icon class="iconify-inline" icon="solar:restart-bold"
-                                    style="color: var(--accent-color); margin-top: 2px;"></iconify-icon>
+                            <div class="help-tip-box">
+                                <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon>
                                 <span><strong>Relais automatique :</strong> Si le modèle échoue, l'app peut basculer
                                     vers un autre. Activable dans les <a href="#" class="link-to-settings btn-link"
                                         data-target-tab="advanced">Paramètres avancés</a>.</span>
@@ -2464,9 +2463,8 @@
                                 </div>
                             </div>
 
-                            <div class="help-tip-box"
-                                style="margin-top: 15px; font-size: 0.9em; color: var(--text-secondary); display: flex; gap: 10px; align-items: center;">
-                                <i class="fas fa-lightbulb" style="color: var(--accent-color); font-size: 1.2em;"></i>
+                            <div class="help-tip-box">
+                                <iconify-icon class="iconify-inline" icon="solar:lightbulb-bolt-bold"></iconify-icon>
                                 <span>L'application détecte automatiquement les colonnes. Si besoin, vous pourrez
                                     ajuster le "mappage" (quelle colonne correspond à quoi) avant de valider.</span>
                             </div>
@@ -2561,17 +2559,15 @@
                                 </tbody>
                             </table>
 
-                            <div class="help-tip-box" style="margin-top: 20px;">
-                                <iconify-icon class="iconify-inline" icon="solar:terminal-bold"></iconify-icon>
+                            <div class="help-tip-box">
+                                <iconify-icon class="iconify-inline" icon="solar:code-square-bold"></iconify-icon>
                                 <span><strong>Note technique :</strong> Toutes ces commandes finissent par l'instruction
                                     : <em>"Réponds uniquement avec le texte brut. Aucune introduction, aucun
                                         commentaire."</em></span>
                             </div>
 
-                            <div class="help-tip-box"
-                                style="margin-top: 10px; border-left: 3px solid var(--accent-color);">
-                                <iconify-icon class="iconify-inline" icon="solar:eye-bold"
-                                    style="color: var(--accent-color);"></iconify-icon>
+                            <div class="help-tip-box" style="margin-top: 10px;">
+                                <iconify-icon class="iconify-inline" icon="solar:eye-bold"></iconify-icon>
                                 <span><strong>Astuce curieux :</strong> Faites un <strong>Clic Droit</strong> sur le
                                     bouton <em>Générer</em> (dans le panneau élève) pour prévisualiser le prompt complet
                                     envoyé à l'IA.</span>
@@ -2580,13 +2576,14 @@
 
                         <!-- Tab 4: Confidentialité -->
                         <div id="help-privacy" class="help-tab-content">
-                            <div
-                                style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px; background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: var(--radius-lg); border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <div class="help-tip-box"
+                                style="margin-bottom: 16px; background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.18);">
                                 <iconify-icon class="iconify-inline" icon="solar:lock-bold"
-                                    style="font-size: 1.5em; color: var(--success-color);"></iconify-icon>
+                                    style="font-size: 1.3em; color: var(--success-color);"></iconify-icon>
                                 <div>
                                     <strong style="color: var(--success-color);">Vos données, votre contrôle.</strong>
-                                    <div style="font-size: 0.9em; opacity: 0.9;">Par défaut, stockage local uniquement —
+                                    <div style="font-size: 0.95em; opacity: 0.9; margin-top: 2px;">Par défaut, stockage
+                                        local uniquement —
                                         vos données restent sur votre appareil.</div>
                                 </div>
                             </div>

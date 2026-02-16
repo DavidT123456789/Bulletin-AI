@@ -251,6 +251,7 @@ export function initDOM() {
     DOM.loadingOverlay = document.getElementById('loadingOverlay');
     DOM.loadingText = document.getElementById('loadingText');
     DOM.pwaInstallBanner = document.getElementById('pwaInstallBanner');
+    DOM.pwaInstallSeparator = document.getElementById('pwaInstallSeparator');
     DOM.installPwaBtn = document.getElementById('installPwaBtn');
     DOM.pwaInstallBtn = document.getElementById('pwaInstallBtn');
     DOM.pwaLaterBtn = document.getElementById('pwaLaterBtn');
@@ -263,6 +264,7 @@ export function initDOM() {
     DOM.importFullBackupBtn = document.getElementById('importFullBackupBtn');
     DOM.importBackupInput = document.getElementById('importBackupInput');
     // Cloud sync elements
+    DOM.cloudSeparator = document.getElementById('cloudSeparator');
     DOM.connectGoogleBtn = document.getElementById('connectGoogleBtn');
     DOM.disconnectGoogleBtn = document.getElementById('disconnectGoogleBtn');
     DOM.connectDropboxBtn = document.getElementById('connectDropboxBtn');

@@ -25,6 +25,7 @@
 .btn i,
 .btn iconify-icon {
     color: inherit;
+    font-size: 1.15em;
     opacity: 0.95;
 }
 

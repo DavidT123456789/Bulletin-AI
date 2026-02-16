@@ -91,11 +91,19 @@ export const OtherModalsListeners = {
                 'openrouter': 'helpContentOpenRouter'
             };
 
+            const descMap = {
+                'mistral': '<strong>Mistral AI</strong> est une solution française, performante et <strong>gratuite</strong> (1 milliard de tokens/mois).',
+                'google': '<strong>Google Gemini</strong> est une alternative gratuite et très performante.',
+                'openrouter': '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les meilleurs modèles (DeepSeek, Claude, GPT-4…).'
+            };
+
+            const descEl = document.getElementById('helpProviderDesc');
+            if (descEl && descMap[value]) descEl.innerHTML = descMap[value];
+
             const contents = document.querySelectorAll('.provider-help-content');
             contents.forEach(el => {
                 if (el.id === contentMap[value]) {
                     el.style.display = 'block';
-                    // Petite animation d'entrée
                     el.animate([
                         { opacity: 0, transform: 'translateY(5px)' },
                         { opacity: 1, transform: 'translateY(0)' }
