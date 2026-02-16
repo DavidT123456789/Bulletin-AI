@@ -78,8 +78,8 @@ a.btn-secondary:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.5);
-    /* Slate 400 with opacity */
+    background: rgba(161, 161, 170, 0.5);
+    /* Zinc 400 with opacity */
     border-radius: var(--radius-pill);
     transition: background var(--transition-fast);
 }
