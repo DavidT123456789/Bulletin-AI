@@ -342,10 +342,10 @@ export const ResultsUIManager = {
                 if (icon.tagName === 'I') {
                     // Replace with iconify-icon
                     const newIcon = document.createElement('iconify-icon');
-                    newIcon.setAttribute('icon', 'solar:magic-stick-3-bold-duotone');
+                    newIcon.setAttribute('icon', 'solar:magic-stick-3-linear');
                     icon.replaceWith(newIcon);
                 } else {
-                    icon.setAttribute('icon', 'solar:magic-stick-3-bold-duotone');
+                    icon.setAttribute('icon', 'solar:magic-stick-3-linear');
                 }
             }
             if (label) label.textContent = 'Générer';

@@ -291,7 +291,7 @@ export const ImportUI = {
         if (columnCount === 1 && lines.length > 1) {
             const warningEl = document.createElement('div');
             warningEl.className = 'generic-info-box warning';
-            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Une seule colonne détectée. Vérifiez le séparateur.`;
+            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Une seule colonne détectée. Vérifiez le séparateur.`;
             warningEl.style.marginTop = '8px';
             DOM.massImportPreview.appendChild(warningEl);
         }
@@ -387,7 +387,7 @@ export const ImportUI = {
                 if (DOM.importGenerateBtn.dataset.originalContent) {
                     DOM.importGenerateBtn.innerHTML = DOM.importGenerateBtn.dataset.originalContent;
                 } else {
-                    DOM.importGenerateBtn.innerHTML = `<iconify-icon icon="solar:bolt-bold-duotone"></iconify-icon> Générer`;
+                    DOM.importGenerateBtn.innerHTML = `<iconify-icon icon="solar:bolt-linear"></iconify-icon> Générer`;
                 }
             }
         }

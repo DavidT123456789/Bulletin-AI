@@ -424,9 +424,9 @@ export const ImportWizardManager = {
             nextArrow.disabled = this.currentStep >= 3;
             // Change icon on last step to show it's the end
             if (this.currentStep >= 3) {
-                nextArrow.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
+                nextArrow.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
             } else {
-                nextArrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>';
+                nextArrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>';
             }
         }
 
@@ -555,21 +555,21 @@ export const ImportWizardManager = {
                     // File Logic
                     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
                         fileIconEl.classList.add('type-pdf');
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-text-bold"></iconify-icon>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-text-linear"></iconify-icon>';
                     } else if (file.name.match(/\.(xlsx|xls|csv)$/i)) {
                         fileIconEl.classList.add('type-excel');
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-right-bold"></iconify-icon>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-right-linear"></iconify-icon>';
                     } else {
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:document-bold"></iconify-icon>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="solar:document-linear"></iconify-icon>';
                     }
                 } else if (type === 'text') {
                     // Text Logic
                     fileIconEl.classList.add('type-text');
-                    fileIconEl.innerHTML = '<iconify-icon icon="solar:keyboard-bold"></iconify-icon>';
+                    fileIconEl.innerHTML = '<iconify-icon icon="solar:keyboard-linear"></iconify-icon>';
                 } else if (type === 'sample') {
                     // Sample logic
                     fileIconEl.classList.add('type-sample');
-                    fileIconEl.innerHTML = '<iconify-icon icon="solar:list-bold"></iconify-icon>';
+                    fileIconEl.innerHTML = '<iconify-icon icon="solar:list-linear"></iconify-icon>';
                 }
             }
         }
@@ -764,7 +764,7 @@ export const ImportWizardManager = {
                 const preview = document.getElementById('wizardStep1Preview');
                 preview?.insertAdjacentElement('afterend', warningEl);
             }
-            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Une seule colonne détectée. Essayez un autre séparateur.`;
+            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Une seule colonne détectée. Essayez un autre séparateur.`;
             warningEl.style.display = 'flex';
         } else if (warningEl) {
             warningEl.style.display = 'none';
@@ -792,11 +792,11 @@ export const ImportWizardManager = {
         const badge = document.createElement('div');
 
         const icons = {
-            'mbn': 'solar:square-academic-cap-bold',
-            'pronote': 'solar:mortarboard-bold',
-            'vertical': 'solar:list-bold'
+            'mbn': 'solar:square-academic-cap-linear',
+            'pronote': 'solar:mortarboard-linear',
+            'vertical': 'solar:list-linear'
         };
-        const icon = icons[format.type] || 'solar:document-text-bold';
+        const icon = icons[format.type] || 'solar:document-text-linear';
 
         badge.innerHTML = `<iconify-icon icon="${icon}"></iconify-icon> ${format.name}`;
         badge.className = `format-detection-badge format-${format.type}`;

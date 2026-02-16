@@ -231,7 +231,7 @@ export const SettingsUIManager = {
         // Keep header simple - no lock icon needed as the toggle is right there
         const iaStyleHeader = document.getElementById('iaStyleHeader');
         if (iaStyleHeader) {
-            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-bold"></iconify-icon> Style de Rédaction`;
+            iaStyleHeader.innerHTML = `<iconify-icon icon="solar:tuning-2-linear"></iconify-icon> Style de Rédaction`;
         }
     },
 
@@ -468,7 +468,7 @@ export const SettingsUIManager = {
                 }
             } else {
                 // Reset to generic Magic Stick for others (logos don't fit well on buttons)
-                iconEl.setAttribute('icon', 'solar:magic-stick-3-bold');
+                iconEl.setAttribute('icon', 'solar:magic-stick-3-linear');
                 // Remove Mistral specific styles/classes
                 iconEl.removeAttribute('style');
                 iconEl.classList.remove('provider-mistral');
@@ -638,7 +638,7 @@ export const SettingsUIManager = {
         const refreshBtn = document.getElementById('refreshPreviewBtn');
 
         if (previewStatus) {
-            previewStatus.innerHTML = `<iconify-icon icon="solar:refresh-bold" style="margin-right: 6px;"></iconify-icon> Réglages modifiés. Cliquez sur <strong>Générer</strong> pour voir l'aperçu.`;
+            previewStatus.innerHTML = `<iconify-icon icon="solar:refresh-linear" style="margin-right: 6px;"></iconify-icon> Réglages modifiés. Cliquez sur <strong>Générer</strong> pour voir l'aperçu.`;
             previewStatus.style.display = 'block';
         }
 
@@ -737,7 +737,7 @@ export const SettingsUIManager = {
             return `<span style="opacity:0.8">${name}</span>`;
         });
 
-        fallbackOrderText.innerHTML = displayQueue.join(' <iconify-icon icon="solar:alt-arrow-right-bold" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></iconify-icon> ');
+        fallbackOrderText.innerHTML = displayQueue.join(' <iconify-icon icon="solar:alt-arrow-right-linear" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></iconify-icon> ');
 
         // Badge "+X" avec tooltip pour voir le reste
         const moreBadge = document.getElementById('fallbackOrderMore');
@@ -793,11 +793,11 @@ export const SettingsUIManager = {
 
         // Afficher le spinner
         if (DOM.validateOllamaBtn) {
-            DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>';
+            DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>';
             DOM.validateOllamaBtn.disabled = true;
         }
         if (DOM.ollamaValidationIcon) {
-            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>';
+            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>';
         }
 
         try {
@@ -822,7 +822,7 @@ export const SettingsUIManager = {
                 // Bouton reste en état validé
                 if (DOM.validateOllamaBtn) {
                     DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> OK';
+                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> OK';
                     DOM.validateOllamaBtn.disabled = false;
                 }
 
@@ -885,7 +885,7 @@ export const SettingsUIManager = {
                 // Pour Ollama, on n'affiche pas l'icône dans l'input car on a déjà le bouton OK et les badges
                 validationIcon.innerHTML = '';
             } else if (status === 'error') {
-                validationIcon.innerHTML = '<iconify-icon icon="ph:x" style="color: var(--error-color);"></iconify-icon>';
+                validationIcon.innerHTML = '<iconify-icon icon="solar:close-circle-linear" style="color: var(--error-color);"></iconify-icon>';
             } else {
                 validationIcon.innerHTML = '';
             }
@@ -930,7 +930,7 @@ export const SettingsUIManager = {
                 const shortName = MODEL_SHORT_NAMES[modelKey]?.replace('🏠 ', '') || modelName;
 
                 const color = isInstalled ? 'var(--success-color)' : 'var(--text-tertiary)';
-                const iconName = isInstalled ? 'solar:check-circle-bold' : 'ph:x';
+                const iconName = isInstalled ? 'solar:check-circle-linear' : 'solar:close-circle-linear';
                 const opacity = isInstalled ? '1' : '0.6';
                 const decoration = isInstalled ? 'none' : 'line-through';
 

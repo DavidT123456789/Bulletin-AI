@@ -87,7 +87,7 @@ export const WelcomeManager = {
                 validateBtn.classList.remove('ready', 'validated');
 
                 if (existingKey) {
-                    validateBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
+                    validateBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
                     validateBtn.classList.add('validated');
                     validateBtn.disabled = true;
                     DOM.welcomeNextBtn.disabled = false;
@@ -110,7 +110,7 @@ export const WelcomeManager = {
             mistral: {
                 placeholder: "Collez votre clé API Mistral ici...",
                 linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<iconify-icon icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="solar:cat-linear" style="color: #fd6f00;"></iconify-icon>'
             },
             google: {
                 placeholder: "Collez votre clé API Google ici (AIzaSy...)",
@@ -120,7 +120,7 @@ export const WelcomeManager = {
             openrouter: {
                 placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
-                linkIcon: '<iconify-icon icon="solar:bolt-bold-duotone" style="color: var(--secondary-color);"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="solar:bolt-linear" style="color: var(--secondary-color);"></iconify-icon>'
             }
         };
 
@@ -321,7 +321,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -334,7 +334,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingGoogleKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -347,7 +347,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -426,7 +426,7 @@ export const WelcomeManager = {
             AppreciationsManager.loadSampleData();
             DOM.welcomeNextStepInfo.style.display = 'block';
             DOM.welcomeLoadSampleBtn.disabled = true;
-            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Données chargées !';
+            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Données chargées !';
             // User needs to click Terminer to finish
             UI.showNotification('Données exemple prêtes ! Cliquez sur "Terminer" pour continuer.', 'success');
         });

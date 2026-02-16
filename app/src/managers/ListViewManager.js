@@ -60,7 +60,7 @@ export const ListViewManager = {
                             <tr class="empty-state-row">
                                 <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
                                     <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                                        <iconify-icon icon="solar:magnifer-bold-duotone" style="font-size:24px; opacity:0.5;"></iconify-icon>
+                                        <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
                                         <span>Aucun élève trouvé</span>
                                     </div>
                                 </td>
@@ -72,7 +72,7 @@ export const ListViewManager = {
                         <tr class="empty-state-row">
                             <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
                                 <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                                    <iconify-icon icon="solar:magnifer-bold-duotone" style="font-size:24px; opacity:0.5;"></iconify-icon>
+                                    <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
                                     <span>Aucun élève trouvé</span>
                                 </div>
                             </td>
@@ -467,7 +467,7 @@ export const ListViewManager = {
              <td class="action-cell">
                 <div class="action-dropdown">
                     <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
-                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
+                        <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this._generateActionMenuHTML(result.id)}
                 </div>
@@ -486,23 +486,23 @@ export const ListViewManager = {
     _generateActionMenuHTML(studentId) {
         return `
             <div class="action-dropdown-menu">
-                <h5 class="dropdown-header"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> APPRÉCIATION</h5>
+                <h5 class="dropdown-header"><iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> APPRÉCIATION</h5>
                 <button class="action-dropdown-item" data-action="regenerate-student">
-                    <iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer
+                    <iconify-icon icon="solar:refresh-linear"></iconify-icon> Régénérer
                 </button>
                 <button class="action-dropdown-item" data-action="copy-appreciation">
-                    <iconify-icon icon="solar:copy-bold"></iconify-icon> Copier
+                    <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                 </button>
                 
-                <h5 class="dropdown-header"><iconify-icon icon="solar:mortarboard-bold"></iconify-icon> ÉLÈVE</h5>
+                <h5 class="dropdown-header"><iconify-icon icon="solar:mortarboard-linear"></iconify-icon> ÉLÈVE</h5>
                 <button class="action-dropdown-item" data-action="move-student">
-                    <iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon> Déplacer
+                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
                 </button>
                 <button class="action-dropdown-item" data-action="reset-student">
-                    <iconify-icon icon="solar:restart-bold"></iconify-icon> Réinitialiser
+                    <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
                 </button>
                 <button class="action-dropdown-item danger" data-action="delete-student">
-                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
+                    <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> Supprimer
                 </button>
             </div>
         `;
@@ -624,7 +624,7 @@ export const ListViewManager = {
             const indicator = document.createElement('span');
             indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';
             indicator.setAttribute('data-tooltip', 'Données modifiées depuis la génération.\nActualisation recommandée.');
-            indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>';
+            indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-linear"></iconify-icon>';
 
             // Insert at the beginning of the cell
             cell.insertBefore(indicator, cell.firstChild);
@@ -658,7 +658,7 @@ export const ListViewManager = {
         const tableClass = isExpanded ? 'student-list-table appreciation-full-view' : 'student-list-table';
         const headerClass = isExpanded ? 'appreciation-header appreciation-toggle-header sortable-header expanded-view' : 'appreciation-header appreciation-toggle-header sortable-header';
         // Solar icons for expand/compress
-        const iconClass = isExpanded ? 'solar:minimize-square-bold appreciation-toggle-icon' : 'solar:maximize-square-bold appreciation-toggle-icon';
+        const iconClass = isExpanded ? 'solar:minimize-square-linear appreciation-toggle-icon' : 'solar:maximize-square-linear appreciation-toggle-icon';
         const title = isExpanded ? 'Réduire' : 'Voir tout le texte';
 
         // Build table HTML (no animation classes in HTML - we'll add them after)
@@ -673,13 +673,13 @@ export const ListViewManager = {
                                     <span class="sort-icon-placeholder name-sort-icon"></span>
                                 </div>
                                 <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" title="Rechercher (Ctrl+F)">
-                                    <iconify-icon icon="solar:magnifer-bold"></iconify-icon>
+                                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                                 </button>
                                 <div class="inline-search-container" id="inlineSearchContainer">
-                                    <iconify-icon icon="solar:magnifer-bold" class="search-icon"></iconify-icon>
+                                    <iconify-icon icon="solar:magnifer-linear" class="search-icon"></iconify-icon>
                                     <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                                     <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
-                                        <iconify-icon icon="ph:x"></iconify-icon>
+                                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                                     </button>
                                 </div>
                             </th>
@@ -693,11 +693,11 @@ export const ListViewManager = {
                                 <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="appreciation-header-actions" id="appreciationHeaderActions">
                                     <button type="button" class="btn-generate-inline tooltip" id="generatePendingBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
-                                        <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon>
+                                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                         <span class="generate-badge" id="pendingCountBadgeInline">0</span>
                                     </button>
                                     <button type="button" class="btn-update-inline tooltip" id="updateDirtyBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
-                                        <iconify-icon icon="solar:refresh-bold"></iconify-icon>
+                                        <iconify-icon icon="solar:refresh-linear"></iconify-icon>
                                         <span class="update-badge" id="dirtyCountBadgeInline">0</span>
                                     </button>
                                 </div>
@@ -709,7 +709,7 @@ export const ListViewManager = {
                             <th class="action-header" style="width: 50px;">
                                 <div class="header-content-wrapper global-actions-dropdown">
                                     <button class="btn-action-menu-header" id="tableActionsBtnToggle" title="Actions">
-                                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
+                                        <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                                         <!-- SECTION SELECTION -->
@@ -725,7 +725,7 @@ export const ListViewManager = {
 
 
                                         <!-- SECTION EXPORT -->
-                                        <h5 class="dropdown-header"><iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Exporter</h5>
+                                        <h5 class="dropdown-header"><iconify-icon icon="solar:download-minimalistic-linear"></iconify-icon> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
                                             <iconify-icon icon="fa6-solid:file-code"></iconify-icon> Données (JSON)
                                         </button>
@@ -772,7 +772,7 @@ export const ListViewManager = {
                         <td class="action-cell">
                             <div class="action-dropdown">
                                 <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
-                                    <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
+                                    <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
                                 </button>
                                 ${this._generateActionMenuHTML(result.id)}
                             </div>
@@ -864,7 +864,7 @@ export const ListViewManager = {
                 const nextP = periods[i + 1];
                 html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" title="Trier par évolution vers ${nextP}">
                              <div class="header-content-wrapper">
-                            <iconify-icon icon="solar:chart-2-bold" style="opacity:0.6; font-size:1.1em;"></iconify-icon> <span class="sort-icon-placeholder"></span>
+                            <iconify-icon icon="solar:chart-2-linear" style="opacity:0.6; font-size:1.1em;"></iconify-icon> <span class="sort-icon-placeholder"></span>
                              </div>
                          </th>`;
             }
@@ -892,8 +892,8 @@ export const ListViewManager = {
                 placeholder.innerHTML = '';
                 if (isSorted) {
                     placeholder.innerHTML = direction === 'asc'
-                        ? '<iconify-icon icon="solar:sort-from-bottom-to-top-bold" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>'
-                        : '<iconify-icon icon="solar:sort-from-top-to-bottom-bold" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>';
+                        ? '<iconify-icon icon="solar:sort-from-bottom-to-top-linear" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>'
+                        : '<iconify-icon icon="solar:sort-from-top-to-bottom-linear" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>';
                 }
             }
         });
@@ -957,12 +957,11 @@ export const ListViewManager = {
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-up-bold"></iconify-icon></span>`;
-                                } else if (['very-negative', 'negative'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-down-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-up-linear"></iconify-icon></span>`;
+                                } else if (diff < 0) {
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-down-linear"></iconify-icon></span>`;
                                 } else {
-                                    // Stable
-                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:arrow-right-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>`;
                                 }
                             }
                         }
@@ -1060,7 +1059,7 @@ export const ListViewManager = {
         if (hasContent) {
             // === COPY BUTTON INTEGRATION ===
             const btnClass = result.copied ? 'btn-copy-appreciation was-copied' : 'btn-copy-appreciation';
-            const icon = result.copied ? '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>' : '<iconify-icon icon="solar:copy-bold"></iconify-icon>';
+            const icon = result.copied ? '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>' : '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
             const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
             const copyButtonHTML = `
@@ -1072,7 +1071,7 @@ export const ListViewManager = {
             // === DIRTY STATE INDICATOR ===
             let dirtyBadge = '';
             if (this._isResultDirty(result)) {
-                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
+                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-linear"></iconify-icon></span>`;
             }
 
             return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>`;
@@ -1118,10 +1117,10 @@ export const ListViewManager = {
         // Icons usually handled by CSS or unnecessary for simple badges, 
         // but adding icons for visual consistency if needed.
         const icons = {
-            'pending': '<iconify-icon icon="solar:clock-circle-bold"></iconify-icon>',
-            'error': '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>',
-            'done': '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>',
-            'generating': '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>'
+            'pending': '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>',
+            'error': '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>',
+            'done': '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>',
+            'generating': '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>'
         };
 
         const label = labels[status] || status;
@@ -1724,7 +1723,7 @@ export const ListViewManager = {
             <div class="selection-toolbar-content">
                 <div class="selection-info">
                     <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection">
-                        <iconify-icon icon="ph:x"></iconify-icon>
+                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                     </button>
                     <span id="selectionCount">0 élève sélectionné</span>
                     <button class="btn-select-all-link" id="btnSelectAllLink">Tout sélectionner</button>

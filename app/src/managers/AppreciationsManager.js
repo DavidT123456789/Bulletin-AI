@@ -304,8 +304,8 @@ export const AppreciationsManager = {
 
         let html = '';
         const sections = [
-            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-bold"></iconify-icon>' },
-            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-bold"></iconify-icon>' }
+            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-linear"></iconify-icon>' },
+            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-linear"></iconify-icon>' }
         ];
 
         sections.forEach(sectionInfo => {

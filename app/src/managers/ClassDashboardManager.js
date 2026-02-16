@@ -288,10 +288,10 @@ export const ClassDashboardManager = {
 
         if (periodBadge) {
             const periodLabels = { T1: 'Trimestre 1', T2: 'Trimestre 2', T3: 'Trimestre 3', S1: 'Semestre 1', S2: 'Semestre 2' };
-            periodBadge.innerHTML = `<iconify-icon icon="solar:calendar-bold"></iconify-icon> ${periodLabels[appState.currentPeriod] || appState.currentPeriod}`;
+            periodBadge.innerHTML = `<iconify-icon icon="solar:calendar-linear"></iconify-icon> ${periodLabels[appState.currentPeriod] || appState.currentPeriod}`;
         }
         if (studentCount) {
-            studentCount.innerHTML = `<iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon> <strong>${stats.count}</strong> élèves analysés`;
+            studentCount.innerHTML = `<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <strong>${stats.count}</strong> élèves analysés`;
         }
 
         // Update Spread stat (unique to this modal - not shown on main page)
@@ -438,7 +438,7 @@ export const ClassDashboardManager = {
         if (content) {
             content.innerHTML = `
                 <div class="ai-placeholder">
-                    <div class="ai-placeholder-icon"><iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon></div>
+                    <div class="ai-placeholder-icon"><iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon></div>
                     <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA contextuelle de votre classe.</p>
                 </div>
             `;
@@ -446,7 +446,7 @@ export const ClassDashboardManager = {
 
         // Reset button text to "Générer"
         if (generateBtn) {
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
+            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer';
         }
     },
 
@@ -508,7 +508,7 @@ export const ClassDashboardManager = {
 
         if (this.cachedStats.dataHash !== this.cachedSynthesisDataHash) {
             // Data is stale
-            generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-bold"></iconify-icon> Actualiser la synthèse';
+            generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Actualiser la synthèse';
             generateBtn.className = 'btn btn-warning'; // Use warning color (orange/yellow) to indicate update needed
             generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
 
@@ -516,7 +516,7 @@ export const ClassDashboardManager = {
             // For now, the button change is a strong enough signal.
         } else {
             // Data is fresh
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Régénérer';
+            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
             generateBtn.className = 'btn btn-primary';
             generateBtn.title = "";
         }
@@ -536,7 +536,7 @@ export const ClassDashboardManager = {
 
         // Update button to show "Régénérer" since synthesis exists
         if (generateBtn) {
-            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Régénérer';
+            generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
         }
     },
 
@@ -561,7 +561,7 @@ export const ClassDashboardManager = {
 
         if (generateBtn) {
             generateBtn.disabled = true;
-            generateBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="spin"></iconify-icon> Génération...';
+            generateBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="spin"></iconify-icon> Génération...';
         }
 
         try {
@@ -588,14 +588,14 @@ export const ClassDashboardManager = {
         } catch (error) {
             content.innerHTML = `
                 <div class="ai-placeholder">
-                    <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon></div>
+                    <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
                     <p class="ai-placeholder-text">Erreur lors de la génération : ${error.message}</p>
                 </div>
             `;
         } finally {
             if (generateBtn) {
                 generateBtn.disabled = false;
-                generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Régénérer';
+                generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
             }
         }
     },
@@ -778,11 +778,11 @@ RÈGLES STRICTES :
 
         // Define section configs with icons and colors
         const sections = [
-            { emoji: '📝', title: 'Synthèse', icon: 'solar:document-text-bold', color: 'primary-dark', isFullWidth: true },
-            { emoji: '📊', title: 'Bilan', icon: 'solar:chart-square-bold', color: 'primary' },
-            { emoji: '✅', title: 'Points forts', icon: 'solar:check-circle-bold', color: 'success' },
-            { emoji: '⚠️', title: 'Points de vigilance', icon: 'solar:danger-triangle-bold', color: 'warning' },
-            { emoji: '💡', title: 'Recommandations', icon: 'solar:lightbulb-bold', color: 'info' }
+            { emoji: '📝', title: 'Synthèse', icon: 'solar:document-text-linear', color: 'primary-dark', isFullWidth: true },
+            { emoji: '📊', title: 'Bilan', icon: 'solar:chart-square-linear', color: 'primary' },
+            { emoji: '✅', title: 'Points forts', icon: 'solar:check-circle-linear', color: 'success' },
+            { emoji: '⚠️', title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning' },
+            { emoji: '💡', title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info' }
         ];
 
         let html = '';

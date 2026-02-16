@@ -535,7 +535,7 @@ export const TrombinoscopeManager = {
         // Display info message in footer
         const footerInfo = document.getElementById('trombiImageInfo');
         if (footerInfo) {
-            footerInfo.innerHTML = `<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
+            footerInfo.innerHTML = `<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
         }
     },
 
@@ -612,7 +612,7 @@ export const TrombinoscopeManager = {
             <div class="grid-control-panel">
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><iconify-icon icon="solar:gallery-vertical-bold"></iconify-icon> Colonnes</label>
+                        <label><iconify-icon icon="solar:gallery-vertical-linear"></iconify-icon> Colonnes</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="colsSlider" 
@@ -622,7 +622,7 @@ export const TrombinoscopeManager = {
                         </div>
                     </div>
                     <div class="control-row">
-                        <label><iconify-icon icon="solar:gallery-horizontal-bold"></iconify-icon> Lignes</label>
+                        <label><iconify-icon icon="solar:gallery-horizontal-linear"></iconify-icon> Lignes</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="rowsSlider" 
@@ -634,7 +634,7 @@ export const TrombinoscopeManager = {
                 </div>
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><iconify-icon icon="solar:sort-horizontal-bold"></iconify-icon> Écart H</label>
+                        <label><iconify-icon icon="solar:sort-horizontal-linear"></iconify-icon> Écart H</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="gapHSlider" 
@@ -644,7 +644,7 @@ export const TrombinoscopeManager = {
                         </div>
                     </div>
                     <div class="control-row">
-                        <label><iconify-icon icon="solar:sort-vertical-bold"></iconify-icon> Écart V</label>
+                        <label><iconify-icon icon="solar:sort-vertical-linear"></iconify-icon> Écart V</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="gapVSlider" 
@@ -656,7 +656,7 @@ export const TrombinoscopeManager = {
                 </div>
                 <div class="control-row-group">
                     <div class="control-row">
-                        <label><iconify-icon icon="solar:maximize-square-3-bold"></iconify-icon> Taille</label>
+                        <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="sizeSlider" 
@@ -667,7 +667,7 @@ export const TrombinoscopeManager = {
                     </div>
                     <div class="control-row">
                         <label class="sync-toggle-label">
-                            <span class="toggle-text"><iconify-icon icon="solar:layers-bold-duotone"></iconify-icon> Groupé</span>
+                            <span class="toggle-text"><iconify-icon icon="solar:layers-linear"></iconify-icon> Groupé</span>
                             <span class="toggle-wrapper">
                                 <input type="checkbox" id="groupedDragToggle" class="sync-toggle-checkbox" checked>
                                 <span class="sync-toggle-switch"></span>
@@ -1038,7 +1038,7 @@ export const TrombinoscopeManager = {
                         height: ${deleteSize}px;
                         font-size: ${deleteFontSize}px;
                     ">
-                        <iconify-icon icon="ph:x"></iconify-icon>
+                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -1287,7 +1287,7 @@ export const TrombinoscopeManager = {
 
         const sliderHtml = `
             <div class="size-slider-container">
-                <label><iconify-icon icon="solar:maximize-square-3-bold"></iconify-icon> Taille</label>
+                <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
                 <input type="range" class="size-slider" 
                        min="${minR}" max="${maxR}" value="${currentR}" step="1">
             </div>
@@ -1315,7 +1315,7 @@ export const TrombinoscopeManager = {
         if (this._zones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <iconify-icon icon="solar:cursor-bold"></iconify-icon>
+                    <iconify-icon icon="solar:cursor-linear"></iconify-icon>
                     <p>Cliquez sur l'image pour ajouter des zones</p>
                 </div>
             `;
@@ -1527,7 +1527,7 @@ export const TrombinoscopeManager = {
         if (assignedZones.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <iconify-icon icon="solar:danger-circle-bold"></iconify-icon>
+                    <iconify-icon icon="solar:danger-circle-linear"></iconify-icon>
                     <p>Aucune photo assignée. Retournez à l'étape précédente.</p>
                 </div>
             `;

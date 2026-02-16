@@ -69,8 +69,8 @@ export const AnalysisManager = {
 
         let html = '';
         const sections = [
-            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-bold-duotone"></iconify-icon>' },
-            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-bold-duotone"></iconify-icon>' }
+            { key: 'strength', class: 'strengths-title', icon: '<iconify-icon icon="solar:like-linear"></iconify-icon>' },
+            { key: 'weakness', class: 'weaknesses-title', icon: '<iconify-icon icon="solar:dislike-linear"></iconify-icon>' }
         ];
 
         sections.forEach(sectionInfo => {

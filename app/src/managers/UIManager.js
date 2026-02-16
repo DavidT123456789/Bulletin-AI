@@ -46,10 +46,10 @@ import { TooltipsUI } from './TooltipsManager.js';
 let App;
 
 const NOTIF_ICONS = {
-    success: '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>',
-    error: '<iconify-icon icon="ph:x"></iconify-icon>',
-    warning: '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>',
-    info: '<iconify-icon icon="solar:info-circle-bold"></iconify-icon>'
+    success: '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>',
+    error: '<iconify-icon icon="solar:close-circle-linear"></iconify-icon>',
+    warning: '<iconify-icon icon="solar:danger-circle-linear"></iconify-icon>',
+    info: '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>'
 };
 
 /**
@@ -396,7 +396,7 @@ export const UI = {
                     const generateBtn = document.getElementById('focusGenerateBtn');
                     if (generateBtn) {
                         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${periodLabel}`;
+                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer ${periodLabel}`;
                     }
 
                     // Update Previous Grades chips (force refresh for creation mode)
@@ -542,7 +542,7 @@ export const UI = {
                 `).join('');
 
                 formHtml += `<div class="period-input-group">
-                    <h3><iconify-icon icon="solar:calendar-mark-bold"></iconify-icon> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
+                    <h3><iconify-icon icon="solar:calendar-mark-linear"></iconify-icon> ${Utils.getPeriodLabel(p, true)} <span class="detail-chip-small">(Période Actuelle)</span></h3>
                     <div class="form-row period-main-row">
                         <div class="form-group current-grade-group">
                             <label for="moy${p}">Moyenne ${p}&nbsp;:</label>
@@ -561,7 +561,7 @@ export const UI = {
             } else {
                 formHtml += `<div class="period-input-group previous-period-group">
                     <h4>
-                        <iconify-icon icon="solar:history-bold"></iconify-icon> ${Utils.getPeriodLabel(p, true)} 
+                        <iconify-icon icon="solar:history-linear"></iconify-icon> ${Utils.getPeriodLabel(p, true)} 
                         <span class="detail-chip-small">(Période précédente)</span>
                     </h4>
                     <div class="form-row">
@@ -666,7 +666,7 @@ export const UI = {
         if (DOM.generateAppreciationBtn) DOM.generateAppreciationBtn.style.display = 'none';
         if (DOM.generateAndNextBtn) {
             DOM.generateAndNextBtn.style.display = 'inline-flex';
-            DOM.generateAndNextBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAndNextBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
             DOM.generateAndNextBtn.className = 'btn btn-ai';
             DOM.generateAndNextBtn.setAttribute('data-tooltip', 'Génère l\'appréciation et prépare le formulaire pour l\'élève suivant. Raccourci : Ctrl+Enter');
         }
@@ -676,7 +676,7 @@ export const UI = {
     switchToEditModeUI() {
         if (DOM.generateAppreciationBtn) {
             DOM.generateAppreciationBtn.style.display = 'inline-flex';
-            DOM.generateAppreciationBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
+            DOM.generateAppreciationBtn.innerHTML = `<iconify-icon icon="solar:refresh-linear"></iconify-icon> Mettre à Jour ${Utils.getPeriodLabel(appState.currentPeriod, false)} <span class="kbd-hint">Ctrl+⏎</span>`;
             DOM.generateAppreciationBtn.className = 'btn btn-ai';
             DOM.generateAppreciationBtn.setAttribute('data-tooltip', 'Regénère l\'appréciation avec les données modifiées. Raccourci : Ctrl+Enter');
         }
@@ -1336,7 +1336,7 @@ export const UI = {
             const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
 
             // Show overlay banner
-            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-bold"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="ph:x"></iconify-icon> Retirer</button>`;
+            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-linear"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="solar:close-circle-linear"></iconify-icon> Retirer</button>`;
             DOM.activeFilterInfo.classList.add('show');
 
             // Also add close button on the active element
@@ -1344,7 +1344,7 @@ export const UI = {
             if (activeElement) {
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'filter-close-btn';
-                closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
+                closeBtn.innerHTML = '<iconify-icon icon="solar:close-circle-linear"></iconify-icon>';
                 closeBtn.setAttribute('aria-label', 'Retirer le filtre');
                 activeElement.style.position = 'relative';
                 activeElement.appendChild(closeBtn);

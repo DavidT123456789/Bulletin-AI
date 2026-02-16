@@ -436,7 +436,7 @@ export const FocusPanelJournal = {
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
                 <button class="journal-chip-remove" aria-label="Retirer">
-                    <iconify-icon icon="ph:x"></iconify-icon>
+                    <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                 </button>
             `;
 
@@ -533,7 +533,7 @@ export const FocusPanelJournal = {
                         }).join('');
 
                         const infoIcon = isIsolated
-                            ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-bold"></iconify-icon></div>`
+                            ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></div>`
                             : '';
 
                         const entryHTML = `
@@ -545,7 +545,7 @@ export const FocusPanelJournal = {
                                 </div>
                                 ${infoIcon}
                                 <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
+                                    <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                 </button>
                             </div>
                         `;
@@ -591,7 +591,7 @@ export const FocusPanelJournal = {
                 // Reset header title
                 const headerLabel = document.querySelector('.journal-draft-label');
                 if (headerLabel) {
-                    headerLabel.innerHTML = `<iconify-icon icon="solar:pen-bold"></iconify-icon> Brouillon`;
+                    headerLabel.innerHTML = `<iconify-icon icon="solar:pen-linear"></iconify-icon> Brouillon`;
                 }
 
                 if (noteInput) noteInput.value = '';

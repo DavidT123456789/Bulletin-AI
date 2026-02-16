@@ -227,7 +227,7 @@ export const ModalUI = {
                 <div class="modal-content modal-content-confirm modal-compact">
                     <div class="modal-compact-body">
                         <div class="modal-icon-wrapper">
-                             <iconify-icon icon="solar:question-circle-bold" style="color: var(--warning-color); font-size: 24px;"></iconify-icon>
+                             <iconify-icon icon="solar:question-circle-linear" style="color: var(--warning-color); font-size: 24px;"></iconify-icon>
                         </div>
                         <div class="modal-text-wrapper">
                             <p>${message}</p>
@@ -242,11 +242,11 @@ export const ModalUI = {
                 <div class="modal-content modal-content-confirm">
                     <div class="modal-header">
                         <h3 class="modal-title">
-                            <iconify-icon icon="solar:question-circle-bold" class="modal-title-icon" style="color: var(--warning-color);"></iconify-icon>
+                            <iconify-icon icon="solar:question-circle-linear" class="modal-title-icon" style="color: var(--warning-color);"></iconify-icon>
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
+                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">
@@ -346,7 +346,7 @@ export const ModalUI = {
                 confirmText = 'Confirmer',
                 cancelText = 'Annuler',
                 isDanger = true,
-                iconClass = 'solar:checklist-minimalistic-bold'
+                iconClass = 'solar:checklist-minimalistic-linear'
             } = options;
 
             const modalId = 'customChoicesModal';
@@ -370,7 +370,7 @@ export const ModalUI = {
                         <div class="modal-choice-checkbox-wrapper">
                             <input type="checkbox" id="choice_${choice.id}" ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                             <div class="custom-checkbox-display">
-                                <iconify-icon icon="solar:check-bold"></iconify-icon>
+                                <iconify-icon icon="solar:check-read-linear"></iconify-icon>
                             </div>
                         </div>
                         <div class="modal-choice-text">
@@ -391,7 +391,7 @@ export const ModalUI = {
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
+                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">

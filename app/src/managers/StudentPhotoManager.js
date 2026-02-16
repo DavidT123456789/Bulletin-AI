@@ -100,7 +100,7 @@ export const StudentPhotoManager = {
 
         const checkmarkHTML = `
             <div class="avatar-selection-overlay">
-                <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
             </div>
         `;
 
