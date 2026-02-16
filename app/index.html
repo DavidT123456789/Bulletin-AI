@@ -70,6 +70,26 @@
             }
         }
 
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+                filter: blur(2px);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        .pop-in {
+            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+            display: inline-block;
+        }
+
         .perspective-container {
             perspective: 1000px;
         }
@@ -344,6 +364,40 @@
                 transition: none !important;
             }
         }
+
+        /* Smart Spacing System */
+        :root {
+            --spacing-title-subtitle: 1rem;
+            /* 16px (mb-4) */
+            --spacing-header-content: 5rem;
+            /* 80px (mb-20) */
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --spacing-header-content: 3rem;
+                /* 48px (mb-12) on mobile */
+            }
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: var(--spacing-header-content);
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 48rem;
+            /* max-w-3xl equivalent */
+        }
+
+        .section-header h2 {
+            margin-bottom: var(--spacing-title-subtitle);
+        }
+
+        .section-header p {
+            margin-top: 0;
+            color: #64748b;
+            /* text-slate-500 */
+        }
     </style>
 </head>
 
@@ -361,7 +415,7 @@
     <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-transparent"
         aria-label="Navigation principale">
         <div class="absolute inset-0 bg-white/70 backdrop-blur-xl transition-opacity duration-300"></div>
-        <div class="relative max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div class="relative max-w-7xl mx-auto px-[34px] h-14 flex items-center justify-between">
             <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
                 <img src="./assets/logo.png" alt="" class="w-9 h-9 object-contain" width="36" height="36">
                 <span class="font-semibold text-base tracking-tight text-slate-800">Bulletin AI</span>
@@ -428,7 +482,8 @@
 
     <main>
         <header id="hero" class="relative pt-32 pb-12 lg:pt-48 lg:pb-20 overflow-hidden">
-            <div class="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div
+                class="max-w-7xl mx-auto px-[34px] grid lg:grid-cols-[56%_44%] gap-12 lg:gap-8 items-center lg:items-end">
                 <div class="text-center lg:text-left z-10">
                     <div
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[11px] font-semibold tracking-wide uppercase mb-6">
@@ -455,7 +510,7 @@
                             Voir comment ça marche
                         </a>
                     </div>
-                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-medium text-slate-400 list-none p-0"
+                    <ul class="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[11.5px] font-medium text-slate-400 list-none p-0"
                         aria-label="Points clés">
                         <li class="flex items-center gap-1.5">
                             <iconify-icon icon="solar:shield-check-linear" class="text-green-500"></iconify-icon>
@@ -475,7 +530,7 @@
                     </ul>
                 </div>
 
-                <div class="relative perspective-container z-0 reveal-on-scroll" aria-hidden="true">
+                <div class="relative perspective-container z-0 reveal-on-scroll lg:-ml-8" aria-hidden="true">
                     <div
                         class="absolute inset-0 bg-gradient-to-tr from-blue-100 to-purple-100 rounded-full filter blur-3xl opacity-30 transform translate-y-10 scale-90">
                     </div>
@@ -494,9 +549,8 @@
                         <div class="p-5 grid gap-4 bg-[#FAFAFA]">
                             <div
                                 class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-start gap-4">
-                                <div
-                                    class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs font-semibold shadow-blue-200 shadow-lg flex-shrink-0">
-                                    MD</div>
+                                <img src="./public/images/sample-solo-1.png" alt="Mathéo D."
+                                    class="w-10 h-10 rounded-full object-cover shadow-blue-200 shadow-lg flex-shrink-0">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-start">
                                         <div>
@@ -538,11 +592,11 @@
         </header>
 
         <section id="how-it-works" class="py-24 bg-white border-b border-slate-100">
-            <div class="max-w-6xl mx-auto px-6">
-                <div class="text-center mb-20 reveal-on-scroll">
-                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900 mb-4">Flux de travail
+            <div class="max-w-7xl mx-auto px-[34px]">
+                <div class="section-header reveal-on-scroll">
+                    <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">Flux de travail
                     </h2>
-                    <p class="text-slate-500">Import des notes, analyse du contexte et génération par IA.</p>
+                    <p>Import des notes, analyse du contexte et génération par IA.</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
                     <div class="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-slate-200 via-blue-100 to-slate-200 z-0"
@@ -610,11 +664,11 @@
         </section>
 
         <section id="features" class="py-24 overflow-hidden bg-[#F5F5F7]">
-            <div class="max-w-6xl mx-auto px-6 mb-16 reveal-on-scroll text-center">
-                <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900 mb-2">Fonctionnalités</h2>
-                <p class="text-slate-500">Une suite d'outils conçue pour la productivité et la confidentialité.</p>
+            <div class="section-header reveal-on-scroll">
+                <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">Fonctionnalités</h2>
+                <p>Une suite d'outils conçue pour la productivité et la confidentialité.</p>
             </div>
-            <div class="h-[420px] sm:h-[450px] relative w-full perspective-container reveal-on-scroll"
+            <div class="h-[360px] sm:h-[380px] relative w-full perspective-container reveal-on-scroll"
                 id="carousel-track" role="region" aria-label="Fonctionnalités de Bulletin AI"
                 aria-roledescription="carousel" aria-live="off" tabindex="0"></div>
             <div class="flex justify-center items-center gap-6 mt-6 reveal-on-scroll">
@@ -633,10 +687,10 @@
         </section>
 
         <section id="specs" class="py-24 bg-white border-t border-slate-100">
-            <div class="max-w-3xl mx-auto px-6">
-                <div class="text-center mb-12 reveal-on-scroll">
+            <div class="max-w-3xl mx-auto px-[34px]">
+                <div class="section-header reveal-on-scroll">
                     <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">Spécifications</h2>
-                    <p class="text-slate-500 mt-2">Détails techniques et fonctionnement.</p>
+                    <p>Détails techniques et fonctionnement.</p>
                 </div>
                 <div class="space-y-4 reveal-on-scroll" role="region" aria-label="Détails techniques">
 
@@ -772,7 +826,7 @@
     </main>
 
     <footer class="relative bg-[#F5F5F7] pt-12 pb-10 border-t border-slate-200">
-        <div class="max-w-6xl mx-auto px-6">
+        <div class="max-w-7xl mx-auto px-[34px]">
 
             <div class="flex flex-col md:flex-row justify-between items-center gap-8">
 
@@ -1131,8 +1185,8 @@
 
             const t2 = setTimeout(() => {
                 mockupAnalysis.innerHTML = `
-                    <span class="px-1.5 py-0.5 rounded bg-green-50 text-green-600 font-medium animate-pulse">Curiosité</span>
-                    <span class="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-medium animate-pulse">Bavardages</span>
+                    <span class="pop-in px-2 py-0.5 rounded-lg bg-green-50 text-green-600 border border-green-200/60 font-medium shadow-sm">Curiosité</span>
+                    <span class="pop-in px-2 py-0.5 rounded-lg bg-red-50 text-red-600 border border-red-200/60 font-medium shadow-sm" style="animation-delay: 0.15s">Bavardages</span>
                 `;
             }, 1200);
             mockupActiveTimeouts.push(t2);
