@@ -175,6 +175,7 @@
 /* Ensure Name header is left-aligned */
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
+    padding-left: 40px !important;
 }
 
 .student-list-table th[data-sort-field="name"] .header-content-wrapper {
@@ -3003,6 +3004,9 @@
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     animation: rotate-gradient 2s linear infinite;
@@ -3125,10 +3129,7 @@
 /* Warning state - data modified, action RECOMMENDED */
 /* Uses same primary gradient as "Générer" for harmony, pulse draws attention */
 /* Generic class for both Focus and List buttons */
-.btn-regenerate-warning {
-    /* Animation removed: Color change (Neutral -> Gradient) is sufficient to attract attention */
-    /* and provides a cleaner, less distracting UI. */
-}
+
 
 @keyframes pulse-orange {
     0% {
@@ -4430,6 +4431,7 @@
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-style: italic;

@@ -14,8 +14,8 @@
     --accent-rgb: 147, 51, 234;
 
     /* Neutres : Palette Warm Stone / Paper */
-    --bg-color: #f8fafc;
-    /* Slate 50 (Cooler/Tech feel) */
+    --bg-color: #F5F5F7;
+    /* Apple Smoke (Landing Page Match) */
     --bg-secondary: #f1f5f9;
     /* Slate 100 */
     --bg-tertiary: #e2e8f0;
@@ -26,7 +26,7 @@
     --surface-color: #ffffff;
     --surface-color-rgb: 255, 255, 255;
 
-    --border-color: rgba(148, 163, 184, 0.4);
+    --border-color: rgba(148, 163, 184, 0.15);
     /* Slate 400 with opacity */
 
     /* Texte : Pierre Froide (Slate) */
