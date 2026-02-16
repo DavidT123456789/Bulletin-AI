@@ -671,18 +671,21 @@
             <div class="h-[360px] sm:h-[380px] relative w-full perspective-container reveal-on-scroll"
                 id="carousel-track" role="region" aria-label="Fonctionnalités de Bulletin AI"
                 aria-roledescription="carousel" aria-live="off" tabindex="0"></div>
-            <div class="flex justify-center items-center gap-6 mt-6 reveal-on-scroll">
-                <button id="prevBtn"
-                    class="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
-                    aria-label="Slide précédente">
-                    <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon>
-                </button>
-                <div id="carousel-dots" class="flex gap-2" role="tablist" aria-label="Navigation du carousel"></div>
-                <button id="nextBtn"
-                    class="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
-                    aria-label="Slide suivante">
-                    <iconify-icon icon="solar:arrow-right-linear" width="18"></iconify-icon>
-                </button>
+            <div class="flex justify-center items-center mt-[42px] reveal-on-scroll">
+                <div class="px-4 py-2 flex items-center gap-4">
+                    <button id="prevBtn"
+                        class="text-slate-400 hover:text-slate-900 transition-colors flex items-center justify-center"
+                        aria-label="Slide précédente">
+                        <iconify-icon icon="solar:alt-arrow-left-linear" width="20"></iconify-icon>
+                    </button>
+                    <div id="carousel-dots" class="flex gap-1.5 items-center" role="tablist"
+                        aria-label="Navigation du carousel"></div>
+                    <button id="nextBtn"
+                        class="text-slate-400 hover:text-slate-900 transition-colors flex items-center justify-center"
+                        aria-label="Slide suivante">
+                        <iconify-icon icon="solar:alt-arrow-right-linear" width="20"></iconify-icon>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -1016,7 +1019,7 @@
             track.appendChild(card);
 
             const dot = document.createElement('button');
-            dot.className = 'h-1.5 rounded-full transition-all duration-300 bg-slate-300 hover:bg-slate-400';
+            dot.className = 'h-1.5 rounded-full transition-all duration-300 bg-slate-200 hover:bg-slate-300';
             dot.style.width = '6px';
             dot.setAttribute('role', 'tab');
             dot.setAttribute('aria-label', `Voir slide ${index + 1}: ${item.title}`);
@@ -1053,13 +1056,13 @@
             });
             dots.forEach((dot, index) => {
                 if (index === centerIndex) {
-                    dot.classList.remove('bg-slate-300');
-                    dot.classList.add('bg-slate-800');
-                    dot.style.width = '24px';
+                    dot.classList.remove('bg-slate-200', 'hover:bg-slate-300');
+                    dot.classList.add('bg-slate-600');
+                    dot.style.width = '20px';
                     dot.setAttribute('aria-selected', 'true');
                 } else {
-                    dot.classList.add('bg-slate-300');
-                    dot.classList.remove('bg-slate-800');
+                    dot.classList.add('bg-slate-200', 'hover:bg-slate-300');
+                    dot.classList.remove('bg-slate-600');
                     dot.style.width = '6px';
                     dot.setAttribute('aria-selected', 'false');
                 }
@@ -1169,6 +1172,11 @@
                 html += `<span class="blur-word" style="transition-delay: ${index * 80}ms">${word}</span> `;
             });
             mockupText.innerHTML = html;
+
+            // Force browser to process the initial state before adding the class
+            // This prevents the browser from batching the changes and skipping the transition
+            void mockupText.offsetWidth;
+
             requestAnimationFrame(() => {
                 mockupText.querySelectorAll('.blur-word').forEach(span => span.classList.add('is-visible'));
             });
