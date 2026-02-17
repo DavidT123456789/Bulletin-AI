@@ -174,16 +174,17 @@ export const ClassUIManager = {
                 border-bottom: 1px solid var(--border-color);
                 animation: slideDownExpand 0.25s ease-out;
             ">
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; gap: 4px; align-items: center;">
                     <input type="text" class="inline-class-input" 
                            placeholder="Nom de la classe..." 
                            autocomplete="off"
                            maxlength="50"
+                           style="flex: 1;"
                            name="newClassName_ignore">
-                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" style="padding: 10px 14px; color: var(--primary-color);" disabled>
+                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" style="padding: 6px 10px; color: var(--primary-color); min-width: 32px;" disabled>
                         <iconify-icon icon="ph:check"></iconify-icon>
                     </button>
-                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
+                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 6px 10px; min-width: 32px;">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -887,7 +888,7 @@ export const ClassUIManager = {
             const formHtml = `
                 <div class="inline-create-class-form" style="
                     display: flex;
-                    gap: 12px;
+                    gap: 6px;
                     align-items: center;
                     padding: 6px; 
                     background: var(--surface-color);
@@ -902,7 +903,7 @@ export const ClassUIManager = {
                            maxlength="50"
                            style="
                                flex: 1;
-                               padding: 12px 16px;
+                               padding: 10px 14px;
                                border: none;
                                background: transparent;
                                font-size: 1rem;
@@ -911,10 +912,10 @@ export const ClassUIManager = {
                                outline: none;
                            "
                            autocomplete="off">
-                    <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 10px 14px; color: var(--primary-color);" disabled>
+                    <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);" disabled>
                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                     </button>
-                    <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 10px 14px;">
+                    <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 6px 10px; min-width: 32px;">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -984,7 +985,7 @@ export const ClassUIManager = {
                     <div class="rename-inline-form" style="
                         display: flex;
                         align-items: center;
-                        gap: 8px;
+                        gap: 6px;
                         width: 100%;
                         animation: slideInConfirm 0.2s ease-out;
                     ">
@@ -1000,10 +1001,10 @@ export const ClassUIManager = {
                                    font-size: 0.95em;
                                    font-weight: 500;
                                ">
-                        <button class="btn btn-secondary btn-small save-rename-btn" style="padding: 8px 12px; color: var(--primary-color);">
+                        <button class="btn btn-secondary btn-small save-rename-btn" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button class="btn btn-secondary btn-small cancel-rename-btn" style="padding: 8px 12px;">
+                        <button class="btn btn-secondary btn-small cancel-rename-btn" style="padding: 6px 10px; min-width: 32px;">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
