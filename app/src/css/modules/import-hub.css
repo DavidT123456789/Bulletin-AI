@@ -171,8 +171,8 @@
     gap: 16px;
     padding: 32px 20px;
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    /* Slate-200 */
+    border: 1px solid transparent;
+    /* Borderless (transparent to prevent layout shift on hover) */
     border-radius: 24px;
     /* Squircle card */
     cursor: pointer;
@@ -187,7 +187,7 @@
 [data-theme="dark"] .import-hub-card {
     background: #1f2937;
     /* Gray-800 */
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid transparent;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -196,8 +196,9 @@
     transform: translateY(-4px);
     /* Border color is now handled specifically per card below */
     box-shadow:
-        0 12px 24px -6px rgba(0, 0, 0, 0.05),
-        0 4px 6px -4px rgba(0, 0, 0, 0.02);
+        0 20px 40px -6px rgba(0, 0, 0, 0.08),
+        /* Enhanced shadow for borderless feel */
+        0 8px 12px -4px rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="dark"] .import-hub-card:hover {
@@ -249,6 +250,14 @@
 
 /* === INDIVIDUAL CARD === */
 /* Color: Blue-600 (#2563eb) */
+.import-hub-card[data-action="individual"] {
+    border-color: #dbeafe;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="individual"] {
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
 .import-hub-card[data-action="individual"] .import-hub-icon {
     background: #eff6ff;
     color: #2563eb;
@@ -270,6 +279,14 @@
 
 /* === MASS IMPORT CARD === */
 /* Color: Purple-600 (#9333ea) */
+.import-hub-card[data-action="mass"] {
+    border-color: #f3e8ff;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="mass"] {
+    border-color: rgba(147, 51, 234, 0.2);
+}
+
 .import-hub-card[data-action="mass"] .import-hub-icon {
     background: #fdf4ff;
     color: #9333ea;
@@ -291,6 +308,14 @@
 
 /* === PHOTOS CARD === */
 /* Color: Emerald-600 (#059669) */
+.import-hub-card[data-action="photos"] {
+    border-color: #d1fae5;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="photos"] {
+    border-color: rgba(5, 150, 105, 0.2);
+}
+
 .import-hub-card[data-action="photos"] .import-hub-icon {
     background: #ecfdf5;
     color: #059669;

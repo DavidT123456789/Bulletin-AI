@@ -1003,7 +1003,11 @@
                 centerIndex = index;
                 updateCarousel();
             });
-            card.className = 'carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 flex flex-col items-center text-center select-none';
+            // Removed 'border' class and item.border
+            // Added 'border border-transparent' to keep layout similar if needed, or just remove border class.
+            // Original had 'border border-slate-200'. I will make it 'border border-transparent' to be safe or just no border classes.
+            // Use 'shadow-xl' mostly.
+            card.className = `carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-3xl border border-transparent shadow-xl p-6 sm:p-8 flex flex-col items-center text-center select-none`;
             card.setAttribute('role', 'tabpanel');
             card.setAttribute('aria-label', item.title);
             card.innerHTML = `

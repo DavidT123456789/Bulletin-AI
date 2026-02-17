@@ -195,16 +195,36 @@
     opacity: 0.8;
 }
 
+.guide-format-chip:hover[data-format="pdf"] {
+    border-color: var(--error-color);
+    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.04);
+}
+
 .guide-format-chip:hover[data-format="pdf"] iconify-icon {
     color: var(--error-color);
+}
+
+.guide-format-chip:hover[data-format="excel"] {
+    border-color: var(--success-color);
+    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.04);
 }
 
 .guide-format-chip:hover[data-format="excel"] iconify-icon {
     color: var(--success-color);
 }
 
+.guide-format-chip:hover[data-format="csv"] {
+    border-color: var(--info-color, #3b82f6);
+    background: rgba(59, 130, 246, 0.04);
+}
+
 .guide-format-chip:hover[data-format="csv"] iconify-icon {
     color: var(--info-color, #3b82f6);
+}
+
+.guide-format-chip:hover[data-format="clipboard"] {
+    border-color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.04);
 }
 
 .guide-format-chip:hover[data-format="clipboard"] iconify-icon {
@@ -212,10 +232,9 @@
 }
 
 .guide-format-chip:hover {
-    border-color: var(--border-color-hover, rgba(0, 0, 0, 0.15));
+    /* Base hover fallbacks if no specific data-format matches (should not happen if HTML is correct) */
     opacity: 1;
     transform: translateY(-1px);
-    background: var(--bg-secondary);
 }
 
 /* Light theme adjustments */
@@ -993,8 +1012,8 @@
     flex: 1;
     min-height: 100px;
     /* Revert padding: Standard padding */
-    padding: 16px 18px 48px 18px;
-    font-size: 0.85rem;
+    padding: 16px 18px 16px 18px;
+    font-size: 0.8rem;
     font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
     color: var(--text-primary);
     background: transparent;
@@ -2617,8 +2636,8 @@
 .preview-col-header span::before {
     content: '';
     display: block;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border: 2px solid var(--text-tertiary);
     border-radius: 4px;
     background: transparent;
@@ -2638,7 +2657,7 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 6l2 2 4-4' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 12px;
+    background-size: 10px;
 }
 
 /* Locked (disabled) state */
