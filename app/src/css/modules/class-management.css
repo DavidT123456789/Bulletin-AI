@@ -94,7 +94,7 @@
     background: transparent;
     border: none;
     padding: 6px 10px;
-    margin: -6px -10px;
+    margin: -6px -4px;
     border-radius: var(--radius-md);
     font-weight: 600;
     font-size: inherit;
@@ -740,7 +740,7 @@
 .class-management-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     padding-bottom: 8px;
     position: relative;
 }
@@ -749,8 +749,8 @@
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 16px;
-    padding: 20px 24px;
+    gap: 12px;
+    padding: 14px 18px;
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -795,14 +795,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     color: var(--text-tertiary);
     cursor: grab;
     border-radius: var(--radius-md);
     transition: all 0.2s ease;
     opacity: 0.5;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
 }
 
 .class-management-item:hover .class-drag-handle {
@@ -818,7 +818,7 @@
 .class-management-info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
 }
@@ -827,13 +827,13 @@
 .class-info-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .class-management-name {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
@@ -846,10 +846,10 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    padding: 2px 8px;
     background: var(--bg-secondary);
     border-radius: var(--radius-pill);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     border: 1px solid transparent;
     transition: all 0.2s ease;
@@ -959,11 +959,11 @@
 .meta-item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
+    gap: 5px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     font-weight: 500;
-    padding: 4px 8px;
+    padding: 3px 6px;
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
 }
@@ -1022,8 +1022,8 @@
 .manage-rename-btn,
 .manage-duplicate-btn,
 .manage-delete-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -1174,4 +1174,104 @@
     animation: rotate-gradient 10s linear infinite;
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
         0 2px 8px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Inline Delete Confirmation Buttons */
+.inline-delete-btn {
+    height: 28px;
+    /* Reduced from 32px */
+    min-width: 80px;
+    /* Reduced from 100px */
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* Disable card hover effect when editing */
+.class-management-item.editing {
+    cursor: default;
+    background: rgba(239, 68, 68, 0.05) !important;
+    /* Subtle red bg for delete context */
+    border-color: var(--error-color) !important;
+}
+
+.class-management-item.editing:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Special case for rename editing (blue instead of red) */
+.class-management-item.editing.renaming {
+    background: rgba(var(--primary-color-rgb), 0.05) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.inline-delete-btn.cancel {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.inline-delete-btn.cancel:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--text-tertiary);
+}
+
+.inline-delete-btn.confirm {
+    background: var(--error-color);
+    color: white;
+    gap: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.inline-delete-btn.confirm:hover {
+    background: #dc2626;
+    /* Darker red */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+}
+
+.inline-delete-btn.confirm:active {
+    transform: translateY(0);
+}
+
+/* ====================================================================
+   DELETE CONFIRMATION LAYOUT (Refactored from inline styles)
+   ==================================================================== */
+
+.delete-confirm-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
+    animation: slideInConfirm 0.2s ease-out;
+}
+
+.delete-confirm-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--error-color);
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.delete-confirm-text iconify-icon {
+    font-size: 1.5em;
+}
+
+.delete-confirm-actions {
+    display: flex;
+    gap: 8px;
 }

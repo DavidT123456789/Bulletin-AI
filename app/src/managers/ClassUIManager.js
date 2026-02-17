@@ -1012,6 +1012,10 @@ export const ClassUIManager = {
 
                 row.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
                 row.style.borderColor = 'var(--primary-color)';
+                row.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
+                row.style.borderColor = 'var(--primary-color)';
+                row.style.display = 'block';
+                row.classList.add('editing', 'renaming');
 
                 const input = row.querySelector('.inline-rename-input');
                 const saveBtn = row.querySelector('.save-rename-btn');
@@ -1024,6 +1028,8 @@ export const ClassUIManager = {
                     row.innerHTML = originalContent;
                     row.style.background = '';
                     row.style.borderColor = '';
+                    row.style.display = '';
+                    row.classList.remove('editing', 'renaming');
                     // Re-bind both buttons
                     const newRenameBtn = row.querySelector('.manage-rename-btn');
                     const newDeleteBtn = row.querySelector('.manage-delete-btn');
@@ -1075,21 +1081,16 @@ export const ClassUIManager = {
                 const cls = ClassManager.getClassById(classId);
 
                 row.innerHTML = `
-                    <div class="delete-confirm-inline" style="
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        width: 100%;
-                        animation: slideInConfirm 0.2s ease-out;
-                    ">
-                        <span style="color: var(--error-color); font-weight: 500; font-size: 0.9em;">
-                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Supprimer "${this._escapeHtml(cls?.name || '')}" ?
+                    <div class="delete-confirm-inline">
+                        <span class="delete-confirm-text">
+                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> 
+                            Supprimer "${this._escapeHtml(cls?.name || '')}" ?
                         </span>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-secondary btn-small cancel-delete-btn" style="padding: 6px 12px; font-size: 0.85em;">
+                        <div class="delete-confirm-actions">
+                            <button class="inline-delete-btn cancel cancel-delete-btn">
                                 Annuler
                             </button>
-                            <button class="btn btn-danger btn-small confirm-delete-btn" style="padding: 6px 12px; font-size: 0.85em; background: var(--error-color); color: white; border: none;">
+                            <button class="inline-delete-btn confirm confirm-delete-btn">
                                 <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
                             </button>
                         </div>
@@ -1098,12 +1099,16 @@ export const ClassUIManager = {
 
                 row.style.background = 'rgba(239, 68, 68, 0.1)';
                 row.style.borderColor = 'var(--error-color)';
+                row.style.display = 'block';
+                row.classList.add('editing');
 
                 // Cancel - restore and re-bind
                 row.querySelector('.cancel-delete-btn').onclick = () => {
                     row.innerHTML = originalContent;
                     row.style.background = '';
                     row.style.borderColor = '';
+                    row.style.display = '';
+                    row.classList.remove('editing');
                     // Re-bind the new delete button
                     const newDeleteBtn = row.querySelector('.manage-delete-btn');
                     if (newDeleteBtn) {
