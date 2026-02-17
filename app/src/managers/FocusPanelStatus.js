@@ -319,7 +319,7 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'empty', 'icon-only');
                 break;
             case 'saved':
-                badge.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon><span class="badge-text">Enregistré</span>';
+                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon><span class="badge-text">Enregistré</span>';
                 badge.classList.add('visible', 'saved');
                 setTimeout(() => {
                     if (badge.classList.contains('saved')) {
@@ -337,7 +337,7 @@ export const FocusPanelStatus = {
                 break;
             case 'generated':
                 // Success state after generation - show brief confirmation then hide
-                badge.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                 badge.classList.add('visible', 'generated', 'icon-only');
                 setTimeout(() => {
                     if (badge.classList.contains('generated')) {
@@ -596,13 +596,13 @@ export const FocusPanelStatus = {
                 badge.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="icon-spin"></iconify-icon>';
                 break;
             case 'done':
-                badge.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                 break;
             case 'error':
                 badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>';
                 break;
             case 'saved':
-                badge.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Enregistré';
+                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Enregistré';
                 setTimeout(() => {
                     if (badge.classList.contains('saved')) {
                         badge.classList.remove('visible', 'saved');

@@ -471,7 +471,7 @@ export const JournalManager = {
             <iconify-icon icon="${tag.icon}"></iconify-icon>
                         <span>${tag.label}</span>
                         <button class="journal-chip-remove" aria-label="Retirer">
-                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </span>
                 `;
@@ -489,7 +489,7 @@ export const JournalManager = {
                     </div>
                     <div class="journal-draft-actions header-actions">
                         <button class="btn-icon-ghost" id="journalDraftCancelBtn" aria-label="Annuler">
-                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                         <button class="btn-icon-ghost" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer" style="color: var(--primary-color);">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>

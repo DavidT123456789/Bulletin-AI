@@ -276,7 +276,7 @@ export const FocusPanelAnalysis = {
                 break;
             case 'done':
                 badge.classList.add('done');
-                badge.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                 break;
             case 'error':
                 badge.classList.add('error');

@@ -181,10 +181,10 @@ export const ClassUIManager = {
                            maxlength="50"
                            name="newClassName_ignore">
                     <button type="button" class="btn btn-secondary btn-small inline-create-btn" style="padding: 10px 14px; color: var(--primary-color);" disabled>
-                        <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:check"></iconify-icon>
                     </button>
                     <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 10px 14px;">
-                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             </form>
@@ -267,7 +267,7 @@ export const ClassUIManager = {
                     <iconify-icon icon="solar:mortarboard-linear" style="font-size: 24px; color: var(--text-tertiary);"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
-                        <iconify-icon icon="solar:add-circle-linear"></iconify-icon> Créer ma première classe
+                        <iconify-icon icon="ph:plus"></iconify-icon> Créer ma première classe
                     </button>
                 </div>
             `;
@@ -569,7 +569,7 @@ export const ClassUIManager = {
             icon = 'solar:danger-triangle-linear';
             statusClass = 'status-error';
         } else if (total > 0 && completed === total) {
-            icon = 'solar:check-circle-linear';
+            icon = 'ph:check';
             statusClass = 'status-complete';
         } else if (completed > 0) {
             icon = 'solar:pie-chart-2-linear'; // Or spinner if you prefer
@@ -694,6 +694,7 @@ export const ClassUIManager = {
                                             title="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
+
                                     <button class="btn-icon-small manage-delete-btn" data-class-id="${cls.id}" 
                                             title="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
@@ -723,9 +724,9 @@ export const ClassUIManager = {
                     </div>
                     <div class="modal-header-actions">
                         <button class="btn btn-secondary btn-small" id="addClassFromModalBtn" title="Créer une nouvelle classe">
-                            <iconify-icon icon="solar:add-circle-linear" style="color: var(--primary-color);"></iconify-icon> <span>Nouvelle classe</span>
+                            <iconify-icon icon="ph:plus" style="color: var(--primary-color);"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
-                        <button class="close-button close-manage-modal"><iconify-icon icon="solar:close-circle-linear"></iconify-icon></button>
+                        <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
@@ -914,7 +915,7 @@ export const ClassUIManager = {
                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                     </button>
                     <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 10px 14px;">
-                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -1003,7 +1004,7 @@ export const ClassUIManager = {
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
                         <button class="btn btn-secondary btn-small cancel-rename-btn" style="padding: 8px 12px;">
-                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                 `;
@@ -1240,7 +1241,7 @@ export const ClassUIManager = {
                         <span class="modal-title-icon"><iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon></span>
                         <span class="modal-title-text">${title}</span>
                     </h2>
-                    <button class="close-button close-move-modal"><iconify-icon icon="solar:close-circle-linear"></iconify-icon></button>
+                    <button class="close-button close-move-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
                     <p style="margin-bottom: 16px; color: var(--text-secondary);">

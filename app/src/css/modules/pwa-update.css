@@ -65,7 +65,7 @@
 }
 
 .pwa-update-banner .pwa-gift-icon {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     color: var(--primary-color);
     /* Subtle glow behind icon */
     filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.25));
@@ -219,7 +219,7 @@
 .pwa-update-banner .pwa-close-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
-    transform: scale(1.08);
+    transform: none;
     opacity: 1;
 }
 

@@ -822,7 +822,7 @@ export const SettingsUIManager = {
                 // Bouton reste en état validé
                 if (DOM.validateOllamaBtn) {
                     DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> OK';
+                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
                     DOM.validateOllamaBtn.disabled = false;
                 }
 
@@ -930,7 +930,7 @@ export const SettingsUIManager = {
                 const shortName = MODEL_SHORT_NAMES[modelKey]?.replace('🏠 ', '') || modelName;
 
                 const color = isInstalled ? 'var(--success-color)' : 'var(--text-tertiary)';
-                const iconName = isInstalled ? 'solar:check-circle-linear' : 'solar:close-circle-linear';
+                const iconName = isInstalled ? 'ph:check' : 'solar:close-circle-linear';
                 const opacity = isInstalled ? '1' : '0.6';
                 const decoration = isInstalled ? 'none' : 'line-through';
 

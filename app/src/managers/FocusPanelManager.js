@@ -901,7 +901,7 @@ export const FocusPanelManager = {
                 const originalIcon = icon?.getAttribute('icon');
 
                 // Change to check icon and add 'copied' class
-                if (icon) icon.setAttribute('icon', 'solar:check-circle-bold');
+                if (icon) icon.setAttribute('icon', 'ph:check-bold');
                 copyBtn.classList.add('copied');
 
                 // Reset after delay
@@ -1244,7 +1244,7 @@ export const FocusPanelManager = {
                 const originalIcon = icon?.getAttribute('icon');
 
                 // Change to check icon and add 'copied' class
-                if (icon) icon.setAttribute('icon', 'solar:check-circle-bold');
+                if (icon) icon.setAttribute('icon', 'ph:check-bold');
                 copyBtn.classList.add('copied');
 
                 // Reset after delay

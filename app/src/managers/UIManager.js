@@ -46,7 +46,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 let App;
 
 const NOTIF_ICONS = {
-    success: '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>',
+    success: '<iconify-icon icon="ph:check"></iconify-icon>',
     error: '<iconify-icon icon="solar:close-circle-linear"></iconify-icon>',
     warning: '<iconify-icon icon="solar:danger-circle-linear"></iconify-icon>',
     info: '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>'
@@ -1336,7 +1336,7 @@ export const UI = {
             const label = filterLabels[appState.activeStatFilter] || (card ? card.querySelector('.stat-label, .legend-label, .detail-label')?.textContent : 'Filtre');
 
             // Show overlay banner
-            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-linear"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="solar:close-circle-linear"></iconify-icon> Retirer</button>`;
+            DOM.activeFilterInfo.innerHTML = `<p><iconify-icon icon="solar:filter-linear"></iconify-icon> Filtre : <strong>${label}</strong></p><button type="button" class="btn-link" id="removeFilterBtn"><iconify-icon icon="ph:x"></iconify-icon> Retirer</button>`;
             DOM.activeFilterInfo.classList.add('show');
 
             // Also add close button on the active element
@@ -1344,7 +1344,7 @@ export const UI = {
             if (activeElement) {
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'filter-close-btn';
-                closeBtn.innerHTML = '<iconify-icon icon="solar:close-circle-linear"></iconify-icon>';
+                closeBtn.innerHTML = '<iconify-icon icon="ph:x"></iconify-icon>';
                 closeBtn.setAttribute('aria-label', 'Retirer le filtre');
                 activeElement.style.position = 'relative';
                 activeElement.appendChild(closeBtn);

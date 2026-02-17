@@ -436,7 +436,7 @@ export const FocusPanelJournal = {
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
                 <button class="journal-chip-remove" aria-label="Retirer">
-                    <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                    <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             `;
 

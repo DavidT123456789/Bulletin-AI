@@ -165,6 +165,13 @@
     /* Do NOT use absolute positioning - we want the group centered */
 }
 
+.sortable-header .sort-icon-placeholder iconify-icon {
+    font-size: 15px;
+    color: var(--primary-color);
+    /* Transition for color change */
+    transition: color 0.2s ease;
+}
+
 /* Hide placeholder completely when empty to ensure perfect centering of text */
 .sortable-header .sort-icon-placeholder:empty {
     display: none;

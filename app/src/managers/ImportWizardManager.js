@@ -424,7 +424,7 @@ export const ImportWizardManager = {
             nextArrow.disabled = this.currentStep >= 3;
             // Change icon on last step to show it's the end
             if (this.currentStep >= 3) {
-                nextArrow.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                nextArrow.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
             } else {
                 nextArrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>';
             }

@@ -368,7 +368,7 @@ export const SyncService = {
                     statusEl.classList.add('connected');
                 }
                 if (connectBtn) {
-                    connectBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Connecté';
+                    connectBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Connecté';
                     connectBtn.classList.add('btn-success');
                     connectBtn.style.display = 'none';
                 }

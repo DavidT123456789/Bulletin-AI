@@ -60,8 +60,8 @@ export const ExportManager = {
                 // Si le bouton contient du texte (ex: menu contextuel), on affiche "Copié !"
                 // Sinon (ex: icône seule), on change juste l'icône
                 buttonEl.innerHTML = hasText
-                    ? '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Copié !'
-                    : '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                    ? '<iconify-icon icon="ph:check"></iconify-icon> Copié !'
+                    : '<iconify-icon icon="ph:check"></iconify-icon>';
 
                 buttonEl.classList.add('copied', 'copy-success');
                 setTimeout(() => {
@@ -93,7 +93,7 @@ export const ExportManager = {
 
                 const btn = DOM.refinementModal.querySelector(`[data-action="copy-${type}"]`);
                 if (btn) {
-                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                    btn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                     btn.classList.add('copied');
                     setTimeout(() => {
                         btn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
@@ -125,7 +125,7 @@ export const ExportManager = {
             UI.showNotification(`${appState.filteredResults.length} appréciations copiées !`, 'success');
             if (button) {
                 const originalIcon = button.innerHTML;
-                button.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>';
+                button.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
                 button.disabled = true;
                 setTimeout(() => {
                     button.innerHTML = originalIcon;

@@ -216,7 +216,7 @@ export const DropdownManager = {
 
         const check = document.createElement('span');
         check.className = 'custom-dropdown-option-check';
-        check.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>';
+        check.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon>';
 
         const text = document.createElement('span');
         text.textContent = optionEl.textContent;

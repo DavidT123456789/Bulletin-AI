@@ -535,7 +535,7 @@ export const TrombinoscopeManager = {
         // Display info message in footer
         const footerInfo = document.getElementById('trombiImageInfo');
         if (footerInfo) {
-            footerInfo.innerHTML = `<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
+            footerInfo.innerHTML = `<iconify-icon icon="ph:check"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
         }
     },
 
@@ -1038,7 +1038,7 @@ export const TrombinoscopeManager = {
                         height: ${deleteSize}px;
                         font-size: ${deleteFontSize}px;
                     ">
-                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
             `;

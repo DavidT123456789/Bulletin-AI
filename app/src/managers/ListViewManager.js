@@ -467,7 +467,7 @@ export const ListViewManager = {
              <td class="action-cell">
                 <div class="action-dropdown">
                     <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
-                        <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
+                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this._generateActionMenuHTML(result.id)}
                 </div>
@@ -679,7 +679,7 @@ export const ListViewManager = {
                                     <iconify-icon icon="solar:magnifer-linear" class="search-icon"></iconify-icon>
                                     <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                                     <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
-                                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                                        <iconify-icon icon="ph:x"></iconify-icon>
                                     </button>
                                 </div>
                             </th>
@@ -709,12 +709,12 @@ export const ListViewManager = {
                             <th class="action-header" style="width: 50px;">
                                 <div class="header-content-wrapper global-actions-dropdown">
                                     <button class="btn-action-menu-header" id="tableActionsBtnToggle" title="Actions">
-                                        <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
+                                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                                         <!-- SECTION SELECTION -->
                                         <button class="action-dropdown-item" id="selectAllBtn-global">
-                                            <iconify-icon icon="solar:check-read-linear"></iconify-icon> Tout sélectionner
+                                            <iconify-icon icon="ph:check-square"></iconify-icon> Tout sélectionner
                                         </button>
                                         
                                         <!-- SECTION VUE -->
@@ -727,13 +727,13 @@ export const ListViewManager = {
                                         <!-- SECTION EXPORT -->
                                         <h5 class="dropdown-header"><iconify-icon icon="solar:download-minimalistic-linear"></iconify-icon> Exporter</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
-                                            <iconify-icon icon="fa6-solid:file-code"></iconify-icon> Données (JSON)
+                                            <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
                                         </button>
                                         <button class="action-dropdown-item" id="exportCsvBtn">
-                                            <iconify-icon icon="fa6-solid:file-csv"></iconify-icon> Tableau (CSV)
+                                            <iconify-icon icon="solar:file-text-linear"></iconify-icon> Tableau (CSV)
                                         </button>
                                         <button class="action-dropdown-item" id="exportPdfBtn">
-                                            <iconify-icon icon="fa6-solid:file-pdf"></iconify-icon> Imprimer / PDF
+                                            <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
                                         </button>
                                     </div>
                                 </div>
@@ -772,7 +772,7 @@ export const ListViewManager = {
                         <td class="action-cell">
                             <div class="action-dropdown">
                                 <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
-                                    <iconify-icon icon="solar:menu-dots-linear" style="transform: rotate(90deg);"></iconify-icon>
+                                    <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                 </button>
                                 ${this._generateActionMenuHTML(result.id)}
                             </div>
@@ -892,8 +892,8 @@ export const ListViewManager = {
                 placeholder.innerHTML = '';
                 if (isSorted) {
                     placeholder.innerHTML = direction === 'asc'
-                        ? '<iconify-icon icon="solar:sort-from-bottom-to-top-linear" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>'
-                        : '<iconify-icon icon="solar:sort-from-top-to-bottom-linear" style="margin-left:4px; color:var(--primary-color);"></iconify-icon>';
+                        ? '<iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>'
+                        : '<iconify-icon icon="solar:sort-from-top-to-bottom-linear"></iconify-icon>';
                 }
             }
         });
@@ -1059,7 +1059,7 @@ export const ListViewManager = {
         if (hasContent) {
             // === COPY BUTTON INTEGRATION ===
             const btnClass = result.copied ? 'btn-copy-appreciation was-copied' : 'btn-copy-appreciation';
-            const icon = result.copied ? '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>' : '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
+            const icon = result.copied ? '<iconify-icon icon="ph:check"></iconify-icon>' : '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
             const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
             const copyButtonHTML = `
@@ -1119,7 +1119,7 @@ export const ListViewManager = {
         const icons = {
             'pending': '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>',
             'error': '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>',
-            'done': '<iconify-icon icon="solar:check-circle-linear"></iconify-icon>',
+            'done': '<iconify-icon icon="ph:check"></iconify-icon>',
             'generating': '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>'
         };
 
@@ -1723,7 +1723,7 @@ export const ListViewManager = {
             <div class="selection-toolbar-content">
                 <div class="selection-info">
                     <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection">
-                        <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                     <span id="selectionCount">0 élève sélectionné</span>
                     <button class="btn-select-all-link" id="btnSelectAllLink">Tout sélectionner</button>
@@ -2544,7 +2544,7 @@ export const ListViewManager = {
 
             // Switch to Expand icon
             if (icon) {
-                icon.setAttribute('icon', 'solar:maximize-square-3-bold');
+                icon.setAttribute('icon', 'solar:maximize-square-linear');
             }
 
             // Update State & Persistence
@@ -2557,7 +2557,7 @@ export const ListViewManager = {
 
             // Switch to Compress icon
             if (icon) {
-                icon.setAttribute('icon', 'solar:minimize-square-3-bold');
+                icon.setAttribute('icon', 'solar:minimize-square-linear');
             }
 
             // Update State & Persistence

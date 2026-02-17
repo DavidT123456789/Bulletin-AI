@@ -214,7 +214,7 @@ export const FormUI = {
                 if (status === 'valid' || status === 'quota') {
                     btn.classList.add('btn-validated');
                     btn.classList.remove('btn-needs-validation');
-                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> OK';
+                    btn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
                 } else {
                     btn.classList.remove('btn-validated');
                     // btn-needs-validation is handled by input listener, 

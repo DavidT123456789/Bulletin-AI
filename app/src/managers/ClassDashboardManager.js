@@ -780,7 +780,7 @@ RÈGLES STRICTES :
         const sections = [
             { emoji: '📝', title: 'Synthèse', icon: 'solar:document-text-linear', color: 'primary-dark', isFullWidth: true },
             { emoji: '📊', title: 'Bilan', icon: 'solar:chart-square-linear', color: 'primary' },
-            { emoji: '✅', title: 'Points forts', icon: 'solar:check-circle-linear', color: 'success' },
+            { emoji: '✅', title: 'Points forts', icon: 'ph:check', color: 'success' },
             { emoji: '⚠️', title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning' },
             { emoji: '💡', title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info' }
         ];

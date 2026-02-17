@@ -246,7 +246,7 @@ export const ModalUI = {
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">
@@ -370,7 +370,7 @@ export const ModalUI = {
                         <div class="modal-choice-checkbox-wrapper">
                             <input type="checkbox" id="choice_${choice.id}" ${checkedState ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                             <div class="custom-checkbox-display">
-                                <iconify-icon icon="solar:check-read-linear"></iconify-icon>
+                                <iconify-icon icon="ph:check"></iconify-icon>
                             </div>
                         </div>
                         <div class="modal-choice-text">
@@ -391,7 +391,7 @@ export const ModalUI = {
                             ${title}
                         </h3>
                         <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                            <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                     <div class="modal-body">

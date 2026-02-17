@@ -91,13 +91,21 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--surface-color);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    opacity: 0.6;
+    font-size: 18px;
+    /* Ensure icon has a size */
+    opacity: 0.8;
+    /* Increased visibility */
+}
+
+.inspector-toggle-btn iconify-icon {
+    font-size: 1em;
+    /* Inherit from button */
 }
 
 .inspector-toggle-btn:hover {

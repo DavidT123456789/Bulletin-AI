@@ -87,7 +87,7 @@ export const WelcomeManager = {
                 validateBtn.classList.remove('ready', 'validated');
 
                 if (existingKey) {
-                    validateBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
+                    validateBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
                     validateBtn.classList.add('validated');
                     validateBtn.disabled = true;
                     DOM.welcomeNextBtn.disabled = false;
@@ -321,7 +321,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -334,7 +334,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingGoogleKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -347,7 +347,7 @@ export const WelcomeManager = {
                 DOM.welcomeApiKeyInput.value = existingOpenRouterKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
-                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
                     DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
                     DOM.welcomeValidateApiKeyBtn.classList.add('validated');
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
@@ -426,7 +426,7 @@ export const WelcomeManager = {
             AppreciationsManager.loadSampleData();
             DOM.welcomeNextStepInfo.style.display = 'block';
             DOM.welcomeLoadSampleBtn.disabled = true;
-            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear"></iconify-icon> Données chargées !';
+            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Données chargées !';
             // User needs to click Terminer to finish
             UI.showNotification('Données exemple prêtes ! Cliquez sur "Terminer" pour continuer.', 'success');
         });

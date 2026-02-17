@@ -1077,7 +1077,7 @@ export const SettingsModalListeners = {
                         if (actionsBar) actionsBar.style.display = 'flex';
 
                         // Update UI to show connected state with disconnect button
-                        DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> Connecté';
+                        DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Connecté';
                         DOM.connectGoogleBtn.classList.add('btn-success');
                         DOM.connectGoogleBtn.style.display = 'none';
                         if (DOM.disconnectGoogleBtn) {
