@@ -790,17 +790,17 @@
                             <div class="guide-format-chips">
                                 <div class="guide-format-chip tooltip" data-format="pdf"
                                     data-tooltip="PDF MBN / Pronote">
-                                    <iconify-icon icon="fa6-solid:file-pdf"></iconify-icon>
+                                    <iconify-icon icon="ph:file-pdf"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="excel" data-tooltip="Fichier Excel">
-                                    <iconify-icon icon="fa6-solid:file-excel"></iconify-icon>
+                                    <iconify-icon icon="ph:file-xls"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="csv" data-tooltip="Fichier CSV">
-                                    <iconify-icon icon="fa6-solid:file-csv"></iconify-icon>
+                                    <iconify-icon icon="ph:file-csv"></iconify-icon>
                                 </div>
                                 <div class="guide-format-chip tooltip" data-format="clipboard"
-                                    data-tooltip="Copier-coller depuis tableur">
-                                    <iconify-icon icon="solar:clipboard-linear"></iconify-icon>
+                                    data-tooltip="Presse-papier">
+                                    <iconify-icon icon="ph:clipboard-text"></iconify-icon>
                                 </div>
                             </div>
                             <p class="guide-hint" style="margin-top: 8px;">Compatible PDF MBN / Pronote</p>
@@ -930,7 +930,7 @@
                                     <!-- STATE 1: EMPTY -->
                                     <div class="drop-zone-content drop-zone-empty" id="wizardDropZoneEmpty">
                                         <div class="drop-zone-icon">
-                                            <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                                            <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
                                         </div>
                                         <div class="drop-zone-text">
                                             <span class="drop-zone-title">Glisser-déposer un fichier</span>
@@ -1009,7 +1009,7 @@
                     <!-- Format badge slot moved to drop zone -->
                     <!-- Line count -->
                     <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
-                        <span class="import-count-badge" id="wizardLineCountBadge">0</span>
+                        <strong id="wizardLineCountBadge">0</strong>
                         <span>lignes détectées</span>
                     </div>
                 </div>
@@ -1024,8 +1024,7 @@
                     <iconify-icon icon="solar:arrow-left-linear"></iconify-icon> Précédent
                 </button>
                 <div class="import-detected-info">
-                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                    <span class="import-count-badge" id="wizardCountBadge2">0</span>
+                    <strong id="wizardCountBadge2">0</strong>
                     <span>élèves détectés</span>
                 </div>
                 <button class="btn btn-primary" id="wizardStep2NextBtn">
@@ -1039,8 +1038,8 @@
                     <iconify-icon icon="solar:arrow-left-linear"></iconify-icon> Précédent
                 </button>
                 <div class="step3-footer-info" id="wizardStep3FooterInfo">
-                    <iconify-icon icon="solar:list-check-linear"></iconify-icon>
-                    <span id="wizardSelectedColsInfo"></span>
+                    <strong id="wizardSelectedColsBadge">0</strong>
+                    <span id="wizardSelectedColsInfo">colonnes sélectionnées</span>
                 </div>
                 <button class="btn btn-organic btn-import-confirm" id="wizardImportOnlyBtn">
                     <iconify-icon icon="ph:check"></iconify-icon> Importer <span id="wizardImportCount">0</span> élèves
@@ -2108,7 +2107,8 @@
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelSettingsBtn" tabindex="0">Annuler</button>
-                <button class="btn" id="saveSettingsBtn" tabindex="0"><iconify-icon icon="ph:check-bold"></iconify-icon>
+                <button class="btn btn-primary" id="saveSettingsBtn" tabindex="0"><iconify-icon
+                        icon="ph:check-bold"></iconify-icon>
                     Enregistrer</button>
             </div>
         </div>

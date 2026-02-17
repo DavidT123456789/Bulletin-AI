@@ -270,8 +270,6 @@
 }
 
 .trombi-close-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
 }
@@ -307,7 +305,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-secondary);
-    border: 2px dashed var(--border-color);
+    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -316,27 +314,12 @@
     box-sizing: border-box;
 }
 
-.trombi-drop-zone::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(var(--primary-color-rgb), 0.08), transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
 .trombi-drop-zone:hover,
 .trombi-drop-zone.dragover {
     border-color: var(--primary-color);
     background: rgba(var(--primary-color-rgb), 0.02);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.trombi-drop-zone:hover::before,
-.trombi-drop-zone.dragover::before {
-    opacity: 1;
-}
 
 .trombi-drop-zone .drop-zone-content {
     display: flex;
@@ -363,7 +346,6 @@
 
 .trombi-drop-zone:hover .drop-zone-icon {
     background: rgba(var(--primary-color-rgb), 0.15);
-    transform: translateY(-4px);
 }
 
 .trombi-drop-zone i {
@@ -371,21 +353,8 @@
     color: var(--primary-color);
 }
 
-.trombi-drop-zone:hover i {
-    animation: float-icon 2s ease-in-out infinite;
-}
 
-@keyframes float-icon {
 
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-4px);
-    }
-}
 
 .trombi-drop-zone .drop-zone-text {
     display: flex;
@@ -423,15 +392,12 @@
     padding: 6px 12px;
     font-size: 0.8rem;
     color: var(--text-secondary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all var(--transition-fast);
 }
 
 .trombi-floating-sample-btn:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

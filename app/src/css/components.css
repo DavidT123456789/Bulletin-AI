@@ -164,41 +164,46 @@
 
 
 /* ====================================================================
-   BTN-PRIMARY - Source de vérité unique pour les boutons d'action
-   Animation organique iOS 2025 (Gradient Flow + Shine Sweep)
+   BTN-PRIMARY / BTN-AI / BTN-ORGANIC - Shared Base
+   Gradient + Organic feel. Shine Sweep reserved for AI buttons only.
    ==================================================================== */
 .btn-primary,
 .btn-ai,
 .btn-organic {
-    /* Couleur et apparence */
     background: var(--gradient-primary);
     background-size: 200% auto;
     color: white;
     border: none;
     border-radius: var(--radius-lg);
-    /* Coins arrondis uniformes */
     font-weight: 600;
-
-    /* Positionnement pour l'effet shine */
     position: relative;
     overflow: hidden;
-
-    /* Ombre premium */
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.15),
         0 2px 8px rgba(var(--primary-color-rgb), 0.2);
-
-    /* Transition iOS Spring */
     transition:
         transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         background-position 0.6s ease;
 }
 
-/* Effet Shine Sweep au hover - Animation continue premium */
+/* --- BTN-PRIMARY & BTN-ORGANIC: Clean hover (gradient shift, no shine) --- */
+.btn-primary:hover:not(:disabled),
+.btn-organic:hover:not(:disabled) {
+    background-position: right center;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 3px 10px rgba(var(--primary-color-rgb), 0.2);
+}
+
+/* No ::before pseudo-element for primary/organic (no shine sweep) */
 .btn-primary::before,
-.btn-ai::before,
 .btn-organic::before {
+    display: none;
+}
+
+/* --- BTN-AI: Full magic treatment (gradient + shine sweep) --- */
+.btn-ai::before {
     content: '';
     position: absolute;
     top: 0;
@@ -212,23 +217,18 @@
     pointer-events: none;
 }
 
-.btn-primary:hover:not(:disabled)::before,
-.btn-ai:hover:not(:disabled)::before,
-.btn-organic:hover:not(:disabled)::before {
+.btn-ai:hover:not(:disabled)::before {
     animation: shine-sweep 1.5s ease-in-out infinite;
 }
 
-/* Hover : gradient glisse + shine traverse (pas d'élévation, plus élégant) */
-.btn-primary:hover:not(:disabled),
-.btn-ai:hover:not(:disabled),
-.btn-organic:hover:not(:disabled) {
+.btn-ai:hover:not(:disabled) {
     background-position: right center;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.2),
         0 4px 12px rgba(var(--primary-color-rgb), 0.25);
 }
 
-/* Animation Shine Sweep - Source unique */
+/* Animation Shine Sweep - Réservée aux boutons IA */
 @keyframes shine-sweep {
     0% {
         left: -100%;
@@ -240,7 +240,7 @@
     }
 }
 
-/* Active : feedback de pression subtil */
+/* Active : feedback de pression (shared) */
 .btn-primary:active:not(:disabled),
 .btn-ai:active:not(:disabled),
 .btn-organic:active:not(:disabled) {
@@ -250,7 +250,7 @@
         0 2px 6px rgba(var(--primary-color-rgb), 0.15);
 }
 
-/* Disabled */
+/* Disabled (shared) */
 .btn-primary:disabled,
 .btn-ai:disabled,
 .btn-organic:disabled {

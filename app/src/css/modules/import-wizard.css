@@ -27,35 +27,39 @@
 
 /* === GUIDE PANEL (Left Sidebar) === */
 .wizard-guide-panel {
-    width: 240px;
-    min-width: 240px;
-    background: var(--bg-color);
-    border-right: 1px solid var(--border-color);
-    padding: 20px 18px;
+    width: 235px;
+    min-width: 235px;
+    background: var(--surface-color);
+    border-right: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 24px 20px;
     display: flex;
     flex-direction: column;
     gap: 0;
     overflow-y: auto;
 }
 
+[data-theme="dark"] .wizard-guide-panel {
+    border-right-color: rgba(255, 255, 255, 0.06);
+}
+
 .guide-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .guide-header i {
     color: var(--primary-color);
-    /* Unified Blue/Purple Theme */
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    opacity: 0.7;
 }
 
 /* Guide content sections - show/hide based on step */
@@ -83,25 +87,26 @@
 }
 
 .guide-section {
-    padding: 12px 0;
+    padding: 14px 0;
 }
 
 .guide-section-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
 }
 
 .guide-section-title i,
 .guide-section-title iconify-icon {
-    color: var(--primary-color);
+    color: var(--text-secondary);
     font-size: 0.85rem;
     width: 16px;
     text-align: center;
+    opacity: 0.8;
 }
 
 .guide-period-badge {
@@ -145,70 +150,72 @@
 .guide-divider {
     height: 1px;
     background: var(--border-color);
-    margin: 4px 0;
+    margin: 2px 0;
+    opacity: 0.4;
 }
 
 /* === FORMAT CHIPS (Visual format indicators) === */
 .guide-format-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 8px;
 }
 
 .guide-format-chip {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: var(--surface-color);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     cursor: help;
-    transition: all var(--transition-fast);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    opacity: 1;
+}
+
+[data-theme="dark"] .guide-format-chip {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .guide-format-chip i {
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
-/* Hide text span if present in older markup */
 .guide-format-chip span {
     display: none;
 }
 
-/* Format-specific colors */
-/* Format-specific colors */
-.guide-format-chip[data-format="pdf"] i,
-.guide-format-chip[data-format="pdf"] iconify-icon {
-    color: var(--error-color);
-    /* Red */
-}
-
-.guide-format-chip[data-format="excel"] i,
-.guide-format-chip[data-format="excel"] iconify-icon {
-    color: var(--grade-range-16-20);
-    /* Green */
-}
-
-.guide-format-chip[data-format="csv"] i,
-.guide-format-chip[data-format="csv"] iconify-icon {
-    color: var(--success-color);
-    /* Emerald */
-}
-
-.guide-format-chip[data-format="clipboard"] i,
-.guide-format-chip[data-format="clipboard"] iconify-icon {
+.guide-format-chip i,
+.guide-format-chip iconify-icon {
     color: var(--text-secondary);
+    transition: color 0.2s ease;
+    opacity: 0.8;
+}
+
+.guide-format-chip:hover[data-format="pdf"] iconify-icon {
+    color: var(--error-color);
+}
+
+.guide-format-chip:hover[data-format="excel"] iconify-icon {
+    color: var(--success-color);
+}
+
+.guide-format-chip:hover[data-format="csv"] iconify-icon {
+    color: var(--info-color, #3b82f6);
+}
+
+.guide-format-chip:hover[data-format="clipboard"] iconify-icon {
+    color: var(--text-primary);
 }
 
 .guide-format-chip:hover {
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--border-color-hover, rgba(0, 0, 0, 0.15));
+    opacity: 1;
+    transform: translateY(-1px);
+    background: var(--bg-secondary);
 }
 
 /* Light theme adjustments */
@@ -219,36 +226,30 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     width: auto;
-    /* Aligned left with text for better flow */
     align-self: flex-start;
-    /* Compact styling */
-    padding: 6px 16px;
+    padding: 7px 14px;
     min-height: 30px;
-    margin-top: 12px;
-    /* Ghost / Dashed style with Primary Tint */
-    background: rgba(var(--primary-color-rgb), 0.03);
-    border: 1px dashed rgba(var(--primary-color-rgb), 0.4);
-    border-radius: var(--radius-md);
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
     color: var(--primary-color);
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.2s ease;
 }
 
 .guide-sample-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.05);
-    border-color: var(--primary-color);
-    /* Becoming solid and colored on hover to invite click */
-    border-style: solid;
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
     color: var(--primary-color);
-    transform: translateY(-1px);
 }
 
 .guide-sample-btn i {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 /* Textarea clear button - positioned inside */
@@ -285,7 +286,6 @@
     overflow: hidden;
 }
 
-/* Dark theme */
 [data-theme="dark"] .wizard-guide-panel {
     background: var(--bg-secondary);
 }
@@ -308,8 +308,7 @@
     justify-content: space-between;
     padding: 20px 32px;
     background: var(--surface-color);
-    /* Very subtle separator instead of heavy border */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
     height: auto;
     min-height: 80px;
     overflow: visible;
@@ -325,7 +324,6 @@
     align-items: center;
     gap: 10px;
     flex: 1;
-    /* Allow taking space */
 }
 
 /* Fused context pill: Clean Text Breadcrumb */
@@ -378,7 +376,6 @@
     flex: 2;
 }
 
-/* Force Reset */
 .wizard-step {
     background: transparent !important;
     box-shadow: none !important;
@@ -390,7 +387,6 @@
     cursor: pointer;
     position: relative;
     opacity: 0.5;
-    /* Default inactive state */
 }
 
 .wizard-step:hover:not(.active) {
@@ -453,12 +449,6 @@
     .wizard-context-sep {
         display: none;
     }
-
-    /* Show only active step label? Or icons? */
-    /* For now, just smaller text */
-    .wizard-step-label {
-        font-size: 0.8rem;
-    }
 }
 
 .wizard-header-actions {
@@ -469,7 +459,7 @@
 
 /* === BODY === */
 .import-wizard-body {
-    padding: 20px;
+    padding: 24px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -518,7 +508,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 4px 0 15px 0;
-    /* Equal padding: top matches the body padding offset */
     margin-bottom: 0;
     flex-wrap: wrap;
     gap: 16px;
@@ -535,8 +524,8 @@
     align-items: center;
     justify-content: center;
     padding: 4px 12px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-    color: white;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
     font-size: 0.75rem;
     font-weight: 700;
     border-radius: var(--radius-pill);
@@ -560,19 +549,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-secondary);
-    border: 2px dashed var(--border-color);
+    background: rgba(var(--primary-color-rgb), 0.015);
+    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     position: relative;
     overflow: hidden;
     margin: 4px;
 }
 
 .import-drop-zone:hover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.03);
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.04);
 }
 
 .import-drop-zone.dragging {
@@ -797,15 +786,15 @@
 }
 
 .drop-zone-icon {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(var(--primary-color-rgb), 0.08);
-    border-radius: 50%;
+    border-radius: var(--radius-lg);
     color: var(--primary-color);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     transition: background 0.2s ease;
 }
 
@@ -838,15 +827,13 @@
     border-bottom: 1px dashed var(--primary-color);
 }
 
-/* Subtle divider - more minimal */
-/* Subtle divider - PILL STYLE */
 /* Subtle divider - Clean Line with Text */
 .import-divider-horizontal {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin: 5px 0;
+    margin: 4px 0;
     position: relative;
 }
 
@@ -855,50 +842,35 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color) 20%, var(--border-color) 80%, transparent);
-    opacity: 0.4;
+    background: var(--border-color);
+    opacity: 0.3;
 }
 
 .import-divider-horizontal span {
     display: block;
-    padding: 0 12px;
+    padding: 0 14px;
     color: var(--text-tertiary);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     background: transparent;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 /* Textarea container with integrated actions */
 .import-input-container {
-    /* width: 100% REMOVED - flex: 1 handles sizing, and 100% + margin: 4px causes overflow */
     flex: 1;
     display: flex;
     flex-direction: column;
     position: relative;
-
-    /* Real Border Implementation - Single Source of Truth */
     border: var(--input-border-width) solid var(--border-color);
     box-shadow: none;
-    /* Shadow handled by hover/focus only if needed, or remove inset */
     border-radius: var(--radius-lg);
-    /* Use --surface-color to match search bar (consistent interactive element styling) */
     background: var(--surface-color);
-    /* OPTIMIZED: Hardware acceleration to prevent painting flashes */
     transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: border-color;
-    /* Faster linear transition */
-    transition: border-color 0.1s linear;
-
-    /* Safe margin for focus ring */
+    transition: border-color 0.15s ease;
     margin: 4px;
-
-    /* Clip children - REMOVED to prevent double-border artifact on rounding */
-    /* overflow: hidden; */
-    /* Fix z-index context */
     z-index: 10;
 }
 
@@ -913,50 +885,40 @@
 }
 
 .btn-text-action {
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    padding: 6px 12px;
+    padding: 5px 12px;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark mode adjustment for glass buttons */
-/* Dark mode adjustment for glass buttons - More visible */
-/* Dark mode adjustment for glass buttons - More visible */
 [data-theme="dark"] .btn-text-action {
-    background: rgba(30, 30, 30, 0.4);
-    /* Lower opacity for glass effect */
+    background: rgba(30, 30, 30, 0.5);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn-text-action:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(var(--primary-color-rgb), 0.08);
     color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.2);
-    border-color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 [data-theme="dark"] .btn-text-action:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
+    background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 .btn-text-action i {
@@ -1092,41 +1054,25 @@
     font-style: italic;
 }
 
-/* === HEADER CONTROLS (Step 2) === */
-/* === CENTERED STATS PILL (Glassmorphism) === */
-/* Footer info — shared minimalist style (icon + badge + text) */
+/* Footer info — unified pill (number + label) */
 .import-wizard-modal .import-detected-info,
 .import-wizard-modal .step3-footer-info {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.85rem;
-    color: var(--text-tertiary);
-    flex: 0 0 auto;
-}
-
-.import-wizard-modal .import-detected-info i,
-.import-wizard-modal .step3-footer-info i {
-    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--primary-color);
-    opacity: 0.7;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    padding: 5px 16px;
+    border-radius: var(--radius-pill);
+    flex: 0 0 auto;
+    line-height: normal;
 }
 
-.import-wizard-modal .import-detected-info .import-count-badge {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-    color: white;
+.import-wizard-modal .import-detected-info strong,
+.import-wizard-modal .step3-footer-info strong {
     font-weight: 700;
-    padding: 0 8px;
-    min-width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    line-height: 1;
-    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
 }
 
 
@@ -1172,7 +1118,6 @@
     width: 100%;
     min-width: 0;
     padding: 8px 12px;
-    /* Slightly taller for better touch target in sidebar */
 }
 
 /* === AUTO-DETECT BUTTON - Format Applied Highlight === */
@@ -1216,37 +1161,34 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 3px 10px;
     margin: 4px 0 0 0;
-    /* Left aligned, close to filename */
-    font-size: 0.75rem;
-    /* Smaller, more discreet */
+    font-size: 0.73rem;
     font-weight: 600;
     border-radius: var(--radius-pill);
     animation: badge-appear 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .format-detection-badge i {
     font-size: 0.9rem;
 }
 
-/* MBN format (ENT) - Purple gradient */
+/* MBN format (ENT) */
 .format-detection-badge.format-mbn {
-    background: linear-gradient(135deg, #9333ea, #7c3aed);
-    color: white;
+    background: rgba(139, 92, 246, 0.1);
+    color: rgb(139, 92, 246);
 }
 
-/* Pronote format - Blue gradient */
+/* Pronote format */
 .format-detection-badge.format-pronote {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
+    background: rgba(59, 130, 246, 0.1);
+    color: rgb(59, 130, 246);
 }
 
-/* Vertical format - Teal gradient */
+/* Vertical format */
 .format-detection-badge.format-vertical {
-    background: linear-gradient(135deg, #14b8a6, #0d9488);
-    color: white;
+    background: rgba(20, 184, 166, 0.1);
+    color: rgb(20, 184, 166);
 }
 
 /* Generic format fallback */
@@ -1282,31 +1224,18 @@
 /* === MAPPING TABLE === */
 .import-wizard-modal .import-mapping-table-container {
     position: relative;
-    /* CRITICAL: Must be hidden - only .table-scroll-wrapper handles scrolling */
     overflow: hidden !important;
     border-radius: var(--radius-lg);
     background: var(--bg-secondary);
-    box-shadow: var(--shadow-sm);
-    /* Margin for potential focus rings/shadows */
     margin: 4px;
-    /* Flex Growth: Fill available space to fix gap issues */
     flex: 1;
     display: flex;
     flex-direction: column;
-    /* Allow shrinking for small screens/zoom */
     min-height: 200px;
-
-    /* Force GPU layer to ensure sticky children are clipped */
     transform: translateZ(0);
-    /* Strict Stacking Context (Fixes bleed-through) */
     isolation: isolate;
-    backface-visibility: hidden;
     z-index: 0;
-
-    /* No padding - wrapper handles spacing */
     padding: 0;
-
-    /* Smooth fade-in animation when table appears */
     animation: table-fade-in 0.4s ease-out;
 }
 
@@ -1323,30 +1252,22 @@
 }
 
 .import-wizard-modal .import-mapping-table-container>.table-scroll-wrapper {
-    /* SCROLL WRAPPER: Contains the table and handles all scrolling */
     overflow-x: auto;
     overflow-y: auto;
-    /* Fill the container */
     flex: 1;
-    /* Remove arbitrary limits */
     max-height: none;
-    /* Inner radius slightly smaller than container */
     border-radius: calc(var(--radius-lg) - 1px);
-    /* CRITICAL: Padding creates space INSIDE for the scrollbar tracks */
-    /* This prevents scrollbars from overlapping the rounded corners */
     padding-right: 4px;
     padding-bottom: 4px;
 }
 
-/* Border overlay: Sits ABOVE scrollbars to clip them at rounded corners */
 .import-wizard-modal .import-mapping-table-container::after {
     content: '';
     position: absolute;
     inset: 0;
-    border: 1px solid rgba(214, 211, 209, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: var(--radius-lg);
     z-index: 20;
-    /* Higher than sticky th (z-index: 10) and scrollbars */
     pointer-events: none;
 }
 
@@ -1357,25 +1278,36 @@
 /* === UNIFIED FOOTER - Single source of truth === */
 .import-wizard-footer {
     display: none;
-    /* Hidden by default */
     justify-content: space-between;
     align-items: center;
-    padding: var(--modal-bar-padding-spacious);
+    padding: 14px 28px;
     background: var(--surface-color);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     gap: 16px;
-    min-height: var(--modal-bar-height-footer);
+    min-height: 60px;
 }
 
-/* Premium Primary Button (Suivant) - Gradient style */
-/* Premium Primary Button (Suivant) - Inherits standard interactions */
-.import-wizard-footer .btn-primary {
-    /* Harmonization: Inherit standard button styles (components.css) */
-    /* No local overrides to prevent animation conflicts (black flash) */
-    min-width: 120px;
-    /* Minimal width for better touch target */
+[data-theme="dark"] .import-wizard-footer {
+    border-top-color: rgba(255, 255, 255, 0.05);
 }
+
+/* Pill Shape for footer buttons — balanced proportions */
+.import-wizard-footer .btn {
+    border-radius: var(--radius-pill) !important;
+    padding: 9px 22px;
+    min-height: 38px;
+    font-size: 0.875rem;
+}
+
+.import-wizard-footer .btn-primary {
+    min-width: 120px;
+}
+
+.import-wizard-footer .btn-ghost {
+    border: 1px solid var(--border-color);
+}
+
 
 /* Local specifity only for button layout/spacing, not Visuals */
 
@@ -1559,7 +1491,6 @@
 .import-wizard-modal .close-modal-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
-    transform: scale(1.08);
     opacity: 1;
 }
 
@@ -1568,7 +1499,6 @@
 .import-wizard-modal .import-separator-row label {
     margin: 0;
     line-height: 1;
-    /* Fix vertical alignment */
 }
 
 
@@ -2149,46 +2079,7 @@
     }
 }
 
-/* (Duplicate removed — .modal-header defined earlier) */
-
-/* Sample button row - now positioned inside textarea container with high Z-index */
-.step-actions-row {
-    position: absolute;
-    bottom: 16px;
-    right: 18px;
-    z-index: 10;
-    /* Ensure strictly above textarea */
-    display: flex;
-    gap: 8px;
-    /* Space between buttons */
-    pointer-events: auto;
-    /* Ensure clickable */
-}
-
-.btn-text-action {
-    background: rgba(var(--surface-color-rgb, 30, 30, 35), 0.85);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.1);
-    color: var(--text-tertiary);
-    font-size: 0.75rem;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    opacity: 0.7;
-}
-
-.btn-text-action:hover {
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    opacity: 1;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
-}
+/* (Duplicate removed — .step-actions-row and .btn-text-action defined at ~line 882) */
 
 
 /* === ADDITIONAL PILL COLORS === */
@@ -2566,7 +2457,6 @@
     overflow: hidden !important;
     border-radius: var(--radius-lg);
     background: var(--bg-secondary);
-    box-shadow: var(--shadow-sm);
     margin: 4px;
     flex: 1;
     display: flex;
@@ -2574,7 +2464,6 @@
     min-height: 200px;
     transform: translateZ(0);
     isolation: isolate;
-    backface-visibility: hidden;
     z-index: 0;
     animation: table-fade-in 0.4s ease-out;
 }
@@ -2590,12 +2479,11 @@
     padding-bottom: 4px;
 }
 
-/* Border overlay: sits ABOVE scrollbars to clip at rounded corners */
 .import-preview-table-container::after {
     content: '';
     position: absolute;
     inset: 0;
-    border: 1px solid rgba(214, 211, 209, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: var(--radius-lg);
     z-index: 20;
     pointer-events: none;
@@ -2942,20 +2830,19 @@
 }
 
 /* Departed action toggle */
+/* Departed action toggle - Minimalist */
 .guide-departed-action {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: var(--radius-md);
-    background: rgba(245, 158, 11, 0.06);
-    border: 1px solid rgba(245, 158, 11, 0.15);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    margin-top: 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
     display: flex;
     align-items: center;
 }
 
 .guide-departed-action:has(input:checked) {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
+    background: transparent;
+    border-color: transparent;
 }
 
 .guide-toggle-row {
@@ -2977,44 +2864,83 @@
     pointer-events: none;
 }
 
-/* Span as flex container for proper alignment */
-.guide-toggle-row span {
-    display: inline-flex;
+/* Modern Toggle Switch */
+.guide-toggle-row {
+    position: relative;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    cursor: pointer;
 }
 
-/* Custom checkbox via pseudo-element */
+.guide-toggle-row span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+    padding-right: 36px;
+    /* Space for toggle on RIGHT */
+    padding-left: 0;
+    font-size: 0.76rem;
+}
+
+/* Toggle Track (Background) - Positioned Right */
 .guide-toggle-row span::before {
     content: '';
-    display: block;
-    width: 14px;
-    height: 14px;
-    border: 1.5px solid var(--text-tertiary);
-    border-radius: 3px;
-    background: transparent;
-    margin-right: 8px;
-    flex-shrink: 0;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 99px;
+    transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.guide-toggle-row:hover span::before {
-    border-color: var(--warning-color);
+/* Toggle Knob (Circle) - Positioned relative to Right */
+.guide-toggle-row span::after {
+    content: '';
+    position: absolute;
+    right: 15px;
+    /* Starts at left side of track (28 - 1pad - 12width) */
+    top: 50%;
+    margin-top: -6px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Checked State - Background */
 .guide-toggle-row input[type="checkbox"]:checked+span::before {
     background: var(--warning-color);
     border-color: var(--warning-color);
-    content: '';
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 6l2 2 4-4' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 12px;
 }
 
-.guide-toggle-row strong {
-    color: var(--warning-color);
-    font-weight: 700;
+/* Checked State - Knob Move Right */
+.guide-toggle-row input[type="checkbox"]:checked+span::after {
+    transform: translateX(14px);
 }
+
+.guide-toggle-row:hover span::before {
+    background: var(--border-color);
+    /* Darker grey on hover text */
+}
+
+.guide-toggle-row input[type="checkbox"]:checked:hover+span::before {
+    background: var(--warning-color);
+    /* Initial color stays on hover when checked */
+    opacity: 0.9;
+}
+
+
 
 
 /* Hide body bottom radius when any footer is visible (handled by unified footer) */

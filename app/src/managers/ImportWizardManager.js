@@ -1480,10 +1480,10 @@ export const ImportWizardManager = {
 
         // Update footer info
         const mappedCols = Object.keys(formatMap).filter(k => k !== 'NOM_PRENOM');
+        const colsBadgeEl = document.getElementById('wizardSelectedColsBadge');
         const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
-        if (colsInfoEl) {
-            colsInfoEl.textContent = `${mappedCols.length} colonne${mappedCols.length > 1 ? 's' : ''} de données`;
-        }
+        if (colsBadgeEl) colsBadgeEl.textContent = mappedCols.length;
+        if (colsInfoEl) colsInfoEl.textContent = `colonne${mappedCols.length > 1 ? 's' : ''} sélectionnée${mappedCols.length > 1 ? 's' : ''}`;
 
         // Update import button count
         const totalToImport = preview.studentsToProcess?.length || 0;
@@ -1625,10 +1625,10 @@ export const ImportWizardManager = {
 
         // Update footer info
         const count = this.state._enabledColumns?.size || 0;
+        const colsBadgeEl = document.getElementById('wizardSelectedColsBadge');
         const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
-        if (colsInfoEl) {
-            colsInfoEl.textContent = `${count} colonne${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
-        }
+        if (colsBadgeEl) colsBadgeEl.textContent = count;
+        if (colsInfoEl) colsInfoEl.textContent = `colonne${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
     },
 
     /**

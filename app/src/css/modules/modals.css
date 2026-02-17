@@ -1059,45 +1059,6 @@
     }
 }
 
-/* === Settings Cards Layout === */
-.settings-card {
-    background: var(--card-glass-bg);
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
-}
-
-.settings-card:last-child {
-    margin-bottom: 0;
-}
-
-.settings-card:hover {
-    box-shadow: var(--shadow-md);
-    /* Pas de translateY dans les modales - espace confiné */
-}
-
-.settings-card-title {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1em;
-    font-weight: 600;
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.settings-card-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 /* === Styles pour la sélection de matière === */
 .subject-selection-row {
     display: flex;
