@@ -575,48 +575,7 @@ export const FocusPanelStatus = {
         }
     },
 
-    /**
-     * Set appreciation badge state (legacy method)
-     * @param {'pending'|'done'|'error'|'saved'|'none'|'modified'} state - Badge state
-     */
-    setAppreciationBadge(state) {
-        const badge = document.getElementById('focusAppreciationBadge');
-        if (!badge) return;
 
-        badge.className = 'appreciation-status-badge';
-
-        if (state === 'none') {
-            return;
-        }
-
-        badge.classList.add('visible', state);
-
-        switch (state) {
-            case 'pending':
-                badge.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="icon-spin"></iconify-icon>';
-                break;
-            case 'done':
-                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
-                break;
-            case 'error':
-                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>';
-                break;
-            case 'saved':
-                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Enregistré';
-                setTimeout(() => {
-                    if (badge.classList.contains('saved')) {
-                        badge.classList.remove('visible', 'saved');
-                    }
-                }, 2000);
-                break;
-            case 'modified':
-                badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Données modifiées';
-                badge.setAttribute('data-tooltip', 'Le contexte ou la note ont changé<br><i style="opacity:0.8; font-size: 0.9em;">Cliquer sur Générer pour mettre à jour</i>');
-                badge.classList.add('tooltip');
-                UI.initTooltips();
-                break;
-        }
-    },
 
     /**
      * Save appreciation edits to result
