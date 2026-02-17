@@ -703,8 +703,8 @@
 
 /* Update indicator: Organic animation of the 3 dots (Pure CSS) */
 .menu-btn.has-update {
-    /* Switch to column layout to stack our 3 dots */
-    flex-direction: column;
+    /* Switch to row layout to align with horizontal icon style */
+    flex-direction: row;
     gap: 3px;
     /* Ensure icon color transition works */
     color: var(--text-secondary);
@@ -754,7 +754,7 @@
     /* Reset background */
 }
 
-/* Stagger delay for wave effect (Top -> Bottom) */
+/* Stagger delay for wave effect (Left -> Right) */
 .menu-btn.has-update::before {
     animation-delay: 0s;
 }
@@ -1007,14 +1007,14 @@
 
 /* Bouton Reconnexion - Style warning */
 .cloud-reconnect-item {
-    background-color: rgba(var(--warning-color-rgb), 0.1);
+    background-color: transparent;
     color: var(--warning-color) !important;
     font-weight: 500;
 }
 
 .cloud-reconnect-item:hover {
-    background-color: rgba(var(--warning-color-rgb), 0.2);
-    color: var(--warning-color) !important;
+    /* Background managed by .menu-item:hover (standard gray) */
+    color: var(--warning-hover) !important;
 }
 
 .cloud-reconnect-item i,
@@ -1026,6 +1026,12 @@
     /* Ensure visibility */
     min-width: 24px;
     justify-content: center;
+    transition: color var(--transition-fast);
+}
+
+.cloud-reconnect-item:hover i,
+.cloud-reconnect-item:hover iconify-icon {
+    color: var(--warning-hover) !important;
 }
 
 /* Separator Line */

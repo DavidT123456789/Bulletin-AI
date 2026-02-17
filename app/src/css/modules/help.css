@@ -14,7 +14,7 @@
 /* Sidebar de navigation (Gauche) */
 .modal-tabs-sidebar {
     width: 210px;
-    background: var(--bg-secondary);
+    background: var(--surface-color);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -60,7 +60,7 @@
     background: var(--surface-color);
     color: var(--primary-color);
     font-weight: 600;
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
 }
 
 .modal-tab-btn.active i {
@@ -226,16 +226,41 @@
 }
 
 /* --- Section Header (centered intro) --- */
+/* --- Section Header (Styled Intro Box) --- */
 .help-section-header {
-    text-align: center;
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.04) 0%, rgba(var(--primary-color-rgb), 0.08) 100%);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
     margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    color: var(--text-primary);
 }
 
 .help-section-header p {
-    margin-bottom: 16px;
-    color: var(--text-secondary);
-    font-size: 0.92em;
+    margin: 0;
+    font-size: 1em;
     line-height: 1.5;
+    color: var(--text-secondary);
+    flex: 1;
+    text-align: left;
+    /* Force left align */
+}
+
+.help-section-icon {
+    font-size: 1.3em;
+    color: var(--primary-color);
+    flex-shrink: 0;
+
+    /* Badge Style */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
 }
 
 /* --- Tip / Info Box --- */
@@ -318,4 +343,11 @@
         padding-top: 12px;
         border-top: 1px dashed var(--border-color);
     }
+}
+
+/* --- Action Buttons in Help --- */
+.help-action-button {
+    margin-top: 20px;
+    width: 100%;
+    justify-content: center;
 }

@@ -416,19 +416,7 @@ export const ImportWizardManager = {
             if (step < this.currentStep) el.classList.add('completed');
         });
 
-        // Update stepper arrows
-        const prevArrow = document.getElementById('wizardStepperPrev');
-        const nextArrow = document.getElementById('wizardStepperNext');
-        if (prevArrow) prevArrow.disabled = this.currentStep <= 1;
-        if (nextArrow) {
-            nextArrow.disabled = this.currentStep >= 3;
-            // Change icon on last step to show it's the end
-            if (this.currentStep >= 3) {
-                nextArrow.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
-            } else {
-                nextArrow.innerHTML = '<iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>';
-            }
-        }
+
 
         // Update step content - scope to modal only
         const modal = document.getElementById('importWizardModal');

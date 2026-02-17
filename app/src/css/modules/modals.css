@@ -135,16 +135,41 @@
     gap: 12px;
 }
 
-.modal-title-icon {
+/* Harmonized Modal Title Icon (All Modals) */
+.modal-title-icon,
+.modal-title iconify-icon,
+.modal-title i {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: rgba(var(--primary-color-rgb), 0.1);
+    /* Style: Icone seule colorée (Bleu primaire) sans fond */
+    width: auto;
+    height: auto;
+    background: transparent;
     color: var(--primary-color);
-    border-radius: var(--radius-md);
-    font-size: 24px;
+    font-size: 26px;
+    /* Taille harmonisée pour toutes les modales */
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Context-specific colors for Modal Title Icons */
+#personalizationModal .modal-title iconify-icon {
+    color: var(--accent-color);
+    /* Violet pour Personnalisation/IA */
+}
+
+#importWizardModal .modal-title iconify-icon,
+#trombiWizardModal .modal-title iconify-icon {
+    color: var(--success-color);
+    /* Vert pour Import/Données */
+}
+
+#appSettingsModal .modal-title iconify-icon {
+    color: var(--text-secondary);
+    /* Gris neutre pour Paramètres */
 }
 
 .modal-title-text-col {
@@ -540,8 +565,8 @@
     width: 20px;
     height: 20px;
     background-color: var(--text-secondary);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M10.586 6.343a2 2 0 0 0 0 2.828L14.172 12l-3.586 2.828a2 2 0 1 0 2.828 2.828l5-4.242a2 2 0 0 0 0-2.828l-5-4.242a2 2 0 0 0-2.828 0Z'/%3E%3C/svg%3E") no-repeat center center / contain;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M10.586 6.343a2 2 0 0 0 0 2.828L14.172 12l-3.586 2.828a2 2 0 1 0 2.828 2.828l5-4.242a2 2 0 0 0 0-2.828l-5-4.242a2 2 0 0 0-2.828 0Z'/%3E%3C/svg%3E") no-repeat center center / contain;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
     transition: transform var(--transition-fast);
     margin-left: auto;
     flex-shrink: 0;

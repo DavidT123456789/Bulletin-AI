@@ -464,9 +464,9 @@ export const ListViewManager = {
             <td class="status-cell">${this._getStudentStatusCellContent(result)}</td>
             ${this._renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
             <td class="appreciation-cell">${appreciationCell}</td>
-             <td class="action-cell">
+            <td class="action-cell">
                 <div class="action-dropdown">
-                    <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
+                    <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this._generateActionMenuHTML(result.id)}
@@ -667,12 +667,12 @@ export const ListViewManager = {
                 <table class="${tableClass}">
                     <thead>
                         <tr>
-                            <th class="name-header-with-search sortable-header" data-sort-field="name" title="Trier par nom">
-                                <div class="header-content-wrapper" id="nameHeaderContent">
+                            <th class="name-header-with-search sortable-header" data-sort-field="name">
+                                <div class="header-content-wrapper" id="nameHeaderContent" data-tooltip="Trier par nom">
                                     Nom
                                     <span class="sort-icon-placeholder name-sort-icon"></span>
                                 </div>
-                                <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" title="Rechercher (Ctrl+F)">
+                                <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" aria-label="Rechercher" data-tooltip="Rechercher (Ctrl+F)">
                                     <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                                 </button>
                                 <div class="inline-search-container" id="inlineSearchContainer">
@@ -683,13 +683,13 @@ export const ListViewManager = {
                                     </button>
                                 </div>
                             </th>
-                            <th class="sortable-header" data-sort-field="status" title="Trier par statut" style="width: 120px;">
+                            <th class="sortable-header" data-sort-field="status" data-tooltip="Trier par statut" style="width: 120px;">
                                 <div class="header-content-wrapper">
                                     Statut<span class="sort-icon-placeholder"></span>
                                 </div>
                             </th>
                             ${this._renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="${headerClass}" title="${title}">
+                            <th class="${headerClass}">
                                 <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="appreciation-header-actions" id="appreciationHeaderActions">
                                     <button type="button" class="btn-generate-inline tooltip" id="generatePendingBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
@@ -701,14 +701,14 @@ export const ListViewManager = {
                                         <span class="update-badge" id="dirtyCountBadgeInline">0</span>
                                     </button>
                                 </div>
-                                <div class="header-content-wrapper">
+                                <div class="header-content-wrapper" data-tooltip="${title}">
                                     Appréciation
                                     <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
                                 </div>
                             </th>
                             <th class="action-header" style="width: 50px;">
                                 <div class="header-content-wrapper global-actions-dropdown">
-                                    <button class="btn-action-menu-header" id="tableActionsBtnToggle" title="Actions">
+                                    <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" data-tooltip="Actions">
                                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                     </button>
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
@@ -771,7 +771,7 @@ export const ListViewManager = {
                         <td class="appreciation-cell">${appreciationCell}</td>
                         <td class="action-cell">
                             <div class="action-dropdown">
-                                <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" title="Actions">
+                                <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
                                     <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                 </button>
                                 ${this._generateActionMenuHTML(result.id)}
@@ -852,7 +852,7 @@ export const ListViewManager = {
         let html = '';
         periods.forEach((p, i) => {
             // Colonne de note - Sortable
-            html += `<th class="grade-header sortable-header" data-sort-field="grade" data-sort-param="${p}" title="Trier par notes ${p}">
+            html += `<th class="grade-header sortable-header" data-sort-field="grade" data-sort-param="${p}" data-tooltip="Trier par notes ${p}">
                         <div class="header-content-wrapper">
                              ${Utils.getPeriodLabel(p, false)} <span class="sort-icon-placeholder"></span>
                         </div>
@@ -862,7 +862,7 @@ export const ListViewManager = {
             if (i < periods.length - 1) {
                 // Evolution is relevant to the NEXT period (target period)
                 const nextP = periods[i + 1];
-                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" title="Trier par évolution vers ${nextP}">
+                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" data-tooltip="Trier par évolution vers ${nextP}">
                              <div class="header-content-wrapper">
                             <iconify-icon icon="solar:chart-2-linear" style="opacity:0.6; font-size:1.1em;"></iconify-icon> <span class="sort-icon-placeholder"></span>
                              </div>
@@ -1063,7 +1063,7 @@ export const ListViewManager = {
             const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
             const copyButtonHTML = `
-                <button class="${btnClass}" data-action="copy-appreciation" title="${title}" onclick="event.stopPropagation(); AppreciationsManager.copyAppreciation('${result.id}', this)">
+                <button class="${btnClass}" data-action="copy-appreciation" aria-label="${title}" data-tooltip="${title}" onclick="event.stopPropagation(); AppreciationsManager.copyAppreciation('${result.id}', this)">
                     ${icon}
                 </button>
             `;
@@ -1714,6 +1714,11 @@ export const ListViewManager = {
      * @returns {HTMLElement}
      * @private
      */
+    /**
+     * Crée la barre d'outils de sélection contextualisée
+     * @returns {HTMLElement}
+     * @private
+     */
     _createSelectionToolbar() {
         const div = document.createElement('div');
         div.id = 'selectionToolbar';
@@ -1730,20 +1735,21 @@ export const ListViewManager = {
                 </div>
                 <div class="selection-actions">
                     <button class="btn-selection-action tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
-                        <iconify-icon icon="solar:refresh-circle-bold"></iconify-icon> <span>Régénérer</span>
+                        <iconify-icon icon="solar:refresh-linear"></iconify-icon> <span>Régénérer</span>
                     </button>
                     <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations (Presse-papier)">
-                        <iconify-icon icon="solar:copy-bold"></iconify-icon> <span>Copier</span>
+                        <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
                     </button>
-                    <div class="selection-action-separator"></div>
+                    
                     <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
-                        <iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon> <span>Déplacer</span>
+                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
                     </button>
                     <button class="btn-selection-action tooltip" data-bulk-action="reset" data-tooltip="Choisir les données à réinitialiser">
-                        <iconify-icon icon="solar:restart-circle-bold"></iconify-icon> <span>Réinitialiser</span>
+                        <iconify-icon icon="solar:restart-linear"></iconify-icon> <span>Réinitialiser</span>
                     </button>
+                    <div class="selection-action-separator"></div>
                     <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves">
-                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> <span>Supprimer</span>
+                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> <span>Supprimer</span>
                     </button>
                 </div>
             </div>
@@ -2535,12 +2541,24 @@ export const ListViewManager = {
         const header = table.querySelector('.appreciation-toggle-header');
         const icon = header?.querySelector('.appreciation-toggle-icon');
 
+        // Helper to update tooltip
+        const updateTooltip = (text) => {
+            const wrapper = header?.querySelector('.header-content-wrapper');
+            if (wrapper) {
+                import('./TooltipsManager.js').then(({ TooltipsUI }) => {
+                    TooltipsUI.updateTooltip(wrapper, text);
+                });
+            }
+            // Ensure no native tooltip conflicts
+            if (header) header.removeAttribute('title');
+        };
+
         // Toggle UI
         if (isFullView) {
             // COLLAPSE: Return to truncated view
             table.classList.remove('appreciation-full-view');
             header?.classList.remove('expanded-view');
-            header.title = 'Voir tout le texte';
+            updateTooltip('Voir tout le texte');
 
             // Switch to Expand icon
             if (icon) {
@@ -2553,7 +2571,7 @@ export const ListViewManager = {
             // EXPAND: Show full text
             table.classList.add('appreciation-full-view');
             header?.classList.add('expanded-view');
-            header.title = 'Réduire';
+            updateTooltip('Réduire');
 
             // Switch to Compress icon
             if (icon) {

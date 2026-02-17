@@ -6,8 +6,12 @@
 .selection-toolbar {
     position: fixed;
     bottom: var(--space-6);
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: fit-content;
+    transform: translateY(150px);
+    /* Increased start distance for better effect */
     z-index: var(--z-modal-backdrop, 500);
 
     /* Matches Table Header Tint + Glass Effect */
@@ -40,12 +44,6 @@
 }
 
 /* Dark Mode Actions Overrides */
-[data-theme="dark"] .btn-deselect {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .btn-deselect:hover,
 [data-theme="dark"] .btn-selection-action:hover {
     background: rgba(var(--primary-color-rgb), 0.25);
     color: var(--primary-color);
@@ -53,7 +51,7 @@
 }
 
 .selection-toolbar.active {
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
 }
@@ -70,7 +68,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 600;
     font-size: 14px;
     white-space: nowrap;
@@ -99,23 +97,25 @@
 }
 
 .btn-deselect {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border: none;
     background: transparent;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    font-size: 12px;
+    border-radius: 50%;
+    margin-right: 4px;
 }
 
 .btn-deselect:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
-    transform: rotate(90deg);
+    background: var(--neutral-light);
+    color: var(--text-primary);
+    transform: scale(1.1);
 }
 
 /* Separator between info and actions */
@@ -195,7 +195,7 @@
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 14px;
+    font-size: 1.5em;
     border-radius: inherit;
     opacity: 0;
     transform: scale(0.5);

@@ -738,31 +738,34 @@
                 <div class="wizard-header-title" id="importWizardTitle">
                     <div class="wizard-context-pill">
                         <span class="wizard-context-class" id="wizardClassBadge"></span>
-                        <span class="wizard-context-sep">·</span>
+                        <span class="wizard-context-sep">/</span>
                         <span class="wizard-context-period" id="wizardPeriodBadge">Trimestre 1</span>
                     </div>
                 </div>
 
                 <div class="import-wizard-stepper">
                     <div class="wizard-step active" data-step="1" role="button" tabindex="0">
-                        <span class="wizard-step-number">1</span>
                         <span class="wizard-step-label">Données</span>
                     </div>
-                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step-separator">
+                        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    </div>
                     <div class="wizard-step" data-step="2" role="button" tabindex="0">
-                        <span class="wizard-step-number">2</span>
                         <span class="wizard-step-label">Mapping</span>
                     </div>
-                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step-separator">
+                        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    </div>
                     <div class="wizard-step" data-step="3" role="button" tabindex="0">
-                        <span class="wizard-step-number">3</span>
                         <span class="wizard-step-label">Confirmer</span>
                     </div>
                 </div>
 
-                <button class="close-modal-btn" id="closeImportWizardBtn" aria-label="Fermer">
-                    <iconify-icon icon="ph:x"></iconify-icon>
-                </button>
+                <div class="wizard-header-actions">
+                    <button class="close-modal-btn" id="closeImportWizardBtn" aria-label="Fermer">
+                        <iconify-icon icon="ph:x"></iconify-icon>
+                    </button>
+                </div>
             </div>
 
             <div class="import-wizard-layout">
@@ -805,7 +808,7 @@
                         <div class="guide-divider"></div>
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <iconify-icon icon="solar:test-tube-bold"></iconify-icon>
+                                <iconify-icon icon="solar:test-tube-linear"></iconify-icon>
                                 Tester l'import
                             </div>
                             <p class="guide-text">Testez l'import avec des données fictives :</p>
@@ -906,7 +909,7 @@
                         <div class="guide-divider"></div>
                         <div class="guide-section">
                             <div class="guide-section-title">
-                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
+                                <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 Bon à savoir
                             </div>
                             <p class="guide-text">Les élèves absents du fichier sont conservés.
@@ -2281,6 +2284,9 @@
                         <!-- Tab 1: Connecter l'IA -->
                         <div id="help-apikey" class="help-tab-content active">
                             <div class="help-section-header">
+                                <div class="help-section-icon">
+                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                </div>
                                 <p>
                                     L'application a besoin d'un "cerveau" IA. Choisissez votre fournisseur pour voir la
                                     marche à suivre.
@@ -2441,56 +2447,127 @@
 
                         <!-- Tab 2: Importer -->
                         <div id="help-import" class="help-tab-content">
-                            <p>Vous avez deux options :</p>
-                            <ul style="margin-top: 5px; margin-bottom: 20px; padding-left: 20px;">
-                                <li style="margin-bottom: 5px;"><strong>Mode Unitaire :</strong> Saisissez les notes
-                                    d'un élève à la main pour tester.</li>
-                                <li><strong>Import en Masse (Recommandé) :</strong> Copiez-collez directement depuis
-                                    Excel, Pronote ou un fichier CSV.</li>
-                            </ul>
-
-                            <div
-                                style="background: var(--card-glass-bg); padding: 15px; border-radius: var(--radius-lg); border: 1px solid var(--card-glass-border);">
-                                <p style="font-weight: 600; font-size: 0.9em; margin-top: 0;">Structure idéale pour
-                                    l'import :</p>
-                                <div class="help-code-block" id="helpFormatStructure" style="margin-bottom: 15px;">
+                            <div class="help-section-header">
+                                <div class="help-section-icon">
+                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 </div>
+                                <p>
+                                    Importez vos classes depuis Excel, Pronote, un PDF ou tout autre document.
+                                </p>
+                            </div>
 
-                                <p style="font-weight: 600; font-size: 0.9em;">Exemple concret :</p>
-                                <div class="help-code-block" id="helpFormatExample"></div>
-                                <div class="help-format-selector" id="helpFormatSelector" style="margin-top: 10px;">
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Choisir la méthode</strong>
+                                        <ul
+                                            style="margin: 8px 0 0 0; padding-left: 20px; color: var(--text-secondary);">
+                                            <li style="margin-bottom: 6px;">
+                                                <strong style="color: var(--text-primary);">Mode Unitaire :</strong>
+                                                Saisie manuelle (un élève à la fois).
+                                            </li>
+                                            <li>
+                                                <strong style="color: var(--text-primary);">Import en Masse :</strong>
+                                                Copiez-collez ou glissez votre fichier. <span
+                                                    style="font-size: 0.85em; background: rgba(var(--success-color-rgb), 0.1); color: var(--success-color); padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px;">Recommandé</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Format idéal</strong>
+                                        <p>L'application détecte automatiquement les colonnes. Copiez simplement votre
+                                            tableau (y compris les en-têtes).</p>
+
+                                        <div
+                                            style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--card-glass-border); margin-top: 10px; font-size: 0.85em; font-family: monospace; color: var(--text-secondary);">
+                                            Nom | Prénom | Moyenne | Appréciation (optionnel)
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="help-tip-box">
                                 <iconify-icon class="iconify-inline" icon="solar:lightbulb-bolt-bold"></iconify-icon>
-                                <span>L'application détecte automatiquement les colonnes. Si besoin, vous pourrez
-                                    ajuster le "mappage" (quelle colonne correspond à quoi) avant de valider.</span>
+                                <span>Après le collage, vous pourrez vérifier et ajuster le "mappage" des colonnes avant
+                                    de valider.</span>
                             </div>
                         </div>
 
                         <!-- Tab 3: Style -->
                         <div id="help-style" class="help-tab-content">
-                            <p>L'IA s'adapte à votre style d'écriture via les <strong>Paramètres</strong> :</p>
-                            <ul style="margin-top: 5px; padding-left: 20px; margin-bottom: 15px;">
-                                <li style="margin-bottom: 8px;"><strong>Ton et Longueur :</strong> Strict ou
-                                    encourageant ? Concis ou détaillé ?</li>
-                                <li><strong>"Ma Patte" :</strong> Donnez des consignes directes (ex: <em>"Ne jamais
-                                        utiliser le mot 'bavard'"</em>, <em>"Toujours mentionner l'effort"</em>).</li>
-                            </ul>
-                            <p style="margin-top: 10px; font-size: 0.9em;">
-                                Utilisez le bouton <strong><i class="fas fa-flask"></i> Aperçu</strong> dans les
-                                paramètres pour tester vos réglages en temps réel sans modifier vos vrais bulletins.
-                            </p>
+                            <div class="help-section-header">
+                                <div class="help-section-icon">
+                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                </div>
+                                <p>
+                                    L'IA s'adapte à votre style d'écriture. Définissez vos préférences dans les
+                                    Paramètres.
+                                </p>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Ton et Longueur</strong>
+                                        <p>Choisissez un ton (Strict, Encourageant...) et la longueur souhaitée (Concis,
+                                            Détaillé) pour vos appréciations.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">2</div>
+                                    <div class="help-step-body">
+                                        <strong>"Ma Patte" (Instructions personnalisées)</strong>
+                                        <p>Donnez des consignes précises à l'IA pour qu'elle imite votre style.</p>
+                                        <div
+                                            style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; font-style: italic; font-size: 0.85em; color: var(--text-secondary); border-left: 3px solid #a855f7;">
+                                            "Ne jamais utiliser le mot 'bavard', toujours mentionner l'effort fourni."
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Prévisualisation en direct</strong>
+                                        <p>
+                                            Utilisez le bouton <strong><iconify-icon class="iconify-inline"
+                                                    icon="solar:test-tube-linear"></iconify-icon> Aperçu</strong> dans
+                                            les
+                                            paramètres pour tester vos réglages instantanément.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <button class="btn btn-secondary help-action-button" id="helpToPersonalizationBtn"
-                                style="margin-top: 15px;"><i class="fas fa-sliders-h" aria-hidden="true"></i> Accéder à
-                                la personnalisation</button>
+                                style="width: 100%; justify-content: center; margin-top: 10px;">
+                                <iconify-icon class="iconify-inline" icon="solar:tuning-2-bold"></iconify-icon> Accéder
+                                à la personnalisation
+                            </button>
                         </div>
 
                         <!-- Tab: Actions IA (New) -->
                         <div id="help-actions" class="help-tab-content">
-                            <div class="help-intro-text">
-                                <p>Instructions envoyées à l'IA pour chaque bouton.</p>
+                            <div class="help-section-header">
+                                <div class="help-section-icon">
+                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                </div>
+                                <p>
+                                    Comprendre les commandes de raffinement envoyées à l'IA.
+                                </p>
                             </div>
 
                             <table class="help-table">
@@ -2505,92 +2582,115 @@
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <iconify-icon icon="solar:minimize-square-bold"></iconify-icon> Concise
+                                                <iconify-icon icon="solar:minimize-square-linear"></iconify-icon>
+                                                Concise
                                             </div>
                                         </td>
                                         <td>Réduire (~20%)</td>
-                                        <td class="prompt-cell">"Rends cette appréciation plus concise, environ
-                                            <strong>[Mots * 0.8]</strong> mots. Garde l'essentiel."
+                                        <td class="prompt-cell">"Rends cette appréciation plus concise. Garde
+                                            l'essentiel."
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <iconify-icon icon="solar:maximize-square-bold"></iconify-icon>
+                                                <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
                                                 Détaillée
                                             </div>
                                         </td>
                                         <td>Développer (~20%)</td>
-                                        <td class="prompt-cell">"Développe les points, environ <strong>[Mots *
-                                                1.2]</strong> mots. N'invente pas de faits."</td>
+                                        <td class="prompt-cell">"Développe les points, sois plus précis. N'invente pas
+                                            de faits."</td>
                                     </tr>
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <iconify-icon icon="solar:heart-bold"></iconify-icon> Encourageante
+                                                <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                                             </div>
                                         </td>
                                         <td>Ton positif</td>
-                                        <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif.
-                                            Garde la même longueur."</td>
+                                        <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif."
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge">
-                                                <iconify-icon icon="solar:restart-bold"></iconify-icon> Variation
+                                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Variation
                                             </div>
                                         </td>
                                         <td>Reformuler</td>
                                         <td class="prompt-cell">"Reformule différemment (vocabulaire, structure) mais
-                                            garde le même sens et la même longueur."</td>
+                                            garde le même sens."</td>
                                     </tr>
                                     <tr>
                                         <td>
                                             <div class="help-btn-badge rainbow-border">
                                                 <iconify-icon class="iconify-inline"
-                                                    icon="solar:magic-stick-3-bold"></iconify-icon> Peaufiner
+                                                    icon="solar:magic-stick-3-linear"></iconify-icon> Peaufiner
                                             </div>
                                         </td>
                                         <td>Correction Pro</td>
                                         <td class="prompt-cell">"Peaufine : corrige fautes, améliore fluidité, adopte un
-                                            ton pro. Garde sens et longueur."</td>
+                                            ton pro."</td>
                                     </tr>
                                 </tbody>
                             </table>
 
-                            <div class="help-tip-box">
-                                <iconify-icon class="iconify-inline" icon="solar:code-square-bold"></iconify-icon>
-                                <span><strong>Note technique :</strong> Toutes ces commandes finissent par l'instruction
-                                    : <em>"Réponds uniquement avec le texte brut. Aucune introduction, aucun
-                                        commentaire."</em></span>
-                            </div>
-
-                            <div class="help-tip-box" style="margin-top: 10px;">
+                            <div class="help-tip-box" style="margin-top: 15px;">
                                 <iconify-icon class="iconify-inline" icon="solar:eye-bold"></iconify-icon>
-                                <span><strong>Astuce curieux :</strong> Faites un <strong>Clic Droit</strong> sur le
-                                    bouton <em>Générer</em> (dans le panneau élève) pour prévisualiser le prompt complet
-                                    envoyé à l'IA.</span>
+                                <span><strong>Astuce :</strong> Faites un <strong>Clic Droit</strong> sur le bouton
+                                    <em>Générer</em> pour voir le prompt complet envoyé à l'IA avant qu'il ne
+                                    parte.</span>
                             </div>
                         </div>
 
                         <!-- Tab 4: Confidentialité -->
                         <div id="help-privacy" class="help-tab-content">
-                            <div class="help-tip-box"
-                                style="margin-bottom: 16px; background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.18);">
-                                <iconify-icon class="iconify-inline" icon="solar:lock-bold"
-                                    style="font-size: 1.3em; color: var(--success-color);"></iconify-icon>
-                                <div>
-                                    <strong style="color: var(--success-color);">Vos données, votre contrôle.</strong>
-                                    <div style="font-size: 0.95em; opacity: 0.9; margin-top: 2px;">Par défaut, stockage
-                                        local uniquement —
-                                        vos données restent sur votre appareil.</div>
+                            <div class="help-section-header">
+                                <div class="help-section-icon">
+                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                </div>
+                                <p>
+                                    Vos données, votre contrôle. Bulletin AI est conçu selon le principe "Local-First".
+                                </p>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number safety-icon"><iconify-icon
+                                            icon="solar:lock-keyhole-bold"></iconify-icon></div>
+                                    <div class="help-step-body">
+                                        <strong>Stockage Local</strong>
+                                        <p>Toutes vos données (élèves, notes, appréciations) sont stockées
+                                            <strong>uniquement sur votre ordinateur</strong> (dans le navigateur). Rien
+                                            n'est sauvegardé sur nos serveurs.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                            <p style="font-size: 0.9em;">
-                                L'IA externe (Google/OpenRouter) reçoit uniquement les données
-                                <strong>anonymisées</strong> nécessaires à la rédaction. Leur traitement ultérieur
-                                dépend des conditions d'utilisation de ces services tiers.
-                            </p>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number safety-icon"><iconify-icon
+                                            icon="solar:incognito-bold"></iconify-icon></div>
+                                    <div class="help-step-body">
+                                        <strong>Anonymisation</strong>
+                                        <p>
+                                            Avant d'être envoyées à l'IA pour génération, les données sont anonymisées.
+                                            Les noms de famille sont supprimés. Seul le prénom et les notes sont
+                                            transmis.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-tip-box"
+                                style="border-color: rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05);">
+                                <iconify-icon class="iconify-inline" icon="solar:check-circle-bold"
+                                    style="color: #10b981;"></iconify-icon>
+                                <span>Le code source de l'application est ouvert et auditable, garantissant une
+                                    transparence totale sur le traitement des données.</span>
+                            </div>
                         </div>
 
                         <!-- Tab 5: À propos -->
@@ -2617,8 +2717,7 @@
                             </div>
 
                             <div class="about-content">
-                                <p class="about-tagline">L'assistant intelligent conçu pour simplifier la rédaction de
-                                    vos appréciations scolaires.</p>
+
 
                                 <!-- Donation Section (Refined) -->
                                 <div class="support-card-premium">

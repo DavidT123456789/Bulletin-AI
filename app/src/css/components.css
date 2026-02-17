@@ -303,7 +303,8 @@
     color: var(--primary-color);
     text-decoration: underline;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: inherit;
+    font-family: inherit;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
