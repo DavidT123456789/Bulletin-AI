@@ -1502,23 +1502,31 @@ export const FocusPanelManager = {
 
         if (appreciationEl && !appreciationEl.classList.contains('empty') && !isGeneratingForThisStudent) {
             const content = appreciationEl.innerHTML;
-            // Additional check: Don't save skeleton HTML
             const isSkeleton = content.includes('appreciation-skeleton');
-            // Check if text content is truly empty (handling <br> remnants)
             const textContent = appreciationEl.textContent.trim();
+            const currentPeriod = appState.currentPeriod;
 
             if (content && textContent !== '' && !isSkeleton) {
-                result.appreciation = content;
-                result.copied = false; // Reset copied status
-                // Sync with period data
-                const currentPeriod = appState.currentPeriod;
-                if (!result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod] = {};
+                // PERIOD GUARD: Only save DOM content into the current period if it genuinely
+                // belongs to it. This prevents S1 appreciation (still in result.appreciation)
+                // from being written into periods['S2'] when the user merely opens/closes the panel.
+                // Content belongs to the current period if:
+                //   (a) periods[currentPeriod] already has an appreciation (user typed or generated here), OR
+                //   (b) result.studentData.currentPeriod matches (this result was generated for this period)
+                const periodAlreadyHasContent = !!(result.studentData.periods?.[currentPeriod]?.appreciation?.trim());
+                const resultBelongsToCurrentPeriod = result.studentData.currentPeriod === currentPeriod;
+
+                if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
+                    result.appreciation = content;
+                    result.copied = false;
+                    if (!result.studentData.periods[currentPeriod]) {
+                        result.studentData.periods[currentPeriod] = {};
+                    }
+                    result.studentData.periods[currentPeriod].appreciation = content;
+                    result.isPending = false;
                 }
-                result.studentData.periods[currentPeriod].appreciation = content;
-                result.isPending = false;
             } else if (textContent === '') {
-                // Explicitly save empty string if user cleared it
+                // User explicitly cleared the appreciation
                 result.appreciation = '';
                 const currentPeriod = appState.currentPeriod;
                 if (result.studentData.periods[currentPeriod]) {

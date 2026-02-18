@@ -449,8 +449,7 @@ export const ListViewManager = {
         tr.tabIndex = 0;
 
         const studentData = result.studentData || {};
-        const status = this._getStatus(result);
-        const appreciationCell = this._getAppreciationCell(result, status);
+        const appreciationCell = this._getAppreciationCell(result);
         const isSelected = this._selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
 
@@ -520,8 +519,7 @@ export const ListViewManager = {
         // Update appreciation cell
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (appreciationCell) {
-            const status = this._getStatus(result);
-            appreciationCell.innerHTML = this._getAppreciationCell(result, status);
+            appreciationCell.innerHTML = this._getAppreciationCell(result);
         }
 
         // Update status cell
@@ -587,18 +585,25 @@ export const ListViewManager = {
         const result = appState.generatedResults.find(r => r.id === studentId);
 
         if (result) {
-            // Optimization: Check if only dirty indicator needs updating
             const appreciationCell = row.querySelector('.appreciation-cell');
-            const existingDirty = appreciationCell?.querySelector('.dirty-indicator');
-            const shouldBeDirty = this._isResultDirty(result);
-            const hasDirtyIndicator = !!existingDirty;
 
-            // If only dirty state changed, use optimized update (no flash)
-            if (appreciationCell && hasDirtyIndicator !== shouldBeDirty) {
-                this._updateDirtyIndicatorOnly(appreciationCell, shouldBeDirty);
-            } else {
-                // Full update needed (appreciation changed, etc.)
+            // CRITICAL: If the cell shows a skeleton (generating/pending), always do a full update
+            // The dirty-only optimization would otherwise add an indicator on top of the skeleton
+            const hasSkeleton = !!appreciationCell?.querySelector('.appreciation-skeleton');
+
+            if (hasSkeleton) {
                 this._updateRowContent(row, result);
+            } else {
+                // Optimization: Check if only dirty indicator needs updating
+                const existingDirty = appreciationCell?.querySelector('.dirty-indicator');
+                const shouldBeDirty = this._isResultDirty(result);
+                const hasDirtyIndicator = !!existingDirty;
+
+                if (appreciationCell && hasDirtyIndicator !== shouldBeDirty) {
+                    this._updateDirtyIndicatorOnly(appreciationCell, shouldBeDirty);
+                } else {
+                    this._updateRowContent(row, result);
+                }
             }
 
             // Also update the global generate button state as dirty counts may have changed
@@ -751,8 +756,7 @@ export const ListViewManager = {
                 // Ensure result.studentData is accessible for subsequent calls if it was missing
                 if (!result.studentData) result.studentData = studentData;
 
-                const status = this._getStatus(result);
-                const appreciationCell = this._getAppreciationCell(result, status);
+                const appreciationCell = this._getAppreciationCell(result);
 
                 const isSelected = this._selectedIds.has(result.id);
                 // Generate avatar HTML with selection state
@@ -980,23 +984,6 @@ export const ListViewManager = {
         return html;
     },
 
-    /**
-     * DÃ©termine le statut d'un rÃ©sultat
-     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
-     * @returns {string} 'done' | 'pending' | 'error'
-     * @private
-     */
-    /**
-     * DÃ©termine le statut d'un rÃ©sultat
-     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
-     * @returns {string} 'done' | 'pending' | 'error'
-     * @private
-     */
-    _getStatus(result) {
-        if (result.errorMessage) return 'error';
-        if (result.appreciation && !result.isPending) return 'done';
-        return 'pending';
-    },
 
     /**
      * Checks if result data has changed since generation (Harmonized with FocusPanelStatus)
@@ -1010,15 +997,18 @@ export const ListViewManager = {
     },
 
     /**
-     * GÃ©nÃ¨re le contenu de la cellule d'apprÃ©ciation
-     * Affiche l'apprÃ©ciation tronquÃ©e si disponible, sinon le badge de statut
-     * @param {Object} result - DonnÃ©es de l'Ã©lÃ¨ve
-     * @param {string} status - Statut de gÃ©nÃ©ration (global)
+     * Génère le contenu de la cellule d'appréciation.
+     * Affiche l'appréciation tronquée si disponible, sinon le badge de statut.
+     * @param {Object} result - Données de l'élève
      * @returns {string} HTML de la cellule
      * @private
      */
-    _getAppreciationCell(result, status) {
-        // [FIX] RÃ©cupÃ©rer l'apprÃ©ciation spÃ©cifique Ã  la pÃ©riode sÃ©lectionnÃ©e
+    _getAppreciationCell(result) {
+        // Short-circuit: error state always takes priority over content/period logic
+        if (result.errorMessage) {
+            return this._getStatusBadge('error');
+        }
+
         const currentPeriod = appState.currentPeriod;
         let appreciation = '';
 
@@ -1077,26 +1067,16 @@ export const ListViewManager = {
             return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>`;
         }
 
-        // Si pas de contenu, on dÃ©termine le statut Ã  afficher
-        // Pour les pÃ©riodes passÃ©es sans donnÃ©e, afficher simplement un tiret
+        // No content: show dash for past periods, pending badge for current
         const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-        // Si l'élève a une erreur qui concerne la période affichée
-        // On affiche l'erreur si: le statut est 'error' ET (pas de période définie OU période == actuelle)
-        if (status === 'error' && (!storedPeriod || storedPeriod === currentPeriod)) {
-            return this._getStatusBadge('error');
-        }
-
-        // Pour les pÃ©riodes passÃ©es sans apprÃ©ciation, afficher un tiret
         const periods = Utils.getPeriods();
         const currentIndex = periods.indexOf(currentPeriod);
         const periodIndex = periods.indexOf(storedPeriod);
 
         if (storedPeriod && currentIndex < periodIndex) {
-            // On regarde une période passée où l'élève n'avait pas encore d'appréciation
             return '<span class="appreciation-preview empty">&mdash;</span>';
         }
 
-        // Sinon, badge "En attente" pour la pÃ©riode actuelle
         return this._getStatusBadge('pending');
     },
 
@@ -1714,11 +1694,6 @@ export const ListViewManager = {
      * @returns {HTMLElement}
      * @private
      */
-    /**
-     * Crée la barre d'outils de sélection contextualisée
-     * @returns {HTMLElement}
-     * @private
-     */
     _createSelectionToolbar() {
         const div = document.createElement('div');
         div.id = 'selectionToolbar';
@@ -1871,16 +1846,125 @@ export const ListViewManager = {
     },
 
     async _bulkRegenerate(ids) {
+        const { MassImportManager } = await import('./MassImportManager.js');
         const { AppreciationsManager } = await import('./AppreciationsManager.js');
         const { UI } = await import('./UIManager.js');
+        const { StudentDataManager } = await import('./StudentDataManager.js');
 
-        UI?.showNotification(`Lancement de la régénération pour ${ids.length} élèves...`, 'info');
+        // 1. Initialize AbortController for global cancellation (Cancel button in header)
+        if (MassImportManager.massImportAbortController) {
+            MassImportManager.massImportAbortController.abort();
+        }
+        MassImportManager.massImportAbortController = new AbortController();
+        const signal = MassImportManager.massImportAbortController.signal;
 
-        const promises = ids.map(id => AppreciationsManager.regenerateFailedAppreciation(id));
-        await Promise.all(promises);
+        let successCount = 0;
+        let errorCount = 0;
+        let wasAborted = false;
+        const total = ids.length;
 
+        // 2. Set visual state "Pending Skeleton" for all selected rows
+        ids.forEach(id => this.setRowStatus(id, 'pending-skeleton'));
+
+        // 3. Sequential processing loop
+        for (let i = 0; i < total; i++) {
+            if (signal.aborted) {
+                wasAborted = true;
+                break;
+            }
+
+            const id = ids[i];
+            const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
+            if (resultIndex === -1) continue;
+
+            const originalResult = appState.generatedResults[resultIndex];
+            const studentName = `${originalResult.prenom} ${originalResult.nom}`;
+
+            UI.showHeaderProgress(i + 1, total, studentName);
+
+            // Set current row status to "Generating"
+            this.setRowStatus(id, 'generating');
+
+            try {
+                // Reset history for regeneration (fresh start)
+                originalResult.historyState = null;
+                originalResult.copied = false;
+
+                // Prepare Data
+                const updatedStudentData = { ...originalResult.studentData };
+                updatedStudentData.id = id;
+                updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
+                updatedStudentData.currentAIModel = appState.currentAIModel;
+
+                // Call AI Service directly (passing signal for cancellation)
+                const newResult = await AppreciationsManager.generateAppreciation(updatedStudentData, false, null, signal, 'single-student');
+
+                // Update State (promptHash auto-computed by updateResult)
+                const updatedResult = StudentDataManager.updateResult(
+                    appState.generatedResults[resultIndex],
+                    newResult
+                );
+
+                // Update Filtered Results Sync
+                const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
+                if (filteredIndex > -1) {
+                    appState.filteredResults[filteredIndex] = updatedResult;
+                }
+
+                // Update UI Row
+                this.updateStudentRow(id);
+                successCount++;
+
+            } catch (e) {
+                if (e.name === 'AbortError' || signal.aborted) {
+                    wasAborted = true;
+                    break;
+                }
+
+                errorCount++;
+                const msg = Utils.translateErrorMessage(e.message);
+
+                // Create Error Result
+                const errorResult = AppreciationsManager.createResultObject(
+                    originalResult.nom,
+                    originalResult.prenom,
+                    originalResult.appreciation || '', // Keep existing if any
+                    originalResult.evolutions,
+                    originalResult.studentData,
+                    originalResult.studentData.prompts || {},
+                    originalResult.tokenUsage || {},
+                    `Erreur IA : ${msg}.`
+                );
+
+                const updatedErrorResult = StudentDataManager.updateResult(appState.generatedResults[resultIndex], errorResult);
+
+                // Update Filtered Results Sync (Error case)
+                const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
+                if (filteredIndex > -1) {
+                    appState.filteredResults[filteredIndex] = updatedErrorResult;
+                }
+
+                this.updateStudentRow(id);
+            }
+        }
+
+        // 4. Cleanup & Feedback
+        MassImportManager.massImportAbortController = null;
+        UI.hideHeaderProgress(errorCount > 0, errorCount);
         this.clearSelections();
-        UI?.showNotification(`Régénération terminée pour les élèves sélectionnés.`, 'success');
+
+        if (wasAborted) {
+            UI.showNotification("Régénération annulée.", "warning");
+            // Restore visual state for all rows (clears "En file" / "Generated")
+            ids.forEach(id => this.updateStudentRow(id));
+        } else {
+            const resultMsg = errorCount > 0
+                ? `Terminé avec ${errorCount} erreur(s).`
+                : `Régénération terminée (${successCount}/${total}).`;
+            UI.showNotification(resultMsg, errorCount > 0 ? "warning" : "success");
+        }
+
+        import('./StorageManager.js').then(({ StorageManager }) => StorageManager.saveAppState());
     },
 
     async _bulkCopy(ids) {
@@ -2338,12 +2422,6 @@ export const ListViewManager = {
      * @param {HTMLElement} row - Ligne du tableau
      * @private
      */
-    /**
-     * Supprime un élève avec confirmation
-     * @param {string} studentId - ID de l'élève
-     * @param {HTMLElement} row - Ligne du tableau
-     * @private
-     */
     async _deleteStudent(studentId, row) {
         const student = appState.generatedResults.find(r => r.id === studentId);
         if (!student) return;
@@ -2513,7 +2591,7 @@ export const ListViewManager = {
 
         } else {
             // Standard render
-            appreciationCell.innerHTML = this._getAppreciationCell(result, 'done');
+            appreciationCell.innerHTML = this._getAppreciationCell(result);
         }
     },
 

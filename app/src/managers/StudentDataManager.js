@@ -1,6 +1,7 @@
 import { appState, userSettings } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { DBService } from '../services/DBService.js';
+import { PromptService } from '../services/PromptService.js';
 
 export const StudentDataManager = {
     createResultObject(nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage = null, modelUsed = null) {
@@ -96,6 +97,7 @@ export const StudentDataManager = {
         existingResult.generationSnapshotJournalCount = preserved.journal?.length || 0;
         existingResult.generationThreshold = newResult.generationThreshold ?? appState.journalThreshold ?? 2;
         existingResult.generationPeriod = newResult.generationPeriod;
+        existingResult.promptHash = newResult.promptHash ?? existingResult.promptHash;
 
         // Mettre à jour studentData
         if (newResult.studentData) {
@@ -114,6 +116,19 @@ export const StudentDataManager = {
         existingResult.history = preserved.history;
         if (preserved._lastModified) existingResult._lastModified = preserved._lastModified;
         if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
+
+        // Auto-compute prompt hash AFTER all data is finalized
+        // If caller provided a hash (via newResult.promptHash), it was set above; skip.
+        // Otherwise, always recompute from current data for accurate dirty detection.
+        if (!newResult.promptHash && existingResult.studentData) {
+            try {
+                existingResult.promptHash = PromptService.getPromptHash({
+                    ...existingResult.studentData,
+                    id: existingResult.id,
+                    currentPeriod: existingResult.generationPeriod || appState.currentPeriod
+                });
+            } catch (_) { /* non-critical */ }
+        }
 
         return existingResult;
     },

@@ -226,16 +226,16 @@ export const GlobalListeners = {
                     }, 200);
                 }
 
-                // 3. Tooltip avec historique des modèles
+                // 3. Tooltip avec historique des modèles (sur la pilule entière)
                 const historyLines = this._modelHistory.map(h => `${h.from} → ${h.to}`).join('<br>');
                 const tooltipText = `⚡ Fallback actif<br>${historyLines}`;
 
                 import('../TooltipsManager.js').then(({ TooltipsUI }) => {
                     if (TooltipsUI?.updateTooltip) {
-                        TooltipsUI.updateTooltip(DOM.dashModelLabel, tooltipText);
+                        TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltipText);
                     }
                 }).catch(() => {
-                    DOM.dashModelLabel?.setAttribute('data-tooltip', tooltipText);
+                    DOM.headerGenDashboard?.setAttribute('data-tooltip', tooltipText);
                 });
 
                 // 4. Retour à l'état normal après 8 secondes
@@ -279,10 +279,10 @@ export const GlobalListeners = {
 
                     import('../TooltipsManager.js').then(({ TooltipsUI }) => {
                         if (TooltipsUI?.updateTooltip) {
-                            TooltipsUI.updateTooltip(DOM.dashModelLabel, finalTooltip);
+                            TooltipsUI.updateTooltip(DOM.headerGenDashboard, finalTooltip);
                         }
                     }).catch(() => {
-                        DOM.dashModelLabel?.setAttribute('data-tooltip', finalTooltip);
+                        DOM.headerGenDashboard?.setAttribute('data-tooltip', finalTooltip);
                     });
                 }, 8000);
             }

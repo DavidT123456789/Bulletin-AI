@@ -918,20 +918,18 @@ export const UI = {
             if (iconEl) iconEl.setAttribute('icon', providerIcon);
         }
 
-        if (DOM.dashModelLabel) {
-            // Richer HTML tooltip with italics on second line
-            // Tippy.js configured with allowHTML: true
+        if (DOM.headerGenDashboard) {
+            // Tooltip on the whole pill (not just the model label sub-button)
             const tooltip = `<strong>${modelName}</strong><br><span class="kbd-hint">Changer de modèle</span>`;
 
-            // Use TooltipsManager to update if possible, otherwise attributes
             import('./TooltipsManager.js').then(({ TooltipsUI }) => {
                 if (TooltipsUI && TooltipsUI.updateTooltip) {
-                    TooltipsUI.updateTooltip(DOM.dashModelLabel, tooltip);
+                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
                 } else {
-                    DOM.dashModelLabel.setAttribute('data-tooltip', tooltip);
+                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
                 }
             }).catch(() => {
-                DOM.dashModelLabel.setAttribute('data-tooltip', tooltip);
+                DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
             });
         }
 

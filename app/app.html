@@ -110,16 +110,14 @@
                 </div>
 
                 <div class="header-actions">
-                    <!-- Generation Dashboard: Always shows class status -->
-                    <div id="headerGenDashboard" class="header-gen-dashboard" role="status" aria-live="polite"
-                        aria-label="Statut de génération">
-                        <!-- Model indicator (subtle, clickable) -->
-                        <button class="dash-model-label tooltip" id="dashModelLabel"
-                            data-tooltip="Changer de modèle IA">
+                    <!-- Generation Dashboard: Unified clickable pill showing class status -->
+                    <div id="headerGenDashboard" class="header-gen-dashboard tooltip" role="button" tabindex="0"
+                        aria-label="Statut de génération" data-tooltip="Changer de modèle IA">
+                        <!-- Model indicator (decorative, not interactive itself) -->
+                        <div class="dash-model-label" id="dashModelLabel">
                             <iconify-icon icon="solar:cpu-linear"></iconify-icon>
                             <span id="dashModelName">Gemini</span>
-                        </button>
-                        <div class="dash-divider"></div>
+                        </div>
                         <!-- Validated count -->
                         <button class="dash-badge dash-validated" id="dashValidated"
                             data-tooltip="Appréciations validées">

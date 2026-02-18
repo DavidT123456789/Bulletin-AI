@@ -24,6 +24,7 @@
     position: relative;
     overflow: hidden;
     transition: box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    cursor: pointer;
 }
 
 .header-gen-dashboard:hover {
@@ -45,47 +46,25 @@
     padding: 5px 10px;
     line-height: 1;
     border-radius: var(--radius-pill);
-    /* Transparent by default - background appears only during generation */
     background: transparent;
     border: none;
     font-size: 0.8rem;
     color: var(--text-primary);
     font-weight: 600;
     letter-spacing: 0.01em;
-    cursor: pointer;
-    /* iOS spring transition */
-    transition:
-        transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-        background 0.25s ease;
+    /* Not interactive itself - parent pill handles click */
+    cursor: inherit;
+    pointer-events: none;
     white-space: nowrap;
     overflow: hidden;
 }
 
-/* Provider icon styling */
+/* Icon styling */
+.dash-model-label iconify-icon,
 .dash-model-label i,
 .dash-model-label svg {
     font-size: 14px;
     opacity: 0.85;
-    transition:
-        opacity 0.25s ease,
-        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Hover: subtle highlight */
-.dash-model-label:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-}
-
-.dash-model-label:hover i,
-.dash-model-label:hover svg {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-/* Active press state */
-.dash-model-label:active {
-    transform: scale(0.96);
-    transition-duration: 0.1s;
 }
 
 /* Model name carousel animation */
@@ -136,13 +115,6 @@
     color: var(--warning-color);
 }
 
-/* Divider */
-.dash-divider {
-    width: 1px;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 2px;
-}
 
 /* ====================================================================
    BADGE BASE
@@ -179,8 +151,7 @@
 /* ====================================================================
    VALIDATED BADGE - Hidden for ultra-minimalist look
    ==================================================================== */
-.dash-validated,
-.dash-divider:first-of-type {
+.dash-validated {
     display: none !important;
 }
 
@@ -238,8 +209,7 @@
    PENDING BADGE - Hidden for ultra-minimalist look
    (pending count shown in Generate button instead)
    ==================================================================== */
-.dash-pending,
-.dash-divider:last-of-type {
+.dash-pending {
     display: none !important;
 }
 
@@ -271,15 +241,13 @@
 }
 
 /* Badges fade out smoothly during generation */
-.dash-badge,
-.dash-divider {
+.dash-badge {
     transition:
         opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.header-gen-dashboard.generating .dash-badge,
-.header-gen-dashboard.generating .dash-divider:last-of-type {
+.header-gen-dashboard.generating .dash-badge {
     opacity: 0;
     transform: scale(0.8);
     pointer-events: none;
@@ -317,39 +285,35 @@
             var(--glow-highlight, rgba(255, 255, 255, 0.8)) 50%,
             rgba(var(--primary-color-rgb), 0.3) 75%,
             var(--primary-color) 100%);
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+    /* Mask: Inner hole (content-box) excluded from Outer rect (border-box) */
+    -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+    -webkit-mask-clip: content-box, border-box;
     -webkit-mask-composite: xor;
+
+    mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+    mask-clip: content-box, border-box;
     mask-composite: exclude;
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
     animation: rotate-gradient 2s linear infinite;
     pointer-events: none;
     z-index: 2;
 }
 
 /* Model badge with background during generation */
+/* Model badge with background during generation - REMOVED to avoid double pill effect
 .header-gen-dashboard.generating .dash-model-label {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    animation: model-breathe 2s ease-in-out infinite;
+    background: transparent;
+    animation: none;
     position: relative;
     z-index: 1;
-}
+} */
 
-@keyframes model-breathe {
-
-    0%,
-    100% {
-        opacity: 0.85;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 1;
-        transform: scale(1.02);
-    }
+.header-gen-dashboard.generating .dash-model-label {
+    background: transparent;
+    animation: none;
+    position: relative;
+    z-index: 1;
+    /* Ensure label text remains visible and distinct */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes generating-glow {

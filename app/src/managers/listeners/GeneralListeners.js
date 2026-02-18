@@ -215,25 +215,35 @@ export const GeneralListeners = {
 
 
 
-        // Model label click -> opens settings (API config) with focus on model selector
-        addClickListener(DOM.dashModelLabel, () => {
-            SettingsUIManager.createSnapshot();
-            UI.openModal(DOM.settingsModal);
-            SettingsUIManager.updateApiStatusDisplay();
-            // Highlight the model selector for clear feedback
-            UI.highlightSettingsElement('iaModelSelect', { tab: 'advanced' });
-        });
+        // UNIFIED PILL INTERACTION: Clicking anywhere on the dashboard opens settings
+        // (except if clicking on specific action buttons inside like Cancel or Errors)
+        if (DOM.headerGenDashboard) {
+            addClickListener(DOM.headerGenDashboard, (e) => {
+                // Ignore clicks that originated from specific buttons 
+                // (though stopPropagation in their listeners should handle this, double-check is safer)
+                if (e.target.closest('#dashCancelBtn') || e.target.closest('#dashErrors')) return;
+
+                SettingsUIManager.createSnapshot();
+                UI.openModal(DOM.settingsModal);
+                SettingsUIManager.updateApiStatusDisplay();
+                // Highlight the model selector for clear feedback
+                UI.highlightSettingsElement('iaModelSelect', { tab: 'advanced' });
+            });
+        }
 
         // Generation Dashboard badge click handlers
         // Error badge -> regenerate errors
-        addClickListener(DOM.dashErrors, () => {
+        addClickListener(DOM.dashErrors, (e) => {
+            e && e.stopPropagation(); // Prevent opening settings
             import('../EventHandlersManager.js').then(({ EventHandlersManager }) => {
                 EventHandlersManager.handleRegenerateErrorsClick?.();
             });
         });
 
         // Cancel button during generation
-        addClickListener(DOM.dashCancelBtn, async () => {
+        addClickListener(DOM.dashCancelBtn, async (e) => {
+            e && e.stopPropagation(); // Prevent opening settings
+
             // 1. Cancel mass import if running
             import('../MassImportManager.js').then(({ MassImportManager }) => {
                 if (MassImportManager.massImportAbortController) {
