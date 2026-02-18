@@ -518,14 +518,6 @@ export const FocusPanelStatus = {
         UI.initTooltips();
     },
 
-    /**
-     * Update AI indicator display (legacy wrapper)
-     * @deprecated Use updateSourceIndicator instead
-     * @param {Object} result - Student result object
-     */
-    updateAiIndicator(result) {
-        this.updateSourceIndicator(result);
-    },
 
     /**
      * Sync appreciation content to the result object

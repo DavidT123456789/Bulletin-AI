@@ -68,8 +68,8 @@ export const UI = {
 
         ImportUI.init(this, appInstance);
         ThemeManager.init();
-        // Initialize stats view toggle
-        StatsUI.initViewToggle();
+
+
         // Initialize mobile stats carousel
         StatsUI.initMobileCarousel();
         // Initialize tooltips at startup

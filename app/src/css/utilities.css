@@ -12,7 +12,7 @@
 .tippy-box[data-theme~='custom-theme'] {
     background-color: rgba(255, 255, 255, 0.95);
     /* Fond clair presque opaque */
-    color: #1e293b;
+    color: var(--text-primary);
     /* Texte gris foncé (Slate 800) pour lisibilité */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -36,7 +36,7 @@
 [data-theme="dark"] .tippy-box[data-theme~='custom-theme'] {
     background-color: rgba(30, 41, 59, 0.95);
     /* Sombre et profond */
-    color: #ffffff;
+    color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
     /* Bordure subtile pour contraste */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);

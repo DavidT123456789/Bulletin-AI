@@ -299,14 +299,6 @@ export const StatsUI = {
         }
     },
 
-    /**
-     * Initialise le toggle de vue (désactivé - simplification du layout).
-     * @deprecated Les vues sont maintenant séparées en cartes distinctes
-     */
-    initViewToggle() {
-        // Conservé pour rétrocompatibilité, mais plus utilisé
-        // Le toggle a été supprimé au profit de cartes dédiées
-    },
 
     /**
      * Met à jour les statistiques affichées dans l'interface.

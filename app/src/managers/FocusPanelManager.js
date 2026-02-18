@@ -1084,7 +1084,7 @@ export const FocusPanelManager = {
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
 
                     // Update AI indicator with new metadata
-                    FocusPanelStatus.updateAiIndicator(result);
+                    FocusPanelStatus.updateSourceIndicator(result);
 
                     // Update button to "Régénérer" state
                     this._updateGenerateButton(result);
@@ -1392,7 +1392,7 @@ export const FocusPanelManager = {
         // or by Observer to ensure disabled state matches content emptiness.
 
         // === 11. AI INDICATOR (✨) - Provenance info ===
-        FocusPanelStatus.updateAiIndicator(result);
+        FocusPanelStatus.updateSourceIndicator(result);
 
         // === 12. STATUS BADGE - Freshness state (generated, modified, pending) ===
         FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
@@ -1752,7 +1752,7 @@ export const FocusPanelManager = {
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
 
                     // Update AI indicator with new metadata
-                    FocusPanelStatus.updateAiIndicator(result);
+                    FocusPanelStatus.updateSourceIndicator(result);
 
                     UI.showNotification('Appréciation raffinée !', 'success');
                 }

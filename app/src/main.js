@@ -83,7 +83,6 @@ function setupPWAUpdateHandler() {
         let registration;
 
         const showUpdateBanner = () => {
-            // console.log('[PWA] Showing update banner');
             const banner = document.getElementById('pwaUpdateBanner');
             if (banner) {
                 banner.style.display = 'block';
@@ -146,7 +145,6 @@ function setupPWAUpdateHandler() {
                 const updateBtn = document.getElementById('pwaUpdateBtn');
                 if (updateBtn) {
                     updateBtn.onclick = () => {
-                        // console.log('[PWA] User accepted update');
                         updateSW && updateSW(true);
                     };
                 }
@@ -173,11 +171,8 @@ function setupPWAUpdateHandler() {
         // Expose manual check function
         window.checkForUpdates = async () => {
             if (registration) {
-                // console.log('[PWA] Manually checking for updates...');
                 try {
                     await registration.update();
-                    // console.log('[PWA] Update check complete');
-                    // Notification handled by UI if needed, or via events
                     // If no update found, we might want to tell the user?
                     // But registration.update() doesn't return "found/not found". It updates the registration.
                     // If a new worker is found, 'updatefound' (or onNeedRefresh) triggers.
@@ -191,7 +186,6 @@ function setupPWAUpdateHandler() {
 
         updateSW = registerSW({
             onNeedRefresh() {
-                // console.log('[PWA] New content available, need refresh');
                 showUpdateBanner();
                 // Update global state
                 if (window.appState) {
@@ -199,11 +193,8 @@ function setupPWAUpdateHandler() {
                     document.dispatchEvent(new CustomEvent('app-update-available'));
                 }
             },
-            onOfflineReady() {
-                // console.log('[PWA] App ready to work offline');
-            },
+            onOfflineReady() { },
             onRegistered(swRegistration) {
-                // console.log('[PWA] Service Worker registered', swRegistration);
                 registration = swRegistration;
 
                 // Check for updates every hour
