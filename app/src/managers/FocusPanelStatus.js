@@ -229,13 +229,9 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Legacy dirty state check for backward compatibility
-     * Used when promptHash is not available but generationSnapshot is
+     * Legacy dirty state check for backward compatibility.
+     * Used when promptHash is not available but generationSnapshot is.
      * @private
-     * 
-     * TODO: [CLEANUP] After 2026-07-01, consider removing _checkDirtyStateLegacy()
-     * and compareDataWithSnapshot() if all users have promptHash populated.
-     * These ~100 lines exist only for backward compat with pre-promptHash data.
      */
     _checkDirtyStateLegacy(result) {
         const currentPeriod = appState.currentPeriod;

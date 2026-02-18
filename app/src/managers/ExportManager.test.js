@@ -57,7 +57,8 @@ vi.mock('../utils/Utils.js', () => ({
     Utils: {
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         getPeriodLabel: vi.fn((p, short) => short ? p : `Trimestre ${p.slice(1)}`),
-        decodeHtmlEntities: vi.fn(text => text)
+        decodeHtmlEntities: vi.fn(text => text),
+        stripMarkdown: vi.fn(text => text)
     }
 }));
 
@@ -168,26 +169,24 @@ describe('ExportManager', () => {
             expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
 
-        it('should show success notification', async () => {
+        it('should save state on success', async () => {
             await ExportManager.copyAppreciation('test-id-1', null);
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            expect(UI.showNotification).toHaveBeenCalledWith('Copiée !', 'success');
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
 
         it('should update button state if button provided', async () => {
             const button = document.createElement('button');
-            button.innerHTML = '<i class="fas fa-copy"></i>';
-            button.classList.add = vi.fn();
-            button.classList.remove = vi.fn();
+            button.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
 
             await ExportManager.copyAppreciation('test-id-1', button);
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            expect(button.innerHTML).toBe('<i class="fas fa-check"></i>');
-            expect(button.classList.add).toHaveBeenCalledWith('copied');
+            expect(button.innerHTML).toContain('ph:check');
+            expect(button.classList.contains('copied')).toBe(true);
         });
 
         it('should handle clipboard errors', async () => {
@@ -224,12 +223,15 @@ describe('ExportManager', () => {
             expect(mockClipboard.writeText).toHaveBeenCalledWith('Suggested text');
         });
 
-        it('should show success notification with correct type', async () => {
+        it('should update button icon on success', async () => {
+            const mockBtn = { innerHTML: '', classList: { add: vi.fn(), remove: vi.fn() } };
+            DOM.refinementModal.querySelector = vi.fn(() => mockBtn);
+
             await ExportManager.copyRefinementText('original');
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            expect(UI.showNotification).toHaveBeenCalledWith('Texte original copié !', 'success');
+            expect(mockBtn.innerHTML).toContain('ph:check');
         });
 
         it('should show warning if text is empty', () => {

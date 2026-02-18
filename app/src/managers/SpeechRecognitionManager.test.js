@@ -63,9 +63,13 @@ describe('SpeechRecognitionManager', () => {
         delete window.SpeechRecognition;
         delete window.webkitSpeechRecognition;
 
+        // init() now uses #focusMicBtn and #focusAppreciationMicBtn
+        document.body.innerHTML = '<button id="focusMicBtn"></button><button id="focusAppreciationMicBtn"></button>';
+        const focusMicBtn = document.getElementById('focusMicBtn');
+
         SpeechRecognitionManager.init();
 
-        expect(micBtn.style.display).toBe('none');
+        expect(focusMicBtn.style.display).toBe('none');
     });
 });
 

@@ -19,6 +19,14 @@ vi.mock('../utils/DOM.js', () => ({
     }
 }));
 
+// Mock HistoryManager (used by openModal/closeModal)
+vi.mock('./HistoryManager.js', () => ({
+    HistoryManager: {
+        pushState: vi.fn(),
+        handleManualClose: vi.fn()
+    }
+}));
+
 describe('ModalUIManager', () => {
     let testModal;
     let helpModal;
@@ -38,14 +46,14 @@ describe('ModalUIManager', () => {
         testModal.id = 'testModal';
         testModal.className = 'modal';
         testModal.style.display = 'none';
-        testModal.innerHTML = '<button id="focusable">Click</button>';
+        testModal.innerHTML = '<div class="modal-content"><button id="focusable">Click</button></div>';
         document.body.appendChild(testModal);
 
         helpModal = document.createElement('div');
         helpModal.id = 'helpModal';
         helpModal.className = 'modal';
         helpModal.style.display = 'none';
-        helpModal.innerHTML = '<button id="helpBtn">Help</button>';
+        helpModal.innerHTML = '<div class="modal-content"><button id="helpBtn">Help</button></div>';
         document.body.appendChild(helpModal);
 
         vi.useFakeTimers();
@@ -57,19 +65,31 @@ describe('ModalUIManager', () => {
     });
 
     describe('openModal', () => {
-        it('should open modal by element', () => {
+        it('should set display to flex', () => {
             ModalUI.openModal(testModal);
 
             expect(testModal.style.display).toBe('flex');
-            expect(testModal.classList.contains('show')).toBe(true);
-            expect(document.body.classList.contains('modal-open')).toBe(true);
+        });
+
+        it('should add show and modal-visible classes during lifecycle', () => {
+            ModalUI.openModal(testModal);
+
+            // After close animation (250ms), classes are cleaned up
+            // This tests the full lifecycle including rAF-triggered class additions
+            ModalUI.closeModal(testModal);
+            // Before timeout: modal-closing should be added
+            expect(testModal.classList.contains('modal-closing')).toBe(true);
+
+            vi.advanceTimersByTime(250);
+            // After timeout: all classes removed
+            expect(testModal.classList.contains('show')).toBe(false);
+            expect(testModal.classList.contains('modal-visible')).toBe(false);
         });
 
         it('should open modal by id', () => {
             ModalUI.openModal('testModal');
 
             expect(testModal.style.display).toBe('flex');
-            expect(testModal.classList.contains('show')).toBe(true);
         });
 
         it('should set activeModal', () => {
@@ -78,6 +98,12 @@ describe('ModalUIManager', () => {
             ModalUI.openModal(testModal);
 
             expect(ModalUI.activeModal).toBe(testModal);
+        });
+
+        it('should add modal-open class to body', () => {
+            ModalUI.openModal(testModal);
+
+            expect(document.body.classList.contains('modal-open')).toBe(true);
         });
 
         it('should save last focused element', () => {
@@ -90,15 +116,6 @@ describe('ModalUIManager', () => {
             expect(ModalUI.lastFocusedElement).toBe(button);
         });
 
-        it('should attempt to focus first focusable element in modal', () => {
-            ModalUI.openModal(testModal);
-
-            // JSDOM doesn't fully support focus/offsetParent, just verify modal opened and element exists
-            const focusable = testModal.querySelector('#focusable');
-            expect(focusable).not.toBeNull();
-            expect(testModal.style.display).toBe('flex'); // Modal is visible
-        });
-
         it('should do nothing if modal not found', () => {
             ModalUI.openModal('nonExistent');
 
@@ -107,11 +124,9 @@ describe('ModalUIManager', () => {
         });
 
         it('should stack helpModal on top of another modal', () => {
-            // Open first modal
             ModalUI.openModal(testModal);
             expect(ModalUI.activeModal).toBe(testModal);
 
-            // Open helpModal on top
             ModalUI.openModal(helpModal);
 
             expect(ModalUI.stackedModal).toBe(testModal);
@@ -120,20 +135,43 @@ describe('ModalUIManager', () => {
     });
 
     describe('closeModal', () => {
-        it('should close modal by element', () => {
+        it('should add modal-closing class immediately', () => {
             ModalUI.openModal(testModal);
+            vi.advanceTimersByTime(0);
+
             ModalUI.closeModal(testModal);
+
+            expect(testModal.classList.contains('modal-closing')).toBe(true);
+        });
+
+        it('should hide modal after animation timeout', () => {
+            ModalUI.openModal(testModal);
+            vi.advanceTimersByTime(0);
+
+            ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
 
             expect(testModal.style.display).toBe('none');
             expect(testModal.classList.contains('show')).toBe(false);
-            expect(document.body.classList.contains('modal-open')).toBe(false);
+            expect(testModal.classList.contains('modal-visible')).toBe(false);
         });
 
         it('should close modal by id', () => {
             ModalUI.openModal(testModal);
+            vi.advanceTimersByTime(0);
+
             ModalUI.closeModal('testModal');
+            vi.advanceTimersByTime(250);
 
             expect(testModal.style.display).toBe('none');
+        });
+
+        it('should remove modal-open from body', () => {
+            ModalUI.openModal(testModal);
+            ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
+
+            expect(document.body.classList.contains('modal-open')).toBe(false);
         });
 
         it('should restore last focused element', () => {
@@ -143,6 +181,7 @@ describe('ModalUIManager', () => {
 
             ModalUI.openModal(testModal);
             ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
 
             expect(document.activeElement).toBe(button);
             expect(ModalUI.lastFocusedElement).toBeNull();
@@ -151,18 +190,17 @@ describe('ModalUIManager', () => {
         it('should clear activeModal', () => {
             ModalUI.openModal(testModal);
             ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
 
             expect(ModalUI.activeModal).toBeNull();
         });
 
         it('should restore stacked modal when closing helpModal', () => {
-            // Open first modal
             ModalUI.openModal(testModal);
-            // Open helpModal on top
             ModalUI.openModal(helpModal);
 
-            // Close helpModal
             ModalUI.closeModal(helpModal);
+            vi.advanceTimersByTime(250);
 
             expect(ModalUI.activeModal).toBe(testModal);
             expect(ModalUI.stackedModal).toBeNull();
@@ -172,10 +210,13 @@ describe('ModalUIManager', () => {
             const confirmModal = document.createElement('div');
             confirmModal.id = 'customConfirmModal';
             confirmModal.className = 'modal';
+            confirmModal.innerHTML = '<div class="modal-content"></div>';
             document.body.appendChild(confirmModal);
 
             ModalUI.openModal(confirmModal);
+            vi.advanceTimersByTime(0);
             ModalUI.closeModal(confirmModal);
+            vi.advanceTimersByTime(250);
 
             expect(document.getElementById('customConfirmModal')).toBeNull();
         });
@@ -186,7 +227,9 @@ describe('ModalUIManager', () => {
             testModal.appendChild(details);
 
             ModalUI.openModal(testModal);
+            vi.advanceTimersByTime(0);
             ModalUI.closeModal(testModal);
+            vi.advanceTimersByTime(250);
 
             expect(details.hasAttribute('open')).toBe(false);
         });
@@ -202,6 +245,7 @@ describe('ModalUIManager', () => {
             ModalUI.openModal(helpModal);
 
             ModalUI.closeAllModals();
+            vi.advanceTimersByTime(250);
 
             expect(testModal.style.display).toBe('none');
             expect(helpModal.style.display).toBe('none');
@@ -216,20 +260,22 @@ describe('ModalUIManager', () => {
 
             expect(ModalUI._isIgnoringTooltips).toBe(true);
 
-            vi.advanceTimersByTime(150);
+            // Tooltip re-enabling happens at 200ms (after focus at 150ms)
+            vi.advanceTimersByTime(200);
 
             expect(ModalUI._isIgnoringTooltips).toBe(false);
         });
 
         it('should temporarily ignore tooltips when closing modal', () => {
             ModalUI.openModal(testModal);
-            vi.advanceTimersByTime(150);
+            vi.advanceTimersByTime(200);
 
             ModalUI.closeModal(testModal);
 
             expect(ModalUI._isIgnoringTooltips).toBe(true);
 
-            vi.advanceTimersByTime(150);
+            // closeModal tooltip reset happens at 300ms
+            vi.advanceTimersByTime(300);
 
             expect(ModalUI._isIgnoringTooltips).toBe(false);
         });

@@ -3,36 +3,36 @@
  * @module managers/FormUIManager.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock des dépendances
+// Mock dependencies
 vi.mock('../state/State.js', () => ({
     appState: {
         useSubjectPersonalization: false,
-        currentSettingsSubject: 'Français',
         subjects: {
-            'Français': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default' }
+            'MonStyle': {
+                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' }
             },
             'Générique': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default' }
+                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' }
             }
         },
         periodSystem: 'trimestre',
-        evolutionThresholds: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
+        evolutionThresholds: { positive: 1, negative: -1 },
         currentAIModel: 'gpt-4',
         openaiApiKey: '',
         googleApiKey: '',
         openrouterApiKey: '',
-        sessionCost: 0.0025,
-        instructionHistory: [],
-        currentSubject: 'Français'
+        anthropicApiKey: '',
+        mistralApiKey: '',
+        sessionTokens: 0,
+        settingsPrivacyAnonymize: false
     }
 }));
 
 vi.mock('../config/Config.js', () => ({
     CONFIG: {},
-    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'default' },
+    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' },
     MODEL_DESCRIPTIONS: {
         'gpt-4': 'Modèle GPT-4 puissant',
         'gemini-pro': 'Modèle Google Gemini'
@@ -44,32 +44,24 @@ vi.mock('../utils/DOM.js', () => ({
     DOM: {
         periodSystemRadios: [],
         settingsEvolutionThresholdPositive: { value: '1' },
-        settingsEvolutionThresholdVeryPositive: { value: '2' },
         settingsEvolutionThresholdNegative: { value: '-1' },
-        settingsEvolutionThresholdVeryNegative: { value: '-2' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
         iaToneSlider: { value: '3' },
         iaStyleInstructions: { value: '' },
+        iaDiscipline: { value: '' },
         aiModelSelect: { value: 'gpt-4' },
         openaiApiKey: { value: '' },
         googleApiKey: { value: '' },
         openrouterApiKey: { value: '' },
+        anthropicApiKey: { value: '' },
+        mistralApiKey: { value: '' },
         appVersionDisplay: { textContent: '' },
-        sessionCost: { textContent: '' },
-        openaiApiKeyGroup: { style: { display: 'none' } },
-        googleApiKeyGroup: { style: { display: 'none' } },
-        openrouterApiKeyGroup: { style: { display: 'none' } },
-        openaiApiKeyError: { style: { display: 'none' } },
-        googleApiKeyError: { style: { display: 'none' } },
-        openrouterApiKeyError: { style: { display: 'none' } },
+        sessionTokens: { textContent: '' },
+        settingsPrivacyAnonymizeToggle: { checked: false },
         settingsModal: {
             querySelectorAll: vi.fn(() => []),
             querySelector: vi.fn(() => null)
-        },
-        mainGenerationPromptDisplay: { innerHTML: '' },
-        strengthsWeaknessesPromptDisplay: { textContent: '' },
-        nextStepsPromptDisplay: { textContent: '' },
-        suggestionsList: null
+        }
     }
 }));
 
@@ -95,7 +87,6 @@ import { FormUI } from './FormUIManager.js';
 import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
-import { AppreciationsManager } from './AppreciationsManager.js';
 
 describe('FormUIManager', () => {
     let mockApp;
@@ -103,24 +94,37 @@ describe('FormUIManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        mockApp = {
-            renderSubjectManagementList: vi.fn(),
-            populatePreviewStudentSelect: vi.fn()
-        };
-
+        mockApp = {};
         FormUI.init(mockApp);
 
         // Reset appState
         appState.useSubjectPersonalization = false;
-        appState.currentSettingsSubject = 'Français';
         appState.periodSystem = 'trimestre';
         appState.currentAIModel = 'gpt-4';
-        appState.instructionHistory = [];
+
+        // Mock getElementById for dynamic elements
+        document.getElementById = vi.fn((id) => {
+            if (id === 'aiModelDescription') return { innerHTML: '' };
+            if (id === 'iaStyleHeader') return { innerHTML: '' };
+            if (id === 'settings-controls-panel') return { classList: { toggle: vi.fn() } };
+            if (id === 'iaLengthSliderValue') return { textContent: '' };
+            if (id === 'iaToneSliderValue') return { textContent: '' };
+            if (id === 'missingApiKeyWarning') return { style: { display: '' } };
+            if (id === 'missingKeyText') return { textContent: '' };
+            return null;
+        });
+
+        // Mock querySelectorAll for voice radios and disabled controls
+        document.querySelectorAll = vi.fn(() => []);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('init()', () => {
         it('should initialize with app instance', () => {
-            const app = { renderSubjectManagementList: vi.fn() };
+            const app = {};
             FormUI.init(app);
             expect(true).toBe(true);
         });
@@ -141,20 +145,20 @@ describe('FormUIManager', () => {
         });
 
         it('should set evolution thresholds from appState', () => {
-            appState.evolutionThresholds = { positive: 1.5, veryPositive: 3, negative: -1.5, veryNegative: -3 };
+            appState.evolutionThresholds = { positive: 1.5, negative: -1.5 };
             FormUI.updateSettingsFields();
             expect(DOM.settingsEvolutionThresholdPositive.value).toBe(1.5);
         });
 
-        it('should set IA length slider value', () => {
+        it('should set IA length slider to default in generic mode', () => {
             appState.useSubjectPersonalization = false;
             FormUI.updateSettingsFields();
             expect(DOM.iaLengthSlider.value).toBe(DEFAULT_IA_CONFIG.length);
         });
 
-        it('should use subject iaConfig when personalization is enabled', () => {
+        it('should use MonStyle iaConfig when personalization is enabled', () => {
             appState.useSubjectPersonalization = true;
-            appState.subjects['Français'].iaConfig.length = 75;
+            appState.subjects['MonStyle'].iaConfig.length = 75;
             FormUI.updateSettingsFields();
             expect(DOM.iaLengthSlider.value).toBe(75);
         });
@@ -171,62 +175,94 @@ describe('FormUIManager', () => {
             expect(DOM.appVersionDisplay.textContent).toBe(APP_VERSION);
         });
 
-        it('should format session cost', () => {
-            appState.sessionCost = 0.0025;
+        it('should set AI model select value', () => {
+            appState.currentAIModel = 'gemini-pro';
             FormUI.updateSettingsFields();
-            expect(DOM.sessionCost.textContent).toBe('0.0025$');
+            expect(DOM.aiModelSelect.value).toBe('gemini-pro');
         });
 
-        it('should call renderSubjectManagementList', () => {
+        it('should set style instructions from MonStyle when personalization enabled', () => {
+            appState.useSubjectPersonalization = true;
+            appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Custom instructions';
             FormUI.updateSettingsFields();
-            expect(mockApp.renderSubjectManagementList).toHaveBeenCalled();
+            expect(DOM.iaStyleInstructions.value).toBe('Custom instructions');
+        });
+
+        it('should clear style instructions when personalization disabled', () => {
+            appState.useSubjectPersonalization = false;
+            FormUI.updateSettingsFields();
+            expect(DOM.iaStyleInstructions.value).toBe('');
         });
     });
 
     describe('updateModelDescription()', () => {
         it('should update model description element', () => {
-            const descEl = document.createElement('div');
-            descEl.id = 'aiModelDescription';
-            document.body.appendChild(descEl);
+            const descEl = { innerHTML: '' };
+            document.getElementById = vi.fn((id) => {
+                if (id === 'aiModelDescription') return descEl;
+                return null;
+            });
             DOM.aiModelSelect.value = 'gpt-4';
             FormUI.updateModelDescription();
             expect(descEl.innerHTML).toBe(MODEL_DESCRIPTIONS['gpt-4']);
-            document.body.removeChild(descEl);
         });
 
         it('should show default text when model not in descriptions', () => {
-            const descEl = document.createElement('div');
-            descEl.id = 'aiModelDescription';
-            document.body.appendChild(descEl);
+            const descEl = { innerHTML: '' };
+            document.getElementById = vi.fn((id) => {
+                if (id === 'aiModelDescription') return descEl;
+                return null;
+            });
             DOM.aiModelSelect.value = 'unknown-model';
             FormUI.updateModelDescription();
             expect(descEl.innerHTML).toBe('Description...');
-            document.body.removeChild(descEl);
         });
     });
 
     describe('toggleAIKeyFields()', () => {
-        it('should show openai group for openai models', () => {
+        let warningEl;
+        let warningTextEl;
+
+        beforeEach(() => {
+            warningEl = { style: { display: '' } };
+            warningTextEl = { textContent: '' };
+
+            document.getElementById = vi.fn((id) => {
+                if (id === 'missingApiKeyWarning') return warningEl;
+                if (id === 'missingKeyText') return warningTextEl;
+                return null;
+            });
+        });
+
+        it('should show warning for openai model without key', () => {
             DOM.aiModelSelect.value = 'openai-gpt4';
+            appState.openaiApiKey = '';
             FormUI.toggleAIKeyFields();
-            expect(DOM.openaiApiKeyGroup.style.display).toBe('block');
+            expect(warningEl.style.display).toBe('flex');
+            expect(warningTextEl.textContent).toContain('OpenAI');
         });
 
-        it('should show google group for gemini models', () => {
+        it('should show warning for gemini model without key', () => {
             DOM.aiModelSelect.value = 'gemini-pro';
+            appState.googleApiKey = '';
             FormUI.toggleAIKeyFields();
-            expect(DOM.googleApiKeyGroup.style.display).toBe('block');
+            expect(warningEl.style.display).toBe('flex');
+            expect(warningTextEl.textContent).toContain('Google Gemini');
         });
 
-        it('should show openrouter group for other models', () => {
+        it('should hide warning when key is present', () => {
+            DOM.aiModelSelect.value = 'gemini-pro';
+            appState.googleApiKey = 'valid-key-123456';
+            FormUI.toggleAIKeyFields();
+            expect(warningEl.style.display).toBe('none');
+        });
+
+        it('should show warning for openrouter models without key', () => {
             DOM.aiModelSelect.value = 'claude-3';
+            appState.openrouterApiKey = '';
             FormUI.toggleAIKeyFields();
-            expect(DOM.openrouterApiKeyGroup.style.display).toBe('block');
-        });
-
-        it('should hide all error messages', () => {
-            FormUI.toggleAIKeyFields();
-            expect(DOM.openaiApiKeyError.style.display).toBe('none');
+            expect(warningEl.style.display).toBe('flex');
+            expect(warningTextEl.textContent).toContain('OpenRouter');
         });
 
         it('should not throw if aiModelSelect is null', () => {
@@ -237,64 +273,9 @@ describe('FormUIManager', () => {
         });
     });
 
-    // Tests renderVocabList supprimés - fonctionnalité vocabulaire dépréciée
-
     describe('renderSettingsLists()', () => {
-        it('should show empty message when no history', () => {
-            appState.instructionHistory = [];
-            DOM.suggestionsList = { innerHTML: '' };
-            FormUI.renderSettingsLists();
-            expect(DOM.suggestionsList.innerHTML).toContain('historique');
-        });
-
-        it('should sort history by favorites first', () => {
-            appState.instructionHistory = [
-                { text: 'regular', isFavorite: false, count: 5 },
-                { text: 'favorite', isFavorite: true, count: 1 }
-            ];
-            DOM.suggestionsList = { innerHTML: '' };
-            FormUI.renderSettingsLists();
-            expect(DOM.suggestionsList.innerHTML).toContain('Favoris');
-        });
-
-        it('should not throw if suggestionsList is null', () => {
-            DOM.suggestionsList = null;
+        it('should not throw (no-op function)', () => {
             expect(() => FormUI.renderSettingsLists()).not.toThrow();
-        });
-    });
-
-    describe('updateAIPromptDisplays()', () => {
-        beforeEach(() => {
-            DOM.mainGenerationPromptDisplay = { innerHTML: '' };
-            DOM.strengthsWeaknessesPromptDisplay = { textContent: '' };
-            DOM.nextStepsPromptDisplay = { textContent: '' };
-        });
-
-        it('should update main generation prompt display', () => {
-            FormUI.updateAIPromptDisplays();
-            expect(DOM.mainGenerationPromptDisplay.innerHTML).toContain('<pre>');
-        });
-
-        it('should call AppreciationsManager.getAllPrompts', () => {
-            FormUI.updateAIPromptDisplays();
-            expect(AppreciationsManager.getAllPrompts).toHaveBeenCalled();
-        });
-
-        it('should update strengths/weaknesses prompt display', () => {
-            FormUI.updateAIPromptDisplays();
-            expect(DOM.strengthsWeaknessesPromptDisplay.textContent).toBe('Strengths/Weaknesses prompt');
-        });
-
-        it('should show personalization info when enabled', () => {
-            appState.useSubjectPersonalization = true;
-            FormUI.updateAIPromptDisplays();
-            expect(DOM.mainGenerationPromptDisplay.innerHTML).toContain('professeur');
-        });
-
-        it('should show standard info when personalization disabled', () => {
-            appState.useSubjectPersonalization = false;
-            FormUI.updateAIPromptDisplays();
-            expect(DOM.mainGenerationPromptDisplay.innerHTML).toContain('paramètres standards');
         });
     });
 });

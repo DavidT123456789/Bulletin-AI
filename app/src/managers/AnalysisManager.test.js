@@ -37,7 +37,8 @@ vi.mock('./UIManager.js', () => ({
 
 vi.mock('../services/AIService.js', () => ({
     AIService: {
-        callAI: vi.fn()
+        callAI: vi.fn(),
+        callAIWithFallback: vi.fn()
     }
 }));
 
@@ -145,15 +146,15 @@ describe('AnalysisManager', () => {
         });
 
         it('should call AIService with correct prompt', async () => {
-            AIService.callAI.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
+            AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
 
             await AnalysisManager.generateStrengthsWeaknesses('test-id-1');
 
-            expect(AIService.callAI).toHaveBeenCalledWith('sw prompt');
+            expect(AIService.callAIWithFallback).toHaveBeenCalledWith('sw prompt');
         });
 
         it('should save result and show notification', async () => {
-            AIService.callAI.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
+            AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
 
             await AnalysisManager.generateStrengthsWeaknesses('test-id-1', false);
 
@@ -163,7 +164,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should not show notification when silent', async () => {
-            AIService.callAI.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
+            AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
 
             await AnalysisManager.generateStrengthsWeaknesses('test-id-1', true);
 
@@ -171,7 +172,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should handle errors gracefully', async () => {
-            AIService.callAI.mockRejectedValueOnce(new Error('API Error'));
+            AIService.callAIWithFallback.mockRejectedValueOnce(new Error('API Error'));
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
             await expect(AnalysisManager.generateStrengthsWeaknesses('test-id-1'))
@@ -202,7 +203,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should parse numbered steps from AI response', async () => {
-            AIService.callAI.mockResolvedValueOnce({
+            AIService.callAIWithFallback.mockResolvedValueOnce({
                 text: '1. First step\n2. Second step\n3. Third step',
                 usage: { total_tokens: 100 }
             });
@@ -214,7 +215,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should limit to 3 steps', async () => {
-            AIService.callAI.mockResolvedValueOnce({
+            AIService.callAIWithFallback.mockResolvedValueOnce({
                 text: '1. Step 1\n2. Step 2\n3. Step 3\n4. Step 4\n5. Step 5',
                 usage: { total_tokens: 100 }
             });
@@ -225,7 +226,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should merge continuation lines', async () => {
-            AIService.callAI.mockResolvedValueOnce({
+            AIService.callAIWithFallback.mockResolvedValueOnce({
                 text: '1. This is the first step\nand continues here',
                 usage: { total_tokens: 100 }
             });
@@ -236,7 +237,7 @@ describe('AnalysisManager', () => {
         });
 
         it('should filter out conclusion phrases', async () => {
-            AIService.callAI.mockResolvedValueOnce({
+            AIService.callAIWithFallback.mockResolvedValueOnce({
                 text: '1. Step 1\nJ\'espère que cela aide',
                 usage: { total_tokens: 100 }
             });
@@ -294,19 +295,19 @@ describe('AnalysisManager', () => {
         beforeEach(() => {
             appState.generatedResults = [mockResult];
             DOM.studentDetailsModal.querySelector = vi.fn(() => ({ innerHTML: '' }));
-            AIService.callAI.mockResolvedValue({ text: 'Analysis', usage: {} });
+            AIService.callAIWithFallback.mockResolvedValue({ text: 'Analysis', usage: {} });
         });
 
         it('should return early if result not found', async () => {
             await AnalysisManager.fetchAnalysesForStudent('non-existent');
 
-            expect(AIService.callAI).not.toHaveBeenCalled();
+            expect(AIService.callAIWithFallback).not.toHaveBeenCalled();
         });
 
         it('should generate analyses if null', async () => {
             await AnalysisManager.fetchAnalysesForStudent('test-id-1');
 
-            expect(AIService.callAI).toHaveBeenCalled();
+            expect(AIService.callAIWithFallback).toHaveBeenCalled();
         });
 
         it('should use existing data if not null', async () => {

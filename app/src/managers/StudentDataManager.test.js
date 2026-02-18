@@ -12,7 +12,13 @@ vi.mock('../state/State.js', () => ({
         currentAIModel: 'gemini-2.5-flash',
         currentSubject: 'Mathématiques',
         useSubjectPersonalization: false,
-        generatedResults: []
+        generatedResults: [],
+        journalThreshold: 2
+    },
+    userSettings: {
+        academic: {
+            currentClassId: null
+        }
     }
 }));
 
@@ -20,7 +26,8 @@ vi.mock('../utils/Utils.js', () => ({
     Utils: {
         normalizeName: (nom, prenom) => `${nom}_${prenom}`.toLowerCase(),
         parseStudentLine: vi.fn(),
-        getPeriods: vi.fn(() => ['T1', 'T2', 'T3'])
+        getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
+        deepClone: (obj) => JSON.parse(JSON.stringify(obj))
     }
 }));
 
@@ -334,7 +341,10 @@ describe('StudentDataManager', () => {
                 periods: { T2: { grade: 15 } },
                 statuses: []
             });
-            appState.generatedResults = [];
+            // Need existing students so merge mode enters the else branch
+            appState.generatedResults = [
+                { nom: 'EXISTING', prenom: 'User', classId: null, studentData: { statuses: [] } }
+            ];
 
             const lines = ['NEW Student\t15'];
             const formatMap = {};

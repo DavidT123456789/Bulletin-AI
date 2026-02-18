@@ -359,7 +359,6 @@ export function initDOM() {
     DOM.customSeparatorInput = document.getElementById('customSeparatorInput');
     DOM.saveMappingCheckbox = document.getElementById('saveMappingCheckbox');
     DOM.cancelImportPreviewBtn = document.getElementById('cancelImportPreviewBtn');
-    DOM.confirmImportPreviewBtn = null; // Deprecated - import only mode now
     DOM.importOnlyBtn = document.getElementById('importOnlyBtn');
     DOM.generateAllPendingBtn = document.getElementById('generateAllPendingBtn');
     DOM.pendingCountBadge = document.getElementById('pendingCountBadge');

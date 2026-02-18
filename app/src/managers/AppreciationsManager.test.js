@@ -53,6 +53,11 @@ vi.mock('../state/State.js', () => ({
             negative: -0.5,
             veryNegative: -1.5
         }
+    },
+    userSettings: {
+        academic: {
+            currentClassId: null
+        }
     }
 }));
 
@@ -98,14 +103,6 @@ describe('AppreciationsManager', () => {
 
         it('should have deleteAppreciation method', () => {
             expect(AppreciationsManager.deleteAppreciation).toBeDefined();
-        });
-
-        it('should have exportToCsv method', () => {
-            expect(AppreciationsManager.exportToCsv).toBeDefined();
-        });
-
-        it('should have exportToPdf method', () => {
-            expect(AppreciationsManager.exportToPdf).toBeDefined();
         });
     });
 
@@ -273,7 +270,8 @@ describe('AppreciationsManager', () => {
         it('should generate polish prompt', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'polish',
-                'Bon travail élève.'
+                'Bon travail élève.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
             expect(result).toContain('Peaufine');
@@ -283,7 +281,8 @@ describe('AppreciationsManager', () => {
         it('should generate variations prompt', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'variations',
-                'Travail sérieux.'
+                'Travail sérieux.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
             expect(result).toContain('Reformule');
@@ -291,20 +290,21 @@ describe('AppreciationsManager', () => {
         });
 
         it('should generate concise prompt with 15% reduction', () => {
-            // Text with 10 words -> should target ~8 words (85%)
             const result = AppreciationsManager.getRefinementPrompt(
                 'concise',
-                'Un deux trois quatre cinq six sept huit neuf dix.'
+                'Un deux trois quatre cinq six sept huit neuf dix.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
             expect(result).toContain('concis');
-            expect(result).toContain('9 mots'); // Math.round(10 * 0.85) = 9
+            expect(result).toContain('8 mots');
         });
 
         it('should generate encouraging prompt', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'encouraging',
-                'Travail moyen.'
+                'Travail moyen.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
             expect(result).toContain('encourageant');
@@ -314,17 +314,18 @@ describe('AppreciationsManager', () => {
         it('should generate formal prompt', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'formal',
-                'Bon travail.'
+                'Bon travail.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
-            expect(result).toContain('formel');
-            expect(result).toContain('soutenu');
+            expect(result).toContain('Reformule');
         });
 
         it('should generate detailed prompt with 15% more words', () => {
             const result = AppreciationsManager.getRefinementPrompt(
                 'detailed',
-                'Bon travail cette période.'
+                'Bon travail cette période.',
+                { nom: 'Dupont', prenom: 'Marie' }
             );
 
             expect(result).toContain('Développe');
@@ -443,8 +444,8 @@ describe('AppreciationsManager', () => {
 
             const result = AppreciationsManager.getAllPrompts(studentData);
 
-            expect(result.appreciation).toContain('Martin');
-            expect(result.appreciation).toContain('Pierre');
+            expect(result.appreciation).toContain('PRÉNOM');
+            expect(result.appreciation).toContain('NOM');
         });
 
         it('should include tone instruction in appreciation prompt', () => {

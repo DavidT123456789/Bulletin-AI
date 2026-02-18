@@ -65,7 +65,7 @@ describe('AIService', () => {
             appState.googleApiKey = '';
             appState.currentAIModel = 'gemini-2.0-flash';
 
-            expect(() => AIService._getApiConfig('Test prompt')).toThrow('Clé Google manquante.');
+            expect(() => AIService._getApiConfig('Test prompt')).toThrow('Clé API Google manquante.');
         });
 
         it('should return correct config for Google provider', async () => {

@@ -12,6 +12,16 @@ vi.mock('../state/State.js', () => ({
         currentAIModel: 'gemini-2.5-flash',
         generatedResults: [],
         importJustCompleted: false
+    },
+    runtimeState: {
+        process: {
+            isMassImportCancelled: false
+        }
+    },
+    userSettings: {
+        academic: {
+            currentClassId: null
+        }
     }
 }));
 
@@ -48,7 +58,7 @@ vi.mock('../utils/RateLimiter.js', () => ({
 const mockAm = {
     generateAppreciation: vi.fn(),
     createResultObject: vi.fn((nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage) => ({
-        id: 'test-id-' + Date.now(),
+        id: 'test-id-' + nom,
         nom, prenom, appreciation, evolutions, studentData,
         errorMessage,
         timestamp: new Date().toISOString()
@@ -64,6 +74,9 @@ const mockUI = {
     updateOutputProgress: vi.fn(),
     resetProgressBar: vi.fn(),
     showNotification: vi.fn(),
+    showHeaderProgress: vi.fn(),
+    hideHeaderProgress: vi.fn(),
+    updateGenerateButtonState: vi.fn(),
     populateResultCard: vi.fn(() => {
         const div = document.createElement('div');
         div.classList = { add: vi.fn(), remove: vi.fn() };
@@ -81,12 +94,14 @@ const mockUI = {
 };
 
 import { MassImportManager } from './MassImportManager.js';
+import { appState } from '../state/State.js';
 
 describe('MassImportManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         MassImportManager.init(mockAm, mockApp, mockUI);
         MassImportManager.massImportAbortController = null;
+        appState.generatedResults = [];
     });
 
     afterEach(() => {
@@ -96,7 +111,6 @@ describe('MassImportManager', () => {
     describe('init', () => {
         it('should initialize the manager with dependencies', () => {
             MassImportManager.init(mockAm, mockApp, mockUI);
-            // No error means success - dependencies are stored internally
             expect(true).toBe(true);
         });
     });
@@ -113,8 +127,6 @@ describe('MassImportManager', () => {
 
         it('should do nothing if no controller exists', () => {
             MassImportManager.massImportAbortController = null;
-
-            // Should not throw
             expect(() => MassImportManager.cancelImport()).not.toThrow();
         });
     });
@@ -135,24 +147,7 @@ describe('MassImportManager', () => {
 
             await MassImportManager.processMassImport(students, 0);
 
-            expect(MassImportManager.massImportAbortController).toBeNull(); // Cleaned up after
-        });
-
-        it('should show progress area on start', async () => {
-            const students = [
-                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
-            ];
-
-            mockAm.generateAppreciation.mockResolvedValue({
-                id: 'test-id',
-                appreciation: 'Test',
-                studentData: { periods: {} },
-                evolutions: []
-            });
-
-            await MassImportManager.processMassImport(students, 0);
-
-            expect(mockUI.showOutputProgressArea).toHaveBeenCalled();
+            expect(MassImportManager.massImportAbortController).toBeNull();
         });
 
         it('should call generateAppreciation for each student', async () => {
@@ -182,29 +177,11 @@ describe('MassImportManager', () => {
 
             await MassImportManager.processMassImport(students, 0);
 
-            // Should create error result object
             expect(mockAm.createResultObject).toHaveBeenCalledWith(
                 'ERROR', 'Student', '', [],
                 expect.any(Object), {}, {},
                 expect.stringContaining('Erreur IA')
             );
-        });
-
-        it('should hide progress area on completion', async () => {
-            const students = [
-                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
-            ];
-
-            mockAm.generateAppreciation.mockResolvedValue({
-                id: 'test-id',
-                appreciation: 'Test',
-                studentData: { periods: {} },
-                evolutions: []
-            });
-
-            await MassImportManager.processMassImport(students, 0);
-
-            expect(mockUI.hideOutputProgressArea).toHaveBeenCalled();
         });
 
         it('should call renderResults after completion', async () => {
@@ -223,89 +200,96 @@ describe('MassImportManager', () => {
 
             expect(mockAm.renderResults).toHaveBeenCalled();
         });
-
-        it('should show success notification with count', async () => {
-            const students = [
-                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] },
-                { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 12 } }, statuses: [] }
-            ];
-
-            mockAm.generateAppreciation.mockResolvedValue({
-                id: 'test-id',
-                appreciation: 'Test',
-                studentData: { periods: {} },
-                evolutions: []
-            });
-
-            await MassImportManager.processMassImport(students, 1);
-
-            expect(mockUI.showNotification).toHaveBeenCalledWith(
-                expect.stringContaining('2/2'),
-                'success'
-            );
-        });
     });
 
     describe('_createPendingCards', () => {
-        it('should create cards for each student', () => {
+        it('should create result IDs for each student', () => {
             const students = [
                 { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] },
                 { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 12 } }, statuses: [] }
             ];
 
-            const cards = MassImportManager._createPendingCards(students);
+            const resultIds = MassImportManager._createPendingCards(students);
 
-            expect(cards.length).toBe(2);
-            expect(mockUI.populateResultCard).toHaveBeenCalledTimes(2);
+            expect(resultIds.length).toBe(2);
+            expect(mockAm.createResultObject).toHaveBeenCalledTimes(2);
         });
 
-        it('should show skeleton in each card', () => {
+        it('should add pending results to generatedResults', () => {
             const students = [
                 { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
             ];
 
             MassImportManager._createPendingCards(students);
 
-            expect(mockUI.showSkeletonInCard).toHaveBeenCalled();
+            expect(appState.generatedResults.length).toBe(1);
+            expect(appState.generatedResults[0].isPending).toBe(true);
+        });
+
+        it('should use existing results when existingId is provided', () => {
+            const existingResult = { id: 'existing-1', nom: 'MARTIN', prenom: 'Lucas', isPending: false };
+            appState.generatedResults = [existingResult];
+
+            const students = [
+                { nom: 'MARTIN', prenom: 'Lucas', existingId: 'existing-1', periods: { T1: { grade: 15 } }, statuses: [] }
+            ];
+
+            const resultIds = MassImportManager._createPendingCards(students);
+
+            expect(resultIds).toContain('existing-1');
+            expect(appState.generatedResults[0].isPending).toBe(true);
+        });
+
+        it('should call renderResults after creating cards', () => {
+            const students = [
+                { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
+            ];
+
+            MassImportManager._createPendingCards(students);
+
+            expect(mockAm.renderResults).toHaveBeenCalled();
         });
     });
 
     describe('_updatePendingCard', () => {
         it('should handle null card gracefully', async () => {
             await expect(
-                MassImportManager._updatePendingCard(null, {}, false)
+                MassImportManager._updatePendingCard(null, { nom: 'TEST', prenom: 'A' }, false)
             ).resolves.not.toThrow();
         });
 
-        it('should update card id from result object', async () => {
-            const mockCard = {
-                classList: { add: vi.fn(), remove: vi.fn() },
-                querySelector: vi.fn(() => null),
-                querySelectorAll: vi.fn(() => []),
-                dataset: {}
+        it('should update existing result in appState', async () => {
+            appState.generatedResults = [
+                { nom: 'MARTIN', prenom: 'Lucas', isPending: true, appreciation: '' }
+            ];
+
+            const resultObject = {
+                id: 'new-id-123',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                appreciation: 'Excellent travail'
             };
 
-            const resultObject = { id: 'new-id-123', appreciation: 'Test' };
+            await MassImportManager._updatePendingCard(null, resultObject, false);
 
-            await MassImportManager._updatePendingCard(mockCard, resultObject, false);
-
-            expect(mockCard.dataset.id).toBe('new-id-123');
+            expect(appState.generatedResults[0].appreciation).toBe('Excellent travail');
+            expect(appState.generatedResults[0].isPending).toBe(false);
         });
 
-        it('should add has-error class on error', async () => {
-            const addMock = vi.fn();
-            const mockCard = {
-                classList: { add: addMock, remove: vi.fn() },
-                querySelector: vi.fn(() => ({ innerHTML: '' })),
-                querySelectorAll: vi.fn(() => []),
-                dataset: {}
+        it('should push new result if not found in appState', async () => {
+            appState.generatedResults = [];
+
+            const resultObject = {
+                id: 'new-id',
+                nom: 'NEW',
+                prenom: 'Student',
+                appreciation: 'Good'
             };
 
-            const resultObject = { id: 'id', errorMessage: 'Test error' };
+            await MassImportManager._updatePendingCard(null, resultObject, false);
 
-            await MassImportManager._updatePendingCard(mockCard, resultObject, true);
-
-            expect(addMock).toHaveBeenCalledWith('has-error', 'just-errored');
+            expect(appState.generatedResults.length).toBe(1);
+            expect(appState.generatedResults[0].isPending).toBe(false);
         });
     });
 });

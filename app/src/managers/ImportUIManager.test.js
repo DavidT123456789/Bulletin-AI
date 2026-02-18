@@ -3,9 +3,9 @@
  * @module managers/ImportUIManager.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock des dépendances
+// Mock dependencies
 vi.mock('../state/State.js', () => ({
     appState: {
         massImportFormats: {},
@@ -17,24 +17,14 @@ vi.mock('../state/State.js', () => ({
 vi.mock('../utils/DOM.js', () => ({
     DOM: {
         massData: { value: '' },
-        clearImportBtn: { style: { display: 'none' } },
-        massImportPreview: { style: { display: 'none' }, innerHTML: '' },
-        importPreviewModal: { querySelector: vi.fn() },
-        separatorSelect: { value: '' },
-        customSeparatorInput: { style: { display: 'none' }, value: '' },
-        mappingHeaders: {
-            querySelector: vi.fn(() => null),
-            hasChildNodes: vi.fn(() => false),
-            appendChild: vi.fn(),
-            querySelectorAll: vi.fn(() => [])
+        massImportPreview: {
+            style: { display: 'none', animation: '' },
+            innerHTML: '',
+            offsetHeight: 0,
+            appendChild: vi.fn()
         },
-        mappingPreviewData: { innerHTML: '' },
-        importSavedFormatInfo: { innerHTML: '', style: { display: 'none' } },
-        strategyMergeRadio: { checked: false },
-        saveMappingCheckbox: { checked: false },
         importGenerateBtn: { disabled: false, innerHTML: '', dataset: {} },
         clearImportBtn: { disabled: false, style: { display: 'none' } },
-        massData: { disabled: false, value: '' },
         importFileBtn: { disabled: false },
         loadSampleDataLink: { disabled: false },
         dropZone: { classList: { toggle: vi.fn() } }
@@ -59,7 +49,6 @@ import { ImportUI } from './ImportUIManager.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { appState } from '../state/State.js';
-import { ModalUI } from './ModalUIManager.js';
 
 describe('ImportUIManager', () => {
     let mockUI;
@@ -79,7 +68,6 @@ describe('ImportUIManager', () => {
 
         // Reset DOM mocks
         DOM.massData.value = '';
-        DOM.clearImportBtn.style.display = 'none';
         DOM.massImportPreview.style.display = 'none';
         DOM.massImportPreview.innerHTML = '';
     });
@@ -91,7 +79,6 @@ describe('ImportUIManager', () => {
 
             ImportUI.init(ui, app);
 
-            // Vérifier que l'init ne lance pas d'erreur
             expect(true).toBe(true);
         });
     });
@@ -166,7 +153,7 @@ describe('ImportUIManager', () => {
             expect(selects[2].value).toBe('IGNORE');
         });
 
-        it('should guess mapping from headers when no saved format', () => {
+        it('should guess mapping from content when no saved format', () => {
             appState.massImportFormats = {};
 
             const selects = [
@@ -184,7 +171,6 @@ describe('ImportUIManager', () => {
 
             ImportUI._guessInitialMapping(selects, firstLineData, options);
 
-            // La fonction doit avoir assigné les valeurs
             expect(selects.some(s => s.value !== '')).toBe(true);
         });
 
@@ -206,21 +192,32 @@ describe('ImportUIManager', () => {
     });
 
     describe('updateMassImportPreview()', () => {
+        let mockCountEl;
+        let mockSepNameEl;
+        let mockPillsContainer;
+        let mockActionsContainer;
+
+        beforeEach(() => {
+            mockCountEl = { textContent: '' };
+            mockSepNameEl = { textContent: '' };
+            mockPillsContainer = { innerHTML: '' };
+            mockActionsContainer = { style: { display: '' } };
+
+            document.getElementById = vi.fn((id) => {
+                if (id === 'previewStudentCount') return mockCountEl;
+                if (id === 'previewSeparatorName') return mockSepNameEl;
+                if (id === 'previewMappingPills') return mockPillsContainer;
+                if (id === 'massImportActions') return mockActionsContainer;
+                return null;
+            });
+        });
+
         it('should hide preview when no text', () => {
             DOM.massData.value = '';
 
             ImportUI.updateMassImportPreview();
 
-            expect(DOM.clearImportBtn.style.display).toBe('none');
             expect(DOM.massImportPreview.style.display).toBe('none');
-        });
-
-        it('should show clear button when text is present', () => {
-            DOM.massData.value = 'Jean Dupont\t15\nMarie Martin\t14';
-
-            ImportUI.updateMassImportPreview();
-
-            expect(DOM.clearImportBtn.style.display).toBe('inline-flex');
         });
 
         it('should hide preview when only whitespace', () => {
@@ -231,32 +228,46 @@ describe('ImportUIManager', () => {
             expect(DOM.massImportPreview.style.display).toBe('none');
         });
 
-        it('should display student count in preview', () => {
+        it('should show actions container when text is present', () => {
             DOM.massData.value = 'Jean Dupont\t15\nMarie Martin\t14';
 
             ImportUI.updateMassImportPreview();
 
-            expect(DOM.massImportPreview.innerHTML).toContain('2');
-            expect(DOM.massImportPreview.innerHTML).toContain('élèves');
+            expect(mockActionsContainer.style.display).toBe('flex');
         });
 
-        it('should use singular "élève" for single student', () => {
+        it('should update student count element', () => {
+            DOM.massData.value = 'Jean Dupont\t15\nMarie Martin\t14';
+
+            ImportUI.updateMassImportPreview();
+
+            expect(mockCountEl.textContent).toBe(2);
+        });
+
+        it('should update separator name element', () => {
+            DOM.massData.value = 'Jean Dupont\t15';
+            Utils.detectSeparator.mockReturnValue('\t');
+
+            ImportUI.updateMassImportPreview();
+
+            expect(mockSepNameEl.textContent).toBe('Tabulation');
+        });
+
+        it('should show preview block when text is present', () => {
             DOM.massData.value = 'Jean Dupont\t15';
 
             ImportUI.updateMassImportPreview();
 
-            expect(DOM.massImportPreview.innerHTML).toContain('1');
-            expect(DOM.massImportPreview.innerHTML).toContain('élève');
-            expect(DOM.massImportPreview.innerHTML).not.toContain('élèves');
+            expect(DOM.massImportPreview.style.display).toBe('block');
         });
 
-        it('should show warning when only one column detected', () => {
+        it('should append warning when only one column detected', () => {
             DOM.massData.value = 'JeanDupont15\nMarieMartin14';
             Utils.detectSeparator.mockReturnValue('\t');
 
             ImportUI.updateMassImportPreview();
 
-            expect(DOM.massImportPreview.innerHTML).toContain('⚠️');
+            expect(DOM.massImportPreview.appendChild).toHaveBeenCalled();
         });
 
         it('should call initTooltips after update', () => {
@@ -267,126 +278,20 @@ describe('ImportUIManager', () => {
             expect(mockUI.initTooltips).toHaveBeenCalled();
         });
 
-        it('should display detected separator name', () => {
-            DOM.massData.value = 'Jean Dupont\t15';
-            Utils.detectSeparator.mockReturnValue('\t');
+        it('should disable import button when no text', () => {
+            DOM.massData.value = '';
 
             ImportUI.updateMassImportPreview();
 
-            expect(DOM.massImportPreview.innerHTML).toContain('Tabulation');
-        });
-    });
-
-    describe('openImportPreviewModal()', () => {
-        beforeEach(() => {
-            DOM.importPreviewModal.querySelector = vi.fn(() => ({ open: false }));
-            DOM.mappingHeaders.querySelector = vi.fn(() => document.createElement('tr'));
-            DOM.mappingHeaders.querySelectorAll = vi.fn(() => []);
-            // Ajouter appendChild au mock
-            DOM.mappingPreviewData.appendChild = vi.fn();
+            expect(DOM.importGenerateBtn.disabled).toBe(true);
         });
 
-        it('should open the modal', () => {
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '\t'
-            };
+        it('should enable import button when text is present', () => {
+            DOM.massData.value = 'Jean Dupont\t15';
 
-            ImportUI.openImportPreviewModal(mappingState);
+            ImportUI.updateMassImportPreview();
 
-            expect(ModalUI.openModal).toHaveBeenCalledWith(DOM.importPreviewModal);
-        });
-
-        it('should set separator select to tab for tab separator', () => {
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '\t'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.separatorSelect.value).toBe('tab');
-        });
-
-        it('should set separator select for comma', () => {
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: ','
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.separatorSelect.value).toBe(',');
-        });
-
-        it('should handle custom separator', () => {
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '#'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.separatorSelect.value).toBe('custom');
-            expect(DOM.customSeparatorInput.value).toBe('#');
-        });
-
-        it('should show saved format info when format exists', () => {
-            appState.massImportFormats = {
-                trimestre: { T1: '{NOM_PRENOM}' }
-            };
-
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '\t'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.importSavedFormatInfo.style.display).toBe('flex');
-        });
-
-        it('should hide saved format info when no format exists', () => {
-            appState.massImportFormats = {};
-
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '\t'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.importSavedFormatInfo.style.display).toBe('none');
-        });
-
-        it('should handle empty lines array', () => {
-            const mappingState = {
-                lines: [],
-                columnCount: 0,
-                separator: '\t'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(DOM.mappingPreviewData.innerHTML).toContain('Aucune donnée');
-        });
-
-        it('should call App.updateImportPreview', () => {
-            const mappingState = {
-                lines: [['Jean', '15']],
-                columnCount: 2,
-                separator: '\t'
-            };
-
-            ImportUI.openImportPreviewModal(mappingState);
-
-            expect(mockApp.updateImportPreview).toHaveBeenCalled();
+            expect(DOM.importGenerateBtn.disabled).toBe(false);
         });
     });
 
@@ -400,9 +305,7 @@ describe('ImportUIManager', () => {
         });
 
         it('should enable elements when not processing', () => {
-            // First set to processing
             ImportUI.setMassImportProcessingState(true);
-            // Then set to not processing
             ImportUI.setMassImportProcessingState(false);
 
             expect(DOM.importGenerateBtn.disabled).toBe(false);

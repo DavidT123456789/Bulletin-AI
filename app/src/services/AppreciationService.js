@@ -86,7 +86,7 @@ export const AppreciationService = {
      * @deprecated Délègue maintenant à PromptService.getRefinementPrompt() pour éviter la duplication de code
      */
     getRefinementPrompt(type, original, context = null) {
-        return PromptService.getRefinementPrompt(type, original, context);
+        return PromptService.getRefinementPrompt(type, original, context ? { context } : {});
     },
 
     /**

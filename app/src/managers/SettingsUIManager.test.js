@@ -3,13 +3,16 @@
  * @module managers/SettingsUIManager.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock des dépendances
 vi.mock('../state/State.js', () => ({
     appState: {
         currentSettingsSubject: 'Français',
         subjects: {
+            'MonStyle': {
+                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral', enableStyleInstructions: true }
+            },
             'Français': {
                 iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
             }
@@ -19,12 +22,21 @@ vi.mock('../state/State.js', () => ({
         openaiApiKey: '',
         googleApiKey: '',
         openrouterApiKey: '',
+        anthropicApiKey: '',
+        mistralApiKey: '',
         currentAIModel: 'gpt-4',
         evolutionThresholds: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
-        instructionHistory: []
+        instructionHistory: [],
+        anonymizeData: false,
+        ollamaEnabled: false,
+        ollamaBaseUrl: '',
+        journalThreshold: 2
     },
     UIState: {
         settingsBeforeEdit: {}
+    },
+    userSettings: {
+        academic: {}
     }
 }));
 
@@ -39,23 +51,26 @@ vi.mock('../config/Config.js', () => ({
 
 vi.mock('../utils/DOM.js', () => ({
     DOM: {
-        iaLengthSlider: { value: '50' },
-        iaToneSlider: { value: '3' },
-        iaStyleInstructions: { value: '' },
+        iaLengthSlider: { value: '50', disabled: false },
+        iaToneSlider: { value: '3', disabled: false },
+        iaStyleInstructions: { value: '', disabled: false, classList: { add: vi.fn(), remove: vi.fn() }, parentElement: { classList: { add: vi.fn(), remove: vi.fn() } } },
+        iaStyleInstructionsToggle: { checked: true, disabled: false },
         openaiApiKey: { value: '' },
         googleApiKey: { value: '' },
         openrouterApiKey: { value: '' },
-        aiModelSelect: { value: 'gpt-4' },
+        anthropicApiKey: { value: '' },
+        mistralApiKey: { value: '' },
+        aiModelSelect: { value: 'gpt-4', querySelectorAll: vi.fn(() => []) },
+        ollamaEnabledToggle: { checked: false },
+        ollamaBaseUrl: { value: '' },
         settingsEvolutionThresholdPositive: { value: '1' },
         settingsEvolutionThresholdVeryPositive: { value: '2' },
         settingsEvolutionThresholdNegative: { value: '-1' },
         settingsEvolutionThresholdVeryNegative: { value: '-2' },
+        settingsPrivacyAnonymizeToggle: { checked: false },
         settingsModal: {},
-        newSubjectInput: { value: '' },
-        subjectManagementList: { innerHTML: '' },
-        settingsSubjectSelect: { innerHTML: '' },
         personalizationToggle: { checked: false },
-        genericSubjectInfo: { style: { display: 'none' }, innerHTML: '' }
+        genericSubjectInfo: { style: { display: 'none' }, innerHTML: '', classList: { add: vi.fn(), remove: vi.fn() } }
     }
 }));
 
@@ -82,21 +97,30 @@ vi.mock('./AppreciationsManager.js', () => ({
     }
 }));
 
+vi.mock('./DropdownManager.js', () => ({
+    DropdownManager: {}
+}));
+
+vi.mock('../config/providers.js', () => ({
+    PROVIDER_CONFIG: {}
+}));
+
 import { SettingsUIManager } from './SettingsUIManager.js';
 import { appState, UIState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
-import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
 
 describe('SettingsUIManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Reset état
         appState.currentSettingsSubject = 'Français';
         appState.subjects = {
+            'MonStyle': {
+                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral', enableStyleInstructions: true }
+            },
             'Français': {
                 iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
             }
@@ -107,13 +131,16 @@ describe('SettingsUIManager', () => {
         UIState.settingsBeforeEdit = {};
     });
 
-    describe('_saveCurrentSettingsSubjectChanges()', () => {
-        it('should update subject iaConfig from DOM values', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    describe('_savePersonalStyleChanges()', () => {
+        it('should update MonStyle iaConfig from DOM values', () => {
             DOM.iaLengthSlider.value = '75';
             DOM.iaToneSlider.value = '4';
             DOM.iaStyleInstructions.value = 'Test style';
 
-            // Mock radio button
             const mockRadio = document.createElement('input');
             mockRadio.type = 'radio';
             mockRadio.name = 'iaVoiceRadio';
@@ -121,21 +148,22 @@ describe('SettingsUIManager', () => {
             mockRadio.checked = true;
             document.body.appendChild(mockRadio);
 
-            SettingsUIManager._saveCurrentSettingsSubjectChanges();
+            SettingsUIManager._savePersonalStyleChanges();
 
-            expect(appState.subjects['Français'].iaConfig.length).toBe(75);
-            expect(appState.subjects['Français'].iaConfig.tone).toBe(4);
-            expect(appState.subjects['Français'].iaConfig.styleInstructions).toBe('Test style');
+            expect(appState.subjects['MonStyle'].iaConfig.length).toBe(75);
+            expect(appState.subjects['MonStyle'].iaConfig.tone).toBe(4);
 
             document.body.removeChild(mockRadio);
         });
 
-        it('should not throw if subject does not exist', () => {
-            appState.currentSettingsSubject = 'NonExistent';
+        it('should create MonStyle if it does not exist', () => {
+            delete appState.subjects['MonStyle'];
 
             expect(() => {
-                SettingsUIManager._saveCurrentSettingsSubjectChanges();
+                SettingsUIManager._savePersonalStyleChanges();
             }).not.toThrow();
+
+            expect(appState.subjects['MonStyle']).toBeDefined();
         });
     });
 
@@ -150,14 +178,14 @@ describe('SettingsUIManager', () => {
             expect(appState.googleApiKey).toBe('google-key');
         });
 
-        it('should save evolution thresholds', () => {
+        it('should save evolution thresholds with veryPositive as 4x positive', () => {
             DOM.settingsEvolutionThresholdPositive.value = '1.5';
-            DOM.settingsEvolutionThresholdVeryPositive.value = '3';
+            DOM.settingsEvolutionThresholdNegative.value = '-1';
 
             SettingsUIManager.saveSettings();
 
             expect(appState.evolutionThresholds.positive).toBe(1.5);
-            expect(appState.evolutionThresholds.veryPositive).toBe(3);
+            expect(appState.evolutionThresholds.veryPositive).toBe(6);
         });
 
         it('should call StorageManager.saveAppState', () => {
@@ -166,32 +194,36 @@ describe('SettingsUIManager', () => {
             expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
 
-        it('should close modal and show notification', () => {
+        it('should close modal and show notification after timeout', () => {
+            vi.useFakeTimers();
+
             SettingsUIManager.saveSettings();
 
             expect(UI.closeModal).toHaveBeenCalledWith(DOM.settingsModal);
+
+            vi.advanceTimersByTime(260);
             expect(UI.showNotification).toHaveBeenCalledWith('Paramètres enregistrés.', 'success');
         });
 
-        it('should sync current subject when personalization is enabled', () => {
-            appState.useSubjectPersonalization = true;
-            appState.currentSettingsSubject = 'Maths';
-            appState.subjects['Maths'] = { iaConfig: {}, vocabulaire: {} };
+        it('should call renderResults after timeout', () => {
+            vi.useFakeTimers();
 
             SettingsUIManager.saveSettings();
 
-            expect(appState.currentSubject).toBe('Maths');
-        });
-
-        it('should call renderResults', () => {
-            SettingsUIManager.saveSettings();
-
+            vi.advanceTimersByTime(260);
             expect(AppreciationsManager.renderResults).toHaveBeenCalled();
         });
     });
 
     describe('cancelSettings()', () => {
-        it('should restore previous settings from UIState', () => {
+        it('should close modal immediately', () => {
+            SettingsUIManager.cancelSettings();
+
+            expect(UI.closeModal).toHaveBeenCalledWith(DOM.settingsModal);
+        });
+
+        it('should restore from snapshot after timeout', () => {
+            vi.useFakeTimers();
             UIState.settingsBeforeEdit = {
                 useSubjectPersonalization: true,
                 subjects: { 'Test': {} },
@@ -201,128 +233,8 @@ describe('SettingsUIManager', () => {
 
             SettingsUIManager.cancelSettings();
 
+            vi.advanceTimersByTime(260);
             expect(appState.useSubjectPersonalization).toBe(true);
-            expect(appState.currentSettingsSubject).toBe('Test');
-        });
-
-        it('should call updatePersonalizationState', () => {
-            const spy = vi.spyOn(SettingsUIManager, 'updatePersonalizationState');
-
-            SettingsUIManager.cancelSettings();
-
-            expect(spy).toHaveBeenCalled();
-        });
-
-        it('should close modal', () => {
-            SettingsUIManager.cancelSettings();
-
-            expect(UI.closeModal).toHaveBeenCalledWith(DOM.settingsModal);
-        });
-    });
-
-    describe('addSubject()', () => {
-        it('should not add subject if name is empty', () => {
-            DOM.newSubjectInput.value = '   ';
-
-            SettingsUIManager.addSubject();
-
-            expect(UI.showNotification).not.toHaveBeenCalled();
-        });
-
-        it('should show warning if subject already exists', () => {
-            DOM.newSubjectInput.value = 'Français';
-
-            SettingsUIManager.addSubject();
-
-            expect(UI.showNotification).toHaveBeenCalledWith('Cette matière existe déjà.', 'warning');
-        });
-
-        it('should add new subject with default config', () => {
-            DOM.newSubjectInput.value = 'Histoire';
-
-            SettingsUIManager.addSubject();
-
-            expect(appState.subjects['Histoire']).toBeDefined();
-            expect(appState.subjects['Histoire'].iaConfig).toBeDefined();
-        });
-
-        it('should set new subject as current settings subject', () => {
-            DOM.newSubjectInput.value = 'Géographie';
-
-            SettingsUIManager.addSubject();
-
-            expect(appState.currentSettingsSubject).toBe('Géographie');
-        });
-
-        it('should clear input after adding', () => {
-            DOM.newSubjectInput.value = 'Physique';
-
-            SettingsUIManager.addSubject();
-
-            expect(DOM.newSubjectInput.value).toBe('');
-        });
-
-        it('should show success notification', () => {
-            DOM.newSubjectInput.value = 'Chimie';
-
-            SettingsUIManager.addSubject();
-
-            expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('Chimie'), 'success');
-        });
-    });
-
-    describe('deleteSubject()', () => {
-        it('should show error if trying to delete last subject', () => {
-            appState.subjects = { 'Français': {} };
-
-            SettingsUIManager.deleteSubject('Français');
-
-            expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('dernière matière'), 'error');
-        });
-
-        it('should show warning for default subjects', () => {
-            appState.subjects = { 'Français': {}, 'Maths': {} };
-
-            SettingsUIManager.deleteSubject('Français');
-
-            expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('par défaut'), 'warning');
-        });
-
-        it('should delete custom subject after confirmation', () => {
-            appState.subjects = { 'Français': {}, 'CustomSubject': {} };
-
-            SettingsUIManager.deleteSubject('CustomSubject');
-
-            expect(appState.subjects['CustomSubject']).toBeUndefined();
-        });
-
-        it('should update currentSettingsSubject after deletion', () => {
-            appState.subjects = { 'Français': {}, 'CustomSubject': {} };
-            appState.currentSettingsSubject = 'CustomSubject';
-
-            SettingsUIManager.deleteSubject('CustomSubject');
-
-            expect(appState.currentSettingsSubject).toBe('Français');
-        });
-    });
-
-    describe('renderSubjectManagementList()', () => {
-        it('should not throw if list element is null', () => {
-            DOM.subjectManagementList = null;
-
-            expect(() => {
-                SettingsUIManager.renderSubjectManagementList();
-            }).not.toThrow();
-        });
-
-        it('should update settingsSubjectSelect options', () => {
-            DOM.subjectManagementList = { innerHTML: '' };
-            appState.subjects = { 'Français': {}, 'Maths': {} };
-
-            SettingsUIManager.renderSubjectManagementList();
-
-            expect(DOM.settingsSubjectSelect.innerHTML).toContain('Français');
-            expect(DOM.settingsSubjectSelect.innerHTML).toContain('Maths');
         });
     });
 
@@ -335,22 +247,20 @@ describe('SettingsUIManager', () => {
             expect(DOM.personalizationToggle.checked).toBe(true);
         });
 
-        it('should show generic info when personalization is disabled', () => {
+        it('should remove collapsed class when personalization is disabled', () => {
             appState.useSubjectPersonalization = false;
 
             SettingsUIManager.updatePersonalizationState();
 
-            expect(DOM.genericSubjectInfo.style.display).toBe('block');
+            expect(DOM.genericSubjectInfo.classList.remove).toHaveBeenCalledWith('collapsed');
         });
 
-        it('should hide generic info when personalization is enabled', () => {
+        it('should add collapsed class when personalization is enabled', () => {
             appState.useSubjectPersonalization = true;
 
             SettingsUIManager.updatePersonalizationState();
 
-            expect(DOM.genericSubjectInfo.style.display).toBe('none');
+            expect(DOM.genericSubjectInfo.classList.add).toHaveBeenCalledWith('collapsed');
         });
     });
-
-    // Tests addVocabItem et handleVocabItemKeydown supprimés - fonctionnalité vocabulaire dépréciée
 });

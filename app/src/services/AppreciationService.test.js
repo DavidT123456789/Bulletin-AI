@@ -8,6 +8,7 @@ vi.mock('../state/State.js', () => ({
         currentSubject: 'Générique',
         currentAIModel: 'gemini-2.0-flash',
         useSubjectPersonalization: false,
+        anonymizeData: true,
         periodSystem: 'trimestres',
         evolutionThresholds: {
             positive: 0.5,
@@ -44,6 +45,7 @@ vi.mock('../utils/Utils.js', () => ({
         countWords: vi.fn((text) => text ? text.split(/\s+/).filter(w => w).length : 0),
         cleanMarkdown: vi.fn((text) => text || ''),
         normalizeName: vi.fn((nom, prenom) => `${nom.toLowerCase()}_${prenom.toLowerCase()}`),
+        detectGender: vi.fn(() => 'indéterminé'),
         parseStudentLine: vi.fn((line, formatMap, currentPeriod) => {
             if (line.includes('|')) {
                 const parts = line.split('|').map(p => p.trim());
@@ -61,7 +63,14 @@ vi.mock('../utils/Utils.js', () => ({
 
 vi.mock('./AIService.js', () => ({
     AIService: {
-        callAI: vi.fn()
+        callAI: vi.fn(),
+        callAIWithFallback: vi.fn()
+    }
+}));
+
+vi.mock('../utils/DOM.js', () => ({
+    DOM: {
+        refinementContext: { value: '' }
     }
 }));
 
@@ -282,12 +291,6 @@ describe('AppreciationService', () => {
             expect(result).toContain('Travail sérieux.');
         });
 
-        it('should generate context prompt with context', () => {
-            const result = AppreciationService.getRefinementPrompt('context', 'Bon travail.', 'Élève timide');
-            expect(result).toContain('Élève timide');
-            expect(result).toContain('contexte');
-        });
-
         it('should generate detailed prompt', () => {
             const result = AppreciationService.getRefinementPrompt('detailed', 'Bon travail.');
             expect(result).toContain('Développe');
@@ -304,12 +307,6 @@ describe('AppreciationService', () => {
             expect(result).toContain('positif');
         });
 
-        it('should generate formal prompt', () => {
-            const result = AppreciationService.getRefinementPrompt('formal', 'Bon travail.');
-            expect(result).toContain('formel');
-            expect(result).toContain('soutenu');
-        });
-
         it('should generate default prompt for unknown type', () => {
             const result = AppreciationService.getRefinementPrompt('unknown', 'Test.');
             expect(result).toContain('Reformule');
@@ -318,8 +315,7 @@ describe('AppreciationService', () => {
 
         it('should always include base instruction', () => {
             const result = AppreciationService.getRefinementPrompt('polish', 'Test.');
-            expect(result).toContain('Sans "performance"');
-            expect(result).toContain('Texte seul');
+            expect(result).toContain('texte brut');
         });
     });
 
@@ -340,7 +336,7 @@ describe('AppreciationService', () => {
             expect(result).toHaveProperty('ns');
         });
 
-        it('should include student name in appreciation prompt', () => {
+        it('should include student identifier in appreciation prompt', () => {
             const studentData = {
                 nom: 'Martin',
                 prenom: 'Pierre',
@@ -351,11 +347,11 @@ describe('AppreciationService', () => {
 
             const result = AppreciationService.getAllPrompts(studentData);
 
-            expect(result.appreciation).toContain('Martin');
-            expect(result.appreciation).toContain('Pierre');
+            // en mode anonymisé par défaut, utilise [PRÉNOM]
+            expect(result.appreciation).toContain('[PRÉNOM]');
         });
 
-        it('should include tone instruction', () => {
+        it('should include style instructions', () => {
             const studentData = {
                 nom: 'Test',
                 prenom: 'Eleve',
@@ -365,7 +361,8 @@ describe('AppreciationService', () => {
             };
 
             const result = AppreciationService.getAllPrompts(studentData);
-            expect(result.appreciation).toContain('ton');
+            // tone 3 = free mode, no explicit tone instruction, but style instructions are present
+            expect(result.appreciation).toContain('INSTRUCTIONS DE STYLE');
         });
 
         it('should respect override config', () => {

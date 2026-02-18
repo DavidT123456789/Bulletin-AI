@@ -66,7 +66,6 @@ export const SyncService = {
     async init() {
         // Load saved provider preference
         const savedProvider = localStorage.getItem('bulletin_sync_provider');
-        // this.autoSyncEnabled = localStorage.getItem('bulletin_sync_auto') === 'true'; // Removed by request
         this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync')) || null;
         this._isOnline = navigator.onLine;
         this._wasConfigured = !!savedProvider;

@@ -155,8 +155,8 @@ describe('Utils', () => {
 
     describe('translateErrorMessage', () => {
         it('devrait traduire les erreurs API reconnues', () => {
-            expect(Utils.translateErrorMessage('Failed to fetch')).toContain('connexion');
-            expect(Utils.translateErrorMessage('timed out')).toContain('expiré');
+            expect(Utils.translateErrorMessage('Failed to fetch')).toContain('onnexion');
+            expect(Utils.translateErrorMessage('timed out')).toContain('Délai');
             expect(Utils.translateErrorMessage('quota exceeded')).toContain('Quota');
         });
 

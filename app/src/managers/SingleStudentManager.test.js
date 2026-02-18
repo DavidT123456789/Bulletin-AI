@@ -14,6 +14,16 @@ vi.mock('../state/State.js', () => ({
         currentEditingId: null,
         useSubjectPersonalization: true,
         currentSubject: 'Français'
+    },
+    userSettings: {
+        academic: {
+            currentClassId: null
+        }
+    },
+    runtimeState: {
+        data: {
+            deletedItems: { students: [], classes: [] }
+        }
     }
 }));
 
@@ -22,11 +32,13 @@ vi.mock('../utils/DOM.js', () => ({
         nomInput: { value: '', focus: vi.fn() },
         prenomInput: { value: '' },
         negativeInstructions: { value: '' },
+        currentPeriodGrade: { value: '' },
         generateAndNextBtn: {},
         generateAppreciationBtn: {},
         actualSingleStudentForm: { reset: vi.fn() },
         loadStudentSelect: { value: '' },
-        appLayout: { classList: { contains: vi.fn(() => false) } }
+        appLayout: { classList: { contains: vi.fn(() => false) } },
+        searchInput: { value: '' }
     }
 }));
 
@@ -51,7 +63,17 @@ vi.mock('./UIManager.js', () => ({
         updateStats: vi.fn(),
         updateResultsHeaderVisibility: vi.fn(),
         updateResultCard: vi.fn(),
-        toggleSidebar: vi.fn()
+        renderResultCard: vi.fn(),
+        toggleSidebar: vi.fn(),
+        showHeaderProgress: vi.fn(),
+        hideHeaderProgress: vi.fn(),
+        updateGenerateButtonState: vi.fn()
+    }
+}));
+
+vi.mock('./AppreciationsManager.js', () => ({
+    AppreciationsManager: {
+        renderResults: vi.fn()
     }
 }));
 
@@ -177,8 +199,8 @@ describe('SingleStudentManager', () => {
         });
 
         it('should parse numeric grades correctly', () => {
+            DOM.currentPeriodGrade.value = '12,5';
             document.getElementById = vi.fn((id) => {
-                if (id === 'moyT1') return { value: '12,5' };
                 if (id === 'appT1') return { value: 'Bon travail' };
                 return { value: '' };
             });
@@ -309,6 +331,13 @@ describe('SingleStudentManager', () => {
 
         beforeEach(() => {
             appState.generatedResults = [mockResult];
+            // loadIntoForm accesses getElementById for grade/appreciation inputs
+            document.getElementById = vi.fn((id) => {
+                if (id === 'searchInput') return { value: '' };
+                if (id.startsWith('moy')) return { value: '' };
+                if (id.startsWith('app')) return { value: '' };
+                return null;
+            });
         });
 
         it('should reset form if no id provided', () => {
@@ -360,20 +389,27 @@ describe('SingleStudentManager', () => {
             appState.filteredResults = [{ id: 'test-id' }];
         });
 
-        it('should remove result from generatedResults', () => {
+        it('should remove result from generatedResults', async () => {
             SingleStudentManager.delete('test-id');
+            // showCustomConfirm callback is async, give it time to complete
+            await vi.dynamicImportSettled();
+            await new Promise(r => setTimeout(r, 0));
 
             expect(appState.generatedResults).toHaveLength(0);
         });
 
-        it('should save app state', () => {
+        it('should save app state', async () => {
             SingleStudentManager.delete('test-id');
+            await vi.dynamicImportSettled();
+            await new Promise(r => setTimeout(r, 0));
 
             expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
 
-        it('should show success notification', () => {
+        it('should show success notification', async () => {
             SingleStudentManager.delete('test-id');
+            await vi.dynamicImportSettled();
+            await new Promise(r => setTimeout(r, 0));
 
             expect(UI.showNotification).toHaveBeenCalledWith('Supprimée.', 'success');
         });

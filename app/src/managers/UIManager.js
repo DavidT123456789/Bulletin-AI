@@ -52,6 +52,8 @@ const NOTIF_ICONS = {
     info: '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>'
 };
 
+const GLIDER_TRANSITION = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+
 /**
  * Module de gestion de l'interface utilisateur.
  * @namespace UI
@@ -968,8 +970,6 @@ export const UI = {
     },
 
     // Legacy delegations - now redirect to header chip
-    showOutputProgressArea() { /* Deprecated - use showHeaderProgress */ },
-    hideOutputProgressArea() { /* Deprecated - use hideHeaderProgress */ },
     updateOutputProgress(cur, total, studentName) { this.showHeaderProgress(cur, total, studentName); },
     resetProgressBar() { this.resetHeaderProgress(); },
     showSettingsTab(tabName) { FormUI.showSettingsTab(tabName); },
@@ -1133,9 +1133,6 @@ export const UI = {
      * Initialise les animations "Glider" pour les sélecteurs.
      */
     initGliders() {
-        // Transition CSS explicite pour la fluidité
-        const GLIDER_TRANSITION = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-
         // Exclude welcome modal selectors - they use standard CSS :checked/:active styles
         // This avoids the "popping" effect when navigating between steps
         const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .generation-mode-selector:not(#welcomeModal .generation-mode-selector), .provider-selector-compact');
@@ -1198,9 +1195,6 @@ export const UI = {
         if (!container) return;
         const glider = container.querySelector('.selector-glider');
         if (!glider) return;
-
-        // Transition CSS explicite pour la fluidité
-        const GLIDER_TRANSITION = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
 
         let activeEl;
         // Détection de l'élément actif selon le type

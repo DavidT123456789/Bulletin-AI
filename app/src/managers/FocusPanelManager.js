@@ -1475,9 +1475,10 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
         if (!result) return;
 
+        const currentPeriod = appState.currentPeriod;
+
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
-            const currentPeriod = appState.currentPeriod;
             if (!result.studentData.periods[currentPeriod]) {
                 result.studentData.periods[currentPeriod] = {};
             }
@@ -1488,7 +1489,6 @@ export const FocusPanelManager = {
         const gradeInput = document.querySelector('.timeline-period.current .timeline-grade-input');
         if (gradeInput) {
             const gradeStr = gradeInput.value.trim().replace(',', '.');
-            const currentPeriod = appState.currentPeriod;
             if (!result.studentData.periods[currentPeriod]) {
                 result.studentData.periods[currentPeriod] = {};
             }
@@ -1504,7 +1504,6 @@ export const FocusPanelManager = {
             const content = appreciationEl.innerHTML;
             const isSkeleton = content.includes('appreciation-skeleton');
             const textContent = appreciationEl.textContent.trim();
-            const currentPeriod = appState.currentPeriod;
 
             if (content && textContent !== '' && !isSkeleton) {
                 // PERIOD GUARD: Only save DOM content into the current period if it genuinely
@@ -1528,15 +1527,11 @@ export const FocusPanelManager = {
             } else if (textContent === '') {
                 // User explicitly cleared the appreciation
                 result.appreciation = '';
-                const currentPeriod = appState.currentPeriod;
                 if (result.studentData.periods[currentPeriod]) {
                     result.studentData.periods[currentPeriod].appreciation = '';
                 }
             }
         }
-
-        // Note: History is now unified and managed directly in result.history by FocusPanelHistory
-        // No need to save separately - it persists automatically
 
         // Persist to storage
         StorageManager.saveAppState();
@@ -2015,7 +2010,6 @@ export const FocusPanelManager = {
      */
     _openSettingsPanel() {
         const panel = document.getElementById('focusSettingsPanel');
-        // const overlay = document.getElementById('focusSettingsOverlay'); // Overlay removed for Context Push
         if (panel) panel.classList.add('active');
 
         // Push Layout: Add class to body to shrink main content
@@ -2028,7 +2022,6 @@ export const FocusPanelManager = {
      */
     _closeSettingsPanel() {
         const panel = document.getElementById('focusSettingsPanel');
-        // const overlay = document.getElementById('focusSettingsOverlay');
         if (panel) panel.classList.remove('active');
 
         // Release Push Layout

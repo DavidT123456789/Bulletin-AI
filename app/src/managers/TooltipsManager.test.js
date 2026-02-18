@@ -6,6 +6,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TooltipsUI } from './TooltipsManager.js';
 
+vi.mock('./ModalUIManager.js', () => ({
+    ModalUI: {
+        _isIgnoringTooltips: false
+    }
+}));
+
 describe('TooltipsManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -91,8 +97,8 @@ describe('TooltipsManager', () => {
 
             expect(mockTippy).toHaveBeenCalledWith('[data-tooltip]', expect.objectContaining({
                 theme: 'custom-theme',
-                animation: 'shift-away',
-                duration: [300, 200],
+                animation: 'organic-scale',
+                duration: [250, 150],
                 allowHTML: true,
                 interactive: false,
                 hideOnClick: true,
@@ -100,26 +106,13 @@ describe('TooltipsManager', () => {
             }));
         });
 
-        it('should configure tippy with manual trigger on touch devices', () => {
-            // Mock matchMedia for touch
-            window.matchMedia = vi.fn().mockImplementation(query => ({
-                matches: query === '(pointer: coarse)' ? true : false,
-                media: query,
-                onchange: null,
-                addListener: vi.fn(),
-                removeListener: vi.fn(),
-                addEventListener: vi.fn(),
-                removeEventListener: vi.fn(),
-                dispatchEvent: vi.fn(),
-            }));
-
+        it('should always include touch hold config', () => {
             const mockTippy = vi.fn(() => []);
             window.tippy = mockTippy;
 
             TooltipsUI.initTooltips();
 
             expect(mockTippy).toHaveBeenCalledWith('[data-tooltip]', expect.objectContaining({
-                trigger: 'manual',
                 touch: ['hold', 500]
             }));
         });

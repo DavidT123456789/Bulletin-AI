@@ -52,7 +52,9 @@ vi.mock('./StorageManager.js', () => ({
 vi.mock('../services/AIService.js', () => ({
     AIService: {
         callAI: vi.fn(),
-        getAvailableModels: vi.fn()
+        getAvailableModels: vi.fn(),
+        _hasApiKeyForModel: vi.fn(() => true),
+        getOpenRouterCredits: vi.fn(() => Promise.resolve({ usage: 0 }))
     }
 }));
 
