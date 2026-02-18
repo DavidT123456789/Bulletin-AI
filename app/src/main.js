@@ -124,23 +124,22 @@ function setupPWAUpdateHandler() {
 
                 populateUpdateInfo();
 
-                // Handle Details Toggle
+                // Handle Details Toggle - Click on the entire text area
+                const bannerText = banner.querySelector('.pwa-banner-text');
                 const infoBtn = document.getElementById('pwaInfoBtn');
                 const details = document.getElementById('pwaUpdateDetails');
 
-                if (infoBtn && details) {
-                    infoBtn.onclick = () => {
-                        const isExpanded = details.classList.contains('expanded');
-                        if (isExpanded) {
-                            details.classList.remove('expanded');
-                            infoBtn.style.transform = 'rotate(0deg)';
-                            infoBtn.classList.remove('active');
-                        } else {
-                            details.classList.add('expanded');
-                            infoBtn.style.transform = 'rotate(180deg)';
-                            infoBtn.classList.add('active');
-                        }
+                if (bannerText && details && infoBtn) {
+                    bannerText.onclick = () => {
+                        details.classList.toggle('expanded');
+                        infoBtn.classList.toggle('active');
                     };
+
+                    // Keep the button click working but prevent bubbling if needed (though bubbling to parent handles it fine usually, 
+                    // but if the button has its own handler it might conflict. Here we just delegate to the parent)
+                    // We remove the specific handler on the button if it exists, or just let the parent handle it.
+                    // To be safe, we can set pointer-events: none on the button in CSS or just letting it bubble is fine 
+                    // as long as we don't attach a second handler to the button itself.
                 }
 
                 // Update button - reload the app

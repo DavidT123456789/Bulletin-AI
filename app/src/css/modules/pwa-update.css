@@ -26,7 +26,7 @@
         0 0 0 1px rgba(255, 255, 255, 0.1);
 
     animation: pwa-toast-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    width: min(600px, 92vw);
+    width: min(540px, 92vw);
     overflow: hidden;
     /* For accordion expansion */
 }
@@ -58,10 +58,41 @@
 .pwa-update-banner .pwa-banner-text {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     flex-grow: 1;
     min-width: 0;
     /* Text truncation fix */
+    cursor: pointer;
+    user-select: none;
+    border-radius: var(--radius-md);
+    transition: background-color 0.2s ease;
+    padding: var(--space-2) var(--space-3);
+    margin: calc(var(--space-2) * -1) calc(var(--space-3) * -1);
+}
+
+.pwa-update-banner .pwa-banner-text:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .pwa-update-banner .pwa-banner-text:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Gift Icon Animation */
+@keyframes gift-wiggle {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
 }
 
 .pwa-update-banner .pwa-gift-icon {
@@ -70,6 +101,12 @@
     /* Subtle glow behind icon */
     filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.25));
     flex-shrink: 0;
+    animation: gift-wiggle 2s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+.pwa-update-banner .pwa-banner-text:hover .pwa-gift-icon {
+    animation: gift-wiggle 0.5s ease-in-out;
 }
 
 .pwa-update-banner .pwa-text-col {
@@ -180,12 +217,12 @@
     color: var(--text-primary);
 }
 
-.pwa-update-banner .pwa-info-btn i {
+.pwa-update-banner .pwa-info-btn iconify-icon {
     font-size: var(--font-sm);
     transition: transform 0.3s ease;
 }
 
-.pwa-update-banner .pwa-info-btn.active i {
+.pwa-update-banner .pwa-info-btn.active iconify-icon {
     transform: rotate(180deg);
 }
 

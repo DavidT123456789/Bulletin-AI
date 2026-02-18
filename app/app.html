@@ -219,17 +219,17 @@
             <!-- PWA Update Banner -->
             <div id="pwaUpdateBanner" class="pwa-update-banner" style="display: none;">
                 <div class="pwa-banner-main">
-                    <div class="pwa-banner-text">
+                    <div class="pwa-banner-text" role="button" tabindex="0">
                         <iconify-icon icon="solar:gift-linear" class="pwa-gift-icon"></iconify-icon>
                         <div class="pwa-text-col">
                             <span class="pwa-title">Mise à jour disponible</span>
                             <span class="pwa-subtitle" id="pwaUpdateMeta">Version plus récente détectée</span>
                         </div>
-                    </div>
-                    <div class="pwa-banner-actions">
                         <button id="pwaInfoBtn" class="pwa-info-btn tooltip" data-tooltip="Nouveautés">
                             <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
                         </button>
+                    </div>
+                    <div class="pwa-banner-actions">
                         <button id="pwaUpdateBtn" class="btn btn-sm btn-primary">Installer</button>
                         <button id="pwaUpdateDismissBtn" class="pwa-close-btn" aria-label="Fermer">
                             <iconify-icon icon="ph:x"></iconify-icon>
