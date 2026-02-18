@@ -4136,7 +4136,7 @@
     min-width: 0;
     /* Allow flexbox to shrink below content size */
     overflow: hidden;
-    /* Contain overflow for scroll */
+    /* Contain overflow for scroll — overridden to visible in edit mode */
 }
 
 /* Add class to header when editing */
@@ -4149,6 +4149,11 @@
     padding-bottom: 16px;
     align-items: flex-start;
     /* Keep left buttons/avatar at top while content expands */
+}
+
+/* Override hidden overflow in edit mode so focus glow & pills aren't clipped */
+.focus-header.editing .focus-header-content {
+    overflow: visible;
 }
 
 /* ============================
@@ -4196,7 +4201,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 4px 0;
+    padding: 4px 4px;
     width: 100%;
     max-height: 0;
     opacity: 0;
@@ -4213,6 +4218,8 @@
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    overflow: visible;
+    /* Let focus glow & pill scroll extend beyond container */
 }
 
 /* Inputs Row in Header */
@@ -4256,17 +4263,12 @@
     transform: scale(1.01);
 }
 
-/* Status Selection in Header (Chips) - Single line on PC */
+/* Status Selection in Header (Chips) — nowrap, visible overflow via ancestors */
 .focus-status-selection {
     display: flex;
     flex-wrap: nowrap;
-    gap: 8px;
-    overflow-x: auto;
-    overflow-y: visible;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    gap: 6px;
     padding-bottom: 2px;
-    max-width: 100%;
 }
 
 .focus-status-selection::-webkit-scrollbar {
@@ -5059,6 +5061,8 @@
         margin-top: 48px;
         /* Space for avatar + nav row */
         width: 100%;
+        overflow: visible;
+        /* Allow status pills scroll to extend to panel edges */
     }
 
     /* Edit form takes full width */
@@ -5088,9 +5092,6 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 4px;
-        margin: 0 -16px;
-        padding-left: 16px;
-        padding-right: 16px;
         gap: 6px;
     }
 
@@ -5335,9 +5336,7 @@
     }
 
     .focus-header.editing .status-checkboxes {
-        margin: 0 -12px;
-        padding-left: 12px;
-        padding-right: 12px;
+        overflow-x: auto;
     }
 
     .focus-header.editing .btn-edit-action {
