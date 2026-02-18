@@ -887,7 +887,8 @@
                                 </div>
                                 <div class="guide-legend-item">
                                     <span class="guide-legend-dot dot-updated"></span>
-                                    <span>Mis à jour</span>
+                                    <span>Mis à jour <span
+                                            class="guide-legend-overwrite-hint">(écrasement)</span></span>
                                     <strong id="wizardUpdatedCount" class="guide-legend-count count-updated">0</strong>
                                 </div>
                                 <div class="guide-legend-item">
@@ -910,9 +911,11 @@
                                 <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 Bon à savoir
                             </div>
-                            <p class="guide-text">Les élèves absents du fichier sont conservés.
-                                Seules les colonnes
+                            <p class="guide-text">Les élèves absents du fichier sont conservés. Seules les colonnes
                                 cochées seront importées ou mises à jour.</p>
+                            <p class="guide-hint guide-hint-warning" id="wizardOverwriteWarning" style="display:none;">
+                                <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Les données existantes
+                                seront écrasées.</p>
                         </div>
                     </div>
                 </aside>

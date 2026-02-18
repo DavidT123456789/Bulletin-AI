@@ -2848,6 +2848,31 @@
     color: var(--warning-color);
 }
 
+/* Overwrite hint in legend label */
+.guide-legend-overwrite-hint {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    opacity: 0.75;
+}
+
+/* Warning hint variant (with icon) */
+.guide-hint-warning {
+    font-size: 0.72rem;
+    color: var(--warning-color);
+    font-style: normal;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+.guide-hint-warning iconify-icon {
+    vertical-align: middle;
+    margin-right: 3px;
+    font-size: 0.8rem;
+    position: relative;
+    top: -1px;
+}
+
 /* Departed action toggle */
 /* Departed action toggle - Minimalist */
 .guide-departed-action {
@@ -2869,7 +2894,7 @@
     align-items: center;
     cursor: pointer;
     font-size: 0.82rem;
-    color: var(--text-secondary);
+    color: var(--warning-color);
     line-height: 1;
     margin: 0;
 }

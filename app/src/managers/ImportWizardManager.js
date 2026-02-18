@@ -1478,6 +1478,12 @@ export const ImportWizardManager = {
             departedAction.style.display = preview.departedStudents.length > 0 ? '' : 'none';
         }
 
+        // Show/hide overwrite warning
+        const overwriteWarning = document.getElementById('wizardOverwriteWarning');
+        if (overwriteWarning) {
+            overwriteWarning.style.display = preview.updatedStudents.length > 0 ? '' : 'none';
+        }
+
         // Update footer info
         const mappedCols = Object.keys(formatMap).filter(k => k !== 'NOM_PRENOM');
         const colsBadgeEl = document.getElementById('wizardSelectedColsBadge');
