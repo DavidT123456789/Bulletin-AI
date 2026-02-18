@@ -11,11 +11,6 @@
     max-width: 900px;
     width: 95%;
     max-height: 92vh;
-    border-radius: var(--radius-xl);
-    background: var(--glass-overlay-bg);
-    backdrop-filter: blur(var(--glass-overlay-blur));
-    -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
-    border: 1px solid var(--glass-overlay-border);
     overflow: hidden;
     display: flex;
     flex-direction: column;

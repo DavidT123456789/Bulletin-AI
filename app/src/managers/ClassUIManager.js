@@ -696,7 +696,7 @@ export const ClassUIManager = {
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
 
-                                    <button class="btn-icon-small manage-delete-btn" data-class-id="${cls.id}" 
+                                    <button class="btn-icon-small manage-delete-btn danger" data-class-id="${cls.id}" 
                                             title="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
@@ -714,7 +714,7 @@ export const ClassUIManager = {
         modalEl.className = 'modal modal-small';
         modalEl.id = 'classManagementModal';
         modalEl.innerHTML = `
-            <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-content">
                 <div class="modal-header">
                     <div class="modal-title-group">
                         <span class="modal-title-icon"><iconify-icon icon="solar:layers-linear"></iconify-icon></span>
@@ -724,8 +724,8 @@ export const ClassUIManager = {
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button class="btn btn-secondary btn-small" id="addClassFromModalBtn" title="Créer une nouvelle classe">
-                            <iconify-icon icon="ph:plus" style="color: var(--primary-color);"></iconify-icon> <span>Nouvelle classe</span>
+                        <button class="btn btn-secondary btn-small add-class-modal-btn" id="addClassFromModalBtn" title="Créer une nouvelle classe">
+                            <iconify-icon icon="ph:plus"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
                         <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>

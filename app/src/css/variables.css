@@ -201,6 +201,16 @@
     /* --- Guide Panel Tokens --- */
     --guide-panel-bg: rgba(244, 244, 245, 0.5);
     /* Zinc 100 equiv */
+
+    /* --- Card Item Tokens (Single Source of Truth for list items in modals) --- */
+    /* Repos : contour fin neutre, pas d'ombre */
+    --card-item-bg: var(--surface-color);
+    --card-item-border: 1px solid var(--border-color);
+    --card-item-radius: var(--radius-lg);
+    --card-item-shadow: none;
+    /* Hover : contour bleu primaire subtil, ombre douce */
+    --card-item-hover-border-color: rgba(var(--primary-color-rgb), 0.3);
+    --card-item-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 }
 
 [data-theme="dark"] {
@@ -272,4 +282,8 @@
 
     /* --- Guide Panel Tokens --- */
     --guide-panel-bg: rgba(255, 255, 255, 0.03);
+
+    /* --- Card Item Tokens (Dark Mode) --- */
+    --card-item-hover-border-color: rgba(var(--primary-color-rgb), 0.35);
+    --card-item-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }

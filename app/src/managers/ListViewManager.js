@@ -2020,7 +2020,7 @@ export const ListViewManager = {
                 id: 'appreciation',
                 label: 'Appréciations',
                 sublabel: withAppreciation > 0
-                    ? `Efface le texte généré (${withAppreciation} élève${withAppreciation > 1 ? 's' : ''} concerné${withAppreciation > 1 ? 's' : ''}). Notes et données conservées.`
+                    ? `Efface le texte généré (${withAppreciation} élève${withAppreciation > 1 ? 's' : ''}). Notes et données conservées.`
                     : 'Aucune appréciation à effacer.',
                 checked: withAppreciation > 0,
                 disabled: withAppreciation === 0
@@ -2038,7 +2038,7 @@ export const ListViewManager = {
                 id: 'context',
                 label: 'Notes de contexte',
                 sublabel: withContext > 0
-                    ? `Efface le texte du champ « Contexte » pour ${appState.currentPeriod} (${withContext} élève${withContext > 1 ? 's' : ''}).`
+                    ? `Efface le texte du champ « Contexte » (${withContext} élève${withContext > 1 ? 's' : ''}).`
                     : 'Aucune note de contexte.',
                 checked: false,
                 disabled: withContext === 0
@@ -2047,7 +2047,7 @@ export const ListViewManager = {
                 id: 'photo',
                 label: 'Photos',
                 sublabel: withPhoto > 0
-                    ? `Supprime ${withPhoto} photo${withPhoto > 1 ? 's' : ''} de profil.`
+                    ? `Supprime la photo de profil (${withPhoto} élève${withPhoto > 1 ? 's' : ''}).`
                     : 'Aucune photo à supprimer.',
                 checked: false,
                 disabled: withPhoto === 0

@@ -356,9 +356,10 @@ export const ModalUI = {
             modal = document.createElement('div');
             modal.id = modalId;
             modal.className = 'modal';
+            if (isDanger) modal.classList.add('modal-danger');
 
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
-            const iconColorVar = isDanger ? 'var(--warning-color)' : 'var(--primary-color)';
+            const iconColorVar = isDanger ? 'var(--error-color)' : 'var(--primary-color)';
 
             // Generate checkboxes HTML
             const choicesHTML = choices.map(choice => {
@@ -385,7 +386,7 @@ export const ModalUI = {
                 <div class="modal-content modal-content-confirm">
                     <div class="modal-header">
                         <h3 class="modal-title">
-                            <div class="modal-title-icon" style="color: ${iconColorVar}; background: rgba(var(--${isDanger ? 'warning' : 'primary'}-rgb), 0.1);">
+                            <div class="modal-title-icon" style="color: ${iconColorVar};">
                                 <iconify-icon icon="${iconClass}"></iconify-icon>
                             </div>
                             ${title}

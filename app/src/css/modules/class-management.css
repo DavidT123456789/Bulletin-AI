@@ -110,8 +110,8 @@
 }
 
 .class-dropdown-title-btn:hover {
-    background: var(--primary-color);
-    color: white;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
 }
 
 .class-dropdown-title-btn:hover i {
@@ -119,24 +119,36 @@
     transform: rotate(90deg);
 }
 
-.class-dropdown-header .btn-icon-small {
+/* Global style for all small icon buttons */
+.btn-icon-small {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
-    border: none;
+    border: 1px solid var(--border-color);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.9em;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
+.btn-icon-small:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.btn-icon-small.danger:hover {
+    background: var(--error-light, rgba(239, 68, 68, 0.08));
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+/* Rotation spécifique au bouton "+" du dropdown header */
 .class-dropdown-header .btn-icon-small:hover {
-    background: var(--primary-color);
-    color: white;
     transform: rotate(90deg);
 }
 
@@ -412,12 +424,7 @@
    ==================================================================== */
 
 #classManagementModal .modal-content {
-    max-width: 700px;
-}
-
-.class-management-grid {
-    display: grid;
-    gap: 16px;
+    max-width: 650px;
 }
 
 .class-card {
@@ -425,15 +432,16 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    transition: all var(--transition-fast);
+    background: var(--card-item-bg);
+    border: var(--card-item-border);
+    border-radius: var(--card-item-radius);
+    box-shadow: var(--card-item-shadow);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .class-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
+    border-color: var(--card-item-hover-border-color);
+    box-shadow: var(--card-item-hover-shadow);
 }
 
 .class-card.active {
@@ -441,64 +449,7 @@
     background: rgba(var(--primary-color-rgb), 0.05);
 }
 
-.class-card-info {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
 
-.class-card-icon {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    border-radius: var(--radius-md);
-    font-size: 1.2em;
-}
-
-.class-card-details h4 {
-    margin: 0 0 4px 0;
-    font-size: 1em;
-    font-weight: 600;
-}
-
-.class-card-details .class-card-meta {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    display: flex;
-    gap: 12px;
-}
-
-.class-card-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.class-card-actions .btn-icon {
-    opacity: 0.7;
-    transition: opacity var(--transition-fast);
-}
-
-.class-card:hover .class-card-actions .btn-icon {
-    opacity: 1;
-}
-
-/* New class form */
-.new-class-form {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-    margin-bottom: 16px;
-}
-
-.new-class-form input {
-    flex: 1;
-}
 
 /* ====================================================================
    RESPONSIVE - DROPDOWN
@@ -734,6 +685,25 @@
 }
 
 /* ====================================================================
+   BOUTON "NOUVELLE CLASSE" - En-tête de la modale Mes classes
+   ==================================================================== */
+
+#classManagementModal .add-class-modal-btn {
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+#classManagementModal .add-class-modal-btn iconify-icon {
+    color: var(--primary-color);
+}
+
+#classManagementModal .add-class-modal-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+}
+
+/* ====================================================================
    CLASS MANAGEMENT LIST - PREMIUM GLASS CARDS
    ==================================================================== */
 
@@ -751,43 +721,28 @@
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: var(--radius-xl);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: var(--card-item-bg);
+    border: var(--card-item-border);
+    border-radius: var(--card-item-radius);
+    box-shadow: var(--card-item-shadow);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     cursor: pointer;
     position: relative;
     overflow: hidden;
 }
 
-[data-theme="dark"] .class-management-item {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
 .class-management-item:hover {
-    transform: translateY(-2px) scale(1.005);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
-}
-
-[data-theme="dark"] .class-management-item:hover {
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(var(--primary-color-rgb), 0.2);
+    border-color: var(--card-item-hover-border-color);
+    box-shadow: var(--card-item-hover-shadow);
 }
 
 .class-management-item.active-switch {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+    background: rgba(var(--primary-color-rgb), 0.05);
 }
 
 [data-theme="dark"] .class-management-item.active-switch {
-    background: rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--primary-color-rgb), 0.1);
 }
 
 /* Drag Handle */
@@ -1067,24 +1022,20 @@
 
 .class-management-item.dragging {
     opacity: 0.6;
-    transform: scale(0.96);
-    border: 2px dashed var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    box-shadow: 0 4px 20px rgba(var(--primary-color-rgb), 0.2);
+    transform: scale(0.98);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.05);
+    box-shadow: var(--shadow-md);
     z-index: 10;
     transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
 .class-management-item:not(.dragging) {
-    transition:
-        transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-        margin 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-        opacity 0.2s ease;
+    transition: all var(--transition-base);
 }
 
 .class-management-list:has(.dragging) .class-management-item:not(.dragging):hover {
-    transform: scale(1.01);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    background: rgba(var(--primary-color-rgb), 0.03);
 }
 
 /* ====================================================================

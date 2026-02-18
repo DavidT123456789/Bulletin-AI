@@ -731,16 +731,18 @@
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    background: var(--card-glass-bg);
-    border: 1px solid var(--card-glass-border);
+    background: var(--card-item-bg);
+    border: var(--card-item-border);
     border-radius: var(--radius-md);
+    box-shadow: var(--card-item-shadow);
     flex: 1;
     min-width: 160px;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .api-status-item:hover {
-    border-color: var(--primary-color);
+    border-color: var(--card-item-hover-border-color);
+    box-shadow: var(--card-item-hover-shadow);
 }
 
 .api-status-icon {
@@ -838,30 +840,31 @@
 
 .modal-choice-item {
     position: relative;
-    background: var(--bg-secondary);
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: var(--card-item-bg);
+    border: var(--card-item-border);
+    border-radius: var(--card-item-radius);
+    box-shadow: var(--card-item-shadow);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     cursor: pointer;
     overflow: hidden;
 }
 
 /* Hover state */
 .modal-choice-item:hover {
-    background: var(--surface-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    /* Soft shadow lift */
-    transform: translateY(-2px);
-    z-index: 1;
+    border-color: var(--card-item-hover-border-color);
+    box-shadow: var(--card-item-hover-shadow);
 }
 
 /* Checked state */
 .modal-choice-item.checked {
-    background: var(--surface-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
-    z-index: 2;
-    /* Bring to front */
+    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Danger Mode: Red Checked State */
+.modal-danger .modal-choice-item.checked {
+    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.06);
+    border-color: rgba(var(--error-color-rgb, 239, 68, 68), 0.4);
 }
 
 .modal-choice-label-wrapper {
@@ -901,7 +904,7 @@
     background-color: var(--surface-color);
     border: 2px solid var(--text-tertiary);
     /* Soft default border */
-    border-radius: 8px;
+    border-radius: 6px;
     /* Smooth rounded corners (Apple style) */
     display: flex;
     align-items: center;
@@ -923,14 +926,20 @@
     box-shadow: 0 2px 5px rgba(var(--primary-color-rgb), 0.4);
 }
 
-.custom-checkbox-display i {
+.modal-danger .modal-choice-item.checked .custom-checkbox-display {
+    background-color: var(--error-color);
+    border-color: var(--error-color);
+    box-shadow: 0 2px 5px rgba(var(--error-color-rgb, 239, 68, 68), 0.4);
+}
+
+.custom-checkbox-display iconify-icon {
     color: white;
     font-size: 13px;
     transform: scale(0) rotate(-45deg);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.modal-choice-item.checked .custom-checkbox-display i {
+.modal-choice-item.checked .custom-checkbox-display iconify-icon {
     transform: scale(1) rotate(0deg);
 }
 
@@ -960,9 +969,15 @@
     color: var(--primary-color);
 }
 
+.modal-danger .modal-choice-item.checked .modal-choice-title {
+    color: var(--error-color);
+}
+
 /* Disabled state - no data to clear */
 .modal-choice-item.disabled {
-    opacity: 0.45;
+    background: var(--bg-secondary);
+    border-color: transparent;
+    opacity: 0.6;
     pointer-events: none;
     cursor: not-allowed;
 }
@@ -1692,18 +1707,18 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: var(--card-glass-bg);
-    border: 1px solid var(--card-glass-border);
+    background: var(--card-item-bg);
+    border: var(--card-item-border);
     border-radius: var(--radius-md);
+    box-shadow: var(--card-item-shadow);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
 .model-item:hover {
-    border-color: var(--primary-color);
+    border-color: var(--card-item-hover-border-color);
     background: var(--bg-secondary);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--card-item-hover-shadow);
 }
 
 .model-item.active {
@@ -1767,4 +1782,37 @@
 .btn-text-link:hover {
     color: var(--primary-color);
     background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+/* === STAGGERED LIST ANIMATION (Premium Feel) === */
+.modal-choice-item {
+    animation: fadeInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-choice-item:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.modal-choice-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.modal-choice-item:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.modal-choice-item:nth-child(4) {
+    animation-delay: 0.2s;
 }
