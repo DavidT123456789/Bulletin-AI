@@ -252,6 +252,18 @@ export const MassImportManager = {
                 }
                 existingResult.studentData.periods[currentPeriod] = studentData.periods[currentPeriod];
                 existingResult.studentData.statuses = studentData.statuses || existingResult.studentData.statuses;
+
+                // Sync root appreciation field to match imported period data
+                const importedAppreciation = studentData.periods?.[currentPeriod]?.appreciation ?? '';
+                existingResult.appreciation = importedAppreciation;
+
+                // An imported appreciation is NOT AI-generated — reset the flag
+                // so the AI icon is not shown for data that came from a PDF/manual import
+                if (importedAppreciation) {
+                    existingResult.wasGenerated = false;
+                    existingResult.appreciationSource = 'imported';
+                }
+
                 updatedCount++;
             } else {
                 const pendingResult = StudentDataManager.createPendingResult(studentData);

@@ -44,7 +44,9 @@ export const StudentDataManager = {
             // Historique des versions précédentes (max 5)
             history: [],
             // Flag pour indiquer si le résultat vient d'être généré par l'IA (vs import ou erreur)
-            wasGenerated: !errorMessage
+            wasGenerated: !errorMessage,
+            // Source explicite de l'appréciation : 'ai' | 'manual' | 'imported'
+            appreciationSource: errorMessage ? null : 'ai'
         };
     },
 
@@ -174,6 +176,8 @@ export const StudentDataManager = {
             // Student photo data (base64)
             studentPhoto: null,
             wasGenerated: false,
+            // Source : 'imported' si une appréciation est déjà présente (depuis fichier), null sinon
+            appreciationSource: hasAppreciation ? 'imported' : null,
             history: []
         };
     },

@@ -51,7 +51,13 @@ export const FocusPanelHistory = {
         if (textEl?.classList.contains('empty')) return;
 
         const state = this._getState();
-        if (HistoryUtils.pushToState(state, content, source)) {
+        // Capture all metadata from the result so the version carries full context
+        const result = this._getResult();
+        const appreciationSource = result?.appreciationSource ?? null;
+        const aiModel = result?.studentData?.currentAIModel ?? null;
+        const tokenUsage = result?.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
+
+        if (HistoryUtils.pushToState(state, content, source, appreciationSource, aiModel, tokenUsage)) {
             this._save();
             this._notifyHistoryChange();
         }
@@ -66,18 +72,18 @@ export const FocusPanelHistory = {
     },
 
     undo() {
-        const content = HistoryUtils.undo(this._getState());
-        if (content !== null) {
+        const version = HistoryUtils.undo(this._getState());
+        if (version !== null) {
             this._save();
-            this._animateVersionChange(content, 'backward');
+            this._animateVersionChange(version, 'backward');
         }
     },
 
     redo() {
-        const content = HistoryUtils.redo(this._getState());
-        if (content !== null) {
+        const version = HistoryUtils.redo(this._getState());
+        if (version !== null) {
             this._save();
-            this._animateVersionChange(content, 'forward');
+            this._animateVersionChange(version, 'forward');
         }
     },
 
@@ -113,10 +119,10 @@ export const FocusPanelHistory = {
     restoreVersion(index) {
         const state = this._getState();
         const oldIndex = state?.currentIndex ?? 0;
-        const content = HistoryUtils.goToVersion(state, index);
-        if (content !== null) {
+        const version = HistoryUtils.goToVersion(state, index);
+        if (version !== null) {
             this._save();
-            this._animateVersionChange(content, index < oldIndex ? 'backward' : 'forward');
+            this._animateVersionChange(version, index < oldIndex ? 'backward' : 'forward');
         }
     },
 
@@ -178,20 +184,51 @@ export const FocusPanelHistory = {
                 sourceHtml = `<span class="history-source">${sourceLabel}</span>`;
             }
 
+            // Determine Source/Status Icon
+            let sourceIconHtml = '';
+            let sourceTooltip = '';
+
+            // Resolve source type for this version
+            let versionSourceType = versionData.appreciationSource; // 'ai', 'manual', 'imported'
+
+            // Fallbacks for older history without explicit appreciationSource
+            if (!versionSourceType) {
+                if (versionData.source === 'edit') versionSourceType = 'manual';
+                else if (versionData.source === 'imported') versionSourceType = 'imported';
+                else if (versionData.aiModel) versionSourceType = 'ai';
+                else if (isOriginal && versionData.aiModel) versionSourceType = 'ai'; // Original might be AI
+                else if (isOriginal) versionSourceType = 'manual'; // Default original to manual if no AI model
+            }
+
+            // Generate Icon HTML
+            if (versionSourceType === 'ai') {
+                // Show Sparkle
+                const modelName = versionData.aiModel ? ` (${versionData.aiModel})` : '';
+                sourceTooltip = `Généré par IA${modelName}`;
+                sourceIconHtml = `<span class="history-source-icon source-ai" title="${sourceTooltip}">✨</span>`;
+            } else if (versionSourceType === 'manual') {
+                sourceTooltip = 'Édité manuellement';
+                sourceIconHtml = `<span class="history-source-icon source-manual" title="${sourceTooltip}"><iconify-icon icon="solar:pen-linear"></iconify-icon></span>`;
+            } else if (versionSourceType === 'imported') {
+                sourceTooltip = 'Importé depuis un fichier';
+                sourceIconHtml = `<span class="history-source-icon source-imported" title="${sourceTooltip}"><iconify-icon icon="solar:file-download-linear"></iconify-icon></span>`;
+            }
+
             // Separator before Original
             const separatorClass = isOriginal ? 'history-version-item--original' : '';
 
             html += `
-                <div class="history-version-item ${isCurrent ? 'current' : ''} ${separatorClass}" data-index="${i}">
-                    <div class="history-version-header">
-                        <span class="history-version-label">${label}</span>
-                        ${sourceHtml}
-                        ${wordDiffHtml}
-                        ${timeHtml}
+                    <div class="history-version-item ${isCurrent ? 'current' : ''} ${separatorClass}" data-index="${i}">
+                        <div class="history-version-header">
+                            <span class="history-version-label">${label}</span>
+                            ${sourceIconHtml}
+                            ${sourceHtml}
+                            ${wordDiffHtml}
+                            ${timeHtml}
+                        </div>
+                        <span class="history-version-preview">${content}</span>
                     </div>
-                    <span class="history-version-preview">${content}</span>
-                </div>
-            `;
+                `;
         }
 
         html += '</div>';
@@ -247,9 +284,37 @@ export const FocusPanelHistory = {
         }, 100);
     },
 
-    _animateVersionChange(content, direction = 'forward') {
+    _animateVersionChange(versionData, direction = 'forward') {
         const textEl = document.getElementById('focusAppreciationText');
         if (!textEl || textEl.classList.contains('history-animating')) return;
+
+        const content = versionData.content;
+        const appreciationSource = versionData.appreciationSource;
+
+        // Restore ALL metadata on the result BEFORE notifying
+        const result = this._getResult();
+        if (result) {
+            // 1. Source Indicator
+            if (appreciationSource !== undefined) {
+                result.appreciationSource = appreciationSource;
+                if (appreciationSource === 'ai') {
+                    result.wasGenerated = true; // Restore "Generated" status for dirty logic
+                } else if (appreciationSource === 'manual' || appreciationSource === 'imported') {
+                    result.wasGenerated = false;
+                }
+            }
+
+            // 2. AI Model (for tooltip)
+            if (versionData.aiModel) {
+                if (!result.studentData) result.studentData = {};
+                result.studentData.currentAIModel = versionData.aiModel;
+            }
+
+            // 3. Token Usage (for tooltip)
+            if (versionData.tokenUsage) {
+                result.tokenUsage = JSON.parse(JSON.stringify(versionData.tokenUsage));
+            }
+        }
 
         textEl.classList.add('history-animating');
         const exitClass = direction === 'backward' ? 'history-exit-forward' : 'history-exit-backward';

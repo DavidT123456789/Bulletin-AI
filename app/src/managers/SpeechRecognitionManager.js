@@ -300,8 +300,9 @@ export const SpeechRecognitionManager = {
             if (!result) return;
 
             // Update the result logic to match FocusPanelManager
-            result.appreciation = content; // Fix: was result.output
-            result.wasGenerated = false; // Mark as manually edited (dictated)
+            result.appreciation = content;
+            result.wasGenerated = false;
+            result.appreciationSource = 'manual';
             result.tokenUsage = null;
 
             // Hide AI indicator

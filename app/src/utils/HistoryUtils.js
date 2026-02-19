@@ -25,9 +25,16 @@ function countWords(text) {
  */
 export function normalizeVersion(version) {
     if (typeof version === 'string') {
-        return { content: version, timestamp: null, source: null, wordCount: countWords(version) };
+        return {
+            content: version,
+            timestamp: null,
+            source: null,
+            appreciationSource: null,
+            aiModel: null,
+            tokenUsage: null,
+            wordCount: countWords(version)
+        };
     }
-    // Ensure wordCount is calculated if missing
     if (version && !version.wordCount && version.content) {
         version.wordCount = countWords(version.content);
     }
@@ -45,6 +52,16 @@ export function getVersionContent(version) {
 }
 
 /**
+ * Get appreciationSource from a version entry
+ * @param {string|Object} version
+ * @returns {string|null}
+ */
+export function getVersionSource(version) {
+    if (!version || typeof version === 'string') return null;
+    return version.appreciationSource ?? null;
+}
+
+/**
  * Get or create history state on a result object
  * @param {Object} result - The result object
  * @returns {Object} The historyState object
@@ -57,6 +74,9 @@ export function getHistoryState(result) {
                 content: result.appreciation,
                 timestamp: Date.now(),
                 source: 'original',
+                appreciationSource: result.appreciationSource ?? null,
+                aiModel: result.studentData?.currentAIModel ?? null,
+                tokenUsage: result.tokenUsage ?? null,
                 wordCount: countWords(result.appreciation)
             });
             result.historyState.currentIndex = 0;
@@ -69,16 +89,16 @@ export function getHistoryState(result) {
  * Push content to history state
  * @param {Object} state - The historyState object
  * @param {string} content - Content to push
- * @param {string} [source='edit'] - Source of the change (edit, concise, detailed, encouraging, variation, regenerate)
+ * @param {string} [source='edit'] - Source of the change
+ * @param {string|null} [appreciationSource=null] - Appreciation source
+ * @param {string|null} [aiModel=null] - AI Model used
+ * @param {Object|null} [tokenUsage=null] - Token usage data
  * @returns {boolean} True if content was added
  */
-export function pushToState(state, content, source = 'edit') {
+export function pushToState(state, content, source = 'edit', appreciationSource = null, aiModel = null, tokenUsage = null) {
     if (!state || !content) return false;
 
-    // Get current version content (handle both formats)
     const currentContent = getVersionContent(state.versions[state.currentIndex]);
-
-    // Don't add if same as current version (prevents destroying future on blur after undo)
     if (currentContent === content) return false;
 
     // Truncate future versions if not at the end
@@ -86,21 +106,19 @@ export function pushToState(state, content, source = 'edit') {
         state.versions = state.versions.slice(0, state.currentIndex + 1);
     }
 
-    // Get last version content
     const lastContent = getVersionContent(state.versions[state.versions.length - 1]);
-
-    // Don't add duplicate of last
     if (lastContent === content) return false;
 
-    // Add new version with metadata
     state.versions.push({
-        content: content,
+        content,
         timestamp: Date.now(),
-        source: source,
+        source,
+        appreciationSource,
+        aiModel,
+        tokenUsage,
         wordCount: countWords(content)
     });
 
-    // Limit to max versions
     if (state.versions.length > MAX_VERSIONS) {
         state.versions.shift();
     }
@@ -129,36 +147,36 @@ export function canRedo(state) {
 
 /**
  * Move to previous version
- * @param {Object} state - The historyState object
- * @returns {string|null} The content at new index, or null if can't undo
+ * @param {Object} state
+ * @returns {{content: string, appreciationSource: string|null}|null}
  */
 export function undo(state) {
     if (!canUndo(state)) return null;
     state.currentIndex--;
-    return getVersionContent(state.versions[state.currentIndex]);
+    return normalizeVersion(state.versions[state.currentIndex]);
 }
 
 /**
  * Move to next version
- * @param {Object} state - The historyState object
- * @returns {string|null} The content at new index, or null if can't redo
+ * @param {Object} state
+ * @returns {{content: string, appreciationSource: string|null}|null}
  */
 export function redo(state) {
     if (!canRedo(state)) return null;
     state.currentIndex++;
-    return getVersionContent(state.versions[state.currentIndex]);
+    return normalizeVersion(state.versions[state.currentIndex]);
 }
 
 /**
  * Navigate to specific version
- * @param {Object} state - The historyState object
- * @param {number} index - Target index
- * @returns {string|null} The content at index, or null if invalid
+ * @param {Object} state
+ * @param {number} index
+ * @returns {{content: string, appreciationSource: string|null}|null}
  */
 export function goToVersion(state, index) {
     if (!state || index < 0 || index >= state.versions.length) return null;
     state.currentIndex = index;
-    return getVersionContent(state.versions[index]);
+    return normalizeVersion(state.versions[index]);
 }
 
 /**

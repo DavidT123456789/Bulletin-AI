@@ -466,38 +466,57 @@ export const FocusPanelStatus = {
     },
 
     /**
+     * Resolve the source of an appreciation from a result object.
+     * Priority: explicit `appreciationSource` field > fallback on `wasGenerated`.
+     * Returns 'ai' | 'manual' | 'imported' | 'none'
+     * @param {Object} result
+     * @returns {'ai'|'manual'|'imported'|'none'}
+     * @private
+     */
+    _resolveSource(result) {
+        if (!this._hasRealContent(result?.appreciation)) return 'none';
+
+        // Explicit field takes priority (new data)
+        if (result.appreciationSource) return result.appreciationSource;
+
+        // Fallback: legacy wasGenerated flag
+        const currentPeriod = appState.currentPeriod;
+        const wasGeneratedForCurrentPeriod = result?.wasGenerated === true
+            && (!result.generationPeriod || result.generationPeriod === currentPeriod);
+
+        return wasGeneratedForCurrentPeriod ? 'ai' : 'manual';
+    },
+
+    /**
      * Update Source Indicator (shows HOW appreciation was produced)
-     * NEW: Manages source dimension - AI (✨) / Manual (✏️) / None (hidden)
+     * 3 states: AI (✨) / Imported (⬇) / Manual (✏️) / None (hidden)
      * @param {Object} result - Student result object
      */
     updateSourceIndicator(result) {
         const sourceIndicator = document.getElementById('focusAiIndicator');
         if (!sourceIndicator) return;
 
-        const hasContent = this._hasRealContent(result?.appreciation);
-        const currentPeriod = appState.currentPeriod;
-        const wasGeneratedForCurrentPeriod = result?.wasGenerated === true
-            && (!result.generationPeriod || result.generationPeriod === currentPeriod);
-
-        // Determine source
-        let source = 'none';
-        if (hasContent) {
-            source = wasGeneratedForCurrentPeriod ? 'ai' : 'manual';
-        }
+        const source = this._resolveSource(result);
 
         // Reset
         sourceIndicator.style.display = 'none';
-        sourceIndicator.classList.remove('source-ai', 'source-manual');
+        sourceIndicator.classList.remove('source-ai', 'source-manual', 'source-imported');
         sourceIndicator.removeAttribute('data-tooltip');
 
         switch (source) {
-            case 'ai':
+            case 'ai': {
                 sourceIndicator.innerHTML = '✨';
                 sourceIndicator.style.display = 'inline-flex';
                 sourceIndicator.classList.add('source-ai');
-                // Get detailed tooltip if available (model, tokens, etc.)
                 const { tooltip } = Utils.getGenerationModeInfo(result);
                 sourceIndicator.setAttribute('data-tooltip', tooltip || 'Généré par IA');
+                break;
+            }
+            case 'imported':
+                sourceIndicator.innerHTML = '<iconify-icon icon="solar:file-download-linear"></iconify-icon>';
+                sourceIndicator.style.display = 'inline-flex';
+                sourceIndicator.classList.add('source-imported');
+                sourceIndicator.setAttribute('data-tooltip', 'Importé depuis un fichier');
                 break;
             case 'manual':
                 sourceIndicator.innerHTML = '<iconify-icon icon="solar:pen-linear"></iconify-icon>';
@@ -507,7 +526,6 @@ export const FocusPanelStatus = {
                 break;
             case 'none':
             default:
-                // Hidden - no content
                 break;
         }
 
