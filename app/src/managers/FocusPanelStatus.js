@@ -303,7 +303,7 @@ export const FocusPanelStatus = {
 
         switch (state) {
             case 'pending':
-                badge.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="icon-spin"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
                 badge.classList.add('visible', 'pending');
                 break;
             case 'dirty':

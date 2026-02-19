@@ -59,7 +59,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    flex-grow: 1;
+    /* flex-grow: 1; Removed to fix hover area issue */
     min-width: 0;
     /* Text truncation fix */
     cursor: pointer;
