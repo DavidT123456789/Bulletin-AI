@@ -476,7 +476,7 @@ export const TrombinoscopeManager = {
     },
 
     _updateStepperUI() {
-        document.querySelectorAll('.trombi-wizard-step').forEach(el => {
+        document.querySelectorAll('.ui-stepper-step').forEach(el => {
             const stepNum = parseInt(el.dataset.step);
             el.classList.toggle('active', stepNum === this._currentStep);
             el.classList.toggle('completed', stepNum < this._currentStep);
