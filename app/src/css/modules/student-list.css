@@ -1,0 +1,1107 @@
+/* ====================================================================
+   LISTE + FOCUS VIEW - UX Revolution
+   Vue Liste pour aperçu + Vue Focus pour édition
+   ==================================================================== */
+
+/* === Vue Liste (Table) === */
+.student-list-view {
+    width: 100%;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--glass-surface-border);
+    overflow: visible;
+    /* Permet au menu d'actions de déborder */
+    /* Espace en bas pour permettre de scroller le dernier élève au-dessus du FAB */
+    margin-bottom: 80px;
+}
+
+.student-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.student-list-table thead {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Coins arrondis sur le thead pour correspondre au conteneur */
+.student-list-table thead tr:first-child th:first-child {
+    border-top-left-radius: var(--radius-lg);
+}
+
+.student-list-table thead tr:first-child th:last-child {
+    border-top-right-radius: var(--radius-lg);
+}
+
+[data-theme="dark"] .student-list-table thead {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.student-list-table th {
+    padding: 14px 16px;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+/* ====================================================================
+   HEADER ACTION TRIGGER - Single Source of Truth
+   Common style for interactive elements inside table headers (search, chips)
+   ==================================================================== */
+.header-action-trigger {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    opacity: 0.5;
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 2;
+}
+
+.header-action-trigger:hover {
+    opacity: 1 !important;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    transform: translateY(-50%) scale(1.15);
+}
+
+/* Sortable Headers */
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: color 0.25s ease;
+}
+
+/* Effet de survol via pseudo-élément pour préserver le fond du thead */
+.sortable-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(var(--primary-color-rgb), 0.06);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.sortable-header:hover::after {
+    opacity: 1;
+}
+
+.sortable-header:hover {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .sortable-header::after {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Contenu au-dessus du pseudo-élément */
+.sortable-header .header-content-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+.sortable-header.active-sort,
+.sortable-header.active-sort:focus {
+    color: var(--primary-color);
+    background-color: transparent !important;
+    outline: none;
+}
+
+/* Léger effet de survol sur la colonne triée active (indique que c'est toujours cliquable) */
+.sortable-header.active-sort:hover {
+    color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb), 0.04) !important;
+}
+
+[data-theme="dark"] .sortable-header.active-sort:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Disable active-sort hover effect when hovering search button */
+.name-header-with-search.active-sort:has(.inline-search-trigger-btn:hover) {
+    background-color: transparent !important;
+}
+
+/* Disable pseudo-element on active-sort (we use direct background instead) */
+.sortable-header.active-sort::after,
+.sortable-header.active-sort:hover::after {
+    opacity: 0 !important;
+}
+
+/* Header Content Alignment Wrapper - Ensures perfect centering */
+.header-content-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+/* Sort Icon - In-flow to center the group (Text + Icon) */
+.sortable-header .sort-icon-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    min-width: 14px;
+    /* Do NOT use absolute positioning - we want the group centered */
+}
+
+.sortable-header .sort-icon-placeholder iconify-icon {
+    font-size: 15px;
+    color: var(--primary-color);
+    /* Transition for color change */
+    transition: color 0.2s ease;
+}
+
+/* Hide placeholder completely when empty to ensure perfect centering of text */
+.sortable-header .sort-icon-placeholder:empty {
+    display: none;
+    margin-left: 0;
+    min-width: 0;
+}
+
+/* Ensure Name header is left-aligned */
+.student-list-table th[data-sort-field="name"] {
+    text-align: left;
+    padding-left: 40px !important;
+}
+
+.student-list-table th[data-sort-field="name"] .header-content-wrapper {
+    justify-content: flex-start;
+}
+
+.student-list-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.student-list-table tbody tr {
+    transition: background var(--transition-fast);
+    cursor: pointer;
+}
+
+.student-list-table tbody tr:hover {
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+/* === POLISH: Show Actions on Hover (Desktop) === */
+.student-list-table tbody tr .btn-action-menu {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Show when row hovered */
+.student-list-table tbody tr:hover .btn-action-menu,
+.student-list-table tbody tr:focus-within .btn-action-menu,
+.student-list-table tbody tr .btn-action-menu:focus,
+.student-list-table tbody tr .action-dropdown-menu.open~.btn-action-menu,
+.student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+    opacity: 1;
+    transform: scale(1);
+    background: white;
+    /* Pop out effect */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu {
+    background: var(--surface-alert-bg);
+}
+
+/* Always visible on touch devices */
+@media (hover: none) {
+    .student-list-table tbody tr .btn-action-menu {
+        opacity: 0.6;
+        transform: scale(1);
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
+/* Active row when focus panel is open - maintains visual link */
+.student-list-table tbody tr.focus-active {
+    background: rgba(var(--primary-color-rgb), 0.06);
+}
+
+.student-list-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ====================================================================
+   PREMIUM LIST FILTER ANIMATIONS
+   Animations fluides iOS-style pour le filtrage de la liste
+   ==================================================================== */
+
+/* Keyframes pour l'entrée des lignes - slide up + fade */
+@keyframes list-row-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation d'entrée staggerée pour les lignes */
+.student-list-table tbody tr.row-animate-in {
+    animation: list-row-enter 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: var(--row-delay, 0ms);
+}
+
+/* Animation de highlight subtile lors du filtrage */
+@keyframes row-filter-highlight {
+    0% {
+        background-color: transparent;
+    }
+
+    30% {
+        background-color: rgba(var(--primary-color-rgb), 0.06);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.student-list-table tbody tr.filter-highlight {
+    animation: row-filter-highlight 0.6s ease-out;
+}
+
+/* Keyframes pour la sortie des lignes filtrées - fade + scale + collapse */
+@keyframes list-row-exit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.96) translateX(-15px);
+    }
+}
+
+/* Animation de sortie pour les lignes filtrées */
+.student-list-table tbody tr.row-exit {
+    animation: list-row-exit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    pointer-events: none;
+}
+
+/* Classe pour les lignes qui se repositionnent (FLIP) */
+.student-list-table tbody tr.row-move {
+    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+/* Effet "carte" pendant le déplacement pour un feedback visuel premium */
+.student-list-table tbody tr.row-moving {
+    position: relative;
+    z-index: 10;
+    background: var(--surface-color) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.student-list-table tbody tr.row-moving td {
+    background: var(--surface-color);
+}
+
+.student-list-table tbody tr.row-moving td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+.student-list-table tbody tr.row-moving td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving {
+    background: var(--surface-elevated) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .student-list-table tbody tr.row-moving td {
+    background: var(--surface-elevated);
+}
+
+/* Keyframes pour l'entrée retardée des nouvelles lignes lors du filtrage */
+@keyframes list-row-filter-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.student-list-table tbody tr.row-filter-enter {
+    animation: list-row-filter-enter 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation-delay: var(--enter-delay, 150ms);
+}
+
+/* Student name column */
+.student-name-cell {
+    font-weight: 600;
+    color: var(--text-primary);
+    /* Prevent column jump when avatar moves above name */
+    min-width: 140px;
+    padding-right: 8px !important;
+    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    /* Allow avatar zoom to overflow */
+    overflow: visible;
+    position: relative;
+}
+
+.student-name-cell .student-prenom {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Grade columns */
+.grade-cell {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+}
+
+.grade-cell .grade-value {
+    font-weight: 600;
+}
+
+.grade-cell .grade-empty {
+    color: var(--text-tertiary);
+}
+
+/* Grade header - compact width for T1/T2/T3 labels */
+.grade-header {
+    width: 70px;
+    min-width: 70px;
+    max-width: 80px;
+    padding: 14px 8px !important;
+}
+
+/* Evolution header - direct hover effect (pseudo-element doesn't work with border-collapse) */
+.evolution-header:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.06) !important;
+}
+
+[data-theme="dark"] .evolution-header:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Disable pseudo-element on evolution-header */
+.evolution-header::after {
+    display: none;
+}
+
+/* Evolution cell styling */
+.evolution-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.grade-cell .grade-evolution,
+.evolution-cell .grade-evolution {
+    font-size: 14px;
+    font-weight: 600;
+    cursor: help;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+}
+
+.grade-cell .grade-evolution:hover,
+.evolution-cell .grade-evolution:hover {
+    transform: scale(1.3);
+    opacity: 1;
+}
+
+.grade-cell .grade-evolution.positive,
+.evolution-cell .grade-evolution.positive {
+    color: var(--success-color);
+}
+
+.grade-cell .grade-evolution.negative,
+.evolution-cell .grade-evolution.negative {
+    color: var(--error-color);
+}
+
+.grade-cell .grade-evolution.stable,
+.evolution-cell .grade-evolution.stable {
+    color: var(--text-tertiary);
+    opacity: 0.6;
+}
+
+/* Appreciation/Status column */
+.appreciation-cell {
+    max-width: 340px;
+    min-width: 280px;
+    text-align: left;
+    transition: padding 0.3s ease;
+    position: relative;
+    /* Anchor for absolute positioning */
+}
+
+/* Center status badges when no appreciation */
+.appreciation-cell:has(.status-badge) {
+    text-align: center;
+}
+
+.appreciation-header {
+    text-align: center;
+    position: relative;
+}
+
+/* Word count chip - positioned absolutely to the right */
+.appreciation-header>.detail-chip {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* ====================================================================
+   UPDATE BUTTON INLINE - Bouton Actualiser dans le header du tableau
+   ==================================================================== */
+.btn-update-inline {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    background: var(--gradient-warning);
+    color: white !important;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 3px rgba(var(--warning-rgb), 0.25);
+    /* CRITICAL: High z-index to be above header overlay and content */
+    z-index: 10;
+    /* Ensure button captures pointer events */
+    pointer-events: auto;
+}
+
+.btn-update-inline:hover {
+    background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
+    box-shadow: 0 2px 8px rgba(var(--warning-rgb), 0.35);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.btn-update-inline:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+.btn-update-inline .update-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Animation d'apparition SANS translation (pour contextes flex/static) */
+@keyframes inline-btn-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.btn-update-inline.animate-in {
+    animation: inline-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ====================================================================
+   APPRECIATION HEADER ACTIONS CONTAINER
+   ==================================================================== */
+.appreciation-header-actions {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+/* ====================================================================
+   GENERATE BUTTON INLINE - Bouton Générer dans le header du tableau
+   ==================================================================== */
+.btn-generate-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    background: var(--gradient-ai);
+    color: white !important;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
+    pointer-events: auto;
+    /* Shine sweep effect - harmonized with btn-primary/btn-ai */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shine sweep pseudo-element (Single Source of Truth: @keyframes shine-sweep in components.css) */
+.btn-generate-inline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+    pointer-events: none;
+}
+
+.btn-generate-inline:hover {
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    transform: scale(1.05);
+}
+
+.btn-generate-inline:hover::before {
+    animation: shine-sweep 1.5s ease-in-out infinite;
+}
+
+.btn-generate-inline:active {
+    transform: scale(0.98);
+}
+
+.btn-generate-inline i {
+    font-size: 11px;
+}
+
+.btn-generate-inline .generate-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Animation d'apparition pour le bouton générer */
+.btn-generate-inline.animate-in {
+    animation: inline-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Remove absolute positioning from btn-update-inline when in container */
+.appreciation-header-actions .btn-update-inline {
+    position: static;
+    transform: none;
+}
+
+.appreciation-header-actions .btn-update-inline:hover {
+    transform: scale(1.05);
+}
+
+/* Ensure the hover overlay on appreciation header doesn't block the button */
+.appreciation-header::after {
+    pointer-events: none;
+}
+
+/* === FIX: Disable header hover effect when hovering interactive children ===
+   When user hovers the Generate/Update buttons or the avgWords chip,
+   we don't want to trigger the parent header's hover overlay effect */
+.appreciation-toggle-header:has(.btn-generate-inline:hover)::after,
+.appreciation-toggle-header:has(.btn-update-inline:hover)::after,
+.appreciation-toggle-header:has(#avgWordsChip:hover)::after,
+/* Also for search button in name column */
+.name-header-with-search:has(.inline-search-trigger-btn:hover)::after {
+    opacity: 0 !important;
+}
+
+/* Also prevent the toggle icon from appearing when hovering interactive children */
+.appreciation-toggle-header:has(.btn-generate-inline:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(.btn-update-inline:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon {
+    opacity: 0 !important;
+}
+
+/* Disable sort icon highlight when hovering search button */
+.name-header-with-search:has(.inline-search-trigger-btn:hover) .sort-icon-placeholder,
+.name-header-with-search:has(.inline-search-trigger-btn:hover) .name-sort-icon {
+    opacity: 0 !important;
+}
+
+/* === Appreciation Column Toggle (Expand/Collapse Content) === */
+/* Note: Uses .sortable-header hover effect for consistency */
+.appreciation-toggle-header .header-content-wrapper {
+    position: relative;
+    display: inline-flex !important;
+}
+
+/* Expand Icon - appears on hover */
+.appreciation-toggle-icon {
+    font-size: 11px;
+    opacity: 0;
+    color: var(--text-tertiary);
+    margin-left: 8px;
+    transition: opacity 0.25s ease;
+}
+
+.appreciation-toggle-header:hover .appreciation-toggle-icon {
+    opacity: 0.7;
+}
+
+.appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
+    opacity: 0.6;
+    color: var(--primary-color);
+}
+
+/* === FULL VIEW STATE (Expanded Content) === */
+
+/* 1. Animate cell height transition */
+/* Expanded View - Width Optimization */
+.student-list-table.appreciation-full-view .appreciation-cell {
+    /* Control width explicitly: Wider than normal (340px) but capped */
+    width: clamp(360px, 40vw, 515px);
+    min-width: 360px;
+    max-width: 515px;
+}
+
+/* 2. Transform the preview bubble into full content */
+.student-list-table.appreciation-full-view .appreciation-preview {
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow: visible;
+    text-overflow: clip;
+
+    /* Card-like styling for full view */
+    background: rgba(0, 0, 0, 0.03);
+    padding: 12px 16px;
+    /* Equal horizontal padding for centered text in card */
+    border-radius: var(--radius-md);
+    line-height: 1.6;
+    margin: 4px 0;
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    /* Enforce left align even in full view to prevent centering issues */
+    text-align: left !important;
+
+    /* Micro-fade animation to mask white-space switch */
+    animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Shrink name column in expanded view to profit from vertical stacking */
+.student-list-table.appreciation-full-view .student-name-cell {
+    min-width: 230px;
+    width: 230px;
+}
+
+
+
+/* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
+@keyframes appreciation-expand-reveal {
+    0% {
+        opacity: 0.4;
+        filter: blur(2px);
+    }
+
+    100% {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+
+/* Appreciation Preview - Truncated inline display */
+.appreciation-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.02);
+    max-width: 100%;
+    max-height: 32px;
+
+    /* iOS Spring transitions synced with row animation */
+    transition:
+        max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        /* Added for smooth zoom */
+        box-shadow 0.3s ease,
+        /* Added for smooth shadow lift */
+        opacity 0.15s ease;
+
+    /* Slight fade during collapse to mask white-space switch */
+    opacity: 1;
+}
+
+/* Expanded state during generation - smooth transition */
+.appreciation-preview.expanded {
+    white-space: pre-wrap;
+    max-height: 300px;
+    /* Allow multi-line */
+}
+
+[data-theme="dark"] .appreciation-preview {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+
+.appreciation-preview:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--text-primary);
+    /* No zoom in compact view as requested */
+}
+
+/* Harmonization: Apply hover effect to expanded view with enhanced zoom */
+.student-list-table.appreciation-full-view .appreciation-preview:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--text-primary);
+    /* Maintain the card shape while scaling - INCREASED ZOOM (5% boost) */
+    transform: scale(1.05);
+    /* Flat design - no shadow */
+    box-shadow: none;
+}
+
+/* Subtle indicator removed - JS handles truncation with "..." */
+
+/* Status badges (shown when no appreciation) */
+.appreciation-cell .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.done {
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    color: var(--success-color);
+}
+
+.status-badge.pending {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .status-badge.pending {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.status-badge.error {
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+    color: var(--error-color);
+}
+
+
+
+/* Status Column */
+.status-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 120px;
+    padding: 8px 4px !important;
+}
+
+.status-cell .status-badge {
+    /* Reuse existing badge appearance but ensure centered */
+    margin: 0 auto;
+    width: fit-content;
+}
+
+/* Action column */
+.action-cell {
+    text-align: center;
+    position: relative;
+}
+
+.action-cell .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* === 3-Dot Action Dropdown === */
+.action-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+
+.btn-action-menu {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast), opacity 0.2s ease;
+    /* Hidden by default - appears on row hover (iOS 2025 pattern) */
+    opacity: 0;
+}
+
+/* Reveal on row hover or when menu is open */
+.student-list-table tbody tr:hover .btn-action-menu,
+.action-dropdown.open .btn-action-menu {
+    opacity: 1;
+}
+
+.btn-action-menu:hover {
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    color: var(--primary-color);
+}
+
+.action-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 160px;
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.95);
+    transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 100;
+    overflow: hidden;
+    padding: 6px;
+    /* Harmonisé avec le menu global */
+}
+
+.action-dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.action-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    /* Harmonisé avec le menu global */
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    border-radius: 8px;
+    /* Harmonisé avec le menu global */
+}
+
+.action-dropdown-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+}
+
+.action-dropdown-item i {
+    width: 16px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.action-dropdown-item.danger {
+    color: var(--error-color);
+}
+
+.action-dropdown-item.danger:hover {
+    background: rgba(var(--error-rgb), 0.1);
+    color: var(--error-color);
+}
+
+[data-theme="dark"] .action-dropdown-menu {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* === GLOBAL ACTIONS DROPDOWN (Table Header) === */
+/* Réutilise .action-dropdown-menu et .action-dropdown-item - source unique de vérité */
+.global-actions-dropdown {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-action-menu-header {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.6;
+}
+
+.btn-action-menu-header:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Le menu global hérite de .action-dropdown-menu + surcharges spécifiques */
+.global-actions-dropdown-menu {
+    /* Override: hérite de action-dropdown-menu mais avec ces différences */
+    position: absolute;
+    top: 100%;
+    /* S'ouvre vers le BAS */
+    right: 0;
+    /* Le menu est décalé vers la gauche via translateX pour éviter le débordement */
+    margin-top: 8px;
+    min-width: 220px;
+    /* Plus large que le menu individuel */
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    display: block;
+    /* Ensure block layout but invisible */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-20px) translateY(-8px) scale(0.95);
+    transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 200;
+    /* Plus élevé que le menu individuel (100) */
+    overflow: hidden;
+    padding: 6px;
+}
+
+.global-actions-dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-20px) translateY(0) scale(1);
+}
+
+/* === Headers sectionnels (Partagé global + individuel) === */
+.global-actions-dropdown-menu .dropdown-header,
+.action-dropdown-menu .dropdown-header {
+    margin: 0;
+    padding: 8px 12px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid var(--border-color);
+}
+
+.global-actions-dropdown-menu .dropdown-header:first-of-type,
+.action-dropdown-menu .dropdown-header:first-of-type {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.global-actions-dropdown-menu .dropdown-header i,
+.action-dropdown-menu .dropdown-header i {
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+/* Divider danger (spécifique au menu global) */
+.global-actions-dropdown-menu .dropdown-divider.danger-divider,
+.action-dropdown-menu .dropdown-divider {
+    border-top: 1px solid rgba(var(--error-rgb), 0.2);
+    margin: 4px 8px;
+}
+
+[data-theme="dark"] .global-actions-dropdown-menu,
+[data-theme="dark"] .action-dropdown-menu {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}

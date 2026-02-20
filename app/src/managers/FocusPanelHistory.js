@@ -286,7 +286,7 @@ export const FocusPanelHistory = {
 
     _animateVersionChange(versionData, direction = 'forward') {
         const textEl = document.getElementById('focusAppreciationText');
-        if (!textEl || textEl.classList.contains('history-animating')) return;
+        if (!textEl) return;
 
         const content = versionData.content;
         const appreciationSource = versionData.appreciationSource;
@@ -316,22 +316,36 @@ export const FocusPanelHistory = {
             }
         }
 
+        // Notify history change immediately for snappy UI feel (updates arrows and x/y badge)
+        this._notifyHistoryChange();
+
+        // Prevent overlapping animations by clearing previous timeouts
+        if (this._animTimeoutExit) clearTimeout(this._animTimeoutExit);
+        if (this._animTimeoutEnter) clearTimeout(this._animTimeoutEnter);
+
+        // Reset classes from any ongoing animation
+        textEl.classList.remove('history-animating', 'history-exit-forward', 'history-exit-backward', 'history-enter-forward', 'history-enter-backward');
+
+        // Force reflow to restart CSS animation synchronously
+        void textEl.offsetWidth;
+
         textEl.classList.add('history-animating');
         const exitClass = direction === 'backward' ? 'history-exit-forward' : 'history-exit-backward';
         const enterClass = direction === 'backward' ? 'history-enter-backward' : 'history-enter-forward';
 
         textEl.classList.add(exitClass);
 
-        setTimeout(() => {
+        this._animTimeoutExit = setTimeout(() => {
             textEl.classList.remove(exitClass);
             textEl.textContent = content;
             textEl.classList.add(enterClass);
 
             this._notifyContentChange(content);
-            this._notifyHistoryChange();
 
-            setTimeout(() => {
+            this._animTimeoutEnter = setTimeout(() => {
                 textEl.classList.remove(enterClass, 'history-animating');
+                this._animTimeoutExit = null;
+                this._animTimeoutEnter = null;
             }, 280);
         }, 180);
     },

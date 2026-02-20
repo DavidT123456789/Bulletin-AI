@@ -27,6 +27,9 @@ export const ModalUI = {
     /** @private */
     _isIgnoringTooltips: false,
 
+    /** @private Map pour stocker les timeouts d'animation par modale */
+    _animTimeouts: new WeakMap(),
+
     /**
      * Ouvre une modale avec animation style Apple.
      * @param {HTMLElement|string} modalOrId - L'élément modale ou son ID
@@ -34,6 +37,14 @@ export const ModalUI = {
     openModal(modalOrId) {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
+
+        // Clear any ongoing close animation timeout to prevent overlaps
+        if (this._animTimeouts.has(modal)) {
+            clearTimeout(this._animTimeouts.get(modal));
+            this._animTimeouts.delete(modal);
+        }
+
+        modal.classList.remove('modal-closing');
 
         // [UX Mobile] History Push via Manager
         HistoryManager.pushState(modal.id, (options) => this.closeModal(modal, options));
@@ -140,7 +151,8 @@ export const ModalUI = {
         modal.classList.add('modal-closing');
 
         // Attendre la fin de l'animation avant de masquer
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+            this._animTimeouts.delete(modal);
             modal.style.display = 'none';
             modal.classList.remove('modal-closing');
             modal.classList.remove('modal-visible');
@@ -169,6 +181,8 @@ export const ModalUI = {
                 }
             }
         }, 250); // Durée de l'animation de fermeture
+
+        this._animTimeouts.set(modal, timeoutId);
 
         setTimeout(() => {
             this._isIgnoringTooltips = false;

@@ -63,7 +63,7 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-    background: #d73c3c;
+    background: var(--error-hover, var(--error-color));
 }
 
 .btn-success {
@@ -72,8 +72,8 @@
 }
 
 .btn-success:hover:not(:disabled) {
-    background-color: #059669;
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    background-color: var(--success-hover, var(--success-color));
+    box-shadow: 0 4px 6px -1px rgba(var(--success-rgb, 16, 185, 129), 0.2);
 }
 
 .btn-warning {
@@ -81,7 +81,7 @@
 }
 
 .btn-warning:hover:not(:disabled) {
-    background: #d97706;
+    background: var(--warning-hover, var(--warning-color));
 }
 
 .btn-purple {
@@ -120,13 +120,13 @@
 
 /* État de succès pour le bouton de validation */
 .btn-purple.btn-validated {
-    background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-hover, var(--success-color)) 100%);
     pointer-events: none;
     animation: validate-success 0.4s ease-out;
 }
 
 .btn-purple.btn-validated:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-hover, var(--success-color)) 100%);
     box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2), var(--shadow-sm);
 }
 
@@ -691,8 +691,8 @@ select optgroup {
 }
 
 [data-theme="dark"] select option {
-    background-color: #1e293b;
-    color: #e2e8f0;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 /* Force native controls (autocomplete, calendar) - Dark mode text color */
@@ -708,8 +708,8 @@ select optgroup {
 }
 
 [data-theme="dark"] select optgroup {
-    background-color: #0f172a;
-    color: #94a3b8;
+    background-color: var(--bg-color);
+    color: var(--text-secondary);
 }
 
 
@@ -1575,14 +1575,14 @@ textarea {
 
 /* PWA Install Button - Animated glow effect when visible */
 .pwa-install-btn {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-hover, var(--success-color)) 100%) !important;
     color: white !important;
     animation: pwa-install-pulse 2s ease-in-out infinite;
 }
 
 .pwa-install-btn:hover {
     animation: none;
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    background: linear-gradient(135deg, var(--success-hover, var(--success-color)) 0%, var(--success-hover, var(--success-color)) 100%) !important;
 }
 
 @keyframes pwa-install-pulse {

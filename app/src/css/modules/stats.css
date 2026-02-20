@@ -527,7 +527,7 @@
 
 /* Range 0-4: Red gradient */
 .performance-card .main-average-value.grade-range-0-4 {
-    background: linear-gradient(135deg, var(--grade-range-0-4) 0%, #dc2626 100%);
+    background: linear-gradient(135deg, var(--grade-range-0-4) 0%, var(--error-color) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
@@ -541,21 +541,21 @@
 
 /* Range 8-12: Yellow gradient */
 .performance-card .main-average-value.grade-range-8-12 {
-    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, #d97706 100%);
+    background: linear-gradient(135deg, var(--grade-range-8-12) 0%, var(--warning-color) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
 /* Range 12-16: Turquoise gradient */
 .performance-card .main-average-value.grade-range-12-16 {
-    background: linear-gradient(135deg, var(--grade-range-12-16) 0%, #0d9488 100%);
+    background: linear-gradient(135deg, var(--grade-range-12-16) 0%, var(--grade-range-16-20) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
 /* Range 16-20: Green gradient */
 .performance-card .main-average-value.grade-range-16-20 {
-    background: linear-gradient(135deg, var(--grade-range-16-20) 0%, #16a34a 100%);
+    background: linear-gradient(135deg, var(--grade-range-16-20) 0%, var(--success-color) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
@@ -786,17 +786,17 @@
 
 /* Animation d'entrée staggerée pour chaque segment */
 .evolution-card .bar-segment.progress {
-    background: linear-gradient(90deg, var(--success-color) 0%, #34d399 100%);
+    background: linear-gradient(90deg, var(--success-color) 0%, rgba(var(--success-rgb), 0.8) 100%);
     animation: segment-grow 0.5s ease-out 0.1s backwards;
 }
 
 .evolution-card .bar-segment.stable {
-    background: linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%);
+    background: linear-gradient(90deg, var(--text-tertiary) 0%, var(--bg-tertiary) 100%);
     animation: segment-grow 0.5s ease-out 0.25s backwards;
 }
 
 .evolution-card .bar-segment.regression {
-    background: linear-gradient(90deg, var(--error-color) 0%, #f87171 100%);
+    background: linear-gradient(90deg, var(--error-color) 0%, rgba(var(--error-rgb), 0.8) 100%);
     animation: segment-grow 0.5s ease-out 0.4s backwards;
 }
 
@@ -880,15 +880,15 @@
 }
 
 .evolution-card .legend-dot.progress {
-    background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%);
+    background: linear-gradient(135deg, var(--success-color) 0%, rgba(var(--success-rgb), 0.8) 100%);
 }
 
 .evolution-card .legend-dot.stable {
-    background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%);
+    background: linear-gradient(135deg, var(--text-tertiary) 0%, var(--bg-tertiary) 100%);
 }
 
 .evolution-card .legend-dot.regression {
-    background: linear-gradient(135deg, var(--error-color) 0%, #f87171 100%);
+    background: linear-gradient(135deg, var(--error-color) 0%, rgba(var(--error-rgb), 0.8) 100%);
 }
 
 /* Texte de la légende - Layout horizontal compact */

@@ -815,12 +815,11 @@
 .generation-mode-selector {
     display: inline-flex;
     background: var(--bg-secondary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     padding: 4px;
-    gap: 4px;
+    gap: 0;
     width: fit-content;
-    border: 1px solid var(--border-color);
-    /* margin-bottom removed - handled by parent form-group */
+    border: 1px solid transparent;
 }
 
 .generation-mode-selector input[type="radio"] {
@@ -829,10 +828,10 @@
 
 .settings-card .generation-mode-selector label {
     text-align: center;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
     transition: all var(--transition-base);
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-secondary);
     margin: 0;
     white-space: nowrap;
@@ -844,16 +843,19 @@
     background-color: var(--bg-hover);
 }
 
-/* État actif : Style harmonisé avec fond primary color pour meilleure visibilité */
+/* État actif : Style harmonisé avec fond transparent et animation du glider (si présent) */
 .generation-mode-selector input[type="radio"]:checked+label {
-    background: var(--primary-color);
-    color: white;
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
     border-color: transparent;
+    font-weight: 600;
 }
 
-/* Hover sur l'élément sélectionné */
+/* Hover sur l'état sélectionné fallback */
 .generation-mode-selector input[type="radio"]:checked+label:hover {
-    background: var(--primary-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
 }
 
 /* Compact variant for smaller settings controls (Pill Shape) */
@@ -886,6 +888,34 @@
     position: relative;
     z-index: 2;
     cursor: pointer;
+}
+
+/* === DARK MODE : Base generation-mode-selector === */
+[data-theme="dark"] .generation-mode-selector {
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .generation-mode-selector label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .generation-mode-selector label:hover {
+    color: var(--text-primary);
+    background-color: transparent;
+}
+
+[data-theme="dark"] .generation-mode-selector input[type="radio"]:checked+label {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(4px);
+    color: var(--text-primary);
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .generation-mode-selector input[type="radio"]:checked+label:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 /* Si le glider est activé par JS - le glider gère le fond */
@@ -953,6 +983,41 @@
 
 .generation-mode-selector.header-style input[type="radio"]:checked+label:hover {
     color: var(--text-primary);
+}
+
+/* === DARK MODE : Harmonisation avec le style "Glass" du theme-control === */
+[data-theme="dark"] .generation-mode-selector.header-style {
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .generation-mode-selector.header-style .selector-glider,
+[data-theme="dark"] .generation-mode-selector .selector-glider {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .generation-mode-selector.header-style label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .generation-mode-selector.header-style label:hover {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .generation-mode-selector.header-style input[type="radio"]:checked+label,
+[data-theme="dark"] .generation-mode-selector.has-glider input[type="radio"]:checked+label {
+    color: var(--text-primary) !important;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+/* Fallback si pas de glider (pour les sous-menus) */
+[data-theme="dark"] .generation-mode-selector.header-style:not(.has-glider) input[type="radio"]:checked+label {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(4px);
 }
 
 .settings-subject-header {

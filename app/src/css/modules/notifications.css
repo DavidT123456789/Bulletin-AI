@@ -54,43 +54,43 @@
 .notification.success {
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.25);
-    color: #065f46;
+    color: var(--text-primary);
 }
 
 .notification.success i:first-child {
     background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
+    color: var(--success-color);
 }
 
 [data-theme="dark"] .notification.success {
     background: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.3);
-    color: #6ee7b7;
+    color: var(--success-color);
 }
 
 /* Error - Pastel Red */
 .notification.error {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #991b1b;
+    color: var(--text-primary);
 }
 
 .notification.error i:first-child {
     background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    color: var(--error-color);
 }
 
 [data-theme="dark"] .notification.error {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
+    color: var(--error-color);
 }
 
 /* Warning - Pastel Orange */
 .notification.warning {
     background: rgba(var(--warning-rgb), 0.12);
     border: 1px solid rgba(var(--warning-rgb), 0.25);
-    color: #92400e;
+    color: var(--text-primary);
 }
 
 .notification.warning i:first-child {
@@ -101,7 +101,7 @@
 [data-theme="dark"] .notification.warning {
     background: rgba(var(--warning-rgb), 0.15);
     border-color: rgba(var(--warning-rgb), 0.3);
-    color: #fcd34d;
+    color: var(--warning-color);
 }
 
 /* Info - Pastel Blue/Primary */

@@ -998,7 +998,7 @@
 
 .api-status-item.pending .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
-    color: #d97706;
+    color: var(--warning-color);
 }
 
 @keyframes pulse-warning {
@@ -1042,7 +1042,7 @@
 
 .api-status-item.quota-warning .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
-    color: #d97706;
+    color: var(--warning-color);
 }
 
 /* État invalid - clé invalide */
@@ -1418,7 +1418,7 @@
 .status-pill.warning {
     background: rgba(245, 158, 11, 0.08);
     border-color: rgba(245, 158, 11, 0.3);
-    color: #d97706;
+    color: var(--warning-color);
     /* Amber-600 */
 }
 
@@ -1523,7 +1523,7 @@
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.2);
     border-radius: var(--radius-xs);
-    color: #d97706;
+    color: var(--warning-color);
     font-size: 0.8em;
     margin-top: 4px;
 }
@@ -1544,7 +1544,7 @@
 .missing-key-warning.banner-warning {
     background: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.3);
-    color: #d97706;
+    color: var(--warning-color);
 }
 
 .missing-key-warning.banner-warning i {

@@ -140,7 +140,7 @@ body.side-panel-open {
 
     .appreciation-result {
         break-inside: avoid;
-        border: 1px solid #ccc;
+        border: 1px solid var(--border-color);
         box-shadow: none;
     }
 }

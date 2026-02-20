@@ -19,21 +19,20 @@
     position: relative;
     display: flex;
     align-items: center;
-    background-color: var(--surface-hover);
-    /* Slightly lighter/darker than bg */
-    border-radius: 999px;
-    /* Pill shape */
-    padding: 3px;
-    /* Reduced from 4px */
+    background: var(--bg-secondary);
+    /* Harmonisé avec le sélecteur de période */
+    border-radius: var(--radius-pill);
+    /* Forme globale pilule */
+    padding: 4px;
+    /* Harmonisé (était 3px) */
     width: fit-content;
     min-width: 90px;
-    /* Compact width */
-    height: 32px;
-    /* Reduced from 40px */
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    /* Subtle inner shadow */
+    height: 36px;
+    /* Ajusté pour le padding 4px */
+    border: none;
     isolation: isolate;
     /* Create stacking context */
+    gap: 0;
 }
 
 /* Individual segments (buttons) */
@@ -47,13 +46,14 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
+    /* Harmonisé avec Semestre 2 */
     font-size: 0.9rem;
     /* Slightly smaller icon */
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: color var(--transition-base);
     height: 100%;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     outline: none;
     /* Focus handled by :focus-visible */
     -webkit-tap-highlight-color: transparent;
@@ -78,21 +78,22 @@
 /* The Glider (Sliding Background) */
 .theme-glider {
     position: absolute;
-    top: 3px;
+    top: 4px;
     /* Match padding */
-    bottom: 3px;
+    bottom: 4px;
     /* Match padding */
-    left: 3px;
+    left: 4px;
     /* Match padding */
-    width: calc((100% - 6px) / 3);
-    /* 3 segments, minus padding (3px*2 = 6px) */
-    background-color: var(--surface);
-    border-radius: 999px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    width: calc((100% - 8px) / 3);
+    /* 3 segments, minus padding (4px*2 = 8px) */
+    background: var(--surface-color);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    /* Harmonised shadow */
     z-index: 1;
     /* Behind text/icon */
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* Spring-like easing */
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Harmonised spring timing */
     pointer-events: none;
 }
 
@@ -126,33 +127,33 @@
 
 /* Dark Mode Adjustments */
 [data-theme="dark"] .theme-segmented-control {
-    background-color: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.4);
     /* Darker track for depth */
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    /* Subtle border definition */
+    border: 1px solid var(--border-color);
+    /* Subtle border definition via token */
 }
 
 [data-theme="dark"] .theme-glider {
-    background-color: rgba(255, 255, 255, 0.15);
-    /* Lighter, translucent glider */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.12);
+    /* Harmonisé avec Semestre 2 */
+    box-shadow: var(--shadow-sm);
     backdrop-filter: blur(4px);
     /* Glassmorphism effect */
 }
 
 [data-theme="dark"] .theme-segment {
-    color: rgba(255, 255, 255, 0.4);
-    /* Dimmed inactive state */
+    color: var(--text-secondary);
+    /* Token unifié */
 }
 
 [data-theme="dark"] .theme-segment:hover {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .theme-segment.active {
-    color: #ffffff;
+    color: var(--text-primary);
     /* Bright white active state */
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    /* Subtle glow */
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+    /* Subtle glow harmonisé */
 }

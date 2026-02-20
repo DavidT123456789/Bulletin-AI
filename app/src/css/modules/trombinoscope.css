@@ -569,8 +569,8 @@
 }
 
 .trombi-zone.resizing {
-    border-color: #f39c12;
-    box-shadow: 0 0 0 4px rgba(243, 156, 18, 0.4);
+    border-color: var(--warning-color);
+    box-shadow: 0 0 0 4px rgba(var(--warning-rgb, 243, 156, 18), 0.4);
 }
 
 .trombi-zone.focused {
@@ -638,7 +638,7 @@
     height: 22px;
     border-radius: 50%;
     border: none;
-    background: #e74c3c;
+    background: var(--error-color);
     color: white;
     cursor: pointer;
     display: flex;
@@ -657,7 +657,7 @@
 }
 
 .trombi-zone .zone-delete:hover {
-    background: #c0392b;
+    background: var(--error-color);
     transform: scale(1.1);
 }
 
@@ -1117,7 +1117,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color) 0%, #9b59b6 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1340,8 +1340,8 @@
 }
 
 .trombi-controls .btn-danger-subtle:hover {
-    border-color: #e74c3c;
-    color: #e74c3c;
+    border-color: var(--error-color);
+    color: var(--error-color);
 }
 
 .zone-counter {

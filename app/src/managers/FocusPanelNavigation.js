@@ -101,6 +101,16 @@ export const FocusPanelNavigation = {
             return;
         }
 
+        // Clean up any ongoing animations from rapid clicking
+        if (this._animTimeout) {
+            clearTimeout(this._animTimeout);
+            this._animTimeout = null;
+        }
+        if (this._activeClone) {
+            this._activeClone.remove();
+            this._activeClone = null;
+        }
+
         // 1. Prepare Target Data
         const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
         const filteredResult = appState.filteredResults[targetIndex];
@@ -110,6 +120,7 @@ export const FocusPanelNavigation = {
 
         // 2. Clone Current Content (Eliminates the "Empty Void")
         const clone = content.cloneNode(true);
+        this._activeClone = clone; // Store reference for rapid click cleanup
         const parent = content.offsetParent || document.body;
 
         clone.style.position = 'absolute';
@@ -159,10 +170,15 @@ export const FocusPanelNavigation = {
         });
 
         // 6. Cleanup
-        setTimeout(() => {
-            clone.remove();
+        this._animTimeout = setTimeout(() => {
+            if (this._activeClone === clone) {
+                this._activeClone.remove();
+                this._activeClone = null;
+            } else {
+                clone.remove();
+            }
             content.classList.remove(inClass);
-            // Clean up parent style if we modified it? Better safe than sorry to leave it if it doesn't break anything.
+            this._animTimeout = null;
         }, 400);
     },
 
