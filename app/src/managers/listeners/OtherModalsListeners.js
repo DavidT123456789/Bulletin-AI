@@ -8,6 +8,8 @@ import { UI } from '../UIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 
+import { SettingsModalListeners } from './SettingsModalListeners.js';
+
 let App = null;
 
 export const OtherModalsListeners = {
@@ -48,9 +50,7 @@ export const OtherModalsListeners = {
                 const personalizationModal = document.getElementById('personalizationModal');
                 if (personalizationModal) UI.openModal(personalizationModal);
                 // Refresh Lab data on modal open
-                import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
-                    SettingsModalListeners._updateStudentContextAndPrompt();
-                });
+                SettingsModalListeners._updateStudentContextAndPrompt();
                 // Highlight the entire style controls card for broader context
                 UI.highlightSettingsElement('settings-controls-panel', {
                     tab: 'templates',

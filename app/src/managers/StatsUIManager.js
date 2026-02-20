@@ -13,6 +13,7 @@ import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { StatsService } from '../services/StatsService.js';
+import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 
 /**
  * Module de gestion des statistiques de l'interface utilisateur.
@@ -386,9 +387,7 @@ export const StatsUI = {
                             if (personalizationModal) {
                                 UI.openModal(personalizationModal);
                                 // [FIX] Refresh Lab data on modal open to sync with current period
-                                import('./listeners/SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
-                                    SettingsModalListeners._updateStudentContextAndPrompt();
-                                });
+                                SettingsModalListeners._updateStudentContextAndPrompt();
                                 // Use centralized highlight utility for length slider
                                 UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
                             }

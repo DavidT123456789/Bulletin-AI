@@ -7,6 +7,7 @@ import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
+import { EventHandlersManager } from '../EventHandlersManager.js';
 
 export const ListViewEvents = {
 
@@ -17,39 +18,34 @@ export const ListViewEvents = {
     },
 
     callbacks: {
-        copySingleAppreciation: () => {},
-        bulkReset: () => {},
-        deleteStudent: () => {},
-        toggleAppreciationColumn: () => {},
-        handleSelectionInteraction: () => {},
-        clearSelections: () => {},
-        handleBulkAction: () => {},
-        toggleSelectVisible: () => {},
-        renderList: () => {},
-        updateHeaderSortIcons: () => {}
+        copySingleAppreciation: () => { },
+        bulkReset: () => { },
+        deleteStudent: () => { },
+        toggleAppreciationColumn: () => { },
+        handleSelectionInteraction: () => { },
+        clearSelections: () => { },
+        handleBulkAction: () => { },
+        toggleSelectVisible: () => { },
+        renderList: () => { },
+        updateHeaderSortIcons: () => { }
     },
 
     init(callbacks) {
         this.callbacks = { ...this.callbacks, ...callbacks };
     },
 
-/**
-     * Attache les event listeners aux Ã©lÃ©ments de la liste
-     * @param {HTMLElement} listContainer - Le conteneur spÃ©cifique de la liste
-     * @private
-     */
+    /**
+         * Attache les event listeners aux Ã©lÃ©ments de la liste
+         * @param {HTMLElement} listContainer - Le conteneur spÃ©cifique de la liste
+         * @private
+         */
     attachEventListeners(listContainer) {
-        // Import EventHandlersManager dynamically
-        import('../EventHandlersManager.js').then(({ EventHandlersManager }) => {
-
-            // Sort headers click (exclude appreciation toggle which has its own handler)
-            listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
-                header.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    EventHandlersManager.handleHeaderSortClick(header);
-                });
+        // Sort headers click (exclude appreciation toggle which has its own handler)
+        listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
+            header.addEventListener('click', (e) => {
+                e.stopPropagation();
+                EventHandlersManager.handleHeaderSortClick(header);
             });
-
         });
 
         // Bouton "Actualiser" inline dans le header du tableau
@@ -420,21 +416,19 @@ export const ListViewEvents = {
         // Import dynamique des dépendances
         import('../AppreciationsManager.js').then(({ AppreciationsManager }) => {
             import('../StorageManager.js').then(({ StorageManager }) => {
-                import('../EventHandlersManager.js').then(({ EventHandlersManager }) => {
-                    // Selection
-                    addAction('#selectAllBtn-global', () => ListSelectionManager.toggleSelectVisible(true));
+                // Selection
+                addAction('#selectAllBtn-global', () => ListSelectionManager.toggleSelectVisible(true));
 
-                    // Maintenance - Moved to toolbar
+                // Maintenance - Moved to toolbar
 
-                    // Export
-                    addAction('#exportJsonBtn', () => StorageManager.exportToJson());
-                    addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
-                    addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
+                // Export
+                addAction('#exportJsonBtn', () => StorageManager.exportToJson());
+                addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
+                addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
 
-                    // Analyze class (in dropdown menu)
-                    import('../ClassDashboardManager.js').then(({ ClassDashboardManager }) => {
-                        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
-                    });
+                // Analyze class (in dropdown menu)
+                import('../ClassDashboardManager.js').then(({ ClassDashboardManager }) => {
+                    addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
                 });
             });
         });

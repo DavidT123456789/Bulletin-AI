@@ -16,6 +16,7 @@ import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
+import { ApiValidationManager } from './ApiValidationManager.js';
 
 /**
  * Module de gestion de l'interface des paramètres.
@@ -596,8 +597,6 @@ export const SettingsUIManager = {
      * Appelé par le bouton "Tester tout"
      */
     async testAllConnections() {
-        const { ApiValidationManager } = await import('./ApiValidationManager.js');
-
         const providers = [
             { id: 'google', key: appState.googleApiKey, inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
             { id: 'openrouter', key: appState.openrouterApiKey, inputEl: DOM.openrouterApiKey, errorEl: DOM.openrouterApiKeyError, btnEl: DOM.validateOpenrouterApiKeyBtn },

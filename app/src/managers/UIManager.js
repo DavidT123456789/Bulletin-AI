@@ -16,6 +16,7 @@ import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
+import { EventHandlersManager } from './EventHandlersManager.js';
 import { Utils } from '../utils/Utils.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
@@ -1364,9 +1365,7 @@ export const UI = {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    import('./EventHandlersManager.js').then(({ EventHandlersManager }) => {
-                        EventHandlersManager.handleStatFilterClick(null);
-                    });
+                    EventHandlersManager.handleStatFilterClick(null);
                 });
             }
         } else {

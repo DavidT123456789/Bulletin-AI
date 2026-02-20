@@ -11,6 +11,8 @@ import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { HistoryManager } from '../HistoryManager.js';  // Import ajouté
+import { EventHandlersManager } from '../EventHandlersManager.js';
+import { SettingsModalListeners } from './SettingsModalListeners.js';
 
 import { APP_LINKS } from '../../config/Config.js';
 
@@ -143,9 +145,7 @@ export const GeneralListeners = {
                     closeMenu();
                     SettingsUIManager.createSnapshot();
                     UI.openModal(DOM.personalizationModal);
-                    import('./SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
-                        SettingsModalListeners._updateStudentContextAndPrompt();
-                    });
+                    SettingsModalListeners._updateStudentContextAndPrompt();
                 });
             }
 
@@ -235,9 +235,7 @@ export const GeneralListeners = {
         // Error badge -> regenerate errors
         addClickListener(DOM.dashErrors, (e) => {
             e && e.stopPropagation(); // Prevent opening settings
-            import('../EventHandlersManager.js').then(({ EventHandlersManager }) => {
-                EventHandlersManager.handleRegenerateErrorsClick?.();
-            });
+            EventHandlersManager.handleRegenerateErrorsClick?.();
         });
 
         // Cancel button during generation

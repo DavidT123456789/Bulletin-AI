@@ -25,6 +25,8 @@ import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ModalUI } from './ModalUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { VariationsManager } from './VariationsManager.js';
+import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -455,9 +457,7 @@ export const FocusPanelManager = {
                 if (personalizationModal) UI.openModal(personalizationModal);
 
                 // 2. Refresh Lab data on modal open to sync with current period
-                import('./listeners/SettingsModalListeners.js').then(({ SettingsModalListeners }) => {
-                    SettingsModalListeners._updateStudentContextAndPrompt();
-                });
+                SettingsModalListeners._updateStudentContextAndPrompt();
 
                 // 3. Use centralized highlight utility for length slider
                 UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
@@ -1689,8 +1689,6 @@ export const FocusPanelManager = {
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
                 if (!result) return;
 
-                // Import VariationsManager dynamically
-                const { VariationsManager } = await import('./VariationsManager.js');
                 const response = await VariationsManager.applyRefinement(currentText, refineType, signal);
 
                 // Check if aborted
