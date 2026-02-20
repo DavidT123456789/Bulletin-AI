@@ -286,12 +286,12 @@
         flex-grow: 0;
     }
 
-    .generation-mode-selector.header-style {
+    .ui-segmented-control.header-style {
         gap: 2px;
         padding: 3px;
     }
 
-    .generation-mode-selector.header-style .mode-btn {
+    .ui-segmented-control.header-style .ui-segment {
         padding: 6px 10px;
         font-size: 11px;
     }

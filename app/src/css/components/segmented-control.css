@@ -1,0 +1,183 @@
+/* ==========================================================================
+   COMPONENT: UI Segmented Control (Architecture Unifiée)
+   Remplace: theme-segmented-control, generation-mode-selector, provider-selector-compact
+   ========================================================================== */
+
+/* The main container for the segmented control */
+.ui-segmented-control {
+    --sc-padding: 3px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    padding: var(--sc-padding);
+    width: fit-content;
+    height: 38px;
+    border: none;
+    isolation: isolate;
+    /* Create stacking context */
+    gap: 0;
+}
+
+
+
+/* Modifier: Header Style (ex: generation-mode-selector.header-style) */
+.ui-segmented-control.header-style {
+    /* Remplacement du glassmorphism "froid" par la couleur unifiée chaude */
+    background: var(--bg-secondary);
+    border: none;
+    backdrop-filter: blur(var(--glass-base-blur));
+    -webkit-backdrop-filter: blur(var(--glass-base-blur));
+}
+
+/* Individual segments (buttons or radio labels) */
+.ui-segment {
+    flex: 1;
+    position: relative;
+    z-index: 2;
+    /* Above the glider */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--font-sm) !important;
+    /* 13px */
+    font-weight: 500 !important;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    opacity: 0.6;
+    filter: grayscale(100%);
+    height: 100%;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: var(--radius-pill);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+}
+
+/* Handle Icons */
+.ui-segment i,
+.ui-segment iconify-icon {
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+/* Handle Radio inputs */
+.ui-segmented-control input[type="radio"] {
+    display: none;
+}
+
+/* Hover state */
+.ui-segment:hover,
+.ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
+    color: var(--text-primary);
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+/* Active state */
+.ui-segment.active,
+.ui-segmented-control input[type="radio"]:checked+.ui-segment {
+    color: var(--text-primary);
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+/* High Contrast Focus */
+.ui-segment:focus-visible,
+.ui-segmented-control input[type="radio"]:focus-visible+.ui-segment {
+    box-shadow: 0 0 0 2px var(--primary-color);
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+/* --- The Glider (Sliding Background) --- */
+/* By default, managed by JS (width and transform) for variable width segments */
+.ui-glider {
+    position: absolute;
+    top: var(--sc-padding, 3px);
+    bottom: var(--sc-padding, 3px);
+    left: 0;
+    background: var(--surface-color);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    z-index: 1;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+/* Override Glider behavior for CSS-only versions (like theme control) */
+/* Requires the segments to be evenly distributed (flex: 1) */
+.ui-segmented-control.css-driven .ui-glider {
+    left: var(--sc-padding, 3px);
+    width: calc((100% - (var(--sc-padding, 3px) * 2)) / 3);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ui-segmented-control.css-driven[data-active="light"] .ui-glider,
+.ui-segmented-control.css-driven[data-active-index="0"] .ui-glider {
+    transform: translateX(0%);
+}
+
+.ui-segmented-control.css-driven[data-active="system"] .ui-glider,
+.ui-segmented-control.css-driven[data-active-index="1"] .ui-glider {
+    transform: translateX(100%);
+}
+
+.ui-segmented-control.css-driven[data-active="dark"] .ui-glider,
+.ui-segmented-control.css-driven[data-active-index="2"] .ui-glider {
+    transform: translateX(200%);
+}
+
+/* --- Dark Mode : Gold Standard Glassmorphism --- */
+[data-theme="dark"] .ui-segmented-control,
+[data-theme="dark"] .ui-segmented-control.header-style {
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+}
+
+/* Ensure header style maintains blur */
+[data-theme="dark"] .ui-segmented-control.header-style {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] .ui-glider {
+    background: rgba(255, 255, 255, 0.12);
+    /* Glassmorphism pure */
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Ensure text is visible and glows subtly on active */
+[data-theme="dark"] .ui-segment,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ui-segment:hover,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui-segment.active,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment {
+    color: var(--text-primary);
+    /* Bright white */
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+    /* Subtle glow for text */
+}
+
+/* Specific tweaks for icons in active state if needed */
+[data-theme="dark"] .ui-segment.active iconify-icon,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}

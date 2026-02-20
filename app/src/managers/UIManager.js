@@ -504,7 +504,7 @@ export const UI = {
                 const tooltip = isActive ? '' : `Passer au ${Utils.getPeriodLabel(p, true)}`;
                 return `
                 <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${isActive ? 'checked' : ''}>
-                <label for="period${p}" class="${tooltip ? 'tooltip' : ''}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
+                <label for="period${p}" class="ui-segment ${tooltip ? 'tooltip' : ''}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
                     ${isActive ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
                 </label>
             `}).join('');
@@ -1135,31 +1135,47 @@ export const UI = {
     initGliders() {
         // Exclude welcome modal selectors - they use standard CSS :checked/:active styles
         // This avoids the "popping" effect when navigating between steps
-        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .generation-mode-selector:not(#welcomeModal .generation-mode-selector), .provider-selector-compact');
+        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .ui-segmented-control:not(#welcomeModal .ui-segmented-control)');
+
+        // Use a shared ResizeObserver to handle font changes, modal reveals, and other layout shifts
+        if (!this._gliderObserver) {
+            this._gliderObserver = new ResizeObserver((entries) => {
+                entries.forEach(entry => {
+                    requestAnimationFrame(() => this.updateGlider(entry.target, true));
+                });
+            });
+        }
+
         containers.forEach(container => {
+            // Respect CSS-driven architecture
+            if (container.classList.contains('css-driven')) return;
+
             // Création du Glider s'il n'existe pas
-            let glider = container.querySelector('.selector-glider');
+            let glider = container.querySelector('.ui-glider');
             const isNewGlider = !glider;
 
             if (isNewGlider) {
                 glider = document.createElement('div');
-                glider.className = 'selector-glider';
+                glider.className = 'ui-glider';
                 container.prepend(glider);
                 container.classList.add('has-glider');
             }
 
             // Toujours s'assurer que la transition est correctement définie
-            glider.style.transition = GLIDER_TRANSITION;
+            // JS transition takes priority for dynamic lengths
+            glider.style.transition = 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
 
-            // Mise à jour initiale immédiate (sans animation) - SEULEMENT pour les nouveaux gliders
-            // pour éviter d'interférer avec les animations en cours
+            // Track any resizes
+            this._gliderObserver.observe(container);
+
+            // Set initial position
             if (isNewGlider) {
                 requestAnimationFrame(() => this.updateGlider(container, true));
             }
 
             // Écouteurs pour les Radios (changement automatique)
             // Use a data attribute to avoid adding listeners multiple times
-            const isRadioSelector = container.classList.contains('generation-mode-selector') || container.classList.contains('provider-selector-compact');
+            const isRadioSelector = container.querySelector('input[type="radio"]') !== null;
             if (isRadioSelector && !container.dataset.gliderListenersAttached) {
                 container.querySelectorAll('input[type="radio"]').forEach(input => {
                     input.addEventListener('change', () => this.updateGlider(container));
@@ -1193,12 +1209,13 @@ export const UI = {
      */
     updateGlider(container, immediate = false) {
         if (!container) return;
-        const glider = container.querySelector('.selector-glider');
+        const glider = container.querySelector('.ui-glider');
         if (!glider) return;
 
         let activeEl;
         // Détection de l'élément actif selon le type
-        if (container.classList.contains('generation-mode-selector') || container.classList.contains('provider-selector-compact')) {
+        const isRadioSelector = container.querySelector('input[type="radio"]') !== null;
+        if (isRadioSelector) {
             const checked = container.querySelector('input:checked');
             if (checked) {
                 // Le label est souvent adjacent ou lié par 'for'
@@ -1224,19 +1241,22 @@ export const UI = {
             if (width > 0) {
                 if (immediate) {
                     glider.style.transition = 'none';
-                    glider.style.width = `${width}px`;
-                    glider.style.left = `${left}px`;
-                    // Force reflow pour appliquer le changement sans transition
-                    glider.offsetHeight;
-                    // Restaure la transition explicitement
-                    requestAnimationFrame(() => {
-                        glider.style.transition = GLIDER_TRANSITION;
-                    });
                 } else {
-                    glider.style.transition = GLIDER_TRANSITION;
-                    glider.style.width = `${width}px`;
-                    glider.style.left = `${left}px`;
+                    glider.style.transition = 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
                 }
+
+                glider.style.width = `${width}px`;
+                glider.style.left = `${left}px`;
+                // Force reflow pour appliquer le changement sans transition
+                glider.offsetHeight;
+                // Restaure la transition explicitement
+                requestAnimationFrame(() => {
+                    glider.style.transition = 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                });
+            } else {
+                glider.style.transition = 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                glider.style.width = `${width}px`;
+                glider.style.left = `${left}px`;
             }
             // If width is 0 (element hidden), don't update - wait for next call when visible
         } else {

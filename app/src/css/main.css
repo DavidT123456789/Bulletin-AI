@@ -9,6 +9,8 @@
 @import './components.css';
 
 
+@import './components/segmented-control.css';
+
 /* Modules refactorisés */
 @import './modules/modals.css';
 @import './modules/help.css';

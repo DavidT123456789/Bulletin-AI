@@ -31,7 +31,7 @@ export const ThemeManager = {
         const control = document.getElementById('themeSegmentedControl');
         if (!control) return;
 
-        const segments = control.querySelectorAll('.theme-segment');
+        const segments = control.querySelectorAll('.ui-segment');
         segments.forEach(segment => {
             segment.addEventListener('click', () => {
                 const selectedTheme = segment.getAttribute('data-value');
@@ -95,7 +95,7 @@ export const ThemeManager = {
         control.setAttribute('data-active', currentMode);
 
         // Update active class on buttons
-        const segments = control.querySelectorAll('.theme-segment');
+        const segments = control.querySelectorAll('.ui-segment');
         segments.forEach(segment => {
             const val = segment.getAttribute('data-value');
             if (val === currentMode) {

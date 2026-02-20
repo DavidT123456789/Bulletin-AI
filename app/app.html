@@ -106,7 +106,7 @@
                 </div>
 
                 <div class="header-center">
-                    <div class="generation-mode-selector header-style" id="mainPeriodSelector"></div>
+                    <div class="ui-segmented-control header-style" id="mainPeriodSelector"></div>
                 </div>
 
                 <div class="header-actions">
@@ -156,20 +156,21 @@
 
                             <div id="headerMenuDropdown" class="header-dropdown-menu">
                                 <div class="theme-control-wrapper">
-                                    <div class="theme-segmented-control" id="themeSegmentedControl" data-active="light">
-                                        <button class="theme-segment" data-value="light" aria-label="Mode clair"
+                                    <div class="ui-segmented-control css-driven" id="themeSegmentedControl"
+                                        data-active="light">
+                                        <button class="ui-segment" data-value="light" aria-label="Mode clair"
                                             title="Mode clair">
                                             <iconify-icon icon="solar:sun-linear"></iconify-icon>
                                         </button>
-                                        <button class="theme-segment" data-value="system" aria-label="Mode système"
+                                        <button class="ui-segment" data-value="system" aria-label="Mode système"
                                             title="Mode système">
                                             <iconify-icon icon="solar:monitor-linear"></iconify-icon>
                                         </button>
-                                        <button class="theme-segment" data-value="dark" aria-label="Mode sombre"
+                                        <button class="ui-segment" data-value="dark" aria-label="Mode sombre"
                                             title="Mode sombre">
                                             <iconify-icon icon="solar:moon-linear"></iconify-icon>
                                         </button>
-                                        <div class="theme-glider"></div>
+                                        <div class="ui-glider"></div>
                                     </div>
                                 </div>
                                 <button id="updateMenuItem" class="menu-item update-item" style="display: none;">
@@ -1345,16 +1346,16 @@
 
                                 <div class="form-group">
                                     <label>Voix du rédacteur</label>
-                                    <div class="generation-mode-selector selector-compact" id="iaVoiceSelector">
+                                    <div class="ui-segmented-control compact" id="iaVoiceSelector">
                                         <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
                                             checked>
-                                        <label for="voiceDefault" class="tooltip"
+                                        <label for="voiceDefault" class="ui-segment tooltip"
                                             data-tooltip="Laisse l'IA choisir le pronom (Je, Nous, impersonnel...).">Défaut</label>
                                         <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
-                                        <label for="voiceJe" class="tooltip"
+                                        <label for="voiceJe" class="ui-segment tooltip"
                                             data-tooltip="Force l'IA à utiliser la première personne du singulier ('Je').">Je</label>
                                         <input type="radio" id="voiceNous" name="iaVoiceRadio" value="nous">
-                                        <label for="voiceNous" class="tooltip"
+                                        <label for="voiceNous" class="ui-segment tooltip"
                                             data-tooltip="Force l'IA à utiliser la première personne du pluriel ('Nous'), plus formel.">Nous</label>
                                     </div>
                                 </div>
@@ -1828,13 +1829,13 @@
                                         <span>Système périodique</span>
                                     </div>
                                     <div class="preference-mini-card-content">
-                                        <div class="generation-mode-selector period-system-selector">
+                                        <div class="ui-segmented-control period-system-selector">
                                             <input type="radio" id="periodSystemTrimestres" name="periodSystemRadio"
                                                 value="trimestres" checked>
-                                            <label for="periodSystemTrimestres">Trimestres</label>
+                                            <label for="periodSystemTrimestres" class="ui-segment">Trimestres</label>
                                             <input type="radio" id="periodSystemSemestres" name="periodSystemRadio"
                                                 value="semestres">
-                                            <label for="periodSystemSemestres">Semestres</label>
+                                            <label for="periodSystemSemestres" class="ui-segment">Semestres</label>
                                         </div>
                                         <small class="preference-hint">T1, T2, T3 ou S1, S2</small>
                                     </div>
@@ -2169,13 +2170,13 @@
 
                 <div id="import-strategy-container" class="import-strategy-container"
                     style="display: none; margin-bottom: 25px;">
-                    <div class="generation-mode-selector selector-compact">
+                    <div class="ui-segmented-control compact">
                         <input type="radio" id="strategyMerge" name="importStrategy" value="merge" checked>
-                        <label for="strategyMerge" class="tooltip"
+                        <label for="strategyMerge" class="ui-segment tooltip"
                             data-tooltip="Ajoute les nouveaux, met à jour les existants et marque les absents. Recommandé.">Mettre
                             à jour (Fusionner)</label>
                         <input type="radio" id="strategyReplace" name="importStrategy" value="replace">
-                        <label for="strategyReplace" class="tooltip"
+                        <label for="strategyReplace" class="ui-segment tooltip"
                             data-tooltip="Supprime tous les élèves actuels et les remplace par ceux de cet import.">Remplacer
                             toute la liste</label>
                     </div>
@@ -2301,29 +2302,30 @@
                                     <div class="help-step-body">
                                         <strong>Choisir votre fournisseur</strong>
                                         <div class="help-provider-hero">
-                                            <div class="provider-selector-compact has-glider" id="helpProviderSelector">
+                                            <div class="ui-segmented-control compact has-glider"
+                                                id="helpProviderSelector">
                                                 <input type="radio" id="helpProviderMistral" name="helpProvider"
                                                     value="mistral" checked>
-                                                <label for="helpProviderMistral">
-                                                    <iconify-icon class="iconify-inline"
-                                                        icon="solar:cat-bold"></iconify-icon>
+                                                <label for="helpProviderMistral" class="ui-segment">
+                                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
+                                                        style="color: #fd6f00;"></iconify-icon>
                                                     <span>Mistral <small class="provider-tag">🇫🇷</small></span>
                                                 </label>
                                                 <input type="radio" id="helpProviderGoogle" name="helpProvider"
                                                     value="google">
-                                                <label for="helpProviderGoogle">
+                                                <label for="helpProviderGoogle" class="ui-segment">
                                                     <iconify-icon class="iconify-inline"
                                                         icon="logos:google-icon"></iconify-icon>
                                                     <span>Google</span>
                                                 </label>
                                                 <input type="radio" id="helpProviderOpenRouter" name="helpProvider"
                                                     value="openrouter">
-                                                <label for="helpProviderOpenRouter">
+                                                <label for="helpProviderOpenRouter" class="ui-segment">
                                                     <iconify-icon class="iconify-inline"
                                                         icon="solar:bolt-bold-duotone"></iconify-icon>
                                                     <span>OpenRouter</span>
                                                 </label>
-                                                <div class="selector-glider"></div>
+                                                <div class="ui-glider"></div>
                                             </div>
                                             <p class="provider-desc" id="helpProviderDesc"><strong>Mistral AI</strong>
                                                 est une solution française, performante et <strong>gratuite</strong> (1
@@ -2825,21 +2827,22 @@
 
                             <!-- Provider Selector - Centré -->
                             <div class="provider-selector-row">
-                                <div class="provider-selector-compact" id="welcomeProviderSelector">
+                                <div class="ui-segmented-control compact" id="welcomeProviderSelector">
                                     <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
                                         checked>
-                                    <label for="providerMistral">
-                                        <iconify-icon class="iconify-inline" icon="solar:cat-bold"></iconify-icon>
+                                    <label for="providerMistral" class="ui-segment">
+                                        <iconify-icon class="iconify-inline" icon="solar:cat-bold"
+                                            style="color: #fd6f00;"></iconify-icon>
                                         <span>Mistral <small class="provider-tag">🇫🇷</small></span>
                                     </label>
                                     <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
-                                    <label for="providerGoogle">
+                                    <label for="providerGoogle" class="ui-segment">
                                         <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
                                         <span>Google</span>
                                     </label>
                                     <input type="radio" id="providerOpenRouter" name="welcomeProvider"
                                         value="openrouter">
-                                    <label for="providerOpenRouter">
+                                    <label for="providerOpenRouter" class="ui-segment">
                                         <iconify-icon class="iconify-inline"
                                             icon="solar:bolt-bold-duotone"></iconify-icon>
                                         <span>OpenRouter</span>
