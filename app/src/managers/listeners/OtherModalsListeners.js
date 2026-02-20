@@ -129,7 +129,7 @@ export const OtherModalsListeners = {
             setTimeout(updateHelpProviderUI, 200);
 
             // Re-calc glider when switching TABS inside help modal
-            const helpTabs = document.querySelectorAll('.modal-tab-btn');
+            const helpTabs = document.querySelectorAll('.ui-tabs-btn');
             helpTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     if (tab.getAttribute('onclick')?.includes('help-apikey')) {

@@ -186,3 +186,198 @@
         display: none !important;
     }
 }
+
+/* === UI VERTICAL TABS === */
+.ui-tabs-vertical {
+    display: flex;
+    gap: 0;
+    flex: 1 1 0;
+    min-height: 560px;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.ui-tabs-sidebar {
+    width: 210px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid var(--border-color);
+    padding: 24px 14px;
+    background: var(--surface-color);
+    height: 100%;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+}
+
+.ui-tabs-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.92em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    width: 100%;
+}
+
+.ui-tabs-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--text-primary);
+}
+
+.ui-tabs-btn.active {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    font-weight: 600;
+    position: relative;
+    box-shadow: none;
+}
+
+.ui-tabs-btn.active iconify-icon,
+.ui-tabs-btn.active i {
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+.ui-tabs-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 55%;
+    width: 3px;
+    background: linear-gradient(180deg, var(--primary-color), rgba(var(--primary-color-rgb), 0.4));
+    border-radius: 0 4px 4px 0;
+}
+
+.ui-tabs-btn iconify-icon {
+    width: 24px;
+    text-align: center;
+    font-size: 1.2em;
+    transition: transform var(--transition-fast);
+}
+
+.ui-tabs-btn:hover iconify-icon,
+.ui-tabs-btn.active iconify-icon {
+    transform: scale(1.1);
+}
+
+.ui-tabs-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 9px 14px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.ui-tabs-action-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--text-secondary);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.ui-tabs-content {
+    flex: 1;
+    padding: 20px 32px 28px 32px;
+    background: var(--bg-color);
+    overflow-y: auto;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    .ui-tabs-vertical {
+        flex-direction: column;
+        gap: 0;
+        overflow-y: auto;
+    }
+
+    .ui-tabs-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px;
+        flex-direction: row;
+        overflow-x: auto;
+        height: auto;
+    }
+
+    .ui-tabs-action-btn {
+        display: none;
+    }
+
+    .ui-tabs-content {
+        padding: 20px;
+        height: auto;
+        overflow: visible;
+    }
+
+    .ui-tabs-btn {
+        width: auto;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 8px 14px;
+    }
+}
+
+/* === UI BADGES === */
+.ui-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+}
+
+.ui-badge-primary {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+}
+
+.ui-badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.ui-badge-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.ui-badge-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.ui-badge-info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+    border-color: rgba(59, 130, 246, 0.2);
+}

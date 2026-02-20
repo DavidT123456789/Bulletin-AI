@@ -113,29 +113,7 @@
     background: transparent;
 }
 
-.count-badge {
-    background: var(--bg-color);
-    color: var(--text-primary);
-    padding: 4px 10px;
-    border-radius: var(--radius-pill);
-    font-size: 14px;
-    font-weight: 600;
-}
 
-.import-preview-column.import-preview-new .count-badge {
-    background: var(--success-light);
-    color: var(--success-color);
-}
-
-.import-preview-column.import-preview-updated .count-badge {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-.import-preview-column.import-preview-departed .count-badge {
-    background: var(--warning-light);
-    color: var(--warning-color);
-}
 
 .mapping-preview-table {
     width: 100%;

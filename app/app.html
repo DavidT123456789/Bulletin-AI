@@ -2186,21 +2186,21 @@
                         <div id="import-preview-new-col" class="import-preview-column import-preview-new">
                             <div class="column-header">
                                 <h4><iconify-icon class="iconify-inline" icon="solar:user-plus-bold"></iconify-icon>
-                                    Nouveaux <span id="new-count" class="count-badge">0</span></h4>
+                                    Nouveaux <span id="new-count" class="ui-badge ui-badge-primary">0</span></h4>
                             </div>
                             <ul id="new-students-list" class="import-preview-list"></ul>
                         </div>
                         <div id="import-preview-updated-col" class="import-preview-column import-preview-updated">
                             <div class="column-header">
                                 <h4><iconify-icon class="iconify-inline" icon="solar:user-id-bold"></iconify-icon> Mis à
-                                    jour <span id="updated-count" class="count-badge">0</span></h4>
+                                    jour <span id="updated-count" class="ui-badge ui-badge-primary">0</span></h4>
                             </div>
                             <ul id="updated-students-list" class="import-preview-list"></ul>
                         </div>
                         <div id="import-preview-departed-col" class="import-preview-column import-preview-departed">
                             <div class="column-header">
                                 <h4><iconify-icon class="iconify-inline" icon="solar:user-minus-bold"></iconify-icon>
-                                    Départs <span id="departed-count" class="count-badge">0</span></h4>
+                                    Départs <span id="departed-count" class="ui-badge ui-badge-danger">0</span></h4>
                             </div>
                             <ul id="departed-students-list" class="import-preview-list"></ul>
                         </div>
@@ -2243,37 +2243,37 @@
                         class="iconify-inline" icon="ph:x"></iconify-icon></button>
             </div>
             <div class="modal-body modal-body-flex">
-                <div class="modal-tabs-layout">
+                <div class="ui-tabs-vertical">
                     <!-- Sidebar Navigation -->
-                    <div class="modal-tabs-sidebar">
-                        <button class="modal-tab-btn active" onclick="switchHelpTab(this, 'help-apikey')">
+                    <div class="ui-tabs-sidebar">
+                        <button class="ui-tabs-btn active" onclick="switchHelpTab(this, 'help-apikey')">
                             <iconify-icon class="iconify-inline icon-key" icon="solar:key-square-bold"></iconify-icon>
                             Connecter l'IA
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-import')">
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-import')">
                             <iconify-icon class="iconify-inline icon-format" icon="solar:import-bold"></iconify-icon>
                             Importer
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-style')">
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-style')">
                             <iconify-icon class="iconify-inline icon-customize"
                                 icon="solar:tuning-2-bold"></iconify-icon> Personnaliser
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-actions')">
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-actions')">
                             <iconify-icon class="iconify-inline icon-actions"
                                 icon="solar:magic-stick-3-bold"></iconify-icon> Commandes IA
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-privacy')">
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-privacy')">
                             <iconify-icon class="iconify-inline icon-privacy" icon="solar:shield-bold"></iconify-icon>
                             Confidentialité
                         </button>
-                        <button class="modal-tab-btn" onclick="switchHelpTab(this, 'help-about')">
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-about')">
                             <iconify-icon class="iconify-inline icon-about"
                                 icon="solar:info-circle-bold"></iconify-icon> À propos
                         </button>
 
                         <!-- Bottom Action Button -->
                         <div style="margin-top: auto; padding-top: 10px; width: 100%;">
-                            <button class="sidebar-action-btn" onclick="relaunchSetupWizard()">
+                            <button class="ui-tabs-action-btn" onclick="relaunchSetupWizard()">
                                 <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon> Relancer
                                 setup
                             </button>
@@ -2281,7 +2281,7 @@
                     </div>
 
                     <!-- Content Area -->
-                    <div class="modal-tabs-content-area">
+                    <div class="ui-tabs-content">
                         <!-- Tab 1: Connecter l'IA -->
                         <!-- Tab 1: Connecter l'IA -->
                         <div id="help-apikey" class="help-tab-content active">
@@ -2584,7 +2584,7 @@
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <div class="help-btn-badge">
+                                            <div class="ui-badge">
                                                 <iconify-icon icon="solar:minimize-square-linear"></iconify-icon>
                                                 Concise
                                             </div>
@@ -2596,7 +2596,7 @@
                                     </tr>
                                     <tr>
                                         <td>
-                                            <div class="help-btn-badge">
+                                            <div class="ui-badge">
                                                 <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
                                                 Détaillée
                                             </div>
@@ -2607,7 +2607,7 @@
                                     </tr>
                                     <tr>
                                         <td>
-                                            <div class="help-btn-badge">
+                                            <div class="ui-badge">
                                                 <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                                             </div>
                                         </td>
@@ -2617,7 +2617,7 @@
                                     </tr>
                                     <tr>
                                         <td>
-                                            <div class="help-btn-badge">
+                                            <div class="ui-badge">
                                                 <iconify-icon icon="solar:restart-linear"></iconify-icon> Variation
                                             </div>
                                         </td>
@@ -2627,7 +2627,7 @@
                                     </tr>
                                     <tr>
                                         <td>
-                                            <div class="help-btn-badge rainbow-border">
+                                            <div class="ui-badge rainbow-border">
                                                 <iconify-icon class="iconify-inline"
                                                     icon="solar:magic-stick-3-linear"></iconify-icon> Peaufiner
                                             </div>
@@ -3247,7 +3247,7 @@
     <script>
         window.switchHelpTab = function (btn, targetId) {
             // Boutons
-            document.querySelectorAll('.modal-tabs-sidebar .modal-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
             // Contenu
