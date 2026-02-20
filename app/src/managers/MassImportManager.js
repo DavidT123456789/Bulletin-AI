@@ -5,6 +5,9 @@ import { RateLimiter } from '../utils/RateLimiter.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { ListViewManager } from './ListViewManager.js';
+import { StorageManager } from './StorageManager.js';
+import { ClassManager } from './ClassManager.js';
 
 let Am;
 let App;
@@ -57,8 +60,6 @@ export const MassImportManager = {
                 // Marquer la rangée courante comme "en cours de génération"
                 const resultId = pendingCards[index];
 
-                // Trigger skeleton animation on the row
-                const { ListViewManager } = await import('./ListViewManager.js');
                 ListViewManager.setRowStatus(resultId, 'generating');
 
                 let newResultObject;
@@ -229,9 +230,6 @@ export const MassImportManager = {
      * @param {number} ignoredCount - Nombre de lignes ignorées
      */
     async importStudentsOnly(studentsToProcess, ignoredCount) {
-        const { StudentDataManager } = await import('./StudentDataManager.js');
-        const { StorageManager } = await import('./StorageManager.js');
-        const { ClassManager } = await import('./ClassManager.js');
 
         let newCount = 0;
         let updatedCount = 0;

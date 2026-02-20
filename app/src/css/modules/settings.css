@@ -353,57 +353,7 @@
     font-size: 1.125rem;
 }
 
-.settings-tab-container {
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    padding: 0 16px;
-    background: var(--surface-color);
-}
 
-.settings-tab {
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: 10px 16px;
-    /* padding compact */
-    cursor: pointer;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: all var(--transition-fast);
-    margin-bottom: -1px;
-}
-
-.settings-tab:hover {
-    color: var(--text-primary);
-}
-
-.settings-tab.active {
-    color: var(--text-primary);
-    border-bottom-color: var(--primary-color);
-}
-
-/* Position relative pour permettre le chevauchement des onglets pendant les animations */
-#appSettingsModal .modal-body {
-    position: relative;
-}
-
-.tab-content {
-    padding-top: 0;
-}
-
-.tab-content h3 {
-    margin: 24px 0 16px 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    padding-top: 32px;
-    border-top: 1px solid var(--border-color);
-}
-
-.tab-content h3:first-of-type {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-}
 
 #studentDetailsModal h3 {
     margin: 0 0 16px 0;

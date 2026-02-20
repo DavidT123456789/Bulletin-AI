@@ -1250,21 +1250,27 @@
     </div>
 
     <!-- MODALES -->
-    <div id="personalizationModal" class="modal" role="dialog" aria-modal="true"
+    <div id="personalizationModal" class="modal modal-lab" role="dialog" aria-modal="true"
         aria-labelledby="personalizationModalTitle">
         <div class="modal-content personalization-modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="personalizationModalTitle"><iconify-icon class="color-accent"
-                        icon="solar:magic-stick-3-linear"></iconify-icon>
-                    Personnalisation</h2>
+                <h2 class="modal-title" id="personalizationModalTitle">
+                    <span class="modal-title-icon color-accent"><iconify-icon
+                            icon="solar:magic-stick-3-linear"></iconify-icon></span>
+                    <span class="modal-title-text">Laboratoire de Style</span>
+                </h2>
                 <div class="modal-header-actions spaced">
-                    <button type="button" class="inspector-toggle-btn tooltip" id="toggleInspectorBtn"
-                        data-tooltip="Afficher/Masquer l'inspecteur de prompt"
-                        aria-label="Afficher/Masquer l'inspecteur de prompt">
+                    <button type="button" class="icon-button tooltip" id="resetLabStyleBtn"
+                        data-tooltip="Réinitialiser les réglages">
+                        <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                    </button>
+                    <button type="button" class="icon-button tooltip" id="toggleInspectorBtn"
+                        data-tooltip="Inspecteur de prompt">
                         <iconify-icon icon="solar:code-square-linear"></iconify-icon>
                     </button>
-                    <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer"><iconify-icon
-                            class="iconify-inline" icon="ph:x"></iconify-icon></button>
+                    <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">
+                        <iconify-icon icon="ph:x"></iconify-icon>
+                    </button>
                 </div>
             </div>
             <div class="modal-body">
@@ -1468,358 +1474,458 @@
         </div>
     </div>
 
-    <div id="appSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div id="appSettingsModal" class="modal modal-help" role="dialog" aria-modal="true"
+        aria-labelledby="settingsModalTitle">
+
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="settingsModalTitle"><iconify-icon class="iconify-inline color-secondary"
-                        icon="solar:settings-bold"></iconify-icon> Paramètres
+                <h2 class="modal-title" id="settingsModalTitle">
+                    <span class="modal-title-icon color-secondary"><iconify-icon class="iconify-inline"
+                            icon="solar:settings-bold"></iconify-icon></span>
+                    <span class="modal-title-text">Paramètres</span>
                 </h2>
-                <button class="close-button" id="closeSettingsModalBtn" aria-label="Fermer les paramètres"><iconify-icon
-                        class="iconify-inline" icon="ph:x"></iconify-icon></button>
+                <button class="close-button" id="closeSettingsModalBtn" aria-label="Fermer les paramètres">
+                    <iconify-icon class="iconify-inline" icon="ph:x"></iconify-icon>
+                </button>
             </div>
 
+            <div class="modal-body modal-body-flex">
+                <div class="ui-tabs-vertical">
+                    <!-- Sidebar Navigation -->
+                    <div class="ui-tabs-sidebar">
+                        <button class="ui-tabs-btn active" onclick="switchHelpTab(this, 'settings-engine')">
+                            <iconify-icon class="iconify-inline icon-key" icon="solar:cpu-bold"></iconify-icon> IA &
+                            Clés
+                        </button>
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-preferences')">
+                            <iconify-icon class="iconify-inline icon-customize"
+                                icon="solar:tuning-2-bold"></iconify-icon> Préférences
+                        </button>
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-privacy')">
+                            <iconify-icon class="iconify-inline icon-privacy"
+                                icon="solar:shield-user-bold"></iconify-icon> Confidentialité
+                        </button>
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-data')">
+                            <iconify-icon class="iconify-inline icon-format" icon="solar:database-bold"></iconify-icon>
+                            Données
+                        </button>
 
-
-            <div class="modal-body">
-
-                <!-- Templates moved to Personalization Modal -->
-
-
-                <div id="advancedTabContent" class="tab-content active" role="tabpanel">
-
-                    <!-- CARTE 1: MOTEUR IA -->
-                    <div class="settings-card">
-                        <div class="settings-card-header-row">
-                            <h3 class="settings-card-title"><iconify-icon icon="solar:cpu-bold"></iconify-icon> Moteur
-                                d'Intelligence</h3>
-                            <div class="session-cost-label tooltip"
-                                data-tooltip="Tokens utilisés depuis l'ouverture de l'application (Session). Réinitialisé au rechargement."
-                                style="cursor: help;">
-                                Tokens : <b id="sessionTokens" class="session-cost-value">0</b>
-                            </div>
-                        </div>
-                        <div class="settings-card-content">
-                            <div id="apiStatusSummary" class="api-status-summary compact-mode">
-                                <div class="api-status-header compact">
-                                    <div class="model-selector-wrapper">
-                                        <label for="aiModelSelect" class="sr-only">Modèle actif</label>
-                                        <select id="aiModelSelect" class="compact-model-select">
-                                            <optgroup label="🐱 Mistral AI — GRATUIT 🇫🇷 (1B tokens/mois)">
-                                                <option value="mistral-direct-small-latest">Mistral Small 3.1
-                                                    (Recommandé)
-                                                </option>
-                                                <option value="mistral-direct-large-latest">Mistral Large 3 (Puissant)
-                                                </option>
-                                            </optgroup>
-                                            <optgroup label="💚 Google Gemini — QUOTA GRATUIT">
-                                                <option value="gemini-3-flash-preview">Gemini 3 Flash (Rapide)
-                                                </option>
-                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Stable)</option>
-                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Équilibré)</option>
-                                                <option value="gemini-3-pro">Gemini 3 Pro (Puissant)</option>
-                                            </optgroup>
-                                            <optgroup label="💚 OpenRouter — QUOTA GRATUIT">
-                                                <option value="llama-3.3-70b-free">Llama 3.3 70B (Puissant - Journalier)
-                                                </option>
-                                                <option value="devstral-free">Devstral (Secours - Illimité?)</option>
-                                            </optgroup>
-                                            <optgroup label="💰 OpenRouter — PAYANT (économique)">
-                                                <option value="claude-sonnet-4.5">Claude Sonnet 4.5 (Puissant)</option>
-                                                <option value="ministral-3b">Ministral 3B (~0€, Mistral)</option>
-                                                <option value="amazon-nova-v1-lite">Nova Lite v1 (Très économique)
-                                                </option>
-                                                <option value="openrouter">DeepSeek V3 (Économique)</option>
-                                                <option value="mistral-small">Mistral Small (Français)</option>
-                                                <option value="mistral-large">Mistral Large (Puissant)</option>
-                                            </optgroup>
-                                            <optgroup label="💰 OpenAI — PAYANT">
-                                                <option value="openai-gpt-4o-mini">GPT-4o Mini (Économique)</option>
-                                                <option value="openai-gpt-3.5-turbo">GPT-3.5 Turbo (Rapide)</option>
-                                                <option value="openai-gpt-4o">GPT-4o (Puissant)</option>
-                                            </optgroup>
-                                            <optgroup label="💰 Anthropic Claude — PAYANT">
-                                                <option value="anthropic-claude-sonnet-4.5">Claude Sonnet 4.5
-                                                    (Puissant)</option>
-                                                <option value="anthropic-claude-opus-4.5">Claude Opus 4.5 (Le plus
-                                                    puissant)</option>
-                                            </optgroup>
-
-                                            <optgroup label="🏠 Ollama — LOCAL">
-                                                <option value="ollama-qwen3:8b">🏠 Qwen 3 8B (Recommandé)</option>
-                                                <option value="ollama-mistral">🏠 Mistral 7B (Standard)</option>
-                                                <option value="ollama-deepseek-r1:8b">🏠 DeepSeek R1 (Raisonnement)
-                                                </option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <button id="testAllConnectionsBtn" class="btn btn-secondary btn-icon-only tooltip"
-                                        data-tooltip="Vérifier la connexion">
-                                        <iconify-icon icon="solar:restart-bold"></iconify-icon>
-                                    </button>
-                                </div>
-                                <div class="api-status-pills-row">
-                                    <div class="status-pill inactive" id="googleApiStatus" tabindex="0"
-                                        title="Non configurée">
-                                        <span class="status-dot"></span> Google
-                                    </div>
-                                    <div class="status-pill inactive" id="openrouterApiStatus" tabindex="0"
-                                        title="Non configurée">
-                                        <span class="status-dot"></span> OpenRouter
-                                    </div>
-                                    <div class="status-pill inactive" id="openaiApiStatus" tabindex="0"
-                                        title="Non configurée">
-                                        <span class="status-dot"></span> OpenAI
-                                    </div>
-                                    <div class="status-pill inactive" id="anthropicApiStatus" tabindex="0"
-                                        title="Non configurée">
-                                        <span class="status-dot"></span> Claude
-                                    </div>
-                                    <div class="status-pill inactive" id="mistralApiStatus" tabindex="0"
-                                        title="Non configurée">
-                                        <span class="status-dot"></span> Mistral AI
-                                    </div>
-                                    <div class="status-pill inactive" id="ollamaApiStatus" tabindex="0"
-                                        title="Non activé">
-                                        <span class="status-dot"></span> Ollama
-                                    </div>
-                                </div>
-
-                                <div class="api-fallback-row">
-                                    <div class="toggle-switch-container compact">
-                                        <label class="toggle-switch small">
-                                            <input type="checkbox" id="enableApiFallbackToggle" checked>
-                                            <span class="slider"></span>
-                                        </label>
-                                        <label for="enableApiFallbackToggle" class="toggle-label-text">Relais
-                                            auto.</label>
-                                    </div>
-                                    <div class="fallback-info">
-                                        <small id="fallbackOrderHint">
-                                            <!-- Arrow removed -->
-                                            <span id="fallbackOrderText">...</span>
-                                            <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
-                                                style="display: none;"></span>
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <div id="missingApiKeyWarning" class="missing-key-warning compact"
-                                    style="display: none;">
-                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
-                                    <span id="missingKeyText">Clé manquante.</span>
-                                    <button type="button" class="btn-link"
-                                        id="openApiKeysAccordionBtn">Configurer</button>
-                                </div>
-
-                                <small id="aiModelDescription" style="display: none;">Description du modèle
-                                    sélectionné...</small>
-                            </div>
-
-                            <details class="ui-accordion" id="apiKeysAccordion">
-                                <summary><iconify-icon class="iconify-inline" icon="solar:key-bold"></iconify-icon>
-                                    Gérer mes clés API</summary>
-                                <div class="ui-accordion-content">
-                                    <form class="ui-accordion-content-inner api-keys-container"
-                                        action="javascript:void(0)" autocomplete="off">
-                                        <div class="api-key-section" id="mistralApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>
-                                                    Mistral AI
-                                                    (API directe)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://console.mistral.ai/api-keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (gratuit)</a>
-                                                    <a href="https://console.mistral.ai/usage" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="mistralApiKey"
-                                                        placeholder="Clé Mistral..." autocomplete="new-password">
-                                                    <span id="mistralApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateMistralApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="mistralApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="googleApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="logos:google-icon"></iconify-icon> Google
-                                                    Gemini</span>
-                                                <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                                    rel="noopener noreferrer" class="btn-link">Obtenir une clé
-                                                    (gratuit limité)</a>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="googleApiKey" placeholder="AIzaSy..."
-                                                        autocomplete="new-password">
-                                                    <span id="googleApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateGoogleApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="googleApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="openrouterApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="solar:bolt-bold-duotone"
-                                                        style="color: var(--secondary-color);"></iconify-icon>
-                                                    OpenRouter
-                                                    (Mistral, DeepSeek...)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://openrouter.ai/keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (gratuit dispo.)</a>
-                                                    <a href="https://openrouter.ai/credits" target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        class="btn-link btn-link-secondary"><iconify-icon
-                                                            class="iconify-inline"
-                                                            icon="solar:wallet-bold"></iconify-icon> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="openrouterApiKey" placeholder="sk-or-..."
-                                                        autocomplete="new-password">
-                                                    <span id="openrouterApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateOpenrouterApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="openrouterApiKeyError"
-                                                style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="openaiApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="logos:openai-icon"></iconify-icon> OpenAI
-                                                    (ChatGPT)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://platform.openai.com/api-keys" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Obtenir une
-                                                        clé (payant)</a>
-                                                    <a href="https://platform.openai.com/usage" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="openaiApiKey" placeholder="sk-..."
-                                                        autocomplete="new-password">
-                                                    <span id="openaiApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateOpenaiApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="openaiApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-                                        <div class="api-key-section" id="anthropicApiKeyGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="logos:anthropic-icon"></iconify-icon> Claude
-                                                    (Anthropic)</span>
-                                                <div class="api-key-links">
-                                                    <a href="https://console.anthropic.com/settings/keys"
-                                                        target="_blank" rel="noopener noreferrer"
-                                                        class="btn-link">Obtenir une
-                                                        clé (payant)</a>
-                                                    <a href="https://console.anthropic.com/settings/usage"
-                                                        target="_blank" rel="noopener noreferrer"
-                                                        class="btn-link btn-link-secondary"><i
-                                                            class="fas fa-wallet"></i> Usage</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-actions">
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="anthropicApiKey" placeholder="sk-ant-..."
-                                                        autocomplete="new-password">
-                                                    <span id="anthropicApiKeyValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateAnthropicApiKeyBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="anthropicApiKeyError" style="display: none;">
-                                            </div>
-                                        </div>
-
-
-
-                                        <!-- Section Ollama (IA locale) -->
-                                        <div class="api-key-section ollama-section" id="ollamaConfigGroup">
-                                            <div class="api-key-header">
-                                                <span class="api-key-provider"><iconify-icon class="iconify-inline"
-                                                        icon="solar:server-square-bold"></iconify-icon> Ollama (IA
-                                                    Locale)</span>
-                                                <div style="display:flex; gap:10px; align-items:center;">
-                                                    <a href="https://ollama.com" target="_blank"
-                                                        rel="noopener noreferrer" class="btn-link">Installer Ollama</a>
-                                                </div>
-                                            </div>
-                                            <div class="api-key-info">
-                                                <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
-                                                Ollama permet d'exécuter des IA sur votre PC. <strong>Gratuit et
-                                                    illimité</strong>, sans envoyer vos données sur internet.
-                                            </div>
-                                            <div class="api-key-actions api-key-actions-wrap">
-                                                <div class="toggle-switch-container toggle-full-width">
-                                                    <label class="toggle-switch">
-                                                        <input type="checkbox" id="ollamaEnabledToggle">
-                                                        <span class="slider"></span>
-                                                    </label>
-                                                    <label for="ollamaEnabledToggle" class="toggle-switch-label">Activer
-                                                        Ollama</label>
-                                                </div>
-                                                <div class="api-key-input-container" style="flex: 1;">
-                                                    <input type="text" id="ollamaBaseUrl"
-                                                        placeholder="http://localhost:11434"
-                                                        value="http://localhost:11434" style="font-family: monospace;">
-                                                    <span id="ollamaValidationIcon"
-                                                        class="api-key-validation-icon"></span>
-                                                </div>
-                                                <button type="button" id="validateOllamaBtn"
-                                                    class="btn btn-purple btn-small">Vérifier</button>
-                                            </div>
-                                            <div class="error-message" id="ollamaError" style="display: none;"></div>
-                                            <div id="ollamaModelsInfo"
-                                                style="display: none; margin-top: 10px; font-size: 0.85em;">
-                                                <iconify-icon class="iconify-inline" icon="ph:check-bold"
-                                                    style="color: var(--success-color);"></iconify-icon>
-                                                <span id="ollamaModelsText">Modèles installés : ...</span>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </details>
+                        <div
+                            style="margin-top: auto; padding-top: 10px; width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                            <button class="ui-tabs-action-btn"
+                                onclick="UI.openModal(DOM.helpModal, { isStacked: true })">
+                                <iconify-icon class="iconify-inline" icon="solar:info-circle-bold"></iconify-icon>
+                                Guide & Aide
+                            </button>
+                            <button class="ui-tabs-action-btn" id="checkUpdatesBtn">
+                                <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon> Mises à
+                                jour
+                            </button>
                         </div>
                     </div>
 
-                    <!-- CARTE 2: PRÉFÉRENCES D'AFFICHAGE -->
-                    <div class="settings-card">
-                        <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                icon="solar:tuning-2-bold"></iconify-icon> Préférences</h3>
-                        <div class="settings-card-content">
+                    <!-- Content Area -->
+                    <div class="ui-tabs-content">
+                        <div id="settings-engine" class="help-tab-content active">
+                            <div class="help-section-header">
+                                <div class="help-section-icon"><iconify-icon icon="solar:cpu-bold"></iconify-icon></div>
+                                <p>Choix du modèle d'intelligence artificielle et configuration des clés API (+ tokens
+                                    utilisés : <b id="sessionTokens" class="session-cost-value">0</b>).</p>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon icon="solar:cpu-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Fournisseur IA (Choix du modèle)</strong>
+                                        <div id="apiStatusSummary" class="api-status-summary compact-mode mt-2">
+                                            <div class="api-status-header compact">
+                                                <div class="model-selector-wrapper">
+                                                    <label for="aiModelSelect" class="sr-only">Modèle actif</label>
+                                                    <select id="aiModelSelect" class="compact-model-select">
+                                                        <optgroup label="🐱 Mistral AI — GRATUIT 🇫🇷 (1B tokens/mois)">
+                                                            <option value="mistral-direct-small-latest">Mistral Small
+                                                                3.1
+                                                                (Recommandé)
+                                                            </option>
+                                                            <option value="mistral-direct-large-latest">Mistral Large 3
+                                                                (Puissant)
+                                                            </option>
+                                                        </optgroup>
+                                                        <optgroup label="💚 Google Gemini — QUOTA GRATUIT">
+                                                            <option value="gemini-3-flash-preview">Gemini 3 Flash
+                                                                (Rapide)
+                                                            </option>
+                                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Stable)
+                                                            </option>
+                                                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Équilibré)
+                                                            </option>
+                                                            <option value="gemini-3-pro">Gemini 3 Pro (Puissant)
+                                                            </option>
+                                                        </optgroup>
+                                                        <optgroup label="💚 OpenRouter — QUOTA GRATUIT">
+                                                            <option value="llama-3.3-70b-free">Llama 3.3 70B (Puissant -
+                                                                Journalier)
+                                                            </option>
+                                                            <option value="devstral-free">Devstral (Secours - Illimité?)
+                                                            </option>
+                                                        </optgroup>
+                                                        <optgroup label="💰 OpenRouter — PAYANT (économique)">
+                                                            <option value="claude-sonnet-4.5">Claude Sonnet 4.5
+                                                                (Puissant)</option>
+                                                            <option value="ministral-3b">Ministral 3B (~0€, Mistral)
+                                                            </option>
+                                                            <option value="amazon-nova-v1-lite">Nova Lite v1 (Très
+                                                                économique)
+                                                            </option>
+                                                            <option value="openrouter">DeepSeek V3 (Économique)</option>
+                                                            <option value="mistral-small">Mistral Small (Français)
+                                                            </option>
+                                                            <option value="mistral-large">Mistral Large (Puissant)
+                                                            </option>
+                                                        </optgroup>
+                                                        <optgroup label="💰 OpenAI — PAYANT">
+                                                            <option value="openai-gpt-4o-mini">GPT-4o Mini (Économique)
+                                                            </option>
+                                                            <option value="openai-gpt-3.5-turbo">GPT-3.5 Turbo (Rapide)
+                                                            </option>
+                                                            <option value="openai-gpt-4o">GPT-4o (Puissant)</option>
+                                                        </optgroup>
+                                                        <optgroup label="💰 Anthropic Claude — PAYANT">
+                                                            <option value="anthropic-claude-sonnet-4.5">Claude Sonnet
+                                                                4.5
+                                                                (Puissant)</option>
+                                                            <option value="anthropic-claude-opus-4.5">Claude Opus 4.5
+                                                                (Le plus
+                                                                puissant)</option>
+                                                        </optgroup>
+
+                                                        <optgroup label="🏠 Ollama — LOCAL">
+                                                            <option value="ollama-qwen3:8b">🏠 Qwen 3 8B (Recommandé)
+                                                            </option>
+                                                            <option value="ollama-mistral">🏠 Mistral 7B (Standard)
+                                                            </option>
+                                                            <option value="ollama-deepseek-r1:8b">🏠 DeepSeek R1
+                                                                (Raisonnement)
+                                                            </option>
+                                                        </optgroup>
+                                                    </select>
+                                                </div>
+                                                <button id="testAllConnectionsBtn"
+                                                    class="btn btn-secondary btn-icon-only tooltip"
+                                                    data-tooltip="Vérifier la connexion">
+                                                    <iconify-icon icon="solar:restart-bold"></iconify-icon>
+                                                </button>
+                                            </div>
+                                            <div class="api-status-pills-row">
+                                                <div class="status-pill inactive" id="googleApiStatus" tabindex="0"
+                                                    title="Non configurée">
+                                                    <span class="status-dot"></span> Google
+                                                </div>
+                                                <div class="status-pill inactive" id="openrouterApiStatus" tabindex="0"
+                                                    title="Non configurée">
+                                                    <span class="status-dot"></span> OpenRouter
+                                                </div>
+                                                <div class="status-pill inactive" id="openaiApiStatus" tabindex="0"
+                                                    title="Non configurée">
+                                                    <span class="status-dot"></span> OpenAI
+                                                </div>
+                                                <div class="status-pill inactive" id="anthropicApiStatus" tabindex="0"
+                                                    title="Non configurée">
+                                                    <span class="status-dot"></span> Claude
+                                                </div>
+                                                <div class="status-pill inactive" id="mistralApiStatus" tabindex="0"
+                                                    title="Non configurée">
+                                                    <span class="status-dot"></span> Mistral AI
+                                                </div>
+                                                <div class="status-pill inactive" id="ollamaApiStatus" tabindex="0"
+                                                    title="Non activé">
+                                                    <span class="status-dot"></span> Ollama
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon icon="solar:key-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Clés API & Relais</strong>
+                                        <div class="mt-2">
+                                            <div class="api-fallback-row">
+                                                <div class="toggle-switch-container compact">
+                                                    <label class="toggle-switch small">
+                                                        <input type="checkbox" id="enableApiFallbackToggle" checked>
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                    <label for="enableApiFallbackToggle"
+                                                        class="toggle-label-text">Relais
+                                                        auto.</label>
+                                                </div>
+                                                <div class="fallback-info">
+                                                    <small id="fallbackOrderHint">
+                                                        <!-- Arrow removed -->
+                                                        <span id="fallbackOrderText">...</span>
+                                                        <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
+                                                            style="display: none;"></span>
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <div id="missingApiKeyWarning" class="missing-key-warning compact"
+                                                style="display: none;">
+                                                <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
+                                                <span id="missingKeyText">Clé manquante.</span>
+                                                <button type="button" class="btn-link"
+                                                    id="openApiKeysAccordionBtn">Configurer</button>
+                                            </div>
+
+                                            <small id="aiModelDescription" style="display: none;">Description du modèle
+                                                sélectionné...</small>
+                                        </div>
+
+                                        <details class="ui-accordion" id="apiKeysAccordion">
+                                            <summary><iconify-icon class="iconify-inline"
+                                                    icon="solar:key-bold"></iconify-icon>
+                                                Gérer mes clés API</summary>
+                                            <div class="ui-accordion-content">
+                                                <form class="ui-accordion-content-inner api-keys-container"
+                                                    action="javascript:void(0)" autocomplete="off">
+                                                    <div class="api-key-section" id="mistralApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline" icon="solar:cat-bold"
+                                                                    style="color: #fd6f00;"></iconify-icon>
+                                                                Mistral AI
+                                                                (API directe)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://console.mistral.ai/api-keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (gratuit)</a>
+                                                                <a href="https://console.mistral.ai/usage"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><i
+                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="password" id="mistralApiKey"
+                                                                    placeholder="Clé Mistral..."
+                                                                    autocomplete="new-password">
+                                                                <span id="mistralApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateMistralApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="mistralApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="googleApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="logos:google-icon"></iconify-icon> Google
+                                                                Gemini</span>
+                                                            <a href="https://aistudio.google.com/app/apikey"
+                                                                target="_blank" rel="noopener noreferrer"
+                                                                class="btn-link">Obtenir une clé
+                                                                (gratuit limité)</a>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="password" id="googleApiKey"
+                                                                    placeholder="AIzaSy..." autocomplete="new-password">
+                                                                <span id="googleApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateGoogleApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="googleApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="openrouterApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="solar:bolt-bold-duotone"
+                                                                    style="color: var(--secondary-color);"></iconify-icon>
+                                                                OpenRouter
+                                                                (Mistral, DeepSeek...)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://openrouter.ai/keys" target="_blank"
+                                                                    rel="noopener noreferrer" class="btn-link">Obtenir
+                                                                    une
+                                                                    clé (gratuit dispo.)</a>
+                                                                <a href="https://openrouter.ai/credits" target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="password" id="openrouterApiKey"
+                                                                    placeholder="sk-or-..." autocomplete="new-password">
+                                                                <span id="openrouterApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateOpenrouterApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="openrouterApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="openaiApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="logos:openai-icon"></iconify-icon> OpenAI
+                                                                (ChatGPT)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://platform.openai.com/api-keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (payant)</a>
+                                                                <a href="https://platform.openai.com/usage"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><i
+                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="password" id="openaiApiKey"
+                                                                    placeholder="sk-..." autocomplete="new-password">
+                                                                <span id="openaiApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateOpenaiApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="openaiApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="anthropicApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="logos:anthropic-icon"></iconify-icon> Claude
+                                                                (Anthropic)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://console.anthropic.com/settings/keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (payant)</a>
+                                                                <a href="https://console.anthropic.com/settings/usage"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><i
+                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="password" id="anthropicApiKey"
+                                                                    placeholder="sk-ant-..."
+                                                                    autocomplete="new-password">
+                                                                <span id="anthropicApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateAnthropicApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="anthropicApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+
+
+                                                    <!-- Section Ollama (IA locale) -->
+                                                    <div class="api-key-section ollama-section" id="ollamaConfigGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="solar:server-square-bold"></iconify-icon>
+                                                                Ollama (IA
+                                                                Locale)</span>
+                                                            <div style="display:flex; gap:10px; align-items:center;">
+                                                                <a href="https://ollama.com" target="_blank"
+                                                                    rel="noopener noreferrer" class="btn-link">Installer
+                                                                    Ollama</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-info">
+                                                            <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
+                                                            Ollama permet d'exécuter des IA sur votre PC.
+                                                            <strong>Gratuit et
+                                                                illimité</strong>, sans envoyer vos données sur
+                                                            internet.
+                                                        </div>
+                                                        <div class="api-key-actions api-key-actions-wrap">
+                                                            <div class="toggle-switch-container toggle-full-width">
+                                                                <label class="toggle-switch">
+                                                                    <input type="checkbox" id="ollamaEnabledToggle">
+                                                                    <span class="slider"></span>
+                                                                </label>
+                                                                <label for="ollamaEnabledToggle"
+                                                                    class="toggle-switch-label">Activer
+                                                                    Ollama</label>
+                                                            </div>
+                                                            <div class="api-key-input-container" style="flex: 1;">
+                                                                <input type="text" id="ollamaBaseUrl"
+                                                                    placeholder="http://localhost:11434"
+                                                                    value="http://localhost:11434"
+                                                                    style="font-family: monospace;">
+                                                                <span id="ollamaValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateOllamaBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="ollamaError"
+                                                            style="display: none;"></div>
+                                                        <div id="ollamaModelsInfo"
+                                                            style="display: none; margin-top: 10px; font-size: 0.85em;">
+                                                            <iconify-icon class="iconify-inline" icon="ph:check-bold"
+                                                                style="color: var(--success-color);"></iconify-icon>
+                                                            <span id="ollamaModelsText">Modèles installés : ...</span>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div> <!-- /ui-accordion-content-inner -->
+                                    </div> <!-- /ui-accordion-content -->
+                                    </details>
+                                </div> <!-- /help-step-body -->
+                            </div> <!-- /help-step-layout -->
+                        </div>
+                        <div id="settings-preferences" class="help-tab-content">
+                            <div class="help-section-header">
+                                <div class="help-section-icon"><iconify-icon icon="solar:tuning-2-bold"></iconify-icon>
+                                </div>
+                                <p>Ajustez l'affichage, les seuils d'évolution et le système de notation de
+                                    l'application.
+                                </p>
+                            </div>
                             <div class="preferences-grid">
                                 <!-- Mini-carte 1: Système périodique -->
                                 <div class="preference-mini-card">
@@ -1885,18 +1991,16 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <small class="preference-hint">En points de moyenne</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- CARTE CONFIDENTIALITÉ -->
-                    <div class="settings-card">
-                        <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                icon="solar:shield-user-bold"></iconify-icon> Confidentialité</h3>
-                        <div class="settings-card-content">
+                        <div id="settings-privacy" class="help-tab-content">
+                            <div class="help-section-header">
+                                <div class="help-section-icon"><iconify-icon
+                                        icon="solar:shield-user-bold"></iconify-icon></div>
+                                <p>Paramètres de confidentialité et gestion de l'envoi de données vers l'IA.</p>
+                            </div>
                             <div class="setting-row">
                                 <div class="setting-info">
                                     <h4 class="setting-subtitle">Anonymisation renforcée</h4>
@@ -1923,19 +2027,18 @@
                                 </div>
                                 <div class="toggle-switch-container">
                                     <label class="toggle-switch">
-                                        <input type="checkbox" id="settingsPrivacyAnonymizeToggle">
+                                        <input type="checkbox" id="settingsPrivacyAnonymizeToggle" checked>
                                         <span class="slider"></span>
                                     </label>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- CARTE 3: GESTION DES DONNÉES -->
-                    <div class="settings-card">
-                        <h3 class="settings-card-title"><iconify-icon class="iconify-inline"
-                                icon="solar:database-bold"></iconify-icon> Système & Données</h3>
-                        <div class="settings-card-content">
+                        <div id="settings-data" class="help-tab-content">
+                            <div class="help-section-header">
+                                <div class="help-section-icon"><iconify-icon icon="solar:database-bold"></iconify-icon>
+                                </div>
+                                <p>Sauvegarde, restauration et synchronisation cloud de vos données.</p>
+                            </div>
                             <!-- Section Sauvegarde Complète -->
                             <div class="setting-row">
                                 <div class="setting-info">
@@ -2059,7 +2162,7 @@
                                         disponible.</p>
                                 </div>
                                 <div class="setting-actions-group">
-                                    <button class="btn btn-secondary btn-small" id="checkUpdatesBtn">
+                                    <button class="btn btn-secondary btn-small" id="checkUpdatesDataBtn">
                                         <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon>
                                         Vérifier
                                     </button>
@@ -2101,17 +2204,15 @@
                                 </details>
                             </div>
                         </div>
-                    </div>
-
-                </div>
-
-            </div>
+                    </div> <!-- /ui-tabs-content -->
+                </div> <!-- /ui-tabs-vertical -->
+            </div> <!-- /modal-body-flex -->
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelSettingsBtn" tabindex="0">Annuler</button>
-                <button class="btn btn-primary" id="saveSettingsBtn" tabindex="0"><iconify-icon
-                        icon="ph:check-bold"></iconify-icon>
-                    Enregistrer</button>
+                <button class="btn btn-primary" id="saveSettingsBtn" tabindex="0">
+                    <iconify-icon icon="ph:check-bold"></iconify-icon> Enregistrer
+                </button>
             </div>
         </div>
     </div>
@@ -2132,7 +2233,8 @@
 
                 <div id="import-summary-text" class="generic-info-box"></div>
                 <div id="importSavedFormatInfo" class="generic-info-box"
-                    style="display: none; justify-content: space-between; align-items: center;"></div>
+                    style="display: none; justify-content: space-between; align-items: center;">
+                </div>
 
                 <details class="ui-accordion" style="margin-bottom: 25px;">
                     <summary><iconify-icon class="iconify-inline" icon="solar:settings-bold"></iconify-icon> Ajuster le
@@ -2141,7 +2243,8 @@
                         <div class="ui-accordion-content-inner">
                             <p style="margin-top:0; font-size:0.9em; color:var(--summary-details-color);">
                                 Vérifiez que
-                                chaque colonne de vos données est correctement associée à un champ.
+                                chaque colonne de vos données est correctement associée à un
+                                champ.
                                 L'application essaie
                                 de deviner le format, mais vous pouvez l'ajuster ici.</p>
                             <div class="form-group-inline" style="margin-bottom: 20px;">
@@ -2202,7 +2305,8 @@
                                 <h4><iconify-icon class="iconify-inline" icon="solar:user-minus-bold"></iconify-icon>
                                     Départs <span id="departed-count" class="ui-badge ui-badge-danger">0</span></h4>
                             </div>
-                            <ul id="departed-students-list" class="import-preview-list"></ul>
+                            <ul id="departed-students-list" class="import-preview-list">
+                            </ul>
                         </div>
                     </div>
                     <div id="import-preview-replace-warning" class="api-key-warning"
@@ -2221,7 +2325,8 @@
                 </div>
                 <button class="btn btn-secondary" id="cancelImportPreviewBtn">Annuler</button>
                 <button class="btn btn-primary" id="importOnlyBtn">
-                    <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Importer les données
+                    <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon>
+                    Importer les données
                 </button>
             </div>
         </div>
@@ -2290,7 +2395,8 @@
                                     <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 </div>
                                 <p>
-                                    L'application a besoin d'un "cerveau" IA. Choisissez votre fournisseur pour voir la
+                                    L'application a besoin d'un "cerveau" IA. Choisissez
+                                    votre fournisseur pour voir la
                                     marche à suivre.
                                 </p>
                             </div>
@@ -2326,9 +2432,12 @@
                                                 </label>
                                                 <div class="ui-glider"></div>
                                             </div>
-                                            <p class="provider-desc" id="helpProviderDesc"><strong>Mistral AI</strong>
-                                                est une solution française, performante et <strong>gratuite</strong> (1
-                                                milliard de tokens/mois).</p>
+                                            <p class="provider-desc" id="helpProviderDesc">
+                                                <strong>Mistral AI</strong>
+                                                est une solution française, performante et
+                                                <strong>gratuite</strong> (1
+                                                milliard de tokens/mois).
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -2347,7 +2456,8 @@
                                             <a href="https://console.mistral.ai/api-keys/" target="_blank"
                                                 rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                 <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon> Ouvrir
+                                                    icon="solar:link-circle-bold"></iconify-icon>
+                                                Ouvrir
                                                 Mistral Console
                                             </a>
                                         </div>
@@ -2360,8 +2470,8 @@
                                         <div class="help-step-body">
                                             <strong>Copier / Coller</strong>
                                             <p>
-                                                Copiez la clé générée et collez-la dans les <a href="#"
-                                                    class="link-to-settings btn-link" data-target-tab="advanced"
+                                                Copiez la clé générée et collez-la dans les
+                                                <a href="#" class="link-to-settings btn-link" data-target-tab="advanced"
                                                     data-target-element="mistralApiKey">Paramètres</a>.
                                             </p>
                                         </div>
@@ -2378,11 +2488,13 @@
                                         <div class="help-step-body">
                                             <strong>Créer une clé API</strong>
                                             <p>Connectez-vous avec votre
-                                                compte Google et cliquez sur "Create API key".</p>
+                                                compte Google et cliquez sur "Create API
+                                                key".</p>
                                             <a href="https://aistudio.google.com/app/apikey" target="_blank"
                                                 rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                 <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon> Ouvrir
+                                                    icon="solar:link-circle-bold"></iconify-icon>
+                                                Ouvrir
                                                 Google AI Studio
                                             </a>
                                         </div>
@@ -2397,7 +2509,8 @@
                                             <p>
                                                 Copiez la clé et collez-la dans les <a href="#"
                                                     class="link-to-settings btn-link" data-target-tab="advanced"
-                                                    data-target-element="googleApiKey">Paramètres</a> section Google.
+                                                    data-target-element="googleApiKey">Paramètres</a>
+                                                section Google.
                                             </p>
                                         </div>
                                     </div>
@@ -2416,7 +2529,8 @@
                                             <a href="https://openrouter.ai/keys" target="_blank"
                                                 rel="noopener noreferrer" class="btn btn-secondary btn-small">
                                                 <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon> Site
+                                                    icon="solar:link-circle-bold"></iconify-icon>
+                                                Site
                                                 OpenRouter
                                             </a>
                                         </div>
@@ -2431,7 +2545,8 @@
                                             <p>
                                                 Collez la clé dans les <a href="#" class="link-to-settings btn-link"
                                                     data-target-tab="advanced"
-                                                    data-target-element="openrouterApiKey">Paramètres</a> section
+                                                    data-target-element="openrouterApiKey">Paramètres</a>
+                                                section
                                                 OpenRouter.
                                             </p>
                                         </div>
@@ -2442,9 +2557,11 @@
                             <!-- Common Footer -->
                             <div class="help-tip-box">
                                 <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon>
-                                <span><strong>Relais automatique :</strong> Si le modèle échoue, l'app peut basculer
+                                <span><strong>Relais automatique :</strong> Si le modèle
+                                    échoue, l'app peut basculer
                                     vers un autre. Activable dans les <a href="#" class="link-to-settings btn-link"
-                                        data-target-tab="advanced">Paramètres avancés</a>.</span>
+                                        data-target-tab="advanced">Paramètres
+                                        avancés</a>.</span>
                             </div>
                         </div>
 
@@ -2455,7 +2572,8 @@
                                     <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 </div>
                                 <p>
-                                    Importez vos classes depuis Excel, Pronote, un PDF ou tout autre document.
+                                    Importez vos classes depuis Excel, Pronote, un PDF ou
+                                    tout autre document.
                                 </p>
                             </div>
 
@@ -2467,12 +2585,15 @@
                                         <ul
                                             style="margin: 8px 0 0 0; padding-left: 20px; color: var(--text-secondary);">
                                             <li style="margin-bottom: 6px;">
-                                                <strong style="color: var(--text-primary);">Mode Unitaire :</strong>
+                                                <strong style="color: var(--text-primary);">Mode
+                                                    Unitaire :</strong>
                                                 Saisie manuelle (un élève à la fois).
                                             </li>
                                             <li>
-                                                <strong style="color: var(--text-primary);">Import en Masse :</strong>
-                                                Copiez-collez ou glissez votre fichier. <span
+                                                <strong style="color: var(--text-primary);">Import
+                                                    en Masse :</strong>
+                                                Copiez-collez ou glissez votre fichier.
+                                                <span
                                                     style="font-size: 0.85em; background: rgba(var(--success-color-rgb), 0.1); color: var(--success-color); padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px;">Recommandé</span>
                                             </li>
                                         </ul>
@@ -2485,12 +2606,14 @@
                                     <div class="help-step-number">2</div>
                                     <div class="help-step-body">
                                         <strong>Format idéal</strong>
-                                        <p>L'application détecte automatiquement les colonnes. Copiez simplement votre
+                                        <p>L'application détecte automatiquement les
+                                            colonnes. Copiez simplement votre
                                             tableau (y compris les en-têtes).</p>
 
                                         <div
                                             style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--card-glass-border); margin-top: 10px; font-size: 0.85em; font-family: monospace; color: var(--text-secondary);">
-                                            Nom | Prénom | Moyenne | Appréciation (optionnel)
+                                            Nom | Prénom | Moyenne | Appréciation
+                                            (optionnel)
                                         </div>
                                     </div>
                                 </div>
@@ -2498,7 +2621,8 @@
 
                             <div class="help-tip-box">
                                 <iconify-icon class="iconify-inline" icon="solar:lightbulb-bolt-bold"></iconify-icon>
-                                <span>Après le collage, vous pourrez vérifier et ajuster le "mappage" des colonnes avant
+                                <span>Après le collage, vous pourrez vérifier et ajuster le
+                                    "mappage" des colonnes avant
                                     de valider.</span>
                             </div>
                         </div>
@@ -2510,7 +2634,8 @@
                                     <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 </div>
                                 <p>
-                                    L'IA s'adapte à votre style d'écriture. Définissez vos préférences dans les
+                                    L'IA s'adapte à votre style d'écriture. Définissez vos
+                                    préférences dans les
                                     Paramètres.
                                 </p>
                             </div>
@@ -2520,7 +2645,8 @@
                                     <div class="help-step-number">1</div>
                                     <div class="help-step-body">
                                         <strong>Ton et Longueur</strong>
-                                        <p>Choisissez un ton (Strict, Encourageant...) et la longueur souhaitée (Concis,
+                                        <p>Choisissez un ton (Strict, Encourageant...) et la
+                                            longueur souhaitée (Concis,
                                             Détaillé) pour vos appréciations.</p>
                                     </div>
                                 </div>
@@ -2530,11 +2656,14 @@
                                 <div class="help-step-layout">
                                     <div class="help-step-number">2</div>
                                     <div class="help-step-body">
-                                        <strong>"Ma Patte" (Instructions personnalisées)</strong>
-                                        <p>Donnez des consignes précises à l'IA pour qu'elle imite votre style.</p>
+                                        <strong>"Ma Patte" (Instructions
+                                            personnalisées)</strong>
+                                        <p>Donnez des consignes précises à l'IA pour qu'elle
+                                            imite votre style.</p>
                                         <div
                                             style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; font-style: italic; font-size: 0.85em; color: var(--text-secondary); border-left: 3px solid #a855f7;">
-                                            "Ne jamais utiliser le mot 'bavard', toujours mentionner l'effort fourni."
+                                            "Ne jamais utiliser le mot 'bavard', toujours
+                                            mentionner l'effort fourni."
                                         </div>
                                     </div>
                                 </div>
@@ -2547,9 +2676,11 @@
                                         <strong>Prévisualisation en direct</strong>
                                         <p>
                                             Utilisez le bouton <strong><iconify-icon class="iconify-inline"
-                                                    icon="solar:test-tube-linear"></iconify-icon> Aperçu</strong> dans
+                                                    icon="solar:test-tube-linear"></iconify-icon>
+                                                Aperçu</strong> dans
                                             les
-                                            paramètres pour tester vos réglages instantanément.
+                                            paramètres pour tester vos réglages
+                                            instantanément.
                                         </p>
                                     </div>
                                 </div>
@@ -2573,82 +2704,110 @@
                                 </p>
                             </div>
 
-                            <table class="help-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 140px;">Bouton</th>
-                                        <th style="width: 120px;">Action</th>
-                                        <th>Prompt Système</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <button class="btn btn-ai-outline btn-tiny" style="pointer-events: none;">
-                                                <iconify-icon icon="solar:minimize-square-linear"></iconify-icon>
-                                                Concise
-                                            </button>
-                                        </td>
-                                        <td>Réduire (~20%)</td>
-                                        <td class="prompt-cell">"Rends cette appréciation plus concise. Garde
-                                            l'essentiel."
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="btn btn-ai-outline btn-tiny" style="pointer-events: none;">
-                                                <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
-                                                Détaillée
-                                            </button>
-                                        </td>
-                                        <td>Développer (~20%)</td>
-                                        <td class="prompt-cell">"Développe les points, sois plus précis. N'invente pas
-                                            de faits."</td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="btn btn-ai-outline btn-tiny" style="pointer-events: none;">
-                                                <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
-                                            </button>
-                                        </td>
-                                        <td>Ton positif</td>
-                                        <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif."
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="btn btn-ai-outline btn-tiny" style="pointer-events: none;">
-                                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Variation
-                                            </button>
-                                        </td>
-                                        <td>Reformuler</td>
-                                        <td class="prompt-cell">"Reformule différemment (vocabulaire, structure) mais
-                                            garde le même sens."</td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="btn btn-ai-outline btn-tiny" style="pointer-events: none;">
-                                                <span class="polish-icon-wrapper">
-                                                    <iconify-icon icon="solar:magic-stick-3-linear"
-                                                        class="polish-wand"></iconify-icon>
-                                                    <span class="polish-sparkle s1">✦</span>
-                                                    <span class="polish-sparkle s2">✦</span>
-                                                    <span class="polish-sparkle s3">✧</span>
-                                                </span>
-                                                Peaufiner
-                                            </button>
-                                        </td>
-                                        <td>Correction Pro</td>
-                                        <td class="prompt-cell">"Peaufine : corrige fautes, améliore fluidité, adopte un
-                                            ton pro."</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="ui-table-container">
+                                <table class="ui-table responsive-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 140px;">Bouton</th>
+                                            <th style="width: 120px;">Action</th>
+                                            <th>Prompt Système</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-ai-outline btn-tiny"
+                                                    style="pointer-events: none;">
+                                                    <iconify-icon icon="solar:minimize-square-linear"></iconify-icon>
+                                                    Concise
+                                                </button>
+                                            </td>
+                                            <td style="font-weight: 500; color: var(--text-primary);">
+                                                Réduire (~20%)
+                                            </td>
+                                            <td class="prompt-cell">"Rends cette
+                                                appréciation plus concise. Garde
+                                                l'essentiel."
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-ai-outline btn-tiny"
+                                                    style="pointer-events: none;">
+                                                    <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
+                                                    Détaillée
+                                                </button>
+                                            </td>
+                                            <td style="font-weight: 500; color: var(--text-primary);">
+                                                Développer (~20%)
+                                            </td>
+                                            <td class="prompt-cell">"Développe les points,
+                                                sois plus précis. N'invente
+                                                pas
+                                                de faits."</td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-ai-outline btn-tiny"
+                                                    style="pointer-events: none;">
+                                                    <iconify-icon icon="solar:heart-linear"></iconify-icon>
+                                                    Encourageante
+                                                </button>
+                                            </td>
+                                            <td style="font-weight: 500; color: var(--text-primary);">
+                                                Ton positif</td>
+                                            <td class="prompt-cell">"Reformule avec un ton
+                                                plus encourageant et
+                                                positif."
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-ai-outline btn-tiny"
+                                                    style="pointer-events: none;">
+                                                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                                                    Variation
+                                                </button>
+                                            </td>
+                                            <td style="font-weight: 500; color: var(--text-primary);">
+                                                Reformuler</td>
+                                            <td class="prompt-cell">"Reformule différemment
+                                                (vocabulaire, structure)
+                                                mais
+                                                garde le même sens."</td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-ai-outline btn-tiny"
+                                                    style="pointer-events: none;">
+                                                    <span class="polish-icon-wrapper">
+                                                        <iconify-icon icon="solar:magic-stick-3-linear"
+                                                            class="polish-wand"></iconify-icon>
+                                                        <span class="polish-sparkle s1">✦</span>
+                                                        <span class="polish-sparkle s2">✦</span>
+                                                        <span class="polish-sparkle s3">✧</span>
+                                                    </span>
+                                                    Peaufiner
+                                                </button>
+                                            </td>
+                                            <td style="font-weight: 500; color: var(--text-primary);">
+                                                Correction Pro
+                                            </td>
+                                            <td class="prompt-cell">"Peaufine : corrige
+                                                fautes, améliore fluidité,
+                                                adopte un
+                                                ton pro."</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
                             <div class="help-tip-box" style="margin-top: 15px;">
                                 <iconify-icon class="iconify-inline" icon="solar:eye-bold"></iconify-icon>
-                                <span><strong>Astuce :</strong> Faites un <strong>Clic Droit</strong> sur le bouton
-                                    <em>Générer</em> pour voir le prompt complet envoyé à l'IA avant qu'il ne
+                                <span><strong>Astuce :</strong> Faites un <strong>Clic
+                                        Droit</strong> sur le bouton
+                                    <em>Générer</em> pour voir le prompt complet envoyé à
+                                    l'IA avant qu'il ne
                                     parte.</span>
                             </div>
                         </div>
@@ -2660,18 +2819,22 @@
                                     <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                 </div>
                                 <p>
-                                    Vos données, votre contrôle. Bulletin AI est conçu selon le principe "Local-First".
+                                    Vos données, votre contrôle. Bulletin AI est conçu selon
+                                    le principe "Local-First".
                                 </p>
                             </div>
 
                             <div class="help-step-card">
                                 <div class="help-step-layout">
                                     <div class="help-step-number safety-icon"><iconify-icon
-                                            icon="solar:lock-keyhole-bold"></iconify-icon></div>
+                                            icon="solar:lock-keyhole-bold"></iconify-icon>
+                                    </div>
                                     <div class="help-step-body">
                                         <strong>Stockage Local</strong>
-                                        <p>Toutes vos données (élèves, notes, appréciations) sont stockées
-                                            <strong>uniquement sur votre ordinateur</strong> (dans le navigateur). Rien
+                                        <p>Toutes vos données (élèves, notes, appréciations)
+                                            sont stockées
+                                            <strong>uniquement sur votre ordinateur</strong>
+                                            (dans le navigateur). Rien
                                             n'est sauvegardé sur nos serveurs.
                                         </p>
                                     </div>
@@ -2681,12 +2844,15 @@
                             <div class="help-step-card">
                                 <div class="help-step-layout">
                                     <div class="help-step-number safety-icon"><iconify-icon
-                                            icon="solar:incognito-bold"></iconify-icon></div>
+                                            icon="solar:incognito-bold"></iconify-icon>
+                                    </div>
                                     <div class="help-step-body">
                                         <strong>Anonymisation</strong>
                                         <p>
-                                            Avant d'être envoyées à l'IA pour génération, les données sont anonymisées.
-                                            Les noms de famille sont supprimés. Seul le prénom et les notes sont
+                                            Avant d'être envoyées à l'IA pour génération,
+                                            les données sont anonymisées.
+                                            Les noms de famille sont supprimés. Seul le
+                                            prénom et les notes sont
                                             transmis.
                                         </p>
                                     </div>
@@ -2697,8 +2863,10 @@
                                 style="border-color: rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05);">
                                 <iconify-icon class="iconify-inline" icon="solar:check-circle-bold"
                                     style="color: #10b981;"></iconify-icon>
-                                <span>Le code source de l'application est ouvert et auditable, garantissant une
-                                    transparence totale sur le traitement des données.</span>
+                                <span>Le code source de l'application est ouvert et
+                                    auditable, garantissant une
+                                    transparence totale sur le traitement des
+                                    données.</span>
                             </div>
                         </div>
 
@@ -2732,10 +2900,12 @@
                                 <div class="support-card-premium">
                                     <h4>
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"
-                                            style="color: #FF5E5B;"></iconify-icon> Soutenir le projet
+                                            style="color: #FF5E5B;"></iconify-icon> Soutenir
+                                        le projet
                                     </h4>
                                     <p>
-                                        Cette application est gratuite. Si elle vous est utile, vous pouvez encourager
+                                        Cette application est gratuite. Si elle vous est
+                                        utile, vous pouvez encourager
                                         son
                                         développement en m'offrant un café !
                                     </p>
@@ -2749,9 +2919,10 @@
                                 <div class="about-footer">
                                     <p>Développé pour les enseignants par David Trafial</p>
                                     <p>© 2025 Bulletin AI - Tous droits réservés</p>
-                                    <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.7;">Sous licence <a
-                                            id="linkLicense" href="#" target="_blank"
-                                            style="color: inherit; text-decoration: underline;">Creative Commons
+                                    <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.7;">
+                                        Sous licence <a id="linkLicense" href="#" target="_blank"
+                                            style="color: inherit; text-decoration: underline;">Creative
+                                            Commons
                                             BY-NC-SA 4.0</a></p>
                                 </div>
                             </div>
@@ -2770,7 +2941,8 @@
     <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="welcomeModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="welcomeModalTitle">🎉 Bienvenue dans Bulletin AI !</h2>
+                <h2 class="modal-title" id="welcomeModalTitle">🎉 Bienvenue dans Bulletin AI
+                    !</h2>
                 <button class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -2784,19 +2956,22 @@
                     <div class="welcome-features-list">
                         <div class="welcome-feature">
                             <span class="feature-icon">✨</span>
-                            <span class="feature-text"><strong>Unique & Varié</strong><br>Plus de
+                            <span class="feature-text"><strong>Unique &
+                                    Varié</strong><br>Plus de
                                 répétitions
                                 robotiques.</span>
                         </div>
                         <div class="welcome-feature">
                             <span class="feature-icon">⚡</span>
-                            <span class="feature-text"><strong>Ultra Rapide</strong><br>Une classe
+                            <span class="feature-text"><strong>Ultra Rapide</strong><br>Une
+                                classe
                                 entière en quelques
                                 minutes.</span>
                         </div>
                         <div class="welcome-feature">
                             <span class="feature-icon">🔒</span>
-                            <span class="feature-text"><strong>Privé & Sécurisé</strong><br>Vos données
+                            <span class="feature-text"><strong>Privé &
+                                    Sécurisé</strong><br>Vos données
                                 restent sous
                                 contrôle.</span>
                         </div>
@@ -2886,7 +3061,8 @@
                     <div class="welcome-icon-small" style="text-align: center; margin-bottom: 15px;">🗓️
                     </div>
                     <h3>Votre rythme scolaire</h3>
-                    <p class="welcome-subtitle">Ce paramètre calibre l'IA pour qu'elle s'adapte à votre
+                    <p class="welcome-subtitle">Ce paramètre calibre l'IA pour qu'elle
+                        s'adapte à votre
                         organisation.
                     </p>
 
@@ -2900,7 +3076,8 @@
                                 </div>
                                 <div class="period-card-text">
                                     <span class="period-card-title">Trimestres</span>
-                                    <span class="period-card-desc">3 périodes par an (Automne, Hiver,
+                                    <span class="period-card-desc">3 périodes par an
+                                        (Automne, Hiver,
                                         Printemps)</span>
                                 </div>
                             </div>
@@ -2914,14 +3091,16 @@
                                 </div>
                                 <div class="period-card-text">
                                     <span class="period-card-title">Semestres</span>
-                                    <span class="period-card-desc">2 périodes par an (Automne,
+                                    <span class="period-card-desc">2 périodes par an
+                                        (Automne,
                                         Printemps)</span>
                                 </div>
                             </div>
                         </label>
                     </div>
 
-                    <p class="welcome-hint">Vous pourrez modifier ce paramètre à tout moment dans les
+                    <p class="welcome-hint">Vous pourrez modifier ce paramètre à tout moment
+                        dans les
                         réglages.</p>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
@@ -2935,7 +3114,8 @@
 
 
                     <h3>Prêt à commencer !</h3>
-                    <p class="welcome-subtitle">Tout est configuré. Voyez l'IA en action sur des données
+                    <p class="welcome-subtitle">Tout est configuré. Voyez l'IA en action sur
+                        des données
                         d'exemple.</p>
 
                     <button class="btn btn-organic btn-organic--rounded btn-cta-full" id="welcomeLoadSampleBtn">
@@ -2943,7 +3123,8 @@
                         Charger et Générer un exemple
                     </button>
 
-                    <div id="welcome-next-step-info">Parfait ! Les données sont prêtes. Cliquez sur
+                    <div id="welcome-next-step-info">Parfait ! Les données sont prêtes.
+                        Cliquez sur
                         "Terminer" pour voir
                         les résultats.</div>
                 </div>
@@ -3125,7 +3306,8 @@
                     </span>
                 </div>
                 <span class="dashboard-student-count" id="dashboardStudentCount">
-                    <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon> <strong>0</strong> élèves
+                    <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
+                    <strong>0</strong> élèves
                     analysés
                 </span>
                 <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
@@ -3177,7 +3359,8 @@
                             Synthèse IA</h3>
                         <div class="ai-section-actions">
                             <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
-                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer la synthèse
+                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer
+                                la synthèse
                             </button>
                         </div>
                     </div>
@@ -3185,7 +3368,8 @@
                         <div class="ai-placeholder">
                             <div class="ai-placeholder-icon"><iconify-icon
                                     icon="solar:magic-stick-3-bold"></iconify-icon></div>
-                            <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA
+                            <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse"
+                                pour obtenir une analyse IA
                                 contextuelle de votre classe.</p>
                         </div>
                     </div>
@@ -3249,42 +3433,26 @@
 
 
 
-    <!-- Script pour les onglets du guide -->
-    <script>
-        window.switchHelpTab = function (btn, targetId) {
-            // Boutons
-            document.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Contenu
-            document.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
-            const target = document.getElementById(targetId);
-            if (target) {
-                target.classList.add('active');
-            }
-        }
-    </script>
-
     <!-- Page Entrance Transition from Landing Page -->
     <script>
-            (function initPageEntrance() {
-                // Check if user is coming from landing page (within last 2 seconds)
-                const transitionTimestamp = sessionStorage.getItem('landingTransition');
-                const now = Date.now();
+        (function initPageEntrance() {
+            // Check if user is coming from landing page (within last 2 seconds)
+            const transitionTimestamp = sessionStorage.getItem('landingTransition');
+            const now = Date.now();
 
-                if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
-                    // Clear the flag
-                    sessionStorage.removeItem('landingTransition');
+            if (transitionTimestamp && (now - parseInt(transitionTimestamp, 10)) < 2000) {
+                // Clear the flag
+                sessionStorage.removeItem('landingTransition');
 
-                    // Apply entrance animation class
-                    document.body.classList.add('is-transitioning-in');
+                // Apply entrance animation class
+                document.body.classList.add('is-transitioning-in');
 
-                    // Remove the class after animation completes
-                    setTimeout(() => {
-                        document.body.classList.remove('is-transitioning-in');
-                    }, 800); // Slightly longer than animation duration
-                }
-            })();
+                // Remove the class after animation completes
+                setTimeout(() => {
+                    document.body.classList.remove('is-transitioning-in');
+                }, 800); // Slightly longer than animation duration
+            }
+        })();
     </script>
 </body>
 

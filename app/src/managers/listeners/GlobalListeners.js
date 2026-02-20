@@ -13,6 +13,11 @@ import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
+import { MassImportManager } from '../MassImportManager.js';
+import { ListViewManager } from '../ListViewManager.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
+import { DropdownManager } from '../DropdownManager.js';
+import { TooltipsUI } from '../TooltipsManager.js';
 
 export const GlobalListeners = {
     /**
@@ -49,12 +54,7 @@ export const GlobalListeners = {
             const { studentId, result } = e.detail || {};
             if (!studentId) return;
 
-            // Dynamically import managers to update UI
             try {
-                const [{ ListViewManager }, { ResultsUIManager }] = await Promise.all([
-                    import('../ListViewManager.js'),
-                    import('../ResultsUIManager.js')
-                ]);
 
                 // Update the specific row dirty indicator
                 if (ListViewManager?.updateStudentRow) {
@@ -70,13 +70,8 @@ export const GlobalListeners = {
             }
         });
 
-        // Écoute les changements de seuil du journal (affecte TOUS les élèves)
         window.addEventListener('journalThresholdChanged', async () => {
             try {
-                const [{ ListViewManager }, { ResultsUIManager }] = await Promise.all([
-                    import('../ListViewManager.js'),
-                    import('../ResultsUIManager.js')
-                ]);
 
                 if (!ListViewManager?.updateStudentRow) return;
 
@@ -230,13 +225,11 @@ export const GlobalListeners = {
                 const historyLines = this._modelHistory.map(h => `${h.from} → ${h.to}`).join('<br>');
                 const tooltipText = `⚡ Fallback actif<br>${historyLines}`;
 
-                import('../TooltipsManager.js').then(({ TooltipsUI }) => {
-                    if (TooltipsUI?.updateTooltip) {
-                        TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltipText);
-                    }
-                }).catch(() => {
+                if (TooltipsUI?.updateTooltip) {
+                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltipText);
+                } else {
                     DOM.headerGenDashboard?.setAttribute('data-tooltip', tooltipText);
-                });
+                }
 
                 // 4. Retour à l'état normal après 8 secondes
                 setTimeout(() => {
@@ -277,13 +270,11 @@ export const GlobalListeners = {
 
                     const finalTooltip = `⚙️ ${configuredModel}<br>✅ Dernier : ${lastUsed}`;
 
-                    import('../TooltipsManager.js').then(({ TooltipsUI }) => {
-                        if (TooltipsUI?.updateTooltip) {
-                            TooltipsUI.updateTooltip(DOM.headerGenDashboard, finalTooltip);
-                        }
-                    }).catch(() => {
+                    if (TooltipsUI?.updateTooltip) {
+                        TooltipsUI.updateTooltip(DOM.headerGenDashboard, finalTooltip);
+                    } else {
                         DOM.headerGenDashboard?.setAttribute('data-tooltip', finalTooltip);
-                    });
+                    }
                 }, 8000);
             }
         });
@@ -304,17 +295,11 @@ export const GlobalListeners = {
             // Mass operations handle their own progress display (1/8, 2/8...)
             // Check if a mass operation is in progress - if so, don't interfere
             if (this._activeGenerationsCount === 1) {
-                try {
-                    const { MassImportManager } = await import('../MassImportManager.js');
-                    if (MassImportManager.massImportAbortController) {
-                        // Mass operation in progress - let it handle its own progress
-                        return;
-                    }
-                } catch (e) {
-                    // Module not loaded yet, safe to proceed
+                if (MassImportManager.massImportAbortController) {
+                    // Mass operation in progress - let it handle its own progress
+                    return;
                 }
 
-                const { UI } = await import('../UIManager.js');
                 UI.showHeaderProgress(0, 1, e.detail?.studentName || '');
             }
         });
@@ -327,19 +312,12 @@ export const GlobalListeners = {
             // Only hide when all concurrent generations are done
             if (this._activeGenerationsCount === 0) {
                 // Check if a mass operation is in progress - if so, let it handle its own progress
-                try {
-                    const { MassImportManager } = await import('../MassImportManager.js');
-                    if (MassImportManager.massImportAbortController) {
-                        // Mass operation in progress - don't interfere with its progress display
-                        return;
-                    }
-                } catch (e) {
-                    // Module not loaded yet, safe to proceed
+                if (MassImportManager.massImportAbortController) {
+                    // Mass operation in progress - don't interfere with its progress display
+                    return;
                 }
 
-                import('../UIManager.js').then(({ UI }) => {
-                    UI.hideHeaderProgress();
-                });
+                UI.hideHeaderProgress();
             }
         });
     },
@@ -371,7 +349,7 @@ export const GlobalListeners = {
                     UI.closeAllModals();
                     // Explicitly close actions dropdown and custom dropdowns
                     DOM.actionsDropdown?.classList.remove('show');
-                    import('../DropdownManager.js').then(({ DropdownManager }) => DropdownManager.closeAll());
+                    DropdownManager.closeAll();
 
                     setTimeout(() => {
                         UI.openModal(DOM.settingsModal);
@@ -389,9 +367,9 @@ export const GlobalListeners = {
             }
             // Fermer les custom dropdowns si on clique en dehors (mais pas si on clique sur le trigger d'un custom dropdown)
             if (!e.target.closest('.custom-dropdown')) {
-                import('../DropdownManager.js').then(({ DropdownManager }) => {
+                try {
                     DropdownManager.closeAll();
-                }).catch(() => { });
+                } catch { }
             } else {
                 // Si on clique SUR un custom dropdown, fermer le menu actions
                 DOM.actionsDropdown?.classList.remove('show');

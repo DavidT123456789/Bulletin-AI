@@ -14,6 +14,9 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
+import { MassImportManager } from './MassImportManager.js';
+import { StorageManager } from './StorageManager.js';
 
 /**
  * Import Wizard Manager
@@ -1413,8 +1416,7 @@ export const ImportWizardManager = {
 
         appState.massImportFormats[appState.periodSystem][appState.currentPeriod] = formatString;
 
-        // Save to storage
-        import('./StorageManager.js').then(({ StorageManager }) => StorageManager.saveAppState());
+        StorageManager.saveAppState();
     },
 
     /**
@@ -1433,7 +1435,6 @@ export const ImportWizardManager = {
      * Update preview for step 3 — builds unified data table with column checkboxes
      */
     async _updatePreview() {
-        const { AppreciationsManager } = await import('./AppreciationsManager.js');
 
         // Build format map from NATIVE Selects
         const formatMap = {};
@@ -1719,7 +1720,6 @@ export const ImportWizardManager = {
 
         this._saveFormat();
 
-        const { MassImportManager } = await import('./MassImportManager.js');
         const currentPeriod = appState.currentPeriod || 'T1';
 
         // Read enabled columns from checkboxes

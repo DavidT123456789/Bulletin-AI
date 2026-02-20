@@ -17,6 +17,7 @@ import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { VariationsManager } from './VariationsManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
+import { DropdownManager } from './DropdownManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -185,9 +186,9 @@ export const EventHandlersManager = {
     handleActionsBtnToggle(e) {
         e.stopPropagation();
         // Fermer les custom dropdowns avant d'ouvrir le menu actions
-        import('./DropdownManager.js').then(({ DropdownManager }) => {
+        try {
             DropdownManager.closeAll();
-        }).catch(() => { });
+        } catch { }
         DOM.actionsDropdown.classList.toggle('show');
     },
 

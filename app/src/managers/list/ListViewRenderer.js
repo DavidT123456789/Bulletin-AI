@@ -8,6 +8,7 @@ import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
 
 export const ListViewRenderer = {
 
@@ -193,9 +194,7 @@ export const ListViewRenderer = {
             }
 
             // Also update the global generate button state as dirty counts may have changed
-            import('../ResultsUIManager.js').then(({ ResultsUIManager }) => {
-                ResultsUIManager.updateGenerateButtonState();
-            });
+            ResultsUIManager.updateGenerateButtonState();
             return true;
         }
         return false;

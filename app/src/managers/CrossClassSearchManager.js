@@ -11,6 +11,7 @@ import { ClassManager } from './ClassManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
+import { UI } from './UIManager.js';
 
 /**
  * Gestionnaire de la recherche cross-classes
@@ -271,7 +272,6 @@ export const CrossClassSearchManager = {
         FocusPanelManager.open(studentId);
 
         // Notification de feedback
-        const { UI } = await import('./UIManager.js');
         UI?.showNotification(`Basculé vers ${className}`, 'info');
     },
 

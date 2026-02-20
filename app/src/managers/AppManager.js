@@ -25,6 +25,8 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { PwaInstallManager } from './PwaInstallManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { ImportWizardManager } from './ImportWizardManager.js';
+import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 
 
 
@@ -91,11 +93,9 @@ export const App = {
         FocusPanelManager.init(AppreciationsManager, ListViewManager);
 
         // Slide-Over Import Panel: Initialize
-        const { ImportWizardManager } = await import('./ImportWizardManager.js');
         ImportWizardManager.init();
 
         // Trombinoscope Photo Import: Initialize
-        const { TrombinoscopeManager } = await import('./TrombinoscopeManager.js');
         TrombinoscopeManager.init();
     },
 

@@ -14,6 +14,8 @@ import { DOM } from '../utils/DOM.js';
 import { detectSeparator, parseLine } from '../utils/ImportUtils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
+import { MassImportManager } from './MassImportManager.js';
+import { ImportWizardManager } from './ImportWizardManager.js';
 
 export const FileImportManager = {
     /**
@@ -52,9 +54,7 @@ export const FileImportManager = {
         setMassImportMappingState({ rawData: rawLines, lines, columnCount, separator, formatMap: {} });
 
         // Open the new Import Wizard instead of old modal
-        import('./ImportWizardManager.js').then(({ ImportWizardManager }) => {
-            ImportWizardManager.openWithData(dataText);
-        });
+        ImportWizardManager.openWithData(dataText);
     },
 
     /**
@@ -74,7 +74,6 @@ export const FileImportManager = {
                 const textContent = await extractTextFromPdf(file);
 
                 // Ouvre l'assistant d'import avec le texte extrait
-                const { ImportWizardManager } = await import('./ImportWizardManager.js');
                 ImportWizardManager.openWithData(textContent);
 
                 UI.showNotification('PDF importé avec succès', 'success');
@@ -93,9 +92,7 @@ export const FileImportManager = {
                 StorageManager.importSettings(content);
             } else {
                 // Open import wizard with file content
-                import('./ImportWizardManager.js').then(({ ImportWizardManager }) => {
-                    ImportWizardManager.openWithData(content);
-                });
+                ImportWizardManager.openWithData(content);
             }
         };
         reader.readAsText(file);
@@ -135,9 +132,6 @@ export const FileImportManager = {
     },
 
     handleCancelImportOutputClick() {
-        // Import dynamique pour éviter la dépendance circulaire
-        import('./MassImportManager.js').then(({ MassImportManager }) => {
-            MassImportManager.cancelImport();
-        });
+        MassImportManager.cancelImport();
     }
 };

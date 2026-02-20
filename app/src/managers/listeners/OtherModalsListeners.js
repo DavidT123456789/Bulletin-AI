@@ -7,7 +7,7 @@ import { DOM } from '../../utils/DOM.js';
 import { UI } from '../UIManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
-
+import { FocusPanelManager } from '../FocusPanelManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 
 let App = null;
@@ -170,8 +170,7 @@ export const OtherModalsListeners = {
                 const studentId = highlightItem.dataset.studentId;
                 ClassDashboardManager.closeDashboard();
                 // Open focus panel for this student
-                setTimeout(async () => {
-                    const { FocusPanelManager } = await import('../FocusPanelManager.js');
+                setTimeout(() => {
                     FocusPanelManager.openByStudentId(studentId);
                 }, 300);
             }

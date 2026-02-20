@@ -8,6 +8,14 @@ import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
+import { UI } from '../UIManager.js';
+import { ModalUI as ModalUIManager } from '../ModalUIManager.js';
+import { MassImportManager } from '../MassImportManager.js';
+import { AppreciationsManager } from '../AppreciationsManager.js';
+import { StudentDataManager } from '../StudentDataManager.js';
+import { ExportManager } from '../ExportManager.js';
+import { StorageManager } from '../StorageManager.js';
+import { TooltipsUI } from '../TooltipsManager.js';
 
 export const ListSelectionManager = {
     selectedIds: new Set(),
@@ -15,21 +23,21 @@ export const ListSelectionManager = {
 
     // Callbacks to avoid circular dependencies
     callbacks: {
-        updateStudentRow: () => {},
-        setRowStatus: () => {},
-        renderList: () => {},
-        clearSelections: () => {}
+        updateStudentRow: () => { },
+        setRowStatus: () => { },
+        renderList: () => { },
+        clearSelections: () => { }
     },
 
     init(callbacks) {
         this.callbacks = { ...this.callbacks, ...callbacks };
     },
 
-/**
-     * Gère l'interaction de sélection avec support Shift/Ctrl
-     * @param {string} studentId 
-     * @param {Event} e 
-     */
+    /**
+         * Gère l'interaction de sélection avec support Shift/Ctrl
+         * @param {string} studentId 
+         * @param {Event} e 
+         */
     handleSelectionInteraction(studentId, e) {
         if (!studentId) return;
 
@@ -187,10 +195,7 @@ export const ListSelectionManager = {
                 document.body.appendChild(toolbar);
 
                 // Initialize tooltips for the new toolbar
-                // Import dynamically to avoid circular dependencies or load order issues
-                import('../TooltipsManager.js').then(({ TooltipsUI }) => {
-                    TooltipsUI.initTooltips();
-                });
+                TooltipsUI.initTooltips();
 
                 // Trigger animation
                 requestAnimationFrame(() => toolbar.classList.add('active'));
@@ -330,7 +335,6 @@ export const ListSelectionManager = {
             ? `<p class="modal-confirm-detail-label">Données perdues :</p><ul class="modal-confirm-detail-list">${dataLines}</ul>`
             : '';
 
-        const { ModalUI: ModalUIManager } = await import('../ModalUIManager.js');
         const confirmed = await ModalUIManager.showCustomConfirm(
             `<div>
                 <p>Supprimer définitivement ${namesList} ?</p>
@@ -346,18 +350,15 @@ export const ListSelectionManager = {
         );
 
         if (confirmed) {
-            const { StudentDataManager } = await import('../StudentDataManager.js');
             for (const id of ids) {
                 await StudentDataManager.deleteStudent(id);
             }
 
-            const { StorageManager } = await import('../StorageManager.js');
             await StorageManager.saveAppState();
 
             this.clearSelections();
             this.callbacks.renderList();
 
-            const { UI } = await import('../UIManager.js');
             UI?.showNotification(`${ids.length} élève${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}.`, 'success');
         }
     },
@@ -369,11 +370,6 @@ export const ListSelectionManager = {
     },
 
     async bulkRegenerate(ids) {
-        const { MassImportManager } = await import('../MassImportManager.js');
-        const { AppreciationsManager } = await import('../AppreciationsManager.js');
-        const { UI } = await import('../UIManager.js');
-        const { StudentDataManager } = await import('../StudentDataManager.js');
-
         // 1. Initialize AbortController for global cancellation (Cancel button in header)
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();
@@ -487,15 +483,13 @@ export const ListSelectionManager = {
             UI.showNotification(resultMsg, errorCount > 0 ? "warning" : "success");
         }
 
-        import('../StorageManager.js').then(({ StorageManager }) => StorageManager.saveAppState());
+        StorageManager.saveAppState();
     },
 
     async bulkCopy(ids) {
-        const { ExportManager } = await import('../ExportManager.js');
         const count = await ExportManager.copyBulkAppreciations(ids);
         if (count > 0) {
             this.clearSelections();
-            const { UI } = await import('../UIManager.js');
             UI?.showNotification(`${count} appréciation${count > 1 ? 's' : ''} copiée${count > 1 ? 's' : ''}.`, 'success');
         }
     },
@@ -506,9 +500,7 @@ export const ListSelectionManager = {
      * @private
      */
     async copySingleAppreciation(studentId) {
-        const { ExportManager } = await import('../ExportManager.js');
         const count = await ExportManager.copyBulkAppreciations([studentId]);
-        const { UI } = await import('../UIManager.js');
         if (count > 0) {
             UI?.showNotification('Appréciation copiée.', 'success');
         } else {
@@ -523,7 +515,6 @@ export const ListSelectionManager = {
      * @private
      */
     async bulkReset(ids) {
-        const { ModalUI: ModalUIManager } = await import('../ModalUIManager.js');
         const results = appState.generatedResults || [];
         const currentPeriod = appState.currentPeriod;
         const isSingle = ids.length === 1;
@@ -663,8 +654,6 @@ export const ListSelectionManager = {
         const totalCleared = Object.values(counts).reduce((sum, c) => sum + c, 0);
 
         if (totalCleared > 0) {
-            const { StorageManager } = await import('../StorageManager.js');
-            const { UI } = await import('../UIManager.js');
             await StorageManager.saveAppState();
             UI?.updateStats?.();
             const parts = [];

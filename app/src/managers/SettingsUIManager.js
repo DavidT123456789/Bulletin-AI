@@ -17,6 +17,7 @@ import { AppreciationsManager } from './AppreciationsManager.js';
 import { DropdownManager } from './DropdownManager.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
 import { ApiValidationManager } from './ApiValidationManager.js';
+import { AIService } from '../services/AIService.js';
 
 /**
  * Module de gestion de l'interface des paramètres.
@@ -788,8 +789,6 @@ export const SettingsUIManager = {
      * @returns {Promise<boolean>} true si Ollama est disponible
      */
     async validateOllamaConnection() {
-        const { AIService } = await import('../services/AIService.js');
-
         // Afficher le spinner
         if (DOM.validateOllamaBtn) {
             DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>';

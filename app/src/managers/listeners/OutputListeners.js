@@ -5,6 +5,8 @@ import { Utils } from '../../utils/Utils.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
+import { MassImportManager } from '../MassImportManager.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
 
 export const OutputListeners = {
     /**
@@ -52,14 +54,12 @@ export const OutputListeners = {
         const headerCancelBtn = document.getElementById('headerCancelBtn');
         if (headerCancelBtn) {
             addClickListener(headerCancelBtn, async () => {
-                const { MassImportManager } = await import('../MassImportManager.js');
                 MassImportManager.cancelImport();
             });
         }
 
         // Bouton "Générer" : Only generates pending appreciations (no more regenerate mode)
         addClickListener(DOM.generateAllPendingBtn, async () => {
-            const { MassImportManager } = await import('../MassImportManager.js');
             await MassImportManager.generateAllPending();
         });
 
@@ -67,7 +67,6 @@ export const OutputListeners = {
         const headerGenerateBtn = document.getElementById('headerGenerateBtn');
         if (headerGenerateBtn) {
             addClickListener(headerGenerateBtn, async () => {
-                const { MassImportManager } = await import('../MassImportManager.js');
                 await MassImportManager.generateAllPending();
             });
         }
@@ -76,7 +75,6 @@ export const OutputListeners = {
         const updateDirtyBtn = document.getElementById('updateDirtyBtn');
         if (updateDirtyBtn) {
             addClickListener(updateDirtyBtn, async () => {
-                const { ResultsUIManager } = await import('../ResultsUIManager.js');
                 await ResultsUIManager.regenerateDirty();
             });
         }

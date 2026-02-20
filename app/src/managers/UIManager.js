@@ -473,9 +473,7 @@ export const UI = {
                         label._tippy.setContent(tooltip);
                     } else {
                         // Will be init by initTooltips or TooltipsUI
-                        import('./TooltipsManager.js').then(({ TooltipsUI }) => {
-                            TooltipsUI.updateTooltip(label, tooltip);
-                        });
+                        TooltipsUI.updateTooltip(label, tooltip);
                     }
                 }
             }
@@ -925,15 +923,11 @@ export const UI = {
             // Tooltip on the whole pill (not just the model label sub-button)
             const tooltip = `<strong>${modelName}</strong><br><span class="kbd-hint">Changer de modèle</span>`;
 
-            import('./TooltipsManager.js').then(({ TooltipsUI }) => {
-                if (TooltipsUI && TooltipsUI.updateTooltip) {
-                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
-                } else {
-                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
-                }
-            }).catch(() => {
+            if (TooltipsUI && TooltipsUI.updateTooltip) {
+                TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
+            } else {
                 DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
-            });
+            }
         }
 
         // Add all-complete state if everything is done

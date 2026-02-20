@@ -9,6 +9,7 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { MassImportManager } from './MassImportManager.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -421,15 +422,13 @@ export const ResultsUIManager = {
         }
 
         // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
-        import('./UIManager.js').then(({ UI }) => {
-            if (UI?.updateGenerateChipState) {
-                UI.updateGenerateChipState(pendingCount);
-            }
-            // Reinitialize tooltips to pick up updated data-tooltip on the update button
-            if (UI?.initTooltips) {
-                UI.initTooltips();
-            }
-        });
+        if (UI?.updateGenerateChipState) {
+            UI.updateGenerateChipState(pendingCount);
+        }
+        // Reinitialize tooltips to pick up updated data-tooltip on the update button
+        if (UI?.initTooltips) {
+            UI.initTooltips();
+        }
     },
 
     /**
@@ -473,9 +472,6 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm(`Régénérer les ${toRegen.length} appréciations ${onlyErrors ? 'en erreur' : 'visibles'} ?`, async () => {
-            // Import MassImportManager to use shared abort controller
-            const { MassImportManager } = await import('./MassImportManager.js');
-
             // Create new abort controller for this regeneration
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
@@ -624,8 +620,6 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm(message, async () => {
-            const { MassImportManager } = await import('./MassImportManager.js');
-
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
 

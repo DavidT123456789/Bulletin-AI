@@ -35,22 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Expose global functions for inline HTML onclick handlers
         window.switchHelpTab = (btn, tabId) => {
-            const buttons = Array.from(document.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn'));
+            const container = btn.closest('.ui-tabs-vertical');
+            if (!container) return;
+            const buttons = Array.from(container.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn'));
             const currentButton = buttons.find(b => b.classList.contains('active'));
             const newIndex = buttons.indexOf(btn);
             const currentIndex = currentButton ? buttons.indexOf(currentButton) : 0;
 
             // Determine direction: going down in list = content exits up
             const direction = newIndex > currentIndex ? 'down' : 'up';
-            const contentArea = document.querySelector('.ui-tabs-content');
+            const contentArea = container.querySelector('.ui-tabs-content');
             if (contentArea) contentArea.dataset.direction = direction;
 
-            // Remove active class from all buttons and contents
+            // Remove active class from all buttons and contents in this container
             buttons.forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
+            container.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
+
             // Add active class to clicked button and corresponding content
             btn.classList.add('active');
-            const content = document.getElementById(tabId);
+
+            // Search inside the container first for scoped IDs, fallback to global
+            const content = container.querySelector(`#${tabId}`) || document.getElementById(tabId);
             if (content) content.classList.add('active');
         };
 

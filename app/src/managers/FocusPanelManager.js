@@ -11,6 +11,7 @@ import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
+import { ListViewManager } from './ListViewManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
@@ -1555,10 +1556,9 @@ export const FocusPanelManager = {
         try {
             let manager = this.listViewManager;
 
-            // Fallback: If injected manager is missing or invalid, try global or dynamic import
+            // Fallback: If injected manager is missing or invalid, try global or static import
             if (!manager || !manager.updateStudentRow) {
-                const module = await import('./ListViewManager.js');
-                manager = module.ListViewManager;
+                manager = ListViewManager;
             }
 
             if (manager && manager.updateStudentRow) {

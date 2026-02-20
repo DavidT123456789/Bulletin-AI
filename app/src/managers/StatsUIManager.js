@@ -14,6 +14,7 @@ import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { StatsService } from '../services/StatsService.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
+import { UI } from './UIManager.js';
 
 /**
  * Module de gestion des statistiques de l'interface utilisateur.
@@ -382,16 +383,14 @@ export const StatsUI = {
                 if (!avgWordsEl._clickListenerAdded) {
                     avgWordsEl.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent triggering parent header toggle
-                        import('./UIManager.js').then(({ UI }) => {
-                            const personalizationModal = document.getElementById('personalizationModal');
-                            if (personalizationModal) {
-                                UI.openModal(personalizationModal);
-                                // [FIX] Refresh Lab data on modal open to sync with current period
-                                SettingsModalListeners._updateStudentContextAndPrompt();
-                                // Use centralized highlight utility for length slider
-                                UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
-                            }
-                        });
+                        const personalizationModal = document.getElementById('personalizationModal');
+                        if (personalizationModal) {
+                            UI.openModal(personalizationModal);
+                            // [FIX] Refresh Lab data on modal open to sync with current period
+                            SettingsModalListeners._updateStudentContextAndPrompt();
+                            // Use centralized highlight utility for length slider
+                            UI.highlightSettingsElement('iaLengthSlider', { tab: 'templates' });
+                        }
                     });
                     avgWordsEl._clickListenerAdded = true;
                 }

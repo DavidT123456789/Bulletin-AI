@@ -69,7 +69,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     minify: 'esbuild',
-    emptyOutDir: true,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -78,7 +78,24 @@ export default defineConfig({
       output: {
         format: 'es',
         entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks(id) {
+          if (id.includes('pdfjs-dist') || id.includes('pdf.mjs') || id.includes('pdf.worker.mjs')) {
+            return 'pdfjs-lib';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+          if (id.includes('/src/managers/')) {
+            return 'managers';
+          }
+          if (id.includes('/src/services/')) {
+            return 'services';
+          }
+          if (id.includes('/src/utils/')) {
+            return 'utils';
+          }
+        }
       }
     }
   }

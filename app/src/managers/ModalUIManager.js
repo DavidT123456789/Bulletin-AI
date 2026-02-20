@@ -9,6 +9,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { HistoryManager } from './HistoryManager.js';
+import { UI } from './UIManager.js';
 
 /**
  * Module de gestion des modales.
@@ -106,15 +107,12 @@ export const ModalUI = {
             if (focusable) focusable.focus();
 
             // Initialize and update gliders inside the modal (they weren't created when hidden)
-            import('./UIManager.js').then(({ UI }) => {
-                // Re-run initGliders to ensure gliders exist and have listeners
-                UI.initGliders();
-                // Then update positions for this modal's visible containers
-                modal.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
-                    if (container.classList.contains('has-glider')) {
-                        UI.updateGlider(container, true);
-                    }
-                });
+            UI.initGliders();
+            // Then update positions for this modal's visible containers
+            modal.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
+                if (container.classList.contains('has-glider')) {
+                    UI.updateGlider(container, true);
+                }
             });
         }, 150);
 

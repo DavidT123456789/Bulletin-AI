@@ -8,6 +8,7 @@ import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { Utils } from '../utils/Utils.js';
+import { PromptService } from '../services/PromptService.js';
 
 export const VariationsManager = {
     /**
@@ -41,7 +42,6 @@ export const VariationsManager = {
 
             // Use unified PromptService for consistent prompt formatting
             const currentAppreciation = result.appreciation || '';
-            const { PromptService } = await import('../services/PromptService.js');
             const variationPrompt = PromptService.getRefinementPrompt('variations', currentAppreciation);
 
             const aiResp = await AIService.callAIWithFallback(variationPrompt);
@@ -112,7 +112,6 @@ export const VariationsManager = {
         if (!text) return null;
 
         // Use unified PromptService for prompt generation
-        const { PromptService } = await import('../services/PromptService.js');
         const prompt = PromptService.getRefinementPrompt(refineType, text);
 
         try {

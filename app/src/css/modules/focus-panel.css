@@ -4178,8 +4178,8 @@
     }
 
     .student-list-table {
-        /* Ensure table doesn't shrink - allow horizontal scroll */
-        min-width: 500px;
+        /* Ensure table doesn't shrink - removed min-width: 500px to avoid horizontal scroll in card view */
+        min-width: auto;
     }
 
     .student-list-table th,

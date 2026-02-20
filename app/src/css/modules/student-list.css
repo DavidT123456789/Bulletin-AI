@@ -496,11 +496,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    height: 28px;
+    padding: 6px 14px;
+    height: 34px;
     border-radius: var(--radius-pill);
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
     background: var(--gradient-warning);
     color: white !important;
@@ -526,9 +526,9 @@
 
 .btn-update-inline .update-badge {
     background: rgba(255, 255, 255, 0.3);
-    padding: 1px 6px;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     min-width: 16px;
     text-align: center;
@@ -572,11 +572,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    height: 28px;
+    padding: 6px 14px;
+    height: 34px;
     border-radius: var(--radius-pill);
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
     background: var(--gradient-ai);
     color: white !important;
@@ -625,9 +625,9 @@
 
 .btn-generate-inline .generate-badge {
     background: rgba(255, 255, 255, 0.3);
-    padding: 1px 6px;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     min-width: 16px;
     text-align: center;
@@ -1104,4 +1104,335 @@
 [data-theme="dark"] .action-dropdown-menu {
     background: rgba(17, 24, 39, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ====================================================================
+   MOBILE RESPONSIVE (CARD LAYOUT) - iOS 2026 Style
+   ==================================================================== */
+@media (max-width: 768px) {
+    .student-list-view {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        margin-bottom: 24px;
+        overflow: visible;
+    }
+
+    .student-list-table,
+    .student-list-table tbody,
+    .student-list-table tr,
+    .student-list-table th,
+    .student-list-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box !important;
+    }
+
+    /* --- THEAD (Header & Toolbars) --- */
+    .student-list-table thead {
+        display: flex;
+        background: transparent;
+        border: none;
+        margin-bottom: 20px;
+    }
+
+    .student-list-table thead tr {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        /* Increased from 12px for better spacing */
+        align-items: center;
+        background: var(--surface-color);
+        padding: 16px;
+        /* Increased from 12px for breathing room */
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        /* Retirer l'effet de hover natif des thead sur mobile */
+        pointer-events: auto;
+        position: relative;
+        /* important pour la barre de recherche */
+        width: 100%;
+        box-sizing: border-box !important;
+    }
+
+    [data-theme="dark"] .student-list-table thead tr {
+        background: var(--surface-elevated);
+    }
+
+    /* Hide standard headers */
+    .student-list-table th {
+        display: none !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* Masquer le texte "Nom", "Statut", "Appréciation" */
+    .student-list-table th .header-content-wrapper {
+        display: none !important;
+    }
+
+    /* Keep Search, Actions, and Global Menu visible */
+    .student-list-table th.name-header-with-search,
+    .student-list-table th.appreciation-toggle-header,
+    .student-list-table th.action-header {
+        display: flex !important;
+        align-items: center;
+        gap: 14px;
+        width: auto !important;
+        pointer-events: none !important;
+        /* Empêche le clic dans les espaces vides de déclencher le tri */
+    }
+
+    /* Réactive les clics pour les vrais boutons */
+    .inline-search-trigger-btn,
+    .inline-search-container,
+    .appreciation-header-actions,
+    #avgWordsChip,
+    .global-actions-dropdown {
+        pointer-events: auto !important;
+    }
+
+    /* Make search button visible as an action button */
+    .student-list-table th.name-header-with-search {
+        flex: 0 0 auto;
+        order: 1;
+        min-width: unset;
+        position: static !important;
+    }
+
+    .inline-search-trigger-btn {
+        position: static !important;
+        transform: none !important;
+        width: 44px;
+        /* Increased for better touch target */
+        height: 44px;
+        border-radius: var(--radius-md);
+        background: rgba(0, 0, 0, 0.04);
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        opacity: 1 !important;
+    }
+
+    [data-theme="dark"] .inline-search-trigger-btn {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Actions line (Generate, Update) */
+    .student-list-table th.appreciation-toggle-header {
+        flex: 1 1 auto;
+        order: 2;
+        /* Les éléments enfants (#avgWordsChip et .appreciation-header-actions) 
+           vont s'aligner naturellement en ligne grâce au display: flex du bloc parent. */
+    }
+
+    /* Remet le pill de mots dans le flux normal (pas de superposition) */
+    #avgWordsChip {
+        position: static !important;
+        transform: none !important;
+        margin: 0 !important;
+        right: auto !important;
+        /* Par défaut il est caché par JS ou pas, on respecte son display inline-flex mais sans position absolue */
+    }
+
+    .appreciation-header-actions {
+        position: static !important;
+        transform: none !important;
+        display: flex;
+        gap: 14px;
+        /* Increased from 8px for better breathing room */
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* Global Menu */
+    .student-list-table th.action-header {
+        flex: 0 0 auto;
+        order: 3;
+    }
+
+    .global-actions-dropdown .btn-action-menu-header {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: var(--radius-md);
+        width: 44px;
+        /* Touch target minimum */
+        height: 44px;
+    }
+
+    [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Décalage du dropdown pour qu'il reste à l'écran */
+    .global-actions-dropdown-menu {
+        right: 0;
+        left: auto;
+        transform: translateY(8px) scale(0.95);
+    }
+
+    .global-actions-dropdown-menu.open {
+        transform: translateY(0) scale(1);
+    }
+
+    /* --- TBODY (Student Cards) --- */
+    .student-list-table tbody tr {
+        background: var(--surface-color);
+        border-radius: var(--radius-lg);
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        padding: 16px;
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    [data-theme="dark"] .student-list-table tbody tr {
+        background: var(--surface-elevated);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .student-list-table tbody tr:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .student-list-table td {
+        border-bottom: none !important;
+        padding: 0 !important;
+    }
+
+    /* 1. Identity (Top) */
+    .student-name-cell {
+        margin-bottom: 12px;
+        padding-right: 48px !important;
+        /* Espace pour l'action cell à droite */
+        padding-bottom: 12px !important;
+        width: 100% !important;
+    }
+
+    [data-theme="dark"] .student-name-cell {
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .student-identity-wrapper {
+        gap: 12px;
+    }
+
+    .student-nom-prenom {
+        font-size: 1.1rem;
+    }
+
+    .student-avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
+    }
+
+    /* 2. Status Badge (Inline below name) */
+    .status-cell {
+        position: static;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin-right: 12px;
+        margin-bottom: 12px;
+        display: flex !important;
+        align-items: center;
+    }
+
+    /* 3. Grades (Middle Row) */
+    .student-list-table td.grade-cell,
+    .student-list-table td.evolution-cell {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin-bottom: 12px;
+        display: flex !important;
+        align-items: center;
+    }
+
+    .grade-cell {
+        margin-right: 4px;
+        font-size: 0.95em;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .evolution-cell {
+        margin-right: 12px;
+    }
+
+    .grade-cell .grade-evolution,
+    .evolution-cell .grade-evolution {
+        margin: 0 4px;
+    }
+
+
+    /* 4. Appreciation (Bottom) */
+    .appreciation-cell {
+        margin-top: 4px;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .appreciation-preview {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        white-space: pre-wrap !important;
+        max-height: none !important;
+        background: rgba(0, 0, 0, 0.02);
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    [data-theme="dark"] .appreciation-preview {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .student-list-table.appreciation-full-view .appreciation-cell {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* 5. Action Cell (Absolute Top Right over name cell) */
+    .action-cell {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: auto !important;
+    }
+
+    /* Show action buttons clearly on mobile - but keep them minimalist */
+    .btn-action-menu {
+        opacity: 0.7 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        transform: none !important;
+        width: 44px;
+        /* Touch target minimum size */
+        height: 44px;
+        border: none !important;
+        color: var(--text-tertiary);
+    }
+
+    [data-theme="dark"] .btn-action-menu {
+        background: transparent !important;
+    }
+
+    .btn-action-menu:active {
+        box-shadow: none !important;
+        background: rgba(var(--primary-color-rgb), 0.1) !important;
+        color: var(--primary-color);
+        transform: scale(0.95) !important;
+        opacity: 1 !important;
+    }
 }

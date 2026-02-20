@@ -6,6 +6,7 @@
 
 import { DOM } from '../utils/DOM.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
+import { TooltipsUI } from './TooltipsManager.js';
 
 /**
  * Module de gestion des dropdowns custom.
@@ -288,11 +289,7 @@ export const DropdownManager = {
 
             // Initialiser les tooltips pour les options désactivées
             // (nécessaire car les éléments sont ajoutés dynamiquement)
-            import('./UIManager.js').then(({ UI }) => {
-                if (UI && UI.initTooltips) {
-                    UI.initTooltips();
-                }
-            }).catch(() => { });
+            TooltipsUI.initTooltips();
 
             // Fix z-index stacking context for settings cards
             const parentCard = wrapper.closest('.settings-card');
@@ -412,14 +409,7 @@ export const DropdownManager = {
             this.updateDisplay(instance.wrapper, instance.selectEl);
 
             // Réinitialiser les tooltips pour les nouveaux éléments
-            // Import dynamique pour éviter les dépendances circulaires
-            import('./UIManager.js').then(({ UI }) => {
-                if (UI && UI.initTooltips) {
-                    UI.initTooltips();
-                }
-            }).catch(() => {
-                // Fallback silencieux si l'import échoue
-            });
+            TooltipsUI.initTooltips();
 
             if (onRefresh) onRefresh();
         }

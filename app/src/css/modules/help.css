@@ -41,64 +41,7 @@
 }
 
 
-/* --- Tableaux de Commandes IA --- */
-.help-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 8px;
-    /* Espacement vertical entre les lignes */
-    margin-top: 16px;
-    font-size: 0.9rem;
-}
-
-.help-table thead th {
-    text-align: left;
-    padding: 0 12px 8px 12px;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-tertiary);
-    font-weight: 600;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.help-table tbody tr {
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    transition: background var(--transition-fast);
-}
-
-/* Astuce pour border-radius sur tr avec border-collapse: separate */
-.help-table tbody tr td:first-child {
-    border-top-left-radius: var(--radius-md);
-    border-bottom-left-radius: var(--radius-md);
-}
-
-.help-table tbody tr td:last-child {
-    border-top-right-radius: var(--radius-md);
-    border-bottom-right-radius: var(--radius-md);
-}
-
-
-
-.help-table td {
-    padding: 16px 12px;
-    vertical-align: middle;
-    color: var(--text-secondary);
-    border: none;
-    /* Reset borders inside */
-}
-
-
-
-
-/* Cellule Action (Colonne 2) */
-.help-table td:nth-child(2) {
-    font-weight: 500;
-    color: var(--text-primary);
-    width: 125px;
-    font-size: 0.9em;
-}
+/* Tableaux de Commandes IA -> Remplacé par .ui-table (ui-components.css) */
 
 /* Cellule Prompt (Colonne 3) */
 .prompt-cell {
@@ -219,33 +162,7 @@
         /* Simplification mobile */
     }
 
-    .help-table {
-        display: block;
-    }
-
-    .help-table thead {
-        display: none;
-    }
-
-    .help-table tbody tr {
-        display: grid;
-        grid-template-columns: 1fr;
-        margin-bottom: 12px;
-        padding: 12px;
-        gap: 8px;
-    }
-
-    .help-table tbody tr td {
-        padding: 4px 0;
-        display: block;
-        width: 100% !important;
-    }
-
-    .help-table td:last-child {
-        margin-top: 8px;
-        padding-top: 12px;
-        border-top: 1px dashed var(--border-color);
-    }
+    /* Responsive mobile pour tableaux = géré par .ui-table.responsive-table */
 }
 
 /* --- Action Buttons in Help --- */

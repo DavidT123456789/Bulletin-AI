@@ -17,6 +17,11 @@ import { ListSelectionManager } from './list/ListSelectionManager.js';
 import { ListViewRenderer } from './list/ListViewRenderer.js';
 import { ListViewAnimations } from './list/ListViewAnimations.js';
 import { ListViewEvents } from './list/ListViewEvents.js';
+import { UI } from './UIManager.js';
+import { ModalUI } from './ModalUIManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
+import { StorageManager } from './StorageManager.js';
 
 /**
  * Module de gestion de la vue Liste (tableau des Ã©lÃ¨ves)
@@ -199,7 +204,6 @@ export const ListViewManager = {
         const studentName = `${student.prenom} ${student.nom}`;
 
         // Confirmation via modale personnalisée
-        const { ModalUI } = await import('./ModalUIManager.js');
         const confirmed = await ModalUI.showCustomConfirm(
             `Êtes-vous sûr de vouloir supprimer définitivement <strong>${studentName}</strong> ?<br>Cette action est irréversible.`,
             null,
@@ -215,18 +219,15 @@ export const ListViewManager = {
         if (!confirmed) return;
 
         // Use standard data manager
-        const { StudentDataManager } = await import('./StudentDataManager.js');
         await StudentDataManager.deleteStudent(studentId);
 
         // Save state
-        const { StorageManager } = await import('./StorageManager.js');
         await StorageManager.saveAppState();
 
         // Render with standard FLIP animation
         this.render(appState.filteredResults, document.getElementById('outputList'));
 
         // Update global UI
-        const { UI } = await import('./UIManager.js');
         ClassUIManager.updateStudentCount();
         UI?.populateLoadStudentSelect();
         UI?.updateStats();
@@ -304,7 +305,6 @@ export const ListViewManager = {
             const targetEl = appreciationCell.querySelector('.appreciation-preview');
 
             // Use UI Manager's typewriter effect
-            const { UI } = await import('./UIManager.js');
             if (UI?.typewriterReveal) {
                 await UI.typewriterReveal(targetEl, cleanText, { speed: 'fast' });
             } else {
@@ -384,9 +384,7 @@ export const ListViewManager = {
         const updateTooltip = (text) => {
             const wrapper = header?.querySelector('.header-content-wrapper');
             if (wrapper) {
-                import('./TooltipsManager.js').then(({ TooltipsUI }) => {
-                    TooltipsUI.updateTooltip(wrapper, text);
-                });
+                TooltipsUI.updateTooltip(wrapper, text);
             }
             // Ensure no native tooltip conflicts
             if (header) header.removeAttribute('title');
@@ -422,9 +420,7 @@ export const ListViewManager = {
         }
 
         // Save preference
-        import('./StorageManager.js').then(({ StorageManager }) => {
-            StorageManager.saveAppState();
-        });
+        StorageManager.saveAppState();
     }
 };
 

@@ -143,10 +143,10 @@ export function initDOM() {
     DOM.sortSelect = document.getElementById('sortSelect');
     DOM.fileInput = document.getElementById('fileInput');
     DOM.settingsModal = document.getElementById('appSettingsModal');
-    DOM.settingsModal = document.getElementById('appSettingsModal');
     DOM.personalizationModal = document.getElementById('personalizationModal');
     DOM.personalizationBtn = document.getElementById('personalizationBtn');
     DOM.closePersonalizationModalBtn = document.getElementById('closePersonalizationModalBtn');
+    DOM.resetLabStyleBtn = document.getElementById('resetLabStyleBtn');
     DOM.cancelPersonalizationBtn = document.getElementById('cancelPersonalizationBtn');
     DOM.savePersonalizationBtn = document.getElementById('savePersonalizationBtn');
     DOM.closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');

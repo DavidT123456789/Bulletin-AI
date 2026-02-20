@@ -17,6 +17,7 @@ import { ResultsUIManager } from './ResultsUIManager.js';
 
 import { MassImportManager } from './MassImportManager.js';
 import { FileImportManager } from './FileImportManager.js';
+import { ListViewManager } from './ListViewManager.js';
 
 import { TooltipsUI } from './TooltipsManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
@@ -393,7 +394,6 @@ export const AppreciationsManager = {
         if (button) UI.showInlineSpinner(button);
 
         // Afficher le skeleton dans la ligne
-        const { ListViewManager } = await import('./ListViewManager.js');
         ListViewManager.setRowStatus(id, 'generating');
 
         const originalResult = appState.generatedResults[resultIndex];

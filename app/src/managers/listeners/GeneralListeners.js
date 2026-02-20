@@ -13,6 +13,8 @@ import { StorageManager } from '../StorageManager.js';
 import { HistoryManager } from '../HistoryManager.js';  // Import ajouté
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
+import { MassImportManager } from '../MassImportManager.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 
 import { APP_LINKS } from '../../config/Config.js';
 
@@ -176,7 +178,7 @@ export const GeneralListeners = {
                 if (restored) {
                     // Update UI to reflect restored state
                     SettingsUIManager.updatePersonalizationState();
-                    import('../FormUIManager.js').then(({ FormUI }) => FormUI.updateSettingsFields());
+                    FormUI.updateSettingsFields();
                 }
             } else {
                 // Confirm changes: clear snapshot without restoring
@@ -243,24 +245,20 @@ export const GeneralListeners = {
             e && e.stopPropagation(); // Prevent opening settings
 
             // 1. Cancel mass import if running
-            import('../MassImportManager.js').then(({ MassImportManager }) => {
-                if (MassImportManager.massImportAbortController) {
-                    MassImportManager.massImportAbortController.abort();
-                    MassImportManager.massImportAbortController = null;
-                }
-            });
+            if (MassImportManager.massImportAbortController) {
+                MassImportManager.massImportAbortController.abort();
+                MassImportManager.massImportAbortController = null;
+            }
 
             // 2. Cancel Focus Panel active generations (refinements)
-            import('../FocusPanelManager.js').then(({ FocusPanelManager }) => {
-                if (FocusPanelManager._activeGenerations && FocusPanelManager._activeGenerations.size > 0) {
-                    for (const [studentId, controller] of FocusPanelManager._activeGenerations) {
-                        if (controller && typeof controller.abort === 'function') {
-                            controller.abort();
-                        }
+            if (FocusPanelManager._activeGenerations && FocusPanelManager._activeGenerations.size > 0) {
+                for (const [studentId, controller] of FocusPanelManager._activeGenerations) {
+                    if (controller && typeof controller.abort === 'function') {
+                        controller.abort();
                     }
-                    FocusPanelManager._activeGenerations.clear();
                 }
-            });
+                FocusPanelManager._activeGenerations.clear();
+            }
         });
 
 

@@ -8,6 +8,11 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
+import { AppreciationsManager } from '../AppreciationsManager.js';
+import { MassImportManager } from '../MassImportManager.js';
+import { StorageManager } from '../StorageManager.js';
+import { ResultsUIManager } from '../ResultsUIManager.js';
+import { ClassDashboardManager } from '../ClassDashboardManager.js';
 
 export const ListViewEvents = {
 
@@ -53,7 +58,6 @@ export const ListViewEvents = {
         if (updateBtnInline) {
             updateBtnInline.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const { ResultsUIManager } = await import('../ResultsUIManager.js');
                 await ResultsUIManager.regenerateDirty();
             });
         }
@@ -63,7 +67,6 @@ export const ListViewEvents = {
         if (generateBtnInline) {
             generateBtnInline.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const { MassImportManager } = await import('../MassImportManager.js');
                 await MassImportManager.generateAllPending();
             });
         }
@@ -217,9 +220,7 @@ export const ListViewEvents = {
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
-                    import('../AppreciationsManager.js').then(({ AppreciationsManager }) => {
-                        AppreciationsManager.regenerateFailedAppreciation(studentId, regenBtn);
-                    });
+                    AppreciationsManager.regenerateFailedAppreciation(studentId, regenBtn);
                 }
                 return;
             }
@@ -413,25 +414,18 @@ export const ListViewEvents = {
             }
         };
 
-        // Import dynamique des dépendances
-        import('../AppreciationsManager.js').then(({ AppreciationsManager }) => {
-            import('../StorageManager.js').then(({ StorageManager }) => {
-                // Selection
-                addAction('#selectAllBtn-global', () => ListSelectionManager.toggleSelectVisible(true));
+        // Selection
+        addAction('#selectAllBtn-global', () => ListSelectionManager.toggleSelectVisible(true));
 
-                // Maintenance - Moved to toolbar
+        // Maintenance - Moved to toolbar
 
-                // Export
-                addAction('#exportJsonBtn', () => StorageManager.exportToJson());
-                addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
-                addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
+        // Export
+        addAction('#exportJsonBtn', () => StorageManager.exportToJson());
+        addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
+        addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
 
-                // Analyze class (in dropdown menu)
-                import('../ClassDashboardManager.js').then(({ ClassDashboardManager }) => {
-                    addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
-                });
-            });
-        });
+        // Analyze class (in dropdown menu)
+        addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
 
         // Attach inline search listeners
         this.attachInlineSearchListeners(listContainer);

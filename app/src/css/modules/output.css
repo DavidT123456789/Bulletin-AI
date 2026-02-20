@@ -281,14 +281,14 @@
     /* Position override - chip is on the right side */
     right: 12px;
     /* Typography overrides */
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
     text-transform: none;
     /* Padding for visible hover background (harmonized with search button) */
-    padding: 6px 10px;
-    /* Reset inherited chip styles */
-    height: auto;
+    padding: 6px 12px;
+    /* Reset inherited chip styles but match button height for visual consistency */
+    height: 34px;
     margin-left: 0;
     box-shadow: none;
     /* Lower initial opacity than default header-action-trigger */

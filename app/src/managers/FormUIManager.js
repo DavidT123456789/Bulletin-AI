@@ -13,6 +13,7 @@ import { CONFIG, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../c
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { UI } from './UIManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App;
@@ -292,13 +293,11 @@ export const FormUI = {
             if (tabName === 'templates' && App?.populatePreviewStudentSelect) {
                 App.populatePreviewStudentSelect();
             }
-            import('./UIManager.js').then(({ UI }) => {
-                UI.initGliders();
-                newContent.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
-                    if (container.classList.contains('has-glider')) {
-                        UI.updateGlider(container, true);
-                    }
-                });
+            UI.initGliders();
+            newContent.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
+                if (container.classList.contains('has-glider')) {
+                    UI.updateGlider(container, true);
+                }
             });
         };
 

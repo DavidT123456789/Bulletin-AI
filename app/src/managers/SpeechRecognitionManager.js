@@ -9,6 +9,9 @@
 
 import { UI } from './UIManager.js';
 import { appState } from '../state/State.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
+import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { FocusPanelStatus } from './FocusPanelStatus.js';
 
 export const SpeechRecognitionManager = {
     /** @type {SpeechRecognition|null} */
@@ -274,10 +277,7 @@ export const SpeechRecognitionManager = {
      * @private
      */
     _setAppreciationBadge(state) {
-        // Delegate to FocusPanelStatus unified status method
-        import('./FocusPanelStatus.js').then(({ FocusPanelStatus }) => {
-            FocusPanelStatus.updateAppreciationStatus(null, { state: state });
-        });
+        FocusPanelStatus.updateAppreciationStatus(null, { state: state });
     },
 
     /**
@@ -287,40 +287,33 @@ export const SpeechRecognitionManager = {
      * @private
      */
     _saveAppreciationAndUpdateList(content) {
-        // Import modules dynamically to avoid circular dependency
-        Promise.all([
-            import('./FocusPanelManager.js'),
-            import('./FocusPanelHistory.js'),
-            import('./FocusPanelStatus.js')
-        ]).then(([{ FocusPanelManager }, { FocusPanelHistory }, { FocusPanelStatus }]) => {
-            const studentId = FocusPanelManager.currentStudentId;
-            if (!studentId) return;
+        const studentId = FocusPanelManager.currentStudentId;
+        if (!studentId) return;
 
-            const result = appState.generatedResults.find(r => r.id === studentId);
-            if (!result) return;
+        const result = appState.generatedResults.find(r => r.id === studentId);
+        if (!result) return;
 
-            // Update the result logic to match FocusPanelManager
-            result.appreciation = content;
-            result.wasGenerated = false;
-            result.appreciationSource = 'manual';
-            result.tokenUsage = null;
+        // Update the result logic to match FocusPanelManager
+        result.appreciation = content;
+        result.wasGenerated = false;
+        result.appreciationSource = 'manual';
+        result.tokenUsage = null;
 
-            // Hide AI indicator
-            const aiIndicator = document.getElementById('focusAiIndicator');
-            if (aiIndicator) aiIndicator.style.display = 'none';
+        // Hide AI indicator
+        const aiIndicator = document.getElementById('focusAiIndicator');
+        if (aiIndicator) aiIndicator.style.display = 'none';
 
-            // Push to history
-            FocusPanelHistory.push(content);
+        // Push to history
+        FocusPanelHistory.push(content);
 
-            // Save context (and appreciation via DOM)
-            FocusPanelManager._saveContext();
+        // Save context (and appreciation via DOM)
+        FocusPanelManager._saveContext();
 
-            // Update list row
-            FocusPanelManager._updateListRow(result);
+        // Update list row
+        FocusPanelManager._updateListRow(result);
 
-            // Show saved badge
-            FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
-        });
+        // Show saved badge
+        FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
     },
 
     /**

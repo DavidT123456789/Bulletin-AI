@@ -15,6 +15,7 @@ import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { StorageManager } from './StorageManager.js';
+import { ImportWizardManager } from './ImportWizardManager.js';
 
 let validateApiKeyCallback = null;
 let welcomeModalAbortController = null;
@@ -262,11 +263,8 @@ export const WelcomeManager = {
             if (sampleData) {
                 sessionStorage.removeItem('pendingSampleData');
 
-                // Wait for UI to be fully ready, then open the proper import wizard with data
                 setTimeout(() => {
-                    import('./ImportWizardManager.js').then(({ ImportWizardManager }) => {
-                        ImportWizardManager.openWithData(sampleData);
-                    });
+                    ImportWizardManager.openWithData(sampleData);
                 }, 400);
             }
         };

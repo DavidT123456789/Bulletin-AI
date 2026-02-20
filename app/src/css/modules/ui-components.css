@@ -381,3 +381,124 @@
     color: var(--info-color);
     border-color: rgba(59, 130, 246, 0.2);
 }
+
+/* === UI TABLE === */
+.ui-table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+
+.ui-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.ui-table th {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ui-table th:first-child {
+    border-top-left-radius: var(--radius-lg);
+}
+
+.ui-table th:last-child {
+    border-top-right-radius: var(--radius-lg);
+}
+
+.ui-table td {
+    padding: 16px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.ui-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ui-table tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.ui-table tbody tr:hover {
+    background: rgba(var(--primary-color-rgb), 0.03);
+}
+
+.ui-table-cell-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 1.1em;
+}
+
+.ui-table-cell-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ui-table-cell-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ui-table-cell-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* --- Responsive Table --- */
+@media (max-width: 768px) {
+    .ui-table.responsive-table {
+        display: block;
+        min-width: unset;
+    }
+
+    .ui-table.responsive-table thead {
+        display: none;
+    }
+
+    .ui-table.responsive-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-bottom: 12px;
+        padding: 12px;
+        gap: 8px;
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+    }
+
+    .ui-table.responsive-table tbody tr td {
+        padding: 4px 0;
+        display: block;
+        width: 100% !important;
+        border-bottom: none;
+    }
+
+    .ui-table.responsive-table td:last-child {
+        margin-top: 8px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border-color);
+    }
+}

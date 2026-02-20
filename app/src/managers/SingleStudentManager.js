@@ -16,6 +16,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
+import { ListViewManager } from './ListViewManager.js';
 
 /** @type {import('./AppManager.js').App|null} */
 let App = null;
@@ -236,7 +237,6 @@ export const SingleStudentManager = {
                 newResult.id = appState.currentEditingId;
 
                 UI.showNotification('Appréciation mise à jour !', 'success');
-                const { ListViewManager } = await import('./ListViewManager.js');
                 await ListViewManager.updateRow(newResult.id, newResult, true);
             }
         } catch (error) {

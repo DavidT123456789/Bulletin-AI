@@ -12,6 +12,7 @@ import { ApiValidationManager } from '../ApiValidationManager.js';
 import { SettingsUIManager } from '../SettingsUIManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
+import { FormUI } from '../FormUIManager.js';
 
 import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
 import { MODEL_SHORT_NAMES } from '../../config/models.js';
@@ -60,7 +61,6 @@ export const SettingsModalListeners = {
             appState.useSubjectPersonalization = e.target.checked;
             SettingsUIManager.updatePersonalizationState();
             // Rafraîchir les valeurs affichées (sliders) pour refléter les nouvelles valeurs
-            const { FormUI } = await import('../FormUIManager.js');
             FormUI.updateSettingsFields();
         });
 
@@ -108,6 +108,9 @@ export const SettingsModalListeners = {
 
         // Inspector toggle button for personalization modal
         this._setupInspectorToggle();
+
+        // Reset Lab Style button
+        addClickListener(DOM.resetLabStyleBtn, () => SettingsUIManager.resetPersonalStyle());
     },
 
     /**
@@ -1014,32 +1017,36 @@ export const SettingsModalListeners = {
 
         addClickListener(DOM.resetAllSettingsBtn, StorageManager.resetAllSettings.bind(StorageManager));
 
-        // Update Check Button
-        const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
-        if (checkUpdatesBtn) {
-            addClickListener(checkUpdatesBtn, async () => {
-                checkUpdatesBtn.disabled = true;
-                const originalContent = checkUpdatesBtn.innerHTML;
-                checkUpdatesBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Vérification...';
+        // Update Check Buttons (Multiple IDs handled to avoid collision)
+        const updateCheckHandler = async (btn) => {
+            if (!btn) return;
+            btn.disabled = true;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Vérification...';
 
-                try {
-                    if (window.checkForUpdates) {
-                        await window.checkForUpdates();
-                        // Wait a bit to ensure potential PWA events fire
-                        await new Promise(r => setTimeout(r, 1000));
-                        UI.showNotification("Vérification des mises à jour terminée", "info");
-                    } else {
-                        UI.showNotification("Fonction de mise à jour non disponible", "warning");
-                    }
-                } catch (e) {
-                    console.error("Update check failed", e);
-                    UI.showNotification("Erreur lors de la vérification", "error");
-                } finally {
-                    checkUpdatesBtn.disabled = false;
-                    checkUpdatesBtn.innerHTML = originalContent;
+            try {
+                if (window.checkForUpdates) {
+                    await window.checkForUpdates();
+                    // Wait a bit to ensure potential PWA events fire
+                    await new Promise(r => setTimeout(r, 1000));
+                    UI.showNotification("Vérification des mises à jour terminée", "info");
+                } else {
+                    UI.showNotification("Fonction de mise à jour non disponible", "warning");
                 }
-            });
-        }
+            } catch (e) {
+                console.error("Update check failed", e);
+                UI.showNotification("Erreur lors de la vérification", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        };
+
+        const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
+        if (checkUpdatesBtn) addClickListener(checkUpdatesBtn, () => updateCheckHandler(checkUpdatesBtn));
+
+        const checkUpdatesDataBtn = document.getElementById('checkUpdatesDataBtn');
+        if (checkUpdatesDataBtn) addClickListener(checkUpdatesDataBtn, () => updateCheckHandler(checkUpdatesDataBtn));
 
         // Factory reset (deletes everything)
         const factoryResetBtn = document.getElementById('factoryResetBtn');
