@@ -163,7 +163,7 @@ export const ImportWizardManager = {
         document.getElementById('wizardStep3PrevBtn')?.addEventListener('click', () => this.prevStep());
 
         // STEPPER NAVIGATION - Clickable steps
-        document.querySelectorAll('.import-wizard-stepper .wizard-step[role="button"]').forEach(stepEl => {
+        document.querySelectorAll('.ui-stepper .ui-stepper-step[role="button"]').forEach(stepEl => {
             stepEl.addEventListener('click', () => {
                 const targetStep = parseInt(stepEl.dataset.step);
                 if (targetStep && targetStep !== this.state.currentStep) {
@@ -409,7 +409,7 @@ export const ImportWizardManager = {
      */
     _updateUI() {
         // Update stepper visual states
-        document.querySelectorAll('.import-wizard-stepper .wizard-step').forEach(el => {
+        document.querySelectorAll('.ui-stepper .ui-stepper-step').forEach(el => {
             const step = parseInt(el.dataset.step);
             el.classList.remove('active', 'completed');
             if (step === this.currentStep) el.classList.add('active');

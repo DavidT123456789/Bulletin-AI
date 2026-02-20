@@ -41,9 +41,10 @@
     max-width: 1250px;
     height: 90vh;
     max-height: 95vh;
-    background: var(--bg-color);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+    background: var(--modal-bg);
+    border-radius: var(--modal-radius);
+    box-shadow: var(--modal-shadow);
+    border: var(--modal-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -87,11 +88,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--modal-bar-padding-spacious);
-    border-bottom: 1px solid var(--border-color);
-    background: var(--surface-color);
-    min-height: var(--modal-bar-height-header);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--modal-header-padding);
+    border-bottom: var(--modal-header-border);
+    background: var(--modal-bg);
+    min-height: var(--modal-header-height);
+    border-radius: var(--modal-radius) var(--modal-radius) 0 0;
+    flex-shrink: 0;
 }
 
 /* Title Pill Container - Harmonized with Import Wizard */
@@ -251,29 +253,6 @@
     background: var(--border-color);
 }
 
-/* Close button - Harmonized with global design tokens */
-.trombi-close-btn {
-    width: var(--close-btn-size);
-    height: var(--close-btn-size);
-    min-width: var(--close-btn-size);
-    min-height: var(--close-btn-size);
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--close-btn-icon-size);
-}
-
-.trombi-close-btn:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-}
-
 /* Body - Flex pour permettre au contenu de croître et au footer de rester ancré */
 .trombi-wizard-body {
     flex: 1;
@@ -293,7 +272,7 @@
 }
 
 .trombi-step-padded {
-    padding: 16px;
+    padding: var(--modal-padding);
 }
 
 /* Drop Zone - Harmonized with import-wizard style */
@@ -1236,11 +1215,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 24px;
-    background: var(--surface-color);
-    border-top: 1px solid var(--border-color);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    min-height: 56px;
+    padding: var(--modal-footer-padding);
+    background: var(--modal-bg);
+    border-top: var(--modal-footer-border);
+    border-radius: 0 0 var(--modal-radius) var(--modal-radius);
+    min-height: var(--modal-footer-height);
     flex-shrink: 0;
     gap: 16px;
 }

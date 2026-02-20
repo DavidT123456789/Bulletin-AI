@@ -12,8 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser l'error boundary en premier pour capturer toutes les erreurs
     initErrorBoundary();
 
-    console.log('Bulletin AI v0.1.1 loaded 🚀');
-
     try {
         initDOM();
         App.init();
@@ -100,9 +98,6 @@ function setupPWAUpdateHandler() {
 
                             const msgEl = document.getElementById('pwaCommitMsg');
                             if (msgEl && data.message) msgEl.textContent = data.message;
-
-                            // Optional: Check if version changed significantly
-                            // if (data.version !== APP_VERSION) ...
                         } else {
                             // Fallback to static build constants if fetch fails
                             throw new Error('version.json fetch failed');
@@ -133,12 +128,6 @@ function setupPWAUpdateHandler() {
                         details.classList.toggle('expanded');
                         infoBtn.classList.toggle('active');
                     };
-
-                    // Keep the button click working but prevent bubbling if needed (though bubbling to parent handles it fine usually, 
-                    // but if the button has its own handler it might conflict. Here we just delegate to the parent)
-                    // We remove the specific handler on the button if it exists, or just let the parent handle it.
-                    // To be safe, we can set pointer-events: none on the button in CSS or just letting it bubble is fine 
-                    // as long as we don't attach a second handler to the button itself.
                 }
 
                 // Update button - reload the app
@@ -173,9 +162,6 @@ function setupPWAUpdateHandler() {
             if (registration) {
                 try {
                     await registration.update();
-                    // If no update found, we might want to tell the user?
-                    // But registration.update() doesn't return "found/not found". It updates the registration.
-                    // If a new worker is found, 'updatefound' (or onNeedRefresh) triggers.
                 } catch (e) {
                     console.error('[PWA] Manual update check failed:', e);
                 }

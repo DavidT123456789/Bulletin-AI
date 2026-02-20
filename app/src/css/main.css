@@ -12,6 +12,7 @@
 @import './components/segmented-control.css';
 
 /* Modules refactorisés */
+@import './modules/ui-components.css';
 @import './modules/modals.css';
 @import './modules/help.css';
 @import './modules/close-button.css';

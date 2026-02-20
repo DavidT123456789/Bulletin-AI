@@ -1699,7 +1699,7 @@ export const UI = {
      * Intercepte le toggle pour permettre à l'animation CSS de se jouer à la fermeture.
      */
     initAccordions() {
-        document.querySelectorAll('.details-accordion').forEach(details => {
+        document.querySelectorAll('.ui-accordion').forEach(details => {
             // Éviter d'ajouter plusieurs fois le listener
             if (details.dataset.accordionInit) return;
             details.dataset.accordionInit = 'true';
@@ -1713,7 +1713,7 @@ export const UI = {
                 // Éviter les clics multiples pendant l'animation
                 if (details.dataset.animating === 'true') return;
 
-                const content = details.querySelector('.details-content');
+                const content = details.querySelector('.ui-accordion-content');
                 if (!content) {
                     details.open = !details.open;
                     return;

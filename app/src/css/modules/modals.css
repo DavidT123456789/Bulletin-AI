@@ -20,23 +20,23 @@
 }
 
 .modal.modal-visible {
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: var(--modal-backdrop-bg);
+    backdrop-filter: blur(var(--modal-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 }
 
 .modal-content {
     padding: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--modal-radius);
     overflow: hidden;
     width: 90%;
-    max-width: 900px;
-    max-height: 90vh;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
+    max-width: var(--modal-width);
+    max-height: var(--modal-max-height);
+    box-shadow: var(--modal-shadow);
+    border: var(--modal-border);
     display: flex;
     flex-direction: column;
-    background: var(--surface-color);
+    background: var(--modal-bg);
     /* iOS 2025 Spring Animation with blur */
     opacity: 0;
     transform: scale(0.92) translateY(16px);
@@ -104,10 +104,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--modal-bar-padding-compact);
-    /* Compact Optimization (User Request) */
-    border-bottom: 1px solid var(--border-color);
-    background: var(--surface-color);
+    padding: var(--modal-header-padding);
+    border-bottom: var(--modal-header-border);
+    background: var(--modal-bg);
+    min-height: var(--modal-header-height);
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -155,21 +156,25 @@
     border-radius: 0;
 }
 
-/* Context-specific colors for Modal Title Icons */
-#personalizationModal .modal-title iconify-icon {
+/* Context-specific colors for Modal Title Icons (Modifier Classes) */
+.modal-title-icon.color-accent,
+.modal-title .color-accent {
     color: var(--accent-color);
-    /* Violet pour Personnalisation/IA */
 }
 
-#importWizardModal .modal-title iconify-icon,
-#trombiWizardModal .modal-title iconify-icon {
+.modal-title-icon.color-success,
+.modal-title .color-success {
     color: var(--success-color);
-    /* Vert pour Import/Données */
 }
 
-#appSettingsModal .modal-title iconify-icon {
+.modal-title-icon.color-secondary,
+.modal-title .color-secondary {
     color: var(--text-secondary);
-    /* Gris neutre pour Paramètres */
+}
+
+.modal-title-icon.color-primary,
+.modal-title .color-primary {
+    color: var(--primary-color);
 }
 
 .modal-title-text-col {
@@ -235,52 +240,45 @@
 }
 
 .modal-body {
-    padding: 16px;
+    padding: var(--modal-padding);
     overflow-y: auto;
     flex-grow: 1;
     background: var(--bg-color);
     /* Scroll performance optimizations */
     contain: content;
-    /* Isolate repaints to this container */
     transform: translateZ(0);
-    /* Promote to GPU layer */
     -webkit-overflow-scrolling: touch;
-    /* Smooth scroll on iOS */
     overscroll-behavior: contain;
-    /* Prevent scroll chaining */
 }
 
-/* Specific modal adjustments */
-#helpModal .modal-body {
+/* Specific modal adjustments (structure classes) */
+.modal-body-flex {
     padding: 0;
     overflow: hidden;
-    /* Disable global scroll for split view */
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    /* Important pour que le flex fonctionne correctement */
 }
 
-/* Footer standard pleine largeur */
-#helpModal .modal-footer {
-    background: var(--surface-color);
-}
-
-/* Smooth height transition for navigation modals (Analyser, Raffinement) */
-#studentDetailsModal .modal-body,
-#refinementModal .modal-body {
+.modal-body-dynamic {
     transition: height 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .modal-footer {
-    padding: var(--modal-bar-padding-compact);
-    /* Compact Optimization */
-    border-top: 1px solid var(--border-color);
+    padding: var(--modal-footer-padding);
+    border-top: var(--modal-footer-border);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    background: var(--surface-color);
+    background: var(--modal-bg);
+    min-height: var(--modal-footer-height);
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-footer.justify-between {
+    justify-content: space-between;
 }
 
 /* Single source of truth for modal action buttons */
@@ -298,7 +296,7 @@
 .modal .card-content-wrapper:hover,
 .modal .stat-card:hover,
 .modal .settings-card:hover,
-.modal .details-accordion:hover,
+.modal .ui-accordion:hover,
 .modal .sidebar-card:hover {
     box-shadow: var(--shadow-sm);
     /* Maintenir l'ombre de base sans élévation */
@@ -411,51 +409,47 @@
 }
 
 /* Inspecteur de Prompt - Hauteur adaptative sans barre de défilement interne */
-#settingsPreviewPrompt {
+.prompt-preview-auto-height {
     max-height: none;
     overflow-y: visible;
     margin-top: 0;
 }
 
-#helpModal .modal-title-icon {
-    color: var(--primary-color);
-}
-
-#helpModal .help-intro-text {
+.modal-help .help-intro-text {
     margin-top: 0;
 }
 
-#helpModal .details-accordion summary .fas,
-#helpModal .details-accordion summary iconify-icon {
+.modal-help .ui-accordion summary .fas,
+.modal-help .ui-accordion summary iconify-icon {
     width: 20px;
     text-align: center;
 }
 
-#helpModal .details-accordion .icon-start {
+.modal-help .ui-accordion .icon-start {
     color: var(--primary-color);
 }
 
-#helpModal .details-accordion .icon-key {
+.modal-help .ui-accordion .icon-key {
     color: var(--warning-color);
 }
 
-#helpModal .details-accordion .icon-format {
+.modal-help .ui-accordion .icon-format {
     color: var(--success-color);
 }
 
-#helpModal .details-accordion .icon-privacy {
+.modal-help .ui-accordion .icon-privacy {
     color: var(--success-color);
 }
 
-#helpModal .details-accordion .icon-customize {
+.modal-help .ui-accordion .icon-customize {
     color: var(--purple-color);
 }
 
-#helpModal .details-accordion .icon-expert {
+.modal-help .ui-accordion .icon-expert {
     color: var(--text-secondary);
 }
 
-#helpModal .details-accordion .details-content ol {
+.modal-help .ui-accordion .ui-accordion-content ol {
     list-style: none;
     padding-left: 0;
     counter-reset: help-counter;
@@ -463,7 +457,7 @@
     margin-bottom: 15px;
 }
 
-#helpModal .details-accordion .details-content ol>li {
+.modal-help .ui-accordion .ui-accordion-content ol>li {
     counter-increment: help-counter;
     display: flex;
     align-items: flex-start;
@@ -472,7 +466,7 @@
     text-align: left;
 }
 
-#helpModal .details-accordion .details-content ol>li::before {
+.modal-help .ui-accordion .ui-accordion-content ol>li::before {
     content: counter(help-counter);
     background-color: var(--primary-color);
     color: white;
@@ -489,126 +483,17 @@
     margin-top: 2px;
 }
 
-#helpModal .details-accordion .details-content li p {
+.modal-help .ui-accordion .ui-accordion-content li p {
     display: block;
     margin: 0;
 }
 
-#helpModal .details-content p:has(> span.badge:only-child) {
+.modal-help .ui-accordion-content p:has(> span.badge:only-child) {
     text-align: center;
     margin-top: 20px;
 }
 
-.details-accordion {
-    background-color: var(--card-glass-bg);
-    backdrop-filter: blur(var(--glass-surface-blur));
-    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
-    border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-lg);
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
-}
 
-#technicalDetailsAccordion {
-    margin-top: 32px;
-}
-
-.options-grid+.details-accordion,
-.options-grid+h3+.details-accordion {
-    margin-top: 32px;
-}
-
-.details-accordion:last-of-type {
-    margin-bottom: 0;
-}
-
-.details-accordion:hover {
-    box-shadow: var(--shadow-md);
-    /* Pas de translateY dans les modales - espace confiné */
-}
-
-.details-accordion[open] {
-    box-shadow: var(--shadow-md);
-}
-
-.details-accordion summary {
-    cursor: pointer;
-    padding: 14px 18px;
-    font-weight: 600;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    transition: background-color var(--transition-fast);
-    border-radius: calc(var(--radius-lg) - 1px);
-}
-
-.details-accordion[open]>summary {
-    background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.details-accordion summary:hover {
-    background-color: var(--bg-secondary);
-}
-
-.details-accordion summary::-webkit-details-marker {
-    display: none;
-}
-
-.details-accordion summary::before {
-    content: '';
-    width: 20px;
-    height: 20px;
-    background-color: var(--text-secondary);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
-    transition: transform var(--transition-fast);
-    margin-left: auto;
-    flex-shrink: 0;
-    order: 1;
-}
-
-.details-accordion[open]>summary::before {
-    transform: rotate(90deg);
-}
-
-.details-content {
-    overflow: hidden;
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease-out,
-        opacity 0.2s ease-out;
-    opacity: 0;
-}
-
-.details-accordion[open]>.details-content {
-    grid-template-rows: 1fr;
-    opacity: 1;
-}
-
-/* Animation pour la première ouverture (Chrome 117+) */
-@starting-style {
-    .details-accordion[open]>.details-content {
-        grid-template-rows: 0fr;
-        opacity: 0;
-    }
-}
-
-.details-content-inner {
-    min-height: 0;
-    padding: 12px 14px;
-    transform: translateY(0);
-    transition: transform 0.25s ease-out;
-}
-
-.details-accordion:not([open])>.details-content>.details-content-inner {
-    transform: translateY(-8px);
-}
 
 /* ====================================================================
    API Status Summary - Récapitulatif des connexions API
@@ -1178,34 +1063,6 @@
 
 }
 
-/* === Carte compacte pour la gestion des matières === */
-#templatesTabContent>.settings-card:first-child {
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    position: relative;
-    z-index: 50;
-    /* Ensure dropdowns float over the grid below */
-    overflow: visible;
-    /* Ensure nothing clips the dropdown */
-}
-
-#templatesTabContent>.settings-card:first-child .settings-card-title {
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-}
-
-#templatesTabContent>.settings-card:first-child .settings-card-content {
-    gap: 10px;
-}
-
-#templatesTabContent>.settings-card:first-child .subject-selection-row {
-    gap: 8px;
-}
-
-#templatesTabContent>.settings-card:first-child .subject-toggle-group label {
-    font-size: 0.9em;
-}
-
 
 /* === Avertissement clé manquante === */
 .missing-key-warning {
@@ -1284,14 +1141,7 @@
 }
 
 /* === Pied de page des Modales (Uniformisé) === */
-.modal-footer {
-    padding: 8px 16px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: var(--surface-color);
-}
+/* (Déjà géré en haut du fichier) */
 
 /* Boutons dans modal-footer : héritent de components.css */
 /* Overrides supprimés pour utiliser le système unifié */

@@ -188,11 +188,28 @@
     /* --- Global Component Variables --- */
     --scrollbar-width: 8px;
 
-    /* --- Modal Bar Tokens --- */
-    --modal-bar-padding-compact: 8px 16px;
-    --modal-bar-padding-spacious: 10px 24px;
-    --modal-bar-height-header: 60px;
-    --modal-bar-height-footer: 52px;
+    /* --- Modal System Tokens (Core Foundation) --- */
+    --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+    --modal-backdrop-blur: 8px;
+    --modal-bg: var(--surface-color);
+    --modal-radius: var(--radius-lg);
+    --modal-border: 1px solid var(--border-color);
+    --modal-shadow: var(--shadow-lg);
+    
+    /* Layout Tokens */
+    --modal-width: 900px;
+    --modal-max-height: 90vh;
+    --modal-padding: 16px; /* Default body padding */
+    --modal-padding-spacious: 24px;
+    
+    /* Bar Tokens */
+    --modal-header-height: 60px;
+    --modal-header-padding: 16px 20px;
+    --modal-header-border: 1px solid var(--border-color);
+    
+    --modal-footer-height: 56px;
+    --modal-footer-padding: 12px 20px;
+    --modal-footer-border: 1px solid var(--border-color);
 
     /* --- Close Button Tokens --- */
     --close-btn-size: 32px;

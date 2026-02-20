@@ -1,0 +1,188 @@
+/* ==========================================================================
+   ui-components.css
+   Composants UI génériques réutilisables
+   ========================================================================== */
+
+/* === UI ACCORDION === */
+.ui-accordion {
+    background-color: var(--card-glass-bg);
+    backdrop-filter: blur(var(--glass-surface-blur));
+    -webkit-backdrop-filter: blur(var(--glass-surface-blur));
+    border: 1px solid var(--card-glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+
+.ui-accordion:last-of-type {
+    margin-bottom: 0;
+}
+
+.ui-accordion:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.ui-accordion[open] {
+    box-shadow: var(--shadow-md);
+}
+
+.ui-accordion summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    transition: background-color var(--transition-fast);
+    border-radius: calc(var(--radius-lg) - 1px);
+}
+
+.ui-accordion[open]>summary {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.ui-accordion summary:hover {
+    background-color: var(--bg-secondary);
+}
+
+.ui-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.ui-accordion summary::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-color: var(--text-secondary);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center / contain;
+    transition: transform var(--transition-fast);
+    margin-left: auto;
+    flex-shrink: 0;
+    order: 1;
+}
+
+.ui-accordion[open]>summary::before {
+    transform: rotate(90deg);
+}
+
+.ui-accordion-content {
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out, opacity 0.2s ease-out;
+    opacity: 0;
+}
+
+.ui-accordion[open]>.ui-accordion-content {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+@starting-style {
+    .ui-accordion[open]>.ui-accordion-content {
+        grid-template-rows: 0fr;
+        opacity: 0;
+    }
+}
+
+.ui-accordion-content-inner {
+    min-height: 0;
+    padding: 12px 14px;
+    transform: translateY(0);
+    transition: transform 0.25s ease-out;
+}
+
+.ui-accordion:not([open])>.ui-accordion-content>.ui-accordion-content-inner {
+    transform: translateY(-8px);
+}
+
+.ui-accordion.danger-accordion>summary {
+    color: var(--danger-color);
+}
+
+.ui-accordion.danger-accordion>summary::before {
+    background-color: var(--danger-color);
+}
+
+
+/* === UI STEPPER === */
+.ui-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    margin: 0 auto;
+    height: auto;
+    flex: 2;
+}
+
+.ui-stepper-step {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 6px 10px !important;
+    min-width: auto;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    opacity: 0.5;
+}
+
+.ui-stepper-step:hover:not(.active) {
+    background: var(--bg-secondary) !important;
+    opacity: 0.8;
+}
+
+.ui-stepper-step.active {
+    opacity: 1;
+    background: rgba(var(--primary-color-rgb), 0.08) !important;
+}
+
+.ui-stepper-step.completed {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.ui-stepper-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    display: block !important;
+}
+
+.ui-stepper-step.active .ui-stepper-label {
+    color: var(--primary-color);
+}
+
+.ui-stepper-step.completed .ui-stepper-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.ui-stepper-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    opacity: 0.4;
+    font-size: 0.75rem;
+    padding: 0 2px;
+}
+
+@media (max-width: 800px) {
+    .ui-stepper.compact .ui-stepper-label {
+        display: none !important;
+    }
+}

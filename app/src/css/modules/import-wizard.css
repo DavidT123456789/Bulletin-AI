@@ -13,7 +13,7 @@
     flex-direction: column;
     padding: 0;
     overflow: hidden;
-    border-radius: var(--radius-lg);
+    border-radius: var(--modal-radius);
     isolation: isolate;
 }
 
@@ -325,18 +325,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 32px;
-    background: var(--surface-color);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-    height: auto;
-    min-height: 80px;
+    padding: var(--modal-header-padding);
+    background: var(--modal-bg);
+    border-bottom: var(--modal-header-border);
+    min-height: var(--modal-header-height);
     overflow: visible;
     z-index: 10;
+    flex-shrink: 0;
 }
 
-[data-theme="dark"] .import-wizard-header-unified {
-    border-bottom-color: rgba(255, 255, 255, 0.05);
-}
+
 
 .wizard-header-title {
     display: flex;
@@ -380,81 +378,6 @@
     color: var(--text-secondary);
 }
 
-/* === BREADCRUMB STEPPER (Apple-style) === */
-.import-wizard-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    margin: 0 auto;
-    height: auto;
-    /* Absolute center styling if needed, but flex-1 on sides works too */
-    flex: 2;
-}
-
-.wizard-step {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 6px 10px !important;
-    min-width: auto;
-    border-radius: var(--radius-md);
-    transition: all 0.2s ease;
-    cursor: pointer;
-    position: relative;
-    opacity: 0.5;
-}
-
-.wizard-step:hover:not(.active) {
-    background: var(--bg-secondary) !important;
-    opacity: 0.8;
-}
-
-/* Active Step (Current) */
-.wizard-step.active {
-    opacity: 1;
-    background: rgba(var(--primary-color-rgb), 0.08) !important;
-}
-
-/* Completed Step (Past) */
-.wizard-step.completed {
-    opacity: 1;
-    color: var(--text-primary);
-}
-
-/* Label Styling */
-.wizard-step-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
-    display: block !important;
-}
-
-.wizard-step.active .wizard-step-label {
-    color: var(--primary-color);
-}
-
-.wizard-step.completed .wizard-step-label {
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-/* Separator Icon */
-.wizard-step-separator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-tertiary);
-    opacity: 0.4;
-    font-size: 0.75rem;
-    padding: 0 2px;
-}
-
-/* Media Query: Collapse texts on small screens */
 @media (max-width: 800px) {
     .wizard-context-class {
         max-width: 150px;
@@ -478,7 +401,7 @@
 
 /* === BODY === */
 .import-wizard-body {
-    padding: 24px;
+    padding: var(--modal-padding-spacious);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1299,16 +1222,13 @@
     display: none;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 28px;
-    background: var(--surface-color);
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: var(--modal-footer-padding);
+    background: var(--modal-bg);
+    border-top: var(--modal-footer-border);
+    border-radius: 0 0 var(--modal-radius) var(--modal-radius);
     gap: 16px;
-    min-height: 60px;
-}
-
-[data-theme="dark"] .import-wizard-footer {
-    border-top-color: rgba(255, 255, 255, 0.05);
+    min-height: var(--modal-footer-height);
+    flex-shrink: 0;
 }
 
 /* Pill Shape for footer buttons — balanced proportions */
@@ -1488,32 +1408,6 @@
     position: relative;
     /* Ensure context for absolute elements if needed */
 }
-
-/* Fix close button style - Harmonized with design tokens (Single Source of Truth) */
-.import-wizard-modal .close-modal-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: var(--close-btn-icon-size);
-    cursor: pointer;
-    padding: 0;
-    border-radius: 50%;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--close-btn-size);
-    height: var(--close-btn-size);
-    opacity: 0.8;
-}
-
-.import-wizard-modal .close-modal-btn:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-    opacity: 1;
-}
-
-
 
 .import-wizard-modal .import-separator-row label {
     margin: 0;

@@ -742,26 +742,26 @@
                     </div>
                 </div>
 
-                <div class="import-wizard-stepper">
-                    <div class="wizard-step active" data-step="1" role="button" tabindex="0">
-                        <span class="wizard-step-label">Données</span>
+                <div class="ui-stepper">
+                    <div class="ui-stepper-step active" data-step="1" role="button" tabindex="0">
+                        <span class="ui-stepper-label">Données</span>
                     </div>
-                    <div class="wizard-step-separator">
+                    <div class="ui-stepper-separator">
                         <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                     </div>
-                    <div class="wizard-step" data-step="2" role="button" tabindex="0">
-                        <span class="wizard-step-label">Mapping</span>
+                    <div class="ui-stepper-step" data-step="2" role="button" tabindex="0">
+                        <span class="ui-stepper-label">Mapping</span>
                     </div>
-                    <div class="wizard-step-separator">
+                    <div class="ui-stepper-separator">
                         <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                     </div>
-                    <div class="wizard-step" data-step="3" role="button" tabindex="0">
-                        <span class="wizard-step-label">Confirmer</span>
+                    <div class="ui-stepper-step" data-step="3" role="button" tabindex="0">
+                        <span class="ui-stepper-label">Confirmer</span>
                     </div>
                 </div>
 
                 <div class="wizard-header-actions">
-                    <button class="close-modal-btn" id="closeImportWizardBtn" aria-label="Fermer">
+                    <button class="close-button" id="closeImportWizardBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -1126,7 +1126,7 @@
                         <span class="step-label">Confirmer</span>
                     </div>
                 </div>
-                <button class="trombi-close-btn" id="closeTrombiWizardBtn" aria-label="Fermer">
+                <button class="close-button" id="closeTrombiWizardBtn" aria-label="Fermer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             </div>
@@ -1255,7 +1255,7 @@
         aria-labelledby="personalizationModalTitle">
         <div class="modal-content personalization-modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="personalizationModalTitle"><iconify-icon
+                <h2 class="modal-title" id="personalizationModalTitle"><iconify-icon class="color-accent"
                         icon="solar:magic-stick-3-linear"></iconify-icon>
                     Personnalisation</h2>
                 <div class="modal-header-actions spaced">
@@ -1472,7 +1472,7 @@
     <div id="appSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="settingsModalTitle"><iconify-icon class="iconify-inline"
+                <h2 class="modal-title" id="settingsModalTitle"><iconify-icon class="iconify-inline color-secondary"
                         icon="solar:settings-bold"></iconify-icon> Paramètres
                 </h2>
                 <button class="close-button" id="closeSettingsModalBtn" aria-label="Fermer les paramètres"><iconify-icon
@@ -1616,12 +1616,12 @@
                                     sélectionné...</small>
                             </div>
 
-                            <details class="details-accordion" id="apiKeysAccordion">
+                            <details class="ui-accordion" id="apiKeysAccordion">
                                 <summary><iconify-icon class="iconify-inline" icon="solar:key-bold"></iconify-icon>
                                     Gérer mes clés API</summary>
-                                <div class="details-content">
-                                    <form class="details-content-inner api-keys-container" action="javascript:void(0)"
-                                        autocomplete="off">
+                                <div class="ui-accordion-content">
+                                    <form class="ui-accordion-content-inner api-keys-container"
+                                        action="javascript:void(0)" autocomplete="off">
                                         <div class="api-key-section" id="mistralApiKeyGroup">
                                             <div class="api-key-header">
                                                 <span class="api-key-provider"><iconify-icon class="iconify-inline"
@@ -2071,11 +2071,11 @@
 
                             <!-- Section Zone de Danger -->
                             <div class="danger-zone-details">
-                                <details class="details-accordion danger-accordion">
+                                <details class="ui-accordion danger-accordion">
                                     <summary><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Zone de
                                         Danger</summary>
-                                    <div class="details-content">
-                                        <div class="details-content-inner">
+                                    <div class="ui-accordion-content">
+                                        <div class="ui-accordion-content-inner">
                                             <div class="danger-action-row">
                                                 <div class="danger-info">
                                                     <strong>Réinitialiser les paramètres</strong>
@@ -2121,7 +2121,7 @@
         aria-labelledby="importPreviewModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="importPreviewModalTitle"><iconify-icon class="iconify-inline"
+                <h2 class="modal-title" id="importPreviewModalTitle"><iconify-icon class="iconify-inline color-success"
                         icon="solar:list-check-bold"></iconify-icon> Configurer
                     et
                     prévisualiser l'import</h2>
@@ -2135,11 +2135,11 @@
                 <div id="importSavedFormatInfo" class="generic-info-box"
                     style="display: none; justify-content: space-between; align-items: center;"></div>
 
-                <details class="details-accordion" style="margin-bottom: 25px;">
+                <details class="ui-accordion" style="margin-bottom: 25px;">
                     <summary><iconify-icon class="iconify-inline" icon="solar:settings-bold"></iconify-icon> Ajuster le
                         mappage des colonnes</summary>
-                    <div class="details-content">
-                        <div class="details-content-inner">
+                    <div class="ui-accordion-content">
+                        <div class="ui-accordion-content-inner">
                             <p style="margin-top:0; font-size:0.9em; color:var(--summary-details-color);">
                                 Vérifiez que
                                 chaque colonne de vos données est correctement associée à un champ.
@@ -2232,18 +2232,18 @@
 
     <!-- Refinement Modal removed - Focus Panel handles all refinement with inline buttons -->
 
-    <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div id="helpModal" class="modal modal-help" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">
-                    <span class="modal-title-icon"><iconify-icon class="iconify-inline"
+                    <span class="modal-title-icon color-primary"><iconify-icon class="iconify-inline"
                             icon="solar:question-circle-bold"></iconify-icon></span>
                     <span class="modal-title-text">Guide de l'application</span>
                 </h2>
                 <button class="close-button" id="closeHelpModalBtn" aria-label="Fermer l'aide"><iconify-icon
                         class="iconify-inline" icon="ph:x"></iconify-icon></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body modal-body-flex">
                 <div class="modal-tabs-layout">
                     <!-- Sidebar Navigation -->
                     <div class="modal-tabs-sidebar">
