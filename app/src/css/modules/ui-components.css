@@ -505,3 +505,90 @@
         border-top: 1px dashed var(--border-color);
     }
 }
+
+/* === PERIOD MISMATCH BANNER === */
+.period-mismatch-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.02));
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.period-mismatch-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.period-mismatch-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.period-mismatch-text h4 {
+    margin: 0 0 4px 0;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.period-mismatch-text p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.period-mismatch-action {
+    flex-shrink: 0;
+}
+
+.period-mismatch-action .btn {
+    white-space: nowrap;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .period-mismatch-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    .period-mismatch-action {
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    .period-mismatch-action .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -61,8 +61,9 @@ export const ListViewManager = {
      * Rend la liste des élèves en format tableau
      * @param {Array} results - Tableau des résultats à afficher
      * @param {HTMLElement} container - Conteneur DOM
+     * @param {boolean} isMismatch - True si les données n'existent que dans un autre système de période
      */
-    render(results, container) {
+    render(results, container, isMismatch = false) {
         // Cancel any pending filter animation to prevent race conditions
         if (ListViewAnimations.state.activeFilterTimeout) {
             clearTimeout(ListViewAnimations.state.activeFilterTimeout);
@@ -81,32 +82,46 @@ export const ListViewManager = {
         // Handle empty results
         if (results.length === 0) {
             if (existingTable && tbody) {
+                const emptyRowHtml = isMismatch ? `
+                    <tr class="empty-state-row">
+                        <td colspan="100%" style="padding: 24px;">
+                            <div class="period-mismatch-banner">
+                                <div class="period-mismatch-content">
+                                    <div class="period-mismatch-icon">
+                                        <iconify-icon icon="solar:folder-error-linear"></iconify-icon>
+                                    </div>
+                                    <div class="period-mismatch-text">
+                                        <h4>Aucune donnée pour cette période</h4>
+                                        <p>Vos saisies semblent avoir été faites dans un autre système de période (Semestre/Trimestre).</p>
+                                    </div>
+                                </div>
+                                <div class="period-mismatch-action">
+                                    <button class="btn btn-primary" onclick="document.dispatchEvent(new CustomEvent('repairMismatchClicked'))">
+                                        <iconify-icon icon="solar:refresh-square-linear"></iconify-icon> Résoudre
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                ` : `
+                    <tr class="empty-state-row">
+                        <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
+                            <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                                <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
+                                <span>Aucun élève trouvé</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
                 // If table exists, just clear rows but KEEP structure (and search bar!)
                 const existingRows = tbody.querySelectorAll('.student-row');
                 if (existingRows.length > 0) {
                     ListViewAnimations.animateRowsOut(existingRows, () => {
-                        tbody.innerHTML = `
-                            <tr class="empty-state-row">
-                                <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
-                                    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                                        <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
-                                        <span>Aucun élève trouvé</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
+                        tbody.innerHTML = emptyRowHtml;
                     });
                 } else if (!tbody.querySelector('.empty-state-row')) {
-                    tbody.innerHTML = `
-                        <tr class="empty-state-row">
-                            <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
-                                <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                                    <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
-                                    <span>Aucun élève trouvé</span>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                    tbody.innerHTML = emptyRowHtml;
                 }
                 return;
             } else {

@@ -18,6 +18,21 @@ export const ResultsUIManager = {
     init(appreciationsManager, uiManager) {
         Am = appreciationsManager;
         UI = uiManager;
+
+        // Listen for repair mismatch custom event
+        document.addEventListener('repairMismatchClicked', () => this.repairMismatch());
+    },
+
+    repairMismatch() {
+        // Toggle period system between semestres and trimestres
+        const currentSystem = appState.periodSystem;
+        const newSystem = currentSystem === 'semestres' ? 'trimestres' : 'semestres';
+
+        const radio = document.querySelector(`input[name="periodSystemRadio"][value="${newSystem}"]`);
+        if (radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        }
     },
 
     renderResults(highlightId = null, highlightType = 'new') {
@@ -207,6 +222,69 @@ export const ResultsUIManager = {
 
         appState.filteredResults = filteredAndSorted;
 
+        // --- NEW LOGIC FOR PERIOD MISMATCH ---
+        let hasDataInCurrentPeriod = false;
+        let hasDataInOtherPeriods = false;
+
+        if (sourceResults.length > 0) {
+            for (const r of sourceResults) {
+                const periods = r.studentData?.periods || {};
+
+                for (const [p, data] of Object.entries(periods)) {
+                    // Check if there is actual data
+                    const hasDataInPeriod = data && ((typeof data.grade === 'number' && !isNaN(data.grade)) || (data.appreciation && data.appreciation.replace(/<[^>]*>/g, '').trim() !== ''));
+                    if (hasDataInPeriod) {
+                        if (p === activePeriod) hasDataInCurrentPeriod = true;
+                        else hasDataInOtherPeriods = true;
+                    }
+                }
+
+                // Fallback for legacy data
+                if (r.appreciation && r.appreciation.replace(/<[^>]*>/g, '').trim() !== '') {
+                    if (r.studentData?.currentPeriod === activePeriod) hasDataInCurrentPeriod = true;
+                    else hasDataInOtherPeriods = true;
+                }
+
+                if (hasDataInCurrentPeriod) break; // If we find data in current period, it's not a mismatch!
+            }
+        }
+
+        const isPeriodMismatch = !hasDataInCurrentPeriod && hasDataInOtherPeriods;
+
+        // Handle period mismatch banner injection
+        let bannerContainer = document.getElementById('period-mismatch-container');
+        if (!bannerContainer) {
+            bannerContainer = document.createElement('div');
+            bannerContainer.id = 'period-mismatch-container';
+            DOM.resultsDiv.parentNode.insertBefore(bannerContainer, DOM.resultsDiv);
+        }
+
+        if (isPeriodMismatch) {
+            const alternateSystem = appState.periodSystem === 'semestres' ? 'trimestriel' : 'semestriel';
+            bannerContainer.innerHTML = `
+                <div class="period-mismatch-banner">
+                    <div class="period-mismatch-content">
+                        <div class="period-mismatch-icon">
+                            <iconify-icon icon="solar:folder-error-linear"></iconify-icon>
+                        </div>
+                        <div class="period-mismatch-text">
+                            <h4>Aucune donnée pour cette période</h4>
+                            <p>Le système <strong>${appState.periodSystem}</strong> est actif mais vos saisies semblent avoir été faites dans le système ${alternateSystem}.</p>
+                        </div>
+                    </div>
+                    <div class="period-mismatch-action">
+                        <button class="btn btn-primary" onclick="document.dispatchEvent(new CustomEvent('repairMismatchClicked'))">
+                            <iconify-icon icon="solar:refresh-square-linear"></iconify-icon> Récupérer mes données
+                        </button>
+                    </div>
+                </div>
+            `;
+            bannerContainer.style.display = 'block';
+        } else {
+            bannerContainer.style.display = 'none';
+        }
+        // --- END NEW LOGIC ---
+
         // Afficher l'état vide si la classe courante n'a pas de résultats
         if (sourceResults.length === 0) {
             // Clear for empty state
@@ -239,7 +317,7 @@ export const ResultsUIManager = {
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
             // Let ListViewManager handle the empty state - it preserves the table header with search bar
-            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
+            ListViewManager.render(filteredAndSorted, DOM.resultsDiv, isPeriodMismatch);
         }
         else {
             // DON'T clear DOM here - let ListViewManager handle animation
@@ -251,7 +329,7 @@ export const ResultsUIManager = {
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
             // Liste + Focus UX: Utiliser ListViewManager au lieu des cartes individuelles
-            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
+            ListViewManager.render(filteredAndSorted, DOM.resultsDiv, isPeriodMismatch);
         }
         if (highlightId && highlightType === 'new') {
             // Liste + Focus: Cibler la ligne du tableau
