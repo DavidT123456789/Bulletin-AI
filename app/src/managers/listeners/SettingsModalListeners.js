@@ -94,8 +94,7 @@ export const SettingsModalListeners = {
         // Bouton pour ouvrir l'accordion des clés API
         this._setupApiKeysAccordion(addClickListener);
 
-        // Cartes de statut API cliquables pour déclencher la validation
-        this._setupApiStatusCards();
+
 
         // Configuration Ollama (IA locale)
         this._setupOllamaListeners(addClickListener);
@@ -172,33 +171,6 @@ export const SettingsModalListeners = {
         }
     },
 
-    _setupApiStatusCards() {
-        const statusCardMap = {
-            'googleApiStatus': 'google',
-            'openaiApiStatus': 'openai',
-            'openrouterApiStatus': 'openrouter',
-            'anthropicApiStatus': 'anthropic',
-            'mistralApiStatus': 'mistral'
-        };
-        Object.entries(statusCardMap).forEach(([cardId, provider]) => {
-            const card = document.getElementById(cardId);
-            if (card) {
-                card.addEventListener('click', () => {
-                    // Use centralized highlight utility for consistent behavior
-                    const inputId = `${provider}ApiKey`;
-                    UI.highlightSettingsElement(inputId, {
-                        tab: 'advanced',
-                        useParentFormGroup: true  // Highlight the .api-key-group parent
-                    });
-
-                    // Ne revalider que si nécessaire (pas déjà validé) pour éviter le spam API
-                    if (!appState.validatedApiKeys[provider]) {
-                        ApiValidationManager.validateApiKey(provider);
-                    }
-                });
-            }
-        });
-    },
 
     _setupOllamaListeners(addClickListener) {
         if (DOM.ollamaEnabledToggle) {
@@ -224,15 +196,6 @@ export const SettingsModalListeners = {
             });
         }
 
-        if (DOM.ollamaApiStatus) {
-            DOM.ollamaApiStatus.addEventListener('click', () => {
-                // Use centralized highlight utility
-                UI.highlightSettingsElement('ollamaConfigGroup', {
-                    tab: 'advanced',
-                    useParentFormGroup: false
-                });
-            });
-        }
     },
 
 
@@ -1036,8 +999,7 @@ export const SettingsModalListeners = {
         const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
         if (checkUpdatesBtn) addClickListener(checkUpdatesBtn, () => updateCheckHandler(checkUpdatesBtn));
 
-        const checkUpdatesDataBtn = document.getElementById('checkUpdatesDataBtn');
-        if (checkUpdatesDataBtn) addClickListener(checkUpdatesDataBtn, () => updateCheckHandler(checkUpdatesDataBtn));
+
 
         // Factory reset (deletes everything)
         const factoryResetBtn = document.getElementById('factoryResetBtn');

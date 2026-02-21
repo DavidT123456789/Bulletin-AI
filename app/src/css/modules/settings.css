@@ -1210,7 +1210,6 @@
 }
 
 .sync-provider-card:hover {
-    border-color: var(--primary-color);
     box-shadow: var(--shadow-sm);
 }
 

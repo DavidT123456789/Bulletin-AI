@@ -142,6 +142,8 @@ export const App = {
             google: DOM.validateGoogleApiKeyBtn,
             openai: DOM.validateOpenaiApiKeyBtn,
             openrouter: DOM.validateOpenrouterApiKeyBtn,
+            anthropic: DOM.validateAnthropicApiKeyBtn,
+            mistral: DOM.validateMistralApiKeyBtn,
             ollama: DOM.validateOllamaBtn,
         };
 

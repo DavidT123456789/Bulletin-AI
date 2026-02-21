@@ -47,7 +47,7 @@
 .prompt-cell {
     font-family: 'Consolas', 'Monaco', monospace;
     /* Police code pour le prompt */
-    font-size: 0.85em;
+    font-size: 0.9em;
     line-height: 1.5;
     color: var(--text-secondary);
     background: transparent;

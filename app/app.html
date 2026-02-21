@@ -1501,10 +1501,6 @@
                             <iconify-icon class="iconify-inline icon-customize"
                                 icon="solar:tuning-2-bold"></iconify-icon> Préférences
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-privacy')">
-                            <iconify-icon class="iconify-inline icon-privacy"
-                                icon="solar:shield-user-bold"></iconify-icon> Confidentialité
-                        </button>
                         <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'settings-data')">
                             <iconify-icon class="iconify-inline icon-format" icon="solar:database-bold"></iconify-icon>
                             Données
@@ -1533,12 +1529,12 @@
                                     utilisés : <b id="sessionTokens" class="session-cost-value">0</b>).</p>
                             </div>
 
-                            <div class="help-step-card">
+                            <div class="help-step-card mb-3">
                                 <div class="help-step-layout">
                                     <div class="help-step-number"><iconify-icon icon="solar:cpu-bold"></iconify-icon>
                                     </div>
                                     <div class="help-step-body" style="width: 100%;">
-                                        <strong>Fournisseur IA (Choix du modèle)</strong>
+                                        <strong>Fournisseur IA & Relais</strong>
                                         <div id="apiStatusSummary" class="api-status-summary compact-mode mt-2">
                                             <div class="api-status-header compact">
                                                 <div class="model-selector-wrapper">
@@ -1618,47 +1614,7 @@
                                                     <iconify-icon icon="solar:restart-bold"></iconify-icon>
                                                 </button>
                                             </div>
-                                            <div class="api-status-pills-row">
-                                                <div class="status-pill inactive" id="googleApiStatus" tabindex="0"
-                                                    title="Non configurée">
-                                                    <span class="status-dot"></span> Google
-                                                </div>
-                                                <div class="status-pill inactive" id="openrouterApiStatus" tabindex="0"
-                                                    title="Non configurée">
-                                                    <span class="status-dot"></span> OpenRouter
-                                                </div>
-                                                <div class="status-pill inactive" id="openaiApiStatus" tabindex="0"
-                                                    title="Non configurée">
-                                                    <span class="status-dot"></span> OpenAI
-                                                </div>
-                                                <div class="status-pill inactive" id="anthropicApiStatus" tabindex="0"
-                                                    title="Non configurée">
-                                                    <span class="status-dot"></span> Claude
-                                                </div>
-                                                <div class="status-pill inactive" id="mistralApiStatus" tabindex="0"
-                                                    title="Non configurée">
-                                                    <span class="status-dot"></span> Mistral AI
-                                                </div>
-                                                <div class="status-pill inactive" id="ollamaApiStatus" tabindex="0"
-                                                    title="Non activé">
-                                                    <span class="status-dot"></span> Ollama
-                                                </div>
-                                            </div>
-
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number"><iconify-icon icon="solar:key-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-step-body" style="width: 100%;">
-                                        <strong>Clés API & Relais</strong>
-                                        <div class="mt-2">
-                                            <div class="api-fallback-row">
+                                            <div class="api-fallback-row mt-3">
                                                 <div class="toggle-switch-container compact">
                                                     <label class="toggle-switch small">
                                                         <input type="checkbox" id="enableApiFallbackToggle" checked>
@@ -1670,7 +1626,6 @@
                                                 </div>
                                                 <div class="fallback-info">
                                                     <small id="fallbackOrderHint">
-                                                        <!-- Arrow removed -->
                                                         <span id="fallbackOrderText">...</span>
                                                         <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
                                                             style="display: none;"></span>
@@ -1678,26 +1633,30 @@
                                                 </div>
                                             </div>
 
-                                            <div id="missingApiKeyWarning" class="missing-key-warning compact"
+                                            <div id="missingApiKeyWarning" class="missing-key-warning compact mt-2"
                                                 style="display: none;">
                                                 <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                                                 <span id="missingKeyText">Clé manquante.</span>
                                                 <button type="button" class="btn-link"
                                                     id="openApiKeysAccordionBtn">Configurer</button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon icon="solar:key-bold"></iconify-icon>
+                                    </div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Configuration des Clés API</strong>
+                                        <div class="mt-2">
                                             <small id="aiModelDescription" style="display: none;">Description du modèle
                                                 sélectionné...</small>
                                         </div>
 
-                                        <!-- Accordéon retiré pour un accès direct -->
-                                        <div id="apiKeysAccordion" style="margin-top: 16px;">
-                                            <h4
-                                                style="margin-bottom: 12px; font-size: 0.95em; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
-                                                <iconify-icon class="iconify-inline"
-                                                    icon="solar:key-bold"></iconify-icon>
-                                                Gestion des clés API
-                                            </h4>
+                                        <div id="apiKeysAccordion" style="margin-top: 12px;">
                                             <div>
                                                 <form class="api-keys-container" action="javascript:void(0)"
                                                     autocomplete="off">
@@ -1715,8 +1674,10 @@
                                                                     clé (gratuit)</a>
                                                                 <a href="https://console.mistral.ai/usage"
                                                                     target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><i
-                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
                                                             </div>
                                                         </div>
                                                         <div class="api-key-actions">
@@ -1741,10 +1702,18 @@
                                                                     class="iconify-inline"
                                                                     icon="logos:google-icon"></iconify-icon> Google
                                                                 Gemini</span>
-                                                            <a href="https://aistudio.google.com/app/apikey"
-                                                                target="_blank" rel="noopener noreferrer"
-                                                                class="btn-link">Obtenir une clé
-                                                                (gratuit limité)</a>
+                                                            <div class="api-key-links">
+                                                                <a href="https://aistudio.google.com/app/apikey"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une clé
+                                                                    (gratuit limité)</a>
+                                                                <a href="https://aistudio.google.com/app/plan_information"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
                                                         </div>
                                                         <div class="api-key-actions">
                                                             <div class="api-key-input-container">
@@ -1810,8 +1779,10 @@
                                                                     clé (payant)</a>
                                                                 <a href="https://platform.openai.com/usage"
                                                                     target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><i
-                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
                                                             </div>
                                                         </div>
                                                         <div class="api-key-actions">
@@ -1842,8 +1813,10 @@
                                                                     clé (payant)</a>
                                                                 <a href="https://console.anthropic.com/settings/usage"
                                                                     target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><i
-                                                                        class="fas fa-wallet"></i> Usage</a>
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
                                                             </div>
                                                         </div>
                                                         <div class="api-key-actions">
@@ -1930,36 +1903,81 @@
                                     l'application.
                                 </p>
                             </div>
-                            <div class="preferences-grid">
-                                <!-- Mini-carte 1: Système périodique -->
-                                <div class="preference-mini-card">
-                                    <div class="preference-mini-card-header">
-                                        <iconify-icon class="iconify-inline" icon="solar:calendar-bold"></iconify-icon>
-                                        <span>Système périodique</span>
-                                    </div>
-                                    <div class="preference-mini-card-content">
-                                        <div class="ui-segmented-control period-system-selector">
-                                            <input type="radio" id="periodSystemTrimestres" name="periodSystemRadio"
-                                                value="trimestres" checked>
-                                            <label for="periodSystemTrimestres" class="ui-segment">Trimestres</label>
-                                            <input type="radio" id="periodSystemSemestres" name="periodSystemRadio"
-                                                value="semestres">
-                                            <label for="periodSystemSemestres" class="ui-segment">Semestres</label>
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:shield-user-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Confidentialité & Anonymisation</strong>
+                                        <p>Règles concernant les noms d'élèves envoyés aux IA.</p>
+                                        <div class="setting-row mt-2"
+                                            style="padding: 0; background: transparent; border: none; align-items: center; justify-content: space-between;">
+                                            <div class="setting-info" style="padding-left: 0;">
+                                                <strong
+                                                    style="font-size: 1.05em; display: flex; align-items: center; gap: 8px;">Anonymisation
+                                                    renforcée <span class="privacy-warning-badge"
+                                                        style="font-size: 0.75em; font-weight: normal; margin-left: 0;"
+                                                        title="Peut causer des répétitions"><iconify-icon
+                                                            icon="solar:danger-triangle-bold"></iconify-icon> Moins
+                                                        fluide</span></strong>
+                                                <p
+                                                    style="margin: 4px 0 0 0; font-size: 0.9em; color: var(--text-secondary);">
+                                                    Remplace le vrai prénom par un pseudonyme avant envoi à l'IA.</p>
+                                            </div>
+                                            <div class="toggle-switch-container m-0">
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="settingsPrivacyAnonymizeToggle" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
                                         </div>
-                                        <small class="preference-hint">T1, T2, T3 ou S1, S2</small>
+                                        <div class="privacy-footer-note mt-3"
+                                            style="display: flex; align-items: center; gap: 8px; font-size: 0.85em; background: rgba(var(--primary-color-rgb), 0.05); color: var(--primary-color); padding: 10px 14px; border-radius: var(--radius-sm);">
+                                            <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"
+                                                style="font-size: 1.2em;"></iconify-icon> Le nom de famille n'est
+                                            <strong>jamais</strong> transmis à l'IA.
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Mini-carte 2: Seuils d'évolution -->
-                                <div class="preference-mini-card">
-                                    <div class="preference-mini-card-header">
-                                        <iconify-icon class="iconify-inline" icon="solar:chart-2-bold"></iconify-icon>
-                                        <span>Seuils d'évolution</span>
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:calendar-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Système périodique</strong>
+                                        <p style="margin-bottom: 16px;">Choisissez comment l'année scolaire s'affiche
+                                            <span style="color: var(--text-secondary);">(T1, T2, T3 ou S1, S2)</span>.
+                                        </p>
+                                        <div class="mt-3">
+                                            <div class="ui-segmented-control period-system-selector"
+                                                style="max-width: 320px; margin: 0;">
+                                                <input type="radio" id="periodSystemTrimestres" name="periodSystemRadio"
+                                                    value="trimestres" checked>
+                                                <label for="periodSystemTrimestres"
+                                                    class="ui-segment">Trimestres</label>
+                                                <input type="radio" id="periodSystemSemestres" name="periodSystemRadio"
+                                                    value="semestres">
+                                                <label for="periodSystemSemestres" class="ui-segment">Semestres</label>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="preference-mini-card-content">
-                                        <div class="evolution-thresholds-inline">
-                                            <div class="threshold-item-compact tooltip"
-                                                data-tooltip="Écart à partir duquel une hausse est significative">
+                                </div>
+                            </div>
+
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:chart-2-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Seuils d'évolution</strong>
+                                        <p style="margin-bottom: 16px;">Écarts à partir desquels une évolution est
+                                            considérée comme significative.
+                                        </p>
+                                        <div class="evolution-thresholds-inline mt-3"
+                                            style="display: flex; gap: 24px; align-items: center;">
+                                            <div class="threshold-item-compact">
                                                 <label for="evolutionThresholdPositive" class="threshold-label">
                                                     <iconify-icon class="iconify-inline settings-evo-icon positive"
                                                         icon="solar:graph-up-bold"></iconify-icon>
@@ -1976,8 +1994,7 @@
                                                             icon="ph:plus-bold"></iconify-icon></button>
                                                 </div>
                                             </div>
-                                            <div class="threshold-item-compact tooltip"
-                                                data-tooltip="Écart à partir duquel une baisse est significative">
+                                            <div class="threshold-item-compact">
                                                 <label for="evolutionThresholdNegative" class="threshold-label">
                                                     <iconify-icon class="iconify-inline settings-evo-icon negative"
                                                         icon="solar:graph-down-bold"></iconify-icon>
@@ -1999,215 +2016,187 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="settings-privacy" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon"><iconify-icon
-                                        icon="solar:shield-user-bold"></iconify-icon></div>
-                                <p>Paramètres de confidentialité et gestion de l'envoi de données vers l'IA.</p>
-                            </div>
-                            <div class="setting-row">
-                                <div class="setting-info">
-                                    <h4 class="setting-subtitle">Anonymisation renforcée</h4>
-                                    <div class="privacy-description-wrapper">
-                                        <div class="privacy-option">
-                                            <span class="option-label">Activé :</span>
-                                            <span class="option-desc">Remplace le prénom par un placeholder.</span>
-                                            <span class="privacy-warning-badge" title="Peut causer des répétitions">
-                                                <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
-                                                Rédaction moins fluide
-                                            </span>
-                                        </div>
-                                        <div class="privacy-option">
-                                            <span class="option-label">Désactivé :</span>
-                                            <span class="option-desc">Utilise le vrai prénom pour un texte plus
-                                                naturel.</span>
-                                        </div>
-                                        <div class="privacy-footer-note">
-                                            <iconify-icon class="iconify-inline"
-                                                icon="solar:shield-check-bold"></iconify-icon> Le nom de famille n'est
-                                            <strong>jamais</strong> transmis à l'IA.
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="toggle-switch-container">
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="settingsPrivacyAnonymizeToggle" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
                         <div id="settings-data" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon"><iconify-icon icon="solar:database-bold"></iconify-icon>
                                 </div>
-                                <p>Sauvegarde, restauration et synchronisation cloud de vos données.</p>
+                                <p>Gérez vos données ou configurez la synchronisation cloud.</p>
                             </div>
-                            <!-- Section Sauvegarde Complète -->
-                            <div class="setting-row">
-                                <div class="setting-info">
-                                    <h4 class="setting-subtitle"><iconify-icon
-                                            icon="solar:cloud-download-bold"></iconify-icon> Sauvegarde
-                                        complète</h4>
-                                    <p class="setting-description">Exportez toutes vos données (élèves, appréciations,
-                                        classes) pour les restaurer sur un autre appareil ou en cas de problème.</p>
+
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:cloud-upload-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Sauvegarde Cloud (Google Drive)</strong>
+                                        <div class="setting-row mt-2"
+                                            style="padding: 0; background: transparent; border: none; flex-direction: column;"
+                                            id="cloudSyncSection">
+                                            <p class="setting-description mb-2" style="margin-top: 0;">
+                                                Sauvegardez ou restaurez vos données sur votre espace Google Drive
+                                                personnel. Respect RGPD assuré.
+                                            </p>
+
+                                            <!-- Provider Selection -->
+                                            <div class="sync-providers" style="margin-top: 8px;">
+                                                <div class="sync-provider-card" data-provider="google">
+                                                    <div class="provider-icon"><iconify-icon class="iconify-inline"
+                                                            icon="logos:google-drive"></iconify-icon></div>
+                                                    <div class="provider-info">
+                                                        <span class="provider-name">Google Drive</span>
+                                                        <span class="provider-status" id="googleSyncStatus">Non
+                                                            connecté</span>
+                                                        <span class="provider-email" id="googleSyncEmail"
+                                                            style="display: none; font-size: 0.8em; color: var(--text-secondary);"></span>
+                                                    </div>
+                                                    <div class="provider-actions" style="display: flex; gap: 8px;">
+                                                        <button class="btn btn-secondary btn-small"
+                                                            id="connectGoogleBtn">
+                                                            Connecter
+                                                        </button>
+                                                        <button class="btn btn-danger btn-small"
+                                                            id="disconnectGoogleBtn" style="display: none;">
+                                                            <iconify-icon class="iconify-inline"
+                                                                icon="solar:logout-bold"></iconify-icon>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Save/Load Actions (visible when connected) -->
+                                            <div class="cloud-actions-bar mt-2" id="cloudActionsBar"
+                                                style="display: none;">
+                                                <button class="btn btn-primary btn-small" id="cloudSaveBtn">
+                                                    <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                                                    Sauvegarder
+                                                </button>
+                                                <button class="btn btn-secondary btn-small" id="cloudLoadBtn">
+                                                    <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                                                    Charger
+                                                </button>
+                                                <span class="cloud-last-save" id="cloudLastSave"></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="setting-actions-group">
-                                    <button class="btn btn-primary btn-small" id="exportFullBackupBtn">
-                                        <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Exporter
-                                    </button>
-                                    <button class="btn btn-secondary btn-small" id="importFullBackupBtn">
-                                        <iconify-icon class="iconify-inline" icon="solar:upload-bold"></iconify-icon>
-                                        Restaurer
-                                    </button>
+                            </div>
+
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:download-minimalistic-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Sauvegarde Locale (Fichier JSON)</strong>
+                                        <div class="setting-row mt-2"
+                                            style="padding: 0; background: transparent; border: none; align-items: flex-start;">
+                                            <div class="setting-info" style="padding-left: 0; width: 100%;">
+                                                <p class="setting-description mb-4" style="margin-top: 0;">Exportez ou
+                                                    importez vos données (format JSON).</p>
+
+                                                <div class="setting-actions-group"
+                                                    style="justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.1); width: 100%; margin-top: 12px; padding-bottom: 16px; margin-bottom: 16px;">
+                                                    <div style="flex: 1; padding-right: 15px;">
+                                                        <strong
+                                                            style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Données
+                                                            Complètes</strong>
+                                                        <span
+                                                            style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Sauvegarde
+                                                            intégrale (classes, élèves, historiques...).</span>
+                                                    </div>
+                                                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                                        <button class="btn btn-secondary btn-small"
+                                                            id="exportFullBackupBtn">
+                                                            <iconify-icon class="iconify-inline"
+                                                                icon="solar:export-bold"></iconify-icon> Exporter
+                                                        </button>
+                                                        <button class="btn btn-secondary btn-small"
+                                                            id="importFullBackupBtn">
+                                                            <iconify-icon icon="solar:import-bold"></iconify-icon>
+                                                            Importer
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="setting-actions-group"
+                                                    style="justify-content: space-between; align-items: center; width: 100%;">
+                                                    <div style="flex: 1; padding-right: 15px;">
+                                                        <strong
+                                                            style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Paramètres
+                                                            Uniquement</strong>
+                                                        <span
+                                                            style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Sauvegarde
+                                                            de votre configuration (sans élèves).</span>
+                                                    </div>
+                                                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                                        <button class="btn btn-ghost btn-small" id="exportSettingsBtn">
+                                                            <iconify-icon class="iconify-inline"
+                                                                icon="solar:export-bold"></iconify-icon> Exporter
+                                                        </button>
+                                                        <button class="btn btn-ghost btn-small" id="importSettingsBtn">
+                                                            <iconify-icon icon="solar:import-bold"></iconify-icon>
+                                                            Importer
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <input type="file" id="importBackupInput" accept=".json" style="display: none;">
 
-                            <div class="settings-divider-light"></div>
-
-                            <!-- Section Paramètres seuls -->
-                            <div class="setting-row">
-                                <div class="setting-info">
-                                    <h4 class="setting-subtitle"><iconify-icon class="iconify-inline"
-                                            icon="solar:tuning-2-bold"></iconify-icon> Paramètres uniquement
-                                    </h4>
-                                    <p class="setting-description">Exportez seulement la configuration (styles,
-                                        matières) sans les données d'élèves.</p>
-                                </div>
-                                <div class="setting-actions-group">
-                                    <button class="btn btn-secondary btn-small" id="exportSettingsBtn">
-                                        <iconify-icon class="iconify-inline" icon="solar:export-bold"></iconify-icon>
-                                        Exporter
-                                    </button>
-                                    <button class="btn btn-secondary btn-small" id="importSettingsBtn">
-                                        <iconify-icon icon="solar:import-bold"></iconify-icon> Importer
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="settings-divider-light"></div>
-
-                            <!-- Section Cloud Save/Load -->
-                            <div class="setting-row setting-row-column" id="cloudSyncSection">
-                                <div class="setting-info setting-info-full">
-                                    <h4 class="setting-subtitle"><iconify-icon class="iconify-inline"
-                                            icon="solar:cloud-bold"></iconify-icon> Sauvegarde Cloud</h4>
-                                    <p class="setting-description">
-                                        Sauvegardez ou restaurez vos données via Google Drive.
-                                    </p>
-                                </div>
-
-                                <!-- Provider Selection -->
-                                <div class="sync-providers">
-                                    <div class="sync-provider-card" data-provider="google">
-                                        <div class="provider-icon"><iconify-icon class="iconify-inline"
-                                                icon="logos:google-drive"></iconify-icon></div>
-                                        <div class="provider-info">
-                                            <span class="provider-name">Google Drive</span>
-                                            <span class="provider-status" id="googleSyncStatus">Non connecté</span>
-                                            <span class="provider-email" id="googleSyncEmail"
-                                                style="display: none; font-size: 0.8em; color: var(--text-secondary);"></span>
-                                        </div>
-                                        <div class="provider-actions" style="display: flex; gap: 8px;">
-                                            <button class="btn btn-secondary btn-small" id="connectGoogleBtn">
-                                                Connecter
-                                            </button>
-                                            <button class="btn btn-danger btn-small" id="disconnectGoogleBtn"
-                                                style="display: none;">
-                                                <iconify-icon class="iconify-inline"
-                                                    icon="solar:logout-bold"></iconify-icon>
-                                            </button>
-                                        </div>
+                            <div class="help-step-card mt-4"
+                                style="border-color: rgba(var(--error-rgb), 0.3); background: rgba(var(--error-rgb), 0.02);">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"
+                                        style="background: rgba(var(--error-rgb), 0.1); color: var(--error-color);">
+                                        <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                                     </div>
-                                    <div class="sync-provider-card" data-provider="dropbox"
-                                        style="opacity: 0.5; pointer-events: none;">
-                                        <div class="provider-icon"><iconify-icon class="iconify-inline"
-                                                icon="logos:dropbox"></iconify-icon></div>
-                                        <div class="provider-info">
-                                            <span class="provider-name">Dropbox</span>
-                                            <span class="provider-status" id="dropboxSyncStatus">Bientôt
-                                                disponible</span>
-                                        </div>
-                                        <button class="btn btn-secondary btn-small" id="connectDropboxBtn" disabled>
-                                            Connecter
-                                        </button>
-                                    </div>
-                                </div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong style="color: var(--error-color);">Action irréversible</strong>
+                                        <p style="margin-bottom: 16px;">Gérez la réinitialisation ou la suppression de
+                                            vos données.</p>
 
-                                <!-- Save/Load Actions (visible when connected) -->
-                                <div class="cloud-actions-bar" id="cloudActionsBar" style="display: none;">
-                                    <button class="btn btn-primary btn-small" id="cloudSaveBtn">
-                                        <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon> Sauvegarder
-                                    </button>
-                                    <button class="btn btn-secondary btn-small" id="cloudLoadBtn">
-                                        <iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Charger
-                                    </button>
-                                    <span class="cloud-last-save" id="cloudLastSave"></span>
-                                </div>
-
-                                <!-- RGPD Warning (always visible) -->
-                                <div class="sync-rgpd-warning" id="syncRgpdWarning">
-                                    <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"></iconify-icon>
-                                    <span>En activant la sauvegarde cloud, vos données seront stockées sur le service
-                                        choisi. Vous êtes responsable du respect des réglementations applicables
-                                        (RGPD).</span>
-                                </div>
-                            </div>
-
-                            <div class="settings-divider"></div>
-
-                            <!-- Section Application Update -->
-                            <div class="setting-row">
-                                <div class="setting-info">
-                                    <h4 class="setting-subtitle"><iconify-icon icon="solar:restart-bold"></iconify-icon>
-                                        Mises à jour</h4>
-                                    <p class="setting-description">Vérifiez si une nouvelle version de l'application est
-                                        disponible.</p>
-                                </div>
-                                <div class="setting-actions-group">
-                                    <button class="btn btn-secondary btn-small" id="checkUpdatesDataBtn">
-                                        <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon>
-                                        Vérifier
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="settings-divider"></div>
-
-                            <!-- Section Zone de Danger -->
-                            <div class="danger-zone-details">
-                                <details class="ui-accordion danger-accordion">
-                                    <summary><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Zone de
-                                        Danger</summary>
-                                    <div class="ui-accordion-content">
-                                        <div class="ui-accordion-content-inner">
-                                            <div class="danger-action-row">
-                                                <div class="danger-info">
-                                                    <strong>Réinitialiser les paramètres</strong>
-                                                    <span>Remet les paramètres par défaut (clés API, matières). Vos
-                                                        classes et élèves sont conservés.</span>
-                                                </div>
-                                                <button class="btn btn-secondary btn-small" id="resetAllSettingsBtn">
+                                        <div class="setting-actions-group"
+                                            style="justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(var(--error-rgb), 0.15); width: 100%; padding-bottom: 16px; margin-bottom: 16px;">
+                                            <div style="flex: 1; padding-right: 15px;">
+                                                <strong
+                                                    style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Réinitialiser
+                                                    les paramètres</strong>
+                                                <span
+                                                    style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Remet
+                                                    les paramètres par défaut (clés API, matières). Vos classes et
+                                                    élèves sont conservés.</span>
+                                            </div>
+                                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                                <button class="btn btn-danger-outline btn-small"
+                                                    id="resetAllSettingsBtn">
                                                     Réinitialiser
                                                 </button>
                                             </div>
-                                            <div class="danger-action-row" style="margin-top: 12px;">
-                                                <div class="danger-info">
-                                                    <strong style="color: var(--error-color);">Supprimer toutes les
-                                                        données</strong>
-                                                    <span>Efface TOUT : classes, élèves, appréciations, paramètres.
-                                                        Irréversible.</span>
-                                                </div>
+                                        </div>
+
+                                        <div class="setting-actions-group"
+                                            style="justify-content: space-between; align-items: center; width: 100%;">
+                                            <div style="flex: 1; padding-right: 15px;">
+                                                <strong
+                                                    style="display: block; font-size: 0.95em; color: var(--error-color); margin-bottom: 6px;">Supprimer
+                                                    toutes les données</strong>
+                                                <span
+                                                    style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Efface
+                                                    TOUT : classes, élèves, appréciations, paramètres.</span>
+                                            </div>
+                                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
                                                 <button class="btn btn-danger btn-small" id="factoryResetBtn">
-                                                    Tout supprimer
+                                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Tout
+                                                    supprimer
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
-                                </details>
+                                </div>
                             </div>
-                        </div>
+                        </div> <!-- /settings-data -->
                     </div> <!-- /ui-tabs-content -->
                 </div> <!-- /ui-tabs-vertical -->
             </div> <!-- /modal-body-flex -->

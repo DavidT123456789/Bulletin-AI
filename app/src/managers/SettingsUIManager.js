@@ -300,83 +300,36 @@ export const SettingsUIManager = {
         let activeProviderIssue = null; // Pour le bandeau intelligent
 
         providers.forEach(({ id, key }) => {
-            const el = document.getElementById(`${id}ApiStatus`);
-            if (!el) return;
-
             const hasKey = !!key && key.length > 5;
             const status = appState.apiKeyStatus?.[id] || 'not-configured';
 
-            // Reset all state classes (now using pill classes)
-            el.classList.remove('active', 'inactive', 'warning', 'invalid', 'pending');
-
-            // Déterminer le texte du tooltip
-            let tooltipText = '';
-
-            if (!hasKey) {
-                el.classList.add('inactive');
-                tooltipText = 'Non configurée';
-            } else if (status === 'valid') {
-                el.classList.add('active');
-                tooltipText = '✓ Clé valide et fonctionnelle';
-            } else if (status === 'quota-warning') {
-                el.classList.add('warning');
-                tooltipText = '✓ Clé valide • ⏳ Quota temporairement atteint';
-                // Si c'est le provider actif, on note le problème
-                if (id === activeProvider) {
-                    activeProviderIssue = {
-                        type: 'quota',
-                        message: 'Clé valide, mais quota temporairement atteint. Patientez quelques minutes ou changez de modèle.'
-                    };
+            if (hasKey) {
+                if (status === 'quota-warning') {
+                    if (id === activeProvider) {
+                        activeProviderIssue = {
+                            type: 'quota',
+                            message: 'Clé valide, mais quota temporairement atteint. Patientez quelques minutes ou changez de modèle.'
+                        };
+                    }
+                } else if (status === 'invalid') {
+                    if (id === activeProvider) {
+                        activeProviderIssue = {
+                            type: 'invalid',
+                            message: 'Clé API invalide. Veuillez la vérifier dans la configuration.'
+                        };
+                    }
                 }
-            } else if (status === 'invalid') {
-                el.classList.add('invalid');
-                tooltipText = '✗ Clé invalide';
-                // Si c'est le provider actif, c'est un problème critique
-                if (id === activeProvider) {
-                    activeProviderIssue = {
-                        type: 'invalid',
-                        message: 'Clé API invalide. Veuillez la vérifier dans la configuration.'
-                    };
-                }
-            } else {
-                // Clé présente mais non testée
-                el.classList.add('pending');
-                tooltipText = '⏳ Non vérifiée<br><span class="kbd-hint">Tester</span>';
             }
-
-            // Appliquer le tooltip
-            el.setAttribute('data-tooltip', tooltipText);
-            el.setAttribute('title', tooltipText);
         });
 
-        // Gérer le cas Ollama séparément - mettre à jour le pill
+        // Gérer le cas Ollama séparément
         const ollamaStatus = appState.apiKeyStatus?.ollama;
         const ollamaValidated = appState.validatedApiKeys?.ollama;
         const ollamaEnabled = appState.ollamaEnabled;
 
-        const ollamaPill = document.getElementById('ollamaApiStatus');
-        if (ollamaPill) {
-            ollamaPill.classList.remove('active', 'inactive', 'warning', 'invalid', 'pending');
-
-            let ollamaTooltip = '';
-            if (ollamaStatus === 'valid' || ollamaValidated) {
-                ollamaPill.classList.add('active');
-                ollamaTooltip = '✓ Ollama connecté';
-            } else if (ollamaEnabled) {
-                ollamaPill.classList.add('pending');
-                ollamaTooltip = '⏳ Activé mais non vérifié';
-            } else {
-                ollamaPill.classList.add('inactive');
-                ollamaTooltip = 'Non activé';
-            }
-
-            ollamaPill.setAttribute('data-tooltip', ollamaTooltip);
-            ollamaPill.setAttribute('title', ollamaTooltip);
-
-            // Si Ollama est valide et qu'on a des modèles en mémoire, mettre à jour l'intérieur de l'accordéon aussi
-            if (ollamaStatus === 'valid' || ollamaValidated) {
-                this.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
-            }
+        // Si Ollama est valide et qu'on a des modèles en mémoire, mettre à jour l'intérieur de l'accordéon aussi
+        if (ollamaStatus === 'valid' || ollamaValidated) {
+            this.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
         }
 
         // Si Ollama est le provider actif et n'est pas validé/activé
@@ -594,25 +547,34 @@ export const SettingsUIManager = {
     },
 
     /**
-     * Teste toutes les connexions API configurées.
+     * Teste toutes les connexions API configurées ou en cours de saisie.
      * Appelé par le bouton "Tester tout"
      */
     async testAllConnections() {
         const providers = [
-            { id: 'google', key: appState.googleApiKey, inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
-            { id: 'openrouter', key: appState.openrouterApiKey, inputEl: DOM.openrouterApiKey, errorEl: DOM.openrouterApiKeyError, btnEl: DOM.validateOpenrouterApiKeyBtn },
-            { id: 'openai', key: appState.openaiApiKey, inputEl: DOM.openaiApiKey, errorEl: DOM.openaiApiKeyError, btnEl: DOM.validateOpenaiApiKeyBtn },
+            { id: 'mistral', inputEl: DOM.mistralApiKey, errorEl: DOM.mistralApiKeyError, btnEl: DOM.validateMistralApiKeyBtn },
+            { id: 'google', inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
+            { id: 'openrouter', inputEl: DOM.openrouterApiKey, errorEl: DOM.openrouterApiKeyError, btnEl: DOM.validateOpenrouterApiKeyBtn },
+            { id: 'openai', inputEl: DOM.openaiApiKey, errorEl: DOM.openaiApiKeyError, btnEl: DOM.validateOpenaiApiKeyBtn },
+            { id: 'anthropic', inputEl: DOM.anthropicApiKey, errorEl: DOM.anthropicApiKeyError, btnEl: DOM.validateAnthropicApiKeyBtn }
         ];
 
-        // Filtrer seulement les clés configurées
-        const configuredProviders = providers.filter(p => p.key && p.key.length > 5);
+        // Récupérer la valeur directement depuis l'interface (inclut les clés en attente de vérification)
+        providers.forEach(p => {
+            p.key = p.inputEl ? p.inputEl.value.trim() : (appState[`${p.id}ApiKey`] || '');
+        });
 
-        if (configuredProviders.length === 0) {
-            UI.showNotification("Aucune clé API configurée à tester.", "warning");
+        const configuredProviders = providers.filter(p => p.key && p.key.length > 5);
+        const hasOllama = appState.ollamaEnabled && DOM.ollamaBaseUrl && DOM.ollamaBaseUrl.value.trim() !== '';
+
+        let totalTests = configuredProviders.length + (hasOllama ? 1 : 0);
+
+        if (totalTests === 0) {
+            UI.showNotification("Aucune configuration API ou locale à tester.", "warning");
             return;
         }
 
-        UI.showNotification(`Test de ${configuredProviders.length} connexion(s)...`, "info");
+        UI.showNotification(`Test de ${totalTests} connexion(s)...`, "info");
 
         for (const provider of configuredProviders) {
             // Valider chaque clé séquentiellement
@@ -624,6 +586,10 @@ export const SettingsUIManager = {
             );
             // Petit délai entre chaque test pour éviter le rate limiting
             await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        if (hasOllama) {
+            await this.validateOllamaConnection();
         }
 
         UI.showNotification("Test des connexions terminé.", "success");

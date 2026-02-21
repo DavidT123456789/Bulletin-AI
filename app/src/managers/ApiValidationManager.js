@@ -349,6 +349,7 @@ export const ApiValidationManager = {
 
         if (btnEl) {
             btnEl.classList.remove('btn-validated');
+            btnEl.innerHTML = 'Vérifier';
             if (input.value.trim()) {
                 btnEl.classList.add('btn-needs-validation');
             } else {

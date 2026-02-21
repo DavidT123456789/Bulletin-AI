@@ -1134,6 +1134,35 @@
 
 .api-key-section .api-key-actions {
     margin-bottom: 0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.api-key-section .api-key-actions .api-key-input-container {
+    flex: 1;
+    position: relative;
+}
+
+.api-key-section .api-key-actions .api-key-input-container input {
+    height: 34px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0 !important;
+    font-size: 13.5px;
+}
+
+.api-key-section .api-key-actions .btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: 34px;
+    min-width: 110px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0 !important;
+    justify-content: center;
+    align-items: center;
+    font-size: 13.5px;
 }
 
 .api-key-section .error-message {
@@ -1151,21 +1180,20 @@
 
 /* === Compact API Status Mode (Refactoring) === */
 .api-status-summary.compact-mode {
-    padding: 12px;
+    padding: 4px 0 0 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
     background-color: transparent;
-    /* Parent .settings-card provides the background */
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     border: none;
-    /* Remove inner border, parent card has one */
 }
 
 .api-status-header.compact {
     display: flex;
     gap: 10px;
     align-items: center;
+    /* Set to center to align perfectly on axis */
     margin-bottom: 0;
 }
 
@@ -1189,6 +1217,7 @@
     color: var(--text-primary);
     cursor: pointer;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    margin: 0 !important;
 }
 
 .compact-model-select:hover:not(:focus),
@@ -1209,6 +1238,7 @@
     border-radius: var(--radius-md);
     font-size: 1.1rem;
     transition: all var(--transition-fast);
+    margin: 0 !important;
 }
 
 /* High specificity to override generic .btn styles */
@@ -1218,105 +1248,6 @@
     box-shadow: none;
 }
 
-.api-status-pills-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.status-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    font-size: 0.8em;
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    user-select: none;
-    flex: 1;
-    justify-content: center;
-    min-width: 80px;
-}
-
-.status-pill:hover {
-    border-color: var(--text-primary);
-    background: var(--surface-color);
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--text-secondary);
-    opacity: 0.5;
-    transition: all var(--transition-fast);
-}
-
-/* Status variants for pill */
-.status-pill.active {
-    background: rgba(34, 197, 94, 0.08);
-    /* Very light green */
-    border-color: rgba(34, 197, 94, 0.3);
-    color: var(--success-color);
-}
-
-.status-pill.active .status-dot {
-    background-color: var(--success-color);
-    opacity: 1;
-    box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
-}
-
-.status-pill.warning {
-    background: rgba(245, 158, 11, 0.08);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: var(--warning-color);
-    /* Amber-600 */
-}
-
-.status-pill.warning .status-dot {
-    background-color: var(--warning-color);
-    opacity: 1;
-}
-
-.status-pill.invalid {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: var(--error-color);
-}
-
-.status-pill.invalid .status-dot {
-    background-color: var(--error-color);
-    opacity: 1;
-}
-
-.status-pill.pending {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    color: var(--primary-color);
-}
-
-.status-pill.pending .status-dot {
-    background-color: var(--primary-color);
-    opacity: 0.7;
-    animation: pulse-pending 2s ease-in-out infinite;
-}
-
-@keyframes pulse-pending {
-
-    0%,
-    100% {
-        opacity: 0.5;
-    }
-
-    50% {
-        opacity: 1;
-    }
-}
 
 .api-fallback-row {
     display: flex;
@@ -1326,6 +1257,7 @@
     margin-top: 4px;
     padding-top: 10px;
     border-top: 1px dashed var(--border-color);
+    margin-bottom: -10px;
 }
 
 .toggle-switch.small {

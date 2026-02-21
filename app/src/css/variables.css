@@ -92,6 +92,8 @@
     --warning-light: rgba(245, 158, 11, 0.12);
 
     --error-color: #ef4444;
+    --error-hover: #dc2626;
+    /* Red 600 */
     --error-rgb: 239, 68, 68;
     --error-light: rgba(239, 68, 68, 0.15);
 
@@ -195,18 +197,19 @@
     --modal-radius: var(--radius-lg);
     --modal-border: 1px solid var(--border-color);
     --modal-shadow: var(--shadow-lg);
-    
+
     /* Layout Tokens */
     --modal-width: 900px;
     --modal-max-height: 90vh;
-    --modal-padding: 16px; /* Default body padding */
+    --modal-padding: 16px;
+    /* Default body padding */
     --modal-padding-spacious: 24px;
-    
+
     /* Bar Tokens */
     --modal-header-height: 60px;
     --modal-header-padding: 16px 20px;
     --modal-header-border: 1px solid var(--border-color);
-    
+
     --modal-footer-height: 56px;
     --modal-footer-padding: 12px 20px;
     --modal-footer-border: 1px solid var(--border-color);

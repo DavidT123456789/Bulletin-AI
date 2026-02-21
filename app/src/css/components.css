@@ -66,6 +66,19 @@
     background: var(--error-hover, var(--error-color));
 }
 
+.btn-danger-outline {
+    background: transparent;
+    color: var(--error-color);
+    border: 1.5px solid rgba(239, 68, 68, 0.3);
+    box-shadow: none;
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: var(--error-color);
+    box-shadow: none;
+}
+
 .btn-success {
     background-color: var(--success-color);
     color: white;
@@ -807,18 +820,7 @@ input[type="number"]::-webkit-outer-spin-button {
     z-index: var(--z-normal);
 }
 
-.number-input-wrapper:hover::before {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08);
-}
 
-.number-input-wrapper:focus-within::before {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
-}
-
-/* Input interne - désactive TOUS les effets de hover/focus natifs */
 .number-input-wrapper input[type="number"] {
     flex: 1;
     min-width: 50px;
@@ -984,8 +986,8 @@ input[type="number"]::-webkit-outer-spin-button {
 .threshold-item-compact {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .threshold-item-compact .threshold-label {
