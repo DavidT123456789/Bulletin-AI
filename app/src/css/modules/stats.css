@@ -332,7 +332,9 @@
     /* Use minmax with 260px min to prevent cards from shrinking too much */
     grid-template-columns: repeat(3, minmax(260px, 1fr));
     gap: var(--space-5);
-    margin-bottom: var(--space-5);
+    margin: -24px -24px calc(var(--space-5) - 24px) -24px;
+    padding: 24px 24px 28px 24px;
+    /* Generous padding to prevent shadow clipping + bottom scrollbar space */
     /* Enable horizontal scroll when cards can't fit at min-width */
     overflow-x: auto;
     /* Smooth scrolling on mobile */
@@ -340,8 +342,6 @@
     /* Subtle scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
-    /* Padding for scroll shadow on edges */
-    padding-bottom: 4px;
 }
 
 /* Hide scrollbar when not needed (desktop) */
@@ -375,11 +375,10 @@
         scroll-snap-type: x mandatory;
         gap: 16px;
         grid-template-columns: none;
-        padding-bottom: 12px;
-        /* Reduced from 24px */
-        margin-bottom: 0;
-        /* Removing excess margin */
-        padding-right: 0;
+        padding: 8px 16px 16px 16px;
+        /* Space for shadow + bottom scroll area */
+        /* Full-bleed strategy on mobile so shadows aren't cut */
+        margin: 0 -16px 0 -16px;
         /* No end padding needed for full width */
 
         /* Hide scrollbar */

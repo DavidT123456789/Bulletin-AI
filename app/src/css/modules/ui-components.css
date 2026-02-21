@@ -264,12 +264,15 @@
     width: 24px;
     text-align: center;
     font-size: 1.2em;
-    transition: transform var(--transition-fast);
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+    opacity: 0.55;
+    /* Soften visual weight for bold icons */
 }
 
 .ui-tabs-btn:hover iconify-icon,
 .ui-tabs-btn.active iconify-icon {
     transform: scale(1.1);
+    opacity: 1;
 }
 
 .ui-tabs-action-btn {

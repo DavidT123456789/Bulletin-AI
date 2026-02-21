@@ -74,39 +74,50 @@
 /* --- Section Header (centered intro) --- */
 /* --- Section Header (Styled Intro Box) --- */
 .help-section-header {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.04) 0%, rgba(var(--primary-color-rgb), 0.08) 100%);
+    background: rgba(var(--primary-color-rgb), 0.05);
+    /* Softer blue banner */
     border: 1px solid rgba(var(--primary-color-rgb), 0.15);
-    border-radius: var(--radius-lg);
-    padding: 16px 20px;
+    border-radius: 16px;
+    /* Smooth rounded corners */
+    padding: 20px;
     margin-bottom: 24px;
     display: flex;
-    gap: 16px;
-    align-items: center;
-    color: var(--text-primary);
+    gap: 12px;
+    align-items: flex-start;
+    /* Top align for better text wrapping */
+}
+
+[data-theme="dark"] .help-section-header {
+    background: rgba(var(--primary-color-rgb), 0.08);
 }
 
 .help-section-header p {
     margin: 0;
-    font-size: 1em;
-    line-height: 1.5;
-    color: var(--text-secondary);
+    font-size: 0.95em;
+    /* Slightly smaller text for better proportion */
+    line-height: 1.6;
+    /* Relaxed leading for readability */
+    color: #1e3a8a;
+    /* Tailwind blue-900 */
     flex: 1;
     text-align: left;
-    /* Force left align */
+}
+
+[data-theme="dark"] .help-section-header p {
+    color: #bfdbfe;
+    /* Tailwind blue-200 for dark mode */
 }
 
 .help-section-icon {
-    font-size: 1.3em;
+    font-size: 1.25em;
+    /* 20px */
     color: var(--primary-color);
     flex-shrink: 0;
-
-    /* Badge Style */
+    margin-top: 2px;
+    /* Slight offset to align with first text line */
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
 }
 
 /* --- Tip / Info Box --- */
