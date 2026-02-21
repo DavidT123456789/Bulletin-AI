@@ -1690,13 +1690,17 @@
                                                 sélectionné...</small>
                                         </div>
 
-                                        <details class="ui-accordion" id="apiKeysAccordion">
-                                            <summary><iconify-icon class="iconify-inline"
+                                        <!-- Accordéon retiré pour un accès direct -->
+                                        <div id="apiKeysAccordion" style="margin-top: 16px;">
+                                            <h4
+                                                style="margin-bottom: 12px; font-size: 0.95em; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                                                <iconify-icon class="iconify-inline"
                                                     icon="solar:key-bold"></iconify-icon>
-                                                Gérer mes clés API</summary>
-                                            <div class="ui-accordion-content">
-                                                <form class="ui-accordion-content-inner api-keys-container"
-                                                    action="javascript:void(0)" autocomplete="off">
+                                                Gestion des clés API
+                                            </h4>
+                                            <div>
+                                                <form class="api-keys-container" action="javascript:void(0)"
+                                                    autocomplete="off">
                                                     <div class="api-key-section" id="mistralApiKeyGroup">
                                                         <div class="api-key-header">
                                                             <span class="api-key-provider"><iconify-icon
@@ -1912,12 +1916,12 @@
                                                         </div>
                                                     </div>
                                                 </form>
-                                            </div> <!-- /ui-accordion-content-inner -->
-                                    </div> <!-- /ui-accordion-content -->
-                                    </details>
-                                </div> <!-- /help-step-body -->
-                            </div> <!-- /help-step-layout -->
-                        </div>
+                                            </div> <!-- /api-keys-container wrapper -->
+                                        </div> <!-- /apiKeysAccordion -->
+                                    </div> <!-- /help-step-body -->
+                                </div> <!-- /help-step-layout -->
+                            </div> <!-- /help-step-card -->
+                        </div> <!-- /settings-engine -->
                         <div id="settings-preferences" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon"><iconify-icon icon="solar:tuning-2-bold"></iconify-icon>

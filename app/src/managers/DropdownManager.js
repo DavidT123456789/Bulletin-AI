@@ -241,17 +241,15 @@ export const DropdownManager = {
             if (selectedOption.parentNode && selectedOption.parentNode.tagName === 'OPTGROUP') {
                 const config = this.getProviderFromLabel(selectedOption.parentNode.label);
                 if (config) {
-                    // Combine styles: margin-right for spacing + provider specific style (color)
                     const baseStyle = config.style || '';
-                    const combinedStyle = `margin-right: 8px; ${baseStyle}`;
-                    iconHtml = `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}" style="${combinedStyle}"></iconify-icon>`;
+                    iconHtml = `<iconify-icon icon="${config.icon}" class="provider-icon ${config.class}" style="${baseStyle}"></iconify-icon>`;
                 }
             }
 
-            valueSpan.innerHTML = iconHtml + selectedOption.textContent;
+            valueSpan.innerHTML = `${iconHtml}<span class="value-text">${selectedOption.textContent}</span>`;
             valueSpan.classList.remove('placeholder');
         } else {
-            valueSpan.textContent = 'Sélectionner...';
+            valueSpan.innerHTML = '<span class="value-text">Sélectionner...</span>';
             valueSpan.classList.add('placeholder');
         }
 

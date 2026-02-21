@@ -62,6 +62,14 @@
 
 .custom-dropdown-value {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.custom-dropdown-value .value-text {
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -163,8 +163,6 @@ export const SettingsModalListeners = {
         const openApiKeysBtn = document.getElementById('openApiKeysAccordionBtn');
         if (openApiKeysBtn) {
             openApiKeysBtn.addEventListener('click', () => {
-                const accordion = document.getElementById('apiKeysAccordion');
-                if (accordion) accordion.open = true;
                 // Use centralized highlight utility
                 UI.highlightSettingsElement('apiKeysAccordion', {
                     tab: 'advanced',
@@ -186,9 +184,6 @@ export const SettingsModalListeners = {
             const card = document.getElementById(cardId);
             if (card) {
                 card.addEventListener('click', () => {
-                    const accordion = document.getElementById('apiKeysAccordion');
-                    if (accordion) accordion.open = true;
-
                     // Use centralized highlight utility for consistent behavior
                     const inputId = `${provider}ApiKey`;
                     UI.highlightSettingsElement(inputId, {
@@ -231,8 +226,6 @@ export const SettingsModalListeners = {
 
         if (DOM.ollamaApiStatus) {
             DOM.ollamaApiStatus.addEventListener('click', () => {
-                const accordion = document.getElementById('apiKeysAccordion');
-                if (accordion) accordion.open = true;
                 // Use centralized highlight utility
                 UI.highlightSettingsElement('ollamaConfigGroup', {
                     tab: 'advanced',
@@ -679,7 +672,6 @@ export const SettingsModalListeners = {
                 previewPromptEl.textContent = prompts.appreciation;
                 previewPromptEl.classList.remove('placeholder');
             } catch (promptError) {
-                console.warn('Could not generate prompt preview:', promptError);
                 previewPromptEl.textContent = 'Erreur lors de la génération du prompt : ' + promptError.message;
             }
         }
@@ -780,7 +772,6 @@ export const SettingsModalListeners = {
                     previewPromptEl.textContent = prompts.appreciation;
                     previewPromptEl.classList.remove('placeholder');
                 } catch (promptError) {
-                    console.warn('Could not generate prompt preview:', promptError);
                     previewPromptEl.textContent = 'Erreur lors de la génération du prompt : ' + promptError.message;
                 }
             }
