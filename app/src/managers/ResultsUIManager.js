@@ -222,34 +222,30 @@ export const ResultsUIManager = {
 
         appState.filteredResults = filteredAndSorted;
 
-        // --- NEW LOGIC FOR PERIOD MISMATCH ---
-        let hasDataInCurrentPeriod = false;
-        let hasDataInOtherPeriods = false;
+        // --- PERIOD MISMATCH DETECTION ---
+        // Only flag a mismatch when data exists in the OTHER period system (semestre↔trimestre),
+        // NOT when data is in a different period of the SAME system (e.g. S1 when viewing S2).
+        const currentSystemPeriods = Utils.getPeriods(); // e.g. ['S1','S2'] or ['T1','T2','T3']
+        let hasDataInCurrentSystem = false;
+        let hasDataInOtherSystem = false;
 
         if (sourceResults.length > 0) {
             for (const r of sourceResults) {
                 const periods = r.studentData?.periods || {};
 
                 for (const [p, data] of Object.entries(periods)) {
-                    // Check if there is actual data
                     const hasDataInPeriod = data && ((typeof data.grade === 'number' && !isNaN(data.grade)) || (data.appreciation && data.appreciation.replace(/<[^>]*>/g, '').trim() !== ''));
                     if (hasDataInPeriod) {
-                        if (p === activePeriod) hasDataInCurrentPeriod = true;
-                        else hasDataInOtherPeriods = true;
+                        if (currentSystemPeriods.includes(p)) hasDataInCurrentSystem = true;
+                        else hasDataInOtherSystem = true;
                     }
                 }
 
-                // Fallback for legacy data
-                if (r.appreciation && r.appreciation.replace(/<[^>]*>/g, '').trim() !== '') {
-                    if (r.studentData?.currentPeriod === activePeriod) hasDataInCurrentPeriod = true;
-                    else hasDataInOtherPeriods = true;
-                }
-
-                if (hasDataInCurrentPeriod) break; // If we find data in current period, it's not a mismatch!
+                if (hasDataInCurrentSystem) break;
             }
         }
 
-        const isPeriodMismatch = !hasDataInCurrentPeriod && hasDataInOtherPeriods;
+        const isPeriodMismatch = !hasDataInCurrentSystem && hasDataInOtherSystem;
 
         // Handle period mismatch banner injection
         let bannerContainer = document.getElementById('period-mismatch-container');
