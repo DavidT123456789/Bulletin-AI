@@ -1128,9 +1128,8 @@ export const UI = {
      * Initialise les animations "Glider" pour les sélecteurs.
      */
     initGliders() {
-        // Exclude welcome modal selectors - they use standard CSS :checked/:active styles
-        // This avoids the "popping" effect when navigating between steps
-        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .ui-segmented-control:not(#welcomeModal .ui-segmented-control)');
+        // Initialisation standard pour tous les segmented controls
+        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .ui-segmented-control');
 
         // Use a shared ResizeObserver to handle font changes, modal reveals, and other layout shifts
         if (!this._gliderObserver) {

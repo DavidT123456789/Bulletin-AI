@@ -725,7 +725,8 @@
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
+    /* Harmonized to ensure visibility in dark mode */
     transition: 0.3s;
     border-radius: var(--radius-xl);
     /* rond */

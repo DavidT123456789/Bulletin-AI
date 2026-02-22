@@ -575,6 +575,8 @@
 /* Welcome modal selector: styling for proper display */
 #welcomeModal .ui-segmented-control {
     justify-content: center;
+    width: max-content;
+    margin: 0 auto;
 }
 
 /* === WELCOME MODAL STABILIZATION === */

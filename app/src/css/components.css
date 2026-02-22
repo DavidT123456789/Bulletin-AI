@@ -802,38 +802,32 @@ input[type="number"]::-webkit-outer-spin-button {
     align-items: stretch;
     gap: 0;
     width: fit-content;
-    background: transparent;
-    border: none;
+    background: var(--bg-tertiary);
+    /* Utilise bg-tertiary pour un contraste plus doux (zinc-800 sombre, zinc-200 clair) */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
     transition: all var(--transition-fast);
     position: relative;
+    overflow: hidden;
+    /* Découpe parfaite de tout le contenu interne (boutons, input) */
 }
 
-/* Bordure globale simulée via un pseudo-élément sur le wrapper */
-.number-input-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-md);
-    pointer-events: none;
-    transition: all var(--transition-fast);
-    z-index: var(--z-normal);
+.number-input-wrapper:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
-
 
 .number-input-wrapper input[type="number"] {
     flex: 1;
-    min-width: 50px;
-    max-width: 70px;
+    min-width: 40px;
+    max-width: 60px;
     text-align: center;
-    padding: 10px 2px;
+    padding: 8px 0;
     font-weight: 600;
     font-size: 14px;
     font-variant-numeric: tabular-nums;
-    background: var(--bg-color) !important;
+    background: transparent !important;
     border: none !important;
-    border-top: 1.5px solid transparent !important;
-    border-bottom: 1.5px solid transparent !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     -moz-appearance: textfield;
@@ -842,17 +836,15 @@ input[type="number"]::-webkit-outer-spin-button {
     z-index: 0;
 }
 
-/* Désactive les effets de hover/focus sur l'input interne */
+/* Désactive les effets de hover/focus sur l'input interne pour déléguer au wrapper */
 .number-input-wrapper input[type="number"]:hover,
 .number-input-wrapper input[type="number"]:focus,
 .number-input-wrapper input[type="number"]:hover:not(:disabled):not(:focus),
 .number-input-wrapper input[type="number"]:focus:not(:disabled) {
     outline: none !important;
-    background: var(--bg-color) !important;
+    background: transparent !important;
     background-image: none !important;
     border: none !important;
-    border-top: 1.5px solid transparent !important;
-    border-bottom: 1.5px solid transparent !important;
     box-shadow: none !important;
     animation: none !important;
 }
@@ -862,10 +854,10 @@ input[type="number"]::-webkit-outer-spin-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    min-width: 36px;
+    width: 32px;
+    min-width: 32px;
     height: auto;
-    background: var(--bg-secondary);
+    background: transparent;
     border: none !important;
     color: var(--text-secondary);
     cursor: pointer;
@@ -876,26 +868,18 @@ input[type="number"]::-webkit-outer-spin-button {
     flex-shrink: 0;
     position: relative;
     z-index: 0;
-}
-
-/* Bouton gauche (décrement) - coins gauche arrondis */
-.number-spinner-btn.decrement {
-    border-radius: 14px 0 0 14px !important;
-}
-
-/* Bouton droit (increment) - coins droit arrondis - EXACTEMENT SYMÉTRIQUE */
-.number-spinner-btn.increment {
-    border-radius: 0 14px 14px 0 !important;
+    border-radius: 0 !important;
+    /* Coins gérés automatiquement par le débordement du parent */
 }
 
 .number-spinner-btn:hover {
-    background: var(--primary-color);
-    color: white;
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 .number-spinner-btn:active {
     transform: scale(0.95);
-    background: var(--primary-hover);
+    background: rgba(var(--primary-color-rgb), 0.15);
 }
 
 .number-spinner-btn:focus {
@@ -978,7 +962,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .evolution-thresholds-inline {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 24px;
     width: 100%;
 }
@@ -1003,11 +987,7 @@ input[type="number"]::-webkit-outer-spin-button {
     font-size: 0.9rem;
 }
 
-/* Better number input styling within compact thresholds */
-.threshold-item-compact .number-input-wrapper {
-    transform: scale(1.05);
-    /* Slightly bigger for touch targets */
-}
+/* Plus besoin d'ajustements spécifiques pour les touch targets car le slider est fin */
 
 /* Style sémantique pour les inputs des seuils d'évolution */
 #evolutionThresholdPositive {

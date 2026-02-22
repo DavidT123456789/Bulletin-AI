@@ -212,10 +212,10 @@ export const WelcomeManager = {
                 const providerSelectorEl = document.getElementById('welcomeProviderSelector');
                 if (providerSelectorEl) {
                     // First, ensure the glider element exists
-                    let glider = providerSelectorEl.querySelector('.selector-glider');
+                    let glider = providerSelectorEl.querySelector('.ui-glider');
                     if (!glider) {
                         glider = document.createElement('div');
-                        glider.className = 'selector-glider';
+                        glider.className = 'ui-glider';
                         glider.style.transition = 'none'; // No animation on first appearance
                         providerSelectorEl.prepend(glider);
                         providerSelectorEl.classList.add('has-glider');

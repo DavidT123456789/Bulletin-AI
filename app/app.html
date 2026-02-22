@@ -2030,7 +2030,7 @@
                                     <div class="help-step-body" style="width: 100%;">
                                         <strong>Sauvegarde Cloud (Google Drive)</strong>
                                         <div class="setting-row mt-2"
-                                            style="padding: 0; background: transparent; border: none; flex-direction: column;"
+                                            style="padding: 0; background: transparent; border: none; flex-direction: column; align-items: flex-start;"
                                             id="cloudSyncSection">
                                             <p class="setting-description mb-2" style="margin-top: 0;">
                                                 Sauvegardez ou restaurez vos données sur votre espace Google Drive
@@ -2128,11 +2128,13 @@
                                                             de votre configuration (sans élèves).</span>
                                                     </div>
                                                     <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                                        <button class="btn btn-ghost btn-small" id="exportSettingsBtn">
+                                                        <button class="btn btn-secondary btn-small"
+                                                            id="exportSettingsBtn">
                                                             <iconify-icon class="iconify-inline"
                                                                 icon="solar:export-bold"></iconify-icon> Exporter
                                                         </button>
-                                                        <button class="btn btn-ghost btn-small" id="importSettingsBtn">
+                                                        <button class="btn btn-secondary btn-small"
+                                                            id="importSettingsBtn">
                                                             <iconify-icon icon="solar:import-bold"></iconify-icon>
                                                             Importer
                                                         </button>
@@ -2265,7 +2267,7 @@
 
                 <div id="import-strategy-container" class="import-strategy-container"
                     style="display: none; margin-bottom: 25px;">
-                    <div class="ui-segmented-control compact">
+                    <div class="ui-segmented-control">
                         <input type="radio" id="strategyMerge" name="importStrategy" value="merge" checked>
                         <label for="strategyMerge" class="ui-segment tooltip"
                             data-tooltip="Ajoute les nouveaux, met à jour les existants et marque les absents. Recommandé.">Mettre
@@ -2400,8 +2402,7 @@
                                     <div class="help-step-body">
                                         <strong>Choisir votre fournisseur</strong>
                                         <div class="help-provider-hero">
-                                            <div class="ui-segmented-control compact has-glider"
-                                                id="helpProviderSelector">
+                                            <div class="ui-segmented-control has-glider" id="helpProviderSelector">
                                                 <input type="radio" id="helpProviderMistral" name="helpProvider"
                                                     value="mistral" checked>
                                                 <label for="helpProviderMistral" class="ui-segment">
@@ -3000,7 +3001,7 @@
 
                             <!-- Provider Selector - Centré -->
                             <div class="provider-selector-row">
-                                <div class="ui-segmented-control compact" id="welcomeProviderSelector">
+                                <div class="ui-segmented-control" id="welcomeProviderSelector">
                                     <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
                                         checked>
                                     <label for="providerMistral" class="ui-segment">
