@@ -24,14 +24,15 @@ export const ResultsUIManager = {
     },
 
     repairMismatch() {
-        // Toggle period system between semestres and trimestres
         const currentSystem = appState.periodSystem;
         const newSystem = currentSystem === 'semestres' ? 'trimestres' : 'semestres';
+        const label = newSystem === 'semestres' ? 'Semestre' : 'Trimestre';
 
         const radio = document.querySelector(`input[name="periodSystemRadio"][value="${newSystem}"]`);
         if (radio) {
             radio.checked = true;
             radio.dispatchEvent(new Event('change'));
+            UI.showNotification(`Système basculé en mode ${label}. Vos données sont de retour.`, 'success');
         }
     },
 
@@ -313,7 +314,7 @@ export const ResultsUIManager = {
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
             // Let ListViewManager handle the empty state - it preserves the table header with search bar
-            ListViewManager.render(filteredAndSorted, DOM.resultsDiv, isPeriodMismatch);
+            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
         }
         else {
             // DON'T clear DOM here - let ListViewManager handle animation
@@ -325,7 +326,7 @@ export const ResultsUIManager = {
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
 
             // Liste + Focus UX: Utiliser ListViewManager au lieu des cartes individuelles
-            ListViewManager.render(filteredAndSorted, DOM.resultsDiv, isPeriodMismatch);
+            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
         }
         if (highlightId && highlightType === 'new') {
             // Liste + Focus: Cibler la ligne du tableau
