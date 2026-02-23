@@ -98,7 +98,7 @@ export const ApiValidationManager = {
                 }
             } else {
                 // Pour OpenAI, OpenRouter, Anthropic, Mistral: validation simple
-                let modelOverride = 'openai-gpt-3.5-turbo';
+                let modelOverride = 'openai-o3-mini';
                 if (provider === 'openrouter') {
                     modelOverride = 'deepseek/deepseek-chat';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
@@ -112,7 +112,7 @@ export const ApiValidationManager = {
                     }
                 } else if (provider === 'anthropic') {
                     // Anthropic uses claude-sonnet as default test model
-                    modelOverride = 'anthropic-claude-sonnet-4.5';
+                    modelOverride = 'anthropic-claude-sonnet-4.6';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                 } else if (provider === 'mistral') {
                     // Mistral uses small-latest as default test model
@@ -171,7 +171,7 @@ export const ApiValidationManager = {
                     const modelIds = models.map(m => m.name.replace('models/', ''));
 
                     // Check if we can fallback to a known working model
-                    const fallbackModel = 'gemini-2.0-flash';
+                    const fallbackModel = 'gemini-2.5-flash';
                     if (modelIds.includes(fallbackModel)) {
                         appState.currentAIModel = fallbackModel;
 
@@ -215,7 +215,7 @@ export const ApiValidationManager = {
                             // Le modèle n'est pas disponible - ce n'est pas un problème de quota
                             appState.apiKeyStatus[provider] = 'invalid';
                             SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-2.0-flash".`;
+                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-3-flash-preview".`;
                             errorEl.style.display = 'block';
                             errorEl.style.color = 'var(--error-color)';
                             inputEl.classList.add('input-error');

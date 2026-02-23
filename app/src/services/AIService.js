@@ -31,7 +31,7 @@ import { DOM } from '../utils/DOM.js';
 
 /**
  * @typedef {Object} GoogleModel
- * @property {string} name - Nom du modèle (ex: "models/gemini-1.5-flash")
+ * @property {string} name - Nom du modèle (ex: "models/gemini-2.5-flash")
  * @property {string} displayName - Nom d'affichage
  */
 
@@ -62,19 +62,17 @@ export const AIService = {
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
                 payload: (p, m) => {
                     // Mapping des modèles vers leurs identifiants OpenRouter
-                    // IDs vérifiés sur openrouter.ai - Janvier 2026
-                    // NOTE: La plupart des modèles :free partagent le même quota quotidien
+                    // IDs vérifiés sur openrouter.ai - Février 2026
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
-                        'claude-sonnet-4.5': 'anthropic/claude-3.5-sonnet',
+                        'claude-sonnet-4.6': 'anthropic/claude-sonnet-4.6',
                         // === GRATUITS ===
-                        'devstral-free': 'mistralai/devstral-2512:free',          // ⭐ Quota indépendant
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
                         // === PAYANTS ÉCONOMIQUES ===
-                        'ministral-3b': 'mistralai/ministral-3b-2512',             // ~0.00005$/requête, Mistral
-                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',          // Très économique
-                        'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
-                        'mistral-large': 'mistralai/mistral-large-2411'
+                        'ministral-3b': 'mistralai/ministral-3b-2512',
+                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
+                        'mistral-small': 'mistralai/mistral-small-3.2-24b-instruct',
+                        'mistral-large': 'mistralai/mistral-large-2512'
                     };
                     return {
                         model: modelMap[m] || 'deepseek/deepseek-chat',
@@ -114,7 +112,7 @@ export const AIService = {
                     'anthropic-version': '2023-06-01'
                 }),
                 payload: (p, m) => ({
-                    model: m.replace('anthropic-', ''), // ex: 'anthropic-claude-sonnet-4.5' → 'claude-sonnet-4.5'
+                    model: m.replace('anthropic-', ''), // ex: 'anthropic-claude-sonnet-4.6' → 'claude-sonnet-4.6'
                     messages: [{ role: 'user', content: p }],
                     max_tokens: 1024
                 }),
@@ -142,7 +140,7 @@ export const AIService = {
             if (!providerConfig) throw new Error("Fournisseur de validation inconnu.");
             const apiKey = providerConfig.apiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
-            const validationModel = modelOverride || 'gemini-2.0-flash';
+            const validationModel = modelOverride || 'gemini-2.5-flash';
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
             if (validationProvider === 'openai') payload.max_tokens = 1;

@@ -675,7 +675,7 @@ export const SettingsModalListeners = {
         }
 
         // Vérifier qu'une clé API est configurée (ou Ollama activé)
-        const currentModel = appState.currentAIModel || 'gemini-2.0-flash';
+        const currentModel = appState.currentAIModel || 'gemini-2.5-flash';
         let hasApiKey = false;
         let isOllama = currentModel.startsWith('ollama');
 

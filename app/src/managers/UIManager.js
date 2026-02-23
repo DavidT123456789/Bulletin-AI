@@ -920,8 +920,7 @@ export const UI = {
         }
 
         if (DOM.headerGenDashboard) {
-            // Tooltip on the whole pill (not just the model label sub-button)
-            const tooltip = `<strong>${modelName}</strong><br><span class="kbd-hint">Changer de modèle</span>`;
+            const tooltip = `<strong>${modelName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${appState.currentAIModel}</span>`;
 
             if (TooltipsUI && TooltipsUI.updateTooltip) {
                 TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);

@@ -498,7 +498,7 @@ export const SettingsUIManager = {
     /**
      * Identifie le fournisseur (ID) associé à un modèle donné.
      * Centralise la logique de détection pour éviter la duplication.
-     * @param {string} model - ID du modèle (ex: 'gemini-1.5-pro', 'ollama-llama3')
+     * @param {string} model - ID du modèle (ex: 'gemini-2.5-flash', 'ollama-llama3')
      * @returns {string} ID du provider (ex: 'google', 'ollama', 'openrouter')
      * @private
      */
@@ -640,14 +640,12 @@ export const SettingsUIManager = {
             // 1. Affiche le nom court depuis la config centralisée
             DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
 
-            // 2. Met à jour le tooltip avec le nom COMPLET et l'ID technique
+            // 2. Tooltip : description complète (identique au dropdown) + ID technique
             if (DOM.headerAiChip) {
-                // Simplification : on n'affiche que l'ID technique car le nom est déjà sur le bouton
-                // Utilisation de HTML pour le style (supporté par Tippy.js via allowHTML: true)
-                const tooltipContent = `Modèle ID : <span style="font-family: monospace;">${model}</span><br><span class="kbd-hint">Changer de modèle</span>`;
+                const displayName = MODEL_SHORT_NAMES[model] || model;
+                const tooltipContent = `<strong>${displayName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
                 DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
 
-                // Re-init tooltip content if needed
                 if (DOM.headerAiChip._tippy) {
                     DOM.headerAiChip._tippy.setContent(tooltipContent);
                 }

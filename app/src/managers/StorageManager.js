@@ -191,8 +191,24 @@ export const StorageManager = {
         }
 
         // Migration de modèles obsolètes vers la version stable actuelle
-        if (userSettings.api.currentAIModel === 'gemini-1.5-flash' || userSettings.api.currentAIModel === 'gemini-1.5-flash-001') {
-            userSettings.api.currentAIModel = 'gemini-2.0-flash';
+        const deprecatedModels = ['gemini-1.5-flash', 'gemini-1.5-flash-001', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3.1-flash'];
+        if (deprecatedModels.includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'gemini-2.5-flash';
+        }
+        // Migration Claude 4.5 → 4.6
+        if (userSettings.api.currentAIModel === 'anthropic-claude-sonnet-4.5') {
+            userSettings.api.currentAIModel = 'anthropic-claude-sonnet-4.6';
+        }
+        if (userSettings.api.currentAIModel === 'anthropic-claude-opus-4.5') {
+            userSettings.api.currentAIModel = 'anthropic-claude-opus-4.6';
+        }
+        // Migration Devstral free (déprécié 27 jan 2026)
+        if (userSettings.api.currentAIModel === 'devstral-free') {
+            userSettings.api.currentAIModel = 'llama-3.3-70b-free';
+        }
+        // Migration OpenAI legacy (GPT-4o retiré fév 2026)
+        if (['openai-gpt-4o', 'openai-gpt-3.5-turbo', 'openai-gpt-4-turbo'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'openai-o3-mini';
         }
     },
 
@@ -346,7 +362,7 @@ export const StorageManager = {
                     evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
                     massImportFormats: { trimestres: {}, semestres: {} },
                     currentSubject: 'MonStyle',
-                    currentAIModel: 'gemini-2.0-flash',
+                    currentAIModel: 'gemini-2.5-flash',
                     privacy: { ...DEFAULT_PRIVACY_SETTINGS },
                 });
 
