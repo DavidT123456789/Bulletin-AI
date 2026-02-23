@@ -998,6 +998,14 @@ export const UI = {
             provider = 'google';
             key = appState.googleApiKey;
             name = 'Google';
+        } else if (model.startsWith('mistral-direct')) {
+            provider = 'mistral';
+            key = appState.mistralApiKey;
+            name = 'Mistral';
+        } else if (model.startsWith('anthropic')) {
+            provider = 'anthropic';
+            key = appState.anthropicApiKey;
+            name = 'Anthropic';
         } else {
             provider = 'openrouter';
             key = appState.openrouterApiKey;

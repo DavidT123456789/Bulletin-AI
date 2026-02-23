@@ -4164,18 +4164,10 @@
     }
 
     /* List Table Mobile Adaptations */
-    .student-list-view {
-        /* Revert to radius-lg (desktop default) for consistency with stats cards */
-        /* border-radius: var(--radius-md);  <- REMOVED */
-
-        /* CRITICAL: Allow horizontal scroll on mobile */
-        overflow-x: auto;
-        overflow-y: hidden;
-        /* Fix double scrollbar */
-        -webkit-overflow-scrolling: touch;
-        /* Bottom padding to avoid FAB overlap - removed as it created abnormal space inside card */
-        padding-bottom: 0;
-    }
+    /* Note: At ≤600px, student-list.css ≤768px already sets overflow: visible
+       for card layout mode. Do NOT re-override with overflow-x: auto here,
+       as it clips box-shadows on all cards. Horizontal scroll is only needed
+       in table mode (handled by ≤900px rule above). */
 
     .student-list-table {
         /* Ensure table doesn't shrink - removed min-width: 500px to avoid horizontal scroll in card view */
@@ -4366,7 +4358,13 @@
         min-width: 35px;
     }
 
-    /* Ensure the table container scrolls if needed specifically here */
+    /* Horizontal table scroll: only needed in TABLE mode (>768px).
+       Below 768px, student-list.css switches to card layout (display: block) and sets
+       overflow: visible — re-overriding it clips card shadows. */
+}
+
+/* Table horizontal scroll: ONLY in table mode (769-900px range) */
+@media (min-width: 769px) and (max-width: 900px) {
     .student-list-view {
         overflow-x: auto;
     }

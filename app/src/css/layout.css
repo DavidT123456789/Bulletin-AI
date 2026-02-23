@@ -100,18 +100,17 @@
 .main-content {
     flex-grow: 1;
     min-height: 0;
-    /* Scroll happens here now */
     overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
 
-    /* Padding-top: fixed 56px header + content spacing */
-    padding: calc(56px + var(--space-5)) var(--space-8) var(--space-6);
-    /* MAX-WIDTH RETIRÉ : Pleine largeur disponible */
+    /* --content-padding-x: single source of truth for horizontal padding.
+       Consumed by full-bleed children (e.g. stats carousel) to stay in sync. */
+    --content-padding-x: var(--space-8);
+    padding: calc(56px + var(--space-5)) var(--content-padding-x) var(--space-6);
     max-width: none;
     width: 100%;
     margin: 0;
-    /* Bento Grid Interne pour le contenu */
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
@@ -1313,8 +1312,8 @@
 /* Tablette (max-width: 1024px) */
 @media (max-width: 1024px) {
     .main-content {
-        padding: var(--space-6) var(--space-6);
-        /* Fixed 56px header + spacing */
+        --content-padding-x: var(--space-6);
+        padding: var(--space-6) var(--content-padding-x);
         padding-top: calc(56px + var(--space-5));
     }
 
@@ -1332,8 +1331,8 @@
     }
 
     .main-content {
-        padding: 16px;
-        /* Fixed 56px header + 16px spacing */
+        --content-padding-x: 16px;
+        padding: 16px var(--content-padding-x);
         padding-top: calc(56px + 16px);
     }
 
@@ -1410,8 +1409,8 @@
 /* Mobile (max-width: 480px) */
 @media (max-width: 480px) {
     .main-content {
-        padding: 12px;
-        /* Fixed 56px header + 12px spacing */
+        --content-padding-x: 12px;
+        padding: 12px var(--content-padding-x);
         padding-top: calc(56px + 12px);
     }
 
