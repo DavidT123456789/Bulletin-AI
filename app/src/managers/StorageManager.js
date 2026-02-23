@@ -206,6 +206,10 @@ export const StorageManager = {
         if (userSettings.api.currentAIModel === 'devstral-free') {
             userSettings.api.currentAIModel = 'llama-3.3-70b-free';
         }
+        // Migration ancien Gemini 3 Pro
+        if (userSettings.api.currentAIModel === 'gemini-3-pro') {
+            userSettings.api.currentAIModel = 'gemini-3.1-pro-preview';
+        }
         // Migration OpenAI legacy (GPT-4o retiré fév 2026)
         if (['openai-gpt-4o', 'openai-gpt-3.5-turbo', 'openai-gpt-4-turbo'].includes(userSettings.api.currentAIModel)) {
             userSettings.api.currentAIModel = 'openai-o3-mini';

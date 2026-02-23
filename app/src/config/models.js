@@ -132,6 +132,26 @@ export const MODEL_SHORT_NAMES = {
 };
 
 /**
+ * Noms complets et précis des modèles pour affichage détaillé (tooltips)
+ */
+export const MODEL_PRECISE_NAMES = {
+    'gemini-2.5-flash': 'Gemini 2.5 Flash',
+    'gemini-2.5-pro': 'Gemini 2.5 Pro',
+    'gemini-3-flash-preview': 'Gemini 3 Flash Preview',
+    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro Preview',
+    'openai-o3-mini': 'OpenAI o3 Mini',
+    'openai-gpt-4o-mini': 'OpenAI GPT-4o Mini',
+    'llama-3.3-70b-free': 'Llama 3.3 70B Instruct',
+    'mistral-direct-large-latest': 'Mistral Large 3',
+    'mistral-direct-small-latest': 'Mistral Small 3.1',
+    'ministral-3b': 'Ministral 3B',
+    'claude-sonnet-4.6': 'Claude 3.5 Sonnet (v4.6)',
+    'anthropic-claude-sonnet-4.6': 'Claude 3.5 Sonnet (v4.6)',
+    'anthropic-claude-opus-4.6': 'Claude 3 Opus (v4.6)',
+    'openrouter': 'DeepSeek V3 (via OpenRouter)',
+};
+
+/**
  * Configuration Ollama
  */
 export const OLLAMA_CONFIG = {

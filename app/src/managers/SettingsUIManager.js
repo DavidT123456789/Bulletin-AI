@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, FALLBACK_CONFIG } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_PRECISE_NAMES, FALLBACK_CONFIG } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -640,10 +640,10 @@ export const SettingsUIManager = {
             // 1. Affiche le nom court depuis la config centralisée
             DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
 
-            // 2. Tooltip : description complète (identique au dropdown) + ID technique
+            // 2. Tooltip : description complète + ID technique
             if (DOM.headerAiChip) {
-                const displayName = MODEL_SHORT_NAMES[model] || model;
-                const tooltipContent = `<strong>${displayName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
+                const preciseName = MODEL_PRECISE_NAMES[model] || MODEL_SHORT_NAMES[model] || model;
+                const tooltipContent = `<strong>${preciseName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
                 DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
 
                 if (DOM.headerAiChip._tippy) {

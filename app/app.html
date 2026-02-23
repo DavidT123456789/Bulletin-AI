@@ -1547,23 +1547,19 @@
                                                     <select id="aiModelSelect" class="compact-model-select">
                                                         <optgroup label="🐱 Mistral AI — GRATUIT 🇫🇷 (1B tokens/mois)">
                                                             <option value="mistral-direct-small-latest">Mistral Small
-                                                                3.1
-                                                                (Recommandé)
-                                                            </option>
-                                                            <option value="mistral-direct-large-latest">Mistral Large 3
-                                                                (Puissant)
-                                                            </option>
+                                                                (Dernier modèle, Recommandé)</option>
+                                                            <option value="mistral-direct-large-latest">Mistral Large
+                                                                (Dernier modèle, Puissant)</option>
                                                         </optgroup>
                                                         <optgroup label="💚 Google Gemini — QUOTA GRATUIT">
-                                                            <option value="gemini-3-flash-preview">Gemini 3 Flash
-                                                                (Rapide)
-                                                            </option>
                                                             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Stable)
                                                             </option>
+                                                            <option value="gemini-3-flash-preview">Gemini 3 Flash
+                                                                (Rapide)</option>
                                                             <option value="gemini-2.5-pro">Gemini 2.5 Pro (Équilibré)
                                                             </option>
-                                                            <option value="gemini-3-pro">Gemini 3 Pro (Puissant)
-                                                            </option>
+                                                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro
+                                                                (Puissant)</option>
                                                         </optgroup>
                                                         <optgroup label="💚 OpenRouter — QUOTA GRATUIT">
                                                             <option value="llama-3.3-70b-free">Llama 3.3 70B (Puissant -
@@ -3032,7 +3028,7 @@
                             <!-- API Key Input -->
                             <div class="welcome-api-key-group">
                                 <input type="password" id="welcomeApiKeyInput"
-                                    placeholder="Collez votre clé API Mistral ici...">
+                                    placeholder="Collez votre clé API Mistral ici..." autocomplete="new-password">
                                 <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                             </div>
                             <div class="error-message" id="welcomeApiKeyError"
