@@ -283,8 +283,7 @@ export const GeneralListeners = {
     setupCloudListeners(addClickListener, closeMenu) {
         const cloudSaveBtn = document.getElementById('cloudSaveMenuBtn');
         if (cloudSaveBtn) {
-            // Always show the button
-            cloudSaveBtn.style.display = 'flex';
+            // Visibility is managed by SyncService._updateCloudIndicator()
 
             // Update last save time on menu open
             DOM.headerMenuBtn?.addEventListener('click', async () => {

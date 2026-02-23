@@ -211,7 +211,8 @@ export const SyncService = {
 
             const currentConfig = config[state] || config.local;
 
-            if (state === 'disconnected' && !this._wasConfigured) {
+            // Hide cloud buttons entirely when no provider was ever configured
+            if (!this._wasConfigured && (state === 'disconnected' || state === 'local')) {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
                 if (reconnectBtn) reconnectBtn.style.display = 'none';
@@ -459,8 +460,9 @@ export const SyncService = {
                 return false;
             }
 
-            // Save preference
+            // Save preference and mark as configured
             localStorage.setItem('bulletin_sync_provider', providerName);
+            this._wasConfigured = true;
             this._updateCloudIndicator('connected');
 
             // Check remote status immediately
@@ -484,6 +486,7 @@ export const SyncService = {
         this._provider = null;
         this.currentProviderName = null;
         this.remoteSyncTime = null;
+        this._wasConfigured = false;
         localStorage.removeItem('bulletin_sync_provider');
         this._updateCloudIndicator('disconnected');
     },
