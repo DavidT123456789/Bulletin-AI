@@ -616,7 +616,7 @@ export const TrombinoscopeManager = {
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="colsSlider" 
-                                       min="1" max="8" value="${this._gridCols}">
+                                       min="1" max="12" value="${this._gridCols}">
                             </div>
                             <span class="slider-value" id="colsValue">${this._gridCols}</span>
                         </div>
@@ -626,7 +626,7 @@ export const TrombinoscopeManager = {
                         <div class="slider-group">
                             <div class="slider-track">
                                 <input type="range" class="control-slider" id="rowsSlider" 
-                                       min="1" max="10" value="${this._gridRows}">
+                                       min="1" max="12" value="${this._gridRows}">
                             </div>
                             <span class="slider-value" id="rowsValue">${this._gridRows}</span>
                         </div>
@@ -835,15 +835,19 @@ export const TrombinoscopeManager = {
 
     _createDefaultGrid() {
         const students = appState.filteredResults || [];
-        const count = Math.min(students.length, 12);
+        const count = students.length || 8;
 
-        if (count <= 4) {
-            this._createGrid(count, 1);
-        } else if (count <= 8) {
-            this._createGrid(4, 2);
-        } else {
-            this._createGrid(4, 3);
-        }
+        // Smart column distribution: aim for ~4-6 columns, scale up for large classes
+        let cols;
+        if (count <= 4) cols = count;
+        else if (count <= 12) cols = 4;
+        else if (count <= 24) cols = 6;
+        else cols = Math.min(8, Math.ceil(Math.sqrt(count)));
+
+        const rows = Math.ceil(count / cols);
+        this._gridCols = cols;
+        this._gridRows = rows;
+        this._createGrid(cols, rows);
     },
 
     _createGrid(cols, rows, preserveReference = false) {
