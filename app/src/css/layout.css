@@ -1007,6 +1007,23 @@
     color: var(--text-tertiary);
 }
 
+/* Bouton Connecter - Découverte pour nouveaux utilisateurs */
+.cloud-connect-item {
+    font-weight: 500;
+}
+
+.cloud-connect-item iconify-icon {
+    font-size: 18px;
+    min-width: 24px;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.cloud-connect-item.saving {
+    cursor: wait;
+    opacity: 0.7;
+}
+
 /* Bouton Reconnexion - Style warning */
 .cloud-reconnect-item {
     background-color: transparent;
@@ -1015,23 +1032,18 @@
 }
 
 .cloud-reconnect-item:hover {
-    /* Background managed by .menu-item:hover (standard gray) */
     color: var(--warning-hover) !important;
 }
 
-.cloud-reconnect-item i,
 .cloud-reconnect-item iconify-icon {
     color: var(--warning-color) !important;
     font-size: 18px;
-    /* Slightly larger for clarity */
     display: inline-flex;
-    /* Ensure visibility */
     min-width: 24px;
     justify-content: center;
     transition: color var(--transition-fast);
 }
 
-.cloud-reconnect-item:hover i,
 .cloud-reconnect-item:hover iconify-icon {
     color: var(--warning-hover) !important;
 }

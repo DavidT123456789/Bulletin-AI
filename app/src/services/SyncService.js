@@ -117,8 +117,6 @@ export const SyncService = {
         const wasOnline = this._isOnline;
         this._isOnline = isOnline;
 
-
-
         if (!isOnline) {
             if (this._wasConfigured || this.currentProviderName) {
                 this._updateCloudIndicator('local');
@@ -166,109 +164,96 @@ export const SyncService = {
      * @private
      */
     _updateCloudIndicator(state) {
-        // Delay to ensure DOM is ready
         setTimeout(() => {
-            // Target menu items
             const saveBtn = document.getElementById('cloudSaveMenuBtn');
             const loadBtn = document.getElementById('cloudLoadMenuBtn');
             const reconnectBtn = document.getElementById('cloudReconnectBtn');
+            const connectBtn = document.getElementById('cloudConnectBtn');
             const separator = document.getElementById('cloudSeparator');
 
             if (!saveBtn) return;
 
-            // Remove previous state classes
+            // Reset classes
             saveBtn.classList.remove('status-connected', 'status-expired', 'status-syncing', 'disabled');
             if (loadBtn) loadBtn.classList.remove('disabled');
 
-            // Labels and icons map
             const config = {
                 connected: {
                     icon: 'solar:cloud-check-bold',
                     label: 'Enregistrer (Cloud)',
-                    class: 'status-connected',
-                    disabled: false
+                    class: 'status-connected'
                 },
                 expired: {
                     icon: 'solar:cloud-warning-bold',
                     label: 'Enregistrer (Cloud)',
-                    class: 'status-expired',
-                    disabled: true
+                    class: 'status-expired'
                 },
                 syncing: {
                     icon: 'solar:spinner-bold-duotone',
                     label: 'Enregistrement...',
                     class: 'status-syncing',
-                    disabled: false,
                     spin: true
                 },
                 local: {
                     icon: 'solar:cloud-upload-bold',
                     label: 'Enregistrer (Cloud)',
-                    class: '',
-                    disabled: false
+                    class: ''
                 }
             };
 
             const currentConfig = config[state] || config.local;
 
-            // Hide cloud buttons entirely when no provider was ever configured
+            // --- First-time user: show only the Connect button ---
             if (!this._wasConfigured && (state === 'disconnected' || state === 'local')) {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
                 if (reconnectBtn) reconnectBtn.style.display = 'none';
-                if (separator) separator.style.display = 'none';
+                if (separator) separator.style.display = 'block';
+                if (connectBtn) connectBtn.style.display = 'flex';
                 return;
             }
 
+            // --- Configured user: hide Connect, show Save/Load ---
+            if (connectBtn) connectBtn.style.display = 'none';
             if (separator) separator.style.display = 'block';
 
-            saveBtn.style.display = 'grid'; // Maintain grid layout defined in CSS
+            saveBtn.style.display = 'grid';
             if (loadBtn) loadBtn.style.display = 'grid';
 
-            // Update Icon
+            // Update icon
             const iconEl = saveBtn.querySelector('iconify-icon');
             if (iconEl) {
                 iconEl.setAttribute('icon', currentConfig.icon);
-                if (currentConfig.spin) {
-                    iconEl.classList.add('rotate-icon');
-                } else {
-                    iconEl.classList.remove('rotate-icon');
-                }
+                iconEl.classList.toggle('rotate-icon', !!currentConfig.spin);
                 iconEl.style.color = '';
             }
 
-            // Update Label
+            // Update label
             const labelEl = saveBtn.querySelector('.cloud-save-label');
             if (labelEl) {
                 labelEl.textContent = currentConfig.label;
                 labelEl.style.color = '';
             }
 
-            // Handle disabled state for expired session
-            if (currentConfig.disabled) {
-                saveBtn.classList.add('disabled');
-                if (loadBtn) loadBtn.classList.add('disabled');
+            // Status class
+            if (currentConfig.class) {
+                saveBtn.classList.add(currentConfig.class);
             }
 
-            // Show/hide reconnect button with dynamic provider name
+            // Reconnect button (expired state only)
             if (reconnectBtn) {
                 if (state === 'expired') {
                     reconnectBtn.style.display = 'flex';
-                    // Update label with provider name
                     const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-                    const providerLabels = {
-                        'google': 'Google Drive',
-                        'dropbox': 'Dropbox'
-                    };
-                    const label = providerLabels[providerName] || 'Cloud';
-                    const labelEl = reconnectBtn.querySelector('span');
-                    if (labelEl) labelEl.textContent = `Reconnecter ${label}`;
+                    const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
+                    const spanEl = reconnectBtn.querySelector('span');
+                    if (spanEl) spanEl.textContent = `Reconnecter ${label}`;
                 } else {
                     reconnectBtn.style.display = 'none';
                 }
             }
 
-            // Update Time Hint (only if connected/syncing)
+            // Save time hint
             const timeHint = saveBtn.querySelector('#cloudSaveTimeHint');
             if (timeHint) {
                 if (state === 'connected' && this.lastSyncTime) {
@@ -279,7 +264,7 @@ export const SyncService = {
                 }
             }
 
-            // Update Recover Button Time Hint
+            // Load time hint
             const loadTimeHint = document.getElementById('cloudLoadTimeHint');
             if (loadTimeHint) {
                 if (state === 'connected' && this.remoteSyncTime) {
@@ -289,12 +274,6 @@ export const SyncService = {
                     loadTimeHint.style.display = 'none';
                 }
             }
-
-            // Add status class for potential CSS styling
-            if (currentConfig.class) {
-                saveBtn.classList.add(currentConfig.class);
-            }
-
         }, 100);
     },
 

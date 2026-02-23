@@ -282,178 +282,175 @@ export const GeneralListeners = {
      */
     setupCloudListeners(addClickListener, closeMenu) {
         const cloudSaveBtn = document.getElementById('cloudSaveMenuBtn');
-        if (cloudSaveBtn) {
-            // Visibility is managed by SyncService._updateCloudIndicator()
+        if (!cloudSaveBtn) return;
 
-            // Update last save time on menu open
-            DOM.headerMenuBtn?.addEventListener('click', async () => {
-                const hintEl = document.getElementById('cloudSaveTimeHint');
+        // --- Helper: ensure connection, auto-reconnect if expired ---
+        const ensureConnected = async (SyncService) => {
+            if (SyncService.isConnected()) return true;
+            const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+            return SyncService.connect(providerName);
+        };
+
+        // --- "Connecter Google Drive" button (first-time users) ---
+        const connectBtn = document.getElementById('cloudConnectBtn');
+        if (connectBtn) {
+            connectBtn.addEventListener('click', async () => {
                 try {
+                    connectBtn.classList.add('saving');
                     const { SyncService } = await import('../../services/SyncService.js');
-                    if (SyncService.isConnected()) {
-                        const lastSync = localStorage.getItem('bulletin_last_sync');
-                        if (hintEl && lastSync) {
-                            const date = new Date(parseInt(lastSync));
-                            hintEl.textContent = `Dernière : ${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-                        } else if (hintEl) {
-                            hintEl.textContent = 'Prêt à sauvegarder';
-                        }
-                    } else if (hintEl) {
-                        hintEl.textContent = 'Connexion requise';
+                    const connected = await SyncService.connect('google');
+                    if (connected) {
+                        UI.showNotification('Connecté à Google Drive', 'success');
+                        closeMenu();
+                    } else {
+                        UI.showNotification('Connexion annulée.', 'warning');
                     }
-                } catch {
-                    if (hintEl) hintEl.textContent = 'Connexion requise';
+                } catch (error) {
+                    UI.showNotification('Erreur de connexion : ' + error.message, 'error');
+                } finally {
+                    connectBtn.classList.remove('saving');
                 }
             });
+        }
 
-            // Handle save click - connect if needed, then save
-            cloudSaveBtn.addEventListener('click', async () => {
-                const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
+        // --- Update time hints on menu open ---
+        DOM.headerMenuBtn?.addEventListener('click', async () => {
+            try {
+                const { SyncService } = await import('../../services/SyncService.js');
+                const saveHint = document.getElementById('cloudSaveTimeHint');
+                const loadHint = document.getElementById('cloudLoadTimeHint');
+
+                if (SyncService.isConnected()) {
+                    const lastSync = localStorage.getItem('bulletin_last_sync');
+                    if (saveHint && lastSync) {
+                        const date = new Date(parseInt(lastSync));
+                        saveHint.textContent = `Dernière : ${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                    } else if (saveHint) {
+                        saveHint.textContent = 'Prêt à sauvegarder';
+                    }
+
+                    // Refresh remote status for Load hint
+                    if (loadHint) {
+                        await SyncService.checkRemoteStatus();
+                    }
+                }
+            } catch { /* Ignore */ }
+        });
+
+        // --- Save button: auto-reconnect then save ---
+        cloudSaveBtn.addEventListener('click', async () => {
+            const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
+            const originalLabel = labelEl?.textContent;
+
+            try {
+                const { SyncService } = await import('../../services/SyncService.js');
+                cloudSaveBtn.classList.add('saving');
+
+                // Auto-reconnect if needed
+                if (!SyncService.isConnected()) {
+                    if (labelEl) labelEl.textContent = 'Connexion...';
+                    const connected = await ensureConnected(SyncService);
+                    if (!connected) {
+                        UI.showNotification('Connexion annulée.', 'warning');
+                        return;
+                    }
+                }
+
+                if (labelEl) labelEl.textContent = 'Enreg...';
+                await SyncService.saveToCloud();
+
+                const hintEl = document.getElementById('cloudSaveTimeHint');
+                if (hintEl) {
+                    const now = new Date();
+                    hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+
+                UI.showNotification('Données envoyées sur le Cloud !', 'success');
+                closeMenu();
+            } catch (error) {
+                UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+            } finally {
+                cloudSaveBtn.classList.remove('saving');
+                if (labelEl) labelEl.textContent = originalLabel;
+            }
+        });
+
+        // --- Load button: auto-reconnect then load ---
+        const cloudLoadBtn = document.getElementById('cloudLoadMenuBtn');
+        if (cloudLoadBtn) {
+            cloudLoadBtn.addEventListener('click', async () => {
+                const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
                 const originalLabel = labelEl?.textContent;
 
                 try {
                     const { SyncService } = await import('../../services/SyncService.js');
 
-                    // If not connected, connect first
                     if (!SyncService.isConnected()) {
-                        cloudSaveBtn.classList.add('saving');
-                        if (labelEl) labelEl.textContent = 'Connexion';
+                        const connected = await ensureConnected(SyncService);
+                        if (!connected) return;
+                    }
 
-                        const connected = await SyncService.connect('google');
-                        if (!connected) {
-                            UI.showNotification('Connexion annulée.', 'warning');
-                            return;
+                    UI.showCustomConfirm(
+                        "⚠️ ÉCRASER LES DONNÉES LOCALES ?\n\nVous êtes sur le point de récupérer la sauvegarde du Cloud.\nCeci remplacera TOUTES vos données actuelles (élèves, paramètres) par celles du Cloud.\n\nCette action est irréversible.",
+                        async () => {
+                            try {
+                                cloudLoadBtn.classList.add('saving');
+                                if (labelEl) labelEl.textContent = 'Récupération...';
+
+                                const result = await SyncService.loadFromCloud();
+                                if (result.success) {
+                                    UI.showNotification('Données récupérées avec succès !', 'success');
+                                    setTimeout(() => window.location.reload(), 1000);
+                                } else {
+                                    UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
+                                }
+                                closeMenu();
+                            } catch (error) {
+                                UI.showNotification('Erreur de récupération : ' + error.message, 'error');
+                            } finally {
+                                cloudLoadBtn.classList.remove('saving');
+                                if (labelEl) labelEl.textContent = originalLabel;
+                            }
                         }
-
-                        // Update Settings UI if open
-                        const actionsBar = document.getElementById('cloudActionsBar');
-                        if (actionsBar) actionsBar.style.display = 'flex';
-
-                        // [FIX] Stop here. Do not auto-save after connection.
-                        UI.showNotification('Connecté à Google Drive', 'success');
-                        closeMenu();
-                        return;
-                    }
-
-                    // Now save
-                    cloudSaveBtn.classList.add('saving');
-                    if (labelEl) labelEl.textContent = 'Enreg...';
-
-                    await SyncService.saveToCloud();
-
-                    // Update timestamp
-                    const hintEl = document.getElementById('cloudSaveTimeHint');
-                    if (hintEl) {
-                        const now = new Date();
-                        hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-                    }
-
-                    UI.showNotification('Données envoyées sur le Cloud !', 'success');
-                    closeMenu();
+                    );
                 } catch (error) {
-                    console.error('Cloud save error:', error);
-                    UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
-                } finally {
-                    cloudSaveBtn.classList.remove('saving');
-                    if (labelEl) labelEl.textContent = originalLabel;
+                    console.error('Cloud load setup error:', error);
                 }
             });
+        }
 
-            // Handle load click
-            const cloudLoadBtn = document.getElementById('cloudLoadMenuBtn');
-            if (cloudLoadBtn) {
-                cloudLoadBtn.addEventListener('click', async () => {
-                    const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
-                    const originalLabel = labelEl?.textContent;
+        // --- Reconnect button ---
+        const reconnectBtn = document.getElementById('cloudReconnectBtn');
+        if (reconnectBtn) {
+            reconnectBtn.addEventListener('click', async () => {
+                const iconEl = reconnectBtn.querySelector('iconify-icon');
+                const originalIcon = iconEl?.getAttribute('icon');
 
-                    try {
-                        const { SyncService } = await import('../../services/SyncService.js');
-
-                        if (!SyncService.isConnected()) {
-                            const connected = await SyncService.connect('google');
-                            if (!connected) return;
-                        }
-
-                        UI.showCustomConfirm(
-                            "⚠️ ÉCRASER LES DONNÉES LOCALES ?\n\nVous êtes sur le point de récupérer la sauvegarde du Cloud.\nCeci remplacera TOUTES vos données actuelles (élèves, paramètres) par celles du Cloud.\n\nCette action est irréversible.",
-                            async () => {
-                                try {
-                                    cloudLoadBtn.classList.add('saving');
-                                    if (labelEl) labelEl.textContent = 'Récupération...';
-
-                                    const result = await SyncService.loadFromCloud();
-                                    if (result.success) {
-                                        UI.showNotification('Données récupérées avec succès !', 'success');
-                                        setTimeout(() => window.location.reload(), 1000);
-                                    } else {
-                                        UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
-                                    }
-                                    // Normally close menu, but we might reload
-                                    closeMenu();
-                                } catch (error) {
-                                    console.error('Cloud load error:', error);
-                                    UI.showNotification('Erreur de récupération : ' + error.message, 'error');
-                                } finally {
-                                    cloudLoadBtn.classList.remove('saving');
-                                    if (labelEl) labelEl.textContent = originalLabel;
-                                }
-                            }
-                        );
-
-                    } catch (error) {
-                        console.error('Cloud load setup error:', error);
+                try {
+                    reconnectBtn.classList.add('saving');
+                    if (iconEl) {
+                        iconEl.setAttribute('icon', 'solar:spinner-bold-duotone');
+                        iconEl.classList.add('icon-spin');
                     }
-                });
-            }
 
-            // Handle reconnect button click
-            const reconnectBtn = document.getElementById('cloudReconnectBtn');
-            if (reconnectBtn) {
-                reconnectBtn.addEventListener('click', async () => {
-                    // Support both new iconify-icon and legacy i tags
-                    const iconEl = reconnectBtn.querySelector('iconify-icon') || reconnectBtn.querySelector('i');
-                    const isIconify = iconEl?.tagName.toLowerCase() === 'iconify-icon';
+                    const { SyncService } = await import('../../services/SyncService.js');
+                    const success = await SyncService.reconnect({ skipIndicator: true });
 
-                    // Capture original state
-                    const originalState = isIconify ? iconEl.getAttribute('icon') : (iconEl?.className || 'fas fa-plug');
-
-                    try {
-                        // Show loading state on THIS button
-                        reconnectBtn.classList.add('saving');
-                        if (iconEl) {
-                            if (isIconify) {
-                                iconEl.setAttribute('icon', 'solar:spinner-bold-duotone');
-                                iconEl.classList.add('icon-spin');
-                            } else {
-                                iconEl.className = 'fas fa-spinner fa-spin';
-                            }
-                        }
-
-                        const { SyncService } = await import('../../services/SyncService.js');
-                        const success = await SyncService.reconnect({ skipIndicator: true });
-
-                        if (success) {
-                            closeMenu();
-                        } else {
-                            // OAuth cancelled or failed - give feedback
-                            UI.showNotification('Reconnexion annulée', 'info');
-                        }
-                    } catch (error) {
-                        console.error('Reconnection error:', error);
-                        UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
-                    } finally {
-                        reconnectBtn.classList.remove('saving');
-                        if (iconEl) {
-                            if (isIconify) {
-                                iconEl.setAttribute('icon', originalState);
-                                iconEl.classList.remove('icon-spin');
-                            } else {
-                                iconEl.className = originalState;
-                            }
-                        }
+                    if (success) {
+                        closeMenu();
+                    } else {
+                        UI.showNotification('Reconnexion annulée', 'info');
                     }
-                });
-            }
+                } catch (error) {
+                    UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
+                } finally {
+                    reconnectBtn.classList.remove('saving');
+                    if (iconEl) {
+                        iconEl.setAttribute('icon', originalIcon);
+                        iconEl.classList.remove('icon-spin');
+                    }
+                }
+            });
         }
     }
 };
