@@ -1,12 +1,10 @@
 import { CONFIG } from '../../config/Config.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
-// AppreciationsManager et StorageManager déplacés vers ListViewManager._attachGlobalActionsListeners()
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { CrossClassSearchManager } from '../CrossClassSearchManager.js';
 import { MassImportManager } from '../MassImportManager.js';
-import { ResultsUIManager } from '../ResultsUIManager.js';
 
 export const OutputListeners = {
     /**
@@ -58,24 +56,12 @@ export const OutputListeners = {
             });
         }
 
-        // Bouton "Générer" : Only generates pending appreciations (no more regenerate mode)
-        addClickListener(DOM.generateAllPendingBtn, async () => {
-            await MassImportManager.generateAllPending();
-        });
 
         // Header Generate Button (in header chip - idle-pending state)
         const headerGenerateBtn = document.getElementById('headerGenerateBtn');
         if (headerGenerateBtn) {
             addClickListener(headerGenerateBtn, async () => {
                 await MassImportManager.generateAllPending();
-            });
-        }
-
-        // Bouton "Actualiser" : Regenerates dirty and error appreciations
-        const updateDirtyBtn = document.getElementById('updateDirtyBtn');
-        if (updateDirtyBtn) {
-            addClickListener(updateDirtyBtn, async () => {
-                await ResultsUIManager.regenerateDirty();
             });
         }
 

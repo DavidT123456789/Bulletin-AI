@@ -1153,6 +1153,10 @@ export const FocusPanelManager = {
                         this._renderAppreciationText(result);
                     }
                 }
+
+                // ALWAYS refresh header dashboard counts (error badge, validated count, smart button)
+                // regardless of which student is currently viewed
+                UI.updateControlButtons();
             }
         }
     },

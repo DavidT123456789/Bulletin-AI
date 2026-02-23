@@ -53,21 +53,17 @@ export const ListViewEvents = {
             });
         });
 
-        // Bouton "Actualiser" inline dans le header du tableau
-        const updateBtnInline = listContainer.querySelector('#updateDirtyBtnInline');
-        if (updateBtnInline) {
-            updateBtnInline.addEventListener('click', async (e) => {
+        // Smart Action Button (unified generate/update button in table header)
+        const smartActionBtn = listContainer.querySelector('#smartActionBtnInline');
+        if (smartActionBtn) {
+            smartActionBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await ResultsUIManager.regenerateDirty();
-            });
-        }
-
-        // Bouton "Générer" inline dans le header du tableau
-        const generateBtnInline = listContainer.querySelector('#generatePendingBtnInline');
-        if (generateBtnInline) {
-            generateBtnInline.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                await MassImportManager.generateAllPending();
+                const mode = smartActionBtn.dataset.actionMode;
+                if (mode === 'update') {
+                    await ResultsUIManager.regenerateDirty();
+                } else {
+                    await MassImportManager.generateAllPending();
+                }
             });
         }
 

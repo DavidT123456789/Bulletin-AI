@@ -486,13 +486,10 @@
 }
 
 /* ====================================================================
-   UPDATE BUTTON INLINE - Bouton Actualiser dans le header du tableau
+   SMART ACTION BUTTON INLINE - Single unified button in table header
+   Switches between Generate (purple) and Update (orange) modes
    ==================================================================== */
-.btn-update-inline {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+.btn-smart-action-inline {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -502,29 +499,63 @@
     font-weight: 600;
     font-size: 13px;
     white-space: nowrap;
-    background: var(--gradient-warning);
     color: white !important;
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
-    box-shadow: 0 1px 3px rgba(var(--warning-rgb), 0.25);
-    /* CRITICAL: High z-index to be above header overlay and content */
-    z-index: 10;
-    /* Ensure button captures pointer events */
     pointer-events: auto;
+    position: relative;
+    overflow: hidden;
 }
 
-.btn-update-inline:hover {
+/* Generate mode (default) - AI purple gradient */
+.btn-smart-action-inline.mode-generate {
+    background: var(--gradient-ai);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.btn-smart-action-inline.mode-generate:hover {
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    transform: scale(1.05);
+}
+
+/* Update mode - Warning orange gradient */
+.btn-smart-action-inline.mode-update {
+    background: var(--gradient-warning);
+    box-shadow: 0 1px 3px rgba(var(--warning-rgb), 0.25);
+}
+
+.btn-smart-action-inline.mode-update:hover {
     background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
     box-shadow: 0 2px 8px rgba(var(--warning-rgb), 0.35);
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.05);
 }
 
-.btn-update-inline:active {
-    transform: translateY(-50%) scale(0.98);
+.btn-smart-action-inline:active {
+    transform: scale(0.98);
 }
 
-.btn-update-inline .update-badge {
+/* Shine sweep for generate mode */
+.btn-smart-action-inline.mode-generate::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+    pointer-events: none;
+}
+
+.btn-smart-action-inline.mode-generate:hover::before {
+    animation: shine-sweep 1.5s ease-in-out infinite;
+}
+
+.smart-action-badge {
     background: rgba(255, 255, 255, 0.3);
     padding: 2px 8px;
     border-radius: var(--radius-sm);
@@ -534,7 +565,7 @@
     text-align: center;
 }
 
-/* Animation d'apparition SANS translation (pour contextes flex/static) */
+/* Animation d'apparition */
 @keyframes inline-btn-appear {
     from {
         opacity: 0;
@@ -547,7 +578,7 @@
     }
 }
 
-.btn-update-inline.animate-in {
+.btn-smart-action-inline.animate-in {
     animation: inline-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
@@ -565,108 +596,19 @@
     z-index: 10;
 }
 
-/* ====================================================================
-   GENERATE BUTTON INLINE - Bouton Générer dans le header du tableau
-   ==================================================================== */
-.btn-generate-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    height: 34px;
-    border-radius: var(--radius-pill);
-    font-weight: 600;
-    font-size: 13px;
-    white-space: nowrap;
-    background: var(--gradient-ai);
-    color: white !important;
-    border: none;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
-    pointer-events: auto;
-    /* Shine sweep effect - harmonized with btn-primary/btn-ai */
-    position: relative;
-    overflow: hidden;
-}
-
-/* Shine sweep pseudo-element (Single Source of Truth: @keyframes shine-sweep in components.css) */
-.btn-generate-inline::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 100%);
-    pointer-events: none;
-}
-
-.btn-generate-inline:hover {
-    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
-    transform: scale(1.05);
-}
-
-.btn-generate-inline:hover::before {
-    animation: shine-sweep 1.5s ease-in-out infinite;
-}
-
-.btn-generate-inline:active {
-    transform: scale(0.98);
-}
-
-.btn-generate-inline i {
-    font-size: 11px;
-}
-
-.btn-generate-inline .generate-badge {
-    background: rgba(255, 255, 255, 0.3);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    min-width: 16px;
-    text-align: center;
-}
-
-/* Animation d'apparition pour le bouton générer */
-.btn-generate-inline.animate-in {
-    animation: inline-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-
-/* Remove absolute positioning from btn-update-inline when in container */
-.appreciation-header-actions .btn-update-inline {
-    position: static;
-    transform: none;
-}
-
-.appreciation-header-actions .btn-update-inline:hover {
-    transform: scale(1.05);
-}
-
 /* Ensure the hover overlay on appreciation header doesn't block the button */
 .appreciation-header::after {
     pointer-events: none;
 }
 
-/* === FIX: Disable header hover effect when hovering interactive children ===
-   When user hovers the Generate/Update buttons or the avgWords chip,
-   we don't want to trigger the parent header's hover overlay effect */
-.appreciation-toggle-header:has(.btn-generate-inline:hover)::after,
-.appreciation-toggle-header:has(.btn-update-inline:hover)::after,
+/* === FIX: Disable header hover effect when hovering interactive children === */
+.appreciation-toggle-header:has(.btn-smart-action-inline:hover)::after,
 .appreciation-toggle-header:has(#avgWordsChip:hover)::after,
-/* Also for search button in name column */
 .name-header-with-search:has(.inline-search-trigger-btn:hover)::after {
     opacity: 0 !important;
 }
 
-/* Also prevent the toggle icon from appearing when hovering interactive children */
-.appreciation-toggle-header:has(.btn-generate-inline:hover) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(.btn-update-inline:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(.btn-smart-action-inline:hover) .appreciation-toggle-icon,
 .appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon {
     opacity: 0 !important;
 }

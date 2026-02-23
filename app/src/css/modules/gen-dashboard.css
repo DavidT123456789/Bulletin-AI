@@ -11,29 +11,40 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    background: linear-gradient(135deg,
-            rgba(var(--surface-color-rgb, 30, 30, 40), 0.85),
-            rgba(var(--surface-color-rgb, 30, 30, 40), 0.95));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     padding: 3px;
-    box-shadow: none;
-    /* Changed: No shadow by default */
     position: relative;
     overflow: hidden;
-    transition: box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     cursor: pointer;
+    height: 38px;
 }
 
 .header-gen-dashboard:hover {
+    background: linear-gradient(135deg,
+            rgba(var(--surface-color-rgb, 255, 255, 255), 0.85),
+            rgba(var(--surface-color-rgb, 255, 255, 255), 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: transparent;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .header-gen-dashboard:hover {
+    background: linear-gradient(135deg,
+            rgba(20, 20, 30, 0.9),
+            rgba(30, 30, 45, 0.95));
+    border-color: transparent;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.header-gen-dashboard:active {
+    transform: scale(0.98);
+    box-shadow: none;
 }
 
 /* ====================================================================
@@ -43,14 +54,15 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 5px 10px;
+    padding: 0 10px;
+    height: 100%;
     line-height: 1;
     border-radius: var(--radius-pill);
     background: transparent;
     border: none;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.01em;
     /* Not interactive itself - parent pill handles click */
     cursor: inherit;
@@ -63,7 +75,7 @@
 .dash-model-label iconify-icon,
 .dash-model-label i,
 .dash-model-label svg {
-    font-size: 14px;
+    font-size: 16px;
     opacity: 0.85;
 }
 
@@ -123,20 +135,22 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    padding: 0 10px;
+    height: 100%;
     border-radius: var(--radius-pill);
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     white-space: nowrap;
 }
 
-.dash-badge i {
-    font-size: 11px;
+.dash-badge i,
+.dash-badge iconify-icon {
+    font-size: 14px;
 }
 
 .dash-badge:hover {
@@ -441,11 +455,6 @@
 /* ====================================================================
    DARK MODE
    ==================================================================== */
-[data-theme="dark"] .header-gen-dashboard {
-    background: linear-gradient(135deg,
-            rgba(20, 20, 30, 0.9),
-            rgba(30, 30, 45, 0.95));
-}
 
 /* Fix for Dark Mode Generating State - Allow fill to be visible */
 [data-theme="dark"] .header-gen-dashboard.generating {

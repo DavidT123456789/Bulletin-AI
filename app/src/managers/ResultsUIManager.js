@@ -398,96 +398,42 @@ export const ResultsUIManager = {
             return FocusPanelStatus.checkDirtyState(r);
         }).length;
 
-        // === GENERATE BUTTON ===
-        if (DOM.generateAllPendingBtn) {
-            const btn = DOM.generateAllPendingBtn;
-            const hasContent = pendingCount > 0;
-
-            btn.dataset.mode = hasContent ? 'generate' : 'disabled';
-            btn.disabled = !hasContent;
-
-            // Always use btn-primary for generate button
-            btn.classList.remove('btn-neutral');
-            btn.classList.add('btn-primary');
-
-            const icon = btn.querySelector('i, iconify-icon');
-            const label = btn.querySelector('span:not(.pending-badge)');
-            const badge = btn.querySelector('.pending-badge');
-
-            if (icon) {
-                if (icon.tagName === 'I') {
-                    // Replace with iconify-icon
-                    const newIcon = document.createElement('iconify-icon');
-                    newIcon.setAttribute('icon', 'solar:magic-stick-3-linear');
-                    icon.replaceWith(newIcon);
-                } else {
-                    icon.setAttribute('icon', 'solar:magic-stick-3-linear');
-                }
-            }
-            if (label) label.textContent = 'Générer';
-            if (badge) {
-                badge.style.display = hasContent ? 'inline-flex' : 'none';
-                badge.textContent = pendingCount;
-            }
-            btn.dataset.tooltip = hasContent
-                ? `Générer les ${pendingCount} appréciations en attente`
-                : "Aucune appréciation en attente";
-        }
-
-        // === UPDATE BUTTON (dirty + errors) ===
-        if (DOM.updateDirtyBtn) {
-            const btn = DOM.updateDirtyBtn;
-            const hasUpdates = needsUpdateCount > 0;
-
-            btn.style.display = hasUpdates ? 'inline-flex' : 'none';
-            btn.disabled = !hasUpdates;
-
-            const badge = btn.querySelector('.pending-badge');
-            if (badge) {
-                badge.textContent = needsUpdateCount;
-            }
-            btn.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} (modifiée${needsUpdateCount > 1 ? 's' : ''} ou en erreur)`;
-        }
-
-        // === UPDATE BUTTON INLINE (in table header) ===
-        const updateBtnInline = document.getElementById('updateDirtyBtnInline');
-        if (updateBtnInline) {
-            const hasUpdates = needsUpdateCount > 0;
-            const wasHidden = updateBtnInline.style.display === 'none';
-
-            updateBtnInline.style.display = hasUpdates ? 'inline-flex' : 'none';
-
-            const badge = updateBtnInline.querySelector('.update-badge');
-            if (badge) {
-                badge.textContent = needsUpdateCount;
-            }
-            updateBtnInline.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} (modifiée${needsUpdateCount > 1 ? 's' : ''} ou en erreur)`;
-
-            // Animate in if newly visible
-            if (hasUpdates && wasHidden) {
-                updateBtnInline.classList.add('animate-in');
-                setTimeout(() => updateBtnInline.classList.remove('animate-in'), 350);
-            }
-        }
-
-        // === GENERATE BUTTON INLINE (in table header) ===
-        const generateBtnInline = document.getElementById('generatePendingBtnInline');
-        if (generateBtnInline) {
+        // === SMART ACTION BUTTON (unified in table header) ===
+        // Priority: Pending (generate) > Dirty (update) > Hidden
+        const smartBtn = document.getElementById('smartActionBtnInline');
+        if (smartBtn) {
             const hasPending = pendingCount > 0;
-            const wasHidden = generateBtnInline.style.display === 'none';
+            const hasUpdates = needsUpdateCount > 0;
+            const hasAction = hasPending || hasUpdates;
+            const wasHidden = smartBtn.style.display === 'none';
 
-            generateBtnInline.style.display = hasPending ? 'inline-flex' : 'none';
+            smartBtn.style.display = hasAction ? 'inline-flex' : 'none';
 
-            const badge = generateBtnInline.querySelector('.generate-badge');
-            if (badge) {
-                badge.textContent = pendingCount;
+            const icon = smartBtn.querySelector('.smart-action-icon');
+            const badge = smartBtn.querySelector('.smart-action-badge');
+
+            if (hasPending) {
+                // Generate mode: pending appreciations take priority
+                smartBtn.dataset.actionMode = 'generate';
+                if (icon) icon.setAttribute('icon', 'solar:magic-stick-3-linear');
+                if (badge) badge.textContent = pendingCount;
+                smartBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
+                smartBtn.classList.remove('mode-update');
+                smartBtn.classList.add('mode-generate');
+            } else if (hasUpdates) {
+                // Update mode: dirty/error appreciations
+                smartBtn.dataset.actionMode = 'update';
+                if (icon) icon.setAttribute('icon', 'solar:refresh-linear');
+                if (badge) badge.textContent = needsUpdateCount;
+                smartBtn.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} modifiée${needsUpdateCount > 1 ? 's' : ''}`;
+                smartBtn.classList.remove('mode-generate');
+                smartBtn.classList.add('mode-update');
             }
-            generateBtnInline.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
 
             // Animate in if newly visible
-            if (hasPending && wasHidden) {
-                generateBtnInline.classList.add('animate-in');
-                setTimeout(() => generateBtnInline.classList.remove('animate-in'), 350);
+            if (hasAction && wasHidden) {
+                smartBtn.classList.add('animate-in');
+                setTimeout(() => smartBtn.classList.remove('animate-in'), 350);
             }
         }
 

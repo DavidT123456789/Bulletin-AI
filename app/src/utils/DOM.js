@@ -360,10 +360,6 @@ export function initDOM() {
     DOM.saveMappingCheckbox = document.getElementById('saveMappingCheckbox');
     DOM.cancelImportPreviewBtn = document.getElementById('cancelImportPreviewBtn');
     DOM.importOnlyBtn = document.getElementById('importOnlyBtn');
-    DOM.generateAllPendingBtn = document.getElementById('generateAllPendingBtn');
-    DOM.pendingCountBadge = document.getElementById('pendingCountBadge');
-    DOM.updateDirtyBtn = document.getElementById('updateDirtyBtn');
-    DOM.dirtyCountBadge = document.getElementById('dirtyCountBadge');
     DOM.singleStudentActions = document.getElementById('singleStudentActions');
 
     DOM.inputPanelsWrapper = document.querySelector('.input-panels-wrapper');

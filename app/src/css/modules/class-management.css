@@ -18,7 +18,6 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    padding-right: 10px;
     flex-shrink: 0;
     min-width: max-content;
 }
@@ -28,13 +27,13 @@
     color: var(--primary-color);
     padding: 2px 8px;
     border-radius: var(--radius-pill);
-    font-size: 0.75em;
+    font-size: 0.8rem;
     font-weight: 600;
-    margin-left: 4px;
+    margin-left: 2px;
 }
 
 .class-chip .class-chevron {
-    font-size: 0.7em;
+    font-size: 16px;
     color: var(--text-secondary);
     transition: transform var(--transition-fast);
     margin-left: 2px;

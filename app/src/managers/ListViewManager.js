@@ -35,6 +35,9 @@ export const ListViewManager = {
     _renderFresh(c, r, p, idx) { ListViewRenderer.renderFresh(c, r, p, idx); },
     _updateHeaderSortIcons(v) { ListViewRenderer.updateHeaderSortIcons(v); },
     _getAppreciationSkeletonHTML() { return ListViewRenderer.getAppreciationSkeletonHTML(); },
+    _getStudentStatusCellContent(result) { return ListViewRenderer.getStudentStatusCellContent(result); },
+    _getAppreciationCell(result) { return ListViewRenderer.getAppreciationCell(result); },
+    _getStatusBadge(status) { return ListViewRenderer.getStatusBadge(status); },
 
     // Inject dependencies into SelectionManager
     initSelectionManager() {

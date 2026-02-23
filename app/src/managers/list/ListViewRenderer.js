@@ -282,13 +282,9 @@ export const ListViewRenderer = {
                             <th class="${headerClass}">
                                 <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="appreciation-header-actions" id="appreciationHeaderActions">
-                                    <button type="button" class="btn-generate-inline tooltip" id="generatePendingBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
-                                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                                        <span class="generate-badge" id="pendingCountBadgeInline">0</span>
-                                    </button>
-                                    <button type="button" class="btn-update-inline tooltip" id="updateDirtyBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
-                                        <iconify-icon icon="solar:refresh-linear"></iconify-icon>
-                                        <span class="update-badge" id="dirtyCountBadgeInline">0</span>
+                                    <button type="button" class="btn-smart-action-inline tooltip" id="smartActionBtnInline" style="display: none;" data-action-mode="generate" data-tooltip="Générer les appréciations en attente">
+                                        <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
+                                        <span class="smart-action-badge" id="smartActionBadgeInline">0</span>
                                     </button>
                                 </div>
                                 <div class="header-content-wrapper" data-tooltip="${title}">

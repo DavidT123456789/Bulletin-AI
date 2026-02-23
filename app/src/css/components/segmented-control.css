@@ -43,8 +43,7 @@
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: var(--font-sm) !important;
-    /* 13px */
+    font-size: 13px !important;
     font-weight: 500 !important;
     cursor: pointer;
     transition: all var(--transition-base);
@@ -63,7 +62,7 @@
 /* Handle Icons */
 .ui-segment i,
 .ui-segment iconify-icon {
-    font-size: 1.1em;
+    font-size: 16px;
     pointer-events: none;
 }
 
