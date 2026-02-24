@@ -375,6 +375,8 @@ export const ListViewManager = {
         const isFullView = table.classList.contains('appreciation-full-view');
         const header = table.querySelector('.appreciation-toggle-header');
         const icon = header?.querySelector('.appreciation-toggle-icon');
+        const mobileBtn = listContainer.querySelector('#mobileCompactToggleBtn');
+        const mobileIcon = mobileBtn?.querySelector('iconify-icon');
 
         // Helper to update tooltip
         const updateTooltip = (text) => {
@@ -382,8 +384,12 @@ export const ListViewManager = {
             if (wrapper) {
                 TooltipsUI.updateTooltip(wrapper, text);
             }
+            if (mobileBtn) {
+                TooltipsUI.updateTooltip(mobileBtn, text);
+            }
             // Ensure no native tooltip conflicts
             if (header) header.removeAttribute('title');
+            if (mobileBtn) mobileBtn.removeAttribute('title');
         };
 
         // Toggle UI
@@ -397,6 +403,9 @@ export const ListViewManager = {
             if (icon) {
                 icon.setAttribute('icon', 'solar:maximize-square-linear');
             }
+            if (mobileIcon) {
+                mobileIcon.setAttribute('icon', 'solar:maximize-square-linear');
+            }
 
             // Update State & Persistence
             appState.isAppreciationFullView = false;
@@ -409,6 +418,9 @@ export const ListViewManager = {
             // Switch to Compress icon
             if (icon) {
                 icon.setAttribute('icon', 'solar:minimize-square-linear');
+            }
+            if (mobileIcon) {
+                mobileIcon.setAttribute('icon', 'solar:minimize-square-linear');
             }
 
             // Update State & Persistence

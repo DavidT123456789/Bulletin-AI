@@ -42,11 +42,11 @@ export const StatsUI = {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
                 const currentVal = start + progress * (end - start);
-                element.textContent = Number.isInteger(end) ? Math.floor(currentVal) : currentVal.toFixed(1);
+                element.textContent = Number.isInteger(end) ? Math.floor(currentVal) : currentVal.toFixed(1).replace('.', ',');
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
                 } else {
-                    if (typeof end === 'number') element.textContent = Number.isInteger(end) ? end : end.toFixed(1);
+                    if (typeof end === 'number') element.textContent = Number.isInteger(end) ? end : end.toFixed(1).replace('.', ',');
                     else element.textContent = end;
                     resolve();
                 }
@@ -337,8 +337,9 @@ export const StatsUI = {
             const el = document.getElementById(id);
             if (el) {
                 if (typeof value === 'number' && !isNaN(value)) {
-                    const startValue = parseFloat(el.textContent) || 0;
-                    if (el.textContent !== (Number.isInteger(value) ? String(value) : value.toFixed(1))) {
+                    // StartValue can contain a comma, so we replace it before parsing
+                    const startValue = parseFloat(el.textContent.replace(',', '.')) || 0;
+                    if (el.textContent.replace(',', '.') !== (Number.isInteger(value) ? String(value) : value.toFixed(1))) {
                         animationPromises.push(this.animateValue(el, startValue, value, 500));
                     }
                 } else {
@@ -404,17 +405,20 @@ export const StatsUI = {
             if (avgEvolution === null) {
                 avgEvoEl.textContent = '--';
                 evolutionChip.classList.add('stable');
+                evolutionChip.style.display = 'none';
             } else {
-                const startVal = parseFloat(avgEvoEl.textContent.replace(' pts', '')) || 0;
+                evolutionChip.style.display = '';
+                // startValue can contain a comma, replace it before parsing
+                const startVal = parseFloat(avgEvoEl.textContent.replace(',', '.').replace(' pts', '')) || 0;
                 const promise = new Promise(resolve => {
                     let startTimestamp = null; const duration = 500;
                     const step = (timestamp) => {
                         if (!startTimestamp) startTimestamp = timestamp;
                         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
                         const currentVal = startVal + progress * (avgEvolution - startVal);
-                        avgEvoEl.textContent = `${currentVal >= 0 ? '+' : ''}${currentVal.toFixed(1)} pts`;
+                        avgEvoEl.textContent = `${currentVal >= 0 ? '+' : ''}${currentVal.toFixed(1).replace('.', ',')} pts`;
                         if (progress < 1) window.requestAnimationFrame(step);
-                        else { avgEvoEl.textContent = `${avgEvolution >= 0 ? '+' : ''}${avgEvolution.toFixed(1)} pts`; resolve(); }
+                        else { avgEvoEl.textContent = `${avgEvolution >= 0 ? '+' : ''}${avgEvolution.toFixed(1).replace('.', ',')} pts`; resolve(); }
                     };
                     window.requestAnimationFrame(step);
                 });
@@ -432,7 +436,7 @@ export const StatsUI = {
         // Update Median (maintenant dans performance-details)
         const medianEl = document.getElementById('medianGradeOutput');
         if (medianEl) {
-            const medianValue = stats.median === '--' ? '--' : (Number.isInteger(stats.median) ? stats.median : stats.median.toFixed(1));
+            const medianValue = stats.median === '--' ? '--' : (Number.isInteger(stats.median) ? String(stats.median) : stats.median.toFixed(1).replace('.', ','));
             medianEl.textContent = medianValue;
         }
 

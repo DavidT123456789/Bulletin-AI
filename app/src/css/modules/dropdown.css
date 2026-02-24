@@ -38,6 +38,7 @@
 }
 
 .custom-dropdown.open .custom-dropdown-trigger {
+    background-color: transparent;
     border-color: transparent;
     /* Use bg-color for open/focus state - animated border is main feedback */
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),

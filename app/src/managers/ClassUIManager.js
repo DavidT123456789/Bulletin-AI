@@ -636,8 +636,8 @@ export const ClassUIManager = {
 
             let averageBadge = '';
             if (hasGrades) {
-                const avg = pedagoStats.average.toFixed(1);
-                const colorClass = avg >= 14 ? 'good' : avg >= 10 ? 'average' : 'risk';
+                const avg = pedagoStats.average.toFixed(1).replace('.', ',');
+                const colorClass = pedagoStats.average >= 14 ? 'good' : pedagoStats.average >= 10 ? 'average' : 'risk';
 
                 let trendIcon = '';
                 if (pedagoStats.avgEvolution !== null) {

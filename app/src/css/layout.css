@@ -104,16 +104,16 @@
     overflow-x: hidden;
     scroll-behavior: smooth;
 
-    /* --content-padding-x: single source of truth for horizontal padding.
-       Consumed by full-bleed children (e.g. stats carousel) to stay in sync. */
-    --content-padding-x: var(--space-8);
-    padding: calc(56px + var(--space-5)) var(--content-padding-x) var(--space-6);
+    /* --content-padding-x: single source of truth for padding.
+       Ensures left, right AND top margins are perfectly symmetrical . */
+    --content-padding-x: var(--space-6);
+    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) var(--content-padding-x);
     max-width: none;
     width: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--content-padding-x);
 }
 
 .output-section {
@@ -1345,7 +1345,7 @@
     .main-content {
         --content-padding-x: 16px;
         padding: 16px var(--content-padding-x);
-        padding-top: calc(56px + 16px);
+        padding-top: calc(56px + 8px);
     }
 
     .header {
@@ -1423,7 +1423,7 @@
     .main-content {
         --content-padding-x: 12px;
         padding: 12px var(--content-padding-x);
-        padding-top: calc(56px + 12px);
+        padding-top: calc(56px + 4px);
     }
 
     .header {

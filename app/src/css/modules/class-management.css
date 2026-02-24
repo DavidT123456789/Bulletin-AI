@@ -599,7 +599,7 @@
 
 .premium-input:focus {
     outline: none;
-    background: var(--bg-color);
+    background-color: transparent;
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
@@ -1105,6 +1105,7 @@
 
 .inline-class-input:focus {
     outline: none;
+    background-color: transparent;
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),

@@ -336,12 +336,12 @@
 }
 
 [data-theme="dark"] .student-list-table tbody tr.row-moving {
-    background: var(--surface-elevated) !important;
+    background: var(--surface-color) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .student-list-table tbody tr.row-moving td {
-    background: var(--surface-elevated);
+    background: var(--surface-color);
 }
 
 /* Keyframes pour l'entrée retardée des nouvelles lignes lors du filtrage */
@@ -1073,17 +1073,23 @@
     /* --- THEAD (Header & Toolbars) --- */
     .student-list-table thead {
         display: flex;
-        background: transparent;
+        background: transparent !important;
         border: none;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
+    }
+
+    [data-theme="dark"] .student-list-table thead {
+        background: transparent !important;
     }
 
     .student-list-table thead tr {
         display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        /* Increased from 12px for better spacing */
-        align-items: center;
+        flex-wrap: nowrap !important;
+        /* Forces elements to stay on a single line, delegating wrapping to children */
+        gap: 10px;
+        /* Synchronized with internal button gaps */
+        align-items: flex-start;
+        /* Ensures top alignment when children wrap internally */
         background: var(--surface-color);
         padding: 16px;
         /* Increased from 12px for breathing room */
@@ -1099,7 +1105,7 @@
     }
 
     [data-theme="dark"] .student-list-table thead tr {
-        background: var(--surface-elevated);
+        background: var(--surface-color);
     }
 
     /* Hide standard headers */
@@ -1137,24 +1143,33 @@
 
     /* Make search button visible as an action button */
     .student-list-table th.name-header-with-search {
-        flex: 0 0 auto;
+        flex: 0 0 40px !important;
+        /* REDUCED to match orange button height */
         order: 1;
-        min-width: unset;
+        width: 40px !important;
+        /* REDUCED */
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
         position: static !important;
+        justify-content: flex-start;
     }
 
     .inline-search-trigger-btn {
         position: static !important;
         transform: none !important;
-        width: 44px;
-        /* Increased for better touch target */
-        height: 44px;
+        width: 40px;
+        /* REDUCED to match others */
+        height: 40px;
+        /* REDUCED */
         border-radius: var(--radius-md);
         background: rgba(0, 0, 0, 0.04);
         display: flex !important;
         align-items: center;
         justify-content: center;
         opacity: 1 !important;
+        color: var(--text-secondary) !important;
+        /* MATCH THE TOGGLE BTN TEXT COLOR */
     }
 
     [data-theme="dark"] .inline-search-trigger-btn {
@@ -1163,29 +1178,96 @@
 
     /* Actions line (Generate, Update) */
     .student-list-table th.appreciation-toggle-header {
-        flex: 1 1 auto;
+        flex: 1 1 0% !important;
+        /* FORCE shrink so we don't wrap the entire TH */
+        min-width: 0 !important;
         order: 2;
-        /* Les éléments enfants (#avgWordsChip et .appreciation-header-actions) 
-           vont s'aligner naturellement en ligne grâce au display: flex du bloc parent. */
+        /* Standard flow: Actions on the left (next to Search), Word chip pushed to the right */
+        flex-direction: row !important;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        /* allows chip to overflow below if strictly needed */
+        align-content: center;
+        gap: 10px;
+        /* Synchronized with global row gaps */
+        position: relative;
     }
 
-    /* Remet le pill de mots dans le flux normal (pas de superposition) */
+    /* Remet le pill de mots dans la logique Flex en deuxième position */
     #avgWordsChip {
         position: static !important;
         transform: none !important;
-        margin: 0 !important;
+        order: 2;
+        /* Rendered after actions */
+        margin: 0 0 0 auto !important;
+        /* Pushes it to the extreme right */
         right: auto !important;
-        /* Par défaut il est caché par JS ou pas, on respecte son display inline-flex mais sans position absolue */
+        left: auto !important;
+        top: auto !important;
+        opacity: 1 !important;
+        /* Full Chip Styling */
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.04) !important;
+        color: var(--text-secondary) !important;
+        padding: 0 14px !important;
+        /* Managed by exact height center alignment */
+        height: 40px !important;
+        /* EXACTLY match other buttons height */
+        box-sizing: border-box !important;
+        border-radius: var(--radius-pill) !important;
+        font-weight: 500 !important;
+    }
+
+    [data-theme="dark"] #avgWordsChip {
+        background: rgba(255, 255, 255, 0.05) !important;
     }
 
     .appreciation-header-actions {
         position: static !important;
         transform: none !important;
         display: flex;
-        gap: 14px;
-        /* Increased from 8px for better breathing room */
-        flex-wrap: wrap;
+        gap: 10px;
+        flex-wrap: nowrap;
+        /* Keep actions inline together */
         align-items: center;
+        order: 1;
+        /* First rendered, which is top-right in row-reverse */
+        margin-left: 0 !important;
+        /* Reset margin */
+    }
+
+    /* Bouton pour basculer la vue (compact/étendu) */
+    #mobileCompactToggleBtn {
+        position: static !important;
+        transform: none !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        /* REDUCED to match others */
+        height: 40px;
+        /* REDUCED */
+        border-radius: var(--radius-md);
+        background: rgba(0, 0, 0, 0.04);
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.2rem;
+        transition: all var(--transition-fast);
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        /* FIX: Restores original color without 50% tint inherited from .header-action-trigger */
+    }
+
+    [data-theme="dark"] #mobileCompactToggleBtn {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    #mobileCompactToggleBtn:active {
+        background: rgba(var(--primary-color-rgb), 0.1);
+        color: var(--primary-color);
+        transform: scale(0.95);
     }
 
     /* Global Menu */
@@ -1197,9 +1279,10 @@
     .global-actions-dropdown .btn-action-menu-header {
         background: rgba(0, 0, 0, 0.04);
         border-radius: var(--radius-md);
-        width: 44px;
-        /* Touch target minimum */
-        height: 44px;
+        width: 40px;
+        /* REDUCED to match others */
+        height: 40px;
+        /* REDUCED */
     }
 
     [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
@@ -1221,7 +1304,7 @@
     .student-list-table tbody tr {
         background: var(--surface-color);
         border-radius: var(--radius-lg);
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border-color);
         padding: 16px;
@@ -1234,7 +1317,7 @@
     }
 
     [data-theme="dark"] .student-list-table tbody tr {
-        background: var(--surface-elevated);
+        background: var(--surface-color);
         border-color: rgba(255, 255, 255, 0.05);
     }
 
@@ -1324,14 +1407,22 @@
     .appreciation-preview {
         box-sizing: border-box !important;
         width: 100% !important;
-        white-space: pre-wrap !important;
-        max-height: none !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-height: 48px !important;
         background: rgba(0, 0, 0, 0.02);
         padding: 14px;
         border-radius: var(--radius-md);
         border: 1px solid rgba(0, 0, 0, 0.02);
         font-size: 14px;
         line-height: 1.6;
+    }
+
+    .student-list-table.appreciation-full-view .appreciation-preview {
+        white-space: pre-wrap !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
 
     [data-theme="dark"] .appreciation-preview {

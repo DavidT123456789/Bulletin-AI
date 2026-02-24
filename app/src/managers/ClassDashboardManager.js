@@ -312,7 +312,7 @@ export const ClassDashboardManager = {
         const spreadValue = this.modal.querySelector('#kpiSpread');
         const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
 
-        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1);
+        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1).replace('.', ',');
         if (spreadLabel) {
             if (stats.stdDev < 2) spreadLabel.textContent = 'Classe homogène';
             else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
@@ -328,10 +328,10 @@ export const ClassDashboardManager = {
         // Average
         const avgValue = this.modal.querySelector('#kpiAverage');
         const avgEvolution = this.modal.querySelector('#kpiAverageEvolution');
-        if (avgValue) avgValue.textContent = stats.average.toFixed(1);
+        if (avgValue) avgValue.textContent = stats.average.toFixed(1).replace('.', ',');
         if (avgEvolution && stats.avgEvolution !== null) {
             const sign = stats.avgEvolution >= 0 ? '+' : '';
-            avgEvolution.textContent = `${sign}${stats.avgEvolution.toFixed(1)} pts`;
+            avgEvolution.textContent = `${sign}${stats.avgEvolution.toFixed(1).replace('.', ',')} pts`;
             avgEvolution.className = `kpi-evolution ${stats.avgEvolution > 0 ? 'positive' : stats.avgEvolution < 0 ? 'negative' : 'neutral'}`;
             avgEvolution.style.display = 'inline-flex';
         } else if (avgEvolution) {
@@ -340,12 +340,12 @@ export const ClassDashboardManager = {
 
         // Median
         const medianValue = this.modal.querySelector('#kpiMedian');
-        if (medianValue) medianValue.textContent = stats.median.toFixed(1);
+        if (medianValue) medianValue.textContent = stats.median.toFixed(1).replace('.', ',');
 
         // Spread (écart-type)
         const spreadValue = this.modal.querySelector('#kpiSpread');
         const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
-        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1);
+        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1).replace('.', ',');
         if (spreadLabel) {
             if (stats.stdDev < 2) spreadLabel.textContent = 'Classe homogène';
             else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
@@ -398,7 +398,7 @@ export const ClassDashboardManager = {
                 progressList.innerHTML = stats.topProgressions.map(s => `
                     <div class="highlight-item" data-student-id="${s.id}">
                         <span class="highlight-student-name">${s.fullName}</span>
-                        <span class="highlight-evolution positive">+${s.evolution.toFixed(1)} pts</span>
+                        <span class="highlight-evolution positive">+${s.evolution.toFixed(1).replace('.', ',')} pts</span>
                     </div>
                 `).join('');
             } else {
@@ -414,7 +414,7 @@ export const ClassDashboardManager = {
 
             if (atRiskStudents.length > 0) {
                 riskList.innerHTML = atRiskStudents.map(s => {
-                    const evolutionText = s.evolution !== null ? `${s.evolution.toFixed(1)} pts` : `Moy: ${s.grade.toFixed(1)}`;
+                    const evolutionText = s.evolution !== null ? `${s.evolution.toFixed(1).replace('.', ',')} pts` : `Moy: ${s.grade.toFixed(1).replace('.', ',')}`;
                     return `
                         <div class="highlight-item" data-student-id="${s.id}">
                             <span class="highlight-student-name">${s.fullName}</span>

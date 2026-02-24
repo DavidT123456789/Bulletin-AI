@@ -368,11 +368,12 @@
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
-        gap: 16px;
+        /* Exact formula to separate cards fully by 1 viewport minus paddings */
+        gap: calc(var(--content-padding-x) * 2);
         grid-template-columns: none;
-        /* Use parent's --content-padding-x to stay in sync at all breakpoints */
-        padding: 8px var(--content-padding-x) 16px;
-        margin: 0 calc(-1 * var(--content-padding-x));
+        /* Use parent's --content-padding-x to stay in sync at all breakpoints. Maintain vertical padding for shadows */
+        padding: 24px var(--content-padding-x) 28px;
+        margin: -24px calc(-1 * var(--content-padding-x)) -12px calc(-1 * var(--content-padding-x));
 
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -404,9 +405,9 @@
         display: flex;
         justify-content: center;
         gap: 8px;
-        margin-top: 4px;
-        /* Tight connection to cards */
-        margin-bottom: 24px;
+        /* Perfectly balanced vertical centering compensating for container padding */
+        margin-top: -14px;
+        margin-bottom: 14px;
     }
 
     .stats-dot {
@@ -644,7 +645,7 @@
 
 /* État actif pour les filtres - Style hover + bordure rotative */
 .performance-card .detail-item.active-filter {
-    background: var(--surface-color);
+    background-color: transparent;
     border: 1.5px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
@@ -833,7 +834,7 @@
 
 /* États actifs pour les filtres - Style hover + bordure rotative */
 .evolution-card .legend-item.active-filter {
-    background: var(--surface-color);
+    background-color: transparent;
     border: 1.5px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
@@ -1180,7 +1181,7 @@
 
 /* État actif pour les filtres - Style avec bordure rotative */
 .hist-bar-group[role="button"].active-filter {
-    background: var(--surface-color);
+    background-color: transparent;
     border: 1.5px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),

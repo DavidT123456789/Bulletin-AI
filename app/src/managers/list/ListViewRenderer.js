@@ -282,6 +282,9 @@ export const ListViewRenderer = {
                             <th class="${headerClass}">
                                 <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
                                 <div class="appreciation-header-actions" id="appreciationHeaderActions">
+                                    <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
+                                        <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
+                                    </button>
                                     <button type="button" class="btn-smart-action-inline tooltip" id="smartActionBtnInline" style="display: none;" data-action-mode="generate" data-tooltip="Générer les appréciations en attente">
                                         <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
                                         <span class="smart-action-badge" id="smartActionBadgeInline">0</span>
@@ -538,7 +541,7 @@ export const ListViewRenderer = {
 
                             if (grade !== null && nextGrade !== null) {
                                 const diff = nextGrade - grade;
-                                const diffText = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+                                const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {

@@ -902,6 +902,7 @@
 
 .vocab-item-text:focus {
     outline: none;
+    background-color: transparent;
     /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),

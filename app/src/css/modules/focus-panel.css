@@ -2487,7 +2487,7 @@
 
 .focus-input:focus {
     outline: none;
-    background: var(--bg-color);
+    background-color: transparent;
     /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
@@ -3531,7 +3531,7 @@
 }
 
 [data-theme="dark"] .context-grade-group {
-    background: var(--surface-elevated, #1f2937);
+    background: var(--surface-color, #1f2937);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: none;
 }
@@ -4130,6 +4130,7 @@
         padding-bottom: max(12px, env(safe-area-inset-bottom));
         gap: 8px;
         flex-wrap: nowrap;
+        border-radius: 0;
         /* No wrap - keep buttons in a row but make them flexible */
     }
 
@@ -4245,6 +4246,7 @@
     .focus-footer {
         padding: 10px 12px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
+        border-radius: 0;
     }
 
     .focus-footer .btn {

@@ -87,6 +87,7 @@
 
 .input-with-button-group textarea:focus {
     /* Style dynamique harmonisé - focus signature */
+    background-color: transparent;
     border: 2px solid transparent !important;
     background-image: linear-gradient(var(--bg-color), var(--bg-color)),
         conic-gradient(from var(--gradient-angle),
@@ -198,7 +199,7 @@
 
 /* Focus sur l'original */
 .refinement-box.editable:focus {
-    background: var(--surface-color);
+    background-color: transparent;
     outline: none;
     /* Style dynamique harmonisé - focus signature */
     border: 2px solid transparent !important;

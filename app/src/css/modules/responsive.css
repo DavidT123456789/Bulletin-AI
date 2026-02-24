@@ -53,8 +53,8 @@
     /* Header padding now managed in layout.css (16px desktop, 12px mobile) */
 
     .main-content {
-        padding: 24px 20px;
-        padding-top: calc(56px + 24px);
+        --content-padding-x: var(--space-5);
+        padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) var(--content-padding-x);
     }
 
     .output-header,
@@ -225,6 +225,11 @@
    BREAKPOINT: 480px - Mobile
    ==================================================================== */
 @media (max-width: 480px) {
+
+    .main-content {
+        --content-padding-x: var(--space-4);
+        padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) var(--content-padding-x);
+    }
 
     /* Fullscreen modals */
     .modal-content {
