@@ -319,6 +319,7 @@
 }
 
 .no-results-message {
+    display: none;
     text-align: center;
     color: var(--text-secondary);
     margin-top: 40px;

@@ -107,13 +107,12 @@
     /* --content-padding-x: single source of truth for padding.
        Ensures left, right AND top margins are perfectly symmetrical . */
     --content-padding-x: var(--space-6);
-    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) var(--content-padding-x);
+    padding: calc(56px + var(--content-padding-x)) var(--content-padding-x) 80px;
     max-width: none;
     width: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--content-padding-x);
 }
 
 .output-section {

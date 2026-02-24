@@ -12,8 +12,7 @@
     border: 1px solid var(--glass-surface-border);
     overflow: visible;
     /* Permet au menu d'actions de déborder */
-    /* Espace en bas pour permettre de scroller le dernier élève au-dessus du FAB */
-    margin-bottom: 80px;
+    margin-bottom: 0;
 }
 
 .student-list-table {
@@ -861,6 +860,7 @@
 }
 
 .action-dropdown-menu {
+    display: none;
     position: absolute;
     top: 100%;
     right: 0;
@@ -873,21 +873,18 @@
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
     transform: translateY(-8px) scale(0.95);
     transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-        visibility 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 100;
     overflow: hidden;
     padding: 6px;
-    /* Harmonisé avec le menu global */
 }
 
 .action-dropdown-menu.open {
+    display: block;
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
     transform: translateY(0) scale(1);
 }
