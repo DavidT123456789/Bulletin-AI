@@ -397,7 +397,7 @@ export const ClassDashboardManager = {
             if (stats.topProgressions.length > 0) {
                 progressList.innerHTML = stats.topProgressions.map(s => `
                     <div class="highlight-item" data-student-id="${s.id}">
-                        <span class="highlight-student-name">${s.fullName}</span>
+                        <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
                         <span class="highlight-evolution positive">+${s.evolution.toFixed(1).replace('.', ',')} pts</span>
                     </div>
                 `).join('');
@@ -417,7 +417,7 @@ export const ClassDashboardManager = {
                     const evolutionText = s.evolution !== null ? `${s.evolution.toFixed(1).replace('.', ',')} pts` : `Moy: ${s.grade.toFixed(1).replace('.', ',')}`;
                     return `
                         <div class="highlight-item" data-student-id="${s.id}">
-                            <span class="highlight-student-name">${s.fullName}</span>
+                            <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
                             <span class="highlight-evolution negative">${evolutionText}</span>
                         </div>
                     `;
@@ -589,7 +589,7 @@ export const ClassDashboardManager = {
             content.innerHTML = `
                 <div class="ai-placeholder">
                     <div class="ai-placeholder-icon" style="background: var(--error-light); color: var(--error-color);"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon></div>
-                    <p class="ai-placeholder-text">Erreur lors de la génération : ${error.message}</p>
+                    <p class="ai-placeholder-text">Erreur lors de la génération : ${Utils.escapeHtml(error.message)}</p>
                 </div>
             `;
         } finally {

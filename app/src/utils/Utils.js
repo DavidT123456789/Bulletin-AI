@@ -1,6 +1,7 @@
 
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
+import { DOMHelper } from './DOMHelper.js';
 
 /**
  * @typedef {Object} StudentPeriodData
@@ -656,11 +657,6 @@ export const Utils = {
      */
     escapeHtml(text) {
         if (!text) return text;
-        return String(text)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return DOMHelper.escapeHTML(text);
     }
 };

@@ -1,5 +1,35 @@
 export const DOMHelper = {
     /**
+     * Escapes HTML special characters to prevent XSS injection.
+     * @param {string} str - The string to escape.
+     * @returns {string} The escaped string, safe to inject via innerHTML.
+     */
+    escapeHTML(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    /**
+     * Tagged template literal for building safe HTML strings.
+     * Interpolated values are auto-escaped; template structure is preserved as-is.
+     * @example safeHTML`<span class="name">${studentName}</span>`
+     * @param {TemplateStringsArray} strings - Template literal string parts.
+     * @param {...*} values - Interpolated values to escape.
+     * @returns {string} Safe HTML string.
+     */
+    safeHTML(strings, ...values) {
+        return strings.reduce((result, str, i) => {
+            const val = i < values.length ? DOMHelper.escapeHTML(values[i]) : '';
+            return result + str + val;
+        }, '');
+    },
+
+    /**
      * Creates a DOM element with attributes and children.
      * @param {string} tag - The HTML tag name.
      * @param {object} [attributes={}] - Key-value pairs for attributes.

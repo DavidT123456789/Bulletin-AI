@@ -26,6 +26,7 @@ import { FocusPanelNavigation } from './FocusPanelNavigation.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ModalUI } from './ModalUIManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { VariationsManager } from './VariationsManager.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 
@@ -55,6 +56,9 @@ export const FocusPanelManager = {
     init(appreciationsManager, listViewManager) {
         AppreciationsManager = appreciationsManager;
         this.listViewManager = listViewManager;
+
+        // Initialize extracted sub-modules
+        FocusPanelRefinement.init(this, UI);
 
         // Initialize History module with callbacks
         FocusPanelHistory.init({
@@ -745,13 +749,13 @@ export const FocusPanelManager = {
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="font-weight: 600; color: var(--text-primary);">Moyenne :</span>
                                 <input type="text" class="history-grade-input-creation" data-period="${periodKey}" 
-                                    value="${grade}" 
+                                    value="${Utils.escapeHtml(grade)}" 
                                     placeholder="--" style="width:50px; text-align:center; padding:4px; border:1px solid var(--border-color); border-radius:4px; background: var(--bg-primary);">
                             </div>
                         </div>
                         <textarea class="history-appreciation-input-creation" data-period="${periodKey}"
                             placeholder="Saisissez l'appréciation pour le trimestre ${shortPeriod}..." 
-                            style="width:100%; min-height:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:0.9rem; resize:vertical; background: var(--bg-primary); line-height: 1.5;">${appreciation}</textarea>
+                            style="width:100%; min-height:80px; padding:8px; border:1px solid var(--border-color); border-radius:4px; font-size:0.9rem; resize:vertical; background: var(--bg-primary); line-height: 1.5;">${Utils.escapeHtml(appreciation)}</textarea>
                     </div>
                 `;
             } else {
@@ -760,9 +764,9 @@ export const FocusPanelManager = {
                     <div class="timeline-compact-badge">${shortPeriod}</div>
                     <div class="timeline-compact-content">
                         <div class="timeline-compact-header">
-                            <span>Moyenne : ${grade}</span>
+                            <span>Moyenne : ${Utils.escapeHtml(grade)}</span>
                         </div>
-                        ${appreciation ? `<div class="timeline-compact-appreciation">"${appreciation}"</div>` : ''}
+                        ${appreciation ? `<div class="timeline-compact-appreciation">"${Utils.escapeHtml(appreciation)}"</div>` : ''}
                     </div>
                 `;
             }
@@ -1053,7 +1057,7 @@ export const FocusPanelManager = {
                     const appreciationEl = document.getElementById('focusAppreciationText');
                     // Show error state
                     if (appreciationEl) {
-                        appreciationEl.innerHTML = `<span class="error-text">${newResult.errorMessage}</span>`;
+                        appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(newResult.errorMessage)}</span>`;
                     }
                     // Show error badge
                     FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
@@ -1122,7 +1126,7 @@ export const FocusPanelManager = {
                 UI.showNotification(`Erreur : ${error.message}`, 'error');
 
                 if (appreciationEl) {
-                    appreciationEl.innerHTML = `<span class="error-text">${error.message}</span>`;
+                    appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(error.message)}</span>`;
                 }
 
                 FocusPanelStatus.updateAppreciationStatus(null, { state: 'error' });
@@ -1304,7 +1308,7 @@ export const FocusPanelManager = {
         // === 1. HEADER: Student Name ===
         const nameEl = document.getElementById('focusStudentName');
         if (nameEl) {
-            nameEl.innerHTML = `${result.prenom} ${result.nom} <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>`;
+            nameEl.innerHTML = `${Utils.escapeHtml(result.prenom)} ${Utils.escapeHtml(result.nom)} <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>`;
         }
 
         // === 2. HEADER: Status Badges ===
@@ -1450,7 +1454,7 @@ export const FocusPanelManager = {
             hasAppreciation = false;
         } else if (result.errorMessage && result.errorPeriod === currentPeriod) {
             // Error state for current period — show error banner
-            appreciationEl.innerHTML = `<span class="error-text">${result.errorMessage}</span>`;
+            appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(result.errorMessage)}</span>`;
             appreciationEl.classList.remove('empty', 'filled');
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
             hasAppreciation = false;
@@ -1591,209 +1595,10 @@ export const FocusPanelManager = {
 
 
 
-    /**
-     * Affiche une prévisualisation du prompt de raffinement
-     * @param {string} refineType - Type de raffinement
-     * @private
-     */
-    async _showRefinementPreview(refineType) {
-        const appreciationText = document.getElementById('focusAppreciationText');
-        if (!appreciationText) return;
-
-        const currentText = appreciationText.textContent?.trim();
-        if (!currentText || currentText.includes('Aucune appréciation')) {
-            UI.showNotification('Générez d\'abord une appréciation', 'info');
-            return;
-        }
-
-        const promptText = PromptService.getRefinementPrompt(refineType, currentText);
-        await this._displayPromptModal(promptText, 'Prévisualisation du Prompt (Raffinement)');
-    },
-
-    /**
-     * Helper partagé pour afficher une modale de prévisualisation de prompt
-     * @param {string} promptText - Le texte du prompt à afficher
-     * @param {string} title - Le titre de la modale
-     * @private
-     */
-    async _displayPromptModal(promptText, title) {
-        // Simple HTML reset/escape
-        const escapedText = Utils.escapeHtml(promptText);
-
-        // Create HTML content for the modal
-        const message = `
-            <div style="text-align: left;">
-                <textarea readonly class="prompt-preview-textarea" style="
-                    width: 100%; 
-                    height: 400px; 
-                    padding: 12px; 
-                    border-radius: var(--radius-sm); 
-                    border: 1px solid var(--border-color); 
-                    background: var(--bg-secondary); 
-                    color: var(--text-primary); 
-                    font-family: 'SF Mono', Consolas, monospace; 
-                    font-size: 0.85rem; 
-                    line-height: 1.5;
-                    white-space: pre-wrap;
-                    resize: vertical;">${escapedText}</textarea>
-            </div>
-        `;
-
-        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
-            title: title,
-            confirmText: 'Copier',
-            cancelText: 'Fermer',
-            isDanger: false,
-            compact: false
-        });
-
-        if (confirmed) {
-            try {
-                await navigator.clipboard.writeText(promptText);
-                UI.showNotification('Prompt copié dans le presse-papier', 'success');
-            } catch (err) {
-                console.error('Failed to copy: ', err);
-                UI.showNotification('Échec de la copie', 'error');
-            }
-        }
-    },
-
-    /**
-     * Apply a refinement style to the appreciation
-     * @param {string} refineType - Type of refinement (concise, detailed, encouraging, variations, polish)
-     * @private
-     */
-    async _refineAppreciation(refineType) {
-        const appreciationText = document.getElementById('focusAppreciationText');
-        if (!appreciationText) return;
-
-        const currentText = appreciationText.textContent?.trim();
-        if (!currentText || currentText.includes('Aucune appréciation')) {
-            UI.showNotification('Générez d\'abord une appréciation', 'info');
-            return;
-        }
-
-        // Save current state to history before refinement
-        FocusPanelHistory.push(currentText);
-
-        // Find the refine button and show loading
-        const btn = document.querySelector(`[data-refine-type="${refineType}"]`);
-        if (btn) {
-            // Add magic loading state - keeps text visible with animated effects
-            btn.classList.add('is-generating');
-
-            // Show pending badge during refinement
-            FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
-
-            // CRITICAL: Register in _activeGenerations to prevent input event from
-            // resetting wasGenerated to false during typewriter animation
-            const refineStudentId = this.currentStudentId;
-
-            // Cancel any existing generation for this student (restart behavior)
-            this._cancelGenerationForStudent(refineStudentId);
-
-            // Create real AbortController for this refinement
-            const abortController = new AbortController();
-            this._activeGenerations.set(refineStudentId, abortController);
-            const signal = abortController.signal;
-
-            try {
-                // Use VariationsManager to apply refinement
-                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-                if (!result) return;
-
-                const response = await VariationsManager.applyRefinement(currentText, refineType, signal);
-
-                // Check if aborted
-                if (signal.aborted) return;
-
-                if (response && response.text) {
-                    const refined = response.text;
-
-                    // CRITICAL: Update result data BEFORE typewriter to prevent input event
-                    // from resetting wasGenerated to false during the animation
-                    result.appreciation = refined;
-                    result.copied = false;
-                    result.wasGenerated = true;
-                    result.appreciationSource = 'ai';
-                    const currentPeriod = appState.currentPeriod;
-                    if (result.studentData.periods[currentPeriod]) {
-                        result.studentData.periods[currentPeriod].appreciation = refined;
-                    }
-
-                    // Update AI metadata (model, tokens, time)
-                    if (response.modelUsed) {
-                        result.studentData.currentAIModel = response.modelUsed;
-                    }
-                    // Structure expected by Utils.getGenerationModeInfo
-                    result.tokenUsage = {
-                        appreciation: {
-                            total_tokens: response.usage?.total_tokens || 0
-                        },
-                        generationTimeMs: response.generationTimeMs || 0
-                    };
-                    result.timestamp = new Date().toISOString();
-
-                    // CRITICAL FIX: Update snapshot after refinement to reset dirty state
-                    // Refinement uses current data, so the new appreciation is up-to-date
-                    result.promptHash = PromptService.getPromptHash({
-                        ...result.studentData,
-                        id: result.id,
-                        currentPeriod: currentPeriod
-                    });
-                    result.generationPeriod = currentPeriod;
-
-                    // Get current word count (for animation start value)
-                    const currentWordCount = Utils.countWords(appreciationText.textContent || '');
-
-                    // Calculate target word count from refined text
-                    const targetWordCount = Utils.countWords(refined);
-
-                    // Start word count animation IN PARALLEL with typewriter
-                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
-
-                    // Effet typewriter pour afficher le nouveau texte
-                    const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(refined));
-                    await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
-
-                    // Push refined version to history with source type
-                    FocusPanelHistory.push(refined, refineType);
-
-                    // Show done badge after successful refinement
-                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
-
-                    // Update AI indicator with new metadata
-                    FocusPanelStatus.updateSourceIndicator(result);
-
-                    UI.showNotification('Appréciation raffinée !', 'success');
-                }
-            } catch (error) {
-                // Handle abort gracefully (user cancelled)
-                // AIService throws "Import annulé par l'utilisateur." when external signal is aborted
-                const isAborted = error.name === 'AbortError'
-                    || signal.aborted
-                    || error.message?.includes('annulé');
-
-                if (isAborted) {
-                    UI.showNotification('Amélioration annulée', 'info');
-                    // Reset status to previous state
-                    FocusPanelStatus.refreshAppreciationStatus();
-                    return;
-                }
-
-                console.error('Refinement error:', error);
-                UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
-                // Show error badge on failure
-                const result = appState.generatedResults.find(r => r.id === refineStudentId);
-                FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
-            } finally {
-                // Clean up _activeGenerations
-                this._activeGenerations.delete(refineStudentId);
-                // Remove magic loading state
-                btn.classList.remove('is-generating');
-            }
-        }
-    },
+    // Refinement functions delegated to FocusPanelRefinement
+    _showRefinementPreview(refineType) { return FocusPanelRefinement.showPreview(refineType); },
+    _displayPromptModal(promptText, title) { return FocusPanelRefinement.displayPromptModal(promptText, title); },
+    _refineAppreciation(refineType) { return FocusPanelRefinement.apply(refineType); },
 
 
 
@@ -1950,7 +1755,7 @@ export const FocusPanelManager = {
         const readBadges = document.getElementById('focusReadBadges');
         if (readBadges) {
             const statuses = result.studentData.statuses || [];
-            readBadges.innerHTML = statuses.map(s => `<span class="status-pill">${s}</span>`).join('');
+            readBadges.innerHTML = statuses.map(s => `<span class="status-pill">${Utils.escapeHtml(s)}</span>`).join('');
         }
 
         // Update grade display
