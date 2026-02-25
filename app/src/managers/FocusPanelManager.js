@@ -1113,20 +1113,24 @@ export const FocusPanelManager = {
                 return;
             }
 
-            console.error('Erreur génération:', error);
+            // Persist error in the model so it appears in the table and dashboard
+            result.errorMessage = error.message;
+            result.errorPeriod = generatingForPeriod;
 
-            // Only show error if still on the same student
+            // Only show error in panel if still on the same student
             if (this.currentStudentId === generatingForStudentId) {
                 UI.showNotification(`Erreur : ${error.message}`, 'error');
 
-                // Show error state
                 if (appreciationEl) {
                     appreciationEl.innerHTML = `<span class="error-text">${error.message}</span>`;
                 }
 
-                // Show error badge
                 FocusPanelStatus.updateAppreciationStatus(null, { state: 'error' });
             }
+
+            // Update list row to show error badge
+            this._updateListRow(result);
+            StorageManager.saveAppState();
         } finally {
             // Ensure we clean up the map in case of errors/exit
             if (this._activeGenerations.has(generatingForStudentId)) {
@@ -1443,10 +1447,15 @@ export const FocusPanelManager = {
                 UI.showInlineSpinner(generateBtn);
             }
 
-            hasAppreciation = false; // Consider as no appreciation yet
+            hasAppreciation = false;
+        } else if (result.errorMessage && result.errorPeriod === currentPeriod) {
+            // Error state for current period — show error banner
+            appreciationEl.innerHTML = `<span class="error-text">${result.errorMessage}</span>`;
+            appreciationEl.classList.remove('empty', 'filled');
+            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
+            hasAppreciation = false;
         } else {
             // Normal rendering: Get appreciation for the CURRENT period specifically
-            // [FIX] Use period-specific appreciation as source of truth (not result.appreciation)
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
 
             if (periodAppreciation && periodAppreciation.trim()) {

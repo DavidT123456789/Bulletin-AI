@@ -154,12 +154,12 @@ export const ResultsUIManager = {
                 }
 
                 if (filter === 'error') {
-                    return !!(r.errorMessage && r.studentData?.currentPeriod === activePeriod);
+                    return !!(r.errorMessage && r.errorPeriod === activePeriod);
                 }
 
                 if (filter === 'pending') {
                     // No valid appreciation for current period
-                    if (r.errorMessage && r.studentData?.currentPeriod === activePeriod) return false;
+                    if (r.errorMessage && r.errorPeriod === activePeriod) return false;
                     const appreciation = r.studentData?.periods?.[activePeriod]?.appreciation || r.appreciation;
                     if (!appreciation) return true;
                     const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
@@ -373,7 +373,7 @@ export const ResultsUIManager = {
             const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
             const appCurrent = (r.studentData?.currentPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
-            const hasBlockingError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            const hasBlockingError = r.errorMessage && r.errorPeriod === currentPeriod;
 
             if (hasBlockingError) return false;
             // Si pas de contenu défini -> En attente
@@ -391,7 +391,7 @@ export const ResultsUIManager = {
         // Count needs update (dirty OR error)
         const needsUpdateCount = sourceResults.filter(r => {
             // Error in current period
-            const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
             if (hasError) return true;
 
             // Dirty state (data modified since creation - works for AI and manual)
@@ -557,7 +557,7 @@ export const ResultsUIManager = {
 
                     errorCount++;
                     const msg = Utils.translateErrorMessage(e.message);
-                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
+                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, resultToRegen.appreciation || '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
                         // Use centralized updateResult to preserve user data
@@ -582,7 +582,7 @@ export const ResultsUIManager = {
             MassImportManager.massImportAbortController = null;
 
             // Hide progress and show errors if any
-            UI.hideHeaderProgress(errorCount > 0, errorCount);
+            UI.hideHeaderProgress(errorCount > 0);
 
             if (wasAborted) {
                 UI.showNotification("Régénération annulée.", "warning");
@@ -616,7 +616,7 @@ export const ResultsUIManager = {
 
         // Find all results that need updating (dirty OR error)
         const toRegen = sourceResults.filter(r => {
-            const hasError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
             if (hasError) return true;
 
             // Dirty state (data modified since creation - works for AI and manual)
@@ -697,7 +697,7 @@ export const ResultsUIManager = {
 
                     newErrorCount++;
                     const msg = Utils.translateErrorMessage(e.message);
-                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
+                    const errorResult = Am.createResultObject(resultToRegen.nom, resultToRegen.prenom, resultToRegen.appreciation || '', resultToRegen.evolutions, resultToRegen.studentData, {}, {}, `Erreur IA : ${msg}.`);
                     const resultIndex = appState.generatedResults.findIndex(r => r.id === resultToRegen.id);
                     if (resultIndex > -1) {
                         // Use centralized updateResult to preserve user data
@@ -717,7 +717,7 @@ export const ResultsUIManager = {
             }
 
             MassImportManager.massImportAbortController = null;
-            UI.hideHeaderProgress(newErrorCount > 0, newErrorCount);
+            UI.hideHeaderProgress(newErrorCount > 0);
 
             if (wasAborted) {
                 UI.showNotification("Actualisation annulée.", "warning");

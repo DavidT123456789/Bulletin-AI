@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, MODEL_PRECISE_NAMES, FALLBACK_CONFIG } from '../config/models.js';
+import { MODEL_SHORT_NAMES, FALLBACK_CONFIG } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -497,25 +497,21 @@ export const SettingsUIManager = {
 
     /**
      * Identifie le fournisseur (ID) associé à un modèle donné.
-     * Centralise la logique de détection pour éviter la duplication.
+     * Aligné avec AIService._getProviderForModel() pour garantir la cohérence.
+     * Seuls les modèles 'mistral-direct-*' utilisent l'API Mistral directe.
+     * Les autres (ministral-3b, mistral-small, etc.) passent par OpenRouter.
      * @param {string} model - ID du modèle (ex: 'gemini-2.5-flash', 'ollama-llama3')
      * @returns {string} ID du provider (ex: 'google', 'ollama', 'openrouter')
      * @private
      */
     _getProviderIdForModel(model) {
         if (!model) return 'openrouter';
-
-        // Cas spéciaux
-        if (model.endsWith('-free')) return 'openrouter'; // Priorité aux modèles gratuits OpenRouter
-
-        // Détection par préfixe/mot-clé
+        if (model.endsWith('-free')) return 'openrouter';
         if (model.startsWith('gemini')) return 'google';
-        if (model.startsWith('openai') || model.startsWith('gpt')) return 'openai';
-        if (model.startsWith('anthropic') || model.startsWith('claude')) return 'anthropic';
+        if (model.startsWith('openai')) return 'openai';
+        if (model.startsWith('anthropic')) return 'anthropic';
         if (model.startsWith('ollama')) return 'ollama';
-        if (model.startsWith('mistral') || model.includes('ministral') || model.includes('devstral') || model.startsWith('codestral')) return 'mistral'; // Mistral Direct
-
-        // Par défaut (DeepSeek, Llama via OpenRouter, etc.)
+        if (model.startsWith('mistral-direct')) return 'mistral';
         return 'openrouter';
     },
 
@@ -640,10 +636,12 @@ export const SettingsUIManager = {
             // 1. Affiche le nom court depuis la config centralisée
             DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
 
-            // 2. Tooltip : description complète + ID technique
+            // 2. Tooltip : nom du modèle (depuis le dropdown = Single Source of Truth) + ID technique
             if (DOM.headerAiChip) {
-                const preciseName = MODEL_PRECISE_NAMES[model] || MODEL_SHORT_NAMES[model] || model;
-                const tooltipContent = `<strong>${preciseName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
+                const select = document.getElementById('aiModelSelect');
+                const selectedOption = select?.querySelector(`option[value="${model}"]`);
+                const displayName = selectedOption?.textContent?.replace(/\s+/g, ' ').trim() || MODEL_SHORT_NAMES[model] || model;
+                const tooltipContent = `<strong>${displayName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
                 DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
 
                 if (DOM.headerAiChip._tippy) {

@@ -588,12 +588,11 @@ export const ListViewRenderer = {
      * @private
      */
     getAppreciationCell(result) {
-        // Short-circuit: error state always takes priority over content/period logic
-        if (result.errorMessage) {
+        // Short-circuit: error state takes priority, but ONLY for the period it occurred in
+        const currentPeriod = appState.currentPeriod;
+        if (result.errorMessage && result.errorPeriod === currentPeriod) {
             return this.getStatusBadge('error');
         }
-
-        const currentPeriod = appState.currentPeriod;
         let appreciation = '';
 
         // 1. PrioritÃ©: apprÃ©ciation stockÃ©e directement dans la pÃ©riode

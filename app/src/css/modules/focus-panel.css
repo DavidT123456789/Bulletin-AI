@@ -1816,10 +1816,9 @@
 .focus-refinement-options {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-top: 0;
-    /* Reduced top padding for balanced spacing: text (14px bottom) + 8px = 22px ≈ 16px bottom  */
-    padding: 8px 16px 16px 16px;
+    padding: 6px 16px 12px 16px;
 }
 
 /* Redesigned Chips - Compact */
@@ -1829,20 +1828,19 @@
     background: rgba(0, 0, 0, 0.02);
     border: none;
     color: var(--text-secondary);
-    padding: 7px 14px;
+    padding: 6px 11px;
+    height: auto;
     border-radius: 100px;
-    /* Pill shape restauré */
     font-size: 12px;
     font-weight: 600;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     cursor: pointer;
     box-shadow: none;
     position: relative;
     overflow: hidden;
-    /* Pour l'effet shine */
 }
 
 /* Dark mode: fond plus visible */
@@ -2001,14 +1999,13 @@
    6. FOOTER (Opaque - contrasts with glassmorphism panel)
    ============================ */
 .focus-footer {
-    padding: 14px 18px;
-    /* Opaque background - contrasts with glassmorphism panel */
+    padding: 10px 18px;
     background: var(--bg-color);
     border-top: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     z-index: 10;
     position: sticky;
     bottom: 0;
@@ -2022,8 +2019,8 @@
     background: transparent;
     color: var(--text-secondary);
     font-weight: 600;
-    padding: 10px 16px;
-    border-radius: 12px;
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
     font-size: 13px;
     transition: all 0.2s;
     border: 1px solid transparent;
@@ -2049,13 +2046,11 @@
 
 #focusGenerateBtn {
     background: var(--gradient-primary);
-    /* Use gradient */
     color: white;
     border: none;
-    border-radius: 14px;
-    /* Refined corners */
-    padding: 12px 24px;
-    font-size: 14px;
+    border-radius: var(--radius-md);
+    padding: 8px 20px;
+    font-size: 13px;
     font-weight: 700;
     box-shadow: none;
     flex: 1;
@@ -3851,7 +3846,7 @@
     }
 
     .focus-footer .btn {
-        padding: 10px 14px;
+        padding: 8px 12px;
         font-size: 13px;
     }
 
@@ -3865,6 +3860,7 @@
 
     .focus-refinement-options .btn {
         flex-shrink: 0;
+        height: auto;
     }
 
 
@@ -4121,7 +4117,8 @@
 
     .focus-refinement-options .btn {
         font-size: 11px;
-        padding: 6px 10px;
+        padding: 4px 8px;
+        height: auto;
     }
 
     /* Footer: Fixed at bottom with safe area */
@@ -4137,10 +4134,8 @@
     .focus-footer .btn {
         flex: 1 1 0;
         min-width: 0;
-        /* Allow shrinking below content size */
-        padding: 12px 10px;
+        padding: 8px 10px;
         font-size: 13px;
-        /* Ensure text doesn't overflow */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -4250,7 +4245,7 @@
     }
 
     .focus-footer .btn {
-        padding: 10px 12px;
+        padding: 8px 10px;
         font-size: 13px;
     }
 

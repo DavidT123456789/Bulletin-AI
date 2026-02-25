@@ -177,9 +177,17 @@ export const SingleStudentManager = {
             this.resetForm(true);
 
         } catch (error) {
-            console.error('Erreur :', error);
             const msg = Utils.translateErrorMessage(error.message);
+
+            // Persist error on existing result so it's visible in the table
+            if (existingStudentIndex > -1) {
+                const existingResult = appState.generatedResults[existingStudentIndex];
+                existingResult.errorMessage = `Erreur IA : ${msg}.`;
+                existingResult.errorPeriod = appState.currentPeriod;
+            }
+
             UI.showNotification(`Erreur : ${msg}`, 'error');
+            AppreciationsManager.renderResults();
         } finally {
             UI.hideInlineSpinner(loadingBtn);
             UI.hideHeaderProgress();
@@ -240,8 +248,17 @@ export const SingleStudentManager = {
                 await ListViewManager.updateRow(newResult.id, newResult, true);
             }
         } catch (error) {
-            console.error('Erreur de mise à jour:', error);
             const msg = Utils.translateErrorMessage(error.message);
+
+            // Persist error on existing result so it's visible in the table
+            const studentIndex = appState.generatedResults.findIndex(r => r.id === appState.currentEditingId);
+            if (studentIndex > -1) {
+                const existingResult = appState.generatedResults[studentIndex];
+                existingResult.errorMessage = `Erreur IA : ${msg}.`;
+                existingResult.errorPeriod = appState.currentPeriod;
+                await ListViewManager.updateRow(appState.currentEditingId, existingResult, false);
+            }
+
             UI.showNotification(`Erreur : ${msg}`, 'error');
         } finally {
             UI.hideInlineSpinner(loadingBtn);

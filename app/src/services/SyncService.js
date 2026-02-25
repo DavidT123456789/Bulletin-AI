@@ -240,6 +240,12 @@ export const SyncService = {
                 saveBtn.classList.add(currentConfig.class);
             }
 
+            // Disable Save/Load when not actively connected
+            if (state === 'expired') {
+                saveBtn.classList.add('disabled');
+                if (loadBtn) loadBtn.classList.add('disabled');
+            }
+
             // Reconnect button (expired state only)
             if (reconnectBtn) {
                 if (state === 'expired') {

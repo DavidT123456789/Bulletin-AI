@@ -1,6 +1,6 @@
 /**
  * @fileoverview Configuration des modèles IA, coûts et fallback.
- * Dernière vérification : 23 février 2026
+ * Dernière vérification : 25 février 2026
  * @module config/models
  */
 
@@ -47,11 +47,11 @@ export const MODEL_DESCRIPTIONS = {
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT</strong> Llama 3.3 70B. Quota partagé quotidien.",
     // OpenRouter - Payants
-    'ministral-3b': "<strong>~0€</strong> Mistral 3B. Ultra économique, excellent français.",
+    'ministral-3b': "<strong>~0€</strong> Ministral 3 3B. Ultra économique, excellent français.",
     'amazon-nova-v1-lite': "<strong>Économique.</strong> Amazon Nova Lite 1.0.",
     'openrouter': "DeepSeek V3. Performant et économique.",
-    'mistral-small': "<strong>Français.</strong> Mistral Small (via OpenRouter).",
-    'mistral-large': "Mistral Large (via OpenRouter). Pour textes nuancés.",
+    'mistral-small': "<strong>Français.</strong> Mistral Small 3.2 (via OpenRouter).",
+    'mistral-large': "Mistral Large 3 (via OpenRouter). Pour textes nuancés.",
     'claude-sonnet-4.6': "<strong>✨ Recommandé.</strong> Claude Sonnet 4.6 (via OpenRouter).",
     // Ollama
     'ollama-qwen3:8b': "<strong>🏠 Local - Recommandé.</strong> Qwen 3 8B.",
@@ -112,11 +112,11 @@ export const MODEL_SHORT_NAMES = {
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': 'Llama 3.3 70B',
     // OpenRouter - Payants
-    'ministral-3b': 'Ministral 3B',
+    'ministral-3b': 'Ministral 3 3B',
     'amazon-nova-v1-lite': 'Nova Lite',
     'openrouter': 'DeepSeek V3',
-    'mistral-small': 'Mistral Small',
-    'mistral-large': 'Mistral Large',
+    'mistral-small': 'Mistral Small 3.2',
+    'mistral-large': 'Mistral Large 3',
     'claude-sonnet-4.6': 'Claude Sonnet 4.6',
     // Ollama (local)
     'ollama-qwen3:8b': '🏠 Qwen 3 8B',
@@ -131,25 +131,6 @@ export const MODEL_SHORT_NAMES = {
     'mistral-direct-small-latest': 'Mistral Small',
 };
 
-/**
- * Noms complets et précis des modèles pour affichage détaillé (tooltips)
- */
-export const MODEL_PRECISE_NAMES = {
-    'gemini-2.5-flash': 'Gemini 2.5 Flash',
-    'gemini-2.5-pro': 'Gemini 2.5 Pro',
-    'gemini-3-flash-preview': 'Gemini 3 Flash Preview',
-    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro Preview',
-    'openai-o3-mini': 'OpenAI o3 Mini',
-    'openai-gpt-4o-mini': 'OpenAI GPT-4o Mini',
-    'llama-3.3-70b-free': 'Llama 3.3 70B Instruct',
-    'mistral-direct-large-latest': 'Mistral Large 3',
-    'mistral-direct-small-latest': 'Mistral Small 3.1',
-    'ministral-3b': 'Ministral 3B',
-    'claude-sonnet-4.6': 'Claude 3.5 Sonnet (v4.6)',
-    'anthropic-claude-sonnet-4.6': 'Claude 3.5 Sonnet (v4.6)',
-    'anthropic-claude-opus-4.6': 'Claude 3 Opus (v4.6)',
-    'openrouter': 'DeepSeek V3 (via OpenRouter)',
-};
 
 /**
  * Configuration Ollama

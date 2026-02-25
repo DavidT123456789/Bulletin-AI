@@ -24,6 +24,7 @@ export const StudentDataManager = {
                 prompts: prompts || { appreciation: null, sw: null, ns: null }
             },
             errorMessage,
+            errorPeriod: errorMessage ? appState.currentPeriod : null,
             timestamp: new Date().toISOString(),
             strengthsWeaknesses: null,
             nextSteps: null,
@@ -89,6 +90,7 @@ export const StudentDataManager = {
         existingResult.appreciation = newResult.appreciation;
         existingResult.evolutions = newResult.evolutions;
         existingResult.errorMessage = newResult.errorMessage;
+        existingResult.errorPeriod = newResult.errorPeriod ?? (newResult.errorMessage ? appState.currentPeriod : null);
         existingResult.timestamp = newResult.timestamp;
         existingResult.tokenUsage = newResult.tokenUsage;
         existingResult.copied = false;

@@ -221,9 +221,8 @@ export const GeneralListeners = {
         // (except if clicking on specific action buttons inside like Cancel or Errors)
         if (DOM.headerGenDashboard) {
             addClickListener(DOM.headerGenDashboard, (e) => {
-                // Ignore clicks that originated from specific buttons 
-                // (though stopPropagation in their listeners should handle this, double-check is safer)
-                if (e.target.closest('#dashCancelBtn') || e.target.closest('#dashErrors')) return;
+                // Ignore clicks on the Cancel button during generation
+                if (e.target.closest('#dashCancelBtn')) return;
 
                 SettingsUIManager.createSnapshot();
                 UI.openModal(DOM.settingsModal);
@@ -233,12 +232,7 @@ export const GeneralListeners = {
             });
         }
 
-        // Generation Dashboard badge click handlers
-        // Error badge -> regenerate errors
-        addClickListener(DOM.dashErrors, (e) => {
-            e && e.stopPropagation(); // Prevent opening settings
-            EventHandlersManager.handleRegenerateErrorsClick?.();
-        });
+
 
         // Cancel button during generation
         addClickListener(DOM.dashCancelBtn, async (e) => {

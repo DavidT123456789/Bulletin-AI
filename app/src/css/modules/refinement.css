@@ -137,11 +137,10 @@
 
 .options-group .btn {
     border-radius: var(--radius-sm);
-    padding: 7px 14px;
+    padding: 5px 12px;
     font-size: 0.85rem;
-    min-height: 32px;
+    min-height: 28px;
     transition: all var(--transition-fast);
-    /* Ensure gradients are consistent if using .btn-ai */
 }
 
 /* --- Comparaison Avant / Après --- */

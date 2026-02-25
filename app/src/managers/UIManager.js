@@ -804,10 +804,9 @@ export const UI = {
 
     /**
      * Hides the generating state and refreshes dashboard counts
-     * @param {boolean} [hasErrors=false] - Whether there are errors to show
-     * @param {number} [errorCount=0] - Number of errors
+     * @param {boolean} [hasErrors=false] - Whether there were errors during generation
      */
-    hideHeaderProgress(hasErrors = false, errorCount = 0) {
+    hideHeaderProgress(hasErrors = false) {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
@@ -839,21 +838,10 @@ export const UI = {
         const currentPeriod = appState.currentPeriod;
 
         let validated = 0;
-        let errors = 0;
         let pending = 0;
-        // Collect error messages for tooltip
-        const errorMessages = [];
         for (const result of results) {
-            // Check for errors first
-            if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
-                errors++;
-                // Collect unique error types for tooltip
-                const shortError = result.errorMessage.length > 50
-                    ? result.errorMessage.substring(0, 50) + '…'
-                    : result.errorMessage;
-                if (!errorMessages.includes(shortError)) {
-                    errorMessages.push(shortError);
-                }
+            // Skip errors — they are handled by the Smart Action Button in the table
+            if (result.errorMessage && result.errorPeriod === currentPeriod) {
                 continue;
             }
 
@@ -882,20 +870,6 @@ export const UI = {
         // Update validated count
         if (DOM.dashValidatedCount) {
             DOM.dashValidatedCount.textContent = validated;
-        }
-
-        // Update error count (show/hide badge) with tooltip
-        if (DOM.dashErrors && DOM.dashErrorCount) {
-            DOM.dashErrorCount.textContent = errors;
-            DOM.dashErrors.classList.toggle('visible', errors > 0);
-
-            // Update tooltip with error details (avoid redundant text)
-            if (errors > 0 && errorMessages.length > 0) {
-                const errorList = errorMessages.slice(0, 3).join('<br>');
-                const moreText = errorMessages.length > 3 ? `<br>(+${errorMessages.length - 3} autre(s))` : '';
-                const tooltipText = `${errorList}${moreText}<br><span class="kbd-hint">Régénérer</span>`;
-                DOM.dashErrors.setAttribute('data-tooltip', tooltipText);
-            }
         }
 
         // Pending badge hidden in ultra-minimalist mode (count shown in Generate button)
@@ -931,7 +905,7 @@ export const UI = {
 
         // Add all-complete state if everything is done
         if (DOM.headerGenDashboard) {
-            const allDone = validated > 0 && pending === 0 && errors === 0;
+            const allDone = validated > 0 && pending === 0;
             DOM.headerGenDashboard.classList.toggle('all-complete', allDone);
         }
     },
@@ -1267,22 +1241,8 @@ export const UI = {
 
     updateControlButtons() {
         const visible = appState.filteredResults;
-        // Note: regenerateAllBtn est maintenant dans le dropdown dynamique du tableau
         const regenerateBtn = document.getElementById('regenerateAllBtn');
         if (regenerateBtn) regenerateBtn.disabled = visible.length === 0;
-
-        // Filter errors by current class only
-        const currentClassId = appState.currentClassId;
-        const classErrors = appState.generatedResults.filter(r =>
-            r.errorMessage && (!currentClassId || r.classId === currentClassId)
-        );
-        const errorCount = classErrors.length;
-
-        // Update shortcut button in table actions (if exists)
-        const regenErrorsBtnShortcut = document.getElementById('regenerateErrorsBtn-shortcut');
-        if (regenErrorsBtnShortcut) {
-            regenErrorsBtnShortcut.style.display = errorCount > 0 ? 'inline-flex' : 'none';
-        }
 
         // Update generation dashboard with current counts
         this.updateDashboardCounts();

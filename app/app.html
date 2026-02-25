@@ -124,11 +124,6 @@
                             <iconify-icon icon="ph:check"></iconify-icon>
                             <span class="dash-count" id="dashValidatedCount">0</span>
                         </button>
-                        <!-- Error count (hidden if 0) -->
-                        <button class="dash-badge dash-errors" id="dashErrors" data-tooltip="Erreurs de génération">
-                            <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>
-                            <span class="dash-count" id="dashErrorCount">0</span>
-                        </button>
                         <!-- Pending count -->
                         <button class="dash-badge dash-pending" id="dashPending"
                             data-tooltip="En attente de génération">
@@ -1546,9 +1541,10 @@
                                                     <select id="aiModelSelect" class="compact-model-select">
                                                         <optgroup label="🐱 Mistral AI — GRATUIT 🇫🇷 (1B tokens/mois)">
                                                             <option value="mistral-direct-small-latest">Mistral Small
-                                                                (Dernier modèle, Recommandé)</option>
-                                                            <option value="mistral-direct-large-latest">Mistral Large
-                                                                (Dernier modèle, Puissant)</option>
+                                                                3.1
+                                                                (Recommandé)</option>
+                                                            <option value="mistral-direct-large-latest">Mistral Large 3
+                                                                (Puissant)</option>
                                                         </optgroup>
                                                         <optgroup label="💚 Google Gemini — QUOTA GRATUIT">
                                                             <option value="gemini-2.5-flash">Gemini 2.5 Flash (Stable)
@@ -1564,35 +1560,32 @@
                                                             <option value="llama-3.3-70b-free">Llama 3.3 70B (Puissant -
                                                                 Journalier)
                                                             </option>
-                                                            <option value="devstral-free">Devstral (Secours - Illimité?)
-                                                            </option>
                                                         </optgroup>
                                                         <optgroup label="💰 OpenRouter — PAYANT (économique)">
-                                                            <option value="claude-sonnet-4.5">Claude Sonnet 4.5
+                                                            <option value="claude-sonnet-4.6">Claude Sonnet 4.6
                                                                 (Puissant)</option>
-                                                            <option value="ministral-3b">Ministral 3B (~0€, Mistral)
+                                                            <option value="ministral-3b">Ministral 3 3B (~0€, Mistral)
                                                             </option>
                                                             <option value="amazon-nova-v1-lite">Nova Lite v1 (Très
                                                                 économique)
                                                             </option>
                                                             <option value="openrouter">DeepSeek V3 (Économique)</option>
-                                                            <option value="mistral-small">Mistral Small (Français)
+                                                            <option value="mistral-small">Mistral Small 3.2 (Français)
                                                             </option>
-                                                            <option value="mistral-large">Mistral Large (Puissant)
+                                                            <option value="mistral-large">Mistral Large 3 (Puissant)
                                                             </option>
                                                         </optgroup>
                                                         <optgroup label="💰 OpenAI — PAYANT">
+                                                            <option value="openai-o3-mini">o3 Mini (Raisonnement)
+                                                            </option>
                                                             <option value="openai-gpt-4o-mini">GPT-4o Mini (Économique)
                                                             </option>
-                                                            <option value="openai-gpt-3.5-turbo">GPT-3.5 Turbo (Rapide)
-                                                            </option>
-                                                            <option value="openai-gpt-4o">GPT-4o (Puissant)</option>
                                                         </optgroup>
                                                         <optgroup label="💰 Anthropic Claude — PAYANT">
-                                                            <option value="anthropic-claude-sonnet-4.5">Claude Sonnet
-                                                                4.5
+                                                            <option value="anthropic-claude-sonnet-4.6">Claude Sonnet
+                                                                4.6
                                                                 (Puissant)</option>
-                                                            <option value="anthropic-claude-opus-4.5">Claude Opus 4.5
+                                                            <option value="anthropic-claude-opus-4.6">Claude Opus 4.6
                                                                 (Le plus
                                                                 puissant)</option>
                                                         </optgroup>

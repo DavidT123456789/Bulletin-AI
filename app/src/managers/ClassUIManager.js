@@ -485,7 +485,7 @@ export const ClassUIManager = {
             let errorCount = 0;
 
             classResults.forEach(result => {
-                if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
+                if (result.errorMessage && result.errorPeriod === currentPeriod) {
                     errorCount++;
                     return;
                 }
@@ -549,7 +549,7 @@ export const ClassUIManager = {
         let errors = 0;
 
         classResults.forEach(result => {
-            if (result.errorMessage && result.studentData?.currentPeriod === currentPeriod) {
+            if (result.errorMessage && result.errorPeriod === currentPeriod) {
                 errors++;
                 return;
             }

@@ -149,6 +149,7 @@ export const MassImportManager = {
                     existingResult.studentData.statuses = newResultObject.studentData.statuses;
                     existingResult.timestamp = newResultObject.timestamp;
                     existingResult.errorMessage = newResultObject.errorMessage;
+                    existingResult.errorPeriod = newResultObject.errorPeriod ?? null;
                     existingResult.evolutions = newResultObject.evolutions;
                     existingResult.tokenUsage = newResultObject.tokenUsage;
                     existingResult.studentData.prompts = newResultObject.studentData.prompts;
@@ -207,7 +208,7 @@ export const MassImportManager = {
         } finally {
             // Hide progress and show errors if any
             const hasErrors = failedImports.length > 0;
-            UI.hideHeaderProgress(hasErrors, failedImports.length);
+            UI.hideHeaderProgress(hasErrors);
             this.massImportAbortController = null;
 
             Am.renderResults();
@@ -308,7 +309,7 @@ export const MassImportManager = {
             const effectiveApp = appRaw || appCurrent;
 
             // Erreur bloquante uniquement si elle concerne la période actuelle
-            const hasBlockingError = r.errorMessage && r.studentData?.currentPeriod === currentPeriod;
+            const hasBlockingError = r.errorMessage && r.errorPeriod === currentPeriod;
 
             // Priorité au flag explicite
             if (r.isPending) return !hasBlockingError;

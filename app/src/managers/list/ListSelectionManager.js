@@ -469,7 +469,7 @@ export const ListSelectionManager = {
 
         // 4. Cleanup & Feedback
         MassImportManager.massImportAbortController = null;
-        UI.hideHeaderProgress(errorCount > 0, errorCount);
+        UI.hideHeaderProgress(errorCount > 0);
         this.clearSelections();
 
         if (wasAborted) {

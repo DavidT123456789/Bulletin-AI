@@ -74,8 +74,6 @@ export function initDOM() {
     DOM.dashModelName = document.getElementById('dashModelName');
     DOM.dashValidated = document.getElementById('dashValidated');
     DOM.dashValidatedCount = document.getElementById('dashValidatedCount');
-    DOM.dashErrors = document.getElementById('dashErrors');
-    DOM.dashErrorCount = document.getElementById('dashErrorCount');
     DOM.dashPending = document.getElementById('dashPending');
     DOM.dashPendingCount = document.getElementById('dashPendingCount');
     DOM.dashGenerating = document.getElementById('dashGenerating');
