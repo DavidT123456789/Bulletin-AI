@@ -174,7 +174,7 @@
     gap: 14px;
     padding: 16px 20px;
     background: var(--surface-color);
-    border: 1.5px solid transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-lg, 16px);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
@@ -635,7 +635,7 @@
 /* État actif pour les filtres - Style hover + bordure rotative */
 .performance-card .detail-item.active-filter {
     background-color: transparent;
-    border: 1.5px solid transparent !important;
+    border: 1px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
@@ -824,7 +824,7 @@
 /* États actifs pour les filtres - Style hover + bordure rotative */
 .evolution-card .legend-item.active-filter {
     background-color: transparent;
-    border: 1.5px solid transparent !important;
+    border: 1px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,
@@ -1150,7 +1150,7 @@
     padding: 4px 2px;
     margin: -4px -2px;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1.5px solid transparent;
+    border: 1px solid transparent;
 }
 
 /* Hover style dynamique (exclut l'état actif) */
@@ -1171,7 +1171,7 @@
 /* État actif pour les filtres - Style avec bordure rotative */
 .hist-bar-group[role="button"].active-filter {
     background-color: transparent;
-    border: 1.5px solid transparent !important;
+    border: 1px solid transparent !important;
     background-image: linear-gradient(var(--surface-color), var(--surface-color)),
         conic-gradient(from var(--gradient-angle),
             rgba(var(--primary-color-rgb), 0.5) 0%,

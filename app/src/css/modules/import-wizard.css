@@ -492,7 +492,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(var(--primary-color-rgb), 0.015);
-    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all 0.25s ease;
@@ -1863,7 +1863,7 @@
     position: relative;
     padding: 16px;
     background: var(--surface-color);
-    border: 1.5px solid var(--border-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-fast);

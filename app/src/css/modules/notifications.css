@@ -152,7 +152,7 @@
 
 .notification-undo-btn {
     background: none;
-    border: 1.5px solid currentColor;
+    border: 1px solid currentColor;
     color: inherit;
     font-weight: 700;
     font-size: 13px;

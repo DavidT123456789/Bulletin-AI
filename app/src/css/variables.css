@@ -69,7 +69,7 @@
     /* Pour petits éléments internes */
 
     /* Input border width (single source of truth) */
-    --input-border-width: 1.5px;
+    --input-border-width: 1px;
     --input-border-width-focus: 2px;
     /* Thicker for animated gradient focus */
     --input-focus-bg: var(--surface-color);

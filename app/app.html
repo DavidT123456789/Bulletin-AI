@@ -2925,74 +2925,58 @@
     </div>
 
 
-    <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="welcomeModalTitle">
+    <div id="welcomeModal" class="modal" role="dialog" aria-modal="true" aria-label="Guide de bienvenue">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="welcomeModalTitle">🎉 Bienvenue dans Bulletin AI
-                    !</h2>
                 <button class="close-button" id="closeWelcomeModalBtn" aria-label="Fermer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             </div>
             <div class="modal-body">
                 <div id="welcome-step-1" class="welcome-step active">
-                    <div class="welcome-icon">🚀</div>
-                    <h3>Gagnez du temps sur vos bulletins</h3>
+                    <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI.</h3>
+                    <p class="welcome-subtitle-premium">Transformez vos notes en appréciations.</p>
 
-
-                    <div class="welcome-features-list">
-                        <div class="welcome-feature">
-                            <span class="feature-icon">✨</span>
-                            <span class="feature-text"><strong>Unique &
-                                    Varié</strong><br>Plus de
-                                répétitions
-                                robotiques.</span>
+                    <div class="welcome-chips">
+                        <div class="welcome-chip">
+                            <span class="welcome-chip__icon">
+                                <iconify-icon icon="solar:stars-minimalistic-bold"></iconify-icon>
+                            </span>
+                            <span class="welcome-chip__label">Unique &amp; Varié</span>
                         </div>
-                        <div class="welcome-feature">
-                            <span class="feature-icon">⚡</span>
-                            <span class="feature-text"><strong>Ultra Rapide</strong><br>Une
-                                classe
-                                entière en quelques
-                                minutes.</span>
+                        <div class="welcome-chip">
+                            <span class="welcome-chip__icon">
+                                <iconify-icon icon="solar:bolt-circle-bold"></iconify-icon>
+                            </span>
+                            <span class="welcome-chip__label">Ultra Rapide</span>
                         </div>
-                        <div class="welcome-feature">
-                            <span class="feature-icon">🔒</span>
-                            <span class="feature-text"><strong>Privé &
-                                    Sécurisé</strong><br>Vos données
-                                restent sous
-                                contrôle.</span>
+                        <div class="welcome-chip">
+                            <span class="welcome-chip__icon">
+                                <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                            </span>
+                            <span class="welcome-chip__label">Privé &amp; Sécurisé</span>
                         </div>
                     </div>
-
-                    <p style="margin-top: 25px; font-size: 0.9em; color: var(--text-secondary); opacity: 0.8;">
-                        Commençons par configurer votre environnement.
-                    </p>
                 </div>
                 <div id="welcome-step-2" class="welcome-step">
-
+                    <h3 class="welcome-title-premium">
+                        <span class="welcome-title-icon wave-animation">🔑</span>
+                        Activez votre Assistant
+                    </h3>
 
                     <div class="welcome-split-layout">
-                        <!-- Left Column: Context & Info -->
                         <div class="welcome-split-info">
-                            <div class="welcome-header-row">
-                                <span class="welcome-icon-small wave-animation">🔑</span>
-                                <h3>Activez votre Assistant</h3>
-                            </div>
-                            <p class="welcome-subtitle-left">
+                            <p class="welcome-split-desc">
                                 L'application a besoin d'une connexion IA.<br>
                                 Chaque option propose un accès gratuit.
                             </p>
-
-                            <div class="security-note-left">
-                                <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"></iconify-icon>
+                            <div class="welcome-info-pill welcome-info-pill--success">
+                                <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
                                 <span>Noms anonymisés • Stockage local</span>
                             </div>
                         </div>
 
-                        <!-- Right Column: Actions -->
                         <div class="welcome-split-action">
-
-                            <!-- Provider Selector - Centré -->
                             <div class="provider-selector-row">
                                 <div class="ui-segmented-control" id="welcomeProviderSelector">
                                     <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
@@ -3017,7 +3001,6 @@
                                 </div>
                             </div>
 
-                            <!-- API Key Input -->
                             <div class="welcome-api-key-group">
                                 <input type="password" id="welcomeApiKeyInput"
                                     placeholder="Collez votre clé API Mistral ici..." autocomplete="new-password">
@@ -3027,7 +3010,6 @@
                                 style="display: none; justify-content: flex-start; margin-bottom: 10px; font-size: 0.9em;">
                             </div>
 
-                            <!-- Action Links Row -->
                             <div class="welcome-action-links">
                                 <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer"
                                     class="get-key-link-mini" id="welcomeGetKeyLink"><iconify-icon
@@ -3045,53 +3027,44 @@
 
 
                 <div id="welcome-step-3" class="welcome-step">
-                    <div class="welcome-icon-small" style="text-align: center; margin-bottom: 15px;">🗓️
-                    </div>
-                    <h3>Votre rythme scolaire</h3>
-                    <p class="welcome-subtitle">Ce paramètre calibre l'IA pour qu'elle
-                        s'adapte à votre
-                        organisation.
-                    </p>
+                    <h3 class="welcome-title-premium">
+                        <span class="welcome-title-icon">🗓️</span>
+                        Votre rythme scolaire
+                    </h3>
 
-                    <div class="period-card-selector">
-                        <label class="period-card" for="welcomePeriodSystemTrimestres">
-                            <input type="radio" id="welcomePeriodSystemTrimestres" name="welcomePeriodSystemRadio"
-                                value="trimestres" checked>
-                            <div class="period-card-content">
-                                <div class="period-card-icon">
-                                    <iconify-icon icon="solar:chart-2-bold"></iconify-icon>
-                                </div>
-                                <div class="period-card-text">
-                                    <span class="period-card-title">Trimestres</span>
-                                    <span class="period-card-desc">3 périodes par an
-                                        (Automne, Hiver,
-                                        Printemps)</span>
+                    <div class="welcome-split-layout">
+                        <div class="welcome-split-info">
+                            <p class="welcome-split-desc">
+                                Ce paramètre calibre l'IA pour qu'elle s'adapte à votre organisation.
+                            </p>
+                            <div class="welcome-info-pill">
+                                <iconify-icon icon="solar:settings-bold"></iconify-icon>
+                                <span>Modifiable dans les réglages</span>
+                            </div>
+                        </div>
+
+                        <div class="welcome-split-action">
+                            <div class="welcome-period-selector">
+                                <div class="ui-segmented-control" id="welcomePeriodSelector">
+                                    <input type="radio" id="welcomePeriodSystemTrimestres"
+                                        name="welcomePeriodSystemRadio" value="trimestres" checked>
+                                    <label for="welcomePeriodSystemTrimestres" class="ui-segment">
+                                        <iconify-icon class="iconify-inline" icon="solar:chart-2-bold"></iconify-icon>
+                                        <span>Trimestres</span>
+                                    </label>
+                                    <input type="radio" id="welcomePeriodSystemSemestres"
+                                        name="welcomePeriodSystemRadio" value="semestres">
+                                    <label for="welcomePeriodSystemSemestres" class="ui-segment">
+                                        <iconify-icon class="iconify-inline"
+                                            icon="solar:pie-chart-2-bold"></iconify-icon>
+                                        <span>Semestres</span>
+                                    </label>
                                 </div>
                             </div>
-                        </label>
-                        <label class="period-card" for="welcomePeriodSystemSemestres">
-                            <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio"
-                                value="semestres">
-                            <div class="period-card-content">
-                                <div class="period-card-icon">
-                                    <iconify-icon class="iconify-inline" icon="solar:pie-chart-2-bold"></iconify-icon>
-                                </div>
-                                <div class="period-card-text">
-                                    <span class="period-card-title">Semestres</span>
-                                    <span class="period-card-desc">2 périodes par an
-                                        (Automne,
-                                        Printemps)</span>
-                                </div>
-                            </div>
-                        </label>
+                        </div>
                     </div>
-
-                    <p class="welcome-hint">Vous pourrez modifier ce paramètre à tout moment
-                        dans les
-                        réglages.</p>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
-                    <!-- Illustration Area -->
                     <!-- Transformation Illustration -->
                     <div class="welcome-transformation-svg">
                         <object type="image/svg+xml" data="./welcome-transformation.svg">
@@ -3099,11 +3072,11 @@
                         </object>
                     </div>
 
-
-                    <h3>Prêt à commencer !</h3>
-                    <p class="welcome-subtitle">Tout est configuré. Voyez l'IA en action sur
-                        des données
-                        d'exemple.</p>
+                    <div class="welcome-step-header">
+                        <h3 class="welcome-title-premium">Prêt à commencer !</h3>
+                        <p class="welcome-subtitle-premium">Tout est configuré. Voyez l'IA en action sur
+                            des données d'exemple.</p>
+                    </div>
 
                     <button class="btn btn-organic btn-organic--rounded btn-cta-full" id="welcomeLoadSampleBtn">
                         <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold"></iconify-icon>
@@ -3111,9 +3084,7 @@
                     </button>
 
                     <div id="welcome-next-step-info">Parfait ! Les données sont prêtes.
-                        Cliquez sur
-                        "Terminer" pour voir
-                        les résultats.</div>
+                        Cliquez sur "Terminer" pour voir les résultats.</div>
                 </div>
             </div>
             <div class="welcome-nav-container">

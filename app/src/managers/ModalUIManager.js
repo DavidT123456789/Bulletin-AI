@@ -99,11 +99,18 @@ export const ModalUI = {
 
         this._isIgnoringTooltips = true;
 
-        // Focus sur le premier élément focalisable après l'animation
+        // Focus sur le premier élément focalisable après l'animation (en évitant le bouton de fermeture si possible)
         setTimeout(() => {
-            const focusable = Array.from(modal.querySelectorAll(
+            const focusableElements = Array.from(modal.querySelectorAll(
                 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
-            )).find(el => el.offsetParent !== null && !el.disabled);
+            )).filter(el => el.offsetParent !== null && !el.disabled);
+
+            // Chercher un élément qui n'est pas le bouton de fermeture
+            let focusable = focusableElements.find(el => !el.classList.contains('close-button'));
+
+            // Fallback: si seul le bouton close existe (ou aucun), prendre le premier
+            if (!focusable && focusableElements.length > 0) focusable = focusableElements[0];
+
             if (focusable) focusable.focus();
 
             // Initialize and update gliders inside the modal (they weren't created when hidden)

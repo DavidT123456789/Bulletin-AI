@@ -167,7 +167,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-secondary);
-    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --lp-primary: #e6a23c;
     --lp-primary-dark: #d18b26;
     --lp-primary-light: rgba(230, 162, 60, .15);
@@ -886,7 +886,7 @@ img {
     bottom: 0;
     left: 0;
     border-radius: inherit;
-    padding: 1.5px;
+    padding: 1px;
     background: conic-gradient(from var(--gradient-angle), rgba(var(--lp-primary-rgb), .15), rgba(var(--lp-primary-rgb), .4) 30%, rgba(var(--lp-primary-rgb), 1) 50%, rgba(var(--lp-primary-rgb), .4) 70%, rgba(var(--lp-primary-rgb), .15));
     animation: rotation 6s linear infinite;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -3968,7 +3968,7 @@ img {
     bottom: 0;
     left: 0;
     border-radius: inherit;
-    padding: 1.5px;
+    padding: 1px;
     background: conic-gradient(from var(--gradient-angle), rgba(var(--lp-primary-rgb), .15), rgba(var(--lp-primary-rgb), .4) 30%, rgba(var(--lp-primary-rgb), 1) 50%, rgba(var(--lp-primary-rgb), .4) 70%, rgba(var(--lp-primary-rgb), .15));
     animation: rotation 6s linear infinite;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);

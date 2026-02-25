@@ -830,7 +830,7 @@
     background: rgba(var(--primary-color-rgb), 0.08);
     color: var(--text-primary);
     padding: 3px 10px;
-    border: 1.5px solid rgba(var(--primary-color-rgb), 0.35);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.35);
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.1);
 }
@@ -1961,7 +1961,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1.5px;
+    padding: 1px;
     background: conic-gradient(from var(--gradient-angle, 0deg),
             var(--primary-color) 0%,
             rgba(var(--primary-color-rgb), 0.3) 25%,
@@ -1984,7 +1984,7 @@
 [data-theme="dark"] .btn-ai-outline.is-generating {
     background: rgba(var(--primary-color-rgb), 0.18);
     box-shadow:
-        0 0 0 1.5px rgba(var(--primary-color-rgb), 0.4),
+        0 0 0 1px rgba(var(--primary-color-rgb), 0.4),
         0 4px 20px rgba(var(--primary-color-rgb), 0.25);
 }
 
