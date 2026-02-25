@@ -602,13 +602,22 @@
 
 /* === FIX: Disable header hover effect when hovering interactive children === */
 .appreciation-toggle-header:has(.btn-smart-action-inline:hover)::after,
+.appreciation-toggle-header:has(.btn-smart-action-inline:active)::after,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover)::after,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:active)::after,
 .appreciation-toggle-header:has(#avgWordsChip:hover)::after,
-.name-header-with-search:has(.inline-search-trigger-btn:hover)::after {
+.appreciation-toggle-header:has(#avgWordsChip:active)::after,
+.name-header-with-search:has(.inline-search-trigger-btn:hover)::after,
+.name-header-with-search:has(.inline-search-trigger-btn:active)::after {
     opacity: 0 !important;
 }
 
 .appreciation-toggle-header:has(.btn-smart-action-inline:hover) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon {
+.appreciation-toggle-header:has(.btn-smart-action-inline:active) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:active) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon,
+.appreciation-toggle-header:has(#avgWordsChip:active) .appreciation-toggle-icon {
     opacity: 0 !important;
 }
 
@@ -1301,10 +1310,10 @@
     .student-list-table tbody tr {
         background: var(--surface-color);
         border-radius: var(--radius-lg);
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border-color);
-        padding: 16px;
+        padding: 14px;
         position: relative;
         display: flex;
         flex-direction: row;
@@ -1330,10 +1339,10 @@
 
     /* 1. Identity (Top) */
     .student-name-cell {
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         padding-right: 48px !important;
         /* Espace pour l'action cell à droite */
-        padding-bottom: 12px !important;
+        padding-bottom: 8px !important;
         width: 100% !important;
     }
 
@@ -1360,10 +1369,15 @@
         position: static;
         flex: 0 0 auto !important;
         width: auto !important;
-        margin-right: 12px;
-        margin-bottom: 12px;
+        margin-right: 8px;
+        margin-bottom: 8px;
         display: flex !important;
         align-items: center;
+    }
+
+    /* Hide the empty dash placeholder on mobile — it becomes a floating '—' before the grade */
+    .status-cell:not(:has(.status-badges-container)) {
+        display: none !important;
     }
 
     /* 3. Grades (Middle Row) */
@@ -1371,31 +1385,31 @@
     .student-list-table td.evolution-cell {
         flex: 0 0 auto !important;
         width: auto !important;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         display: flex !important;
         align-items: center;
     }
 
     .grade-cell {
-        margin-right: 4px;
+        margin-right: 2px;
         font-size: 0.95em;
         background: transparent !important;
         padding: 0 !important;
     }
 
     .evolution-cell {
-        margin-right: 12px;
+        margin-right: 2px;
     }
 
     .grade-cell .grade-evolution,
     .evolution-cell .grade-evolution {
-        margin: 0 4px;
+        margin: 0 6px;
     }
 
 
     /* 4. Appreciation (Bottom) */
     .appreciation-cell {
-        margin-top: 4px;
+        margin-top: 2px;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -1436,8 +1450,8 @@
     /* 5. Action Cell (Absolute Top Right over name cell) */
     .action-cell {
         position: absolute;
-        top: 16px;
-        right: 16px;
+        top: 14px;
+        right: 14px;
         width: auto !important;
     }
 

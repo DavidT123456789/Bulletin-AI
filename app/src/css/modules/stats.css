@@ -369,13 +369,10 @@
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
-        /* Exact formula to separate cards fully by 1 viewport minus paddings */
         gap: calc(var(--content-padding-x) * 2);
         grid-template-columns: none;
-        /* Use parent's --content-padding-x to stay in sync at all breakpoints. Maintain vertical padding for shadows */
-        padding: 24px var(--content-padding-x) 28px;
-        margin: -24px calc(-1 * var(--content-padding-x)) -12px calc(-1 * var(--content-padding-x));
-
+        padding: var(--space-6) var(--content-padding-x) 28px;
+        margin: calc(-1 * var(--space-6)) calc(-1 * var(--content-padding-x)) -12px calc(-1 * var(--content-padding-x));
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -386,19 +383,11 @@
 
     .stats-container .stat-card {
         width: 100%;
-        /* Force exact width */
         min-width: 100%;
         max-width: 100%;
         box-sizing: border-box;
-        /* Ensure padding doesn't add to width */
         scroll-snap-align: center;
         flex-shrink: 0;
-        margin-right: 0;
-    }
-
-    /* Ensure the 3rd card behaves normally in flex */
-    .stats-container .stat-card:nth-child(3) {
-        grid-column: auto;
     }
 
     /* Show pagination on mobile */
@@ -406,7 +395,6 @@
         display: flex;
         justify-content: center;
         gap: 8px;
-        /* Perfectly balanced vertical centering compensating for container padding */
         margin-top: -14px;
         margin-bottom: 14px;
     }
@@ -1220,22 +1208,20 @@
 }
 
 /* ====================================================================
-   Responsive - Adaptations tablette et mobile
+   Responsive - Adaptations tablette
    
-   LOGICAL APPROACH (mobile-first progressive enhancement):
-   - Base/Default: 3 columns (using minmax for auto-sizing)
-   - Mobile only (<550px): 2 columns + 1 spanning below (2+1 layout)
-   
-   No need for separate tablet rules - 3 columns scale naturally.
+   LAYOUT STRATEGY:
+   - Default (>900px): 3-column grid with generous spacing
+   - Tablet (701–900px): 3-column grid with compact spacing
+   - Mobile (≤700px): Full-bleed scroll-snap carousel (defined above)
    ==================================================================== */
 
-/* Tablette: Compact styles but keep 3 columns */
-@media (max-width: 900px) {
+/* Tablette: Compact grid — only applies above carousel breakpoint */
+@media (max-width: 900px) and (min-width: 701px) {
     .stats-container {
         gap: var(--space-3);
     }
 
-    /* Prevent content from forcing card expansion */
     .stats-container>.stat-card {
         min-width: 0;
         overflow: hidden;
@@ -1263,18 +1249,8 @@
     }
 }
 
-/* Mobile: 2 columns + 1 below (2+1 layout) */
+/* Mobile compact typography (applies to carousel cards) */
 @media (max-width: 550px) {
-    .stats-container {
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-3);
-    }
-
-    /* Third card spans full width below */
-    .stats-container>.stat-card:last-child {
-        grid-column: span 2;
-    }
-
     .stat-card {
         padding: 10px 12px;
     }
