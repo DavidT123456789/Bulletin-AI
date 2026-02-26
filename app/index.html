@@ -599,19 +599,18 @@
                     <p>Import des notes, analyse du contexte et génération par IA.</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
-                    <div class="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-slate-200 via-blue-100 to-slate-200 z-0"
+                    <div class="hidden md:block absolute top-10 left-[16%] right-[16%] h-px bg-slate-100 z-0"
                         aria-hidden="true"></div>
 
                     <div class="relative z-10 group reveal-on-scroll">
-                        <div class="relative w-24 h-24 mx-auto mb-6">
+                        <div class="relative w-20 h-20 mx-auto mb-6">
                             <div
-                                class="absolute inset-0 bg-blue-50 rounded-2xl border border-blue-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-blue-600">
-                                    <iconify-icon icon="solar:import-linear" width="28" height="28"></iconify-icon>
-                                </div>
+                                class="absolute inset-0 bg-blue-50 rounded-2xl border border-blue-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
+                                <iconify-icon icon="solar:import-linear" width="32"
+                                    class="text-blue-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-blue-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-2">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-blue-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 1</div>
                         </div>
                         <div class="text-center px-4">
@@ -622,16 +621,14 @@
                     </div>
 
                     <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 100ms;">
-                        <div class="relative w-24 h-24 mx-auto mb-6">
+                        <div class="relative w-20 h-20 mx-auto mb-6">
                             <div
-                                class="absolute inset-0 bg-purple-50 rounded-2xl border border-purple-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-purple-600">
-                                    <iconify-icon icon="solar:magic-stick-3-linear" width="28"
-                                        height="28"></iconify-icon>
-                                </div>
+                                class="absolute inset-0 bg-purple-50 rounded-2xl border border-purple-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
+                                <iconify-icon icon="solar:magic-stick-3-linear" width="32"
+                                    class="text-purple-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-purple-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-2">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-purple-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 2</div>
                         </div>
                         <div class="text-center px-4">
@@ -642,15 +639,14 @@
                     </div>
 
                     <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 200ms;">
-                        <div class="relative w-24 h-24 mx-auto mb-6">
+                        <div class="relative w-20 h-20 mx-auto mb-6">
                             <div
-                                class="absolute inset-0 bg-green-50 rounded-2xl border border-green-100/50 shadow-lg flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-2">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-green-600">
-                                    <iconify-icon icon="solar:export-linear" width="28" height="28"></iconify-icon>
-                                </div>
+                                class="absolute inset-0 bg-green-50 rounded-2xl border border-green-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
+                                <iconify-icon icon="solar:export-linear" width="32"
+                                    class="text-green-600"></iconify-icon>
                             </div>
                             <div
-                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-green-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-2">
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-green-600 border-2 border-white text-white flex items-center justify-center text-xs font-bold z-10 shadow-sm transition-transform duration-300 group-hover:-translate-y-1.5">
                                 3</div>
                         </div>
                         <div class="text-center px-4">
@@ -695,12 +691,11 @@
                     <h2 class="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-800">Spécifications</h2>
                     <p>Détails techniques et fonctionnement.</p>
                 </div>
-                <div class="space-y-4 reveal-on-scroll" role="region" aria-label="Détails techniques">
 
-                    <div
-                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/50 overflow-hidden group">
-                        <button
-                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                <div class="space-y-1 reveal-on-scroll" role="region" aria-label="Détails techniques">
+
+                    <div class="accordion-item border-b border-slate-100">
+                        <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-1">
                             <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:server-square-linear"
@@ -712,8 +707,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-1" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div
-                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                <div class="pb-6 text-sm text-slate-500 leading-relaxed pl-8">
                                     Les données sensibles (identités des élèves, notes brutes) sont stockées
                                     <strong>exclusivement dans le LocalStorage</strong> du navigateur. L'application
                                     applique une anonymisation stricte à la volée avant tout envoi vers les API
@@ -723,10 +717,8 @@
                         </div>
                     </div>
 
-                    <div
-                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/50 overflow-hidden group">
-                        <button
-                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                    <div class="accordion-item border-b border-slate-100">
+                        <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-2">
                             <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:stars-minimalistic-linear"
@@ -738,8 +730,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-2" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div
-                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                <div class="pb-6 text-sm text-slate-500 leading-relaxed pl-8">
                                     Compatible nativement avec <strong>Mistral AI</strong> (gratuit), Google Gemini et
                                     OpenRouter. Intégration complète avec <strong>Ollama</strong> pour une exécution
                                     100% hors ligne (Air-Gapped).
@@ -748,10 +739,8 @@
                         </div>
                     </div>
 
-                    <div
-                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/50 overflow-hidden group">
-                        <button
-                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                    <div class="accordion-item border-b border-slate-100">
+                        <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-3">
                             <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:tuning-square-linear"
@@ -763,8 +752,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-3" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div
-                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                <div class="pb-6 text-sm text-slate-500 leading-relaxed pl-8">
                                     L'application utilise des System Prompts calibrés pour garantir un ton
                                     professionnel. Les commandes (Concis, Détaillé, Encourageant) modifient
                                     dynamiquement les paramètres de génération.
@@ -773,10 +761,8 @@
                         </div>
                     </div>
 
-                    <div
-                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/50 overflow-hidden group">
-                        <button
-                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                    <div class="accordion-item border-b border-slate-100">
+                        <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-4">
                             <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:file-check-linear"
@@ -788,8 +774,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-4" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div
-                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                <div class="pb-6 text-sm text-slate-500 leading-relaxed pl-8">
                                     Algorithme de détection automatique de colonnes compatible avec tout tableur (Excel,
                                     CSV, Pronote). Export en format texte brut formaté pour les logiciels de vie
                                     scolaire.
@@ -798,10 +783,8 @@
                         </div>
                     </div>
 
-                    <div
-                        class="accordion-item bg-[#FAFAFA] rounded-xl shadow-sm border border-slate-200/50 overflow-hidden group">
-                        <button
-                            class="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50 transition-colors"
+                    <div class="accordion-item border-b border-slate-100">
+                        <button class="w-full flex justify-between items-center py-5 text-left transition-colors"
                             onclick="toggleAccordion(this)" aria-expanded="false" aria-controls="acc-panel-5">
                             <span class="accordion-title font-medium text-slate-800 text-sm flex items-center gap-3">
                                 <iconify-icon icon="solar:copyright-linear"
@@ -813,8 +796,7 @@
                         </button>
                         <div class="accordion-content" id="acc-panel-5" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
-                                <div
-                                    class="px-5 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4">
+                                <div class="pb-6 text-sm text-slate-500 leading-relaxed pl-8">
                                     Code source distribué sous licence <strong>CC BY-NC-SA 4.0</strong>. Auditable sur
                                     GitHub pour vérifier l'absence de télémétrie cachée. Les dons via Ko-fi servent
                                     exclusivement à financer l'hébergement et le développement.
@@ -1007,7 +989,7 @@
             // Added 'border border-transparent' to keep layout similar if needed, or just remove border class.
             // Original had 'border border-slate-200'. I will make it 'border border-transparent' to be safe or just no border classes.
             // Use 'shadow-xl' mostly.
-            card.className = `carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-3xl border border-transparent shadow-xl p-6 sm:p-8 flex flex-col items-center text-center select-none`;
+            card.className = `carousel-card w-[280px] sm:w-[320px] h-[360px] sm:h-[380px] bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 flex flex-col items-center text-center select-none`;
             card.setAttribute('role', 'tabpanel');
             card.setAttribute('aria-label', item.title);
             card.innerHTML = `

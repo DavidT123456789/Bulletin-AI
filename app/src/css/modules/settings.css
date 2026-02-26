@@ -171,7 +171,7 @@
 
 /* Prompt preview block in inspector - better sizing */
 .settings-inspector-column .prompt-preview-block {
-    max-height: 400px;
+    max-height: none;
     min-height: 200px;
     font-size: 12px;
     line-height: 1.5;

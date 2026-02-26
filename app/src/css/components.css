@@ -980,7 +980,26 @@ textarea {
     padding: 14px;
     font-size: 14px;
     line-height: 1.5;
-    /* Utilise les mêmes styles de fond que les autres textareas (--bg-color) */
+    background: transparent !important;
+    border: 2px solid transparent !important;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* Hover state - Subtle light background instead of border */
+#negativeInstructions:hover:not(:disabled):not(:focus) {
+    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background-image: none !important;
+    border: 2px solid transparent !important;
+}
+
+/* Focus state - Slightly more visible background than hover */
+#negativeInstructions:focus {
+    outline: none !important;
+    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background-image: none !important;
+    border: 2px solid transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 

@@ -1090,8 +1090,9 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    /* Fix: Prevent unwanted horizontal scrollbar caused by animations/subpixels */
-
+    /* Fix: Prevent focus ring clipping by expanding the scroll container's bounds */
+    padding: 8px;
+    margin: -8px;
 }
 
 
