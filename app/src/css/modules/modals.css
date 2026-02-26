@@ -283,10 +283,40 @@
 
 /* Single source of truth for modal action buttons */
 .modal-footer .btn,
+.import-wizard-footer .btn,
+.trombi-step-footer .btn,
 .analysis-actions .btn {
-    height: 32px;
-    padding: 0 14px !important;
+    height: var(--modal-btn-height) !important;
+    padding: 0 16px !important;
     font-size: 13px !important;
+    border-radius: var(--radius-pill) !important;
+}
+
+/* Unified footer info pill — shared across all wizard modals */
+.modal-footer-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--success-color);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    line-height: normal;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modal-footer-info:not(:empty) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.modal-footer-info strong {
+    font-weight: 700;
 }
 
 /* ====================================================================

@@ -130,9 +130,9 @@
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
-    padding: 6px 10px !important;
+    padding: 6px 14px !important;
     min-width: auto;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     transition: all 0.2s ease;
     cursor: pointer;
     position: relative;

@@ -431,11 +431,7 @@ export const ImportWizardManager = {
             });
         }
 
-        // Update Step 3 action buttons visibility
-        const step3Actions = document.getElementById('wizardStep3Actions');
-        if (step3Actions) {
-            step3Actions.style.display = this.currentStep === 3 ? 'flex' : 'none';
-        }
+
 
         // Update guide panel content based on current step
         this._updateGuidePanel();

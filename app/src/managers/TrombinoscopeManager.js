@@ -104,6 +104,12 @@ export const TrombinoscopeManager = {
             this._loadImageFromUrl('/images/sample-trombinoscope.png');
         });
 
+        // Remove image button (× in corner)
+        document.getElementById('trombiRemoveImageBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._removeImage();
+        });
+
         // Navigation buttons
         document.getElementById('trombiStep1NextBtn')?.addEventListener('click', () => this._goToStep(2));
         document.getElementById('trombiStep2PrevBtn')?.addEventListener('click', () => this._goToStep(1));
@@ -535,8 +541,33 @@ export const TrombinoscopeManager = {
         // Display info message in footer
         const footerInfo = document.getElementById('trombiImageInfo');
         if (footerInfo) {
-            footerInfo.innerHTML = `<iconify-icon icon="ph:check"></iconify-icon> Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
+            footerInfo.textContent = `Image chargée (${this._imageNaturalWidth} × ${this._imageNaturalHeight} px)`;
         }
+    },
+
+    _removeImage() {
+        this._imageSrc = null;
+        this._imageNaturalWidth = 0;
+        this._imageNaturalHeight = 0;
+        this._cachedImage = null;
+
+        const placeholder = document.getElementById('trombiDropPlaceholder');
+        const preview = document.getElementById('trombiDropPreview');
+        const previewImg = document.getElementById('trombiPreviewImg');
+        const dropZone = document.getElementById('trombiDropZone');
+        const sampleBtn = document.getElementById('trombiSampleBtn');
+        const fileInput = document.getElementById('trombiFileInput');
+        const footerInfo = document.getElementById('trombiImageInfo');
+        const nextBtn = document.getElementById('trombiStep1NextBtn');
+
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+        if (previewImg) previewImg.src = '';
+        dropZone?.classList.remove('has-image');
+        if (sampleBtn) sampleBtn.style.display = '';
+        if (fileInput) fileInput.value = '';
+        if (footerInfo) footerInfo.textContent = '';
+        if (nextBtn) nextBtn.disabled = true;
     },
 
     // ========================================================================
@@ -673,6 +704,9 @@ export const TrombinoscopeManager = {
                                 <span class="sync-toggle-switch"></span>
                             </span>
                         </label>
+                        <button type="button" class="grid-reset-btn" id="gridResetBtn">
+                            <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
+                        </button>
                     </div>
                 </div>
             </div>
@@ -747,6 +781,19 @@ export const TrombinoscopeManager = {
 
         groupedToggle?.addEventListener('change', e => {
             this._groupedDrag = e.target.checked;
+        });
+
+        document.getElementById('gridResetBtn')?.addEventListener('click', () => {
+            this._gridCols = 4;
+            this._gridRows = Math.ceil((appState.filteredResults?.length || 8) / 4);
+            this._gapH = 0;
+            this._gapV = 0;
+            if (colsSlider) { colsSlider.value = this._gridCols; colsValue.textContent = this._gridCols; }
+            if (rowsSlider) { rowsSlider.value = this._gridRows; rowsValue.textContent = this._gridRows; }
+            if (sizeSlider) { sizeSlider.value = 60; sizeValue.textContent = '60%'; }
+            if (gapHSlider) { gapHSlider.value = 0; gapHValue.textContent = '0'; }
+            if (gapVSlider) { gapVSlider.value = 0; gapVValue.textContent = '0'; }
+            this._createGridSilent(this._gridCols, this._gridRows);
         });
 
         // Create initial grid with auto-assignment

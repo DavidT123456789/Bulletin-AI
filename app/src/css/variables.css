@@ -210,9 +210,11 @@
     --modal-header-padding: 16px 20px;
     --modal-header-border: 1px solid var(--border-color);
 
-    --modal-footer-height: 48px;
-    --modal-footer-padding: 10px 20px;
+    --modal-footer-height: 56px;
+    --modal-footer-padding: 12px 20px;
     --modal-footer-border: 1px solid var(--border-color);
+    --modal-btn-height: 36px;
+
 
     /* --- Close Button Tokens --- */
     --close-btn-size: 32px;

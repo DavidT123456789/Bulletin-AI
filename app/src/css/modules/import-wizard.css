@@ -996,27 +996,7 @@
     font-style: italic;
 }
 
-/* Footer info — unified pill (number + label) */
-.import-wizard-modal .import-detected-info,
-.import-wizard-modal .step3-footer-info {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    padding: 5px 16px;
-    border-radius: var(--radius-pill);
-    flex: 0 0 auto;
-    line-height: normal;
-}
-
-.import-wizard-modal .import-detected-info strong,
-.import-wizard-modal .step3-footer-info strong {
-    font-weight: 700;
-}
-
+/* Footer info pill — uses unified .modal-footer-info from modals.css */
 
 .import-wizard-modal .import-separator-row {
     display: flex;
@@ -1231,14 +1211,7 @@
     flex-shrink: 0;
 }
 
-/* Pill Shape for footer buttons — balanced proportions */
-.import-wizard-footer .btn {
-    border-radius: var(--radius-pill) !important;
-    padding: 9px 22px;
-    min-height: 38px;
-    font-size: 0.875rem;
-}
-
+/* Layout du bouton primaire uniquement */
 .import-wizard-footer .btn-primary {
     min-width: 120px;
 }
@@ -1246,6 +1219,7 @@
 .import-wizard-footer .btn-ghost {
     border: 1px solid var(--border-color);
 }
+
 
 
 /* Local specifity only for button layout/spacing, not Visuals */
@@ -2296,15 +2270,7 @@
     align-items: center;
 }
 
-/* === STEP 3 ACTION BUTTONS === */
-.wizard-step-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-}
+
 
 /* === PREVIEW HINT MESSAGE === */
 .mapping-preview-hint {
@@ -2323,23 +2289,11 @@
     color: var(--primary-color);
 }
 
-/* === STEP 3 SINGLE ACTION BUTTON === */
-#wizardStep3Actions {
-    display: flex;
-    justify-content: center;
-    margin-top: 24px;
-    padding: 0;
-}
-
-/* Import Confirm Button - Extends .btn-organic */
-/* NOTE: Ajouter la classe .btn-organic dans le HTML pour hériter de l'animation */
+/* Import Confirm Button — layout overrides for icon + badge */
 .btn-import-confirm {
-    /* Sizing spécifique pour ce contexte */
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 24px;
-    font-size: 0.95rem;
 }
 
 .btn-import-confirm i {
@@ -2767,115 +2721,29 @@
     top: -1px;
 }
 
-/* Departed action toggle */
-/* Departed action toggle - Minimalist */
+/* Departed toggle — uses standard .toggle-switch.small */
 .guide-departed-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
     margin-top: 12px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    display: flex;
-    align-items: center;
+    gap: 8px;
 }
 
-.guide-departed-action:has(input:checked) {
-    background: transparent;
-    border-color: transparent;
-}
-
-.guide-toggle-row {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 0.82rem;
-    color: var(--warning-color);
-    line-height: 1;
-    margin: 0;
-}
-
-/* Hide the real checkbox */
-.guide-toggle-row input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    pointer-events: none;
-}
-
-/* Modern Toggle Switch */
-.guide-toggle-row {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    cursor: pointer;
-}
-
-.guide-toggle-row span {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    width: 100%;
-    padding-right: 36px;
-    /* Space for toggle on RIGHT */
-    padding-left: 0;
+.guide-departed-label {
+    display: inline;
     font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--warning-color);
+    cursor: pointer;
+    margin: 0;
+    line-height: 1;
 }
 
-/* Toggle Track (Background) - Positioned Right */
-.guide-toggle-row span::before {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 16px;
-    background: var(--bg-tertiary);
-    border-radius: 99px;
-    transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* Toggle Knob (Circle) - Positioned relative to Right */
-.guide-toggle-row span::after {
-    content: '';
-    position: absolute;
-    right: 15px;
-    /* Starts at left side of track (28 - 1pad - 12width) */
-    top: 50%;
-    margin-top: -6px;
-    width: 12px;
-    height: 12px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Checked State - Background */
-.guide-toggle-row input[type="checkbox"]:checked+span::before {
+/* Warning color modifier for toggle-switch */
+.toggle-switch.color-warning input:checked+.slider {
     background: var(--warning-color);
-    border-color: var(--warning-color);
-}
-
-/* Checked State - Knob Move Right */
-.guide-toggle-row input[type="checkbox"]:checked+span::after {
-    transform: translateX(14px);
-}
-
-.guide-toggle-row:hover span::before {
-    background: var(--border-color);
-    /* Darker grey on hover text */
-}
-
-.guide-toggle-row input[type="checkbox"]:checked:hover+span::before {
-    background: var(--warning-color);
-    /* Initial color stays on hover when checked */
-    opacity: 0.9;
 }
 
 
@@ -3180,7 +3048,7 @@
         justify-content: center;
     }
 
-    .step3-footer-info {
+    #wizardStep3FooterInfo {
         order: 2;
         font-size: 0.75rem;
         justify-content: center;

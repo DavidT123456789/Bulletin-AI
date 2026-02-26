@@ -321,17 +321,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 32px;
-    border-top: 1px solid transparent;
-    background: var(--surface-color);
+    padding: var(--modal-footer-padding);
+    min-height: var(--modal-footer-height);
+    border-top: var(--modal-footer-border);
+    background: var(--modal-bg);
     flex-shrink: 0;
 }
 
-#welcomeNextBtn {
-    border-radius: 100px;
-    padding-left: 24px;
-    padding-right: 24px;
+
+/* Welcome Modal nav buttons — forme pilule + taille harmonisée */
+#welcomeNextBtn,
+#welcomePrevBtn,
+#welcome-finish-options .btn {
+    border-radius: var(--radius-pill);
+    height: var(--modal-btn-height);
+    padding: 0 20px;
+    font-size: 13px;
 }
+
+
+
 
 #welcomeNextBtn::after {
     content: ' →';
@@ -1098,7 +1107,6 @@
 /* Full-width CTA Button - Extends .btn-organic via HTML class */
 /* NOTE: Ajouter les classes .btn-organic .btn-organic--rounded dans le HTML */
 .btn-cta-full {
-    /* Sizing spécifique pour ce contexte */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1108,6 +1116,7 @@
     margin: 16px auto 0 auto;
     padding: 16px 28px;
     font-size: 1.05em;
+    border-radius: var(--radius-pill);
 }
 
 /* ====================================================================

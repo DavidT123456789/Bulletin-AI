@@ -899,9 +899,11 @@
                                 </div>
                             </div>
                             <div class="guide-departed-action" id="wizardDepartedAction" style="display: none;">
-                                <label class="guide-toggle-row" for="wizardDeleteDepartedToggle">
+                                <label class="guide-departed-label" for="wizardDeleteDepartedToggle">Supprimer les
+                                    absents</label>
+                                <label class="toggle-switch small color-warning">
                                     <input type="checkbox" id="wizardDeleteDepartedToggle">
-                                    <span>Supprimer les absents</span>
+                                    <span class="slider"></span>
                                 </label>
                             </div>
                         </div>
@@ -1010,7 +1012,7 @@
                 <div class="wizard-footer-center">
                     <!-- Format badge slot moved to drop zone -->
                     <!-- Line count -->
-                    <div class="import-detected-info" id="wizardStep1LineCount" style="display: none;">
+                    <div class="modal-footer-info" id="wizardStep1LineCount" style="display: none;">
                         <strong id="wizardLineCountBadge">0</strong>
                         <span>lignes détectées</span>
                     </div>
@@ -1025,7 +1027,7 @@
                 <button class="btn btn-ghost" id="wizardStep2PrevBtn">
                     <iconify-icon icon="solar:arrow-left-linear"></iconify-icon> Précédent
                 </button>
-                <div class="import-detected-info">
+                <div class="modal-footer-info">
                     <strong id="wizardCountBadge2">0</strong>
                     <span>élèves détectés</span>
                 </div>
@@ -1039,7 +1041,7 @@
                 <button class="btn btn-ghost" id="wizardStep3PrevBtn">
                     <iconify-icon icon="solar:arrow-left-linear"></iconify-icon> Précédent
                 </button>
-                <div class="step3-footer-info" id="wizardStep3FooterInfo">
+                <div class="modal-footer-info" id="wizardStep3FooterInfo">
                     <strong id="wizardSelectedColsBadge">0</strong>
                     <span id="wizardSelectedColsInfo">colonnes sélectionnées</span>
                 </div>
@@ -1178,10 +1180,10 @@
                                 <!-- Preview content (shown when image loaded) -->
                                 <div class="drop-zone-preview" id="trombiDropPreview">
                                     <img src="" alt="Trombinoscope" class="drop-zone-image" id="trombiPreviewImg">
-                                    <div class="drop-zone-overlay">
-                                        <iconify-icon icon="solar:camera-linear"></iconify-icon>
-                                        <span>Cliquez pour changer l'image</span>
-                                    </div>
+                                    <button class="drop-zone-remove-btn" id="trombiRemoveImageBtn"
+                                        aria-label="Supprimer l'image">
+                                        <iconify-icon icon="ph:x"></iconify-icon>
+                                    </button>
                                 </div>
                                 <!-- Sample button moved to sidebar -->
                             </div>
@@ -1221,7 +1223,7 @@
             <!-- FOOTERS - Ancrés en bas, hors du body scrollable -->
             <div class="trombi-step-footer" id="trombiStep1Footer">
                 <button class="btn btn-ghost" id="trombiStep1CancelBtn">Annuler</button>
-                <span class="trombi-footer-info" id="trombiImageInfo"></span>
+                <span class="modal-footer-info" id="trombiImageInfo"></span>
                 <button class="btn btn-primary" id="trombiStep1NextBtn" disabled>
                     Suivant <iconify-icon class="iconify-inline" icon="solar:arrow-right-linear"></iconify-icon>
                 </button>
@@ -1231,7 +1233,7 @@
                 <button class="btn btn-ghost" id="trombiStep2PrevBtn">
                     <iconify-icon class="iconify-inline" icon="solar:arrow-left-linear"></iconify-icon> Précédent
                 </button>
-                <span class="trombi-footer-info" id="trombiZonesInfo"></span>
+                <span class="modal-footer-info" id="trombiZonesInfo"></span>
                 <button class="btn btn-primary" id="trombiStep2NextBtn">
                     Suivant <iconify-icon class="iconify-inline" icon="solar:arrow-right-linear"></iconify-icon>
                 </button>
@@ -3091,10 +3093,10 @@
                 <button class="btn btn-secondary" id="welcomePrevBtn" style="visibility: hidden;">Précédent</button>
                 <div id="welcome-dots"><span class="dot active"></span><span class="dot"></span><span
                         class="dot"></span><span class="dot"></span></div>
-                <button class="btn" id="welcomeNextBtn">Suivant</button>
+                <button class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
                 <div id="welcome-finish-options">
                     <button class="btn btn-secondary" id="welcomeFinishBtn">Terminer</button>
-                    <button class="btn" id="welcomeFinishAndHideBtn">Terminer et ne plus
+                    <button class="btn btn-primary" id="welcomeFinishAndHideBtn">Terminer et ne plus
                         afficher</button>
                 </div>
             </div>
@@ -3240,7 +3242,7 @@
                     <span class="input-char-count"><span id="classNameCharCount">0</span>/50</span>
                 </div>
             </div>
-            <div class="modal-footer modal-footer-buttons">
+            <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelCreateClassBtn">Annuler</button>
                 <button class="btn btn-organic" id="confirmCreateClassBtn" disabled>
                     <iconify-icon icon="ph:check-bold"></iconify-icon> Créer

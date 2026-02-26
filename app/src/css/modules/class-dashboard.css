@@ -874,12 +874,13 @@
    ========================================================================== */
 
 .class-dashboard-modal .modal-footer {
-    padding: 8px 16px;
-    border-top: 1px solid var(--border-color);
+    padding: var(--modal-footer-padding);
+    border-top: var(--modal-footer-border);
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-3);
+    min-height: var(--modal-footer-height);
     flex-shrink: 0;
 }
 
