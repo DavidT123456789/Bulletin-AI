@@ -464,6 +464,35 @@ export const StorageManager = {
         });
     },
 
+    parseBackupFile(fileContent) {
+        const backup = JSON.parse(fileContent);
+        if (!backup._meta && !backup.appVersion && !backup.settings) {
+            throw new Error('Format de fichier invalide.');
+        }
+
+        const settings = backup.settings || backup;
+        const results = backup.generatedResults || [];
+        const classes = backup.classes || [];
+        const journalCount = results.reduce((n, r) => n + (r.journal?.length || 0), 0);
+        const photoCount = results.filter(r => r.studentPhoto?.data).length;
+
+        const hasApiKeys = !!(settings.openaiApiKey || settings.googleApiKey || settings.openrouterApiKey || settings.anthropicApiKey || settings.mistralApiKey);
+        const apiKeyCount = [settings.openaiApiKey, settings.googleApiKey, settings.openrouterApiKey, settings.anthropicApiKey, settings.mistralApiKey].filter(Boolean).length;
+        const subjectCount = settings.subjects ? Object.keys(settings.subjects).length : 0;
+
+        return {
+            raw: backup,
+            meta: backup._meta || {},
+            categories: {
+                settings: { available: !!settings.subjects, count: subjectCount, label: 'Paramètres', description: 'Matières, thème, seuils, modèle IA' },
+                classes: { available: classes.length > 0, count: classes.length, label: 'Classes', description: 'Structure des classes et listes d\'élèves' },
+                students: { available: results.length > 0, count: results.length, label: 'Données élèves', description: `Notes, appréciations, statuts${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
+                journal: { available: journalCount > 0, count: journalCount, label: 'Journal de bord', description: 'Observations et notes de suivi', parent: 'students' },
+                apiKeys: { available: hasApiKeys, count: apiKeyCount, label: 'Clés API', description: 'Clés d\'accès aux services IA' }
+            }
+        };
+    },
+
     exportToJson() {
         const dataToExport = {
             // Sync metadata for future cloud sync
@@ -533,7 +562,7 @@ export const StorageManager = {
      * @param {string} fileContent - JSON content
      * @param {Object} options - { mergeData: boolean }
      */
-    async importBackup(fileContent, options = { mergeData: true }) {
+    async importBackup(fileContent, options = { mergeData: true, categories: null, silent: false }) {
         try {
             const backup = JSON.parse(fileContent);
 
@@ -541,11 +570,13 @@ export const StorageManager = {
                 throw new Error('Format de fichier invalide.');
             }
 
-            const stats = { imported: 0, updated: 0, skipped: 0 };
+            const stats = { imported: 0, updated: 0, skipped: 0, settingsImported: false, classesAdded: 0, apiKeysImported: 0, journalEntries: 0 };
             const settings = backup.settings || backup;
+            const cats = options.categories;
+            const shouldImport = (cat) => !cats || cats[cat] === true;
 
             // Import settings
-            if (settings.subjects) {
+            if (shouldImport('settings') && settings.subjects) {
                 Object.assign(appState, {
                     theme: settings.theme || appState.theme,
                     useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
@@ -557,83 +588,105 @@ export const StorageManager = {
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS }
                 });
+                stats.settingsImported = true;
+            }
+
+            // Import API keys (only when explicitly selected)
+            if (shouldImport('apiKeys') && settings) {
+                const keys = ['openaiApiKey', 'googleApiKey', 'openrouterApiKey', 'anthropicApiKey', 'mistralApiKey'];
+                keys.forEach(k => {
+                    if (settings[k]) { appState[k] = settings[k]; stats.apiKeysImported++; }
+                });
             }
 
             // Import classes if present
-            if (backup.classes && Array.isArray(backup.classes)) {
+            if (shouldImport('classes') && backup.classes && Array.isArray(backup.classes)) {
                 if (options.mergeData) {
                     const existingIds = new Set((userSettings.academic.classes || []).map(c => c.id));
                     backup.classes.forEach(importedClass => {
                         if (!existingIds.has(importedClass.id)) {
                             userSettings.academic.classes.push(importedClass);
+                            stats.classesAdded++;
                         }
                     });
                 } else {
-                    // Overwrite mode for classes
                     userSettings.academic.classes = backup.classes;
+                    stats.classesAdded = backup.classes.length;
                 }
             }
 
             // Import student data
-            const importedResults = backup.generatedResults || [];
-            if (importedResults.length > 0) {
-                const existingResults = appState.generatedResults || [];
+            if (shouldImport('students')) {
+                const includeJournal = !cats || cats.journal !== false;
+                const stripJournal = !includeJournal;
+                let importedResults = (backup.generatedResults || []).map(r => {
+                    if (stripJournal) {
+                        const { journal, ...rest } = r;
+                        return rest;
+                    }
+                    return r;
+                });
 
-                if (options.mergeData) {
-                    const existingMap = new Map(existingResults.map(r => [r.id, r]));
-
-                    importedResults.forEach(imported => {
-                        const existing = existingMap.get(imported.id);
-                        if (!existing) {
-                            existingResults.push({
-                                ...imported,
-                                _lastModified: imported._lastModified || Date.now()
-                            });
-                            stats.imported++;
-                        } else {
-                            const importedTime = imported._lastModified || 0;
-                            const existingTime = existing._lastModified || 0;
-
-                            if (importedTime > existingTime) {
-                                Object.assign(existing, imported);
-                                stats.updated++;
-                            } else {
-                                stats.skipped++;
-                            }
-                        }
-                    });
-
-                    runtimeState.data.generatedResults = existingResults;
-                    // CLEAR DB first and save merged results
-                    await DBService.clear('generatedResults');
-                    await DBService.putAll('generatedResults', existingResults);
-                    // stats.imported was updated in loop
-                } else {
-                    // Overwrite mode for generatedResults
-                    const newResults = importedResults.map(r => ({
-                        ...r,
-                        _lastModified: r._lastModified || Date.now()
-                    }));
-                    runtimeState.data.generatedResults = newResults;
-
-                    await DBService.clear('generatedResults');
-                    await DBService.putAll('generatedResults', newResults);
-                    stats.imported = newResults.length;
+                if (includeJournal) {
+                    stats.journalEntries = importedResults.reduce((n, r) => n + (r.journal?.length || 0), 0);
                 }
-            } else if (!options.mergeData) {
-                // If backup has NO results and we are overwriting, clear local results
-                runtimeState.data.generatedResults = [];
-                await DBService.clear('generatedResults');
+
+                if (importedResults.length > 0) {
+                    const existingResults = appState.generatedResults || [];
+
+                    if (options.mergeData) {
+                        const existingMap = new Map(existingResults.map(r => [r.id, r]));
+
+                        importedResults.forEach(imported => {
+                            const existing = existingMap.get(imported.id);
+                            if (!existing) {
+                                existingResults.push({
+                                    ...imported,
+                                    _lastModified: imported._lastModified || Date.now()
+                                });
+                                stats.imported++;
+                            } else {
+                                const importedTime = imported._lastModified || 0;
+                                const existingTime = existing._lastModified || 0;
+
+                                if (importedTime > existingTime) {
+                                    Object.assign(existing, imported);
+                                    stats.updated++;
+                                } else {
+                                    stats.skipped++;
+                                }
+                            }
+                        });
+
+                        runtimeState.data.generatedResults = existingResults;
+                        await DBService.clear('generatedResults');
+                        await DBService.putAll('generatedResults', existingResults);
+                    } else {
+                        const newResults = importedResults.map(r => ({
+                            ...r,
+                            _lastModified: r._lastModified || Date.now()
+                        }));
+                        runtimeState.data.generatedResults = newResults;
+
+                        await DBService.clear('generatedResults');
+                        await DBService.putAll('generatedResults', newResults);
+                        stats.imported = newResults.length;
+                    }
+                } else if (!options.mergeData) {
+                    runtimeState.data.generatedResults = [];
+                    await DBService.clear('generatedResults');
+                }
             }
 
             await this.saveAppState();
             if (App && App.updateUIOnLoad) App.updateUIOnLoad();
 
-            const message = options.mergeData
-                ? `Importé: ${stats.imported} nouveaux, ${stats.updated} mis à jour, ${stats.skipped} ignorés.`
-                : `Restauré: ${stats.imported} élèves.`;
-
-            UI.showNotification(message, 'success');
+            if (!options.silent) {
+                const message = options.mergeData
+                    ? `Importé: ${stats.imported} nouveaux, ${stats.updated} mis à jour, ${stats.skipped} ignorés.`
+                    : `Restauré: ${stats.imported} élèves.`;
+                UI.showNotification(message, 'success');
+            }
             return { success: true, stats };
 
         } catch (error) {

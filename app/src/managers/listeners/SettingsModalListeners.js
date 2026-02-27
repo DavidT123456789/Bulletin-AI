@@ -6,6 +6,7 @@
 import { appState } from '../../state/State.js';
 import { DOM } from '../../utils/DOM.js';
 import { Utils } from '../../utils/Utils.js';
+import { BackupImportManager } from '../BackupImportManager.js';
 import { UI } from '../UIManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { ApiValidationManager } from '../ApiValidationManager.js';
@@ -961,7 +962,7 @@ export const SettingsModalListeners = {
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        StorageManager.importBackup(event.target.result, { mergeData: true });
+                        BackupImportManager.showSelectionModal(event.target.result);
                     };
                     reader.readAsText(file);
                     e.target.value = '';

@@ -1589,3 +1589,206 @@
 .segmented-control label:hover {
     color: var(--text-primary);
 }
+
+/* ====================================================================
+   BACKUP IMPORT MODAL — Category Checklist
+   ==================================================================== */
+
+.modal-content-backup-import {
+    max-width: 520px;
+    width: 92%;
+}
+
+.backup-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.backup-meta-line iconify-icon {
+    font-size: 16px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.backup-category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.backup-category-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.backup-category-item:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.backup-category-item.sub-item {
+    margin-left: 36px;
+    padding: 10px 14px;
+    border-style: dashed;
+}
+
+.backup-category-item.sub-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Custom checkbox */
+.backup-category-check {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.backup-category-check input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 2;
+    margin: 0;
+}
+
+.backup-checkmark {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-color);
+    background: var(--surface-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.backup-checkmark iconify-icon {
+    font-size: 14px;
+    color: white;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.backup-category-check input:checked~.backup-checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.backup-category-check input:checked~.backup-checkmark iconify-icon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Category icon */
+.backup-category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.backup-category-icon iconify-icon {
+    font-size: 18px;
+    color: var(--primary-color);
+}
+
+/* Category info */
+.backup-category-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.backup-category-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.backup-category-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+/* Count badge */
+.backup-category-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    padding: 2px 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+}
+
+/* Mode toggle row */
+.backup-import-mode-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.backup-mode-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    user-select: none;
+    cursor: pointer;
+}
+
+/* Info/Warning banner */
+.backup-import-warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.backup-import-warning.warning {
+    background: rgba(var(--warning-color-rgb, 255, 152, 0), 0.08);
+}
+
+.backup-import-warning iconify-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
