@@ -428,7 +428,13 @@ export const FocusPanelHeader = {
             }
         }
 
-        nameEl.innerHTML = `${prenom} ${nom} <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon"></iconify-icon>`;
+        nameEl.innerHTML = `
+            <span class="focus-name-details">
+                <span class="focus-name-nom">${Utils.escapeHtml(nom).toUpperCase()}</span>
+                <span class="focus-name-prenom">${Utils.escapeHtml(prenom)}</span>
+            </span>
+            <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon"></iconify-icon>
+        `;
     },
 
     /**

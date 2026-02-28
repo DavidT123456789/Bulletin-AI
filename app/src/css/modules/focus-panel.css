@@ -178,12 +178,37 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     padding: 6px 12px;
     margin: -6px -12px;
     border-radius: 12px;
     transition: background 0.25s ease, transform 0.15s ease;
 }
+
+.focus-name-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.focus-name-nom {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text-primary);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    /* Ensure extremely long names break */
+}
+
+.focus-name-prenom {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-secondary);
+}
+
 
 .focus-student-name:hover {
     background: rgba(var(--primary-color-rgb), 0.08);
@@ -234,14 +259,10 @@
     align-items: center;
 }
 
-.focus-status-badges .status-pill {
-    padding: 4px 10px;
-    font-size: 11px;
-    border-radius: 100px;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    font-weight: 500;
+.focus-status-badges .tag-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+    letter-spacing: 0.3px;
     white-space: nowrap;
 }
 
@@ -2554,9 +2575,6 @@
         padding: 16px 16px;
     }
 
-    .focus-student-name {
-        font-size: 20px;
-    }
 
     .grades-timeline {
         padding: 24px 10px;
@@ -3814,9 +3832,7 @@
         gap: 8px;
     }
 
-    .focus-student-name {
-        font-size: 18px;
-    }
+
 
     /* Navigation buttons more compact */
     .focus-nav-buttons {
@@ -3888,29 +3904,78 @@
         height: calc(100% - 56px);
     }
 
-    /* Header: Simplified for mobile - no safe-area needed since panel is below general header */
+    /* Header: Smart flex layout for mobile (allows wrapping text in read mode, stacking in edit mode) */
     .focus-header {
-        padding: 12px 16px;
-        gap: 8px;
+        position: relative;
+        flex-wrap: wrap;
+        /* Inherits display: flex, align-items: center, padding: 12px 16px, gap: 8px from base and 768px media query */
     }
 
-    .focus-header-left {
+    .focus-header.editing {
+        padding: 12px 16px 16px;
+        align-items: flex-start;
+    }
+
+    .focus-header-left,
+    .focus-header.editing .focus-header-left {
+        order: 1;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
     }
 
-    .focus-panel-avatar-container {
+    .focus-panel-avatar-container,
+    .focus-header.editing .focus-panel-avatar-container {
         width: 40px;
         height: 40px;
     }
 
+    /* Content takes available space and allows Name to wrap onto 2 lines naturally */
+    .focus-header-content {
+        order: 2;
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 0 4px;
+    }
+
+    .focus-header.editing .focus-header-content {
+        order: 3;
+        flex-basis: 100%;
+        margin-top: 8px;
+        padding: 0;
+        /* Reset padding when wrapping to new line */
+        overflow: visible;
+    }
+
+    .focus-header-read {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        width: 100%;
+    }
+
     .focus-student-name {
-        font-size: 16px;
-        padding: 4px 8px;
-        margin: -4px -8px;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        gap: 4px;
+    }
+
+    .focus-name-nom {
+        font-size: 15px;
+        line-height: 1.15;
+    }
+
+    .focus-name-prenom {
+        font-size: 14.5px;
+        line-height: 1.2;
+        font-weight: 500;
+        margin-top: 2px;
     }
 
     .focus-name-edit-icon {
-        font-size: 10px;
+        display: none;
     }
 
     /* Status badges wrap on mobile */
@@ -3920,41 +3985,25 @@
         max-width: 100%;
     }
 
-    .focus-status-badges .status-badge {
-        font-size: 10px;
+    .focus-status-badges .tag-badge {
+        font-size: 9.5px;
         padding: 2px 6px;
+        line-height: 1.2;
     }
 
-    /* CRITICAL: Ensure nav buttons never get pushed off-screen */
-    .focus-nav-buttons {
+    /* Nav Buttons to the right */
+    .focus-nav-buttons,
+    .focus-header.editing .focus-nav-buttons {
+        order: 3;
         flex-shrink: 0;
-        margin-left: 8px;
-    }
-
-    /* Limit header content to allow space for nav buttons */
-    .focus-header-content {
-        flex: 1 1 0;
-        min-width: 0;
-        overflow: hidden;
-    }
-
-    .focus-header-read {
-        flex-wrap: wrap;
-        max-width: 100%;
-    }
-
-    .focus-student-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 100%;
-    }
-
-    /* Navigation: Compact pill */
-    .focus-nav-buttons {
+        margin-left: auto;
         gap: 2px;
         padding: 4px 6px;
         border-radius: 12px;
+    }
+
+    .focus-header.editing .focus-nav-buttons {
+        order: 2;
     }
 
     .focus-nav-btn {
@@ -3966,62 +4015,18 @@
     .focus-position {
         font-size: 11px;
         min-width: 32px;
+        text-align: center;
     }
 
     .focus-nav-divider {
-        height: 16px;
-        margin: 0 4px;
+        display: none;
     }
 
     /* ============================================
        MOBILE EDIT MODE - Optimized vertical layout
        ============================================ */
 
-    /* Header becomes a structured vertical layout in edit mode */
-    .focus-header.editing {
-        position: relative;
-        /* Required for absolute children */
-        flex-direction: column;
-        align-items: stretch;
-        padding: 12px 16px 16px;
-        gap: 12px;
-    }
-
-    /* Top bar: Avatar + Edit buttons on the left */
-    .focus-header.editing .focus-header-left {
-        position: absolute;
-        top: 12px;
-        left: 16px;
-        width: auto;
-        /* Allow flex content */
-        height: 40px;
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-    }
-
-    /* Ensure avatar is sized correctly */
-    .focus-header.editing .focus-panel-avatar-container {
-        width: 40px;
-        height: 40px;
-    }
-
-    /* Nav buttons stay at top-right in edit mode */
-    .focus-header.editing .focus-nav-buttons {
-        position: absolute;
-        top: 12px;
-        right: 16px;
-        margin-left: 0;
-    }
-
     /* Content area - push down below the avatar/nav row */
-    .focus-header.editing .focus-header-content {
-        margin-top: 48px;
-        /* Space for avatar + nav row */
-        width: 100%;
-        overflow: visible;
-        /* Allow status pills scroll to extend to panel edges */
-    }
 
     /* Edit form takes full width */
     .focus-header.editing .focus-header-edit {
@@ -4210,22 +4215,36 @@
 
 /* Small Mobile Breakpoint (max-width: 375px) */
 @media (max-width: 375px) {
-    .focus-header {
-        padding: 8px 12px;
-        padding-top: max(8px, env(safe-area-inset-top));
+
+    .focus-header,
+    .focus-header.editing {
+        padding: 12px 12px !important;
+        padding-top: max(12px, env(safe-area-inset-top)) !important;
     }
 
-    .focus-panel-avatar-container {
+    .focus-header-left,
+    .focus-header.editing .focus-header-left {
+        height: 36px;
+    }
+
+    .focus-nav-buttons,
+    .focus-header.editing .focus-nav-buttons {
+        padding: 3px 5px;
+    }
+
+    .focus-panel-avatar-container,
+    .focus-header.editing .focus-panel-avatar-container {
         width: 36px;
         height: 36px;
     }
 
-    .focus-student-name {
-        font-size: 15px;
+    .focus-name-nom {
+        font-size: 14px;
     }
 
-    .focus-nav-buttons {
-        padding: 3px 5px;
+    .focus-name-prenom {
+        font-size: 12.5px;
+        margin-top: 2px;
     }
 
     .focus-nav-btn {
@@ -4261,26 +4280,6 @@
     }
 
     /* EDIT MODE: Ultra-compact adjustments */
-    .focus-header.editing {
-        padding: 10px 12px 14px;
-    }
-
-    .focus-header.editing .focus-header-left {
-        top: 10px;
-        left: 12px;
-        width: 36px;
-        height: 36px;
-    }
-
-    .focus-header.editing .focus-nav-buttons {
-        top: 10px;
-        right: 12px;
-    }
-
-    .focus-header.editing .focus-header-content {
-        margin-top: 44px;
-    }
-
     .focus-header.editing .focus-input-header {
         font-size: 14px;
         padding: 8px 12px;
@@ -4370,11 +4369,26 @@
 /* Touch-friendly: Larger tap targets */
 @media (pointer: coarse) {
 
-    .focus-nav-btn,
     .btn-action-menu,
     .focus-back-btn {
         min-width: 44px;
         min-height: 44px;
+    }
+
+    /* Boutons de la pilule légèrement plus compacts pour l'esthétique */
+    .focus-nav-btn {
+        min-width: 38px;
+        min-height: 38px;
+    }
+
+    /* Le focus-save-btn doit toujours utiliser 'width' pour gérer sa taille (fluidité de l'animation) */
+    .focus-nav-btn.focus-save-btn {
+        min-width: 0 !important;
+    }
+
+    /* Override width in edit mode on mobile for smooth transition to 38px */
+    .focus-nav-buttons.editing .focus-save-btn {
+        width: 38px;
     }
 
     .focus-footer .btn {

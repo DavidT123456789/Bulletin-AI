@@ -1308,7 +1308,13 @@ export const FocusPanelManager = {
         // === 1. HEADER: Student Name ===
         const nameEl = document.getElementById('focusStudentName');
         if (nameEl) {
-            nameEl.innerHTML = `${Utils.escapeHtml(result.prenom)} ${Utils.escapeHtml(result.nom)} <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>`;
+            nameEl.innerHTML = `
+                <span class="focus-name-details">
+                    <span class="focus-name-nom">${Utils.escapeHtml(result.nom).toUpperCase()}</span>
+                    <span class="focus-name-prenom">${Utils.escapeHtml(result.prenom)}</span>
+                </span>
+                <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>
+            `;
         }
 
         // === 2. HEADER: Status Badges ===
