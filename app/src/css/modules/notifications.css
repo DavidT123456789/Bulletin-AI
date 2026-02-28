@@ -54,7 +54,7 @@
 .notification.success {
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.25);
-    color: var(--text-primary);
+    color: var(--success-color);
 }
 
 .notification.success i:first-child {
@@ -72,7 +72,7 @@
 .notification.error {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    color: var(--text-primary);
+    color: var(--error-color);
 }
 
 .notification.error i:first-child {
@@ -90,7 +90,7 @@
 .notification.warning {
     background: rgba(var(--warning-rgb), 0.12);
     border: 1px solid rgba(var(--warning-rgb), 0.25);
-    color: var(--text-primary);
+    color: var(--warning-color);
 }
 
 .notification.warning i:first-child {
@@ -108,7 +108,7 @@
 .notification.info {
     background: rgba(var(--primary-color-rgb), 0.1);
     border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    color: var(--text-primary);
+    color: var(--primary-color);
 }
 
 .notification.info i:first-child {

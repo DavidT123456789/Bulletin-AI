@@ -358,8 +358,8 @@ export const Utils = {
         // Traductions des messages d'erreur API en anglais
         if (msg.includes('Failed to fetch')) return "Connexion impossible. Vérifiez votre réseau.";
         if (msg.includes('timed out') || msg.includes('expired')) return "Délai dépassé. Réessayez.";
-        if (msg.includes('401')) return "Clé API invalide.";
-        if (msg.includes('402') && msg.includes('more credits')) return "Crédits API épuisés.";
+        if (msg.includes('401')) return "Accès refusé. Vérifiez votre clé API.";
+        if (msg.includes('402') && msg.includes('more credits')) return "Crédits API insuffisants.";
         if (msg.includes('503') || msg.toLowerCase().includes('overloaded')) return "Service IA surchargé. Patientez.";
 
         // Erreur quota simple (fallback si pas géré par callAIWithFallback)
