@@ -579,11 +579,11 @@
 }
 
 .journal-tag.below-threshold {
-    opacity: 0.5;
-    background: color-mix(in srgb, var(--tag-color) 8%, transparent);
-    /* Lighter background */
-    filter: saturate(0.7);
-    /* Desaturate slightly */
+    opacity: 0.8;
+    background: transparent !important;
+    border: 1px dashed var(--tag-color) !important;
+    box-shadow: none !important;
+    /* Lighter appearance matching isolated entries in the card */
 }
 
 .journal-tag i {

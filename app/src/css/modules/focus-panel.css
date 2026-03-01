@@ -3440,19 +3440,21 @@
     padding: 0 10px;
     height: 28px;
     border-radius: 99px;
-    background: rgba(var(--primary-color-rgb), 0.05);
-    border: 1px solid transparent;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     transition: all var(--transition-fast);
 }
 
 .context-grade-group:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 .context-grade-group:focus-within {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-color: rgba(var(--primary-color-rgb), 0.2);
-    /* Elevation removed for a cleaner, flatter iOS-style input */
+    background: var(--surface-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
+        inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .context-grade-group label {
@@ -3511,17 +3513,19 @@ input.context-grade-input {
 }
 
 [data-theme="dark"] .context-grade-group {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .context-grade-group:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 [data-theme="dark"] .context-grade-group:focus-within {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+    background: rgba(0, 0, 0, 0.35);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .previous-grade-chip .prev-grade-label {

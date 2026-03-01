@@ -318,7 +318,7 @@ export const FocusPanelJournal = {
             const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod);
 
             if (aggregated.length > 0) {
-                const threshold = appState.journalThreshold ?? 2;
+                const threshold = JournalManager.getThreshold();
 
                 // Render detailed counts with icons using standard journal-tag class for consistency
                 const html = aggregated.map(item => {
