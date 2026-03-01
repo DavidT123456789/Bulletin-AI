@@ -5,7 +5,7 @@
     top: 56px;
     right: 0;
     width: 100%;
-    max-width: 640px;
+    max-width: 610px;
     /* Adjust height to account for header (matches .header height: 56px) */
     height: calc(100vh - 56px);
     /* Glassmorphism - Semi-transparent background with blur */
@@ -69,15 +69,11 @@
     padding: 10px 18px;
     /* Opaque background - contrasts with glassmorphism panel */
     background: var(--bg-color);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--card-glass-border);
     flex-shrink: 0;
     z-index: 10;
     position: sticky;
     top: 0;
-}
-
-[data-theme="dark"] .focus-header {
-    border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .focus-back-btn {
@@ -167,7 +163,7 @@
 }
 
 .focus-student-name {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.015em;
@@ -193,7 +189,7 @@
 }
 
 .focus-name-nom {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     line-height: 1.1;
     color: var(--text-primary);
@@ -332,7 +328,7 @@
 }
 
 .focus-position {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
     padding: 0 6px;
@@ -508,34 +504,35 @@
 /* REDESIGNED: Compact header style inspired by Journal de bord */
 .grades-timeline,
 .focus-context-group,
-.focus-appreciation {
+.focus-appreciation,
+.journal-section {
     background: var(--surface-color);
     border-radius: var(--radius-lg);
     padding: 0;
     /* No padding - header handles its own padding */
-    box-shadow: none;
-    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    /* Subtle depth matching landing page */
+    border: 1px solid var(--card-glass-border);
     margin: 0;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    /* Apply overflow hidden to clip inner headers at rounded corners */
-    overflow: hidden;
+    transition: border-color 0.3s ease;
+    /* Apply overflow visible to not clip inner dropdowns */
+    overflow: visible;
     height: auto;
     min-height: auto;
     /* FIX: Prevent cards from shrinking in flex container */
     flex-shrink: 0;
 }
 
-/* FIX: Journal de bord (Grades Timeline) specifically needs overflow hidden to fix corners
-   because its header structure is different/wrapped */
+/* FIX: If any specific card needs overflow hidden to fix corners */
 .grades-timeline {
     overflow: hidden;
 }
 
-
 /* Fix header corners matching card radius - Explicit radius to prevent clipping issues */
 .grades-timeline> :first-child,
 .focus-context-group> :first-child,
-.focus-appreciation> :first-child {
+.focus-appreciation> :first-child,
+.journal-section> :first-child {
     border-top-left-radius: var(--radius-lg);
     border-top-right-radius: var(--radius-lg);
 }
@@ -543,24 +540,13 @@
 /* Fix footer corners */
 .grades-timeline> :last-child,
 .focus-context-group> :last-child,
-.focus-appreciation> :last-child {
+.focus-appreciation> :last-child,
+.journal-section> :last-child {
     border-bottom-left-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-lg);
 }
 
-[data-theme="dark"] .grades-timeline,
-[data-theme="dark"] .focus-context-group,
-[data-theme="dark"] .focus-appreciation {
-    /* Background and border handled by variables */
-    box-shadow: none;
-}
-
-/* ============================
-    box-shadow:
-        0 0 0 3px rgba(var(--primary-color-rgb), 0.1),
-        0 6px 16px -4px rgba(var(--primary-color-rgb), 0.2),
-        0 2px 6px rgba(0, 0, 0, 0.04);
-}
+/* (Dark mode overrides removed - fully reliant on CSS variables) */
 
 /* Input Specific */
 .timeline-grade-input {
@@ -619,7 +605,7 @@
    4. CONTEXT CARD - Compact Header Style (matching Journal)
    ============================ */
 .focus-context-label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
@@ -632,7 +618,7 @@
 /* Icon styling - matches focus-appreciation-label > i:first-child */
 .focus-context-label i.fa-info-circle {
     color: var(--primary-color);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .focus-context-info-trigger {
@@ -752,9 +738,11 @@
     background: transparent !important;
     /* CRITICAL: 2px border at all times to prevent layout shift on hover */
     border: 2px solid transparent !important;
+    box-shadow: none !important;
+    /* Fix inner shadow relief */
     /* Fix: match container radius (bottom corners) */
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.6;
     color: var(--text-primary);
     resize: none;
@@ -932,47 +920,7 @@
     background: rgba(255, 255, 255, 0.03);
 }
 
-.context-grade-group {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    /* Style note actuelle - fond couleur thème pour mise en évidence */
-    background: rgba(var(--primary-color-rgb), 0.08);
-    padding: 4px 10px;
-    border-radius: var(--radius-pill);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
-    box-shadow: none;
-    transition: all var(--transition-fast);
-}
 
-.context-grade-group:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border-color: rgba(var(--primary-color-rgb), 0.4);
-}
-
-.context-grade-group label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin: 0;
-    opacity: 0.8;
-}
-
-.context-grade-input {
-    width: 50px;
-    height: 28px;
-    border: none;
-    background: transparent;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--primary-color);
-    padding: 0;
-}
-
-.context-grade-input:focus {
-    outline: none;
-}
 
 /* History Grade Input (Small, inside badge) */
 .history-grade-input {
@@ -1013,7 +961,7 @@
 }
 
 .focus-appreciation-label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
     display: flex;
@@ -1025,7 +973,7 @@
 /* Icon styling - matches focus-context-label i */
 .focus-appreciation-label>i:first-child {
     color: var(--primary-color);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .focus-appreciation-meta {
@@ -1058,7 +1006,7 @@
     height: auto;
     padding: 14px 16px;
     /* Harmonized with context-textarea */
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.6;
     color: var(--text-primary);
     outline: none;
@@ -2022,7 +1970,7 @@
 .focus-footer {
     padding: 10px 18px;
     background: var(--bg-color);
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--card-glass-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2030,10 +1978,6 @@
     z-index: 10;
     position: sticky;
     bottom: 0;
-}
-
-[data-theme="dark"] .focus-footer {
-    border-top-color: rgba(255, 255, 255, 0.05);
 }
 
 .focus-footer .btn-secondary {
@@ -2754,13 +2698,15 @@
     background: rgba(245, 245, 244, 0.85);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--card-glass-border);
     flex-shrink: 0;
+    z-index: 10;
+    position: sticky;
+    top: 0;
 }
 
 [data-theme="dark"] .focus-analysis-header {
     background: rgba(3, 7, 18, 0.85);
-    border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .focus-analysis-title {
@@ -3466,19 +3412,16 @@
     background: rgba(var(--primary-color-rgb), 0.1);
 }
 
-/* Subtle Historical Grades Chips */
-/* Subtle Historical Grades Chips (Original Grey Style) */
+/* Subtle Historical Grades Chips (Redesigned iOS Premium) */
 .previous-grade-chip {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    /* Style notes antérieures - fond gris neutre pour être discret */
-    background: rgba(0, 0, 0, 0.04);
-    border: none;
-    font-size: 11px;
-    color: var(--text-secondary);
+    padding: 0 10px;
+    height: 28px;
+    border-radius: 99px;
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
     transition: all var(--transition-fast);
     user-select: none;
 }
@@ -3487,30 +3430,29 @@
     background: rgba(255, 255, 255, 0.06);
 }
 
-.previous-grade-chip:hover {
-    background: rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-}
+/* Removed hover effect since chip is informational and not clickable */
 
-/* Active/Current Grade Container (Minimal - White with Subtle Gray Border) */
+/* Active/Current Grade Container (Minimal iOS Style) */
 .context-grade-group {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 4px 8px;
-    border-radius: 99px;
-    background: var(--surface-color);
-    /* Fine subtle gray border */
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: none;
+    gap: 4px;
+    padding: 0 10px;
     height: 28px;
+    border-radius: 99px;
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border: 1px solid transparent;
     transition: all var(--transition-fast);
 }
 
-/* Hover: subtle lift only */
 .context-grade-group:hover {
-    transform: translateY(-1px);
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
+.context-grade-group:focus-within {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+    /* Elevation removed for a cleaner, flatter iOS-style input */
 }
 
 .context-grade-group label {
@@ -3520,48 +3462,78 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     cursor: pointer;
-    margin-right: 2px;
-    /* Micro-adjust spacing */
+    margin: 0;
+    padding: 0;
 }
 
-.context-grade-input {
-    border: none;
-    background: transparent;
-    width: 38px;
-    /* Slightly narrower input */
+/* 
+ * Style de base de l'input transparent (Poids : 0,2,1)
+ */
+input.context-grade-input {
+    border: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    width: 36px;
+    height: auto;
     font-size: 12px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: center;
-    outline: none;
+    outline: none !important;
     padding: 0;
+    margin: 0;
     font-family: inherit;
+    touch-action: manipulation;
+}
+
+/* 
+ * Annulation CHIRURGICALE des effets de survol/focus hérités de components.css.
+ * Ici, le sélecteur "Verbeux" est obligatoire pour MATHÉMATIQUEMENT battre le poids (0,4,1) 
+ * de la très lourde règle : `input:not([type="range"]):hover:not(:disabled):not(:focus)`.
+ * Poids de notre règle : (0,5,1) -> On gagne et le flash disparaît.
+ */
+.context-grade-group input.context-grade-input:hover,
+.context-grade-group input.context-grade-input:focus,
+.context-grade-group input.context-grade-input:hover:not(:disabled):not(:focus),
+.context-grade-group input.context-grade-input:focus:not(:disabled) {
+    outline: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 .context-grade-input::placeholder {
     color: var(--text-tertiary);
-    font-weight: 400;
+    font-weight: 500;
 }
 
 [data-theme="dark"] .context-grade-group {
-    background: var(--surface-color, #1f2937);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
 }
 
 [data-theme="dark"] .context-grade-group:hover {
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .context-grade-group:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
 .previous-grade-chip .prev-grade-label {
     font-weight: 600;
-    opacity: 0.7;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 0.3px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
 }
 
 .previous-grade-chip .prev-grade-value {
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-primary);
 }
@@ -3968,7 +3940,7 @@
     }
 
     .focus-name-prenom {
-        font-size: 14.5px;
+        font-size: 15px;
         line-height: 1.2;
         font-weight: 500;
         margin-top: 2px;
@@ -4243,7 +4215,7 @@
     }
 
     .focus-name-prenom {
-        font-size: 12.5px;
+        font-size: 13px;
         margin-top: 2px;
     }
 

@@ -9,7 +9,8 @@
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    margin-top: 12px;
+    padding: 0 16px 16px 16px;
+    /* Harmonized with focus-appreciation-text */
 }
 
 

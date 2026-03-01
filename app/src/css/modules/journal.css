@@ -4,17 +4,7 @@
    ==================================================================== */
 
 /* === Journal Section Container === */
-.journal-section {
-    background: var(--surface-color);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
-    /* FIXED: Remove overflow hidden that clips content */
-    overflow: visible;
-    margin: 0;
-    /* FIXED: Ensure proper sizing in flex container */
-    flex-shrink: 0;
-    min-height: auto;
-}
+/* Styling centralized in focus-panel.css alongside other cards */
 
 .journal-header {
     display: flex;
@@ -41,6 +31,8 @@
     gap: 8px;
     /* Increased gap */
     font-weight: 600;
+    font-size: 13px;
+    /* Harmonized with focus-context-label */
     color: var(--text-primary);
 }
 
@@ -64,7 +56,8 @@
 
 .journal-header-left i {
     color: var(--primary-color);
-    font-size: 14px;
+    font-size: 13px;
+    /* Harmonized with focus-context-label */
 }
 
 .journal-count-badge {
