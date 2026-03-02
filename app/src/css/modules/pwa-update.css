@@ -96,7 +96,7 @@
 }
 
 .pwa-update-banner .pwa-gift-icon {
-    font-size: 1.5rem;
+    font-size: 2rem;
     color: var(--primary-color);
     /* Subtle glow behind icon */
     filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.25));
@@ -286,7 +286,7 @@
     }
 
     .pwa-update-banner .pwa-gift-icon {
-        font-size: 1.5rem;
+        font-size: 2rem;
         margin-bottom: 4px;
     }
 
