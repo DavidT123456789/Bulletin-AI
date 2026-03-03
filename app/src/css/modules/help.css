@@ -72,19 +72,15 @@
 }
 
 /* --- Section Header (centered intro) --- */
-/* --- Section Header (Styled Intro Box) --- */
 .help-section-header {
     background: rgba(var(--primary-color-rgb), 0.05);
-    /* Softer blue banner */
     border: 1px solid rgba(var(--primary-color-rgb), 0.15);
-    border-radius: 16px;
-    /* Smooth rounded corners */
+    border-radius: var(--radius-md);
     padding: 20px;
     margin-bottom: 24px;
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    /* Top align for better text wrapping */
 }
 
 [data-theme="dark"] .help-section-header {
@@ -94,27 +90,21 @@
 .help-section-header p {
     margin: 0;
     font-size: 0.95em;
-    /* Slightly smaller text for better proportion */
     line-height: 1.6;
-    /* Relaxed leading for readability */
-    color: #1e3a8a;
-    /* Tailwind blue-900 */
+    color: var(--primary-hover);
     flex: 1;
     text-align: left;
 }
 
 [data-theme="dark"] .help-section-header p {
-    color: #bfdbfe;
-    /* Tailwind blue-200 for dark mode */
+    color: rgba(var(--primary-color-rgb), 0.8);
 }
 
 .help-section-icon {
     font-size: 1.25em;
-    /* 20px */
     color: var(--primary-color);
     flex-shrink: 0;
     margin-top: 2px;
-    /* Slight offset to align with first text line */
     display: flex;
     align-items: center;
     justify-content: center;

@@ -22,32 +22,32 @@
 
 /* App starts with blur applied, animation removes it progressively */
 .app-loading .header {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) both;
 }
 
 .app-loading .stats-container {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.08s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.08s both;
 }
 
 .app-loading .output-header {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.15s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.15s both;
 }
 
 .app-loading #outputList {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.22s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.22s both;
 }
 
 .app-loading .fab-add-student {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.3s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.3s both;
 }
 
 /* Individual stat cards for extra stagger effect */
 .app-loading .stat-card:nth-child(1) {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.05s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.05s both;
 }
 
 .app-loading .stat-card:nth-child(2) {
-    animation: appFadeInBlur 0.6s cubic-bezier(0.32, 0.72, 0, 1) 0.1s both;
+    animation: appFadeInBlur 0.6s var(--ease-spring) 0.1s both;
 }
 
 .app-loading .stat-card:nth-child(3) {
@@ -224,7 +224,7 @@
     /* Standardized bold weight */
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.2s var(--ease-spring);
     border: 1px solid transparent;
     box-shadow: none;
     /* Removed shadow */
@@ -239,7 +239,7 @@
     background-color: var(--surface-color);
     /* Restore background on hover */
     /* Sharp pixel-perfect shadow (matched with Theme Selector) */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
     /* Slight lift */
     color: var(--text-primary);
@@ -248,7 +248,7 @@
 
 [data-theme="dark"] .header-context-chip:hover,
 [data-theme="dark"] .header-context-chip.active {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-elevation);
 }
 
 .header-context-chip:active {
@@ -278,7 +278,7 @@
     border: 1px solid rgba(var(--primary-color-rgb), 0.2);
     position: relative;
     overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.2s var(--ease-spring);
     box-shadow: none;
 }
 
@@ -289,12 +289,12 @@
 .ai-model-chip:hover {
     background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.25));
     border-color: var(--primary-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
 }
 
 [data-theme="dark"] .ai-model-chip:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-elevation);
 }
 
 /* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
@@ -319,7 +319,7 @@
     animation: rotate-gradient 8s linear infinite;
     /* Metamorph shadow + Focus ring, replacing diffuse glow */
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12),
-        0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+        var(--shadow-elevation);
     transform: translateY(-1px);
 }
 
@@ -503,8 +503,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     position: relative;
     border: none;
@@ -517,7 +517,7 @@
 .cloud-sync-indicator.minimal-cloud:hover {
     color: var(--text-primary);
     background-color: var(--surface-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
 }
 
@@ -530,13 +530,13 @@
 [data-theme="dark"] .cloud-sync-indicator.minimal-cloud:hover {
     background-color: var(--surface-color);
     /* Ensure contrast in dark mode too */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-elevation);
     /* Stronger shadow in dark mode */
 }
 
 .cloud-sync-indicator.minimal-cloud i.fa-cloud,
 .cloud-sync-indicator.minimal-cloud i.fa-hard-drive {
-    font-size: 16px;
+    font-size: 20px;
     /* User request: Cloud always white with dark grey outline */
     color: #ffffff;
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
@@ -579,7 +579,7 @@
 
 .cloud-sync-indicator.connected:hover {
     background-color: var(--surface-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
 }
 
 [data-theme="dark"] .cloud-sync-indicator.connected:hover {
@@ -606,7 +606,7 @@
 
 .cloud-sync-indicator.expired:hover {
     background-color: var(--surface-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
 }
 
@@ -679,15 +679,14 @@
 
 .menu-btn i,
 .menu-btn iconify-icon {
-    font-size: 22px;
-    /* Ensure harmonized icon size */
+    font-size: 20px;
 }
 
 .menu-btn:hover,
 .menu-btn.active {
     background-color: var(--surface-color);
     color: var(--text-primary);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
 }
 
@@ -700,7 +699,7 @@
 [data-theme="dark"] .menu-btn:hover,
 [data-theme="dark"] .menu-btn.active {
     background-color: var(--surface-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-elevation);
 }
 
 /* Update indicator: Organic animation of the 3 dots (Pure CSS) */

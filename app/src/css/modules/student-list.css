@@ -840,8 +840,10 @@
 }
 
 .btn-action-menu {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    flex: 0 0 36px;
     padding: 0;
     border-radius: 50%;
     display: flex;
@@ -853,7 +855,6 @@
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast), opacity 0.2s ease;
-    /* Hidden by default - appears on row hover (iOS 2025 pattern) */
     opacity: 0;
 }
 
@@ -938,7 +939,7 @@
 }
 
 [data-theme="dark"] .action-dropdown-menu {
-    background: rgba(17, 24, 39, 0.95);
+    background: rgba(24, 24, 27, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -1050,7 +1051,7 @@
 
 [data-theme="dark"] .global-actions-dropdown-menu,
 [data-theme="dark"] .action-dropdown-menu {
-    background: rgba(17, 24, 39, 0.95);
+    background: rgba(24, 24, 27, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
 }
 

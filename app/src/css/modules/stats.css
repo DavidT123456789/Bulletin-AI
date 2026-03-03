@@ -619,9 +619,8 @@
 
 /* Hover style dynamique (exclut l'état actif) */
 .performance-card .detail-item[role="button"]:not(.active-filter):hover {
-    background: var(--surface-color);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: transparent;
 }
 
 .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label {
@@ -710,8 +709,8 @@
 }
 
 .evolution-card .view-toggle-btn:hover {
-    background: var(--surface-color);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: transparent;
     color: var(--primary-color);
 }
 
@@ -812,9 +811,8 @@
 
 /* Hover style dynamique (exclut l'état actif) */
 .evolution-card .legend-item:not(.active-filter):hover {
-    background: var(--surface-color);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: transparent;
 }
 
 .evolution-card .legend-item:not(.active-filter):hover .legend-label {

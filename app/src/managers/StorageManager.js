@@ -342,126 +342,208 @@ export const StorageManager = {
     },
 
     /**
-     * Reset settings only (API keys, subjects, themes).
+     * Reset settings with granular choices via showChoicesModal.
      * Preserves user data (classes, students, appreciations).
      */
-    resetAllSettings() {
-        UI.showCustomConfirm("Réinitialiser les paramètres (matières, clés API, thème) ?\n\nVos classes et élèves seront conservés.", async () => {
+    async resetAllSettings() {
+        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
 
-            // Verrouiller l'interface pour éviter les conflits
-            const saveBtn = document.getElementById('saveSettingsBtn');
-            const cancelBtn = document.getElementById('cancelSettingsBtn');
-            const closeBtn = document.getElementById('closeSettingsModalBtn');
-            if (saveBtn) saveBtn.disabled = true;
-            if (cancelBtn) cancelBtn.disabled = true;
-            if (closeBtn) closeBtn.disabled = true;
+        const apiKeyCount = [
+            appState.openaiApiKey, appState.googleApiKey,
+            appState.openrouterApiKey, appState.anthropicApiKey, appState.mistralApiKey
+        ].filter(Boolean).length;
 
-            try {
+        const subjectCount = appState.subjects ? Object.keys(appState.subjects).length : 0;
 
+        const choices = [
+            {
+                id: 'apiKeys',
+                label: 'Clés API',
+                sublabel: apiKeyCount > 0
+                    ? `Efface les ${apiKeyCount} clé${apiKeyCount > 1 ? 's' : ''} configurée${apiKeyCount > 1 ? 's' : ''} (Google, OpenAI…).`
+                    : 'Aucune clé configurée.',
+                checked: false,
+                disabled: apiKeyCount === 0
+            },
+            {
+                id: 'subjects',
+                label: 'Matières & prompts',
+                sublabel: subjectCount > 0
+                    ? `Restaure les ${subjectCount} matière${subjectCount > 1 ? 's' : ''} par défaut (« Ma Patte », styles IA…).`
+                    : 'Configuration par défaut.',
+                checked: true,
+                disabled: false
+            },
+            {
+                id: 'thresholds',
+                label: 'Seuils d\'évolution',
+                sublabel: 'Remet les seuils progression/régression aux valeurs par défaut.',
+                checked: true,
+                disabled: false
+            },
+            {
+                id: 'preferences',
+                label: 'Préférences visuelles',
+                sublabel: 'Remet le thème, le modèle IA et le système de périodes par défaut.',
+                checked: false,
+                disabled: false
+            }
+        ];
 
-                Object.assign(appState, {
-                    useSubjectPersonalization: true,
-                    periodSystem: 'trimestres',
-                    subjects: JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES)),
-                    evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
-                    massImportFormats: { trimestres: {}, semestres: {} },
-                    currentSubject: 'MonStyle',
-                    currentAIModel: 'gemini-2.5-flash',
-                    privacy: { ...DEFAULT_PRIVACY_SETTINGS },
-                });
+        const { confirmed, values } = await ModalUIManager.showChoicesModal(
+            'Réinitialiser les paramètres',
+            'Choisissez les paramètres à restaurer par défaut. <strong>Vos classes et élèves seront conservés.</strong>',
+            choices,
+            {
+                confirmText: 'Réinitialiser',
+                cancelText: 'Annuler',
+                isDanger: true,
+                iconClass: 'solar:restart-circle-bold'
+            }
+        );
 
+        if (!confirmed) return;
+
+        const resetApiKeys = values.apiKeys;
+        const resetSubjects = values.subjects;
+        const resetThresholds = values.thresholds;
+        const resetPreferences = values.preferences;
+
+        if (!resetApiKeys && !resetSubjects && !resetThresholds && !resetPreferences) return;
+
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        const cancelBtn = document.getElementById('cancelSettingsBtn');
+        const closeBtn = document.getElementById('closeSettingsModalBtn');
+        if (saveBtn) saveBtn.disabled = true;
+        if (cancelBtn) cancelBtn.disabled = true;
+        if (closeBtn) closeBtn.disabled = true;
+
+        try {
+            const parts = [];
+
+            if (resetApiKeys) {
                 appState.openaiApiKey = '';
                 appState.googleApiKey = '';
                 appState.openrouterApiKey = '';
                 appState.anthropicApiKey = '';
                 appState.mistralApiKey = '';
-
-
-
-                await this.saveAppState();
-
-                UI.updatePeriodSystemUI();
-                UI.updateSettingsPromptFields();
-                UI.updateSettingsFields();
-                UI.renderSettingsLists();
-                UI.showNotification('Paramètres réinitialisés (données conservées).', 'success');
-            } catch (e) {
-                UI.showNotification('Erreur lors de la réinitialisation.', 'error');
-                console.error(e);
-            } finally {
-                // Déverrouiller l'interface
-                if (saveBtn) saveBtn.disabled = false;
-                if (cancelBtn) cancelBtn.disabled = false;
-                if (closeBtn) closeBtn.disabled = false;
+                parts.push('clés API');
             }
-        });
+
+            if (resetSubjects) {
+                appState.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
+                appState.useSubjectPersonalization = true;
+                appState.currentSubject = 'MonStyle';
+                appState.massImportFormats = { trimestres: {}, semestres: {} };
+                appState.privacy = { ...DEFAULT_PRIVACY_SETTINGS };
+                parts.push('matières');
+            }
+
+            if (resetThresholds) {
+                appState.evolutionThresholds = { ...DEFAULT_EVOLUTION_THRESHOLDS };
+                parts.push('seuils');
+            }
+
+            if (resetPreferences) {
+                appState.periodSystem = 'trimestres';
+                appState.currentAIModel = 'gemini-2.5-flash';
+                parts.push('préférences');
+            }
+
+            await this.saveAppState();
+
+            UI.updatePeriodSystemUI();
+            UI.updateSettingsPromptFields();
+            UI.updateSettingsFields();
+            UI.renderSettingsLists();
+            UI.showNotification(`Réinitialisé : ${parts.join(', ')} (données conservées).`, 'success');
+        } catch (e) {
+            UI.showNotification('Erreur lors de la réinitialisation.', 'error');
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
+            if (cancelBtn) cancelBtn.disabled = false;
+            if (closeBtn) closeBtn.disabled = false;
+        }
     },
 
     /**
-     * Factory reset - Erases EVERYTHING.
-     * Classes, students, appreciations, settings - all gone.
+     * Factory reset — Erases EVERYTHING.
+     * Uses Hard Confirm modal (user must type SUPPRIMER).
      */
     async factoryReset() {
-        UI.showCustomConfirm("⚠️ SUPPRIMER TOUTES LES DONNÉES ?\n\nCette action est IRRÉVERSIBLE.\nClasses, élèves, appréciations, paramètres - tout sera effacé.", async () => {
-            // Verrouiller définitivement l'interface (rechargement à venir)
-            const saveBtn = document.getElementById('saveSettingsBtn');
-            const cancelBtn = document.getElementById('cancelSettingsBtn');
-            const closeBtn = document.getElementById('closeSettingsModalBtn');
-            const modalFunctions = document.querySelectorAll('.settings-modal button, .settings-modal input, .settings-modal select');
+        const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
 
-            if (saveBtn) saveBtn.disabled = true;
-            if (cancelBtn) cancelBtn.disabled = true;
-            if (closeBtn) closeBtn.disabled = true;
-            modalFunctions.forEach(el => el.disabled = true);
+        const studentCount = appState.generatedResults?.length || 0;
+        const classCount = appState.classes?.length || 0;
 
-            try {
-                // Clear IndexedDB
-                await DBService.clear('generatedResults');
-
-                // Clear the main app state (contains classes, settings, etc.)
-                localStorage.removeItem(CONFIG.LS_APP_STATE_KEY);
-
-                // Clear all bulletin/app related keys
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (
-                        key.startsWith('bulletin') ||
-                        key.startsWith('appState') ||
-                        key.startsWith('appreciation') ||
-                        key.includes('Generator')
-                    )) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(key => localStorage.removeItem(key));
-
-                // Also remove sync-related keys
-                localStorage.removeItem('bulletin_device_id');
-                localStorage.removeItem('bulletin_sync_provider');
-                localStorage.removeItem('bulletin_sync_auto');
-                localStorage.removeItem('bulletin_last_sync');
-                localStorage.removeItem('bulletin_google_token');
-                localStorage.removeItem('bulletin_dropbox_token');
-
-                UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
-
-                // Reload to fresh state
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-
-            } catch (error) {
-                console.error('Factory reset error:', error);
-                UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');
-
-                // Déverrouiller en cas d'erreur
-                if (saveBtn) saveBtn.disabled = false;
-                if (cancelBtn) cancelBtn.disabled = false;
-                if (closeBtn) closeBtn.disabled = false;
-                modalFunctions.forEach(el => el.disabled = false);
-            }
+        const confirmed = await ModalUIManager.showHardConfirmModal({
+            title: 'Remise à zéro totale',
+            message: `
+                <p>Cette action est <strong>irréversible</strong> et supprimera :</p>
+                <ul style="margin: 12px 0 12px 20px; line-height: 1.8; color: var(--text-primary);">
+                    <li><strong>${classCount}</strong> classe${classCount > 1 ? 's' : ''}</li>
+                    <li><strong>${studentCount}</strong> élève${studentCount > 1 ? 's' : ''} et leurs appréciations</li>
+                    <li>Tous les paramètres, clés API et prompts</li>
+                    <li>La synchronisation cloud</li>
+                </ul>
+                <p>L'application sera rechargée à son état initial.</p>
+            `,
+            confirmWord: 'SUPPRIMER',
+            confirmText: 'Tout supprimer',
+            cancelText: 'Annuler'
         });
+
+        if (!confirmed) return;
+
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        const cancelBtn = document.getElementById('cancelSettingsBtn');
+        const closeBtn = document.getElementById('closeSettingsModalBtn');
+        const modalFunctions = document.querySelectorAll('.settings-modal button, .settings-modal input, .settings-modal select');
+
+        if (saveBtn) saveBtn.disabled = true;
+        if (cancelBtn) cancelBtn.disabled = true;
+        if (closeBtn) closeBtn.disabled = true;
+        modalFunctions.forEach(el => el.disabled = true);
+
+        try {
+            await DBService.clear('generatedResults');
+            localStorage.removeItem(CONFIG.LS_APP_STATE_KEY);
+
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (
+                    key.startsWith('bulletin') ||
+                    key.startsWith('appState') ||
+                    key.startsWith('appreciation') ||
+                    key.includes('Generator')
+                )) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            localStorage.removeItem('bulletin_device_id');
+            localStorage.removeItem('bulletin_sync_provider');
+            localStorage.removeItem('bulletin_sync_auto');
+            localStorage.removeItem('bulletin_last_sync');
+            localStorage.removeItem('bulletin_google_token');
+            localStorage.removeItem('bulletin_dropbox_token');
+
+            UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+        } catch (error) {
+            UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');
+
+            if (saveBtn) saveBtn.disabled = false;
+            if (cancelBtn) cancelBtn.disabled = false;
+            if (closeBtn) closeBtn.disabled = false;
+            modalFunctions.forEach(el => el.disabled = false);
+        }
     },
 
     parseBackupFile(fileContent) {

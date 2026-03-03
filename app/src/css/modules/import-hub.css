@@ -71,8 +71,7 @@
 
 /* Dark mode - Neutral gray glass */
 [data-theme="dark"] .import-hub-modal {
-    background: #111827;
-    /* Gray-900 solid */
+    background: #18181b;
     border: 1px solid rgba(255, 255, 255, 0.08);
     /* Thinner border */
     box-shadow:
@@ -185,8 +184,7 @@
 
 /* Dark mode card */
 [data-theme="dark"] .import-hub-card {
-    background: #1f2937;
-    /* Gray-800 */
+    background: #27272a;
     border: 1px solid transparent;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
@@ -202,7 +200,7 @@
 }
 
 [data-theme="dark"] .import-hub-card:hover {
-    background: #262f3d;
+    background: #2e2e32;
     box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
 }
 

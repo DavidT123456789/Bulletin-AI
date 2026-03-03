@@ -10,16 +10,13 @@
 }
 
 ::selection {
-    background: #dbeafe;
-    /* blue-100 */
-    color: #1d4ed8;
-    /* blue-700 */
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
 }
 
 html {
     scroll-behavior: smooth;
-    /* font de la maquette */
-    font-family: 'inter', sans-serif;
+    font-family: var(--font-sans);
 }
 
 body {
@@ -28,10 +25,8 @@ body {
     background: var(--bg-color);
     color: var(--text-primary);
     font-size: 14px;
-    /* base size */
     line-height: 1.5;
     overflow: hidden;
-    /* pour le layout app-like */
 }
 
 h1,
@@ -43,6 +38,7 @@ h6 {
     margin: 0;
     font-weight: 600;
     color: var(--text-primary);
+    letter-spacing: -0.02em;
 }
 
 a {
@@ -67,10 +63,9 @@ a.btn-secondary:hover {
     color: var(--primary-color);
 }
 
-/* Scrollbar personnalisée (webkit) - Premium Thin */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
 }
 
 ::-webkit-scrollbar-track {
@@ -78,10 +73,8 @@ a.btn-secondary:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(161, 161, 170, 0.5);
-    /* Zinc 400 with opacity */
+    background: rgba(161, 161, 170, 0.4);
     border-radius: var(--radius-pill);
-    transition: background var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {

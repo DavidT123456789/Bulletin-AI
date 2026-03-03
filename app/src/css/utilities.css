@@ -34,7 +34,7 @@
    DARK MODE SUPPORT - Tooltips
    ============================ */
 [data-theme="dark"] .tippy-box[data-theme~='custom-theme'] {
-    background-color: rgba(30, 41, 59, 0.95);
+    background-color: rgba(39, 39, 42, 0.95);
     /* Sombre et profond */
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -60,28 +60,28 @@
 .tippy-box[data-theme~='custom-theme'][data-placement^='top']>.tippy-arrow::before {
     bottom: -7px;
     border-width: 7px 7px 0;
-    border-top-color: rgba(30, 41, 59, 0.95);
+    border-top-color: rgba(39, 39, 42, 0.95);
 }
 
 /* BOTTOM placement */
 .tippy-box[data-theme~='custom-theme'][data-placement^='bottom']>.tippy-arrow::before {
     top: -7px;
     border-width: 0 7px 7px;
-    border-bottom-color: rgba(30, 41, 59, 0.95);
+    border-bottom-color: rgba(39, 39, 42, 0.95);
 }
 
 /* LEFT placement */
 .tippy-box[data-theme~='custom-theme'][data-placement^='left']>.tippy-arrow::before {
     right: -7px;
     border-width: 7px 0 7px 7px;
-    border-left-color: rgba(30, 41, 59, 0.95);
+    border-left-color: rgba(39, 39, 42, 0.95);
 }
 
 /* RIGHT placement */
 .tippy-box[data-theme~='custom-theme'][data-placement^='right']>.tippy-arrow::before {
     left: -7px;
     border-width: 7px 7px 7px 0;
-    border-right-color: rgba(30, 41, 59, 0.95);
+    border-right-color: rgba(39, 39, 42, 0.95);
 }
 
 .tippy-content {

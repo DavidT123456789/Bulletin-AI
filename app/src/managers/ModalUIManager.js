@@ -181,7 +181,8 @@ export const ModalUI = {
                 this.activeModal = null;
 
                 // Supprimer les modales de confirmation dynamiques
-                if (modal.id === 'customConfirmModal' && modal.parentNode) {
+                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal'];
+                if (dynamicModals.includes(modal.id) && modal.parentNode) {
                     modal.parentNode.removeChild(modal);
                 }
             }
@@ -499,14 +500,140 @@ export const ModalUI = {
             else okBtn.focus();
         });
     },
+
+    /**
+     * Modale de confirmation "dure" — l'utilisateur doit taper un mot précis pour confirmer.
+     * Utilisée pour les actions irréversibles (factory reset, suppression totale).
+     * 
+     * @param {Object} options
+     * @param {string} options.title - Titre de la modale
+     * @param {string} options.message - Message HTML explicatif
+     * @param {string} options.confirmWord - Mot que l'utilisateur doit taper (ex: "SUPPRIMER")
+     * @param {string} [options.confirmText='Confirmer'] - Texte du bouton de confirmation
+     * @param {string} [options.cancelText='Annuler'] - Texte du bouton d'annulation
+     * @param {string} [options.inputPlaceholder] - Placeholder du champ
+     * @returns {Promise<boolean>}
+     */
+    showHardConfirmModal(options = {}) {
+        return new Promise((resolve) => {
+            const {
+                title = 'Confirmation requise',
+                message = '',
+                confirmWord = 'SUPPRIMER',
+                confirmText = 'Confirmer',
+                cancelText = 'Annuler',
+                inputPlaceholder
+            } = options;
+
+            const modalId = 'hardConfirmModal';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal modal-danger';
+
+            const placeholder = inputPlaceholder || `Tapez ${confirmWord} pour confirmer`;
+
+            modal.innerHTML = `
+                <div class="modal-content modal-content-confirm">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <iconify-icon icon="solar:danger-triangle-bold" class="modal-title-icon" style="color: var(--error-color);"></iconify-icon>
+                            ${title}
+                        </h3>
+                        <button class="close-button" aria-label="Fermer">
+                            <iconify-icon icon="ph:x"></iconify-icon>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom: 20px; color: var(--text-secondary);">${message}</div>
+                        <div class="hard-confirm-input-wrapper">
+                            <label class="hard-confirm-label" for="hardConfirmInput">
+                                Tapez <strong class="hard-confirm-word">${confirmWord}</strong> pour confirmer :
+                            </label>
+                            <input 
+                                type="text" 
+                                id="hardConfirmInput" 
+                                class="hard-confirm-input" 
+                                placeholder="${placeholder}" 
+                                autocomplete="off" 
+                                spellcheck="false"
+                            >
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
+                        <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            const input = document.getElementById('hardConfirmInput');
+            const okBtn = document.getElementById('hardConfirmOkBtn');
+            const cancelBtn = document.getElementById('hardConfirmCancelBtn');
+            const closeBtn = modal.querySelector('.close-button');
+
+            let keyHandler;
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
+            const handleConfirm = () => {
+                if (okBtn.disabled) return;
+                cleanup();
+                resolve(true);
+                this.closeModal(modal);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+                this.closeModal(modal);
+            };
+
+            input.addEventListener('input', () => {
+                const match = input.value.trim() === confirmWord;
+                okBtn.disabled = !match;
+                input.classList.toggle('match', match);
+            });
+
+            okBtn.addEventListener('click', handleConfirm, { once: true });
+            cancelBtn.addEventListener('click', handleCancel, { once: true });
+            if (closeBtn) closeBtn.addEventListener('click', handleCancel, { once: true });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) handleCancel();
+            });
+
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancel();
+                } else if (e.key === 'Enter' && !okBtn.disabled) {
+                    e.preventDefault();
+                    handleConfirm();
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+
+            setTimeout(() => input.focus(), 150);
+        });
+    },
+
     closeAllModals() {
         const modals = [
             DOM.settingsModal,
             DOM.studentDetailsModal,
-            // DOM.refinementModal removed - Focus Panel handles all refinement inline
             DOM.helpModal,
             DOM.welcomeModal,
             document.getElementById('customConfirmModal'),
+            document.getElementById('customChoicesModal'),
+            document.getElementById('hardConfirmModal'),
             document.getElementById('classDashboardModal'),
             DOM.classAnalysisModal,
             DOM.importPreviewModal

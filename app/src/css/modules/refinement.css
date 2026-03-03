@@ -420,13 +420,12 @@
 }
 
 [data-theme="dark"] .refinement-box.suggestion-box {
-    background: linear-gradient(145deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.4) 100%);
+    background: linear-gradient(145deg, rgba(39, 39, 42, 0.6) 0%, rgba(24, 24, 27, 0.4) 100%);
     border-color: var(--border-color);
 }
 
 [data-theme="dark"] .refinement-accept-btn {
-    background: #1f2937;
-    /* Darker surface */
+    background: var(--surface-color);
 }
 
 /* === Bouton VALIDER === */

@@ -8,8 +8,8 @@
     background: var(--primary-color);
     color: white;
     border: none;
-    padding: 0 18px;
-    height: 36px;
+    padding: 0 20px;
+    height: 40px;
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 13px;
@@ -18,8 +18,7 @@
     display: inline-flex;
     justify-content: center;
     align-items: center;
-    gap: 7px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    gap: 8px;
 }
 
 /* Harmonization: Icons inherit text color */
@@ -32,12 +31,10 @@
 
 .btn:hover:not(:disabled) {
     background: var(--primary-hover);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .btn:active:not(:disabled) {
-    transform: scale(0.98);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -289,19 +286,19 @@
 
 .btn-small {
     padding: 0 14px;
-    height: 30px;
+    height: 32px;
     font-size: 12px;
 }
 
 .btn-icon {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    width: 36px;
-    height: 36px;
+    border-radius: var(--radius-md);
+    width: 40px;
+    height: 40px;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.05em;
+    font-size: 1.1em;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
