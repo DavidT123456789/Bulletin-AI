@@ -160,13 +160,13 @@
     gap: 16px;
     padding: 24px;
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--card-glass-border);
     border-radius: var(--radius-xl, 20px);
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     flex: 1;
     min-width: 220px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Dark mode */
