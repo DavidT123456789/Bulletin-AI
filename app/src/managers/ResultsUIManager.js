@@ -295,7 +295,7 @@ export const ResultsUIManager = {
                 // Bind events on inline hub cards
                 this._bindEmptyStateHubEvents(DOM.emptyStateCard);
             }
-            if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'block';
+            if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
             // Masquer les statistiques et le header de liste quand il n'y a pas de données

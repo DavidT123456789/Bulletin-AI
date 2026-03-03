@@ -3161,42 +3161,28 @@
     </template>
 
     <template id="empty-state-template">
-        <div class="empty-state-illustration">
-            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="60" cy="60" r="55" stroke="url(#gradient)" stroke-width="2" stroke-dasharray="8 4"
-                    class="empty-state-circle" />
-                <path d="M45 55L55 65L75 45" stroke="url(#gradient)" stroke-width="3" stroke-linecap="round"
-                    stroke-linejoin="round" class="empty-state-check" />
-                <circle cx="60" cy="60" r="25" fill="url(#gradient)" fill-opacity="0.1" />
-                <text x="60" y="65" text-anchor="middle" font-size="24" class="empty-state-emoji">✨</text>
-                <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#d97706" />
-                        <stop offset="100%" stop-color="#b45309" />
-                    </linearGradient>
-                </defs>
-            </svg>
-        </div>
-        <h3>Commencez par ajouter vos élèves</h3>
+        <h3>Générez vos premiers bulletins</h3>
+        <p>Commencez par ajouter vos élèves.</p>
+
 
         <!-- Hub d'import intégré directement -->
         <div class="empty-state-hub">
             <div class="empty-state-hub-card" data-action="individual" tabindex="0" role="button">
                 <div class="empty-state-hub-icon">
-                    <iconify-icon class="iconify-inline" icon="solar:user-plus-bold"></iconify-icon>
+                    <iconify-icon icon="solar:user-plus-bold-duotone"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Individuel</h4>
-                    <p>Ajouter un élève manuellement</p>
+                    <p>Ajouter un élève<br>manuellement</p>
                 </div>
             </div>
             <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button">
                 <div class="empty-state-hub-icon">
-                    <iconify-icon icon="solar:file-text-bold"></iconify-icon>
+                    <iconify-icon icon="solar:file-text-bold-duotone"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Classe entière</h4>
-                    <p>Importer depuis Excel / CSV</p>
+                    <p>Importer depuis<br>Excel / CSV</p>
                 </div>
             </div>
         </div>
