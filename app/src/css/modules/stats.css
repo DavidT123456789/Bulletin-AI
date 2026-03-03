@@ -454,11 +454,6 @@
 /* [data-theme="dark"] .stat-card block removed */
 
 
-/* Hover effect spécifique aux stats */
-.stat-card:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-}
-
 /* État actif avec filtre - Bordure haute colorée */
 .stat-card.active-filter::before {
     content: '';
