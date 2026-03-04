@@ -220,6 +220,10 @@
     color: var(--text-secondary);
 }
 
+[data-theme="dark"] .class-dropdown-item .class-student-count {
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .class-dropdown-item.active .class-student-count {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
@@ -271,6 +275,10 @@
     background: var(--bg-secondary);
     color: var(--text-secondary);
     transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .progress-count {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .progress-count i {
