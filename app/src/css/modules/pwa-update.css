@@ -26,7 +26,8 @@
         0 0 0 1px rgba(255, 255, 255, 0.1);
 
     animation: pwa-toast-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    width: min(540px, 92vw);
+    width: fit-content;
+    max-width: min(540px, 92vw);
     overflow: hidden;
     /* For accordion expansion */
 }

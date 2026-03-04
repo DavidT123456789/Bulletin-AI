@@ -292,15 +292,22 @@ export const ResultsUIManager = {
                 DOM.emptyStateCard.innerHTML = '';
                 DOM.emptyStateCard.appendChild(emptyTemplate.content.cloneNode(true));
 
-                // Bind events on inline hub cards
+                const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
+                const subtitle = DOM.emptyStateCard.querySelector('p');
+                if (subtitle) {
+                    subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
+                }
+
                 this._bindEmptyStateHubEvents(DOM.emptyStateCard);
             }
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
-            // Masquer les statistiques et le header de liste quand il n'y a pas de données
+            // Masquer les statistiques, dots et le header de liste quand il n'y a pas de données
             if (DOM.statsContainer) DOM.statsContainer.style.display = 'none';
             if (DOM.outputHeader) DOM.outputHeader.style.display = 'none';
+            const statsPagination = document.getElementById('statsPagination');
+            if (statsPagination) statsPagination.style.display = 'none';
         }
         else if (filteredAndSorted.length === 0) {
             // CRITICAL FIX: Preserve table structure (and search bar) when filter returns no results
@@ -312,6 +319,8 @@ export const ResultsUIManager = {
             // Réafficher les statistiques si masquées précédemment
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
+            const statsPag1 = document.getElementById('statsPagination');
+            if (statsPag1) statsPag1.style.display = '';
 
             // Let ListViewManager handle the empty state - it preserves the table header with search bar
             ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
@@ -324,6 +333,8 @@ export const ResultsUIManager = {
             // Réafficher les statistiques si masquées précédemment
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
+            const statsPag2 = document.getElementById('statsPagination');
+            if (statsPag2) statsPag2.style.display = '';
 
             // Liste + Focus UX: Utiliser ListViewManager au lieu des cartes individuelles
             ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
