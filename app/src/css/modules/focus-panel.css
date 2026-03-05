@@ -69,8 +69,8 @@
     padding: 4px 16px 4px 4px;
     /* Padding minimal à gauche et en haut/bas pour enlacer l'avatar */
     /* Reduced padding for a thinner pill */
-    margin: 16px 16px 12px 16px;
-    /* Floating margin */
+    margin: 15px 16px 20px 16px;
+    /* Floating margin (top 15px, bottom 20px pour plus de respiration avant le contenu) */
     /* Opaque beautiful surface background */
     background: var(--surface-color);
     border-radius: 100px;
@@ -151,7 +151,7 @@
    Comme le header est `absolute`, on doit ajuster la marge supérieure du conteneur en dessous.
 */
 .focus-header.editing+.focus-pages-container .focus-content {
-    padding-top: 208px;
+    padding-top: 224px;
 }
 
 .focus-back-btn {
@@ -505,7 +505,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     /* Padding top massif pour compenser l'entête absolute, permet le scroll en-dessous */
-    padding: 92px 14px 24px 14px;
+    padding: 108px 14px 24px 14px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -4001,12 +4001,12 @@ input.context-grade-input {
 
     /* Le focus content sur mobile: compensation du header mobile */
     .focus-content {
-        padding: 108px 16px 24px 16px;
+        padding: 124px 16px 24px 16px;
     }
 
     /* Le focus content sur mobile + mode édition: compensation maximale */
     .focus-header.editing+.focus-pages-container .focus-content {
-        padding-top: 268px;
+        padding-top: 284px;
     }
 
     .focus-header-read {
@@ -4139,7 +4139,7 @@ input.context-grade-input {
 
     /* Content: Full width, less padding - Padding Top already managed */
     .focus-content {
-        padding: 108px 16px 24px 16px;
+        padding: 124px 16px 24px 16px;
     }
 
     /* Context group */
