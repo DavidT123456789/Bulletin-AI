@@ -44,7 +44,29 @@ vi.mock('./UIManager', () => ({
 
 vi.mock('./AppreciationsManager', () => ({
     AppreciationsManager: {
-        loadSampleData: vi.fn()
+        loadSampleData: vi.fn(),
+        renderResults: vi.fn()
+    }
+}));
+
+vi.mock('./ClassManager', () => ({
+    ClassManager: {
+        createClass: vi.fn(() => ({ id: 'demo-class-id', name: 'Classe Exemple' })),
+        switchClass: vi.fn(),
+        _filterResultsByClass: vi.fn()
+    }
+}));
+
+vi.mock('./StudentDataManager', () => ({
+    StudentDataManager: {
+        createPendingResult: vi.fn(s => ({ id: 'mock-id', nom: s.nom, prenom: s.prenom, classId: 'demo-class-id' }))
+    }
+}));
+
+vi.mock('./ClassUIManager', () => ({
+    ClassUIManager: {
+        updateHeaderDisplay: vi.fn(),
+        updateStudentCount: vi.fn()
     }
 }));
 
@@ -107,9 +129,8 @@ describe('WelcomeManager', () => {
     describe('activateDemoMode', () => {
         it('should enable demo mode', async () => {
             const { UI } = await import('./UIManager');
-            const { AppreciationsManager } = await import('./AppreciationsManager');
 
-            WelcomeManager.activateDemoMode();
+            await WelcomeManager.activateDemoMode();
 
             expect(appState.isDemoMode).toBe(true);
             expect(UI.showNotification).toHaveBeenCalledWith(
@@ -119,7 +140,6 @@ describe('WelcomeManager', () => {
             expect(UI.closeModal).toHaveBeenCalled();
             expect(UI.updateGenerateButtonState).toHaveBeenCalled();
             expect(UI.updateHeaderPremiumLook).toHaveBeenCalled();
-            expect(AppreciationsManager.loadSampleData).toHaveBeenCalled();
         });
     });
 

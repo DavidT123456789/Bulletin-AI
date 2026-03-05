@@ -15,7 +15,9 @@ import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { StorageManager } from './StorageManager.js';
-import { ImportWizardManager } from './ImportWizardManager.js';
+import { ClassManager } from './ClassManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
 
 let validateApiKeyCallback = null;
 let welcomeModalAbortController = null;
@@ -51,6 +53,15 @@ export const WelcomeManager = {
         const signal = welcomeModalAbortController.signal;
 
         let currentWelcomeStep = 1;
+
+        // Reset demo data button state (in case modal is reopened)
+        if (DOM.welcomeLoadSampleBtn) {
+            DOM.welcomeLoadSampleBtn.disabled = false;
+            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold"></iconify-icon> Charger une classe exemple';
+        }
+        if (DOM.welcomeNextStepInfo) {
+            DOM.welcomeNextStepInfo.style.display = 'none';
+        }
         const totalWelcomeSteps = 4;
         let isAnimating = false;
         let currentProvider = 'mistral';
@@ -258,15 +269,13 @@ export const WelcomeManager = {
             UI.closeModal(DOM.welcomeModal);
             UI.updateGenerateButtonState();
 
-            // Check if sample data was loaded and needs to be imported
-            const sampleData = sessionStorage.getItem('pendingSampleData');
-            if (sampleData) {
-                sessionStorage.removeItem('pendingSampleData');
-
-                setTimeout(() => {
-                    ImportWizardManager.openWithData(sampleData);
-                }, 400);
-            }
+            // Refresh UI if demo data was loaded
+            setTimeout(() => {
+                AppreciationsManager.renderResults();
+                UI.updateStats?.();
+                ClassUIManager.updateHeaderDisplay();
+                ClassUIManager.updateStudentCount();
+            }, 300);
         };
 
         const validateWelcomeApiKey = async () => {
@@ -415,18 +424,22 @@ export const WelcomeManager = {
             DOM.welcomeNextBtn.click();
         });
 
-        addClickListener(DOM.welcomeLoadSampleBtn, () => {
+        addClickListener(DOM.welcomeLoadSampleBtn, async () => {
             const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked').value;
             if (appState.periodSystem !== selectedSystem) {
                 appState.periodSystem = selectedSystem;
                 UI.updatePeriodSystemUI();
             }
-            AppreciationsManager.loadSampleData();
-            DOM.welcomeNextStepInfo.style.display = 'block';
-            DOM.welcomeLoadSampleBtn.disabled = true;
-            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Données chargées !';
-            // User needs to click Terminer to finish
-            UI.showNotification('Données exemple prêtes ! Cliquez sur "Terminer" pour continuer.', 'success');
+
+            try {
+                await this._injectDemoClass(selectedSystem);
+                DOM.welcomeNextStepInfo.style.display = 'block';
+                DOM.welcomeLoadSampleBtn.disabled = true;
+                DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Données chargées !';
+                UI.showNotification('Classe Exemple créée avec 8 élèves ! Cliquez sur "Terminer" pour continuer.', 'success');
+            } catch (error) {
+                UI.showNotification('Erreur lors du chargement des données.', 'error');
+            }
         });
 
         // Gestion du bouton Mode Démo
@@ -437,15 +450,101 @@ export const WelcomeManager = {
      * Active le mode démo
      * Permet d'utiliser l'application sans clé API avec des données simulées
      */
-    activateDemoMode() {
+    async activateDemoMode() {
         appState.isDemoMode = true;
         UI.showNotification("Mode Démo activé ! Génération simulée.", "success");
         UI.closeModal(DOM.welcomeModal);
         UI.updateGenerateButtonState();
         UI.updateHeaderPremiumLook();
 
-        // Charger les données d'exemple
-        AppreciationsManager.loadSampleData();
+        try {
+            await this._injectDemoClass(appState.periodSystem);
+            setTimeout(() => {
+                AppreciationsManager.renderResults();
+                UI.updateStats?.();
+                ClassUIManager.updateHeaderDisplay();
+                ClassUIManager.updateStudentCount();
+            }, 300);
+        } catch (_) { /* silent fallback */ }
+    },
+
+    /**
+     * Crée une classe "Exemple" avec 8 élèves pré-remplis (P1)
+     * @param {string} periodSystem - 'trimestres' ou 'semestres'
+     * @private
+     */
+    async _injectDemoClass(periodSystem) {
+        // Guard: skip if a demo class already exists
+        const existingDemo = ClassManager.getAllClasses().find(c => c.name === 'Classe Exemple');
+        if (existingDemo) {
+            await ClassManager.switchClass(existingDemo.id);
+            return;
+        }
+
+        const { getDemoClassData } = await import('../data/SampleData.js');
+        const { className, students } = getDemoClassData(periodSystem);
+
+        const newClass = ClassManager.createClass(className);
+        await ClassManager.switchClass(newClass.id);
+
+        const currentPeriod = periodSystem === 'semestres' ? 'S1' : 'T1';
+        appState.currentPeriod = currentPeriod;
+
+        const results = [];
+        for (const studentData of students) {
+            const photoFile = studentData.photoFile;
+            delete studentData.photoFile;
+
+            const result = StudentDataManager.createPendingResult(studentData);
+            results.push({ result, photoFile });
+            appState.generatedResults.push(result);
+        }
+
+        await ClassManager._filterResultsByClass(newClass.id);
+        await StorageManager.saveAppState();
+
+        // Fetch demo photos in parallel (non-blocking)
+        this._loadDemoPhotos(results);
+    },
+
+    /**
+     * Charge les photos démo et les assigne aux résultats élèves
+     * @param {Array<{result: Object, photoFile: string}>} entries
+     * @private
+     */
+    async _loadDemoPhotos(entries) {
+        const photoPromises = entries.map(async ({ result, photoFile }) => {
+            if (!photoFile) return;
+            try {
+                const response = await fetch(`./images/Demo/${photoFile}`);
+                if (!response.ok) return;
+                const blob = await response.blob();
+                const base64 = await this._blobToBase64(blob);
+                result.studentPhoto = {
+                    data: base64,
+                    source: 'demo',
+                    uploadedAt: new Date().toISOString()
+                };
+            } catch (_) { /* photo optionnelle */ }
+        });
+
+        await Promise.all(photoPromises);
+        await StorageManager.saveAppState();
+
+        // Refresh UI to display loaded photos
+        AppreciationsManager.renderResults?.();
+    },
+
+    /**
+     * @private
+     */
+    _blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
     },
 
     /**
