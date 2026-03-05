@@ -117,7 +117,8 @@
     position: absolute;
     bottom: -6px;
     /* Laisse l'avatar dépasser un peu en bas de la pilule */
-    left: 0;
+    left: -14px;
+    /* Décale l'avatar à gauche pour mordre la bordure de la pilule */
 }
 
 /* Specific override for the injected avatar to make it pop out */
