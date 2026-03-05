@@ -60,20 +60,84 @@
 }
 
 /* ============================
-   1. HEADER (Floating Large Title)
+   1. HEADER (Floating Pill & Avatar Overflow)
    ============================ */
 .focus-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 18px;
-    /* Opaque background - contrasts with glassmorphism panel */
-    background: var(--bg-color);
-    border-bottom: 1px solid var(--card-glass-border);
+    gap: 16px;
+    padding: 8px 16px 8px 10px;
+    /* Reduced left padding for avatar overlap */
+    margin: 28px 16px 12px 16px;
+    /* Floating margin */
+    /* Opaque beautiful surface background */
+    background: var(--surface-color);
+    border-radius: 100px;
+    /* Floating Pill shape */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    /* Soft elevated shadow */
+    border: 1px solid var(--card-glass-border);
     flex-shrink: 0;
-    z-index: 10;
+    z-index: 20;
     position: sticky;
-    top: 0;
+    top: 16px;
+    /* Keeps it floating while stuck */
+    transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-theme="dark"] .focus-header {
+    background: rgba(30, 30, 30, 0.95);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Edit Mode Adaptation: Pill shape to rounded rectangle to fit multiple fields gracefully */
+.focus-header.editing {
+    border-radius: var(--radius-lg, 16px);
+    padding: 12px 16px;
+    align-items: flex-start;
+    /* Better for multiple lines of edit */
+}
+
+/* AVATAR OVERFLOW LOGIC */
+.focus-header-left {
+    position: relative;
+    z-index: 2;
+    /* Avatar above everything */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Specific override for the injected avatar to make it pop out */
+.focus-header .focus-panel-avatar-container .student-avatar {
+    width: 76px !important;
+    height: 76px !important;
+    font-size: 30px !important;
+    border: 4px solid var(--surface-color);
+    /* Matches the pill background for cutout effect */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    /* Lifted photo */
+    /* Strong negative top margin for profound overflow, small negative bottom to keep it grounded */
+    margin-top: -32px;
+    margin-bottom: -4px;
+    margin-left: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="dark"] .focus-header .focus-panel-avatar-container .student-avatar {
+    border-color: #1a1a1c;
+    /* Deep match for dark mode pill */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.focus-header.editing .focus-panel-avatar-container .student-avatar {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 24px !important;
 }
 
 .focus-back-btn {
