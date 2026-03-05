@@ -139,23 +139,19 @@
 
 
 /* --- Mode Édition --- */
-.focus-header.editing .focus-header-left {
-    width: auto;
-    height: auto;
-}
-
-.focus-header.editing .focus-panel-avatar-container {
-    position: relative;
-    /* Retour au comportement normal (flow) pendant l'édition */
-    bottom: auto;
-    left: auto;
-}
-
+/* (Le flux naturel est désormais géré automatiquement car plus de positions absolues fixes dans la zone gauche) */
 .focus-header.editing .focus-panel-avatar-container .student-avatar {
-    margin: 0;
     width: 60px !important;
     height: 60px !important;
     font-size: 24px !important;
+}
+
+/* 
+   Ajustement du padding de contenu lorsque le header est en mode édition (il s'agrandit).
+   Comme le header est `absolute`, on doit ajuster la marge supérieure du conteneur en dessous.
+*/
+.focus-header.editing+.focus-pages-container .focus-content {
+    padding-top: 220px;
 }
 
 .focus-back-btn {
@@ -3962,7 +3958,7 @@ input.context-grade-input {
 
     /* Header: Smart flex layout for mobile (allows wrapping text in read mode, stacking in edit mode) */
     .focus-header {
-        position: relative;
+        /* On conserve l'absolute pour le chevauchement, mais flex-wrap pour les petits écrans */
         flex-wrap: wrap;
         /* Inherits display: flex, align-items: center, padding: 12px 16px, gap: 8px from base and 768px media query */
     }
@@ -4001,6 +3997,16 @@ input.context-grade-input {
         padding: 0;
         /* Reset padding when wrapping to new line */
         overflow: visible;
+    }
+
+    /* Le focus content sur mobile: compensation du header mobile */
+    .focus-content {
+        padding: 120px 16px 24px 16px;
+    }
+
+    /* Le focus content sur mobile + mode édition: compensation maximale */
+    .focus-header.editing+.focus-pages-container .focus-content {
+        padding-top: 280px;
     }
 
     .focus-header-read {
@@ -4131,9 +4137,9 @@ input.context-grade-input {
         font-size: 12px;
     }
 
-    /* Content: Full width, less padding */
+    /* Content: Full width, less padding - Padding Top already managed */
     .focus-content {
-        padding: 12px 16px;
+        padding: 120px 16px 24px 16px;
     }
 
     /* Context group */
