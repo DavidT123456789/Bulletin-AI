@@ -72,7 +72,7 @@ export const ListViewRenderer = {
     generateActionMenuHTML(studentId) {
         return `
             <div class="action-dropdown-menu">
-                <h5 class="dropdown-header"><iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> APPRÉCIATION</h5>
+                <h5 class="dropdown-header">APPRÉCIATION</h5>
                 <button class="action-dropdown-item" data-action="regenerate-student">
                     <iconify-icon icon="solar:refresh-linear"></iconify-icon> Régénérer
                 </button>
@@ -80,7 +80,7 @@ export const ListViewRenderer = {
                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
                 </button>
                 
-                <h5 class="dropdown-header"><iconify-icon icon="solar:mortarboard-linear"></iconify-icon> ÉLÈVE</h5>
+                <h5 class="dropdown-header">ÉLÈVE</h5>
                 <button class="action-dropdown-item" data-action="move-student">
                     <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
                 </button>
@@ -314,7 +314,7 @@ export const ListViewRenderer = {
 
 
                                         <!-- SECTION EXPORT -->
-                                        <h5 class="dropdown-header"><iconify-icon icon="solar:download-minimalistic-linear"></iconify-icon> Exporter</h5>
+                                        <h5 class="dropdown-header">EXPORTER</h5>
                                         <button class="action-dropdown-item" id="exportJsonBtn">
                                             <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
                                         </button>
