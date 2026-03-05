@@ -492,8 +492,8 @@
 }
 
 .nav-arrow-custom:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     transform: scale(1.1);
 }
 

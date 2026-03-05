@@ -102,6 +102,18 @@
     --close-btn-hover-bg: var(--error-light);
     --close-btn-hover-color: var(--error-color);
 
+    /* Icon Button States (Single Source of Truth) */
+    --icon-btn-color: var(--text-secondary);
+    --icon-btn-hover: var(--primary-color);
+    --icon-btn-muted: var(--text-tertiary);
+
+    /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
+    --item-idle-bg: rgba(0, 0, 0, 0.02);
+    --item-hover-bg: rgba(0, 0, 0, 0.03);
+    --item-active-bg: rgba(0, 0, 0, 0.05);
+    /* Elevated variant: for items already on --bg-secondary */
+    --item-hover-bg-elevated: var(--bg-tertiary);
+
     --purple-color: #9333ea;
     --purple-rgb: 147, 51, 234;
     --purple-light: rgba(147, 51, 234, 0.15);
@@ -311,4 +323,14 @@
     /* --- Card Item Tokens (Dark Mode) --- */
     --card-item-hover-border-color: rgba(var(--primary-color-rgb), 0.35);
     --card-item-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+    /* Icon/Interactive Hover: White luminous instead of blue for readability */
+    --icon-btn-hover: var(--text-primary);
+
+    /* Universal Interactive Item Hover (Neutral) */
+    --item-idle-bg: rgba(255, 255, 255, 0.03);
+    --item-hover-bg: rgba(255, 255, 255, 0.07);
+    --item-active-bg: rgba(255, 255, 255, 0.10);
+    /* Elevated variant: for items already on --bg-secondary */
+    --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
 }

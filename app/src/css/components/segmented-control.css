@@ -36,19 +36,16 @@
     flex: 1;
     position: relative;
     z-index: 2;
-    /* Above the glider */
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--icon-btn-muted);
     font-size: 13px !important;
     font-weight: 500 !important;
     cursor: pointer;
     transition: all var(--transition-base);
-    opacity: 0.6;
-    filter: grayscale(100%);
     height: 100%;
     padding: 0 10px !important;
     margin: 0 !important;
@@ -74,25 +71,19 @@
 /* Hover state */
 .ui-segment:hover,
 .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
-    color: var(--text-primary);
-    opacity: 1;
-    filter: grayscale(0%);
+    color: var(--icon-btn-hover);
 }
 
 /* Active state */
 .ui-segment.active,
 .ui-segmented-control input[type="radio"]:checked+.ui-segment {
     color: var(--text-primary);
-    opacity: 1;
-    filter: grayscale(0%);
 }
 
 /* High Contrast Focus */
 .ui-segment:focus-visible,
 .ui-segmented-control input[type="radio"]:focus-visible+.ui-segment {
     box-shadow: 0 0 0 2px var(--primary-color);
-    opacity: 1;
-    filter: grayscale(0%);
 }
 
 /* --- The Glider (Sliding Background) --- */

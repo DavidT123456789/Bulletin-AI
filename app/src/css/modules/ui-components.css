@@ -146,7 +146,7 @@
 
 .ui-stepper-step.active {
     opacity: 1;
-    background: rgba(var(--primary-color-rgb), 0.08) !important;
+    background: var(--item-active-bg) !important;
 }
 
 .ui-stepper-step.completed {
@@ -175,8 +175,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-tertiary);
-    opacity: 0.4;
+    color: var(--icon-btn-muted);
     font-size: 0.75rem;
     padding: 0 2px;
 }
@@ -230,13 +229,13 @@
 }
 
 .ui-tabs-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    color: var(--text-primary);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
 }
 
 .ui-tabs-btn.active {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
+    background: var(--item-active-bg);
+    color: var(--icon-btn-hover);
     font-weight: 600;
     position: relative;
     box-shadow: none;
@@ -244,8 +243,7 @@
 
 .ui-tabs-btn.active iconify-icon,
 .ui-tabs-btn.active i {
-    opacity: 1;
-    filter: brightness(1.1);
+    color: inherit;
 }
 
 .ui-tabs-btn.active::before {
@@ -264,15 +262,14 @@
     width: 24px;
     text-align: center;
     font-size: 1.2em;
-    transition: transform var(--transition-fast), opacity var(--transition-fast);
-    opacity: 0.55;
-    /* Soften visual weight for bold icons */
+    color: var(--icon-btn-color);
+    transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
 .ui-tabs-btn:hover iconify-icon,
 .ui-tabs-btn.active iconify-icon {
     transform: scale(1.1);
-    opacity: 1;
+    color: var(--icon-btn-hover);
 }
 
 .ui-tabs-action-btn {
@@ -285,15 +282,15 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--icon-btn-muted);
     font-size: 0.82em;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .ui-tabs-action-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    color: var(--text-secondary);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
@@ -399,7 +396,8 @@
 .ui-table {
     width: 100%;
     min-width: 600px;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     text-align: left;
 }
 
@@ -434,12 +432,20 @@
     border-bottom: none;
 }
 
-.ui-table tbody tr {
+.ui-table tbody tr td {
     transition: background-color var(--transition-fast);
 }
 
-.ui-table tbody tr:hover {
-    background: rgba(var(--primary-color-rgb), 0.03);
+.ui-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--radius-lg);
+}
+
+.ui-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--radius-lg);
+}
+
+.ui-table tbody tr:hover td {
+    background: var(--item-hover-bg);
 }
 
 .ui-table-cell-icon {

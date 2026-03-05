@@ -91,16 +91,13 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--surface-color);
-    color: var(--text-secondary);
+    color: var(--icon-btn-color);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
     font-size: 18px;
-    /* Ensure icon has a size */
-    opacity: 0.8;
-    /* Increased visibility */
 }
 
 .inspector-toggle-btn iconify-icon {
@@ -109,16 +106,14 @@
 }
 
 .inspector-toggle-btn:hover {
-    opacity: 1;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     border-color: var(--primary-color);
 }
 
 /* Active state when inspector is visible */
 .inspector-toggle-btn.active {
-    opacity: 1;
-    background: rgba(var(--primary-color-rgb), 0.1);
+    background: var(--item-active-bg);
     color: var(--primary-color);
     border-color: var(--primary-color);
 }
@@ -889,7 +884,7 @@
 }
 
 .vocab-item:hover {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg-elevated);
 }
 
 .vocab-item-text {
@@ -1638,7 +1633,7 @@
 
 .backup-category-item:hover {
     border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    background: var(--item-hover-bg);
 }
 
 .backup-category-item.sub-item {

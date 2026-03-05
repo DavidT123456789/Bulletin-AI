@@ -258,8 +258,9 @@
 }
 
 .trombi-floating-sample-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
+    background: var(--item-hover-bg-elevated);
+    transform: scale(1.08);
+    box-shadow: var(--shadow-md);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -645,8 +646,8 @@
 }
 
 .grid-reset-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
@@ -909,7 +910,7 @@
 }
 
 .assignment-row:hover {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg-elevated);
 }
 
 .assignment-row.focused {
@@ -1167,7 +1168,7 @@
 }
 
 .trombi-controls .btn-secondary:hover {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg-elevated);
     border-color: var(--primary-color);
     color: var(--primary-color);
 }

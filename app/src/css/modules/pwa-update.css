@@ -214,7 +214,7 @@
 
 .pwa-update-banner .pwa-info-btn:hover,
 .pwa-update-banner .pwa-info-btn.active {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 

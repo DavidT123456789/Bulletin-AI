@@ -35,7 +35,7 @@
 }
 
 .history-nav-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg);
     color: var(--primary-color);
 }
 
@@ -60,7 +60,7 @@
 }
 
 .history-indicator-btn:hover {
-    background: var(--bg-hover);
+    background: var(--item-hover-bg);
     color: var(--primary-color);
 }
 

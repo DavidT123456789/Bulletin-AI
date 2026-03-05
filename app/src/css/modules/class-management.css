@@ -174,13 +174,13 @@
 }
 
 .class-dropdown-item:hover {
-    background: rgba(var(--primary-color-rgb), 0.04);
+    background: var(--item-hover-bg);
 }
 
 .class-dropdown-item.active {
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: var(--item-active-bg);
     box-shadow: inset 4px 0 0 var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--border-color);
 }
 
 .class-dropdown-item .class-info {
@@ -225,8 +225,8 @@
 }
 
 .class-dropdown-item.active .class-student-count {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--item-hover-bg-elevated);
+    color: var(--text-primary);
 }
 
 .class-dropdown-item:hover .class-student-count {
@@ -310,8 +310,8 @@
 }
 
 .class-dropdown-item.active .progress-count {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--item-hover-bg-elevated);
+    color: var(--text-primary);
 }
 
 .class-dropdown-item.active .progress-count.is-complete {
@@ -453,7 +453,7 @@
 
 .class-card.active {
     border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.05);
+    background: var(--item-active-bg);
 }
 
 

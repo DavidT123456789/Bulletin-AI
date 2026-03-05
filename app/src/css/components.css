@@ -50,10 +50,14 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: rgba(var(--primary-color-rgb), 0.1);
+    background: var(--item-hover-bg);
     border-color: rgba(var(--primary-color-rgb), 0.3);
     color: var(--primary-color);
     box-shadow: none;
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+    color: var(--text-primary);
 }
 
 .btn-danger {
@@ -96,17 +100,15 @@
 }
 
 .btn-purple {
-    /* Bouton d'action secondaire fort - Style "Vercel / Apple" plat et contrasté */
-    background: var(--text-primary);
-    color: var(--surface-color);
+    background: var(--primary-color);
+    color: white;
     box-shadow: var(--shadow-sm);
 }
 
 .btn-purple:hover:not(:disabled) {
-    background: var(--text-secondary);
+    background: var(--primary-hover);
     box-shadow: var(--shadow-md);
     transform: none;
-    /* Pas d'élévation artificielle */
 }
 
 .btn-purple:active:not(:disabled) {
@@ -241,15 +243,19 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--item-hover-bg);
     border-color: rgba(var(--primary-color-rgb), 0.25);
     color: var(--primary-color);
     box-shadow: none;
 }
 
+[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+    color: var(--text-primary);
+}
+
 .btn-ghost:active:not(:disabled) {
     transform: scale(0.98);
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: var(--item-active-bg);
 }
 
 /* Indicateur de raccourci clavier sur les boutons */
@@ -306,15 +312,18 @@
 }
 
 .btn-icon:hover:not(:disabled) {
-    background-color: rgba(var(--primary-color-rgb), 0.1);
-    /* survol plus clair (tint) */
-    color: var(--primary-color);
+    background-color: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .btn-icon:hover:not(:disabled) {
+    color: var(--text-primary);
 }
 
 .btn-icon:active:not(:disabled) {
     transform: scale(0.95);
-    background-color: rgba(var(--primary-color-rgb), 0.15);
+    background-color: var(--item-active-bg);
 }
 
 .btn-icon:disabled {
@@ -480,7 +489,7 @@
 }
 
 .accordion-trigger:hover {
-    background: rgba(var(--primary-color-rgb), 0.04);
+    background: var(--item-hover-bg);
 }
 
 .accordion-icon {
@@ -830,13 +839,13 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .number-spinner-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
 }
 
 .number-spinner-btn:active {
     transform: scale(0.95);
-    background: rgba(var(--primary-color-rgb), 0.15);
+    background: var(--item-active-bg);
 }
 
 .number-spinner-btn:focus {
@@ -844,8 +853,8 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .number-spinner-btn:focus-visible {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--item-active-bg);
+    color: var(--icon-btn-hover);
 }
 
 /* === Grille des préférences avec mini-cartes === */
@@ -984,7 +993,7 @@ textarea {
 
 /* Hover state - Subtle light background instead of border */
 #negativeInstructions:hover:not(:disabled):not(:focus) {
-    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background: var(--item-hover-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
 }
@@ -992,7 +1001,7 @@ textarea {
 /* Focus state - Slightly more visible background than hover */
 #negativeInstructions:focus {
     outline: none !important;
-    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background: var(--item-active-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
     box-shadow: none !important;
@@ -1371,11 +1380,16 @@ textarea {
     border: none;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .btn-dropdown-item:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--item-hover-bg);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .btn-dropdown-item:hover {
+    color: var(--text-primary);
 }
 
 .btn-dropdown-item i {

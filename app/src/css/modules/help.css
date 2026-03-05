@@ -121,7 +121,7 @@
     line-height: 1.5;
     color: var(--text-secondary);
     background: var(--bg-secondary);
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
 }
 
@@ -130,8 +130,6 @@
     flex-shrink: 0;
     margin-top: 2px;
     color: var(--text-secondary);
-    /* Subtle monochrome */
-    opacity: 0.8;
     font-size: 1.1em;
 }
 

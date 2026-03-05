@@ -173,31 +173,27 @@ export const SyncService = {
 
             if (!saveBtn) return;
 
-            // Reset classes
-            saveBtn.classList.remove('status-connected', 'status-expired', 'status-syncing', 'disabled');
+            // Reset
+            saveBtn.classList.remove('disabled');
             if (loadBtn) loadBtn.classList.remove('disabled');
 
             const config = {
                 connected: {
                     icon: 'solar:cloud-check-bold',
-                    label: 'Enregistrer (Cloud)',
-                    class: 'status-connected'
+                    label: 'Enregistrer (Cloud)'
                 },
                 expired: {
                     icon: 'solar:cloud-warning-bold',
-                    label: 'Enregistrer (Cloud)',
-                    class: 'status-expired'
+                    label: 'Enregistrer (Cloud)'
                 },
                 syncing: {
                     icon: 'solar:spinner-bold-duotone',
                     label: 'Enregistrement...',
-                    class: 'status-syncing',
                     spin: true
                 },
                 local: {
                     icon: 'solar:cloud-upload-bold',
-                    label: 'Enregistrer (Cloud)',
-                    class: ''
+                    label: 'Enregistrer (Cloud)'
                 }
             };
 
@@ -235,20 +231,15 @@ export const SyncService = {
                 labelEl.style.color = '';
             }
 
-            // Status class
-            if (currentConfig.class) {
-                saveBtn.classList.add(currentConfig.class);
-            }
-
             // Disable Save/Load when not actively connected
-            if (state === 'expired') {
+            if (state !== 'connected') {
                 saveBtn.classList.add('disabled');
                 if (loadBtn) loadBtn.classList.add('disabled');
             }
 
-            // Reconnect button (expired state only)
+            // Reconnect button (not connected states)
             if (reconnectBtn) {
-                if (state === 'expired') {
+                if (state === 'expired' || (state === 'local' && this._wasConfigured)) {
                     reconnectBtn.style.display = 'flex';
                     const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
                     const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
@@ -375,7 +366,6 @@ export const SyncService = {
     async reconnect(options = {}) {
         const { skipIndicator = false } = options;
 
-        // Try to get provider name from current state or localStorage
         let providerName = this.currentProviderName;
         if (!providerName) {
             providerName = localStorage.getItem('bulletin_sync_provider');
@@ -386,23 +376,22 @@ export const SyncService = {
             return false;
         }
 
+        const displayLabel = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
+
         try {
-            // If provider not loaded yet, connect first (which loads and authorizes)
             if (!this._provider) {
                 const connected = await this.connect(providerName, { silent: false });
                 if (connected) {
-                    window.UI?.showNotification('Reconnecté à Google Drive', 'success');
+                    window.UI?.showNotification(`Reconnecté à ${displayLabel}`, 'success');
                     return true;
                 }
                 if (!skipIndicator) this._updateCloudIndicator('expired');
                 return false;
             }
 
-            // Provider already loaded, just reauthorize
             const authorized = await this._provider.authorize({ silent: false });
             if (authorized) {
-                // Just connect, DO NOT SYNC
-                window.UI?.showNotification('Reconnecté à Google Drive', 'success');
+                window.UI?.showNotification(`Reconnecté à ${displayLabel}`, 'success');
                 this._updateCloudIndicator('connected');
                 this._updateUIConnected(this.currentProviderName);
                 return true;
@@ -532,18 +521,17 @@ export const SyncService = {
 
     /**
      * Force pull remote data to local (overwrites local).
+     * @param {Object} [prefetchedData] - Optional pre-fetched remote data to avoid a second read
      */
-    async forceDownload() {
+    async forceDownload(prefetchedData) {
         if (!this._provider) throw new Error('Aucun provider connecté');
 
         this._setStatus('syncing');
-        const remoteData = await this._provider.read();
+        const remoteData = prefetchedData || await this._provider.read();
 
-        // Import remote data if it exists (even without generatedResults - new device may have classes only)
         if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
             await StorageManager.importBackup(JSON.stringify(remoteData), { mergeData: false });
 
-            // Refresh UI after download
             if (window.App?.updateUIOnLoad) {
                 window.App.updateUIOnLoad();
             }
@@ -580,7 +568,7 @@ export const SyncService = {
             return { success: false };
         }
 
-        await this.forceDownload();
+        await this.forceDownload(remoteData);
         return { success: true };
     },
 

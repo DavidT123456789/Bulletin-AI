@@ -114,7 +114,7 @@
 }
 
 .journal-header-btn:hover {
-    background: var(--surface-hover);
+    background: var(--item-hover-bg);
     border-color: var(--primary-color);
     color: var(--primary-color);
     transform: translateY(-1px);
@@ -140,8 +140,8 @@
 }
 
 .journal-header-btn.icon-only:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
     transform: scale(1.1);
 }
 
@@ -154,7 +154,7 @@
 /* Note: .journal-threshold-btn inherits from .journal-header-btn (via HTML class) */
 /* Following the single source of truth: icon muted at rest, colored on hover */
 .journal-threshold-control.open .journal-threshold-btn {
-    background: var(--surface-hover);
+    background: var(--item-hover-bg);
     border-color: var(--primary-color);
     color: var(--primary-color);
 }
@@ -226,8 +226,8 @@
 
 .threshold-adjust-btn:hover {
     border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover);
 }
 
 .threshold-adjust-btn:active {

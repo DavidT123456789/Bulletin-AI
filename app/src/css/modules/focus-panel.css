@@ -207,11 +207,11 @@
 
 
 .focus-student-name:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--item-hover-bg);
 }
 
 [data-theme="dark"] .focus-student-name:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: var(--item-hover-bg);
 }
 
 .focus-student-name:active {
@@ -230,7 +230,7 @@
 }
 
 .focus-name-editable:hover {
-    background: rgba(var(--primary-color-rgb), 0.05);
+    background: var(--item-hover-bg);
 }
 
 .focus-name-edit-icon {
@@ -656,8 +656,8 @@
 }
 
 .focus-mic-btn:hover {
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--icon-btn-hover);
+    background: var(--item-hover-bg);
     transform: scale(1.1);
 }
 
@@ -693,7 +693,7 @@
 }
 
 [data-theme="dark"] .focus-mic-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
+    background: var(--item-hover-bg);
 }
 
 /* === History Button - Extension of journal-header-btn === */
@@ -773,7 +773,7 @@
 /* Selector must have HIGHER specificity than textarea:hover:not(:disabled):not(:focus) */
 .focus-context-textarea:hover:not(:disabled):not(:focus) {
     /* Subtle background instead of border - more elegant */
-    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background: var(--item-hover-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
 }
@@ -782,7 +782,7 @@
 /* Must override global textarea:focus from components.css */
 .focus-context-textarea:focus {
     outline: none !important;
-    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background: var(--item-active-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
     box-shadow: none !important;
@@ -1040,7 +1040,7 @@
     opacity: 0;
     transform: translateY(5px) scale(0.95);
     pointer-events: none;
-    background: var(--surface-variant);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     border: 1px solid transparent;
     /* Prepare for border changes */
@@ -1740,19 +1740,17 @@
     border-radius: 0;
 }
 
-/* Hover state - Subtle light background instead of border */
+/* Hover state - Neutral background, harmonized with focus-context-textarea */
 .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    /* Subtle background instead of border - more elegant */
-    background: rgba(var(--primary-color-rgb), 0.04) !important;
+    background: var(--item-hover-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
 }
 
-/* Focus state - Slightly more visible background than hover */
-/* Harmonized with hover - no border, just subtle background */
+/* Focus state - Harmonized with focus-context-textarea */
 .focus-appreciation-text[contenteditable="true"]:focus {
     outline: none !important;
-    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background: var(--item-active-bg) !important;
     background-image: none !important;
     border: 2px solid transparent !important;
     box-shadow: none !important;
