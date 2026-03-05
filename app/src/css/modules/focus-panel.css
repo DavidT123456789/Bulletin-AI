@@ -80,9 +80,11 @@
     border: 1px solid var(--card-glass-border);
     flex-shrink: 0;
     z-index: 20;
-    position: sticky;
-    top: 16px;
-    /* Keeps it floating while stuck */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Keeps it floating over scrolled content */
     transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -506,8 +508,8 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    /* Reduced margins: tighter horizontal, balanced vertical */
-    padding: 12px 14px;
+    /* Padding top massif pour compenser l'entête absolute, permet le scroll en-dessous */
+    padding: 104px 14px 24px 14px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -3882,7 +3884,7 @@ input.context-grade-input {
 
     /* Simplify header layout */
     .focus-header {
-        padding: 12px 16px;
+        padding: 4px 16px 4px 4px;
         gap: 8px;
     }
 
@@ -3906,7 +3908,7 @@ input.context-grade-input {
 
     /* Content area */
     .focus-content {
-        padding: 16px;
+        padding: 104px 16px 24px 16px;
     }
 
     /* Footer buttons stack on smaller tablets */
