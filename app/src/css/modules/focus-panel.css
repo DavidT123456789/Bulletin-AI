@@ -69,8 +69,8 @@
     padding: 4px 16px 4px 4px;
     /* Padding minimal à gauche et en haut/bas pour enlacer l'avatar */
     /* Reduced padding for a thinner pill */
-    margin: 15px 16px 16px 16px;
-    /* Floating margin (top 15px, bottom 16px pour un équilibre modéré avant le contenu) */
+    margin: 15px 8px 16px 8px;
+    /* Floating margin (top 15px, bottom 16px, bords horizontaux réduits pour élargir la pilule) */
     /* Opaque beautiful surface background */
     background: var(--surface-color);
     border-radius: 100px;
