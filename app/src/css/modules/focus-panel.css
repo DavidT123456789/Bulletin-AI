@@ -71,13 +71,14 @@
 }
 
 /* ============================
-   1. HEADER (Floating Pill & Avatar Overflow)
+   1. HEADER (Floating Pill — Symmetric Design)
+   Avatar flush-left ↔ Close flush-right
    ============================ */
 .focus-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 4px 16px 4px 4px;
+    gap: 10px;
+    padding: 4px 4px 4px 4px;
     margin: 15px 12px 16px 12px;
     background: var(--surface-color);
     border-radius: 100px;
@@ -94,7 +95,6 @@
         padding 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Ombre renforcée quand le contenu scrolle sous la pilule */
 .focus-header.scrolled {
     box-shadow: 0 6px 32px rgba(0, 0, 0, 0.14);
 }
@@ -116,20 +116,22 @@
     align-items: flex-start;
 }
 
-/* Avatar zone */
+/* --- LEFT ZONE: Avatar flush into pill edge --- */
 .focus-header-left {
     position: relative;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .focus-header .focus-panel-avatar-container {
     position: relative;
 }
 
-/* Integrated avatar inside the pill */
 .focus-header .focus-panel-avatar-container .student-avatar {
     width: 56px !important;
     height: 56px !important;
@@ -142,19 +144,16 @@
         font-size 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Hide multi-selection checkmark inside the focus panel */
 .focus-header .focus-panel-avatar-container .avatar-selection-overlay {
     display: none !important;
 }
 
-/* Mode Édition */
 .focus-header.editing .focus-panel-avatar-container .student-avatar {
     width: 60px !important;
     height: 60px !important;
     font-size: 24px !important;
 }
 
-/* Compensation du padding-top quand le header édition s'agrandit */
 .focus-header.editing+.focus-pages-container .focus-content {
     padding-top: var(--focus-header-offset-editing);
 }
@@ -184,7 +183,6 @@
 }
 
 .focus-back-btn:hover i {
-    /* Transform removed to prevent shifting on down-chevron */
     transform: none;
 }
 
@@ -192,67 +190,13 @@
     transform: scale(0.95);
 }
 
-/* Tab-style Name Container with integrated close */
-.focus-name-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 12px;
-    padding-right: 4px;
-    /* Space for close button */
-    transition: background 0.25s ease;
-}
-
-[data-theme="dark"] .focus-name-tab {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.focus-name-tab:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] .focus-name-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-/* Close button integrated in tab */
-.focus-tab-close {
-    width: 24px;
-    height: 24px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    cursor: pointer;
-    opacity: 0.5;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-    flex-shrink: 0;
-}
-
-.focus-tab-close:hover {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
-    color: var(--error-color);
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.focus-tab-close:active {
-    transform: scale(0.95);
-}
-
+/* --- NAME --- */
 .focus-student-name {
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.015em;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-
-    /* Clickable/Editable styling - no default background */
     background: transparent;
     cursor: pointer;
     display: inline-flex;
@@ -278,7 +222,6 @@
     color: var(--text-primary);
     overflow-wrap: break-word;
     word-break: break-word;
-    /* Ensure extremely long names break */
 }
 
 .focus-name-prenom {
@@ -287,7 +230,6 @@
     line-height: 1.2;
     color: var(--text-secondary);
 }
-
 
 .focus-student-name:hover {
     background: var(--item-hover-bg);
@@ -301,7 +243,6 @@
     transform: scale(0.98);
 }
 
-/* Helper to edit name (legacy class, kept for compatibility) */
 .focus-name-editable {
     cursor: pointer;
     display: flex;
@@ -330,7 +271,6 @@
     transform: translateX(0);
 }
 
-/* Header Status Badges Container - inline horizontal */
 .focus-status-badges {
     display: flex;
     flex-wrap: wrap;
@@ -345,101 +285,63 @@
     white-space: nowrap;
 }
 
-/* Bouton Détails/Historique - Séparé de la navigation */
-.focus-details-toggle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    margin-left: auto;
-    /* Pousse à droite */
-    margin-right: 8px;
-    flex-shrink: 0;
-}
-
-.focus-details-toggle:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    transform: scale(1.05);
-}
-
-.focus-details-toggle.active {
-    background: var(--primary-color);
-    color: white;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
-}
-
-[data-theme="dark"] .focus-details-toggle {
-    background: rgba(var(--primary-color-rgb), 0.15);
-}
-
-[data-theme="dark"] .focus-details-toggle:hover {
-    background: rgba(var(--primary-color-rgb), 0.25);
-}
-
-/* Nav Buttons - Unified Pill with Close + Navigation */
+/* --- NAV BUTTONS: Compact embedded group (← 1/8 →) --- */
 .focus-nav-buttons {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     background: rgba(0, 0, 0, 0.04);
-    padding: 4px;
+    padding: 3px;
     border-radius: 100px;
     flex-shrink: 0;
     margin-left: auto;
-    /* Push to the right */
 }
 
 [data-theme="dark"] .focus-nav-buttons {
     background: rgba(255, 255, 255, 0.06);
 }
 
-/* Divider between close and navigation */
-.focus-nav-divider {
-    width: 1px;
-    height: 20px;
-    background: var(--border-color);
-    margin: 0 4px;
-    opacity: 0.5;
-}
-
 .focus-position {
     font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
-    padding: 0 6px;
+    padding: 0 4px;
     font-variant-numeric: tabular-nums;
+    min-width: 28px;
+    text-align: center;
 }
 
+/* --- SHARED: All pill action buttons (flat style — no elevation) --- */
 .focus-nav-btn {
     width: 28px;
     height: 28px;
     border-radius: 50%;
     border: none;
-    background: var(--surface-color);
-    color: var(--text-primary);
+    background: transparent;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    flex-shrink: 0;
 }
 
 .focus-nav-btn:hover:not(:disabled) {
-    transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
 }
 
-/* Close button specific styling - Harmonized with design tokens */
+[data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.focus-nav-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+/* --- CLOSE button: Flush-right, integrated into pill rounded edge --- */
 .focus-nav-btn.focus-close-btn {
     color: var(--close-btn-color);
 }
@@ -447,10 +349,9 @@
 .focus-nav-btn.focus-close-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
-    transform: scale(1.1);
 }
 
-/* Save button: Hidden by default, shown in edit mode with animation */
+/* --- SAVE button: Hidden by default, shown in edit mode --- */
 .focus-nav-btn.focus-save-btn {
     opacity: 0;
     width: 0;
@@ -462,43 +363,31 @@
     transition: opacity 0.25s ease, width 0.25s ease, transform 0.2s ease;
 }
 
-/* EDIT MODE: Show save button with smooth animation */
-.focus-nav-buttons.editing .focus-save-btn {
+/* EDIT MODE: Show save button */
+.focus-header.editing .focus-save-btn {
     opacity: 1;
     width: 28px;
     pointer-events: auto;
 }
 
-.focus-nav-buttons.editing .focus-save-btn:hover {
+.focus-header.editing .focus-save-btn:hover {
     background: rgba(34, 197, 94, 0.15);
     color: var(--success-color, #22c55e);
-    transform: scale(1.1);
 }
 
-/* Close button: Changes to Cancel style in edit mode */
-.focus-nav-buttons.editing .focus-close-btn {
+/* Close → Cancel style in edit mode */
+.focus-header.editing .focus-close-btn {
     color: var(--error-color);
 }
 
-.focus-nav-buttons.editing .focus-close-btn:hover {
-    background: rgba(var(--error-color-rgb), 0.15);
-    color: var(--error-color);
+.focus-header.editing .focus-close-btn:hover {
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
 }
 
 .focus-nav-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    box-shadow: none;
-    background: transparent;
-}
-
-/* Dark theme: buttons need visible background contrast */
-[data-theme="dark"] .focus-nav-btn:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.18);
 }
 
 
@@ -2586,34 +2475,7 @@
     border-color: var(--primary-color);
 }
 
-/* ============================
-   RESPONSIVE
-   ============================ */
-@media (max-width: 600px) {
-    .focus-content {
-        padding: 20px 16px;
-    }
-
-    .focus-header {
-        padding: 16px 16px;
-    }
-
-
-    .grades-timeline {
-        padding: 24px 10px;
-    }
-
-    .timeline-grade-input,
-    .timeline-grade-display {
-        width: 52px;
-        height: 52px;
-        font-size: 20px;
-    }
-
-    .focus-footer {
-        padding: 16px 20px;
-    }
-}
+/* Legacy responsive section removed — now consolidated in the main MOBILE RESPONSIVE section below */
 
 /* Identity Footer with Save Button */
 .focus-identity-footer {
@@ -3141,46 +3003,14 @@
     /* Contain overflow for scroll — overridden to visible in edit mode */
 }
 
-/* Add class to header when editing */
-.focus-header {
-    transition: padding 0.3s ease, align-items 0.3s ease;
-}
-
-.focus-header.editing {
-    padding-top: 16px;
-    padding-bottom: 16px;
-    align-items: flex-start;
-    /* Keep left buttons/avatar at top while content expands */
-}
-
 /* Override hidden overflow in edit mode so focus glow & pills aren't clipped */
 .focus-header.editing .focus-header-content {
     overflow: visible;
 }
 
-/* ============================
-   LEFT ZONE: Avatar + Edit actions
-   ============================ */
-.focus-header-left {
-    position: relative;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
 /* Avatar container inside left zone */
 .focus-header-left .focus-panel-avatar-container {
     transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-/* KEEP avatar visible in edit mode - only add editable styling */
-.focus-header.editing .focus-header-left .focus-panel-avatar-container {
-    /* No longer hidden - avatar stays visible */
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
 }
 
 /* Read Mode (Default) */
@@ -3964,7 +3794,7 @@ input.context-grade-input {
     /* Header: Pilule compacte pour mobile */
     .focus-header {
         flex-wrap: wrap;
-        padding: 4px 12px 4px 4px;
+        padding: 4px;
         margin: 10px 8px 12px 8px;
         gap: 8px;
     }
@@ -4066,9 +3896,8 @@ input.context-grade-input {
         line-height: 1.2;
     }
 
-    /* Nav Buttons: pilule transparente */
-    .focus-nav-buttons,
-    .focus-header.editing .focus-nav-buttons {
+    /* Nav Buttons + Close/Save: right-aligned row */
+    .focus-nav-buttons {
         order: 3;
         flex-shrink: 0;
         margin-left: auto;
@@ -4082,6 +3911,12 @@ input.context-grade-input {
         order: 2;
     }
 
+    /* Close & Save at pill level on mobile */
+    .focus-header>.focus-close-btn,
+    .focus-header>.focus-save-btn {
+        order: 4;
+    }
+
     .focus-nav-btn {
         width: 24px;
         height: 24px;
@@ -4092,10 +3927,6 @@ input.context-grade-input {
         font-size: 10px;
         min-width: 28px;
         text-align: center;
-    }
-
-    .focus-nav-divider {
-        display: none;
     }
 
     /* ============================================
@@ -4293,7 +4124,7 @@ input.context-grade-input {
 @media (max-width: 375px) {
 
     .focus-header {
-        padding: 3px 10px 3px 3px;
+        padding: 3px;
         margin: 8px 6px 10px 6px;
         gap: 6px;
     }
@@ -4474,7 +4305,7 @@ input.context-grade-input {
     }
 
     /* Override width in edit mode on mobile for smooth transition to 38px */
-    .focus-nav-buttons.editing .focus-save-btn {
+    .focus-header.editing .focus-save-btn {
         width: 38px;
     }
 

@@ -70,7 +70,7 @@ export const FocusPanelHeader = {
                 this.toggleEditMode(false); // Validates and closes
             });
         }
-        // Note: Cancel is now handled by the close button (×) in focus-nav-buttons
+        // Note: Cancel is handled by the close button (×) at pill level
 
         if (nomInput) nomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
         if (prenomInput) prenomInput.addEventListener('input', () => this.callbacks.onRefreshStatus());
@@ -104,10 +104,6 @@ export const FocusPanelHeader = {
             header.classList.add('editing');
             readMode.classList.add('hidden');
             editMode.classList.add('visible');
-
-            // Add editing class to nav buttons for styling
-            const navButtons = document.querySelector('.focus-nav-buttons');
-            if (navButtons) navButtons.classList.add('editing');
 
             // Update tooltips for edit mode
             const saveBtn = document.getElementById('focusEditSaveBtn');
@@ -250,10 +246,6 @@ export const FocusPanelHeader = {
         header?.classList.remove('editing');
         readMode?.classList.remove('hidden');
         editMode?.classList.remove('visible');
-
-        // Remove editing state from nav buttons
-        const navButtons = document.querySelector('.focus-nav-buttons');
-        navButtons?.classList.remove('editing');
 
         // Restore original tooltips
         const saveBtn = document.getElementById('focusEditSaveBtn');

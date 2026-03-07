@@ -665,7 +665,6 @@ export const FocusPanelManager = {
             header.classList.remove('editing');
             document.querySelector('.focus-header-read')?.classList.remove('hidden');
             document.querySelector('.focus-header-edit')?.classList.remove('visible');
-            document.querySelector('.focus-nav-buttons')?.classList.remove('editing');
         }
 
         // Save context and identity changes before closing (NOT in creation mode)

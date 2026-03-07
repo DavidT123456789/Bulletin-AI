@@ -414,15 +414,14 @@
     <div id="focusPanelBackdrop" class="focus-panel-backdrop"></div>
     <div id="focusPanel" class="focus-panel" role="dialog" aria-modal="true" aria-labelledby="focusStudentName">
         <div class="focus-header">
-            <!-- LEFT ZONE: Avatar (always visible) -->
+            <!-- LEFT ZONE: Avatar flush into pill rounded edge -->
             <div class="focus-header-left">
-                <!-- AVATAR: Always visible, editable in edit mode -->
                 <div id="focusAvatarContainer" class="focus-panel-avatar-container">
                     <!-- Populated by FocusPanelManager -->
                 </div>
             </div>
 
-            <!-- IDENTITY ZONE: Name/Badges (read) or Inputs (edit) - CENTERED -->
+            <!-- CENTER ZONE: Name/Badges (read) or Inputs (edit) -->
             <div id="focusHeaderContent" class="focus-header-content">
                 <!-- READ MODE: Name & Badges -->
                 <div class="focus-header-read">
@@ -455,24 +454,26 @@
                 </div>
             </div>
 
-            <!-- RIGHT ZONE: Unified Navigation Pill (Close + Prev/Next) -->
+            <!-- NAVIGATION: Compact nav group (← 1/8 →) -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
                     <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
                 </button>
-                <span id="focusPosition" class="focus-position">3/25</span>
+                <span id="focusPosition" class="focus-position">1/8</span>
                 <button id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
                     <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                 </button>
-                <div class="focus-nav-divider"></div>
-                <!-- Edit mode: Save button (hidden in read mode, visible in edit mode) -->
-                <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
-                    <iconify-icon icon="ph:check"></iconify-icon>
-                </button>
-                <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
-                    <iconify-icon icon="ph:x"></iconify-icon>
-                </button>
             </div>
+
+            <!-- EDIT MODE: Save button (hidden in read mode) -->
+            <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
+                <iconify-icon icon="ph:check"></iconify-icon>
+            </button>
+
+            <!-- RIGHT ZONE: Close button flush into pill rounded edge -->
+            <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
+                <iconify-icon icon="ph:x"></iconify-icon>
+            </button>
         </div>
 
         <div class="focus-pages-container" id="focusPagesContainer">
