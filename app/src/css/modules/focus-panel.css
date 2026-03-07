@@ -3984,16 +3984,23 @@ input.context-grade-input {
 
     .focus-panel-avatar-container,
     .focus-header.editing .focus-panel-avatar-container {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
     }
 
-    /* Content takes available space and allows Name to wrap onto 2 lines naturally */
+    .focus-header .focus-panel-avatar-container .student-avatar {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+    }
+
+    /* Content takes available space — vertically centered with photo */
     .focus-header-content {
         order: 2;
         flex: 1 1 0;
         min-width: 0;
         padding: 0 4px;
+        align-self: center;
     }
 
     .focus-header.editing .focus-header-content {
@@ -4019,7 +4026,7 @@ input.context-grade-input {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 4px;
+        gap: 2px;
         width: 100%;
     }
 
@@ -4059,15 +4066,16 @@ input.context-grade-input {
         line-height: 1.2;
     }
 
-    /* Nav Buttons to the right */
+    /* Nav Buttons: pilule transparente */
     .focus-nav-buttons,
     .focus-header.editing .focus-nav-buttons {
         order: 3;
         flex-shrink: 0;
         margin-left: auto;
         gap: 2px;
-        padding: 4px 6px;
-        border-radius: 12px;
+        padding: 2px;
+        border-radius: 100px;
+        background: transparent;
     }
 
     .focus-header.editing .focus-nav-buttons {
@@ -4075,14 +4083,14 @@ input.context-grade-input {
     }
 
     .focus-nav-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
     }
 
     .focus-position {
-        font-size: 11px;
-        min-width: 32px;
+        font-size: 10px;
+        min-width: 28px;
         text-align: center;
     }
 
@@ -4301,18 +4309,19 @@ input.context-grade-input {
 
     .focus-nav-buttons,
     .focus-header.editing .focus-nav-buttons {
-        padding: 3px 5px;
+        padding: 2px;
+        background: transparent;
     }
 
     .focus-panel-avatar-container,
     .focus-header.editing .focus-panel-avatar-container {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
     }
 
     .focus-header .focus-panel-avatar-container .student-avatar {
-        width: 36px !important;
-        height: 36px !important;
+        width: 38px !important;
+        height: 38px !important;
         font-size: 15px !important;
     }
 
@@ -4326,9 +4335,9 @@ input.context-grade-input {
     }
 
     .focus-nav-btn {
-        width: 26px;
-        height: 26px;
-        font-size: 11px;
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
     }
 
     .focus-content {
