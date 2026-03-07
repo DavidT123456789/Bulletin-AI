@@ -4,9 +4,10 @@
 :root {
     --focus-header-offset: 100px;
     --focus-header-offset-tablet: 104px;
-    --focus-header-offset-mobile: 116px;
+    --focus-header-offset-mobile: 92px;
+    --focus-header-offset-small: 80px;
     --focus-header-offset-editing: 216px;
-    --focus-header-offset-editing-mobile: 276px;
+    --focus-header-offset-editing-mobile: 260px;
 }
 
 .focus-panel {
@@ -3960,11 +3961,12 @@ input.context-grade-input {
         height: calc(100% - 56px);
     }
 
-    /* Header: Smart flex layout for mobile (allows wrapping text in read mode, stacking in edit mode) */
+    /* Header: Pilule compacte pour mobile */
     .focus-header {
-        /* On conserve l'absolute pour le chevauchement, mais flex-wrap pour les petits écrans */
         flex-wrap: wrap;
-        /* Inherits display: flex, align-items: center, padding: 12px 16px, gap: 8px from base and 768px media query */
+        padding: 4px 12px 4px 4px;
+        margin: 10px 8px 12px 8px;
+        gap: 8px;
     }
 
     .focus-header.editing {
@@ -4003,12 +4005,12 @@ input.context-grade-input {
         overflow: visible;
     }
 
-    /* Le focus content sur mobile: compensation du header mobile */
+    /* Le focus content sur mobile: compensation du header compact */
     .focus-content {
         padding: var(--focus-header-offset-mobile) 16px 24px 16px;
     }
 
-    /* Le focus content sur mobile + mode édition: compensation maximale */
+    /* Le focus content sur mobile + mode édition */
     .focus-header.editing+.focus-pages-container .focus-content {
         padding-top: var(--focus-header-offset-editing-mobile);
     }
@@ -4282,15 +4284,19 @@ input.context-grade-input {
 /* Small Mobile Breakpoint (max-width: 375px) */
 @media (max-width: 375px) {
 
-    .focus-header,
+    .focus-header {
+        padding: 3px 10px 3px 3px;
+        margin: 8px 6px 10px 6px;
+        gap: 6px;
+    }
+
     .focus-header.editing {
-        padding: 12px 12px !important;
-        padding-top: max(12px, env(safe-area-inset-top)) !important;
+        padding: 10px 12px;
     }
 
     .focus-header-left,
     .focus-header.editing .focus-header-left {
-        height: 36px;
+        height: auto;
     }
 
     .focus-nav-buttons,
@@ -4304,13 +4310,19 @@ input.context-grade-input {
         height: 36px;
     }
 
+    .focus-header .focus-panel-avatar-container .student-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 15px !important;
+    }
+
     .focus-name-nom {
         font-size: 14px;
     }
 
     .focus-name-prenom {
         font-size: 13px;
-        margin-top: 2px;
+        margin-top: 1px;
     }
 
     .focus-nav-btn {
@@ -4320,7 +4332,7 @@ input.context-grade-input {
     }
 
     .focus-content {
-        padding: 10px 12px;
+        padding: var(--focus-header-offset-small) 12px 24px 12px;
     }
 
     .focus-footer {
