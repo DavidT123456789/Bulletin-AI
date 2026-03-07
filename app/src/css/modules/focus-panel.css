@@ -336,6 +336,7 @@
 /* --- CLOSE button: Flush-right, integrated into pill rounded edge --- */
 .focus-nav-btn.focus-close-btn {
     color: var(--close-btn-color);
+    margin-right: 4px;
 }
 
 .focus-nav-btn.focus-close-btn:hover {
