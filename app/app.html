@@ -470,6 +470,12 @@
                 <iconify-icon icon="ph:check"></iconify-icon>
             </button>
 
+            <!-- Analyze button (icon in pill, navigates to analysis page) -->
+            <button id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
+                aria-label="Analyser l'élève">
+                <iconify-icon icon="solar:chart-square-linear"></iconify-icon>
+            </button>
+
             <!-- RIGHT ZONE: Close button flush into pill rounded edge -->
             <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
                 <iconify-icon icon="ph:x"></iconify-icon>
@@ -526,7 +532,7 @@
                                     <!-- Manual note button (Pen icon) -->
                                     <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
                                         data-tooltip="Ajouter une note">
-                                        <iconify-icon icon="solar:pen-linear"></iconify-icon>
+                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
 
                                     <!-- Tag dropdowns (Always visible) -->
@@ -631,32 +637,25 @@
                             </button>
                             <button class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
                                 data-tooltip="Corrige et améliore le style">
-                                <span class="polish-icon-wrapper">
-                                    <iconify-icon icon="solar:magic-stick-3-linear" class="polish-wand"></iconify-icon>
-                                    <span class="polish-sparkle s1">✦</span>
-                                    <span class="polish-sparkle s2">✦</span>
-                                    <span class="polish-sparkle s3">✧</span>
-                                </span>
-                                Peaufiner
+                                <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
+                            </button>
+                        </div>
+
+                        <!-- Inline actions: Copy + Generate (contextual to the appreciation card) -->
+                        <div class="focus-appreciation-actions">
+                            <button id="focusCopyBtn" class="focus-action-icon-btn tooltip" disabled
+                                data-tooltip="Copier l'appréciation<br><i style='opacity:0.7'>Clic droit : copier le prompt</i>"
+                                aria-label="Copier l'appréciation">
+                                <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                            </button>
+                            <button id="focusGenerateBtn" class="btn btn-ai tooltip"
+                                data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
+                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span
+                                    id="focusGeneratePeriod">T2</span>
                             </button>
                         </div>
                     </div>
                 </div> <!-- End focus-content -->
-                <!-- Footer Page 1 -->
-                <div class="focus-footer">
-                    <button id="focusCopyBtn" class="btn btn-secondary tooltip" disabled
-                        data-tooltip="Copier l'appréciation<br><i style='opacity:0.7'>Clic droit : copier le prompt</i>">
-                        <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
-                    </button>
-                    <button id="focusGenerateBtn" class="btn btn-ai tooltip"
-                        data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
-                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer <span
-                            id="focusGeneratePeriod">T2</span>
-                    </button>
-                    <button id="focusAnalyzeBtn" class="btn btn-secondary">
-                        <iconify-icon icon="solar:chart-2-linear"></iconify-icon> Analyser
-                    </button>
-                </div>
             </div>
 
             <!-- PAGE 2: Analysis (slides in from right) -->
@@ -2770,13 +2769,7 @@
                                             <td>
                                                 <button class="btn btn-ai-outline btn-tiny"
                                                     style="pointer-events: none;">
-                                                    <span class="polish-icon-wrapper">
-                                                        <iconify-icon icon="solar:magic-stick-3-linear"
-                                                            class="polish-wand"></iconify-icon>
-                                                        <span class="polish-sparkle s1">✦</span>
-                                                        <span class="polish-sparkle s2">✦</span>
-                                                        <span class="polish-sparkle s3">✧</span>
-                                                    </span>
+                                                    <iconify-icon icon="solar:stars-line-linear"></iconify-icon>
                                                     Peaufiner
                                                 </button>
                                             </td>

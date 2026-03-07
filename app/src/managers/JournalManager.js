@@ -488,10 +488,10 @@ export const JournalManager = {
                         ${pillButtonsHTML}
                     </div>
                     <div class="journal-draft-actions header-actions">
-                        <button class="btn-icon-ghost" id="journalDraftCancelBtn" aria-label="Annuler">
+                        <button class="journal-header-btn icon-only" id="journalDraftCancelBtn" aria-label="Annuler">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
-                        <button class="btn-icon-ghost" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer" style="color: var(--primary-color);">
+                        <button class="journal-header-btn icon-only" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
                     </div>

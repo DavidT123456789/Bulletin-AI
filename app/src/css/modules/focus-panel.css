@@ -333,10 +333,15 @@
     transform: scale(0.92);
 }
 
-/* --- CLOSE button: Flush-right, integrated into pill rounded edge --- */
+/* --- CLOSE button: Tonal icon button, flush-right in pill --- */
 .focus-nav-btn.focus-close-btn {
     color: var(--close-btn-color);
     margin-right: 4px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .focus-nav-btn.focus-close-btn {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .focus-nav-btn.focus-close-btn:hover {
@@ -381,6 +386,12 @@
 .focus-nav-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+
+/* --- ANALYZE button: AI action — distinctive hover --- */
+.focus-nav-btn.focus-analyze-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 
@@ -577,11 +588,23 @@
     gap: 10px;
 }
 
-/* Icon styling - matches focus-appreciation-label > i:first-child */
-/* Icon styling - matches focus-appreciation-label > i:first-child */
-.focus-context-label i.fa-info-circle {
-    color: var(--primary-color);
-    font-size: 13px;
+/* Section icon — colored background square (inspired by premium mockups) */
+.focus-context-info-trigger>iconify-icon:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .focus-context-info-trigger>iconify-icon:first-child {
+    background: rgba(96, 165, 250, 0.12);
+    color: #60a5fa;
 }
 
 .focus-context-info-trigger {
@@ -606,22 +629,19 @@
     font-size: 12px;
     cursor: pointer;
     transition: all var(--transition-fast);
-    /* Negative margin to pull mic closer to text despite parent gap */
     margin-left: -4px;
     flex-shrink: 0;
 }
 
-/* Single source of truth for mic icon size - prevents inheritance from parent labels */
 .focus-mic-btn i,
 .focus-mic-btn iconify-icon {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1;
 }
 
 .focus-mic-btn:hover {
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
     background: var(--item-hover-bg);
-    transform: scale(1.1);
 }
 
 .focus-mic-btn.recording {
@@ -933,10 +953,23 @@
     margin: 0;
 }
 
-/* Icon styling - matches focus-context-label i */
-.focus-appreciation-label>i:first-child {
-    color: var(--primary-color);
-    font-size: 13px;
+/* Section icon — violet colored background square */
+.focus-appreciation-label>iconify-icon:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .focus-appreciation-label>iconify-icon:first-child {
+    background: rgba(167, 139, 250, 0.12);
+    color: #a78bfa;
 }
 
 .focus-appreciation-meta {
@@ -1751,6 +1784,68 @@
     padding: 6px 16px 12px 16px;
 }
 
+/* ============================
+   INLINE APPRECIATION ACTIONS
+   Copy (icon) + Generate (full) inside the card
+   ============================ */
+.focus-appreciation-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px 14px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .focus-appreciation-actions {
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Copy button — icon-only, flat Material You tonal style */
+.focus-action-icon-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+.focus-action-icon-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.focus-action-icon-btn:active {
+    transform: scale(0.96);
+}
+
+.focus-action-icon-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Copy success feedback */
+.focus-action-icon-btn.copied {
+    color: var(--success-color, #10b981);
+    background: rgba(16, 185, 129, 0.08);
+}
+
+/* Generate button — fills remaining space */
+.focus-appreciation-actions #focusGenerateBtn {
+    flex: 1;
+    max-width: none;
+}
+
 /* Redesigned Chips - Compact */
 /* Redesigned Chips - Modern & Premium */
 /* Redesigned Chips - Modern & Premium with Shine */
@@ -1762,7 +1857,7 @@
     height: auto;
     border-radius: 100px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: flex;
     align-items: center;
@@ -1778,20 +1873,115 @@
     background: rgba(255, 255, 255, 0.03);
 }
 
-.btn-ai-outline i {
-    color: var(--primary-color);
-    font-size: 12px;
+.btn-ai-outline iconify-icon {
+    font-size: 13px;
     transition: transform 0.2s ease;
 }
 
 .btn-ai-outline:hover {
-    background: var(--surface-color);
-    color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
 }
 
-.btn-ai-outline:hover i {
+.btn-ai-outline:hover iconify-icon {
     transform: scale(1.1);
+}
+
+/* === Per-chip accent colors (inspired by premium mockups) === */
+/* .btn prefix needed to beat .btn:hover:not(:disabled) from components.css */
+[data-refine-type="concise"] iconify-icon {
+    color: #f59e0b;
+}
+
+.btn[data-refine-type="concise"]:hover {
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.12);
+}
+
+[data-refine-type="detailed"] iconify-icon {
+    color: #0ea5e9;
+}
+
+.btn[data-refine-type="detailed"]:hover {
+    color: #0369a1;
+    border-color: rgba(14, 165, 233, 0.3);
+    background: rgba(14, 165, 233, 0.1);
+}
+
+[data-refine-type="encouraging"] iconify-icon {
+    color: #f43f5e;
+}
+
+.btn[data-refine-type="encouraging"]:hover {
+    color: #be123c;
+    border-color: rgba(244, 63, 94, 0.3);
+    background: rgba(244, 63, 94, 0.1);
+}
+
+[data-refine-type="variations"] iconify-icon {
+    color: #10b981;
+}
+
+.btn[data-refine-type="variations"]:hover {
+    color: #047857;
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+[data-refine-type="polish"] iconify-icon {
+    color: #8b5cf6;
+}
+
+.btn[data-refine-type="polish"]:hover {
+    color: #6d28d9;
+    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Dark mode: brighter tints */
+[data-theme="dark"] [data-refine-type="concise"] iconify-icon {
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .btn[data-refine-type="concise"]:hover {
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.15);
+}
+
+[data-theme="dark"] [data-refine-type="detailed"] iconify-icon {
+    color: #38bdf8;
+}
+
+[data-theme="dark"] .btn[data-refine-type="detailed"]:hover {
+    color: #7dd3fc;
+    background: rgba(56, 189, 248, 0.15);
+}
+
+[data-theme="dark"] [data-refine-type="encouraging"] iconify-icon {
+    color: #fb7185;
+}
+
+[data-theme="dark"] .btn[data-refine-type="encouraging"]:hover {
+    color: #fda4af;
+    background: rgba(251, 113, 133, 0.15);
+}
+
+[data-theme="dark"] [data-refine-type="variations"] iconify-icon {
+    color: #34d399;
+}
+
+[data-theme="dark"] .btn[data-refine-type="variations"]:hover {
+    color: #6ee7b7;
+    background: rgba(52, 211, 153, 0.15);
+}
+
+[data-theme="dark"] [data-refine-type="polish"] iconify-icon {
+    color: #a78bfa;
+}
+
+[data-theme="dark"] .btn[data-refine-type="polish"]:hover {
+    color: #c4b5fd;
+    background: rgba(167, 139, 250, 0.15);
 }
 
 /* Effet Shine au survol */
@@ -1809,14 +1999,14 @@
     animation: shine-sweep 1.5s ease-in-out infinite;
 }
 
-/* État Hover : Fond léger + Texte coloré + Bordure subtile - SPECIFICITY INCREASED */
-.btn-ai-outline:hover:not(:disabled) {
+/* État Hover : Fond léger + Texte coloré (exclut les chips avec couleur individuelle) */
+.btn-ai-outline:hover:not(:disabled):not([data-refine-type]) {
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
     box-shadow: none;
 }
 
-[data-theme="dark"] .btn-ai-outline:hover:not(:disabled) {
+[data-theme="dark"] .btn-ai-outline:hover:not(:disabled):not([data-refine-type]) {
     background: rgba(var(--primary-color-rgb), 0.2);
 }
 
@@ -1926,7 +2116,7 @@
 }
 
 /* ============================
-   6. FOOTER (Opaque - contrasts with glassmorphism panel)
+   6. FOOTER — Legacy (kept for Analysis page only)
    ============================ */
 .focus-footer {
     padding: 10px 18px;
@@ -1939,34 +2129,6 @@
     z-index: 10;
     position: sticky;
     bottom: 0;
-}
-
-.focus-footer .btn-secondary {
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-
-/* Hover state inherited from .btn-secondary in components.css for consistency */
-
-.focus-footer .btn-secondary:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-/* Copy success feedback animation */
-.focus-footer .btn-secondary.copied {
-    color: var(--success-color, #10b981);
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.focus-footer .btn-secondary.copied i {
-    color: var(--success-color, #10b981);
 }
 
 
@@ -1987,6 +2149,23 @@
     gap: 8px;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     letter-spacing: 0.3px;
+}
+
+/* Period badge — frosted pill inside the Generate button */
+#focusGeneratePeriod {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-left: 2px;
+    backdrop-filter: blur(4px);
+}
+
+#focusGenerateBtn.btn-ai-outline #focusGeneratePeriod {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
 }
 
 #focusGenerateBtn:hover {
@@ -2037,15 +2216,14 @@
 
 /* Neutral state - already up to date, OPTIONAL action */
 /* Shared by Focus Panel and List View "Régénérer" buttons */
-/* Harmonized with stat-cards: glass border + subtle shadow */
+/* Flat Material You — tonal container, no border, no shadow */
 #focusGenerateBtn.btn-neutral,
 .btn.btn-neutral {
-    background: var(--surface-color);
-    border: 1px solid var(--card-glass-border);
+    background: var(--background-secondary);
+    border: none;
     color: var(--text-secondary);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: none;
     animation: none !important;
-    /* CRITICAL: Kill any lingering pulse */
 }
 
 #focusGenerateBtn.btn-neutral i,
@@ -2055,9 +2233,9 @@
 
 #focusGenerateBtn.btn-neutral:hover,
 .btn.btn-neutral:hover {
-    background: var(--surface-color);
+    background: var(--item-hover-bg);
     color: var(--text-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
 }
 
 #focusGenerateBtn.btn-neutral:hover i,
@@ -2068,7 +2246,7 @@
 #focusGenerateBtn.btn-neutral:active,
 .btn.btn-neutral:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: none;
 }
 
 .appreciation-cell {
@@ -3638,58 +3816,37 @@ input.context-grade-input {
 }
 
 /* ====================================================================
-   ANALYZE BUTTON - AI SUBTLE HOVER EFFECT
-   Effet visuel subtil au survol pour signaler l'action IA
+   ANALYZE BUTTON — Header Pill Icon Style
+   Compact icon button in the header pill, before the close button
    ==================================================================== */
 
-#focusAnalyzeBtn {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+.focus-analyze-btn {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    background: rgba(0, 0, 0, 0.04);
 }
 
-#focusAnalyzeBtn:hover {
+[data-theme="dark"] .focus-analyze-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.focus-analyze-btn:hover {
+    color: var(--primary-color);
     background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    color: var(--primary-color);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.12);
 }
 
-#focusAnalyzeBtn:hover i {
-    color: var(--primary-color);
+.focus-analyze-btn:active {
+    transform: scale(0.96);
 }
 
-/* Effet Shine traversant au survol */
-#focusAnalyzeBtn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 100%);
+/* Hide in edit mode (not relevant when editing identity) */
+.focus-header.editing .focus-analyze-btn {
     opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-#focusAnalyzeBtn:hover::before {
-    opacity: 1;
-    animation: analyze-shine-sweep 1.5s ease-in-out infinite;
-}
-
-@keyframes analyze-shine-sweep {
-    0% {
-        left: -100%;
-    }
-
-    50%,
-    100% {
-        left: 100%;
-    }
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 /* ====================================================================
@@ -3735,15 +3892,9 @@ input.context-grade-input {
         padding: var(--focus-header-offset-tablet) 16px 24px 16px;
     }
 
-    /* Footer buttons stack on smaller tablets */
-    .focus-footer {
-        padding: 12px 16px;
-        gap: 8px;
-    }
-
-    .focus-footer .btn {
-        padding: 8px 12px;
-        font-size: 13px;
+    /* Inline appreciation actions — tablet */
+    .focus-appreciation-actions {
+        padding: 8px 12px 14px 12px;
     }
 
     /* Refinement options: scroll horizontally */
@@ -4026,24 +4177,21 @@ input.context-grade-input {
         height: auto;
     }
 
-    /* Footer: Fixed at bottom with safe area */
-    .focus-footer {
-        padding: 12px 16px;
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
+    /* Inline appreciation actions — mobile */
+    .focus-appreciation-actions {
+        padding: 6px 12px 12px 12px;
         gap: 8px;
-        flex-wrap: nowrap;
-        border-radius: 0;
-        /* No wrap - keep buttons in a row but make them flexible */
     }
 
-    .focus-footer .btn {
-        flex: 1 1 0;
-        min-width: 0;
+    .focus-action-icon-btn {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+    }
+
+    .focus-appreciation-actions #focusGenerateBtn {
         padding: 8px 10px;
         font-size: 13px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     /* Analysis page on mobile */
@@ -4168,15 +4316,17 @@ input.context-grade-input {
         padding: var(--focus-header-offset-small) 12px 24px 12px;
     }
 
-    .focus-footer {
-        padding: 10px 12px;
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
-        border-radius: 0;
+    /* Inline actions — small mobile */
+    .focus-appreciation-actions {
+        padding: 6px 10px 10px 10px;
+        gap: 6px;
     }
 
-    .focus-footer .btn {
-        padding: 8px 10px;
-        font-size: 13px;
+    .focus-action-icon-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        font-size: 15px;
     }
 
     /* List: Ultra compact */
@@ -4302,7 +4452,8 @@ input.context-grade-input {
         width: 38px;
     }
 
-    .focus-footer .btn {
+    .focus-action-icon-btn {
+        min-width: 44px;
         min-height: 44px;
     }
 
