@@ -145,6 +145,15 @@ export const FocusPanelManager = {
         const generateBtn = document.getElementById('focusGenerateBtn');
         const copyBtn = document.getElementById('focusCopyBtn');
 
+        // Dynamic shadow on scroll: reinforce pill shadow when content scrolls underneath
+        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
+        const focusHeader = panel?.querySelector('.focus-header');
+        if (focusContent && focusHeader) {
+            focusContent.addEventListener('scroll', () => {
+                focusHeader.classList.toggle('scrolled', focusContent.scrollTop > 8);
+            }, { passive: true });
+        }
+
         // Close panel
         if (backdrop) backdrop.addEventListener('click', () => this.close());
 
