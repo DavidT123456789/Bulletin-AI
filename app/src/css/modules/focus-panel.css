@@ -159,10 +159,10 @@
 }
 
 .focus-back-btn {
-    background: rgba(0, 0, 0, 0.04);
+    background: transparent;
     border: none;
     font-size: 14px;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     cursor: pointer;
     width: 32px;
     height: 32px;
@@ -173,21 +173,17 @@
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.focus-back-btn i {
-    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
 .focus-back-btn:hover {
-    background: rgba(0, 0, 0, 0.08);
-    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
 }
 
-.focus-back-btn:hover i {
-    transform: none;
+[data-theme="dark"] .focus-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .focus-back-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
 }
 
 /* --- NAME --- */
@@ -232,10 +228,6 @@
 }
 
 .focus-student-name:hover {
-    background: var(--item-hover-bg);
-}
-
-[data-theme="dark"] .focus-student-name:hover {
     background: var(--item-hover-bg);
 }
 
@@ -2475,7 +2467,7 @@
     border-color: var(--primary-color);
 }
 
-/* Legacy responsive section removed — now consolidated in the main MOBILE RESPONSIVE section below */
+
 
 /* Identity Footer with Save Button */
 .focus-identity-footer {
@@ -3920,7 +3912,7 @@ input.context-grade-input {
     .focus-nav-btn {
         width: 24px;
         height: 24px;
-        font-size: 11px;
+        font-size: 12px;
     }
 
     .focus-position {
@@ -4168,7 +4160,7 @@ input.context-grade-input {
     .focus-nav-btn {
         width: 22px;
         height: 22px;
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .focus-content {

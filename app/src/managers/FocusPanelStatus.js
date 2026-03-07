@@ -276,11 +276,15 @@ export const FocusPanelStatus = {
         // If no explicit state, compute from result
         if (!state) {
             const isGenerating = this._isGenerating(result?.id);
+            const hasError = !!(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
             const hasContent = this._hasRealContent(result?.appreciation);
 
             if (isGenerating) {
                 state = 'pending';
                 tooltip = 'Génération en cours...';
+            } else if (hasError) {
+                state = 'error';
+                tooltip = 'Échec de génération';
             } else if (!hasContent) {
                 state = 'empty';
                 tooltip = 'En attente';
@@ -328,8 +332,8 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':
-                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon><span class="badge-text">Erreur</span>';
-                badge.classList.add('visible', 'error');
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>';
+                badge.classList.add('visible', 'error', 'icon-only');
                 break;
             case 'generated':
                 // Success state after generation - show brief confirmation then hide
@@ -495,6 +499,15 @@ export const FocusPanelStatus = {
     updateSourceIndicator(result) {
         const sourceIndicator = document.getElementById('focusAiIndicator');
         if (!sourceIndicator) return;
+
+        // Hide source indicator when an error is active — error badge takes priority
+        const hasError = !!(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
+        if (hasError) {
+            sourceIndicator.style.display = 'none';
+            sourceIndicator.classList.remove('source-ai', 'source-manual', 'source-imported');
+            sourceIndicator.removeAttribute('data-tooltip');
+            return;
+        }
 
         const source = this._resolveSource(result);
 
