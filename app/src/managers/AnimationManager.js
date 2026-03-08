@@ -219,7 +219,10 @@ export const AnimationManager = {
 
         cursor.style.transition = 'opacity 0.3s ease-out';
         cursor.style.opacity = '0';
-        setTimeout(() => cursor.remove(), 300);
+        await new Promise(r => setTimeout(r, 300));
+
+        container.innerHTML = htmlContent;
+        container.classList.remove('progressive-reveal-container');
     },
 
     /**

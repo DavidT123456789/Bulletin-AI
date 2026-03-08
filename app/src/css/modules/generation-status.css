@@ -329,7 +329,7 @@
 
 /* Success state text */
 .generation-status-chip.success .generation-text {
-    color: #10b981;
+    color: var(--success-color);
 }
 
 .generation-status-chip.success .generation-text::before {
@@ -367,7 +367,7 @@
 
 .generation-error-badge i {
     font-size: 12px;
-    color: #ef4444;
+    color: var(--error-color);
     animation: icon-pulse 2s ease-in-out infinite;
 }
 
@@ -424,7 +424,7 @@
 }
 
 .generation-cancel-btn:hover {
-    background: rgba(239, 68, 68, 0.9);
+    background: rgba(var(--error-rgb), 0.9);
     color: white;
     transform: scale(1.1);
 }

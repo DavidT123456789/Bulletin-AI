@@ -296,12 +296,12 @@
 }
 
 .progress-count.has-alert {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     color: #dc2626;
 }
 
 [data-theme="dark"] .progress-count.has-alert {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(var(--error-rgb), 0.2);
     color: #f87171;
 }
 
@@ -324,7 +324,7 @@
 }
 
 .class-dropdown-item.active .progress-count.has-alert {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(var(--error-rgb), 0.2);
     color: #dc2626;
 }
 
@@ -839,13 +839,13 @@
 }
 
 .class-stat-badge.risk {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(var(--error-rgb), 0.1);
     color: #dc2626;
     border-color: rgba(239, 68, 68, 0.2);
 }
 
 [data-theme="dark"] .class-stat-badge.risk {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.3);
 }
@@ -1011,12 +1011,12 @@
 }
 
 .manage-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     color: #dc2626;
 }
 
 [data-theme="dark"] .manage-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(var(--error-rgb), 0.2);
     color: #f87171;
 }
 
@@ -1154,7 +1154,7 @@
 /* Disable card hover effect when editing */
 .class-management-item.editing {
     cursor: default;
-    background: rgba(239, 68, 68, 0.05) !important;
+    background: rgba(var(--error-rgb), 0.05) !important;
     /* Subtle red bg for delete context */
     border-color: var(--error-color) !important;
 }

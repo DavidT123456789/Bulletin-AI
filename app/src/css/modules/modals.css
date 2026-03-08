@@ -967,7 +967,7 @@
 }
 
 .api-status-item.invalid:hover {
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(var(--error-rgb), 0.08);
 }
 
 .api-status-item.invalid .api-status-icon {
@@ -976,7 +976,7 @@
 }
 
 .api-status-item.invalid .api-status-badge {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     color: var(--error-color);
 }
 
@@ -1372,7 +1372,7 @@
 }
 
 .missing-key-warning.banner-error {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(var(--error-rgb), 0.1);
     border-color: rgba(239, 68, 68, 0.3);
     color: var(--error-color);
 }

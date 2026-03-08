@@ -120,7 +120,7 @@
 
 /* État d'erreur - SEULEMENT dans la zone appréciation */
 .appreciation-result.has-error .appreciation-text {
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(var(--error-rgb), 0.08);
     border-radius: var(--radius-sm);
     padding: 12px;
     color: var(--error-color);
@@ -381,7 +381,7 @@
 /* Supporte à la fois les bulles (cartes) et les valeurs (liste) */
 .grade-bubble.grade-range-0-4,
 .grade-value.grade-range-0-4 {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(var(--error-rgb), 0.12);
     color: var(--grade-range-0-4);
 }
 
@@ -505,7 +505,7 @@
 
 .icon-action-btn[data-action="delete"]:hover:not(:disabled) {
     color: var(--error-color);
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(var(--error-rgb), 0.1);
 }
 
 .icon-action-btn:disabled {
@@ -514,7 +514,7 @@
 }
 
 .copy-btn.copied {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(var(--success-rgb), 0.12);
     color: var(--success-color);
 }
 

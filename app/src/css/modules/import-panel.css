@@ -301,20 +301,9 @@
 .import-textarea {
     width: 100%;
     min-height: 140px;
-    padding: 16px;
-    font-size: 0.9rem;
     font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
     line-height: 1.7;
-    color: var(--text-primary);
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
     resize: vertical;
-}
-
-.import-textarea::placeholder {
-    color: var(--text-tertiary);
-    font-family: inherit;
 }
 
 /* === DETECTED INFO === */
@@ -368,7 +357,7 @@
 }
 
 .import-mapping-pill.type-grade {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(var(--primary-color-rgb), 0.1);
     border-color: rgba(59, 130, 246, 0.3);
     color: rgb(59, 130, 246);
 }

@@ -1088,7 +1088,8 @@ export const FocusPanelManager = {
                         // Pass targetCount since DOM is still empty
                         FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
 
-                        await UI.typewriterReveal(appreciationEl, newResult.appreciation, { speed: 'fast' });
+                        const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(newResult.appreciation));
+                        await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
                     }
 
                     // Réinitialiser l'historique - la régénération est un nouveau départ

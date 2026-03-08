@@ -52,36 +52,36 @@
 
 /* Success - Pastel Green */
 .notification.success {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(var(--success-rgb), 0.12);
     border: 1px solid rgba(16, 185, 129, 0.25);
     color: var(--success-color);
 }
 
 .notification.success i:first-child {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(var(--success-rgb), 0.2);
     color: var(--success-color);
 }
 
 [data-theme="dark"] .notification.success {
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(var(--success-rgb), 0.15);
     border-color: rgba(16, 185, 129, 0.3);
     color: var(--success-color);
 }
 
 /* Error - Pastel Red */
 .notification.error {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(var(--error-rgb), 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
     color: var(--error-color);
 }
 
 .notification.error i:first-child {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     color: var(--error-color);
 }
 
 [data-theme="dark"] .notification.error {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     border-color: rgba(239, 68, 68, 0.3);
     color: var(--error-color);
 }

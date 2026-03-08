@@ -1028,16 +1028,16 @@
 }
 
 .danger-accordion summary:hover {
-    background-color: rgba(239, 68, 68, 0.04);
+    background-color: rgba(var(--error-rgb), 0.04);
 }
 
 .danger-accordion[open] summary {
-    background-color: rgba(239, 68, 68, 0.08);
+    background-color: rgba(var(--error-rgb), 0.08);
     border-bottom-color: rgba(239, 68, 68, 0.15);
 }
 
 .danger-accordion .details-content {
-    background: rgba(239, 68, 68, 0.03);
+    background: rgba(var(--error-rgb), 0.03);
     /* Inherits padding/inner structure from base class */
 }
 
@@ -1311,7 +1311,7 @@
 }
 
 .sync-rgpd-warning i {
-    color: #f59e0b;
+    color: var(--warning-color);
     margin-top: 2px;
 }
 

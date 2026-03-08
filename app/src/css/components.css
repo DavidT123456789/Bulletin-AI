@@ -76,7 +76,7 @@
 }
 
 .btn-danger-outline:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(var(--error-rgb), 0.08);
     border-color: var(--error-color);
     box-shadow: none;
 }

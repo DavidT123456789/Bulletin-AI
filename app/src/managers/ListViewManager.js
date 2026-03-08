@@ -300,9 +300,9 @@ export const ListViewManager = {
             appreciationCell.innerHTML = `<div class="appreciation-preview expanded"></div>`;
             const targetEl = appreciationCell.querySelector('.appreciation-preview');
 
-            // Use UI Manager's typewriter effect
-            if (UI?.typewriterReveal) {
-                await UI.typewriterReveal(targetEl, cleanText, { speed: 'fast' });
+            // Use UI Manager's HTML reveal effect
+            if (UI?.animateHtmlReveal) {
+                await UI.animateHtmlReveal(targetEl, cleanText, { speed: 'fast' });
             } else {
                 targetEl.textContent = cleanText;
             }

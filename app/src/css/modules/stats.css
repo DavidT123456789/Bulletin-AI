@@ -218,11 +218,11 @@
 /* Specific styling for the mass import card icon */
 .empty-state-hub-card[data-action="mass"] .empty-state-hub-icon {
     color: var(--success-color, #10b981);
-    background: rgba(16, 185, 129, 0.08);
+    background: rgba(var(--success-rgb), 0.08);
 }
 
 [data-theme="dark"] .empty-state-hub-card[data-action="mass"] .empty-state-hub-icon {
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(var(--success-rgb), 0.15);
 }
 
 .empty-state-hub-card:hover .empty-state-hub-icon {
@@ -231,7 +231,7 @@
 }
 
 .empty-state-hub-card[data-action="mass"]:hover .empty-state-hub-icon {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(var(--success-rgb), 0.2);
 }
 
 .empty-state-hub-text {

@@ -132,7 +132,7 @@
 }
 
 .help-step-number.safety-icon {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(var(--success-rgb), 0.1);
     /* --success-color alpha */
     color: var(--success-color);
 }

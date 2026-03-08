@@ -937,7 +937,7 @@
 
 .welcome-info-pill--success {
     color: var(--success-color);
-    background: rgba(16, 185, 129, 0.08);
+    background: rgba(var(--success-rgb), 0.08);
     border-color: rgba(16, 185, 129, 0.2);
 }
 
@@ -1335,7 +1335,7 @@
 }
 
 .mapping-pill.type-grade {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(var(--primary-color-rgb), 0.1);
     border-color: rgba(59, 130, 246, 0.3);
     color: rgb(59, 130, 246);
 }

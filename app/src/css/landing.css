@@ -784,7 +784,7 @@ img {
 }
 
 .lp-hero__status-check {
-    color: #10b981;
+    color: var(--success-color);
     opacity: 0;
     transform: scale(.5)
 }
@@ -3866,7 +3866,7 @@ img {
 }
 
 .lp-hero__status-check {
-    color: #10b981;
+    color: var(--success-color);
     opacity: 0;
     transform: scale(.5)
 }

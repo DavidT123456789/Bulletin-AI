@@ -398,7 +398,7 @@
 }
 
 .dash-cancel-btn:hover {
-    background: rgba(239, 68, 68, 0.9);
+    background: rgba(var(--error-rgb), 0.9);
     color: white;
     transform: scale(1.1);
 }

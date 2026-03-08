@@ -168,6 +168,10 @@ export const FocusPanelRefinement = {
                 const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(refined));
                 await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
 
+                // CRITICAL FIX: Delete the active generation ONLY after animation finishes,
+                // so that _saveContext() triggered during animation does not save the span tags.
+                panel._activeGenerations.delete(refineStudentId);
+
                 FocusPanelHistory.push(refined, refineType);
 
                 FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
@@ -183,14 +187,19 @@ export const FocusPanelRefinement = {
             if (isAborted) {
                 UI.showNotification('Amélioration annulée', 'info');
                 FocusPanelStatus.refreshAppreciationStatus();
+                // We must delete the active generation since we return early
+                panel._activeGenerations.delete(refineStudentId);
+                btn.classList.remove('is-generating');
                 return;
             }
 
             UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
             const result = appState.generatedResults.find(r => r.id === refineStudentId);
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
-        } finally {
             panel._activeGenerations.delete(refineStudentId);
+            btn.classList.remove('is-generating');
+        } finally {
+            // Delete is now handled in success path (after animation) and error paths
             btn.classList.remove('is-generating');
         }
     }

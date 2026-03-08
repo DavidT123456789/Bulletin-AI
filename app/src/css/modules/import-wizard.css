@@ -215,7 +215,7 @@
 
 .guide-format-chip:hover[data-format="csv"] {
     border-color: var(--info-color, #3b82f6);
-    background: rgba(59, 130, 246, 0.04);
+    background: rgba(var(--primary-color-rgb), 0.04);
 }
 
 .guide-format-chip:hover[data-format="csv"] iconify-icon {
@@ -990,11 +990,6 @@
     background-color: var(--text-secondary);
 }
 
-.import-textarea::placeholder {
-    color: var(--text-tertiary);
-    opacity: 0.7;
-    font-style: italic;
-}
 
 /* Footer info pill — uses unified .modal-footer-info from modals.css */
 
@@ -1103,7 +1098,7 @@
 
 /* Pronote format */
 .format-detection-badge.format-pronote {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(var(--primary-color-rgb), 0.1);
     color: rgb(59, 130, 246);
 }
 
@@ -1977,7 +1972,7 @@
 }
 
 .mapping-pill.type-app {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(var(--success-rgb), 0.1);
     border-color: rgba(16, 185, 129, 0.3);
     color: rgb(16, 185, 129);
 }
@@ -2117,7 +2112,7 @@
 
 /* Pill Type Colors */
 .mapping-pill.type-name {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(var(--primary-color-rgb), 0.1);
     border-color: rgba(59, 130, 246, 0.3);
     color: rgb(59, 130, 246);
 }
@@ -2605,7 +2600,7 @@
 
 .status-badge-cell.status-ppre,
 .preview-status-badge.status-ppre {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(var(--success-rgb), 0.12);
     color: rgb(16, 185, 129);
 }
 
@@ -2623,7 +2618,7 @@
 
 .status-badge-cell.status-nouveau,
 .preview-status-badge.status-nouveau {
-    background: rgba(59, 130, 246, 0.12);
+    background: rgba(var(--primary-color-rgb), 0.12);
     color: rgb(59, 130, 246);
 }
 
@@ -3190,7 +3185,7 @@
 }
 
 #wizardFileBadgeSlot .format-detection-badge.format-pronote {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(var(--success-rgb), 0.1);
     color: rgb(16, 185, 129);
     border-color: rgba(16, 185, 129, 0.2);
 }

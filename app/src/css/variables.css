@@ -49,8 +49,10 @@
     --glass-surface-blur: 16px;
 
     /* --- Universal Card Style (Single Source of Truth) --- */
-    --card-glass-bg: rgba(255, 255, 255, 0.75);
+    --card-glass-bg: #ffffff;
+    /* Solid white for maximum contrast */
     --card-glass-border: rgba(255, 255, 255, 0.8);
+    /* Luminous white border */
 
     /* Niveau 3 : Overlay (Modales / Popovers) - Frosted glass effect */
     --glass-overlay-bg: rgba(255, 255, 255, 0.8);
@@ -312,9 +314,9 @@
     --gradient-ai: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
 
     /* --- Universal Card Style --- */
-    --card-glass-bg: rgba(24, 24, 27, 0.6);
-    /* Zinc 900 */
-    --card-glass-border: rgba(255, 255, 255, 0.06);
+    --card-glass-bg: #18181b;
+    /* Solid Zinc 900 for dark mode */
+    --card-glass-border: rgba(255, 255, 255, 0.08);
     /* Balanced globally */
 
     /* --- Guide Panel Tokens --- */

@@ -121,13 +121,13 @@
 .import-hub-close:hover {
     background: #fee2e2;
     /* Red-100 */
-    color: #ef4444;
+    color: var(--error-color);
     /* Red-500 */
     transform: scale(1.05);
 }
 
 [data-theme="dark"] .import-hub-close:hover {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--error-rgb), 0.15);
     /* Red-500 with opacity */
     color: #f87171;
     /* Red-400 */
@@ -287,7 +287,7 @@
 
 .import-hub-card[data-action="mass"] .import-hub-icon {
     background: #fdf4ff;
-    color: #9333ea;
+    color: var(--accent-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
@@ -296,7 +296,7 @@
 }
 
 .import-hub-card[data-action="mass"]:hover {
-    border-color: #9333ea;
+    border-color: var(--accent-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"]:hover {

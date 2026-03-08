@@ -80,3 +80,39 @@ a.btn-secondary:hover {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
 }
+
+/* ====================================================================
+   Harmonisation Globale des Textes Informatifs (Placeholders / Empty States)
+   Rend ces éléments légèrement plus effacés pour la hiérarchie visuelle
+   ==================================================================== */
+::-webkit-input-placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.55 !important;
+    font-style: italic;
+}
+
+::-moz-placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.55 !important;
+    font-style: italic;
+}
+
+:-ms-input-placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.55 !important;
+    font-style: italic;
+}
+
+::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.55 !important;
+    font-style: italic;
+}
+
+/* Base class for all generic empty/informative states */
+.empty-state,
+.empty-state-text,
+.no-data-text {
+    opacity: 0.55;
+    transition: opacity var(--transition-base);
+}

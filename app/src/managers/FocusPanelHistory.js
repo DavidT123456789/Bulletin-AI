@@ -7,6 +7,7 @@
 import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
+import { Utils } from '../utils/Utils.js';
 
 /**
  * Focus Panel history UI controller
@@ -337,7 +338,7 @@ export const FocusPanelHistory = {
 
         this._animTimeoutExit = setTimeout(() => {
             textEl.classList.remove(exitClass);
-            textEl.textContent = content;
+            textEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(content));
             textEl.classList.add(enterClass);
 
             this._notifyContentChange(content);

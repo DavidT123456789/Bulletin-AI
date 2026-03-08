@@ -24,19 +24,35 @@ function countWords(text) {
  * @returns {Object} Normalized version object
  */
 export function normalizeVersion(version) {
+    let content = typeof version === 'string' ? version : version?.content || '';
+
+    // Auto-clean any leaked HTML spans from previous bugs (clean up historical data)
+    if (content.includes('reveal-word')) {
+        content = content.replace(/<span[^>]*class="reveal-word"[^>]*>(.*?)<\/span>/g, '$1')
+            .replace(/<span[^>]*class="reveal-cursor"[^>]*><\/span>/g, '')
+            .replace(/<span class="progressive-reveal">/g, '')
+            .replace(/<\/span>$/, '');
+        // Remove trailing space that might have been added between spans
+        content = content.replace(/\s+/g, ' ').trim();
+    }
+
     if (typeof version === 'string') {
         return {
-            content: version,
+            content: content,
             timestamp: null,
             source: null,
             appreciationSource: null,
             aiModel: null,
             tokenUsage: null,
-            wordCount: countWords(version)
+            wordCount: countWords(content)
         };
     }
-    if (version && !version.wordCount && version.content) {
-        version.wordCount = countWords(version.content);
+
+    if (version) {
+        version.content = content;
+        if (!version.wordCount && version.content) {
+            version.wordCount = countWords(version.content);
+        }
     }
     return version;
 }
