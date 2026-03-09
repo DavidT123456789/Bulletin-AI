@@ -121,9 +121,6 @@ export const ClassManager = {
         // Synchroniser vers le cloud
         this._triggerCloudSync();
 
-        // Notifier
-        UI?.showNotification(`Classe "${newClass.name}" créée !`, 'success');
-
         return newClass;
     },
 
@@ -198,7 +195,6 @@ export const ClassManager = {
         // Synchroniser immédiatement vers le cloud pour propager la suppression
         this._triggerCloudSync();
 
-        UI?.showNotification(`Classe "${deletedClass.name}" supprimée`, 'success');
         return true;
     },
 
@@ -432,11 +428,6 @@ export const ClassManager = {
                 throw error;
             }
         }
-
-        UI?.showNotification(
-            `Classe "${sourceClass.name}" dupliquée${studentCount > 0 ? ` (${studentCount} élève${studentCount > 1 ? 's' : ''})` : ''}`,
-            'success'
-        );
 
         return duplicatedClass;
     },

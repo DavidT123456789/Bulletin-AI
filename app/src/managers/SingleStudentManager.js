@@ -169,10 +169,8 @@ export const SingleStudentManager = {
                 StudentDataManager.transferGenerationMetadata(existingResult, newResult);
                 newResult.id = existingResult.id;
             } else {
-                appState.generatedResults.unshift(newResult);
             }
 
-            UI.showNotification('Appréciation générée !', 'success');
             AppreciationsManager.renderResults(newResult.id, 'new');
             this.resetForm(true);
 
@@ -240,11 +238,8 @@ export const SingleStudentManager = {
                 existingResult.tokenUsage = newResult.tokenUsage;
                 existingResult.studentData.prompts = newResult.studentData.prompts;
                 // Transfer all generation metadata for dirty detection
-                StudentDataManager.transferGenerationMetadata(existingResult, newResult);
-
                 newResult.id = appState.currentEditingId;
 
-                UI.showNotification('Appréciation mise à jour !', 'success');
                 await ListViewManager.updateRow(newResult.id, newResult, true);
             }
         } catch (error) {
@@ -397,8 +392,6 @@ export const SingleStudentManager = {
 
         UI.switchToEditModeUI();
 
-        UI.showNotification(`Modification de ${result.prenom} ${result.nom}.`, 'info');
-
         if (DOM.loadStudentSelect) {
             DOM.loadStudentSelect.value = id;
         }
@@ -451,7 +444,6 @@ export const SingleStudentManager = {
             }
 
             StorageManager.saveAppState();
-            UI.showNotification('Supprimée.', 'success');
         }, null, { compact: true });
     }
 };

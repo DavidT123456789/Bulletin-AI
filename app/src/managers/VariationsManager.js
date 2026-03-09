@@ -67,8 +67,6 @@ export const VariationsManager = {
                 card?.classList.add('just-generated');
                 setTimeout(() => card?.classList.remove('just-generated'), 1000);
             }
-
-            UI.showNotification("Nouvelle variation générée.", "success");
         } catch (e) {
             console.error(e);
 

@@ -122,7 +122,6 @@ export const ExportManager = {
         ).join('\n\n');
 
         navigator.clipboard.writeText(text).then(() => {
-            UI.showNotification(`${appState.filteredResults.length} appréciations copiées !`, 'success');
             if (button) {
                 const originalIcon = button.innerHTML;
                 button.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
@@ -199,8 +198,6 @@ export const ExportManager = {
             UI.showNotification('Aucune donnée à exporter.', 'warning');
             return;
         }
-
-        UI.showNotification('Préparation de l\'export PDF...', 'info');
 
         const originalTitle = document.title;
         document.title = `Appréciations - ${appState.currentSubject} - ${Utils.getPeriodLabel(appState.currentPeriod, true)}`;

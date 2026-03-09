@@ -176,8 +176,6 @@ export const FocusPanelRefinement = {
 
                 FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
                 FocusPanelStatus.updateSourceIndicator(result);
-
-                UI.showNotification('Appréciation raffinée !', 'success');
             }
         } catch (error) {
             const isAborted = error.name === 'AbortError'

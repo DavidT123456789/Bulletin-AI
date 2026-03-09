@@ -147,7 +147,6 @@ export const AppreciationsManager = {
         }
 
         StorageManager.saveAppState();
-        UI.showNotification(isShowingOlder ? 'Version précédente affichée.' : 'Version récente affichée.', 'info');
         return true;
     },
 
@@ -345,7 +344,6 @@ export const AppreciationsManager = {
             if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.sw = resp.usage;
             StorageManager.saveAppState();
-            if (!silent) UI.showNotification('Analyse générée.', 'success');
         } catch (e) {
             console.error("Erreur F/F:", e);
             if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
@@ -377,7 +375,6 @@ export const AppreciationsManager = {
             if (!result.tokenUsage) result.tokenUsage = {};
             result.tokenUsage.ns = resp.usage;
             StorageManager.saveAppState();
-            if (!silent) UI.showNotification('Pistes générées.', 'success');
         } catch (e) {
             console.error("Erreur pistes:", e);
             if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
@@ -427,8 +424,6 @@ export const AppreciationsManager = {
 
             // Mettre à jour la ligne avec animation typewriter
             await ListViewManager.updateRow(id, updatedResult, true);
-
-            UI.showNotification(`Réussi pour ${originalResult.prenom}.`, 'success');
 
         } catch (e) {
             const msg = Utils.translateErrorMessage(e.message);
