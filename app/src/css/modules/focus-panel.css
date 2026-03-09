@@ -4128,6 +4128,10 @@ input.context-grade-input {
         gap: 8px;
     }
 
+    .focus-header:not(.editing) .focus-save-btn {
+        margin-right: -8px;
+    }
+
 
 
     /* Navigation buttons more compact */
@@ -4221,14 +4225,14 @@ input.context-grade-input {
 
     .focus-panel-avatar-container,
     .focus-header.editing .focus-panel-avatar-container {
-        width: 44px;
-        height: 44px;
+        width: 56px;
+        height: 56px;
     }
 
     .focus-header .focus-panel-avatar-container .student-avatar {
-        width: 44px !important;
-        height: 44px !important;
-        font-size: 18px !important;
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 22px !important;
     }
 
     /* Content takes available space — vertically centered with photo */
@@ -4275,12 +4279,12 @@ input.context-grade-input {
     }
 
     .focus-name-nom {
-        font-size: 15px;
+        font-size: 18px;
         line-height: 1.15;
     }
 
     .focus-name-prenom {
-        font-size: 15px;
+        font-size: 16px;
         line-height: 1.2;
         font-weight: 500;
         margin-top: 2px;
@@ -4314,9 +4318,14 @@ input.context-grade-input {
         order: 3;
         flex-shrink: 0;
         margin-left: 0;
-        gap: 2px;
-        padding: 2px;
+        gap: 0;
+        padding: 4px 10px;
         border-radius: 100px;
+    }
+
+    /* Hide navigation arrows on mobile to save space (user can swipe) */
+    .focus-nav-buttons>.focus-nav-btn {
+        display: none;
     }
 
     .focus-header.editing .focus-nav-buttons {
@@ -4329,6 +4338,10 @@ input.context-grade-input {
         order: 4;
     }
 
+    .focus-header:not(.editing) .focus-save-btn {
+        margin-right: -8px;
+    }
+
     .focus-nav-btn {
         width: 24px;
         height: 24px;
@@ -4336,9 +4349,10 @@ input.context-grade-input {
     }
 
     .focus-position {
-        font-size: 10px;
-        min-width: 28px;
+        font-size: 11px;
+        min-width: auto;
         text-align: center;
+        padding: 0;
     }
 
     /* ============================================
@@ -4549,7 +4563,7 @@ input.context-grade-input {
 
     .focus-nav-buttons,
     .focus-header.editing .focus-nav-buttons {
-        padding: 2px;
+        padding: 4px 8px;
     }
 
     .focus-panel-avatar-container,
