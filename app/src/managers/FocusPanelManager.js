@@ -136,6 +136,8 @@ export const FocusPanelManager = {
         if (this._listenersAttached) return;
         this._listenersAttached = true;
 
+        this._initCloseGestures();
+
         // DOM elements
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
@@ -483,6 +485,169 @@ export const FocusPanelManager = {
         }
 
         // Journal listeners are now handled by FocusPanelJournal module
+    },
+
+    /**
+     * Initialise les gestures natives iOS pour fermer le panneau ("Edge Swipe" et "Pull-to-Dismiss")
+     * @private
+     */
+    _initCloseGestures() {
+        const panel = document.getElementById('focusPanel');
+        if (!panel) return;
+
+        let touchStartX = null;
+        let touchStartY = null;
+        let currentX = 0;
+        let currentY = 0;
+        let isEdgeSwiping = false;
+        let isPullingDown = false;
+        let contentEl = null;
+
+        panel.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+
+            // Ignorer si on interagit avec des inputs spécifiques
+            if (e.target.closest('input[type="range"]') || e.target.closest('textarea')) return;
+
+            // En mode édition, bloquer la gestuelle pour éviter la perte de brouillon
+            const header = document.querySelector('.focus-header');
+            if (header && header.classList.contains('editing')) return;
+
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            currentX = 0;
+            currentY = 0;
+
+            // 1. Edge Swipe: Le doigt démarre tout au bord gauche (< 30px)
+            isEdgeSwiping = touchStartX < 30;
+            isPullingDown = false;
+
+            contentEl = panel.querySelector('.focus-main-page .focus-content')
+                || panel.querySelector('.focus-analysis-content-area');
+
+            // 2. Pull-to-Dismiss: On est tout en haut du content panel ET le swipe démarre sur l'en-tête ou le haut.
+            if (!isEdgeSwiping && contentEl && contentEl.scrollTop <= 0) {
+                const headerRect = header ? header.getBoundingClientRect() : null;
+                if (headerRect && touchStartY <= headerRect.bottom + 40) {
+                    isPullingDown = true;
+                }
+            }
+
+            if (isEdgeSwiping || isPullingDown) {
+                panel.style.transition = 'none';
+                panel.style.willChange = 'transform';
+            }
+        }, { passive: true });
+
+        panel.addEventListener('touchmove', (e) => {
+            if (touchStartX === null || touchStartY === null) return;
+
+            currentX = e.touches[0].clientX - touchStartX;
+            currentY = e.touches[0].clientY - touchStartY;
+
+            if (isEdgeSwiping) {
+                if (currentX > 0) {
+                    if (e.cancelable) e.preventDefault();
+                    const progress = Math.min(currentX / window.innerWidth, 1);
+                    panel.style.transform = `translateX(${currentX}px)`;
+
+                    const backdrop = document.getElementById('focusPanelBackdrop');
+                    if (backdrop) backdrop.style.opacity = (1 - progress).toString();
+                }
+            }
+            else if (isPullingDown && currentY > 0) {
+                // S'assurer qu'on swipe bien verticalement (et non horizontalement)
+                if (currentY > Math.abs(currentX)) {
+                    if (e.cancelable) e.preventDefault();
+                    // Friction/résistance iOS
+                    const resistance = currentY * 0.45;
+                    panel.style.transform = `translateY(${resistance}px)`;
+                } else {
+                    // Annulation si le swipe devient horizontal
+                    isPullingDown = false;
+                    panel.style.transition = '';
+                    panel.style.transform = '';
+                }
+            }
+        }, { passive: false });
+
+        panel.addEventListener('touchend', (e) => {
+            if (touchStartX === null || touchStartY === null) return;
+
+            if (isEdgeSwiping) {
+                const threshold = window.innerWidth * 0.3; // 30% width pour fermer
+                const velocity = currentX / (e.timeStamp || 1); // Simplification de vélocité
+
+                if (currentX > threshold || velocity > 1.5) {
+                    // => Fermeture validée
+                    panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                    panel.style.transform = 'translateX(100%)';
+
+                    const backdrop = document.getElementById('focusPanelBackdrop');
+                    if (backdrop) {
+                        backdrop.style.transition = 'opacity 0.3s ease';
+                        backdrop.style.opacity = '0';
+                    }
+
+                    setTimeout(() => {
+                        this.close();
+                        this._resetTransformations(panel, backdrop);
+                    }, 300);
+                } else {
+                    // => Rebond (Annulation)
+                    panel.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                    panel.style.transform = 'translateX(0)';
+                    const backdrop = document.getElementById('focusPanelBackdrop');
+                    if (backdrop) {
+                        backdrop.style.transition = 'opacity 0.45s ease';
+                        backdrop.style.opacity = '1';
+                    }
+                    setTimeout(() => this._resetTransformations(panel, backdrop), 450);
+                }
+            }
+            else if (isPullingDown) {
+                const threshold = 100; // 100px pour fermer via pull down
+                if (currentY > threshold) {
+                    // => Fermeture validée vers le bas
+                    panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                    panel.style.transform = `translateY(100vh)`;
+
+                    setTimeout(() => {
+                        this.close();
+                        // Reset properties only AFTER close has wiped the .open class
+                        setTimeout(() => this._resetTransformations(panel, null), 50);
+                    }, 300);
+                } else {
+                    // => Rebond (Annulation)
+                    panel.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                    panel.style.transform = 'translateX(0) translateY(0)';
+                    setTimeout(() => this._resetTransformations(panel, null), 450);
+                }
+            }
+
+            touchStartX = null;
+            touchStartY = null;
+            currentX = 0;
+            currentY = 0;
+            isEdgeSwiping = false;
+            isPullingDown = false;
+        }, { passive: true });
+    },
+
+    /**
+     * Helper pour nettoyer les transformations en ligne après un drag
+     * @private
+     */
+    _resetTransformations(panel, backdrop) {
+        if (panel) {
+            panel.style.transition = '';
+            panel.style.transform = '';
+            panel.style.willChange = '';
+        }
+        if (backdrop) {
+            backdrop.style.transition = '';
+            backdrop.style.opacity = '';
+        }
     },
 
     /**
