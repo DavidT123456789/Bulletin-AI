@@ -36,7 +36,7 @@ export const FocusPanelNavigation = {
     },
 
     /**
-     * Initialize touch events for swipe navigation
+     * Initialize touch events for swipe navigation (iOS Gallery Style 2026)
      * @private
      */
     _initSwipeNavigation() {
@@ -44,59 +44,129 @@ export const FocusPanelNavigation = {
         if (!targetArea) return;
 
         let touchStartX = null;
-        let touchEndX = null;
         let touchStartY = null;
-        let touchEndY = null;
-
-        // Minimum pixel distance to be considered a swipe
-        const minSwipeDistance = 60;
+        let isSwiping = false;
+        let swipeContent = null;
+        let currentIndex = -1;
+        let totalItems = -1;
+        let currentTranslateX = 0;
 
         targetArea.addEventListener('touchstart', e => {
+            if (e.touches.length > 1) return; // Ignore multi-touch
+
             touchStartX = null;
             touchStartY = null;
+            isSwiping = false;
+            currentTranslateX = 0;
 
-            // Ignore if touching an input, textarea, slider, or horizontal scroll area
+            // Ignore if touching an input, textarea, slider, horizontal scroll area, or interactive elements
             if (e.target.closest('input') ||
                 e.target.closest('textarea') ||
                 e.target.closest('.focus-refinement-options') ||
-                e.target.closest('.history-navigation-group')) {
+                e.target.closest('.history-navigation-group') ||
+                e.target.closest('select') ||
+                e.target.closest('button')) {
                 return;
             }
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
+
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+
+            // Determine active content cleanly
+            const isAnalysisMode = FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible();
+            swipeContent = isAnalysisMode
+                ? document.querySelector('.focus-analysis-content-area')
+                : document.querySelector('.focus-main-page .focus-content');
+
+            if (swipeContent) {
+                swipeContent.style.transition = 'none'; // Instant follow
+                swipeContent.style.willChange = 'transform, opacity';
+            }
+
+            currentIndex = this.callbacks.getCurrentIndex();
+            totalItems = appState.filteredResults.length;
         }, { passive: true });
 
-        targetArea.addEventListener('touchend', e => {
-            if (touchStartX === null || touchStartY === null) return;
+        targetArea.addEventListener('touchmove', e => {
+            if (touchStartX === null || touchStartY === null || !swipeContent) return;
 
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-            this._handleSwipeGesture(touchStartX, touchEndX, touchStartY, touchEndY, minSwipeDistance);
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const diffX = currentX - touchStartX;
+            const diffY = currentY - touchStartY;
+
+            if (!isSwiping) {
+                // Determine swipe intent: horizontal vs vertical
+                if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+                    isSwiping = true;
+                } else if (Math.abs(diffY) > 10) {
+                    touchStartX = null; // Vertical scroll, abort swipe
+                    return;
+                }
+            }
+
+            if (isSwiping) {
+                if (e.cancelable) e.preventDefault(); // Prevent vertical scroll bouncing
+
+                let translateX = diffX;
+                const resistance = 0.25;
+
+                // Resistance past edges
+                if ((currentIndex <= 0 && diffX > 0) || (currentIndex >= totalItems - 1 && diffX < 0)) {
+                    translateX = diffX * resistance;
+                }
+
+                currentTranslateX = translateX;
+
+                // iOS 2026 Premium Effect: slight scale down and fade
+                const progress = Math.min(Math.abs(translateX) / window.innerWidth, 1);
+                const scale = 1 - (progress * 0.04);
+                const opacity = 1 - (progress * 0.4);
+
+                swipeContent.style.transform = `translateX(${translateX}px) scale(${scale})`;
+                swipeContent.style.opacity = opacity.toString();
+            }
+        }, { passive: false }); // false so preventDefault works
+
+        targetArea.addEventListener('touchend', e => {
+            if (touchStartX === null || !swipeContent) return;
+
+            if (isSwiping) {
+                const threshold = window.innerWidth * 0.25; // 25% screen width threshold
+
+                if (currentTranslateX > threshold && currentIndex > 0) {
+                    this._navigateWithAnimation('prev', currentTranslateX);
+                } else if (currentTranslateX < -threshold && currentIndex < totalItems - 1) {
+                    this._navigateWithAnimation('next', currentTranslateX);
+                } else {
+                    // Snap back (Elastic spring)
+                    swipeContent.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
+                    swipeContent.style.transform = 'translateX(0) scale(1)';
+                    swipeContent.style.opacity = '1';
+
+                    setTimeout(() => {
+                        window.requestAnimationFrame(() => {
+                            if (swipeContent) {
+                                swipeContent.style.transition = '';
+                                swipeContent.style.transform = '';
+                                swipeContent.style.opacity = '';
+                                swipeContent.style.willChange = '';
+                            }
+                        });
+                    }, 450);
+                }
+            } else {
+                // Clean reset
+                swipeContent.style.transition = '';
+                swipeContent.style.transform = '';
+                swipeContent.style.opacity = '';
+                swipeContent.style.willChange = '';
+            }
 
             touchStartX = null;
             touchStartY = null;
+            isSwiping = false;
         }, { passive: true });
-    },
-
-    /**
-     * Determines swipe direction and triggers navigation
-     * @private
-     */
-    _handleSwipeGesture(startX, endX, startY, endY, minDistance) {
-        // Calculate coordinate differences
-        const diffX = endX - startX;
-        const diffY = endY - startY;
-
-        // Ensure movement is mostly horizontal (not a vertical scroll)
-        if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > minDistance) {
-            if (diffX > 0) {
-                // Swipe Right -> Navigue vers la "gauche" (précédent)
-                this.navigatePrev();
-            } else {
-                // Swipe Left -> Navigue vers la "droite" (suivant)
-                this.navigateNext();
-            }
-        }
     },
 
     /**
@@ -145,16 +215,17 @@ export const FocusPanelNavigation = {
     /**
      * Navigation avec animation de transition
      * @param {'prev'|'next'} direction - Direction de navigation
+     * @param {number|null} swipeStartX - Position X de départ si c'est un swipe
      * @private
      */
-    _navigateWithAnimation(direction) {
+    _navigateWithAnimation(direction, swipeStartX = null) {
         // Cancel edit mode before navigating (don't save, just discard)
         const header = document.querySelector('.focus-header');
         if (header && header.classList.contains('editing')) {
             FocusPanelHeader.toggleEditMode(false, true); // Cancel without saving
         }
 
-        const isAnalysisVisible = FocusPanelAnalysis.isVisible();
+        const isAnalysisVisible = FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible();
         const content = isAnalysisVisible
             ? document.querySelector('.focus-analysis-content-area')
             : document.querySelector('.focus-main-page .focus-content');
@@ -168,13 +239,12 @@ export const FocusPanelNavigation = {
             const filteredResult = appState.filteredResults[targetIndex];
             if (filteredResult) {
                 const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
-                // We don't have a direct 'open' callback usually, but we can set state and render
                 this._switchToStudent(targetResult, targetIndex);
             }
             return;
         }
 
-        // Clean up any ongoing animations from rapid clicking
+        // Clean up any ongoing animations
         if (this._animTimeout) {
             clearTimeout(this._animTimeout);
             this._animTimeout = null;
@@ -191,9 +261,9 @@ export const FocusPanelNavigation = {
 
         const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
 
-        // 2. Clone Current Content (Eliminates the "Empty Void")
+        // 2. Clone Current Content (Retains the swipe-induced inline styles)
         const clone = content.cloneNode(true);
-        this._activeClone = clone; // Store reference for rapid click cleanup
+        this._activeClone = clone;
         const parent = content.offsetParent || document.body;
 
         clone.style.position = 'absolute';
@@ -207,7 +277,12 @@ export const FocusPanelNavigation = {
         clone.style.overflow = 'hidden';
         clone.scrollTop = content.scrollTop;
 
-        // Ensure parent is positioned relative so absolute positioning works
+        if (swipeStartX === null) {
+            clone.style.transform = 'translateX(0) scale(1)';
+            clone.style.opacity = '1';
+        }
+
+        // Ensure parent is positioned relative
         const parentStyle = window.getComputedStyle(parent);
         if (parentStyle.position === 'static') {
             parent.style.position = 'relative';
@@ -215,34 +290,50 @@ export const FocusPanelNavigation = {
 
         parent.appendChild(clone);
 
-        // 3. Animation Classes
-        const outClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
-        const inClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
-
-        // 4. Update State & Content IMMEDIATELY
+        // 3. Update State & Content IMMEDIATELY
         this.callbacks.saveContext();
+
+        // Prepare new content for animation
+        content.style.transition = 'none';
+        content.style.opacity = '0';
+        content.style.willChange = 'transform, opacity';
 
         // Switch Logic
         this._switchToStudent(targetResult, targetIndex);
 
         // Analysis Refresh if needed
-        if (isAnalysisVisible) {
-            FocusPanelAnalysis.show(); // Refreshes for the new currentStudentId
+        if (isAnalysisVisible && FocusPanelAnalysis.show) {
+            FocusPanelAnalysis.show();
         }
 
         content.scrollTop = 0;
 
-        // 5. Trigger Animations
+        // 4. Trigger Inline Animations (iOS Gallery Physics)
         requestAnimationFrame(() => {
-            clone.classList.add(outClass);
+            const viewportMultiplier = window.innerWidth > 600 ? 0.6 : 1.0;
+            const exitX = direction === 'next' ? -window.innerWidth * viewportMultiplier : window.innerWidth * viewportMultiplier;
+            const enterX = direction === 'next' ? window.innerWidth * viewportMultiplier : -window.innerWidth * viewportMultiplier;
 
-            content.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            // Animate Clone Out
+            clone.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
+            clone.style.transform = `translateX(${exitX}px) scale(0.92)`;
+            clone.style.opacity = '0';
+
+            // Position Content for Enter
+            content.style.transition = 'none';
+            content.style.transform = `translateX(${enterX}px) scale(0.92)`;
+            content.style.opacity = '0';
+
             // Force reflow
             void content.offsetWidth;
-            content.classList.add(inClass);
+
+            // Animate Content In
+            content.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
+            content.style.transform = 'translateX(0) scale(1)';
+            content.style.opacity = '1';
         });
 
-        // 6. Cleanup
+        // 5. Cleanup
         this._animTimeout = setTimeout(() => {
             if (this._activeClone === clone) {
                 this._activeClone.remove();
@@ -250,9 +341,12 @@ export const FocusPanelNavigation = {
             } else {
                 clone.remove();
             }
-            content.classList.remove(inClass);
+            content.style.transition = '';
+            content.style.transform = '';
+            content.style.opacity = '';
+            content.style.willChange = '';
             this._animTimeout = null;
-        }, 400);
+        }, 480);
     },
 
     /**
