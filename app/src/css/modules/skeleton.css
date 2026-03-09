@@ -431,51 +431,6 @@
     animation-duration: 0.3s;
 }
 
-/* Cursor shown at the end during generation */
-.reveal-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1em;
-    background: var(--primary-color);
-    margin-left: 2px;
-    vertical-align: middle;
-    animation: cursor-pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    border-radius: 1px;
-}
-
-@keyframes cursor-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.3;
-    }
-}
-
-/* Legacy typewriter cursor (kept for compatibility) */
-.typewriter-cursor::after {
-    content: '▋';
-    display: inline-block;
-    margin-left: 2px;
-    color: var(--primary-color);
-    animation: blink-cursor 0.6s step-end infinite;
-    font-weight: 400;
-}
-
-@keyframes blink-cursor {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0;
-    }
-}
 
 /* ====================================================================
    Responsive

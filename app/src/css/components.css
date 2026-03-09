@@ -92,11 +92,21 @@
 }
 
 .btn-warning {
-    background: var(--warning-color);
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.15);
+    color: var(--warning-color);
 }
 
 .btn-warning:hover:not(:disabled) {
-    background: var(--warning-hover, var(--warning-color));
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
+}
+
+[data-theme="dark"] .btn-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .btn-warning:hover:not(:disabled) {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
 }
 
 .btn-purple {

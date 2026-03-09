@@ -377,6 +377,11 @@
     stroke-width: var(--icon-stroke-width) !important;
 }
 
+/* Optical correction: vertical lines appear thinner than diagonal lines */
+.focus-nav-btn.focus-analyze-btn svg {
+    stroke-width: calc(var(--icon-stroke-width) + 0.4px) !important;
+}
+
 .focus-nav-btn:hover:not(:disabled) {
     background: var(--item-active-bg);
     color: var(--text-primary);
@@ -1978,6 +1983,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: space-between;
     margin-top: 0;
     padding: 6px 16px 12px 16px;
 }
@@ -1991,11 +1997,6 @@
     align-items: center;
     gap: 10px;
     padding: 8px 16px 14px 16px;
-    border-top: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .focus-appreciation-actions {
-    border-top-color: var(--border-color);
 }
 
 /* Copy button — icon-only, flat Material You tonal style */
@@ -2379,13 +2380,24 @@
 
 /* Warning state - data modified, action RECOMMENDED */
 #focusGenerateBtn.btn-warning {
-    background: var(--warning-color);
-    color: white;
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.15);
+    color: var(--warning-color);
     box-shadow: none;
 }
 
 #focusGenerateBtn.btn-warning:hover {
-    box-shadow: 0 6px 16px rgba(var(--warning-color-rgb, 245, 158, 11), 0.3);
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
+    box-shadow: none;
+}
+
+[data-theme="dark"] #focusGenerateBtn.btn-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
+    color: #fbbf24;
+    /* Matches concise tag */
+}
+
+[data-theme="dark"] #focusGenerateBtn.btn-warning:hover {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
 }
 
 @keyframes pulse-orange {
@@ -2414,6 +2426,7 @@
     animation: none !important;
     position: relative;
     overflow: hidden;
+    font-weight: 500;
 }
 
 #focusGenerateBtn.btn-neutral i,

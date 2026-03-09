@@ -98,10 +98,6 @@ export const AnimationManager = {
         revealContainer.className = 'progressive-reveal';
         container.appendChild(revealContainer);
 
-        const cursor = document.createElement('span');
-        cursor.className = 'reveal-cursor';
-        container.appendChild(cursor);
-
         const adaptiveDelay = Math.max(15, Math.min(config.wordDelay, 2000 / words.length));
         const isFast = text.length > 200;
 
@@ -125,10 +121,7 @@ export const AnimationManager = {
             await new Promise(r => setTimeout(r, adaptiveDelay));
         }
 
-        cursor.style.transition = 'opacity 0.3s ease-out';
-        cursor.style.opacity = '0';
         await new Promise(r => setTimeout(r, 300));
-        cursor.remove();
 
         container.textContent = text;
     },
@@ -209,17 +202,9 @@ export const AnimationManager = {
             container.appendChild(tempDiv.firstChild);
         }
 
-        const cursor = document.createElement('span');
-        cursor.className = 'reveal-cursor';
-        container.appendChild(cursor);
-
         const totalDuration = maxDelay + 400;
 
-        await new Promise(r => setTimeout(r, totalDuration + 100));
-
-        cursor.style.transition = 'opacity 0.3s ease-out';
-        cursor.style.opacity = '0';
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, totalDuration + 400));
 
         container.innerHTML = htmlContent;
         container.classList.remove('progressive-reveal-container');

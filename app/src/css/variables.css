@@ -117,9 +117,9 @@
     /* Zinc 400 with opacity */
 
     /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
-    --item-idle-bg: rgba(0, 0, 0, 0.02);
-    --item-hover-bg: rgba(0, 0, 0, 0.03);
-    --item-active-bg: rgba(0, 0, 0, 0.05);
+    --item-idle-bg: rgba(0, 0, 0, 0.025);
+    --item-hover-bg: rgba(0, 0, 0, 0.04);
+    --item-active-bg: rgba(0, 0, 0, 0.06);
     /* Elevated variant: for items already on --bg-secondary */
     --item-hover-bg-elevated: var(--bg-tertiary);
 
