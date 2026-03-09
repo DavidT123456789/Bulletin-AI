@@ -43,15 +43,18 @@ export const FocusPanelNavigation = {
         const targetArea = document.getElementById('focusPagesContainer') || document.getElementById('focusPanel');
         if (!targetArea) return;
 
-        let touchStartX = 0;
-        let touchEndX = 0;
-        let touchStartY = 0;
-        let touchEndY = 0;
+        let touchStartX = null;
+        let touchEndX = null;
+        let touchStartY = null;
+        let touchEndY = null;
 
         // Minimum pixel distance to be considered a swipe
         const minSwipeDistance = 60;
 
         targetArea.addEventListener('touchstart', e => {
+            touchStartX = null;
+            touchStartY = null;
+
             // Ignore if touching an input, textarea, slider, or horizontal scroll area
             if (e.target.closest('input') ||
                 e.target.closest('textarea') ||
@@ -64,9 +67,14 @@ export const FocusPanelNavigation = {
         }, { passive: true });
 
         targetArea.addEventListener('touchend', e => {
+            if (touchStartX === null || touchStartY === null) return;
+
             touchEndX = e.changedTouches[0].screenX;
             touchEndY = e.changedTouches[0].screenY;
             this._handleSwipeGesture(touchStartX, touchEndX, touchStartY, touchEndY, minSwipeDistance);
+
+            touchStartX = null;
+            touchStartY = null;
         }, { passive: true });
     },
 

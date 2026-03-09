@@ -4304,7 +4304,6 @@ input.context-grade-input {
         gap: 2px;
         padding: 2px;
         border-radius: 100px;
-        background: transparent;
     }
 
     .focus-header.editing .focus-nav-buttons {
@@ -4538,7 +4537,6 @@ input.context-grade-input {
     .focus-nav-buttons,
     .focus-header.editing .focus-nav-buttons {
         padding: 2px;
-        background: transparent;
     }
 
     .focus-panel-avatar-container,
