@@ -4225,14 +4225,15 @@ input.context-grade-input {
 
     .focus-panel-avatar-container,
     .focus-header.editing .focus-panel-avatar-container {
-        width: 56px;
-        height: 56px;
+        width: 64px;
+        height: 64px;
     }
 
-    .focus-header .focus-panel-avatar-container .student-avatar {
-        width: 56px !important;
-        height: 56px !important;
-        font-size: 22px !important;
+    .focus-header .focus-panel-avatar-container .student-avatar,
+    .focus-header.editing .focus-panel-avatar-container .student-avatar {
+        width: 64px !important;
+        height: 64px !important;
+        font-size: 26px !important;
     }
 
     /* Content takes available space — vertically centered with photo */
@@ -4265,16 +4266,17 @@ input.context-grade-input {
 
     .focus-header-read {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
         width: 100%;
     }
 
     .focus-student-name {
         padding: 0;
         margin: 0;
-        width: 100%;
+        width: auto;
         gap: 4px;
     }
 
@@ -4330,12 +4332,18 @@ input.context-grade-input {
 
     .focus-header.editing .focus-nav-buttons {
         order: 2;
+        margin-left: auto;
     }
 
     /* Close & Save at pill level on mobile */
     .focus-header>.focus-close-btn,
     .focus-header>.focus-save-btn {
         order: 4;
+    }
+
+    .focus-header.editing>.focus-close-btn,
+    .focus-header.editing>.focus-save-btn {
+        order: 2;
     }
 
     .focus-header:not(.editing) .focus-save-btn {
@@ -4572,7 +4580,8 @@ input.context-grade-input {
         height: 38px;
     }
 
-    .focus-header .focus-panel-avatar-container .student-avatar {
+    .focus-header .focus-panel-avatar-container .student-avatar,
+    .focus-header.editing .focus-panel-avatar-container .student-avatar {
         width: 38px !important;
         height: 38px !important;
         font-size: 15px !important;
