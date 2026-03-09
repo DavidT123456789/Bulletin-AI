@@ -518,24 +518,37 @@ export const FocusPanelManager = {
             currentX = 0;
             currentY = 0;
 
+            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
+
             // 1. Edge Swipe: Le doigt démarre tout au bord gauche (< 30px)
             isEdgeSwiping = touchStartX < 30;
             isPullingDown = false;
 
-            contentEl = panel.querySelector('.focus-main-page .focus-content')
-                || panel.querySelector('.focus-analysis-content-area');
+            contentEl = isAnalysisVisible
+                ? panel.querySelector('.focus-analysis-content-area')
+                : panel.querySelector('.focus-main-page .focus-content');
 
-            // 2. Pull-to-Dismiss: On est tout en haut du content panel ET le swipe démarre sur l'en-tête ou le haut.
+            // 2. Pull-to-Dismiss
             if (!isEdgeSwiping && contentEl && contentEl.scrollTop <= 0) {
-                const headerRect = header ? header.getBoundingClientRect() : null;
-                if (headerRect && touchStartY <= headerRect.bottom + 40) {
-                    isPullingDown = true;
+                let currentHeaderRect = null;
+                if (isAnalysisVisible) {
+                    const analysisHeader = panel.querySelector('.focus-analysis-header');
+                    currentHeaderRect = analysisHeader ? analysisHeader.getBoundingClientRect() : null;
+                } else {
+                    currentHeaderRect = header ? header.getBoundingClientRect() : null;
+                }
+
+                if (currentHeaderRect && touchStartY <= currentHeaderRect.bottom + 40) {
+                    isPullingDown = true; // Détecté
                 }
             }
 
             if (isEdgeSwiping || isPullingDown) {
-                panel.style.transition = 'none';
-                panel.style.willChange = 'transform';
+                const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
+                if (target) {
+                    target.style.transition = 'none';
+                    target.style.willChange = 'transform';
+                }
             }
         }, { passive: true });
 
@@ -545,28 +558,33 @@ export const FocusPanelManager = {
             currentX = e.touches[0].clientX - touchStartX;
             currentY = e.touches[0].clientY - touchStartY;
 
+            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
+            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
+            if (!target) return;
+
             if (isEdgeSwiping) {
                 if (currentX > 0) {
                     if (e.cancelable) e.preventDefault();
-                    const progress = Math.min(currentX / window.innerWidth, 1);
-                    panel.style.transform = `translateX(${currentX}px)`;
 
-                    const backdrop = document.getElementById('focusPanelBackdrop');
-                    if (backdrop) backdrop.style.opacity = (1 - progress).toString();
+                    if (isAnalysisVisible) {
+                        target.style.transform = `translateX(${currentX}px)`;
+                    } else {
+                        const progress = Math.min(currentX / window.innerWidth, 1);
+                        target.style.transform = `translateX(${currentX}px)`;
+                        const backdrop = document.getElementById('focusPanelBackdrop');
+                        if (backdrop) backdrop.style.opacity = (1 - progress).toString();
+                    }
                 }
             }
             else if (isPullingDown && currentY > 0) {
-                // S'assurer qu'on swipe bien verticalement (et non horizontalement)
                 if (currentY > Math.abs(currentX)) {
                     if (e.cancelable) e.preventDefault();
-                    // Friction/résistance iOS
                     const resistance = currentY * 0.45;
-                    panel.style.transform = `translateY(${resistance}px)`;
+                    target.style.transform = `translateY(${resistance}px)`;
                 } else {
-                    // Annulation si le swipe devient horizontal
                     isPullingDown = false;
-                    panel.style.transition = '';
-                    panel.style.transform = '';
+                    target.style.transition = '';
+                    target.style.transform = '';
                 }
             }
         }, { passive: false });
@@ -574,54 +592,80 @@ export const FocusPanelManager = {
         panel.addEventListener('touchend', (e) => {
             if (touchStartX === null || touchStartY === null) return;
 
+            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
+            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panel;
+
+            if (!target) return;
+
             if (isEdgeSwiping) {
-                const threshold = window.innerWidth * 0.3; // 30% width pour fermer
-                const velocity = currentX / (e.timeStamp || 1); // Simplification de vélocité
+                const threshold = window.innerWidth * 0.3;
+                const velocity = currentX / (e.timeStamp || 1);
 
                 if (currentX > threshold || velocity > 1.5) {
                     // => Fermeture validée
-                    panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    panel.style.transform = 'translateX(100%)';
+                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                    target.style.transform = 'translateX(100%)';
 
-                    const backdrop = document.getElementById('focusPanelBackdrop');
-                    if (backdrop) {
-                        backdrop.style.transition = 'opacity 0.3s ease';
-                        backdrop.style.opacity = '0';
+                    if (isAnalysisVisible) {
+                        setTimeout(() => {
+                            FocusPanelAnalysis.hide();
+                            this._resetTransformations(target, null);
+                        }, 300);
+                    } else {
+                        const backdrop = document.getElementById('focusPanelBackdrop');
+                        if (backdrop) {
+                            backdrop.style.transition = 'opacity 0.3s ease';
+                            backdrop.style.opacity = '0';
+                        }
+                        setTimeout(() => {
+                            target.style.transition = 'none';
+                            this.close();
+                            this._resetTransformations(target, backdrop);
+                        }, 300);
                     }
-
-                    setTimeout(() => {
-                        this.close();
-                        this._resetTransformations(panel, backdrop);
-                    }, 300);
                 } else {
                     // => Rebond (Annulation)
-                    panel.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    panel.style.transform = 'translateX(0)';
-                    const backdrop = document.getElementById('focusPanelBackdrop');
-                    if (backdrop) {
-                        backdrop.style.transition = 'opacity 0.45s ease';
-                        backdrop.style.opacity = '1';
+                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                    target.style.transform = 'translateX(0)';
+
+                    if (!isAnalysisVisible) {
+                        const backdrop = document.getElementById('focusPanelBackdrop');
+                        if (backdrop) {
+                            backdrop.style.transition = 'opacity 0.45s ease';
+                            backdrop.style.opacity = '1';
+                            setTimeout(() => this._resetTransformations(target, backdrop), 450);
+                        } else {
+                            setTimeout(() => this._resetTransformations(target, null), 450);
+                        }
+                    } else {
+                        setTimeout(() => this._resetTransformations(target, null), 450);
                     }
-                    setTimeout(() => this._resetTransformations(panel, backdrop), 450);
                 }
             }
             else if (isPullingDown) {
                 const threshold = 100; // 100px pour fermer via pull down
                 if (currentY > threshold) {
                     // => Fermeture validée vers le bas
-                    panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                    panel.style.transform = `translateY(100vh)`;
+                    target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+                    target.style.transform = `translateY(100vh)`;
 
-                    setTimeout(() => {
-                        this.close();
-                        // Reset properties only AFTER close has wiped the .open class
-                        setTimeout(() => this._resetTransformations(panel, null), 50);
-                    }, 300);
+                    if (isAnalysisVisible) {
+                        setTimeout(() => {
+                            FocusPanelAnalysis.hide();
+                            this._resetTransformations(target, null);
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            target.style.transition = 'none';
+                            this.close();
+                            this._resetTransformations(target, null);
+                        }, 300);
+                    }
                 } else {
                     // => Rebond (Annulation)
-                    panel.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    panel.style.transform = 'translateX(0) translateY(0)';
-                    setTimeout(() => this._resetTransformations(panel, null), 450);
+                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                    target.style.transform = 'translateX(0) translateY(0)';
+                    setTimeout(() => this._resetTransformations(target, null), 450);
                 }
             }
 
@@ -638,11 +682,11 @@ export const FocusPanelManager = {
      * Helper pour nettoyer les transformations en ligne après un drag
      * @private
      */
-    _resetTransformations(panel, backdrop) {
-        if (panel) {
-            panel.style.transition = '';
-            panel.style.transform = '';
-            panel.style.willChange = '';
+    _resetTransformations(target, backdrop) {
+        if (target) {
+            target.style.transition = '';
+            target.style.transform = '';
+            target.style.willChange = '';
         }
         if (backdrop) {
             backdrop.style.transition = '';
