@@ -36,6 +36,8 @@
     /* Zinc 600 */
     --text-tertiary: #71717a;
     /* Zinc 500 — WCAG AA compliant on Zinc 50 */
+    --text-quaternary: #a1a1aa;
+    /* Zinc 400 — Softest readable icon tint */
 
     /* --- Système Glassmorphism Unifié (Modern Tech) --- */
     /* Niveau 1 : Base (Panneaux fixes) */
@@ -100,14 +102,19 @@
 
     /* Close Button Design Tokens */
     --close-btn-bg: transparent;
-    --close-btn-color: var(--text-secondary);
+    --close-btn-color: var(--icon-btn-color);
     --close-btn-hover-bg: var(--error-light);
     --close-btn-hover-color: var(--error-color);
 
     /* Icon Button States (Single Source of Truth) */
-    --icon-btn-color: var(--text-secondary);
+    --icon-btn-color: #8f8f98;
+    /* Intermédiaire parfait entre Zinc 400 et 500 */
+    --icon-stroke-width: 1.3px;
+    /* Epaisseur harmonisée pour toutes les icônes (Lucide et Solar) */
+    /* Encore allégé (Zinc-400) pour un design ultra-aérien */
     --icon-btn-hover: var(--primary-color);
-    --icon-btn-muted: var(--text-tertiary);
+    --icon-btn-muted: rgba(161, 161, 170, 0.7);
+    /* Zinc 400 with opacity */
 
     /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
     --item-idle-bg: rgba(0, 0, 0, 0.02);

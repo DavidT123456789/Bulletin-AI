@@ -14,18 +14,18 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
  */
 const PREDEFINED_TAGS = [
     // POSITIF (vert) - 4 items
-    { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-bold', color: 'var(--success-color)', category: 'positive' },
-    { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-bold', color: 'var(--success-color)', category: 'positive' },
-    { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-bold', color: 'var(--success-color)', category: 'positive' },
-    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-bold', color: 'var(--success-color)', category: 'positive' },
+    { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-linear', color: 'var(--success-color)', category: 'positive' },
+    { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-linear', color: 'var(--success-color)', category: 'positive' },
+    { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-linear', color: 'var(--success-color)', category: 'positive' },
+    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-linear', color: 'var(--success-color)', category: 'positive' },
     // NÉGATIF (rouge) - 4 items
-    { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-bold', color: 'var(--error-color)', category: 'negative' },
-    { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-bold', color: 'var(--error-color)', category: 'negative' },
-    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-bold', color: 'var(--error-color)', category: 'negative' },
-    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-bold', color: 'var(--error-color)', category: 'negative' },
+    { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-linear', color: 'var(--error-color)', category: 'negative' },
+    { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-linear', color: 'var(--error-color)', category: 'negative' },
+    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-linear', color: 'var(--error-color)', category: 'negative' },
+    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-linear', color: 'var(--error-color)', category: 'negative' },
     // NEUTRE (orange/gris) - 2 direct buttons
-    { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-bold', color: 'var(--warning-color)', category: 'neutral' },
-    { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-bold', color: 'var(--text-secondary)', category: 'neutral' }
+    { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-linear', color: 'var(--warning-color)', category: 'neutral' },
+    { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-linear', color: 'var(--text-secondary)', category: 'neutral' }
 ];
 
 /**
@@ -379,7 +379,7 @@ export const JournalManager = {
         if (entries.length === 0) {
             return `
                 <div class="journal-empty">
-                    <iconify-icon icon="solar:book-2-bold"></iconify-icon>
+                    <iconify-icon icon="solar:book-2-linear"></iconify-icon>
                     <span>Aucune observation</span>
                 </div>
             `;
@@ -421,7 +421,7 @@ export const JournalManager = {
 
             // New design: Tooltip is only on the small 'i' icon, not the whole row
             const infoIcon = isIsolated
-                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-bold"></iconify-icon></div>`
+                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></div>`
                 : '';
 
             return `
@@ -433,7 +433,7 @@ export const JournalManager = {
                     </div>
                     ${infoIcon}
                     <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
+                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                     </button>
                 </div>
             `;
@@ -455,7 +455,7 @@ export const JournalManager = {
         const formattedDate = this.formatDate(dateStr);
 
         // Header Label
-        const labelIcon = isEdit ? 'solar:pen-new-square-bold' : 'solar:pen-bold';
+        const labelIcon = isEdit ? 'solar:pen-new-square-linear' : 'solar:pen-linear';
         const labelText = isEdit ? 'Modifier' : 'Brouillon';
 
         // Pre-render selected tags if editing
@@ -492,7 +492,7 @@ export const JournalManager = {
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                         <button class="journal-header-btn icon-only" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer">
-                            <iconify-icon icon="ph:check-bold"></iconify-icon>
+                            <iconify-icon icon="ph:check"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -533,7 +533,7 @@ export const JournalManager = {
                     <button class="journal-pill-btn" style="--pill-color: ${color}">
                         <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
-                        <iconify-icon icon="solar:alt-arrow-down-bold" class="journal-pill-arrow"></iconify-icon>
+                        <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-pill-arrow"></iconify-icon>
                     </button>
                     <div class="journal-pill-menu">
                         ${optionsHTML}
@@ -551,8 +551,8 @@ export const JournalManager = {
         `).join('');
 
         return `
-            ${renderPillDropdown('positive', 'Positif', 'ph:plus-bold', positiveTags, 'var(--success-color)')}
-            ${renderPillDropdown('negative', 'Négatif', 'ph:minus-bold', negativeTags, 'var(--error-color)')}
+            ${renderPillDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)')}
+            ${renderPillDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)')}
             ${neutralBtnsHTML}
         `;
     },
@@ -578,7 +578,7 @@ export const JournalManager = {
                     <button class="journal-dropdown-trigger" style="--dropdown-color: ${color}">
                         <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
-                        <iconify-icon icon="solar:alt-arrow-down-bold" class="journal-dropdown-arrow"></iconify-icon>
+                        <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-dropdown-arrow"></iconify-icon>
                     </button>
                     <div class="journal-dropdown-menu">
                         ${optionsHTML}
@@ -588,8 +588,8 @@ export const JournalManager = {
         };
 
         return `
-            ${renderDropdown('positive', 'Positif', 'ph:plus-bold', positiveTags, 'var(--success-color)')}
-            ${renderDropdown('negative', 'Négatif', 'ph:minus-bold', negativeTags, 'var(--error-color)')}
+            ${renderDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)')}
+            ${renderDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)')}
         `;
     }
 };

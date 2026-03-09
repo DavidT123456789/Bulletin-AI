@@ -150,11 +150,15 @@
     background: transparent;
     border: none;
     box-shadow: none;
-    color: var(--text-tertiary);
+    color: var(--icon-btn-color);
+    /* Correctly inherits Zinc-400 */
 }
 
-.journal-header-btn.icon-only iconify-icon {
+.journal-header-btn.icon-only iconify-icon,
+.journal-header-btn.icon-only svg {
     font-size: 14px;
+    /* Harmonisé avec l'icône de titre */
+    stroke-width: var(--icon-stroke-width) !important;
 }
 
 .journal-header-btn.icon-only:hover {
@@ -565,7 +569,7 @@
     padding: 2px 8px;
     border-radius: var(--radius-pill);
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 400;
     background: color-mix(in srgb, var(--tag-color) 15%, transparent);
     color: var(--tag-color);
 }
@@ -796,7 +800,7 @@
     background: var(--surface-color);
     color: var(--text-secondary);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -896,7 +900,7 @@
     padding: 4px 8px;
     border-radius: var(--radius-pill);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     background: color-mix(in srgb, var(--tag-color) 15%, transparent);
     color: var(--tag-color);
     animation: chip-appear 0.2s cubic-bezier(0.32, 0.72, 0, 1);
@@ -954,7 +958,7 @@
     background: var(--surface-color);
     color: var(--text-secondary);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -1108,7 +1112,7 @@
     background: color-mix(in srgb, var(--pill-color) 5%, var(--surface-color));
     color: color-mix(in srgb, var(--pill-color) 50%, var(--text-secondary));
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }

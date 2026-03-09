@@ -428,7 +428,11 @@
                     <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
                         data-tooltip="Cliquez pour éditer l'identité et les statuts">
                         Sophie DURAND
-                        <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon"></iconify-icon>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"
+                            class="focus-name-edit-icon" width="1em" height="1em">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
                     </h2>
                     <div id="focusStatusBadges" class="focus-status-badges">
                         <!-- Badges générés dynamiquement -->
@@ -457,28 +461,46 @@
             <!-- Analyze button (icon in pill, navigates to analysis page) -->
             <button id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
                 aria-label="Analyser l'élève">
-                <iconify-icon icon="solar:chart-square-linear"></iconify-icon>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
             </button>
 
             <!-- NAVIGATION: Compact nav group (← 1/8 →) -->
             <div class="focus-nav-buttons">
                 <button id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
-                    <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
                 </button>
                 <span id="focusPosition" class="focus-position">1/8</span>
                 <button id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
-                    <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
                 </button>
             </div>
 
             <!-- EDIT MODE: Save button (hidden in read mode) -->
             <button id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
-                <iconify-icon icon="ph:check"></iconify-icon>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
             </button>
 
             <!-- RIGHT ZONE: Close button flush into pill rounded edge -->
             <button id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
-                <iconify-icon icon="ph:x"></iconify-icon>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
             </button>
         </div>
 
@@ -500,7 +522,13 @@
                                 <!-- Voice Dictation Button -->
                                 <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter le contexte">
-                                    <iconify-icon icon="solar:microphone-linear"></iconify-icon>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                        stroke-linejoin="round" width="1em" height="1em">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                                    </svg>
                                 </button>
                             </div>
 
@@ -532,7 +560,11 @@
                                     <!-- Manual note button (Pen icon) -->
                                     <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
                                         data-tooltip="Ajouter une note">
-                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                            stroke-linejoin="round" width="1em" height="1em">
+                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                        </svg>
                                     </button>
 
                                     <!-- Tag dropdowns (Always visible) -->
@@ -581,7 +613,13 @@
                                 <!-- Voice Dictation Button for Appreciation -->
                                 <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
-                                    <iconify-icon icon="solar:microphone-linear"></iconify-icon>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                        stroke-linejoin="round" width="1em" height="1em">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                                    </svg>
                                 </button>
                                 <!-- History Navigation Group (Segmented) -->
                                 <div class="history-navigation-group" id="historyNavigationGroup"

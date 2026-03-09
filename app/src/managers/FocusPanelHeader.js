@@ -55,13 +55,26 @@ export const FocusPanelHeader = {
      */
     _setupEventListeners() {
         const studentName = document.getElementById('focusStudentName');
+        const focusAvatarContainer = document.getElementById('focusAvatarContainer');
         const focusEditSaveBtn = document.getElementById('focusEditSaveBtn');
         const nomInput = document.getElementById('headerNomInput');
         const prenomInput = document.getElementById('headerPrenomInput');
         const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes');
 
+        const initiateEdit = () => {
+            const header = document.querySelector('.focus-header');
+            if (header && !header.classList.contains('editing')) {
+                this.toggleEditMode(true);
+            }
+        };
+
         if (studentName) {
-            studentName.addEventListener('click', () => this.toggleEditMode(true));
+            studentName.addEventListener('click', initiateEdit);
+        }
+
+        // Also allow clicking the avatar to trigger edit mode (unifies the new hover zone)
+        if (focusAvatarContainer) {
+            focusAvatarContainer.addEventListener('click', initiateEdit);
         }
 
         if (focusEditSaveBtn) {
