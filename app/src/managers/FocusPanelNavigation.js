@@ -32,6 +32,63 @@ export const FocusPanelNavigation = {
      */
     init(callbacks) {
         this.callbacks = { ...this.callbacks, ...callbacks };
+        this._initSwipeNavigation();
+    },
+
+    /**
+     * Initialize touch events for swipe navigation
+     * @private
+     */
+    _initSwipeNavigation() {
+        const targetArea = document.getElementById('focusPagesContainer') || document.getElementById('focusPanel');
+        if (!targetArea) return;
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        // Minimum pixel distance to be considered a swipe
+        const minSwipeDistance = 60;
+
+        targetArea.addEventListener('touchstart', e => {
+            // Ignore if touching an input, textarea, slider, or horizontal scroll area
+            if (e.target.closest('input') ||
+                e.target.closest('textarea') ||
+                e.target.closest('.focus-refinement-options') ||
+                e.target.closest('.history-navigation-group')) {
+                return;
+            }
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        targetArea.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            this._handleSwipeGesture(touchStartX, touchEndX, touchStartY, touchEndY, minSwipeDistance);
+        }, { passive: true });
+    },
+
+    /**
+     * Determines swipe direction and triggers navigation
+     * @private
+     */
+    _handleSwipeGesture(startX, endX, startY, endY, minDistance) {
+        // Calculate coordinate differences
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        // Ensure movement is mostly horizontal (not a vertical scroll)
+        if (Math.abs(diffX) > Math.abs(diffY) * 1.5 && Math.abs(diffX) > minDistance) {
+            if (diffX > 0) {
+                // Swipe Right -> Navigue vers la "gauche" (précédent)
+                this.navigatePrev();
+            } else {
+                // Swipe Left -> Navigue vers la "droite" (suivant)
+                this.navigateNext();
+            }
+        }
     },
 
     /**
@@ -61,12 +118,20 @@ export const FocusPanelNavigation = {
         const nextBtn = document.getElementById('focusNextBtn');
         const positionEl = document.getElementById('focusPosition');
 
+        const analysisPrevBtn = document.getElementById('focusAnalysisPrevBtn');
+        const analysisNextBtn = document.getElementById('focusAnalysisNextBtn');
+        const analysisPositionEl = document.getElementById('focusAnalysisPosition');
+
         const currentIndex = this.callbacks.getCurrentIndex();
         const total = appState.filteredResults.length;
 
         if (prevBtn) prevBtn.disabled = currentIndex <= 0;
         if (nextBtn) nextBtn.disabled = currentIndex >= total - 1;
         if (positionEl) positionEl.textContent = `${currentIndex + 1}/${total}`;
+
+        if (analysisPrevBtn) analysisPrevBtn.disabled = currentIndex <= 0;
+        if (analysisNextBtn) analysisNextBtn.disabled = currentIndex >= total - 1;
+        if (analysisPositionEl) analysisPositionEl.textContent = `${currentIndex + 1}/${total}`;
     },
 
     /**

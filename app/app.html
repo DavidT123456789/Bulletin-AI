@@ -448,11 +448,13 @@
                             autocomplete="off">
                     </div>
                     <div class="focus-status-selection">
-                        <label class="status-pill-check"><input type="checkbox" value="Nouveau"> Nouveau</label>
-                        <label class="status-pill-check"><input type="checkbox" value="Départ"> Départ</label>
-                        <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
-                        <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
-                        <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
+                        <label class="status-pill-check tag-info"><input type="checkbox" value="Nouveau">
+                            Nouveau</label>
+                        <label class="status-pill-check tag-danger"><input type="checkbox" value="Départ">
+                            Départ</label>
+                        <label class="status-pill-check tag-warning"><input type="checkbox" value="PPRE"> PPRE</label>
+                        <label class="status-pill-check tag-warning"><input type="checkbox" value="PAP"> PAP</label>
+                        <label class="status-pill-check tag-warning"><input type="checkbox" value="ULIS"> ULIS</label>
                         <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
                     </div>
                 </div>
@@ -699,16 +701,47 @@
             <!-- PAGE 2: Analysis (slides in from right) -->
             <div class="focus-page focus-analysis-page" id="focusAnalysisPage">
                 <div class="focus-analysis-header">
-                    <button id="focusAnalysisBackBtn" class="focus-back-btn" aria-label="Fermer l'analyse">
-                        <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
-                    </button>
-                    <h3 class="focus-analysis-title">
-                        <iconify-icon icon="solar:chart-2-linear"></iconify-icon>
-                        Analyse IA
-                    </h3>
-                    <button id="focusGenerateAnalysisBtn" class="btn btn-ai btn-sm">
-                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer
-                    </button>
+                    <!-- LEFT ZONE: Avatar + Title -->
+                    <div class="focus-analysis-header-left">
+                        <div id="focusAnalysisAvatarContainer"
+                            class="focus-panel-avatar-container analysis-avatar-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                        <div class="focus-analysis-title-group">
+                            <h3 class="focus-analysis-title" id="focusAnalysisTitle">Analyse IA</h3>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT ZONE: Generate + Nav + Close -->
+                    <div class="focus-analysis-header-right">
+                        <button id="focusGenerateAnalysisBtn" class="btn btn-ai btn-sm focus-analyze-gen-btn">
+                            <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer
+                        </button>
+
+                        <!-- Navigation Add -->
+                        <div class="focus-nav-buttons analysis-nav-buttons">
+                            <button id="focusAnalysisPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                    stroke-linejoin="round" width="1em" height="1em">
+                                    <path d="m15 18-6-6 6-6"></path>
+                                </svg>
+                            </button>
+                            <span id="focusAnalysisPosition" class="focus-position">1/8</span>
+                            <button id="focusAnalysisNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                    stroke-linejoin="round" width="1em" height="1em">
+                                    <path d="m9 18 6-6-6-6"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <button id="focusAnalysisBackBtn" class="focus-nav-btn focus-close-btn"
+                            aria-label="Fermer l'analyse">
+                            <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="focus-content focus-analysis-content-area">

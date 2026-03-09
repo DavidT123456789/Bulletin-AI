@@ -142,6 +142,8 @@ export const FocusPanelManager = {
         const backBtn = document.getElementById('focusBackBtn');
         const prevBtn = document.getElementById('focusPrevBtn');
         const nextBtn = document.getElementById('focusNextBtn');
+        const analysisPrevBtn = document.getElementById('focusAnalysisPrevBtn');
+        const analysisNextBtn = document.getElementById('focusAnalysisNextBtn');
         const generateBtn = document.getElementById('focusGenerateBtn');
         const copyBtn = document.getElementById('focusCopyBtn');
 
@@ -187,6 +189,8 @@ export const FocusPanelManager = {
         // Navigation delegated to FocusPanelNavigation
         if (prevBtn) prevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
         if (nextBtn) nextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
+        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
+        if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
 
         // [UX Mobile] Back Button Trap
         // Intercept browser back button to close panel instead of navigating away/closing app
@@ -1215,11 +1219,11 @@ export const FocusPanelManager = {
         const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
 
         // Remove all state classes first
-        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral');
+        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
 
         // NEW UX LOGIC:
         // - Bold style (btn-ai) = ACTION NEEDED → "Générer" first time
-        // - Warning style = ACTION RECOMMENDED → "Régénérer" when data changed  
+        // - Warning style = ACTION RECOMMENDED → "Mettre à jour" when data changed  
         // - Neutral style = OPTIONAL → "Régénérer" when already up to date
 
         if (!hasAppreciation) {
@@ -1228,8 +1232,8 @@ export const FocusPanelManager = {
             generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
         } else if (isDirty) {
             // STATE 2: Data modified since generation → Warning style (action recommended)
-            generateBtn.classList.add('btn-ai', 'btn-regenerate-warning');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
+            generateBtn.classList.add('btn-warning');
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour`;
         } else if (isRegenerate) {
             // STATE 3: Already generated and up to date → Neutral style (optional)
             generateBtn.classList.add('btn-neutral');

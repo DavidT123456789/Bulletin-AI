@@ -124,7 +124,7 @@
     backdrop-filter: blur(32px) saturate(180%);
     -webkit-backdrop-filter: blur(32px) saturate(180%);
     box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.15);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-color);
 }
 
 /* Edit Mode adjustments */
@@ -191,12 +191,12 @@
 }
 
 .focus-back-btn:hover {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--item-active-bg);
     color: var(--text-primary);
 }
 
 [data-theme="dark"] .focus-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--item-active-bg);
 }
 
 .focus-back-btn:active {
@@ -378,12 +378,12 @@
 }
 
 .focus-nav-btn:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--item-active-bg);
     color: var(--text-primary);
 }
 
 [data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--item-active-bg);
 }
 
 .focus-nav-btn:active:not(:disabled) {
@@ -873,7 +873,7 @@
 }
 
 [data-theme="dark"] .focus-context-textarea:focus {
-    background: rgba(255, 255, 255, 0.02) !important;
+    background: var(--item-idle-bg) !important;
     box-shadow: none !important;
 }
 
@@ -884,7 +884,7 @@
 }
 
 [data-theme="dark"] .focus-context-textarea:hover:not(:disabled):not(:focus) {
-    background: rgba(255, 255, 255, 0.02) !important;
+    background: var(--item-idle-bg) !important;
 }
 
 
@@ -1011,12 +1011,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--item-idle-bg);
     border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .focus-context-header {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--item-idle-bg);
 }
 
 
@@ -1119,13 +1119,13 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--item-idle-bg);
     border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .focus-appreciation-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom-color: rgba(255, 255, 255, 0.05);
+    background: var(--item-idle-bg);
+    border-bottom-color: var(--border-color);
 }
 
 .focus-appreciation-label {
@@ -1301,7 +1301,7 @@
 }
 
 .appreciation-status-badge.valid {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--item-active-bg);
     color: var(--text-secondary);
     width: auto;
     border-radius: var(--radius-pill);
@@ -1313,7 +1313,7 @@
 }
 
 [data-theme="dark"] .appreciation-status-badge.valid {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--item-active-bg);
     color: var(--text-secondary);
 }
 
@@ -1931,7 +1931,7 @@
 }
 
 [data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: rgba(255, 255, 255, 0.02) !important;
+    background: var(--item-idle-bg) !important;
 }
 
 /* Focus state - sans bordure (glow) */
@@ -1945,7 +1945,7 @@
 }
 
 [data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:focus {
-    background: rgba(255, 255, 255, 0.02) !important;
+    background: var(--item-idle-bg) !important;
     box-shadow: none !important;
 }
 
@@ -1991,11 +1991,11 @@
     align-items: center;
     gap: 10px;
     padding: 8px 16px 14px 16px;
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    border-top: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .focus-appreciation-actions {
-    border-top-color: rgba(255, 255, 255, 0.06);
+    border-top-color: var(--border-color);
 }
 
 /* Copy button — icon-only, flat Material You tonal style */
@@ -2203,13 +2203,13 @@
     opacity: 0.4;
     pointer-events: none;
     cursor: not-allowed;
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--item-idle-bg);
     color: var(--text-tertiary);
 }
 
 [data-theme="dark"] .btn-ai-outline:disabled,
 [data-theme="dark"] .btn-ai-outline.disabled {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--item-hover-bg);
 }
 
 .btn-ai-outline:disabled i,
@@ -2378,8 +2378,15 @@
 }
 
 /* Warning state - data modified, action RECOMMENDED */
-/* Uses same primary gradient as "Générer" for harmony - animation removed as color is sufficient */
-/* Generic class removed to keep CSS clean */
+#focusGenerateBtn.btn-warning {
+    background: var(--warning-color);
+    color: white;
+    box-shadow: none;
+}
+
+#focusGenerateBtn.btn-warning:hover {
+    box-shadow: 0 6px 16px rgba(var(--warning-color-rgb, 245, 158, 11), 0.3);
+}
 
 @keyframes pulse-orange {
     0% {
@@ -2666,14 +2673,14 @@
 /* Previous Appreciation Section */
 .read-prev-appreciation {
     padding: 12px 14px;
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--item-idle-bg);
     border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .read-prev-appreciation {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.05);
+    background: var(--item-idle-bg);
+    border-color: var(--border-color);
 }
 
 .read-prev-header {
@@ -2731,7 +2738,7 @@
     background: var(--surface-color);
     border-radius: 20px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
     /* Smooth expand/collapse animation */
     max-height: 0;
     opacity: 0;
@@ -2926,18 +2933,18 @@
 }
 
 [data-theme="dark"] .focus-identity-content {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--item-hover-bg);
     /* Same as others */
 }
 
 [data-theme="dark"] .focus-input {
     background: rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .focus-status-pills label {
     background: rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-color);
 }
 
 /* ============================
@@ -3016,8 +3023,8 @@
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    padding: 16px 24px;
-    /* Padding normal restauré */
+    padding: 12px 16px;
+    /* Matched to main focus header visually */
     background: rgba(250, 250, 250, 0.85);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -3032,32 +3039,70 @@
     background: rgba(9, 9, 11, 0.85);
 }
 
-.focus-analysis-title {
-    flex: 1;
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
+.focus-analysis-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
-.focus-analysis-title i {
-    color: var(--primary-color);
+.focus-analysis-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
+.analysis-avatar-container {
+    width: 32px;
+    height: 32px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* More specific selector to override !important styles if needed, though they match lg size */
+.analysis-avatar-container .student-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+    border-width: 1.5px !important;
+    margin: 0 !important;
+}
+
+.analysis-avatar-container .avatar-selection-overlay {
+    display: none !important;
+}
+
+.focus-analysis-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.focus-analysis-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.focus-analyze-gen-btn {
+    margin-right: 8px;
+    /* Push nav buttons a bit to the right */
+}
+
+/* Kept for backwards compatibility if still used somewhere inside analysis */
 .focus-analysis-student {
     font-size: 14px;
     font-weight: 500;
     color: var(--text-secondary);
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--item-hover-bg);
     padding: 6px 12px;
     border-radius: 100px;
 }
 
 [data-theme="dark"] .focus-analysis-student {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--item-active-bg);
 }
 
 /* Analysis Content Area */
@@ -3074,14 +3119,14 @@
 .analysis-card {
     background: var(--surface-color);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
     transition: all 0.3s ease;
     /* box-shadow removed */
 }
 
 [data-theme="dark"] .analysis-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.05);
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
     box-shadow: none;
 }
 
@@ -3111,12 +3156,12 @@
     gap: 12px;
     padding: 10px 16px;
     background: rgba(0, 0, 0, 0.01);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .analysis-card-header {
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom-color: rgba(255, 255, 255, 0.05);
+    background: var(--item-idle-bg);
+    border-bottom-color: var(--border-color);
 }
 
 .analysis-card-header h4 {
@@ -3525,47 +3570,39 @@
 
 /* Specific colors for statuses (Hover & Checked) */
 /* Warning (PPRE, PAP, PAI, ULIS, SEGPA) */
-.status-pill-check:has(input[value*="PPRE"]):hover,
-.status-pill-check:has(input[value*="PAP"]):hover,
-.status-pill-check:has(input[value*="PAI"]):hover,
-.status-pill-check:has(input[value*="ULIS"]):hover,
-.status-pill-check:has(input[value*="SEGPA"]):hover,
-.status-pill-check:has(input[value*="PPRE"]:checked),
-.status-pill-check:has(input[value*="PAP"]:checked),
-.status-pill-check:has(input[value*="PAI"]:checked),
-.status-pill-check:has(input[value*="ULIS"]:checked),
-.status-pill-check:has(input[value*="SEGPA"]:checked) {
+.status-pill-check.tag-warning:hover,
+.status-pill-check.tag-warning:has(input:checked) {
     background: var(--warning-light);
     color: var(--warning-color);
 }
 
 /* Info (Nouveau) */
-.status-pill-check:has(input[value*="Nouveau"]):hover,
-.status-pill-check:has(input[value*="Nouveau"]:checked) {
+.status-pill-check.tag-info:hover,
+.status-pill-check.tag-info:has(input:checked) {
     background: var(--info-light);
     color: var(--info-color);
 }
 
 /* Danger (Départ) */
-.status-pill-check:has(input[value*="Départ"]):hover,
-.status-pill-check:has(input[value*="Départ"]:checked) {
+.status-pill-check.tag-danger:hover,
+.status-pill-check.tag-danger:has(input:checked) {
     background: var(--error-light);
     color: var(--error-color);
 }
 
 /* Dark Mode Adjustments */
 [data-theme="dark"] .focus-input-header {
-    background: rgba(0, 0, 0, 0.25);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--input-fill-bg);
+    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .focus-input-header:focus {
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--input-focus-bg);
 }
 
 [data-theme="dark"] .status-pill-check {
-    background: rgba(0, 0, 0, 0.25);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--input-fill-bg);
+    border-color: var(--border-color);
 }
 
 /* ============================
@@ -3804,8 +3841,8 @@ input.context-grade-input {
 }
 
 [data-theme="dark"] .context-grade-group {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
 }
 
 [data-theme="dark"] .context-grade-group:hover {
@@ -3835,7 +3872,7 @@ input.context-grade-input {
 
 
 [data-theme="dark"] .read-prev-data-container {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--item-idle-bg);
 }
 
 /* Ensure inputs in sidebar behave nicely */
@@ -4001,9 +4038,9 @@ input.context-grade-input {
 
 /* === DARK MODE OVERRIDES === */
 [data-theme="dark"] .btn-copy-appreciation {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--item-active-bg);
     /* More subtle glass */
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--border-color);
     /* Softer border */
     color: var(--text-secondary);
     /* Grey icon (not stark white) */
@@ -4018,8 +4055,8 @@ input.context-grade-input {
 
 [data-theme="dark"] .btn-copy-appreciation.copy-success,
 [data-theme="dark"] .btn-copy-appreciation.was-copied {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--item-active-bg);
+    border-color: var(--border-color);
     /* Restore green color for success state */
     color: var(--success-color);
 }
@@ -4033,11 +4070,11 @@ input.context-grade-input {
     color: var(--text-tertiary);
     font-size: 14px;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--item-hover-bg);
 }
 
 [data-theme="dark"] .focus-analyze-btn {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--item-hover-bg);
 }
 
 .focus-analyze-btn:hover {
@@ -4112,6 +4149,10 @@ input.context-grade-input {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 4px;
+    }
+
+    .focus-refinement-options::-webkit-scrollbar {
+        display: none;
     }
 
     .focus-refinement-options .btn {
@@ -4249,11 +4290,17 @@ input.context-grade-input {
         line-height: 1.2;
     }
 
+    /* Group Analyze and Nav Buttons together */
+    .focus-header>.focus-analyze-btn {
+        order: 3;
+        margin-left: auto;
+    }
+
     /* Nav Buttons + Close/Save: right-aligned row */
     .focus-nav-buttons {
         order: 3;
         flex-shrink: 0;
-        margin-left: auto;
+        margin-left: 0;
         gap: 2px;
         padding: 2px;
         border-radius: 100px;
@@ -4645,10 +4692,26 @@ input.context-grade-input {
         min-height: 44px;
     }
 
-    /* Boutons de la pilule légèrement plus compacts pour l'esthétique */
-    .focus-nav-btn {
+    /* Align height of standalone buttons */
+    .focus-nav-btn.focus-close-btn,
+    .focus-nav-btn.focus-analyze-btn {
         min-width: 38px;
         min-height: 38px;
+        width: 38px;
+        height: 38px;
+    }
+
+    /* Harmonise height of Nav Pill and its inner buttons */
+    .focus-nav-buttons {
+        height: 38px;
+        align-items: center;
+    }
+
+    .focus-nav-buttons .focus-nav-btn {
+        min-width: 34px;
+        min-height: 34px;
+        width: 34px;
+        height: 34px;
     }
 
     /* Le focus-save-btn doit toujours utiliser 'width' pour gérer sa taille (fluidité de l'animation) */
@@ -4659,6 +4722,7 @@ input.context-grade-input {
     /* Override width in edit mode on mobile for smooth transition to 38px */
     .focus-header.editing .focus-save-btn {
         width: 38px;
+        height: 38px;
     }
 
     .focus-action-icon-btn {

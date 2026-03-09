@@ -311,8 +311,8 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'pending');
                 break;
             case 'dirty':
-                badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon><span class="badge-text">Mettre à jour</span>';
-                badge.classList.add('visible', 'modified');
+                badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
+                badge.classList.add('visible', 'modified', 'icon-only');
                 break;
             case 'empty':
                 badge.innerHTML = '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>';

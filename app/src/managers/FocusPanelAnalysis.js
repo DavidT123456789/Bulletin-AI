@@ -9,6 +9,7 @@ import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
+import { StudentPhotoManager } from './StudentPhotoManager.js';
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
@@ -126,6 +127,18 @@ export const FocusPanelAnalysis = {
         // If analysis data already exists for CURRENT student, populate it
         const studentId = this._getCurrentStudentId();
         const result = appState.generatedResults.find(r => r.id === studentId);
+
+        // Populate new Analysis header
+        const avatarContainer = document.getElementById('focusAnalysisAvatarContainer');
+        const titleEl = document.getElementById('focusAnalysisTitle');
+        if (result) {
+            if (avatarContainer) {
+                avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+            }
+            if (titleEl) {
+                titleEl.textContent = `Analyse de ${result.prenom}`;
+            }
+        }
 
         // Update generate button state
         this._updateAnalysisGenerateButton(result);
