@@ -2992,6 +2992,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    flex: 1 1 0;
 }
 
 .focus-analysis-header-right {
@@ -3025,14 +3027,18 @@
 .focus-analysis-title-group {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .focus-analysis-title {
     margin: 0;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .focus-analyze-gen-btn {
@@ -3058,6 +3064,8 @@
 .focus-analysis-content-area {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
     padding: 20px 24px 32px;
     display: flex;
     flex-direction: column;
@@ -4457,21 +4465,7 @@ input.context-grade-input {
         padding-top: max(12px, env(safe-area-inset-top));
     }
 
-    .focus-analysis-header-left {
-        min-width: 0;
-        flex: 1 1 0;
-    }
-
-    .focus-analysis-title-group {
-        min-width: 0;
-    }
-
-    .focus-analysis-title {
-        font-size: 16px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+    /* Removed redundant title wrapping rules (handled globally) */
 
     .focus-analysis-content-area {
         padding: 16px 16px 24px 16px;
