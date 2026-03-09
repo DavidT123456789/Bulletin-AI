@@ -4,10 +4,10 @@
 :root {
     --focus-header-offset: 106px;
     --focus-header-offset-tablet: 110px;
-    --focus-header-offset-mobile: 98px;
-    --focus-header-offset-small: 86px;
+    --focus-header-offset-mobile: 110px;
+    --focus-header-offset-small: 96px;
     --focus-header-offset-editing: 154px;
-    --focus-header-offset-editing-mobile: 198px;
+    --focus-header-offset-editing-mobile: 178px;
 }
 
 .focus-panel {
@@ -171,7 +171,7 @@
     font-size: 30px !important;
 }
 
-.focus-header.editing+.focus-pages-container .focus-content {
+.focus-header.editing+.focus-pages-container .focus-main-page .focus-content {
     padding-top: var(--focus-header-offset-editing);
 }
 
@@ -3783,8 +3783,17 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    background: rgba(var(--primary-color-rgb), 0.05);
+    padding: 0 10px;
+    height: 28px;
+    border-radius: 99px;
     transition: all var(--transition-fast);
     user-select: none;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .previous-grade-chip {
+    background: rgba(var(--primary-color-rgb), 0.1);
 }
 
 /* Removed hover effect since chip is informational and not clickable */
@@ -4260,7 +4269,7 @@ input.context-grade-input {
     }
 
     /* Le focus content sur mobile + mode édition */
-    .focus-header.editing+.focus-pages-container .focus-content {
+    .focus-header.editing+.focus-pages-container .focus-main-page .focus-content {
         padding-top: var(--focus-header-offset-editing-mobile);
     }
 
@@ -4301,6 +4310,8 @@ input.context-grade-input {
         flex-wrap: wrap;
         gap: 4px;
         max-width: 100%;
+        margin-bottom: 4px;
+        /* More space below read-mode statuses */
     }
 
     .focus-status-badges .tag-badge {
@@ -4317,12 +4328,15 @@ input.context-grade-input {
 
     /* Nav Buttons + Close/Save: right-aligned row */
     .focus-nav-buttons {
-        order: 3;
         flex-shrink: 0;
         margin-left: 0;
         gap: 0;
         padding: 4px 10px;
         border-radius: 100px;
+    }
+
+    .focus-header>.focus-nav-buttons {
+        order: 3;
     }
 
     /* Hide navigation arrows on mobile to save space (user can swipe) */
@@ -4374,15 +4388,15 @@ input.context-grade-input {
         width: 100%;
     }
 
-    /* Stack inputs vertically on narrow screens */
+    /* Keep inputs side-by-side on narrow screens */
     .focus-header.editing .focus-edit-row {
-        flex-direction: column;
+        flex-direction: row;
         gap: 6px;
     }
 
-    /* Reset proportional flex — both inputs take full width when stacked */
+    /* Apply correct flexible width */
     .focus-header.editing .focus-header-edit #headerNomInput {
-        flex: 1;
+        flex: 1.5;
     }
 
     .focus-header.editing .focus-input-header {
@@ -4395,7 +4409,9 @@ input.context-grade-input {
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: 4px;
+        padding-bottom: 8px;
+        /* Plus d'espace sous les statuts */
+        margin-bottom: 6px;
         gap: 6px;
     }
 
