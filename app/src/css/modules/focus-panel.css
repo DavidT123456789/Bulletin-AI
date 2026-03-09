@@ -4223,11 +4223,21 @@ input.context-grade-input {
         margin: 0;
         width: auto;
         gap: 4px;
+        min-width: 0;
+    }
+
+    .focus-name-details {
+        min-width: 0;
     }
 
     .focus-name-nom {
         font-size: 18px;
         line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        max-width: 100%;
     }
 
     .focus-name-prenom {
@@ -4235,6 +4245,11 @@ input.context-grade-input {
         line-height: 1.2;
         font-weight: 500;
         margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        max-width: 100%;
     }
 
     .focus-name-edit-icon {
@@ -4442,8 +4457,24 @@ input.context-grade-input {
         padding-top: max(12px, env(safe-area-inset-top));
     }
 
+    .focus-analysis-header-left {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+
+    .focus-analysis-title-group {
+        min-width: 0;
+    }
+
     .focus-analysis-title {
         font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .focus-analysis-content-area {
+        padding: 16px 16px 24px 16px;
     }
 
     .analysis-card {
