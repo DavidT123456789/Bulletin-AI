@@ -220,8 +220,7 @@
 
 /* === POLISH: Show Actions on Hover (Desktop) === */
 .student-list-table tbody tr .btn-action-menu {
-    opacity: 0.1;
-    /* Reduced visual noise, visible only slightly */
+    opacity: 0;
     transform: scale(0.9);
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -246,8 +245,7 @@
 /* Always visible on touch devices */
 @media (hover: none) {
     .student-list-table tbody tr .btn-action-menu {
-        opacity: 0.1;
-        /* Keep visual noise low even on touch devices */
+        opacity: 0.6;
         transform: scale(1);
         background: transparent;
         box-shadow: none;

@@ -710,16 +710,30 @@ select:hover:not(:disabled):not(:focus) {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* --- Focus State: Organic glow (Apple 2026 style) --- */
+/* --- Focus State: Dynamic rotating gradient (signature effect) --- */
 input:not([type="range"]):focus,
 textarea:focus {
     outline: none;
-    background-color: rgba(var(--primary-color-rgb), 0.03);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.4) !important;
-    background-image: none;
-    animation: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1),
-        0 4px 16px rgba(var(--primary-color-rgb), 0.15);
+    background-color: transparent;
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(var(--bg-color), var(--bg-color)),
+        conic-gradient(from var(--gradient-angle),
+            rgba(var(--primary-color-rgb), 0.5) 0%,
+            rgba(var(--primary-color-rgb), 0.5) 18%,
+            var(--glow-highlight) 23%,
+            var(--glow-highlight) 27%,
+            rgba(var(--primary-color-rgb), 0.5) 32%,
+            rgba(var(--primary-color-rgb), 0.5) 50%,
+            rgba(var(--primary-color-rgb), 0.5) 68%,
+            var(--glow-highlight) 73%,
+            var(--glow-highlight) 77%,
+            rgba(var(--primary-color-rgb), 0.5) 82%,
+            rgba(var(--primary-color-rgb), 0.5) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    animation: rotate-gradient 10s linear infinite;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
+        0 2px 8px rgba(var(--primary-color-rgb), 0.1);
 }
 
 /* --- Select Focus: Clean ring (no animated gradient — selects close on click) --- */

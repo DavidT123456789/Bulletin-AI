@@ -85,32 +85,16 @@
 
 /* Sidebar styles removed - Hub Modal handles imports now */
 
+/* --- Main Content Area --- */
 .main-content-wrapper {
     grid-area: main;
     height: 100%;
+    /* Scroll moved to .main-content */
     display: flex;
     flex-direction: column;
     border-radius: 0;
     overflow: hidden;
-    background-color: var(--bg-color);
-    /* Preserve bg color for scale effect */
-    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1),
-        border-radius 0.6s cubic-bezier(0.32, 0.72, 0, 1),
-        filter 0.6s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* --- iOS 2026 3D Depth Effect for Modals and Focus Panel --- */
-body:has(.modal-visible) .app-layout,
-body:has(.focus-panel-backdrop.visible) .app-layout {
-    background-color: #000;
-}
-
-body:has(.modal-visible) .main-content-wrapper,
-body:has(.focus-panel-backdrop.visible) .main-content-wrapper {
-    transform: scale(0.97) translateY(4px);
-    border-radius: var(--radius-xl);
-    filter: brightness(0.6) blur(2px);
-    pointer-events: none;
+    /* Ensure content is constrained to wrapper height */
 }
 
 .main-content {

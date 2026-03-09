@@ -3944,8 +3944,7 @@ input.context-grade-input {
     justify-content: center;
     cursor: pointer;
     font-size: 11px;
-    opacity: 0.1;
-    /* Reduced visual noise, visible only slightly */
+    opacity: 0;
     z-index: 5;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 
