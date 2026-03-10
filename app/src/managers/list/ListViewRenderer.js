@@ -273,7 +273,7 @@ export const ListViewRenderer = {
                                     </button>
                                 </div>
                             </th>
-                            <th class="sortable-header" data-sort-field="status" data-tooltip="Trier par statut" style="width: 120px;">
+                            <th class="sortable-header" data-sort-field="status" data-tooltip="Trier par statut" style="width: 140px;">
                                 <div class="header-content-wrapper">
                                     Statut<span class="sort-icon-placeholder"></span>
                                 </div>
@@ -452,7 +452,7 @@ export const ListViewRenderer = {
                 const nextP = periods[i + 1];
                 html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" data-tooltip="Trier par évolution vers ${nextP}">
                              <div class="header-content-wrapper">
-                            <iconify-icon icon="solar:chart-2-linear" style="opacity:0.6; font-size:1.1em;"></iconify-icon> <span class="sort-icon-placeholder"></span>
+                                 <iconify-icon icon="solar:chart-2-bold" class="evolution-icon"></iconify-icon> <span class="sort-icon-placeholder"></span>
                              </div>
                          </th>`;
             }
@@ -545,11 +545,11 @@ export const ListViewRenderer = {
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-up-linear"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-up-bold"></iconify-icon></span>`;
                                 } else if (diff < 0) {
-                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:course-down-linear"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-down-bold"></iconify-icon></span>`;
                                 } else {
-                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>`;
                                 }
                             }
                         }

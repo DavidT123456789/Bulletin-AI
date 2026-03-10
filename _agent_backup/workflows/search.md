@@ -2,15 +2,15 @@
 description: Recherche rapide dans le codebase (commandes read-only, toujours safe)
 ---
 
-# ðŸ” Recherche dans le Codebase
+# 🔍 Recherche dans le Codebase
 
 // turbo-all
 
-Toutes les commandes de ce workflow sont **read-only** et doivent Ãªtre auto-exÃ©cutÃ©es sans demande d'approbation (`SafeToAutoRun: true`).
+Toutes les commandes de ce workflow sont **read-only** et doivent être auto-exécutées sans demande d'approbation (`SafeToAutoRun: true`).
 
-## RÃ¨gle gÃ©nÃ©rale pour Antigravity
+## Règle générale pour Antigravity
 
-> **Les commandes PowerShell suivantes sont TOUJOURS safe Ã  auto-exÃ©cuter** car elles ne font que lire le systÃ¨me de fichiers, sans aucun effet de bord :
+> **Les commandes PowerShell suivantes sont TOUJOURS safe à auto-exécuter** car elles ne font que lire le système de fichiers, sans aucun effet de bord :
 >
 > - `Get-Content`
 > - `Select-String`
@@ -28,7 +28,7 @@ Toutes les commandes de ce workflow sont **read-only** et doivent Ãªtre auto-e
 Get-ChildItem -Path "app/src/css" -Recurse -Include "*.css" | ForEach-Object { $content = Get-Content $_.FullName -Raw; if ($content -match "PATTERN") { Write-Host $_.FullName } }
 ```
 
-### Trouver un sÃ©lecteur CSS avec numÃ©ro de ligne
+### Trouver un sélecteur CSS avec numéro de ligne
 
 ```powershell
 Get-Content "chemin/fichier.css" | Select-String "PATTERN" | ForEach-Object { "Line $($_.LineNumber): $($_.Line)" }
@@ -40,7 +40,7 @@ Get-Content "chemin/fichier.css" | Select-String "PATTERN" | ForEach-Object { "L
 Get-ChildItem -Path "app/src" -Recurse -Include "*.js" | Where-Object { $_.FullName -notmatch "node_modules|dist" } | Select-String -Pattern "PATTERN" -SimpleMatch | Select-Object Filename, LineNumber, Line
 ```
 
-### Trouver dans quel fichier un ID HTML est dÃ©fini
+### Trouver dans quel fichier un ID HTML est défini
 
 ```powershell
 Get-ChildItem -Path "app" -Recurse -Include "*.js","*.html" -Exclude "node_modules","dist" | Where-Object { $_.FullName -notmatch "node_modules|dist" } | Select-String -Pattern "ID_NAME" -SimpleMatch | Select-Object -First 10

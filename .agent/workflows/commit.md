@@ -1,33 +1,33 @@
 ---
-description: Génère un commit intelligent et pousse les changements en une seule étape validée.
+description: GÃ©nÃ¨re un commit intelligent et pousse les changements en une seule Ã©tape validÃ©e.
 ---
 
 # Workflow: Fast Commit & Push
 
-Ce workflow groupe toutes les étapes d'analyse en mode "turbo" (sans validation) et combine toutes les actions d'écriture (add, commit, push) en une seule commande finale pour minimiser les clics.
+Ce workflow groupe toutes les Ã©tapes d'analyse en mode "turbo" (sans validation) et combine toutes les actions d'Ã©criture (add, commit, push) en une seule commande finale pour minimiser les clics.
 
 ## 1. Analyse Silencieuse (Turbo)
 
 // turbo
-Récupère le statut et les fichiers modifiés pour préparer le message.
+RÃ©cupÃ¨re le statut et les fichiers modifiÃ©s pour prÃ©parer le message.
 
 ```bash
 git status
 git diff --stat
 ```
 
-## 2. Génération du Message
+## 2. GÃ©nÃ©ration du Message
 
 Analyse les changements et propose un message de commit suivant la convention :
 `<type>(<scope>): <description>`
 
 Types : `feat`, `fix`, `style`, `refactor`, `docs`, `chore`.
 
-## 3. Exécution Unique (One-Click)
+## 3. ExÃ©cution Unique (One-Click)
 
-Combine l'ajout, le commit et le push en une seule commande pour ne demander qu'une seule validation à l'utilisateur.
+Combine l'ajout, le commit et le push en une seule commande pour ne demander qu'une seule validation Ã  l'utilisateur.
 
-Le message de commit DOIT être une simple chaîne sans retours à la ligne complexes pour éviter les erreurs de syntaxe dans la commande combinée.
+Le message de commit DOIT Ãªtre une simple chaÃ®ne sans retours Ã  la ligne complexes pour Ã©viter les erreurs de syntaxe dans la commande combinÃ©e.
 
 ```bash
 git add -A; git commit -m "<TITRE DU COMMIT>" -m "<DESCRIPTION DETAILLEE>"; git push
@@ -35,4 +35,4 @@ git add -A; git commit -m "<TITRE DU COMMIT>" -m "<DESCRIPTION DETAILLEE>"; git 
 
 ## 4. Confirmation
 
-Confirme simplement que tout est à jour.
+Confirme simplement que tout est Ã  jour.

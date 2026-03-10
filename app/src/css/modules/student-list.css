@@ -189,14 +189,21 @@
     min-width: 0;
 }
 
-/* Ensure Name header is left-aligned */
+/* Ensure Name header is left-aligned with perfect typography alignment */
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
-    padding-left: 40px !important;
+    padding-left: 58px !important; /* Normal view: 16px cell + 32px avatar + 10px gap */
+    transition: padding-left 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Expanded view dynamically adjusts to perfectly align with the new text position */
+.student-list-table.appreciation-full-view th[data-sort-field="name"] {
+    padding-left: 96px !important; /* Expanded view: 16px cell + 8px wrapper + 56px avatar + 16px gap */
 }
 
 .student-list-table th[data-sort-field="name"] .header-content-wrapper {
     justify-content: flex-start;
+    transform-origin: left center;
 }
 
 .student-list-table td {
@@ -427,6 +434,12 @@
     display: none;
 }
 
+/* Evolution header icon styling */
+.evolution-header .evolution-icon {
+    font-size: 14px;
+    color: inherit;
+}
+
 /* Evolution cell styling */
 .evolution-cell {
     text-align: center;
@@ -435,14 +448,15 @@
 
 .grade-cell .grade-evolution,
 .evolution-cell .grade-evolution {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     cursor: help;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.9;
+    opacity: 0.95;
+    -webkit-text-stroke: 0.6px currentColor;
 }
 
 .grade-cell .grade-evolution:hover,
@@ -820,7 +834,7 @@
 .status-cell {
     text-align: center;
     vertical-align: middle;
-    width: 120px;
+    width: 140px;
     padding: 8px 4px !important;
 }
 

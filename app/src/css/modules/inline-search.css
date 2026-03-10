@@ -18,15 +18,21 @@
 .inline-search-trigger-btn {
     /* Position override - loupe is on the left side (absolute) */
     position: absolute;
-    left: 8px;
+    left: 20px; /* Perfectly centered above the 32px avatar in normal view */
     right: auto;
     top: 50%;
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
     margin: 0;
-    /* Reset margin */
+    transition: left 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
+
+/* Move the loupe to stay perfectly centered above the larger 56px avatar in expanded view */
+.appreciation-full-view .inline-search-trigger-btn {
+    left: 40px;
+}
+
 
 .inline-search-trigger-btn i {
     font-size: 0.75rem;
