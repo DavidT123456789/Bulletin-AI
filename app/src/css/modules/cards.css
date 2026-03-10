@@ -836,7 +836,7 @@
     font-size: 11px;
     padding: 4px 8px;
     border-radius: var(--radius-pill);
-    background: var(--neutral-light);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     font-weight: 600;
     text-transform: uppercase;
@@ -844,36 +844,40 @@
 }
 
 .tag-badge.tag-warning {
-    background: var(--warning-light);
+    background: color-mix(in srgb, var(--warning-color) 15%, var(--surface-color));
     color: var(--warning-color);
 }
 
 .tag-badge.tag-info {
-    background: var(--info-light);
+    background: color-mix(in srgb, var(--info-color) 15%, var(--surface-color));
     color: var(--info-color);
 }
 
 .tag-badge.tag-danger {
-    background: var(--error-light);
+    background: color-mix(in srgb, var(--error-color) 15%, var(--surface-color));
     color: var(--error-color);
 }
 
 /* Clickable status badges in focus panel header */
 .tag-badge.status-badge-clickable {
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-        filter 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: filter 0.2s ease;
 }
 
 .tag-badge.status-badge-clickable:hover {
-    transform: scale(1.08);
-    filter: brightness(1.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    filter: brightness(0.95);
+}
+
+[data-theme="dark"] .tag-badge.status-badge-clickable:hover {
+    filter: brightness(1.15);
 }
 
 .tag-badge.status-badge-clickable:active {
-    transform: scale(0.98);
+    filter: brightness(0.9);
+}
+
+[data-theme="dark"] .tag-badge.status-badge-clickable:active {
+    filter: brightness(1.25);
 }
 
 /* BOUTON D'ACTION "PREMIUM" (Crayon) */

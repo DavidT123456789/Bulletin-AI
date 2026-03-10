@@ -146,7 +146,8 @@ export const FocusPanelHeader = {
 
             // Populate Inputs
             // FORCE null result if in creation mode to ensure we don't load a previous student
-            const result = (currentStudentId && !isCreationMode) ? appState.filteredResults.find(r => r.id === currentStudentId) : null;
+            // CRITICAL FIX: Use generatedResults as source of truth (filteredResults may be stale)
+            const result = (currentStudentId && !isCreationMode) ? appState.generatedResults.find(r => r.id === currentStudentId) : null;
             if (result) {
                 const nomInput = document.getElementById('headerNomInput');
                 const prenomInput = document.getElementById('headerPrenomInput');
@@ -219,6 +220,25 @@ export const FocusPanelHeader = {
                 checkboxes.forEach(cb => {
                     cb.checked = this._originalHeaderValues.statuses.includes(cb.value);
                 });
+
+                // CRITICAL FIX: Revert mutated state that was modified live by handleDataChange
+                const resultToRevert = appState.generatedResults.find(r => r.id === currentStudentId);
+                if (resultToRevert) {
+                    resultToRevert.nom = this._originalHeaderValues.nom;
+                    resultToRevert.prenom = this._originalHeaderValues.prenom;
+                    resultToRevert.studentData.statuses = [...this._originalHeaderValues.statuses];
+
+                    // Sync the reverted state to filteredResults too
+                    const filteredIndex = appState.filteredResults.findIndex(r => r.id === currentStudentId);
+                    if (filteredIndex > -1) {
+                        appState.filteredResults[filteredIndex] = resultToRevert;
+                    }
+
+                    this.callbacks.onUpdateListRow(resultToRevert);
+
+                    // Refresh the status so 'Mettre à jour' badge correctly reverts if we cancelled
+                    this.callbacks.onRefreshStatus();
+                }
 
                 // Clear stored values and pending photo
                 this._originalHeaderValues = null;
@@ -393,6 +413,12 @@ export const FocusPanelHeader = {
         this.callbacks.onUpdateNavigation();
 
         // 5. Sync with List
+        // CRITICAL FIX: Synchronize filteredResults to avoid stale data on subsequent list view renders
+        const filteredIndex = appState.filteredResults.findIndex(r => r.id === result.id);
+        if (filteredIndex > -1) {
+            appState.filteredResults[filteredIndex] = result;
+        }
+
         this.callbacks.onUpdateListRow(result);
 
         if (!isCreationMode) {
@@ -443,31 +469,49 @@ export const FocusPanelHeader = {
     },
 
     /**
-     * Renders status badges
+     * Renders status badges logically split between panels
      * @param {Array} statuses 
      */
     renderStatusBadges(statuses) {
-        const container = document.getElementById('focusStatusBadges');
-        if (!container) return;
+        const headerContainer = document.getElementById('focusStatusBadges');
+        const contextContainer = document.getElementById('focusContextStatusBadges');
 
-        container.innerHTML = statuses.map(s => {
+        let headerHtml = '';
+        let contextHtml = '';
+
+        statuses.forEach(s => {
             const badgeInfo = Utils.getStatusBadgeInfo(s);
             const tooltip = this._statusDescriptions[s] || s;
-            return `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
+            const html = `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
                           data-tooltip="${tooltip}" 
                           role="button" 
                           tabindex="0">${badgeInfo.label}</span>`;
-        }).join('');
 
-        // Add click listeners
-        container.querySelectorAll('.status-badge-clickable').forEach(badge => {
-            badge.addEventListener('click', () => this.toggleEditMode(true));
-            badge.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.toggleEditMode(true);
-                }
-            });
+            // "Nouveau" and "Départ" are general/administrative, they stay in main header
+            // Everything else moves to the Contexte card where it belongs logically
+            if (s === 'Nouveau' || s === 'Départ') {
+                headerHtml += html;
+            } else {
+                contextHtml += html;
+            }
+        });
+
+        if (headerContainer) headerContainer.innerHTML = headerHtml;
+        if (contextContainer) contextContainer.innerHTML = contextHtml;
+
+        // Add click listeners to all generated badges
+        [headerContainer, contextContainer].forEach(container => {
+            if (container) {
+                container.querySelectorAll('.status-badge-clickable').forEach(badge => {
+                    badge.addEventListener('click', () => this.toggleEditMode(true));
+                    badge.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.toggleEditMode(true);
+                        }
+                    });
+                });
+            }
         });
     },
 
