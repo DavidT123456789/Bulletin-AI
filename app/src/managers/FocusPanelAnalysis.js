@@ -293,7 +293,7 @@ export const FocusPanelAnalysis = {
                 break;
             case 'error':
                 badge.classList.add('error');
-                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>';
                 break;
             case 'modified':
                 badge.classList.add('modified');
@@ -578,7 +578,7 @@ export const FocusPanelAnalysis = {
      */
     _showError(message) {
         const errorHtml = `<span style="color:var(--error-color); font-size: 12px; display: flex; align-items: center; gap: 4px;">
-            <iconify-icon icon="solar:danger-circle-linear"></iconify-icon> ${message.substring(0, 60)}...
+            <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${message.substring(0, 60)}...
         </span>`;
 
         const forcesContent = document.getElementById('analysisForcesContent');

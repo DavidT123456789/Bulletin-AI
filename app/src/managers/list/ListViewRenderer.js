@@ -214,10 +214,14 @@ export const ListViewRenderer = {
             const indicator = document.createElement('span');
             indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';
             indicator.setAttribute('data-tooltip', 'Données modifiées depuis la génération.\nActualisation recommandée.');
-            indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-linear"></iconify-icon>';
+            indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>';
 
-            // Insert at the beginning of the cell
-            cell.insertBefore(indicator, cell.firstChild);
+            const wrapper = cell.querySelector('.appreciation-preview-wrapper');
+            if (wrapper) {
+                wrapper.insertBefore(indicator, wrapper.firstChild);
+            } else {
+                cell.insertBefore(indicator, cell.firstChild); // Fallback
+            }
 
             // Trigger animation
             requestAnimationFrame(() => {
@@ -644,10 +648,14 @@ export const ListViewRenderer = {
             // === DIRTY STATE INDICATOR ===
             let dirtyBadge = '';
             if (this.isResultDirty(result)) {
-                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-linear"></iconify-icon></span>`;
+                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
             }
 
-            return `${copyButtonHTML}${dirtyBadge}<div class="appreciation-preview has-copy-btn" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>`;
+            return `${copyButtonHTML}
+            <div class="appreciation-preview-wrapper" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">
+                ${dirtyBadge}
+                <div class="appreciation-preview has-copy-btn">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
+            </div>`;
         }
 
         // No content: show dash for past periods, pending badge for current
@@ -681,7 +689,7 @@ export const ListViewRenderer = {
         // but adding icons for visual consistency if needed.
         const icons = {
             'pending': '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>',
-            'error': '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>',
+            'error': '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>',
             'done': '<iconify-icon icon="ph:check"></iconify-icon>',
             'generating': '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>'
         };

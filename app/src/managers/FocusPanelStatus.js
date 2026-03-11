@@ -332,7 +332,7 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':
-                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>';
                 badge.classList.add('visible', 'error', 'icon-only');
                 break;
             case 'generated':

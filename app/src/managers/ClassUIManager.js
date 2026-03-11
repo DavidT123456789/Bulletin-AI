@@ -567,7 +567,7 @@ export const ClassUIManager = {
         let statusClass = 'status-pending';
 
         if (errors > 0) {
-            icon = 'solar:danger-triangle-linear';
+            icon = 'solar:danger-triangle-bold';
             statusClass = 'status-error';
         } else if (total > 0 && completed === total) {
             icon = 'ph:check';

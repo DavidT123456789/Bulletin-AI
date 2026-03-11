@@ -2439,13 +2439,16 @@
 
 .dirty-indicator {
     position: absolute;
-    top: 6px;
-    left: 8px;
-    z-index: 5;
+    top: -6px;
+    left: -6px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--warning-color);
-    font-size: 14px;
-    animation: pulse-orange 2s infinite;
+    font-size: 16px;
     cursor: help;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15));
     /* Premium transition for opacity/transform */
     transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);

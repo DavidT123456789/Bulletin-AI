@@ -701,13 +701,19 @@
     /* Equal horizontal padding for centered text in card */
     border-radius: var(--radius-md);
     line-height: 1.6;
-    margin: 4px 0;
+    /* Move margin logic to wrapper for expanded view */
+    margin: 0;
     border: 1px solid rgba(0, 0, 0, 0.02);
     /* Enforce left align even in full view to prevent centering issues */
     text-align: left !important;
 
     /* Micro-fade animation to mask white-space switch */
     animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Wrapper manages structural margin in full view to prevent badge floating */
+.student-list-table.appreciation-full-view .appreciation-preview-wrapper {
+    margin: 4px 0;
 }
 
 /* Shrink name column in expanded view to profit from vertical stacking */
@@ -738,6 +744,23 @@
 }
 
 
+/* Wrapper for preview and status indicator */
+.appreciation-preview-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* Hover effects apply to the preview INSIDE the wrapper */
+.appreciation-preview-wrapper:hover .appreciation-preview,
+.appreciation-preview:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
 /* Appreciation Preview - Truncated inline display */
 .appreciation-preview {
     white-space: nowrap;
@@ -746,7 +769,7 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--text-secondary);
-    cursor: pointer;
+    /* cursor is on wrapper */
     padding: 6px 12px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.02);
@@ -760,13 +783,9 @@
         background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        /* Added for smooth zoom */
-        box-shadow 0.3s ease,
-        /* Added for smooth shadow lift */
+        /* transform and shadow removed from individual transition (handled by wrapper if needed) */
         opacity 0.15s ease;
 
-    /* Slight fade during collapse to mask white-space switch */
     opacity: 1;
 }
 
@@ -781,18 +800,19 @@
     background: rgba(255, 255, 255, 0.04);
 }
 
-
-.appreciation-preview:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+/* Harmonization: Apply hover effect to expanded view with enhanced zoom on wrapper */
+.student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover {
+    transform: scale(1.05); /* Wrapper zooms, carrying the badge with it! */
+    z-index: 5;
 }
 
-/* Harmonization: Apply hover effect to expanded view with enhanced zoom */
+/* Disable inner scaling to prevent double zoom */
+.student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
 .student-list-table.appreciation-full-view .appreciation-preview:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
-    transform: scale(1.05);
     box-shadow: none;
+    transform: none;
 }
 
 /* Subtle indicator removed - JS handles truncation with "..." */
