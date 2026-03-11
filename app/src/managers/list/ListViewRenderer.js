@@ -283,20 +283,23 @@ export const ListViewRenderer = {
                                 </div>
                             </th>
                             ${this.renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="${headerClass}">
-                                <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none"></span>
-                                <div class="appreciation-header-actions" id="appreciationHeaderActions">
-                                    <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
-                                        <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
-                                    </button>
-                                    <button type="button" class="btn-smart-action-inline tooltip" id="smartActionBtnInline" style="display: none;" data-action-mode="generate" data-tooltip="Générer les appréciations en attente">
-                                        <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
-                                        <span class="smart-action-badge" id="smartActionBadgeInline">0</span>
-                                    </button>
-                                </div>
-                                <div class="header-content-wrapper" data-tooltip="${title}">
-                                    Appréciation
-                                    <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
+                            <th class="${headerClass}" style="position: relative;">
+                                <div class="header-tooltip-target" data-tooltip="${title}" style="position: absolute; inset: 0; z-index: 1;"></div>
+                                <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
+                                <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
+                                    <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
+                                        <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
+                                            <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
+                                        </button>
+                                        <button type="button" class="btn-smart-action-inline tooltip" id="smartActionBtnInline" style="display: none;" data-action-mode="generate" data-tooltip="Générer les appréciations en attente">
+                                            <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
+                                            <span class="smart-action-badge" id="smartActionBadgeInline">0</span>
+                                        </button>
+                                    </div>
+                                    <span style="display: inline-flex; align-items: center;">
+                                        Appréciation
+                                        <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
+                                    </span>
                                 </div>
                             </th>
                             <th class="action-header" style="width: 50px;">

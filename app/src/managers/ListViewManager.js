@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileoverview List View Manager - Rend les élèves en vue tableau
  * Part of Liste + Focus UX Revolution - REFACTORED: Inline Appreciation Display
  * @module managers/ListViewManager
@@ -380,9 +380,9 @@ export const ListViewManager = {
 
         // Helper to update tooltip
         const updateTooltip = (text) => {
-            const wrapper = header?.querySelector('.header-content-wrapper');
-            if (wrapper) {
-                TooltipsUI.updateTooltip(wrapper, text);
+            const tooltipTarget = header?.querySelector('.header-tooltip-target');
+            if (tooltipTarget) {
+                TooltipsUI.updateTooltip(tooltipTarget, text);
             }
             if (mobileBtn) {
                 TooltipsUI.updateTooltip(mobileBtn, text);

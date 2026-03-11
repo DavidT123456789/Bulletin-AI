@@ -501,92 +501,115 @@
     position: relative;
 }
 
-/* Word count chip - positioned absolutely to the right */
-.appreciation-header>.detail-chip {
+/* Word count chip - discreetly positioned absolutely to the right */
+.appreciation-header > #avgWordsChip {
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: var(--text-tertiary) !important;
+    background: transparent !important;
+    padding: 4px 8px !important; /* Restaure un peu d'espace pour le hover */
+    border-radius: var(--radius-sm) !important;
+    transition: background-color var(--transition-fast), color var(--transition-fast) !important;
+}
+
+.appreciation-header > #avgWordsChip:hover {
+    background: var(--item-hover-bg) !important;
+    color: var(--text-primary) !important;
 }
 
 /* ====================================================================
-   SMART ACTION BUTTON INLINE - Single unified button in table header
+   SMART ACTION BUTTON INLINE - Minimalist Notification Style
    Switches between Generate (purple) and Update (orange) modes
    ==================================================================== */
 .btn-smart-action-inline {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    height: 34px;
-    border-radius: var(--radius-pill);
-    font-weight: 600;
-    font-size: 13px;
-    white-space: nowrap;
-    color: white !important;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent; /* Fond totalement retiré au repos */
+    color: var(--text-primary) !important;
     border: none;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: auto;
     position: relative;
-    overflow: hidden;
 }
 
-/* Generate mode (default) - AI purple gradient */
-.btn-smart-action-inline.mode-generate {
-    background: var(--gradient-ai);
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.25);
-}
-
-.btn-smart-action-inline.mode-generate:hover {
-    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-color) 100%);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
-    transform: scale(1.05);
-}
-
-/* Update mode - Warning orange gradient */
-.btn-smart-action-inline.mode-update {
-    background: var(--gradient-warning);
-    box-shadow: 0 1px 3px rgba(var(--warning-rgb), 0.25);
-}
-
-.btn-smart-action-inline.mode-update:hover {
-    background: linear-gradient(135deg, var(--warning-hover) 0%, #b45309 100%);
-    box-shadow: 0 2px 8px rgba(var(--warning-rgb), 0.35);
-    transform: scale(1.05);
+.btn-smart-action-inline:hover {
+    background: var(--item-hover-bg);
+    transform: scale(1.05); /* Grow the whole button on hover */
 }
 
 .btn-smart-action-inline:active {
-    transform: scale(0.98);
+    transform: scale(0.92);
 }
 
-/* Shine sweep for generate mode */
-.btn-smart-action-inline.mode-generate::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 100%);
-    pointer-events: none;
+/* Icon internal transition */
+.btn-smart-action-inline .smart-action-icon {
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), color 0.2s ease;
 }
 
-.btn-smart-action-inline.mode-generate:hover::before {
-    animation: shine-sweep 1.5s ease-in-out infinite;
+[data-theme="dark"] .btn-smart-action-inline .smart-action-icon {
+    color: var(--text-primary);
 }
 
+.btn-smart-action-inline:hover .smart-action-icon {
+    color: var(--text-primary);
+}
+
+.btn-smart-action-inline.mode-generate:hover .smart-action-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.btn-smart-action-inline.mode-update:hover .smart-action-icon {
+    transform: rotate(90deg);
+}
+
+/* Badge notification overlay - Floating minimalist number */
 .smart-action-badge {
-    background: rgba(255, 255, 255, 0.3);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    min-width: 16px;
-    text-align: center;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600; /* Entre 500 et 700 (Semi-bold) */
+    background: transparent; /* Aucun fond */
+    z-index: 2;
+    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Cleanup leftover styles from previous iteration */
+.sortable-header:hover .smart-action-badge {
+    background: transparent;
+}
+
+/* Hover scales the number slightly */
+.btn-smart-action-inline:hover .smart-action-badge {
+    transform: scale(1.1);
+}
+
+/* Mode Generate (Purple/AI) - Text alone gets the color */
+.btn-smart-action-inline.mode-generate .smart-action-badge {
+    color: var(--primary-color);
+}
+
+/* Mode Update (Orange/Warning) - Text alone gets the color */
+.btn-smart-action-inline.mode-update .smart-action-badge {
+    color: var(--warning-color, #f59e0b);
 }
 
 /* Animation d'apparition */
@@ -595,7 +618,6 @@
         opacity: 0;
         transform: scale(0.8);
     }
-
     to {
         opacity: 1;
         transform: scale(1);
@@ -610,13 +632,10 @@
    APPRECIATION HEADER ACTIONS CONTAINER
    ==================================================================== */
 .appreciation-header-actions {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-right: 8px;
     z-index: 10;
 }
 

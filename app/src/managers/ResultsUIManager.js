@@ -400,14 +400,19 @@ export const ResultsUIManager = {
         }).length;
 
         // Count needs update (dirty OR error)
-        const needsUpdateCount = sourceResults.filter(r => {
-            // Error in current period
+        let errorUpdateCount = 0;
+        let dirtyUpdateCount = 0;
+        
+        sourceResults.forEach(r => {
             const hasError = r.errorMessage && r.errorPeriod === currentPeriod;
-            if (hasError) return true;
-
-            // Dirty state (data modified since creation - works for AI and manual)
-            return FocusPanelStatus.checkDirtyState(r);
-        }).length;
+            if (hasError) {
+                errorUpdateCount++;
+            } else if (FocusPanelStatus.checkDirtyState(r)) {
+                dirtyUpdateCount++;
+            }
+        });
+        
+        const needsUpdateCount = errorUpdateCount + dirtyUpdateCount;
 
         // === SMART ACTION BUTTON (unified in table header) ===
         // Priority: Pending (generate) > Dirty (update) > Hidden
@@ -436,7 +441,17 @@ export const ResultsUIManager = {
                 smartBtn.dataset.actionMode = 'update';
                 if (icon) icon.setAttribute('icon', 'solar:refresh-linear');
                 if (badge) badge.textContent = needsUpdateCount;
-                smartBtn.dataset.tooltip = `Actualiser ${needsUpdateCount} appréciation${needsUpdateCount > 1 ? 's' : ''} modifiée${needsUpdateCount > 1 ? 's' : ''}`;
+                
+                let tooltipText = '';
+                if (errorUpdateCount > 0 && dirtyUpdateCount > 0) {
+                    tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur`;
+                } else if (errorUpdateCount > 0) {
+                    tooltipText = `Régénérer ${errorUpdateCount} appréciation${errorUpdateCount > 1 ? 's' : ''} en erreur`;
+                } else {
+                    tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''}`;
+                }
+                
+                smartBtn.dataset.tooltip = tooltipText;
                 smartBtn.classList.remove('mode-generate');
                 smartBtn.classList.add('mode-update');
             }
