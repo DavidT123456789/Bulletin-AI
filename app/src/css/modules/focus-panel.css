@@ -3097,6 +3097,7 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
+    overflow: hidden; /* Added to clip any inner backgrounds */
     /* box-shadow removed */
 }
 
@@ -3133,6 +3134,8 @@
     padding: 10px 16px;
     background: rgba(0, 0, 0, 0.01);
     border-bottom: 1px solid var(--border-color);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
 }
 
 [data-theme="dark"] .analysis-card-header {
