@@ -142,7 +142,8 @@ export const ResultsUIManager = {
                 // Dashboard badge filters
                 if (filter === 'generated') {
                     // Has valid appreciation for current period (not placeholder)
-                    const appreciation = r.studentData?.periods?.[activePeriod]?.appreciation || r.appreciation;
+                    const periodApp = r.studentData?.periods?.[activePeriod]?.appreciation;
+                    const appreciation = periodApp || ((r.generationPeriod === activePeriod) ? r.appreciation : null);
                     if (!appreciation) return false;
                     const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
                     const isPlaceholder = textOnly === '' ||
@@ -160,7 +161,8 @@ export const ResultsUIManager = {
                 if (filter === 'pending') {
                     // No valid appreciation for current period
                     if (r.errorMessage && r.errorPeriod === activePeriod) return false;
-                    const appreciation = r.studentData?.periods?.[activePeriod]?.appreciation || r.appreciation;
+                    const periodApp = r.studentData?.periods?.[activePeriod]?.appreciation;
+                    const appreciation = periodApp || ((r.generationPeriod === activePeriod) ? r.appreciation : null);
                     if (!appreciation) return true;
                     const textOnly = appreciation.replace(/<[^>]*>/g, '').trim().toLowerCase();
                     return textOnly === '' ||
@@ -369,12 +371,8 @@ export const ResultsUIManager = {
         const currentPeriod = appState.currentPeriod;
         const currentClassId = appState.currentClassId;
 
-        // CRITICAL FIX: Always use generatedResults as source of truth
-        // filteredResults contains shallow copies that may be stale after data modifications
-        // This mirrors the fix applied to ListViewManager.updateStudentRow
         let sourceResults = appState.generatedResults || [];
 
-        // Filter by current class if applicable
         if (currentClassId) {
             sourceResults = sourceResults.filter(r => r.classId === currentClassId);
         }
@@ -382,15 +380,13 @@ export const ResultsUIManager = {
         // Count pending (empty/placeholder)
         const pendingCount = sourceResults.filter(r => {
             const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
-            const appCurrent = (r.studentData?.currentPeriod === currentPeriod) ? r.appreciation : null;
+            const appCurrent = (r.generationPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
             const hasBlockingError = r.errorMessage && r.errorPeriod === currentPeriod;
 
             if (hasBlockingError) return false;
-            // Si pas de contenu défini -> En attente
             if (!effectiveApp) return true;
 
-            // Si contenu existant, vérifier s'il est vide ou placeholder
             const textOnly = effectiveApp.replace(/<[^>]*>/g, '').trim().toLowerCase();
             return textOnly === '' ||
                 textOnly.includes('en attente') ||
@@ -414,52 +410,50 @@ export const ResultsUIManager = {
         
         const needsUpdateCount = errorUpdateCount + dirtyUpdateCount;
 
-        // === SMART ACTION BUTTON (unified in table header) ===
-        // Priority: Pending (generate) > Dirty (update) > Hidden
-        const smartBtn = document.getElementById('smartActionBtnInline');
-        if (smartBtn) {
-            const hasPending = pendingCount > 0;
-            const hasUpdates = needsUpdateCount > 0;
-            const hasAction = hasPending || hasUpdates;
-            const wasHidden = smartBtn.style.display === 'none';
+        // === GENERATE BUTTON ===
+        const generateBtn = document.getElementById('generateBtnInline');
+        if (generateBtn) {
+            const badge = generateBtn.querySelector('.smart-action-badge');
+            const wasHidden = generateBtn.style.display === 'none';
 
-            smartBtn.style.display = hasAction ? 'inline-flex' : 'none';
+            generateBtn.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
 
-            const icon = smartBtn.querySelector('.smart-action-icon');
-            const badge = smartBtn.querySelector('.smart-action-badge');
-
-            if (hasPending) {
-                // Generate mode: pending appreciations take priority
-                smartBtn.dataset.actionMode = 'generate';
-                if (icon) icon.setAttribute('icon', 'solar:magic-stick-3-linear');
+            if (pendingCount > 0) {
                 if (badge) badge.textContent = pendingCount;
-                smartBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
-                smartBtn.classList.remove('mode-update');
-                smartBtn.classList.add('mode-generate');
-            } else if (hasUpdates) {
-                // Update mode: dirty/error appreciations
-                smartBtn.dataset.actionMode = 'update';
-                if (icon) icon.setAttribute('icon', 'solar:refresh-linear');
+                generateBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
+
+                if (wasHidden) {
+                    generateBtn.classList.add('animate-in');
+                    setTimeout(() => generateBtn.classList.remove('animate-in'), 350);
+                }
+            }
+        }
+
+        // === UPDATE BUTTON ===
+        const updateBtn = document.getElementById('updateBtnInline');
+        if (updateBtn) {
+            const badge = updateBtn.querySelector('.smart-action-badge');
+            const wasHidden = updateBtn.style.display === 'none';
+
+            updateBtn.style.display = needsUpdateCount > 0 ? 'inline-flex' : 'none';
+
+            if (needsUpdateCount > 0) {
                 if (badge) badge.textContent = needsUpdateCount;
-                
+
                 let tooltipText = '';
                 if (errorUpdateCount > 0 && dirtyUpdateCount > 0) {
-                    tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur`;
+                    tooltipText = `Actualiser ${dirtyUpdateCount} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur`;
                 } else if (errorUpdateCount > 0) {
                     tooltipText = `Régénérer ${errorUpdateCount} appréciation${errorUpdateCount > 1 ? 's' : ''} en erreur`;
                 } else {
                     tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''}`;
                 }
-                
-                smartBtn.dataset.tooltip = tooltipText;
-                smartBtn.classList.remove('mode-generate');
-                smartBtn.classList.add('mode-update');
-            }
+                updateBtn.dataset.tooltip = tooltipText;
 
-            // Animate in if newly visible
-            if (hasAction && wasHidden) {
-                smartBtn.classList.add('animate-in');
-                setTimeout(() => smartBtn.classList.remove('animate-in'), 350);
+                if (wasHidden) {
+                    updateBtn.classList.add('animate-in');
+                    setTimeout(() => updateBtn.classList.remove('animate-in'), 350);
+                }
             }
         }
 

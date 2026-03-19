@@ -78,30 +78,6 @@ export function getVersionSource(version) {
 }
 
 /**
- * Get or create history state on a result object
- * @param {Object} result - The result object
- * @returns {Object} The historyState object
- */
-export function getHistoryState(result) {
-    if (!result.historyState) {
-        result.historyState = { versions: [], currentIndex: -1 };
-        if (result.appreciation) {
-            result.historyState.versions.push({
-                content: result.appreciation,
-                timestamp: Date.now(),
-                source: 'original',
-                appreciationSource: result.appreciationSource ?? null,
-                aiModel: result.studentData?.currentAIModel ?? null,
-                tokenUsage: result.tokenUsage ?? null,
-                wordCount: countWords(result.appreciation)
-            });
-            result.historyState.currentIndex = 0;
-        }
-    }
-    return result.historyState;
-}
-
-/**
  * Push content to history state
  * @param {Object} state - The historyState object
  * @param {string} content - Content to push

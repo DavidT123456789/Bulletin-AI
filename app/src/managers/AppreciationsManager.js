@@ -75,13 +75,53 @@ export const AppreciationsManager = {
     },
 
     /**
+     * Get per-period history state for a result (mirrors FocusPanelHistory._getState logic)
+     * @param {Object} result - The result object
+     * @returns {Object} The history state for the current period
+     * @private
+     */
+    _getPerPeriodState(result) {
+        const currentPeriod = appState.currentPeriod;
+        if (!result.historyPerPeriod) result.historyPerPeriod = {};
+
+        // Migrate legacy historyState → historyPerPeriod
+        // CRITICAL: Only use generationPeriod (immutable) — never studentData.currentPeriod
+        // because currentPeriod changes as the user navigates, causing S1 history
+        // to be incorrectly assigned to S2.
+        if (result.historyState?.versions?.length > 0) {
+            const legacyPeriod = result.generationPeriod;
+            if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
+                result.historyPerPeriod[legacyPeriod] = result.historyState;
+            }
+            result.historyState = null;
+        }
+
+        // Guard: If current period has history but no appreciation,
+        // it was contaminated from another period — reset it
+        const existingState = result.historyPerPeriod[currentPeriod];
+        if (existingState?.versions?.length > 0) {
+            const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
+            const isGenerationPeriod = result.generationPeriod === currentPeriod;
+            if (!hasAppreciation && !isGenerationPeriod) {
+                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+            }
+        }
+
+        if (!result.historyPerPeriod[currentPeriod]) {
+            result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+        }
+
+        return result.historyPerPeriod[currentPeriod];
+    },
+
+    /**
      * Sauvegarde la version actuelle dans l'historique avant modification
      * @param {Object} result - L'objet résultat à sauvegarder
      * @param {string} source - Source de la modification (edit, concise, detailed, encouraging, variation, regenerate)
      */
     pushToHistory(result, source = 'edit') {
         if (!result || !result.appreciation) return;
-        const state = HistoryUtils.getHistoryState(result);
+        const state = this._getPerPeriodState(result);
         const appreciationSource = result.appreciationSource ?? null;
         const aiModel = result.studentData?.currentAIModel ?? null;
         const tokenUsage = result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
@@ -98,7 +138,7 @@ export const AppreciationsManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result) return false;
 
-        const state = HistoryUtils.getHistoryState(result);
+        const state = this._getPerPeriodState(result);
 
         // Sauvegarder texte actuel s'il diffère
         if (result.appreciation) {
@@ -157,7 +197,9 @@ export const AppreciationsManager = {
      */
     hasHistory(id) {
         const result = appState.generatedResults.find(r => r.id === id);
-        return result ? HistoryUtils.hasMultipleVersions(HistoryUtils.getHistoryState(result)) : false;
+        if (!result) return false;
+        const state = this._getPerPeriodState(result);
+        return HistoryUtils.hasMultipleVersions(state);
     },
 
 

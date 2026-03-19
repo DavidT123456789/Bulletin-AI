@@ -511,14 +511,15 @@
     font-weight: 500 !important;
     color: var(--text-tertiary) !important;
     background: transparent !important;
-    padding: 4px 8px !important; /* Restaure un peu d'espace pour le hover */
-    border-radius: var(--radius-sm) !important;
-    transition: background-color var(--transition-fast), color var(--transition-fast) !important;
+    padding: 4px 10px !important; /* Adjusted for pill shape */
+    border-radius: var(--radius-pill) !important; /* Rounded premium style */
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast) !important;
 }
 
 .appreciation-header > #avgWordsChip:hover {
-    background: var(--item-hover-bg) !important;
+    background: var(--item-hover-bg) !important; /* Soft adaptive hover */
     color: var(--text-primary) !important;
+    transform: translateY(-50%) scale(1.05);
 }
 
 /* ====================================================================
@@ -566,8 +567,13 @@
     color: var(--text-primary);
 }
 
+/* Flip the magic wand so the handle points left, moving it away from the badge */
+.btn-smart-action-inline.mode-generate .smart-action-icon {
+    transform: scaleX(-1);
+}
+
 .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
-    transform: scale(1.1) rotate(5deg);
+    transform: scaleX(-1) scale(1.1) rotate(-5deg);
 }
 
 .btn-smart-action-inline.mode-update:hover .smart-action-icon {
@@ -635,7 +641,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-right: 8px;
+    margin-left: 8px;
     z-index: 10;
 }
 
@@ -680,11 +686,17 @@
 
 /* Expand Icon - appears on hover */
 .appreciation-toggle-icon {
-    font-size: 11px;
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px; /* slightly bigger for left placement */
     opacity: 0;
     color: var(--text-tertiary);
-    margin-left: 8px;
-    transition: opacity 0.25s ease;
+    margin: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, color 0.25s ease;
+    z-index: 2;
 }
 
 .appreciation-toggle-header:hover .appreciation-toggle-icon {
@@ -692,8 +704,11 @@
 }
 
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
-    opacity: 0.6;
-    color: var(--primary-color);
+    color: var(--primary-color); /* Keeps the active color state, but inherits opacity:0 */
+}
+
+.appreciation-toggle-header.expanded-view:hover .appreciation-toggle-icon {
+    opacity: 0.8;
 }
 
 /* === FULL VIEW STATE (Expanded Content) === */

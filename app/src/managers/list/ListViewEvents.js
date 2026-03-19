@@ -53,17 +53,21 @@ export const ListViewEvents = {
             });
         });
 
-        // Smart Action Button (unified generate/update button in table header)
-        const smartActionBtn = listContainer.querySelector('#smartActionBtnInline');
-        if (smartActionBtn) {
-            smartActionBtn.addEventListener('click', async (e) => {
+        // Generate Button (pending appreciations)
+        const generateBtn = listContainer.querySelector('#generateBtnInline');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const mode = smartActionBtn.dataset.actionMode;
-                if (mode === 'update') {
-                    await ResultsUIManager.regenerateDirty();
-                } else {
-                    await MassImportManager.generateAllPending();
-                }
+                await MassImportManager.generateAllPending();
+            });
+        }
+
+        // Update Button (dirty/error appreciations)
+        const updateBtn = listContainer.querySelector('#updateBtnInline');
+        if (updateBtn) {
+            updateBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await ResultsUIManager.regenerateDirty();
             });
         }
 

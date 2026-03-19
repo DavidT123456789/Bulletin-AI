@@ -286,20 +286,24 @@ export const ListViewRenderer = {
                             <th class="${headerClass}" style="position: relative;">
                                 <div class="header-tooltip-target" data-tooltip="${title}" style="position: absolute; inset: 0; z-index: 1;"></div>
                                 <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
+                                <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
                                 <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
+                                    <span style="display: inline-flex; align-items: center;">
+                                        Appréciation
+                                    </span>
                                     <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
                                         <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
                                             <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                                         </button>
-                                        <button type="button" class="btn-smart-action-inline tooltip" id="smartActionBtnInline" style="display: none;" data-action-mode="generate" data-tooltip="Générer les appréciations en attente">
+                                        <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
                                             <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
-                                            <span class="smart-action-badge" id="smartActionBadgeInline">0</span>
+                                            <span class="smart-action-badge" id="generateBadgeInline">0</span>
+                                        </button>
+                                        <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
+                                            <iconify-icon icon="solar:refresh-linear" class="smart-action-icon"></iconify-icon>
+                                            <span class="smart-action-badge" id="updateBadgeInline">0</span>
                                         </button>
                                     </div>
-                                    <span style="display: inline-flex; align-items: center;">
-                                        Appréciation
-                                        <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
-                                    </span>
                                 </div>
                             </th>
                             <th class="action-header" style="width: 50px;">
@@ -607,12 +611,12 @@ export const ListViewRenderer = {
         if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
             appreciation = periodApp.trim();
         }
-        // 2. Fallback: result.appreciation (dÃ©jÃ  transformÃ©e dans renderResults pour la pÃ©riode courante)
+        // 2. Fallback: result.appreciation ONLY if generation period matches current
+        // CRITICAL: Use generationPeriod (immutable) instead of studentData.currentPeriod
+        // which gets overwritten to the active view period by renderResults()
         else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            // VÃ©rifier que cette apprÃ©ciation correspond bien Ã  la pÃ©riode courante
-            // soit via studentData.currentPeriod, soit parce qu'il n'y a qu'une seule pÃ©riode
-            const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-            if (!storedPeriod || storedPeriod === currentPeriod) {
+            const generationPeriod = result.generationPeriod || result.aiGenerationPeriod;
+            if (generationPeriod === currentPeriod) {
                 appreciation = result.appreciation.trim();
             }
         }
@@ -659,16 +663,6 @@ export const ListViewRenderer = {
                 ${dirtyBadge}
                 <div class="appreciation-preview has-copy-btn">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
             </div>`;
-        }
-
-        // No content: show dash for past periods, pending badge for current
-        const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-        const periods = Utils.getPeriods();
-        const currentIndex = periods.indexOf(currentPeriod);
-        const periodIndex = periods.indexOf(storedPeriod);
-
-        if (storedPeriod && currentIndex < periodIndex) {
-            return '<span class="appreciation-preview empty">&mdash;</span>';
         }
 
         return this.getStatusBadge('pending');

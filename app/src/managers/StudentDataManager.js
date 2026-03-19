@@ -65,6 +65,7 @@ export const StudentDataManager = {
         existingResult.generationSnapshotJournal = newResult.generationSnapshotJournal;
         existingResult.generationSnapshotJournalCount = newResult.generationSnapshotJournalCount;
         existingResult.generationThreshold = newResult.generationThreshold;
+        existingResult.promptHash = newResult.promptHash ?? existingResult.promptHash;
     },
 
     /**

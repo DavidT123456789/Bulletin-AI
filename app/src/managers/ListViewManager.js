@@ -285,8 +285,8 @@ export const ListViewManager = {
         if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
             appreciation = periodApp.trim();
         } else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            const storedPeriod = result.studentData?.currentPeriod || result.aiGenerationPeriod;
-            if (!storedPeriod || storedPeriod === currentPeriod) {
+            const generationPeriod = result.generationPeriod || result.aiGenerationPeriod;
+            if (generationPeriod === currentPeriod) {
                 appreciation = result.appreciation.trim();
             }
         }

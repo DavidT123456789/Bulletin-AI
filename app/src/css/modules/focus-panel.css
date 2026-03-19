@@ -1024,7 +1024,7 @@
 
 .previous-grade-chip .prev-grade-value {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-secondary);
 }
 
 .context-grade-group {
@@ -3850,7 +3850,7 @@ input.context-grade-input {
 
 .previous-grade-chip .prev-grade-label {
     font-weight: 400;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     text-transform: uppercase;
     font-size: 11.5px;
     letter-spacing: 0.5px;
@@ -3859,7 +3859,7 @@ input.context-grade-input {
 .previous-grade-chip .prev-grade-value {
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-secondary);
 }
 
 

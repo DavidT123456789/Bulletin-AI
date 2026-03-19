@@ -26,9 +26,54 @@ export const FocusPanelHistory = {
         return appState.generatedResults.find(r => r.id === this._currentResultId);
     },
 
+    /**
+     * Get period-scoped history state for the current period.
+     *
+     * Architecture:
+     * - History lives in result.historyPerPeriod[period] (one state per period)
+     * - Legacy result.historyState is migrated to the correct period on first access
+     * - History entries are ONLY created through push() (generation, edit, refinement)
+     * - No auto-seeding: this avoids cross-period contamination
+     *
+     * @returns {Object|null}
+     * @private
+     */
     _getState() {
         const result = this._getResult();
-        return result ? HistoryUtils.getHistoryState(result) : null;
+        if (!result) return null;
+
+        const currentPeriod = appState.currentPeriod;
+        if (!result.historyPerPeriod) result.historyPerPeriod = {};
+
+        // 1. Migrate legacy historyState → historyPerPeriod
+        // CRITICAL: Only use generationPeriod (immutable) — never studentData.currentPeriod
+        // because currentPeriod changes as the user navigates, causing S1 history
+        // to be incorrectly assigned to S2.
+        if (result.historyState?.versions?.length > 0) {
+            const legacyPeriod = result.generationPeriod;
+            if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
+                result.historyPerPeriod[legacyPeriod] = result.historyState;
+            }
+            result.historyState = null;
+        }
+
+        // 2. Guard: If current period has history but no appreciation,
+        // it was contaminated from another period — reset it
+        const existingState = result.historyPerPeriod[currentPeriod];
+        if (existingState?.versions?.length > 0) {
+            const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
+            const isGenerationPeriod = result.generationPeriod === currentPeriod;
+            if (!hasAppreciation && !isGenerationPeriod) {
+                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+            }
+        }
+
+        // 3. Return existing period history, or create empty state
+        if (!result.historyPerPeriod[currentPeriod]) {
+            result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+        }
+
+        return result.historyPerPeriod[currentPeriod];
     },
 
     _save() {
@@ -91,7 +136,10 @@ export const FocusPanelHistory = {
     clearForResult() {
         const result = this._getResult();
         if (result) {
-            result.historyState = { versions: [], currentIndex: -1 };
+            const currentPeriod = appState.currentPeriod;
+            if (result.historyPerPeriod?.[currentPeriod]) {
+                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+            }
             this._save();
         }
         this._notifyHistoryChange();

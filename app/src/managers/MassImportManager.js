@@ -206,14 +206,12 @@ export const MassImportManager = {
             console.error("Une erreur inattendue est survenue durant la génération:", e);
             UI.showNotification("Une erreur inattendue est survenue durant la génération.", 'error');
         } finally {
-            // Hide progress and show errors if any
             const hasErrors = failedImports.length > 0;
             UI.hideHeaderProgress(hasErrors);
             this.massImportAbortController = null;
 
             Am.renderResults();
 
-            // Émettre l'événement pour synchroniser l'UI (compteur, liste, stats)
             window.dispatchEvent(new CustomEvent('studentsUpdated'));
         }
     },
@@ -305,7 +303,7 @@ export const MassImportManager = {
         const pendingResults = sourceResults.filter(r => {
             const currentPeriod = appState.currentPeriod;
             const appRaw = r.studentData?.periods?.[currentPeriod]?.appreciation;
-            const appCurrent = (r.studentData?.currentPeriod === currentPeriod) ? r.appreciation : null;
+            const appCurrent = (r.generationPeriod === currentPeriod) ? r.appreciation : null;
             const effectiveApp = appRaw || appCurrent;
 
             // Erreur bloquante uniquement si elle concerne la période actuelle

@@ -1307,7 +1307,10 @@ export const FocusPanelManager = {
 
                     // Réinitialiser l'historique - la régénération est un nouveau départ
                     // L'"Original" sera la nouvelle génération IA
-                    result.historyState = null;
+                    // CRITICAL: Use captured generatingForPeriod, not appState.currentPeriod
+                    // (user may have switched periods during async generation)
+                    if (!result.historyPerPeriod) result.historyPerPeriod = {};
+                    result.historyPerPeriod[generatingForPeriod] = null;
                     FocusPanelHistory.load(generatingForStudentId); // Re-init with fresh state
                     FocusPanelHistory.push(newResult.appreciation, 'original');
 
@@ -1761,9 +1764,9 @@ export const FocusPanelManager = {
                 // from being written into periods['S2'] when the user merely opens/closes the panel.
                 // Content belongs to the current period if:
                 //   (a) periods[currentPeriod] already has an appreciation (user typed or generated here), OR
-                //   (b) result.studentData.currentPeriod matches (this result was generated for this period)
+                //   (b) result.generationPeriod matches (this result was generated for this period)
                 const periodAlreadyHasContent = !!(result.studentData.periods?.[currentPeriod]?.appreciation?.trim());
-                const resultBelongsToCurrentPeriod = result.studentData.currentPeriod === currentPeriod;
+                const resultBelongsToCurrentPeriod = result.generationPeriod === currentPeriod;
 
                 if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
                     result.appreciation = content;

@@ -270,7 +270,78 @@ export const StorageManager = {
             if (result.wasGenerated === undefined) {
                 // Heuristic: If there is an appreciation and it's not pending, assume it was generated
                 result.wasGenerated = !!(result.appreciation && result.appreciation.trim());
-                // Don't force migrationNeeded for runtime property unless strictly necessary
+            }
+
+            // MIGRATION: Fix cross-period contamination (appreciation + history + generationPeriod)
+            // Previous bug wrote S1 data into S2 fields (including generationPeriod itself).
+            // Strategy: compare appreciation text across periods — if two periods share
+            // identical plain text, the duplicate is a contamination artifact.
+            const genPeriod = result.generationPeriod;
+            if (sd.periods) {
+                const periodsWithContent = Object.entries(sd.periods)
+                    .filter(([, pData]) => pData?.appreciation?.replace(/<[^>]*>/g, '').trim())
+                    .map(([period, pData]) => ({
+                        period,
+                        plainText: pData.appreciation.replace(/<[^>]*>/g, '').trim()
+                    }));
+
+                // Detect duplicates: if two periods have identical text, one is contaminated
+                if (periodsWithContent.length >= 2) {
+                    for (let i = 0; i < periodsWithContent.length; i++) {
+                        for (let j = i + 1; j < periodsWithContent.length; j++) {
+                            if (periodsWithContent[i].plainText === periodsWithContent[j].plainText) {
+                                // Determine which is the original: the one matching generationPeriod,
+                                // or the earlier period (S1 < S2) as fallback
+                                const a = periodsWithContent[i].period;
+                                const b = periodsWithContent[j].period;
+                                const originalPeriod = (genPeriod === a || genPeriod === b)
+                                    ? genPeriod
+                                    : (a < b ? a : b);
+                                const contaminatedPeriod = originalPeriod === a ? b : a;
+
+                                // Clean the contaminated period
+                                sd.periods[contaminatedPeriod].appreciation = '';
+                                if (result.historyPerPeriod?.[contaminatedPeriod]) {
+                                    result.historyPerPeriod[contaminatedPeriod] = { versions: [], currentIndex: -1 };
+                                }
+                                // Fix generationPeriod if it was pointing to the contaminated period
+                                if (result.generationPeriod === contaminatedPeriod) {
+                                    result.generationPeriod = originalPeriod;
+                                }
+                                migrationNeeded = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // MIGRATION: historyState → historyPerPeriod (period-scoped history)
+            // CRITICAL: Only use generationPeriod (immutable) — never sd.currentPeriod
+            // because currentPeriod changes as the user navigates, causing S1 history
+            // to be incorrectly assigned to S2.
+            if (result.historyState?.versions?.length > 0) {
+                if (!result.historyPerPeriod) result.historyPerPeriod = {};
+                const historyPeriod = result.generationPeriod;
+                if (historyPeriod && !result.historyPerPeriod[historyPeriod]) {
+                    result.historyPerPeriod[historyPeriod] = result.historyState;
+                }
+                result.historyState = null;
+                migrationNeeded = true;
+            }
+
+            // MIGRATION: Clean orphaned historyPerPeriod entries
+            // If a period has history but no appreciation AND is not the generation period,
+            // it was seeded from corrupted cross-period data — reset it.
+            if (result.historyPerPeriod) {
+                const currentGenPeriod = result.generationPeriod;
+                for (const [period, state] of Object.entries(result.historyPerPeriod)) {
+                    if (currentGenPeriod && period === currentGenPeriod) continue;
+                    const hasAppreciation = sd.periods?.[period]?.appreciation?.trim();
+                    if (!hasAppreciation && state?.versions?.length > 0) {
+                        result.historyPerPeriod[period] = { versions: [], currentIndex: -1 };
+                        migrationNeeded = true;
+                    }
+                }
             }
 
             return result;

@@ -25,7 +25,15 @@
     width: 24px;
     height: 24px;
     margin: 0;
+    border-radius: var(--radius-pill) !important; /* Premium rounded style */
     transition: left 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+.inline-search-trigger-btn:hover {
+    background: var(--item-hover-bg); /* Subtle semi-transparent hover */
+    color: var(--primary-color) !important;
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.1);
 }
 
 /* Move the loupe to stay perfectly centered above the larger 56px avatar in expanded view */
@@ -135,6 +143,8 @@
     height: 20px;
     border: none;
     background: transparent;
+    border-radius: var(--radius-pill);
+    color: var(--text-tertiary);
     cursor: pointer;
     font-size: 10px;
     transition: all var(--transition-fast);
@@ -149,7 +159,8 @@
 }
 
 .inline-search-clear:hover {
-    background: var(--text-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     transform: scale(1.1);
 }
 
