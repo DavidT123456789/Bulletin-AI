@@ -181,13 +181,14 @@ export const ListViewRenderer = {
             if (hasSkeleton) {
                 this.updateRowContent(row, result);
             } else {
-                // Optimization: Check if only dirty indicator needs updating
+                // Optimization: Only skip full update when ADDING a dirty indicator
+                // (content unchanged, only metadata changed). All other transitions
+                // require a full update to reflect content changes.
                 const existingDirty = appreciationCell?.querySelector('.dirty-indicator');
                 const shouldBeDirty = this.isResultDirty(result);
-                const hasDirtyIndicator = !!existingDirty;
 
-                if (appreciationCell && hasDirtyIndicator !== shouldBeDirty) {
-                    this.updateDirtyIndicatorOnly(appreciationCell, shouldBeDirty);
+                if (appreciationCell && shouldBeDirty && !existingDirty) {
+                    this.updateDirtyIndicatorOnly(appreciationCell, true);
                 } else {
                     this.updateRowContent(row, result);
                 }

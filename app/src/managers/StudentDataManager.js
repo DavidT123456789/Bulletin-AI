@@ -65,7 +65,19 @@ export const StudentDataManager = {
         existingResult.generationSnapshotJournal = newResult.generationSnapshotJournal;
         existingResult.generationSnapshotJournalCount = newResult.generationSnapshotJournalCount;
         existingResult.generationThreshold = newResult.generationThreshold;
-        existingResult.promptHash = newResult.promptHash ?? existingResult.promptHash;
+
+        // Use provided hash, or auto-compute from finalized studentData
+        if (newResult.promptHash) {
+            existingResult.promptHash = newResult.promptHash;
+        } else if (existingResult.studentData) {
+            try {
+                existingResult.promptHash = PromptService.getPromptHash({
+                    ...existingResult.studentData,
+                    id: existingResult.id,
+                    currentPeriod: existingResult.generationPeriod || existingResult.studentData?.currentPeriod
+                });
+            } catch (_) { /* non-critical */ }
+        }
     },
 
     /**
@@ -123,8 +135,6 @@ export const StudentDataManager = {
         if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
 
         // Auto-compute prompt hash AFTER all data is finalized
-        // If caller provided a hash (via newResult.promptHash), it was set above; skip.
-        // Otherwise, always recompute from current data for accurate dirty detection.
         if (!newResult.promptHash && existingResult.studentData) {
             try {
                 existingResult.promptHash = PromptService.getPromptHash({

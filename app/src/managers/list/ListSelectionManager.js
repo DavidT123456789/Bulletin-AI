@@ -604,6 +604,12 @@ export const ListSelectionManager = {
                 periodLastModified: student.studentData?.periods?.[currentPeriod]?._lastModified,
                 lastModified: student._lastModified,
                 copied: student.copied,
+                promptHash: student.promptHash,
+                generationSnapshot: student.generationSnapshot,
+                generationPeriod: student.generationPeriod,
+                wasGenerated: student.wasGenerated,
+                historyState: student.historyState,
+                appreciationSource: student.appreciationSource,
                 journal: student.journal ? [...student.journal] : [],
                 context: student.studentData?.periods?.[currentPeriod]?.context,
                 studentPhoto: student.studentPhoto ? { ...student.studentPhoto } : null
@@ -628,6 +634,12 @@ export const ListSelectionManager = {
                     }
                     student._lastModified = now;
                     student.copied = false;
+                    student.promptHash = null;
+                    student.generationSnapshot = null;
+                    student.generationPeriod = null;
+                    student.wasGenerated = false;
+                    student.historyState = null;
+                    student.appreciationSource = null;
                     counts.appreciation++;
                 }
             }
@@ -679,6 +691,12 @@ export const ListSelectionManager = {
                             }
                             student._lastModified = snap.lastModified;
                             student.copied = snap.copied;
+                            student.promptHash = snap.promptHash;
+                            student.generationSnapshot = snap.generationSnapshot;
+                            student.generationPeriod = snap.generationPeriod;
+                            student.wasGenerated = snap.wasGenerated;
+                            student.historyState = snap.historyState;
+                            student.appreciationSource = snap.appreciationSource;
                         }
 
                         if (clearJournal) {
