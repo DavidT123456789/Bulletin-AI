@@ -62,7 +62,7 @@ export const AIService = {
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
                 payload: (p, m) => {
                     // Mapping des modèles vers leurs identifiants OpenRouter
-                    // IDs vérifiés sur openrouter.ai - Février 2026
+                    // IDs vérifiés sur openrouter.ai - Mars 2026
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
                         'claude-sonnet-4.6': 'anthropic/claude-sonnet-4.6',
@@ -71,7 +71,7 @@ export const AIService = {
                         // === PAYANTS ÉCONOMIQUES ===
                         'ministral-3b': 'mistralai/ministral-3b-2512',
                         'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
-                        'mistral-small': 'mistralai/mistral-small-3.2-24b-instruct',
+                        'mistral-small': 'mistralai/mistral-small-2603',
                         'mistral-large': 'mistralai/mistral-large-2512'
                     };
                     return {

@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, FALLBACK_CONFIG } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -24,6 +24,37 @@ import { AIService } from '../services/AIService.js';
  * @namespace SettingsUIManager
  */
 export const SettingsUIManager = {
+    /**
+     * Peuple le sélecteur de modèle IA depuis MODEL_SELECTOR_CONFIG.
+     * Single Source of Truth : les noms viennent de MODEL_SHORT_NAMES,
+     * les qualificatifs et le groupement de MODEL_SELECTOR_CONFIG.
+     */
+    populateModelSelector() {
+        const select = DOM.aiModelSelect;
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        MODEL_SELECTOR_CONFIG.forEach(group => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = group.label;
+
+            group.models.forEach(({ id, qualifier }) => {
+                const option = document.createElement('option');
+                option.value = id;
+                const shortName = MODEL_SHORT_NAMES[id] || id;
+                option.textContent = `${shortName} (${qualifier})`;
+                optgroup.appendChild(option);
+            });
+
+            select.appendChild(optgroup);
+        });
+
+        if (appState.currentAIModel) {
+            select.value = appState.currentAIModel;
+        }
+    },
+
     /**
      * Sauvegarde les modifications du style personnalisé.
      * @private

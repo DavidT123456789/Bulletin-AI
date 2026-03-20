@@ -2970,10 +2970,11 @@
     transform: translateY(100%);
     background: var(--bg-color);
     z-index: 30;
-    /* 30 > 20 (pilule). Ainsi la page d'analyse recouvre tout via le slide, style iOS */
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
 }
 
 /* When analysis page is active */
@@ -3092,6 +3093,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-height: 0;
 }
 
 /* Individual Analysis Card */
@@ -3100,8 +3102,8 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
-    overflow: hidden; /* Added to clip any inner backgrounds */
-    /* box-shadow removed */
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 [data-theme="dark"] .analysis-card {
@@ -3232,8 +3234,6 @@
     font-size: 14px;
     line-height: 1.7;
     color: var(--text-secondary);
-    max-height: 400px;
-    overflow-y: auto;
 }
 
 .analysis-card-body ul {

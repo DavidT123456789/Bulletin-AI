@@ -65,6 +65,8 @@ export const App = {
 
         // Initialize custom dropdowns
         DropdownManager.init();
+        // Populate model selector from config (Single Source of Truth)
+        SettingsUIManager.populateModelSelector();
         // Enhance main selects with custom dropdowns
         if (DOM.aiModelSelect) DropdownManager.enhance(DOM.aiModelSelect);
         if (DOM.sortSelect) DropdownManager.enhance(DOM.sortSelect);
