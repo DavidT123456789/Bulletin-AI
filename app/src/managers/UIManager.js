@@ -30,6 +30,7 @@ import { ThemeManager } from './ThemeManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { GliderManager } from './GliderManager.js';
 import { AnimationManager } from './AnimationManager.js';
+import { NotificationCoalescer } from './NotificationManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -73,7 +74,7 @@ export const UI = {
 
         ImportUI.init(this, appInstance);
         ThemeManager.init();
-
+        NotificationCoalescer.init();
 
         // Initialize mobile stats carousel
         StatsUI.initMobileCarousel();
@@ -106,7 +107,7 @@ export const UI = {
      * @param {NotificationType} [type='success'] - Type de notification (success, error, warning, info)
      * @param {number} [duration=4000] - Durée d'affichage en ms
      */
-    showNotification(message, type = 'success', duration = 4000) {
+    showNotification(message, type = 'success', duration = 4000, coalescingOptions = {}) {
         const container = document.getElementById('notification-container') || (() => {
             const c = document.createElement('div');
             c.id = 'notification-container';
@@ -114,7 +115,7 @@ export const UI = {
             return c;
         })();
 
-        // Prevent duplicate notifications (debounce 1s for same message)
+        // Prevent exact duplicate notifications (debounce 1s for same message)
         const timestamp = Date.now();
         if (this._lastNotification &&
             this._lastNotification.message === message &&
@@ -124,6 +125,32 @@ export const UI = {
         }
         this._lastNotification = { message, type, timestamp };
 
+        // Intelligent coalescing: evaluate if we should show, group, or queue
+        const evaluation = NotificationCoalescer.evaluate(message, type, coalescingOptions);
+
+        if (evaluation.action === 'queue') return;
+        if (evaluation.action === 'skip') return;
+
+        if (evaluation.action === 'coalesce' && evaluation.existingElement) {
+            NotificationCoalescer.updateBadge(evaluation.existingElement, evaluation.count);
+
+            const el = evaluation.existingElement;
+            const groupKey = coalescingOptions.group || `${type}:${NotificationCoalescer._normalizeMessage(message)}`;
+            const groupData = NotificationCoalescer._activeGroups.get(groupKey);
+            if (groupData?.timeoutId) clearTimeout(groupData.timeoutId);
+
+            const newTimeout = setTimeout(() => {
+                if (el.dataset.removing) return;
+                el.dataset.removing = 'true';
+                el.classList.remove('show');
+                setTimeout(() => el.remove(), 300);
+            }, duration);
+
+            if (groupData) groupData.timeoutId = newTimeout;
+            return;
+        }
+
+        // Standard flow: create new notification
         const notif = document.createElement('div');
         notif.className = `notification ${type}`;
 
@@ -161,10 +188,12 @@ export const UI = {
         notif.addEventListener('mouseleave', startTimer);
 
         container.appendChild(notif);
-        // RAF for animation to ensure class addition happens after DOM insertion
+
+        // Register for coalescing tracking
         requestAnimationFrame(() => {
             notif.classList.add('show');
             startTimer();
+            NotificationCoalescer.register(message, type, notif, timeoutId, coalescingOptions);
         });
     },
     /**

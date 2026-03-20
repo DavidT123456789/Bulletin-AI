@@ -38,6 +38,35 @@
     transform: translateX(0);
 }
 
+/* Coalescing Badge (×N counter) */
+.notification-coalesce-badge {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    opacity: 0.85;
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
+[data-theme="light"] .notification-coalesce-badge {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.notification-coalesce-badge.badge-bump {
+    animation: coalesceBump 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes coalesceBump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
 /* Notification Icon Container */
 .notification i:first-child {
     width: 28px;

@@ -151,8 +151,8 @@ export const GlobalListeners = {
 
     _aiFallbackListenerAttached: false,
     _lastFallbackNotificationTime: 0,
-    _fallbackNotificationDebounceMs: 3000,
-    _modelHistory: [], // Track model usage history
+    _fallbackNotificationDebounceMs: 8000,
+    _modelHistory: [],
 
     /**
      * Counter for active AI generations.
@@ -163,7 +163,6 @@ export const GlobalListeners = {
     _activeGenerationsCount: 0,
 
     _setupAiFallbackListener() {
-        // Guard: avoid adding listener multiple times
         if (this._aiFallbackListenerAttached) return;
         this._aiFallbackListenerAttached = true;
 
@@ -173,26 +172,24 @@ export const GlobalListeners = {
             appState.lastUsedFallbackModel = usedModel;
             appState.lastFallbackReason = reason;
 
-            // Noms courts pour l'affichage
             const shortOriginal = MODEL_SHORT_NAMES[originalModel] || originalModel;
             const shortUsed = MODEL_SHORT_NAMES[usedModel] || usedModel;
 
-            // Track model history
             this._modelHistory.push({ from: shortOriginal, to: shortUsed, reason, timestamp: Date.now() });
-            if (this._modelHistory.length > 5) this._modelHistory.shift(); // Keep last 5
+            if (this._modelHistory.length > 5) this._modelHistory.shift();
 
-            // Déduplication : évite les notifications en double pour les appels parallèles
             const now = Date.now();
             if (now - this._lastFallbackNotificationTime > this._fallbackNotificationDebounceMs) {
                 this._lastFallbackNotificationTime = now;
 
-                // Notification toast
                 let shortReason = reason || 'Erreur API';
                 if (shortReason.length > 60) shortReason = shortReason.substring(0, 60) + '…';
 
                 UI.showNotification(
                     `⚡ <strong>Fallback</strong> • ${shortOriginal} → ${shortUsed}<br>📋 <strong>Raison</strong> • ${shortReason}`,
-                    'warning'
+                    'warning',
+                    4000,
+                    { group: 'fallback' }
                 );
             }
 

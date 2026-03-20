@@ -8,6 +8,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
+import { NotificationCoalescer } from './NotificationManager.js';
 
 let Am;
 let App;
@@ -109,13 +110,14 @@ export const MassImportManager = {
                         // Marquer l'erreur 429 pour l'auto-tuning (augmente le délai)
                         RateLimiter.markError429(appState.currentAIModel, e.message);
 
-                        // Extraire le temps d'attente suggéré par l'API
                         const retryAfter = RateLimiter.extractRetryAfter(e.message);
-                        const waitTime = retryAfter || 5000; // 5s par défaut (réactif)
+                        const waitTime = retryAfter || 5000;
 
-                        UI.showNotification(
-                            `Limite API atteinte, reprise dans ${RateLimiter.formatTime(waitTime)}...`,
-                            'warning'
+                        // Absorb into progress bar instead of spawning a separate toast
+                        UI.updateOutputProgress(
+                            index,
+                            studentsToProcess.length,
+                            `⏱️ Limite API – reprise dans ${RateLimiter.formatTime(waitTime)}`
                         );
 
                         try {
@@ -209,6 +211,7 @@ export const MassImportManager = {
             const hasErrors = failedImports.length > 0;
             UI.hideHeaderProgress(hasErrors);
             this.massImportAbortController = null;
+            NotificationCoalescer.reset();
 
             Am.renderResults();
 
