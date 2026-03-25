@@ -124,6 +124,12 @@ export const FocusPanelAnalysis = {
         // Slide to analysis page
         container.classList.add('show-analysis');
 
+        // Manage focus/accessibility state (prevent tab bleeding)
+        const mainPage = document.getElementById('focusMainPage');
+        const analysisPage = document.getElementById('focusAnalysisPage');
+        if (mainPage) mainPage.setAttribute('inert', '');
+        if (analysisPage) analysisPage.removeAttribute('inert');
+
         // If analysis data already exists for CURRENT student, populate it
         const studentId = this._getCurrentStudentId();
         const result = appState.generatedResults.find(r => r.id === studentId);
@@ -166,6 +172,12 @@ export const FocusPanelAnalysis = {
         if (container) {
             container.classList.remove('show-analysis');
         }
+
+        // Manage focus/accessibility state (restore focus to main page)
+        const mainPage = document.getElementById('focusMainPage');
+        const analysisPage = document.getElementById('focusAnalysisPage');
+        if (mainPage) mainPage.removeAttribute('inert');
+        if (analysisPage) analysisPage.setAttribute('inert', '');
     },
 
     /**

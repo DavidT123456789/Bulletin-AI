@@ -664,6 +664,7 @@
 
 /* 2. Menu Button (Hamburger/Ellipsis) */
 .menu-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -702,8 +703,9 @@
     box-shadow: var(--shadow-elevation);
 }
 
-/* Update indicator: Organic animation of the 3 dots (Pure CSS) */
-.menu-btn.has-update {
+/* Indicator active: Organic animation of the 3 dots (Pure CSS) */
+.menu-btn.has-update,
+.menu-btn.has-cloud-reminder {
     /* Switch to row layout to align with horizontal icon style */
     flex-direction: row;
     gap: 3px;
@@ -718,11 +720,26 @@
    3. ::after (Bottom)
 */
 
-/* Shared logic for all 3 dots */
+/* Shared logic for all 3 dots (update & cloud backup reminder) */
+.menu-btn.has-update, .menu-btn.has-cloud-reminder {
+    --dot-target-bg: var(--primary-color);
+    --dot-target-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.6);
+}
+
+/* Specific styling for cloud backup reminder (warning color) if no update is present */
+.menu-btn.has-cloud-reminder:not(.has-update) {
+    --dot-target-bg: var(--warning-color);
+    --dot-target-shadow: 0 0 6px var(--warning-color);
+}
+
 .menu-btn.has-update::before,
 .menu-btn.has-update::after,
 .menu-btn.has-update i,
-.menu-btn.has-update iconify-icon {
+.menu-btn.has-update iconify-icon,
+.menu-btn.has-cloud-reminder::before,
+.menu-btn.has-cloud-reminder::after,
+.menu-btn.has-cloud-reminder i,
+.menu-btn.has-cloud-reminder iconify-icon {
     content: '';
     display: block;
     width: 3.5px;
@@ -744,28 +761,35 @@
 
 /* Specific overrides to hide the original font icon glyph */
 .menu-btn.has-update i::before,
-.menu-btn.has-update iconify-icon::part(svg) {
+.menu-btn.has-update iconify-icon::part(svg),
+.menu-btn.has-cloud-reminder i::before,
+.menu-btn.has-cloud-reminder iconify-icon::part(svg) {
     display: none !important;
 }
 
 /* For iconify-icon, we might need to hide the content differently since it uses Shadow DOM or direct SVG */
-.menu-btn.has-update iconify-icon {
+.menu-btn.has-update iconify-icon,
+.menu-btn.has-cloud-reminder iconify-icon {
     /* When active, we actually want to turn the ELEMENT ITSELF into a dot, ignoring its SVG content */
     background: transparent;
     /* Reset background */
 }
 
 /* Stagger delay for wave effect (Left -> Right) */
-.menu-btn.has-update::before {
+.menu-btn.has-update::before,
+.menu-btn.has-cloud-reminder::before {
     animation-delay: 0s;
 }
 
 .menu-btn.has-update i,
-.menu-btn.has-update iconify-icon {
+.menu-btn.has-update iconify-icon,
+.menu-btn.has-cloud-reminder i,
+.menu-btn.has-cloud-reminder iconify-icon {
     animation-delay: 0.15s;
 }
 
-.menu-btn.has-update::after {
+.menu-btn.has-update::after,
+.menu-btn.has-cloud-reminder::after {
     animation-delay: 0.3s;
 }
 
@@ -780,10 +804,10 @@
     }
 
     50% {
-        background-color: var(--primary-color);
+        background-color: var(--dot-target-bg);
         transform: scale(1.6);
-        /* Glow effect matching primary color */
-        box-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.6);
+        /* Glow effect matching target color */
+        box-shadow: var(--dot-target-shadow);
         opacity: 1;
     }
 }
@@ -999,6 +1023,20 @@
 .cloud-save-menu-item.disabled .cloud-save-label {
     color: var(--text-tertiary);
 }
+
+/* Cloud backup reminder — stale hint (>24h without cloud save) */
+.cloud-save-time.cloud-save-stale {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* Stale save row — subtle left accent */
+.cloud-save-menu-item.cloud-stale {
+    border-left: 2px solid var(--warning-color);
+    padding-left: 10px;
+}
+
+
 
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */
 .cloud-connect-item {

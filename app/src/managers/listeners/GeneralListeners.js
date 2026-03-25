@@ -307,7 +307,7 @@ export const GeneralListeners = {
             });
         }
 
-        // --- Update time hints on menu open ---
+        // --- Update time hints + cloud reminder on menu open ---
         DOM.headerMenuBtn?.addEventListener('click', async () => {
             try {
                 const { SyncService } = await import('../../services/SyncService.js');
@@ -328,6 +328,9 @@ export const GeneralListeners = {
                         await SyncService.checkRemoteStatus();
                     }
                 }
+
+                // Cloud reminder: warn when last save > 24h
+                this._updateCloudReminder(saveHint, cloudSaveBtn);
             } catch { /* Ignore */ }
         });
 
@@ -357,7 +360,12 @@ export const GeneralListeners = {
                 if (hintEl) {
                     const now = new Date();
                     hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                    hintEl.classList.remove('cloud-save-stale');
                 }
+
+                // Clear reminder indicators after successful save
+                cloudSaveBtn.classList.remove('cloud-stale');
+                DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
 
                 UI.showNotification('Données envoyées sur le Cloud !', 'success');
                 closeMenu();
@@ -446,5 +454,58 @@ export const GeneralListeners = {
                 }
             });
         }
+    },
+
+    /** @private */
+    _STALE_THRESHOLD_MS: 24 * 60 * 60 * 1000,
+
+    /**
+     * Cloud backup reminder — nudges user when last cloud save is stale.
+     * Shows a warning hint on the Save button and a dot on the menu button.
+     * @private
+     */
+    _updateCloudReminder(saveHintEl, saveBtnEl) {
+        if (!localStorage.getItem('bulletin_sync_provider')) return;
+
+        const lastSync = localStorage.getItem('bulletin_last_sync');
+        const lastModified = localStorage.getItem('bulletin_last_modified') || 0;
+        
+        const elapsed = lastSync ? Date.now() - parseInt(lastSync) : Infinity;
+        // Smart condition: stale AND contains un-synced modifications
+        const isStale = (elapsed > this._STALE_THRESHOLD_MS) && (parseInt(lastModified) > parseInt(lastSync || 0));
+
+        if (saveHintEl) {
+            if (isStale) {
+                const staleDays = lastSync ? Math.floor(elapsed / this._STALE_THRESHOLD_MS) : 0;
+                saveHintEl.textContent = staleDays
+                    ? `${staleDays}j sans sauvegarde`
+                    : 'Jamais sauvegardé';
+                saveHintEl.classList.add('cloud-save-stale');
+                saveHintEl.style.display = 'block';
+            } else {
+                saveHintEl.classList.remove('cloud-save-stale');
+            }
+        }
+
+        saveBtnEl?.classList.toggle('cloud-stale', isStale);
+        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', isStale);
+    },
+
+    /**
+     * Initialize the cloud reminder on app startup.
+     * Called once after SyncService.init() to set the menu button dot.
+     */
+    initCloudReminder() {
+        if (!localStorage.getItem('bulletin_sync_provider')) return;
+
+        const lastSync = localStorage.getItem('bulletin_last_sync');
+        const lastModified = localStorage.getItem('bulletin_last_modified') || 0;
+        const elapsed = lastSync ? Date.now() - parseInt(lastSync) : Infinity;
+
+        // Smart check at boot
+        if (elapsed > this._STALE_THRESHOLD_MS && parseInt(lastModified) > parseInt(lastSync || 0)) {
+            DOM.headerMenuBtn?.classList.add('has-cloud-reminder');
+        }
     }
 };
+

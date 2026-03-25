@@ -888,6 +888,9 @@ export const FocusPanelManager = {
         // Cancel any in-progress generation
         if (this.currentStudentId) this._cancelGenerationForStudent(this.currentStudentId);
 
+        // ALWAYS hide analysis page on close to reset view and inert states
+        FocusPanelAnalysis.hide();
+
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
 

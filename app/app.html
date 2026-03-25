@@ -95,7 +95,7 @@
                                 <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                 <span>Mes Classes</span>
                             </button>
-                            <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe">
+                            <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
                                 <iconify-icon icon="ph:plus"></iconify-icon>
                             </button>
                         </div>
@@ -136,7 +136,7 @@
                                 <div class="dash-progress-fill" id="dashProgressFill"></div>
                             </div>
                             <span class="dash-progress-text" id="dashProgressText">0/0</span>
-                            <button class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler">
+                            <button class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler" aria-label="Annuler la génération">
                                 <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
                         </div>
@@ -145,7 +145,7 @@
                     <div class="header-actions-pill">
 
                         <div class="dropdown-wrapper">
-                            <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu">
+                            <button id="headerMenuBtn" class="pill-segment menu-btn tooltip" data-tooltip="Menu" aria-label="Ouvrir le menu">
                                 <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
                             </button>
 
@@ -561,7 +561,7 @@
                                 <div class="journal-controls-group">
                                     <!-- Manual note button (Pen icon) -->
                                     <button class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
-                                        data-tooltip="Ajouter une note">
+                                        data-tooltip="Ajouter une note" aria-label="Ajouter une note">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
                                             stroke-linejoin="round" width="1em" height="1em">
@@ -699,7 +699,7 @@
             </div>
 
             <!-- PAGE 2: Analysis (slides in from right) -->
-            <div class="focus-page focus-analysis-page" id="focusAnalysisPage">
+            <div class="focus-page focus-analysis-page" id="focusAnalysisPage" inert>
                 <div class="focus-analysis-header">
                     <!-- LEFT ZONE: Avatar + Title -->
                     <div class="focus-analysis-header-left">
@@ -1333,11 +1333,11 @@
                 </h2>
                 <div class="modal-header-actions spaced">
                     <button type="button" class="icon-button tooltip" id="resetLabStyleBtn"
-                        data-tooltip="Réinitialiser les réglages">
+                        data-tooltip="Réinitialiser les réglages" aria-label="Réinitialiser les réglages">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon>
                     </button>
                     <button type="button" class="icon-button tooltip" id="toggleInspectorBtn"
-                        data-tooltip="Inspecteur de prompt">
+                        data-tooltip="Inspecteur de prompt" aria-label="Afficher l'inspecteur de prompt">
                         <iconify-icon icon="solar:code-square-linear"></iconify-icon>
                     </button>
                     <button class="close-button" id="closePersonalizationModalBtn" aria-label="Fermer">

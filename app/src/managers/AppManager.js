@@ -27,6 +27,7 @@ import { PwaInstallManager } from './PwaInstallManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
 
@@ -51,6 +52,9 @@ export const App = {
         } catch (e) {
             console.warn('[App] Cloud sync init failed:', e.message);
         }
+
+        // Cloud backup reminder: show dot on menu if last save > 24h
+        GeneralListeners.initCloudReminder();
 
         UI.applyTheme();
         UI.updateSettingsPromptFields();

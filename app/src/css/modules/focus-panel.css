@@ -1,6 +1,30 @@
 /* === Vue Focus (Panel) - Redesign 2025 "Premium iOS" === */
 
-/* Header offset tokens — single source of truth */
+/* ┌──────────────────────────────────────────────────────┐
+   │  TABLE OF CONTENTS  (Ctrl+F the section name)        │
+   ├──────────────────────────────────────────────────────┤
+   │  §0  TOKENS ................... :root variables       │
+   │  §1  PANEL SHELL ............. container, backdrop    │
+   │  §2  HEADER .................. student card, avatar   │
+   │  §3  NAV BUTTONS ............. prev/next, analyze     │
+   │  §4  CONTENT GRID ............ cards layout, shared   │
+   │  §5  CONTEXT CARD ............ info, badges, mic      │
+   │  §6  HISTORY & GRADES ........ summary, badges, prev  │
+   │  §7  APPRECIATION ............ preview, textarea, AI  │
+   │  §8  HISTORY ANIMATIONS ...... version change FX      │
+   │  §9  INLINE ACTIONS .......... copy, generate btns    │
+   │  §10 MAGIC LOADING ........... AI generation state    │
+   │  §11 FOOTER .................. legacy (analysis only) │
+   │  §12 STUDENT CARD ............ fiche élève, identity  │
+   │  §13 PAGES SYSTEM ............ sliding, analysis page │
+   │  §14 EXPANDABLE HEADER ....... in-place editing       │
+   │  §15 RETRACTABLE DETAILS ..... identity & history     │
+   │  §16 COPY BUTTON ............. appreciation cell      │
+   │  §17 ANALYZE BUTTON .......... header pill icon       │
+   │  §18 RESPONSIVE .............. all breakpoints        │
+   └──────────────────────────────────────────────────────┘ */
+
+/* §0 TOKENS — Header offset tokens, single source of truth */
 :root {
     --focus-header-offset: 106px;
     --focus-header-offset-tablet: 110px;
@@ -153,7 +177,7 @@
     width: 68px !important;
     height: 68px !important;
     font-size: 28px !important;
-    border: 2.5px solid var(--surface-color) !important;
+    border: 1.5px solid var(--surface-color) !important;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08) !important;
     margin: 0 !important;
     transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),

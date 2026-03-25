@@ -25,6 +25,9 @@ export const ModalUI = {
     /** @type {HTMLElement|null} Modale empilée (ex: helpModal par-dessus settings) */
     stackedModal: null,
 
+    /** @private Handler pour le focus trap (WCAG) */
+    _focusTrapHandler: null,
+
     /** @private */
     _isIgnoringTooltips: false,
 
@@ -94,10 +97,36 @@ export const ModalUI = {
             modal.classList.add('show');
         });
 
+        // Accessibilité (WCAG 2.1) : ARIA
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+
         this.activeModal = modal;
         document.body.classList.add('modal-open');
 
         this._isIgnoringTooltips = true;
+
+        // Configuration du Focus Trap
+        if (this._focusTrapHandler) document.removeEventListener('keydown', this._focusTrapHandler);
+        this._focusTrapHandler = (e) => {
+            if (e.key !== 'Tab') return;
+            const focusableElements = Array.from(modal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )).filter(el => !el.disabled && el.offsetParent !== null);
+            
+            if (focusableElements.length === 0) return;
+            const firstEl = focusableElements[0];
+            const lastEl = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey && document.activeElement === firstEl) {
+                lastEl.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && document.activeElement === lastEl) {
+                firstEl.focus();
+                e.preventDefault();
+            }
+        };
+        document.addEventListener('keydown', this._focusTrapHandler);
 
         // Focus sur le premier élément focalisable après l'animation (en évitant le bouton de fermeture si possible)
         setTimeout(() => {
@@ -167,7 +196,13 @@ export const ModalUI = {
             if (this.stackedModal && modal.id === 'helpModal') {
                 this.activeModal = this.stackedModal;
                 this.stackedModal = null;
+                // Rediriger le focus trap vers la modale restaurée
+                this.openModal(this.activeModal.id); 
             } else {
+                if (this._focusTrapHandler) {
+                    document.removeEventListener('keydown', this._focusTrapHandler);
+                    this._focusTrapHandler = null;
+                }
                 document.body.classList.remove('modal-open');
                 if (modal.id !== 'helpModal') {
                     modal.querySelectorAll('details[open]').forEach(d => d.removeAttribute('open'));

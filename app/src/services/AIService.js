@@ -36,6 +36,8 @@ import { DOM } from '../utils/DOM.js';
  */
 
 
+const MAX_RESPONSE_TOKENS = 1024;
+
 export const AIService = {
     /**
      * Génère la configuration API pour un provider donné
@@ -77,7 +79,7 @@ export const AIService = {
                     return {
                         model: modelMap[m] || 'deepseek/deepseek-chat',
                         messages: [{ role: "user", content: p }],
-                        max_tokens: 512
+                        max_tokens: MAX_RESPONSE_TOKENS
                     };
                 },
             },
@@ -96,7 +98,7 @@ export const AIService = {
                     // Paramètres de contrôle pour des réponses cohérentes
                     options: {
                         temperature: 0.7,      // Moins créatif, plus cohérent
-                        num_predict: 512,      // Limite à ~512 tokens de sortie (augmenté pour éviter les coupures)
+                        num_predict: MAX_RESPONSE_TOKENS,
                         top_p: 0.9,
                         repeat_penalty: 1.1,   // Évite les répétitions
                     }
@@ -114,7 +116,7 @@ export const AIService = {
                 payload: (p, m) => ({
                     model: m.replace('anthropic-', ''), // ex: 'anthropic-claude-sonnet-4.6' → 'claude-sonnet-4.6'
                     messages: [{ role: 'user', content: p }],
-                    max_tokens: 1024
+                    max_tokens: MAX_RESPONSE_TOKENS
                 }),
             },
             mistral: {
@@ -130,7 +132,7 @@ export const AIService = {
                     // ex: 'mistral-direct-large-latest' → 'mistral-large-latest'
                     model: m.replace('mistral-direct-', 'mistral-'),
                     messages: [{ role: 'user', content: p }],
-                    max_tokens: 512
+                    max_tokens: MAX_RESPONSE_TOKENS
                 }),
             }
         };

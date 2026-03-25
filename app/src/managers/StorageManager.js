@@ -8,6 +8,8 @@ let App;
 
 export const StorageManager = {
     _savePromise: null,
+    _lastSaveHash: null,
+    _isFirstLoadSave: false,
     init(ui, app) {
         UI = ui;
         App = app;
@@ -136,6 +138,7 @@ export const StorageManager = {
         this._ensureDefaultState();
         this._ensureConfigUpgrades();
 
+        this._isFirstLoadSave = true;
         this.saveAppState();
     },
 
@@ -404,7 +407,25 @@ export const StorageManager = {
         };
 
         const lsData = { version: APP_VERSION, settings: settings };
-        localStorage.setItem(CONFIG.LS_APP_STATE_KEY, JSON.stringify(lsData));
+        const stringifiedSettings = JSON.stringify(lsData);
+        // We also stringify generatedResults to detect real data changes safely
+        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
+        const currentHash = stringifiedSettings + stringifiedResults;
+
+        // Optimization: prevent writing to disk if state hasn't changed at all
+        if (this._lastSaveHash === currentHash) {
+            this._isFirstLoadSave = false;
+            return; 
+        }
+        this._lastSaveHash = currentHash;
+
+        // If this isn't the invisible first-load serialization, flag as manually dirtied
+        if (!this._isFirstLoadSave) {
+            localStorage.setItem('bulletin_last_modified', Date.now().toString());
+        }
+        this._isFirstLoadSave = false;
+
+        localStorage.setItem(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
 
         if (runtimeState.data.generatedResults) {
             await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
