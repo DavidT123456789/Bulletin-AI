@@ -333,12 +333,11 @@ export const StorageManager = {
             }
 
             // MIGRATION: Clean orphaned historyPerPeriod entries
-            // If a period has history but no appreciation AND is not the generation period,
-            // it was seeded from corrupted cross-period data — reset it.
+            // If a period has history but no appreciation, it's orphaned — reset it.
+            // NOTE: We do NOT exempt generationPeriod because it was contaminated
+            // by the original bug (S1 data written with generationPeriod='S2').
             if (result.historyPerPeriod) {
-                const currentGenPeriod = result.generationPeriod;
                 for (const [period, state] of Object.entries(result.historyPerPeriod)) {
-                    if (currentGenPeriod && period === currentGenPeriod) continue;
                     const hasAppreciation = sd.periods?.[period]?.appreciation?.trim();
                     if (!hasAppreciation && state?.versions?.length > 0) {
                         result.historyPerPeriod[period] = { versions: [], currentIndex: -1 };

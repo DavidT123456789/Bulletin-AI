@@ -386,8 +386,14 @@ export const FocusPanelManager = {
                         }
 
                         result.appreciation = content;
+                        if (result.studentData?.periods?.[appState.currentPeriod]) {
+                            result.studentData.periods[appState.currentPeriod].appreciation = content;
+                        }
                     } else {
                         result.appreciation = '';
+                        if (result.studentData?.periods?.[appState.currentPeriod]) {
+                            result.studentData.periods[appState.currentPeriod].appreciation = '';
+                        }
                     }
 
                     FocusPanelStatus.updateSourceIndicator(result);

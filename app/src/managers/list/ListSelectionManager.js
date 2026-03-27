@@ -640,6 +640,9 @@ export const ListSelectionManager = {
                     student.wasGenerated = false;
                     student.historyState = null;
                     student.appreciationSource = null;
+                    if (student.historyPerPeriod?.[currentPeriod]) {
+                        student.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                    }
                     counts.appreciation++;
                 }
             }

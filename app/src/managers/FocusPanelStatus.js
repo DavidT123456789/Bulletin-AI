@@ -277,7 +277,11 @@ export const FocusPanelStatus = {
         if (!state) {
             const isGenerating = this._isGenerating(result?.id);
             const hasError = !!(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
-            const hasContent = this._hasRealContent(result?.appreciation);
+            // CRITICAL: Check period-specific appreciation first, with fallback only when period matches
+            const currentPeriod = appState.currentPeriod;
+            const periodApp = result?.studentData?.periods?.[currentPeriod]?.appreciation;
+            const effectiveApp = periodApp || ((result?.generationPeriod === currentPeriod) ? result?.appreciation : null);
+            const hasContent = this._hasRealContent(effectiveApp);
 
             if (isGenerating) {
                 state = 'pending';

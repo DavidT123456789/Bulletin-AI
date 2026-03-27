@@ -58,12 +58,14 @@ export const FocusPanelHistory = {
         }
 
         // 2. Guard: If current period has history but no appreciation,
-        // it was contaminated from another period — reset it
+        // the history is orphaned (likely contaminated from another period) — reset it.
+        // NOTE: We intentionally do NOT exempt generationPeriod here, because
+        // generationPeriod itself was contaminated by the original bug
+        // (S1 data written with generationPeriod='S2').
         const existingState = result.historyPerPeriod[currentPeriod];
         if (existingState?.versions?.length > 0) {
             const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
-            const isGenerationPeriod = result.generationPeriod === currentPeriod;
-            if (!hasAppreciation && !isGenerationPeriod) {
+            if (!hasAppreciation) {
                 result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
             }
         }

@@ -97,12 +97,11 @@ export const AppreciationsManager = {
         }
 
         // Guard: If current period has history but no appreciation,
-        // it was contaminated from another period — reset it
+        // the history is orphaned — reset it
         const existingState = result.historyPerPeriod[currentPeriod];
         if (existingState?.versions?.length > 0) {
             const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
-            const isGenerationPeriod = result.generationPeriod === currentPeriod;
-            if (!hasAppreciation && !isGenerationPeriod) {
+            if (!hasAppreciation) {
                 result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
             }
         }

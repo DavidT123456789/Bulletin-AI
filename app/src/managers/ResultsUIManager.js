@@ -818,8 +818,17 @@ export const ResultsUIManager = {
                     r._lastModified = now;
 
                     r.copied = false;
-                    // We don't clear history by default to allow undo/reference, but we could if requested.
-                    // The user asked "Supprimer les journaux de bord", which implies a separate action.
+                    r.promptHash = null;
+                    r.generationSnapshot = null;
+                    r.generationPeriod = null;
+                    r.wasGenerated = false;
+                    r.appreciationSource = null;
+
+                    // Clear per-period history to prevent S1 history showing in S2
+                    if (r.historyPerPeriod?.[currentPeriod]) {
+                        r.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                    }
+                    r.historyState = null;
 
                     clearedCount++;
                 }
