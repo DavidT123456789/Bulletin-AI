@@ -241,6 +241,7 @@ export const SingleStudentManager = {
                 newResult.id = appState.currentEditingId;
 
                 await ListViewManager.updateRow(newResult.id, newResult, true);
+                UI.updateStats();
             }
         } catch (error) {
             const msg = Utils.translateErrorMessage(error.message);

@@ -909,6 +909,8 @@ export const FocusPanelManager = {
         if (wasOpen && !options.causedByHistory && history.state?.focusPanel) {
             HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
         }
+
+
     },
 
 
@@ -1325,11 +1327,9 @@ export const FocusPanelManager = {
 
                     // Update button to "Régénérer" state
                     this._updateGenerateButton(result);
-
-                    UI.showNotification('Appréciation générée !', 'success');
                 } else {
-                    // User navigated away - just show a subtle notification
-                    UI.showNotification(`Appréciation générée pour ${result.prenom}`, 'success');
+                    // User navigated away — this is their only feedback
+                    UI.showNotification(`Appréciation générée pour ${result.prenom}`, 'info');
                 }
 
                 // ALWAYS update the list view (regardless of current student)
@@ -1792,6 +1792,9 @@ export const FocusPanelManager = {
         // Persist to storage
         StorageManager.saveAppState();
 
+        // Refresh header stats (avgWordsChip) after any context/text/grade change
+        UI?.updateStats?.();
+
         // Refresh appreciation status (dirty check)
         FocusPanelStatus.refreshAppreciationStatus();
     },
@@ -1825,6 +1828,10 @@ export const FocusPanelManager = {
         } catch (e) {
             console.error('[FocusPanelManager] Failed to update list row:', e);
         }
+
+        // Centralized stats refresh — single source of truth for all Focus Panel mutations
+        // (generate, refine, manual edit, speech input, etc.)
+        UI?.updateStats?.();
     },
 
 

@@ -108,7 +108,6 @@ export const AnalysisManager = {
             result.strengthsWeaknesses = resp.text;
             result.tokenUsage.sw = resp.usage;
             StorageManager.saveAppState();
-            if (!silent) UI.showNotification('Analyse générée.', 'success');
         } catch (e) {
             console.error("Erreur F/F:", e);
             if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
@@ -147,7 +146,6 @@ export const AnalysisManager = {
             result.nextSteps = steps.slice(0, 3).filter(Boolean);
             result.tokenUsage.ns = resp.usage;
             StorageManager.saveAppState();
-            if (!silent) UI.showNotification('Pistes générées.', 'success');
         } catch (e) {
             console.error("Erreur pistes:", e);
             if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');

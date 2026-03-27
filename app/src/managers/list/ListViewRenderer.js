@@ -648,7 +648,7 @@ export const ListViewRenderer = {
             const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
 
             const copyButtonHTML = `
-                <button class="${btnClass}" data-action="copy-appreciation" aria-label="${title}" data-tooltip="${title}" onclick="event.stopPropagation(); AppreciationsManager.copyAppreciation('${result.id}', this)">
+                <button class="${btnClass}" data-action="copy-appreciation" aria-label="${title}" data-tooltip="${title}">
                     ${icon}
                 </button>
             `;
@@ -660,7 +660,7 @@ export const ListViewRenderer = {
             }
 
             return `${copyButtonHTML}
-            <div class="appreciation-preview-wrapper" onclick="event.stopPropagation(); this.closest('.appreciation-cell').click();">
+            <div class="appreciation-preview-wrapper">
                 ${dirtyBadge}
                 <div class="appreciation-preview has-copy-btn">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
             </div>`;
@@ -716,16 +716,14 @@ export const ListViewRenderer = {
 
         uniqueStatuses.forEach(tag => {
             const badgeInfo = Utils.getStatusBadgeInfo(tag);
-            // Use smaller gap/margin for multiple badges
-            html += `<span class="${badgeInfo.className}" style="margin: 2px;">${badgeInfo.label}</span>`;
+            html += `<span class="${badgeInfo.className}">${badgeInfo.label}</span>`;
         });
 
-        // Si vide, afficher un tiret très subtil (presque invisible)
         if (!html) {
-            return '<span style="color:var(--text-tertiary); font-size:10px; opacity:0.4;">&mdash;</span>';
+            return '<span class="status-empty-dash">&mdash;</span>';
         }
 
-        return `<div class="status-badges-container" style="display:flex; flex-wrap:wrap; justify-content:center; gap:4px;">${html}</div>`;
+        return `<div class="status-badges-container">${html}</div>`;
     },
 
     /**

@@ -378,8 +378,6 @@ export const FocusPanelAnalysis = {
 
             // Update button to Régénérer state
             this._updateAnalysisGenerateButton(result);
-
-            UI.showNotification('Analyse générée !', 'success');
         } catch (error) {
             console.error('Erreur analyse:', error);
             UI.showNotification(`Erreur : ${error.message}`, 'error');

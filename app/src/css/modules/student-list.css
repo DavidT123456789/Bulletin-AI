@@ -892,8 +892,20 @@
     padding: 8px 4px !important;
 }
 
+.status-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.status-empty-dash {
+    color: var(--text-tertiary);
+    font-size: 10px;
+    opacity: 0.4;
+}
+
 .status-cell .status-badge {
-    /* Reuse existing badge appearance but ensure centered */
     margin: 0 auto;
     width: fit-content;
 }

@@ -153,20 +153,19 @@ describe('AnalysisManager', () => {
             expect(AIService.callAIWithFallback).toHaveBeenCalledWith('sw prompt');
         });
 
-        it('should save result and show notification', async () => {
+        it('should save result to state', async () => {
             AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
 
             await AnalysisManager.generateStrengthsWeaknesses('test-id-1', false);
 
             expect(mockResult.strengthsWeaknesses).toBe('Analysis result');
             expect(StorageManager.saveAppState).toHaveBeenCalled();
-            expect(UI.showNotification).toHaveBeenCalledWith('Analyse générée.', 'success');
         });
 
-        it('should not show notification when silent', async () => {
+        it('should not show success notification even when not silent', async () => {
             AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
 
-            await AnalysisManager.generateStrengthsWeaknesses('test-id-1', true);
+            await AnalysisManager.generateStrengthsWeaknesses('test-id-1', false);
 
             expect(UI.showNotification).not.toHaveBeenCalled();
         });
