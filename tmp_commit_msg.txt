@@ -1,4 +1,0 @@
-refactor(ui): épuration des notifications de succès et modernisation des infobulles
-
-- Suppression des appels à UI.showNotification pour les actions réussies évidentes visuellement (création de classe, génération, exports, raffinement).
-- Actualisation du design des tooltips (Tippy.js) vers une esthétique plus premium et légère (mode translucide, sans flèche).
