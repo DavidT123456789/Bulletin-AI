@@ -1997,9 +1997,21 @@
     box-shadow: none;
 }
 
+.focus-action-icon-btn iconify-icon {
+    opacity: 0.75;
+    stroke-width: 1.6px;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: center;
+}
+
 .focus-action-icon-btn:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
+}
+
+.focus-action-icon-btn:hover iconify-icon {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .focus-action-icon-btn:active {
@@ -2014,8 +2026,12 @@
 
 /* Copy success feedback */
 .focus-action-icon-btn.copied {
-    color: var(--success-color, #10b981);
+    color: var(--success-color, #10b981) !important;
     background: rgba(var(--success-rgb), 0.08);
+}
+
+.focus-action-icon-btn.copied iconify-icon {
+    opacity: 1;
 }
 
 /* Generate button — fills remaining space */
