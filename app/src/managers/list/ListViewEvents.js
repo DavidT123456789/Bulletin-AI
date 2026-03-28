@@ -40,8 +40,8 @@ export const ListViewEvents = {
     },
 
     /**
-         * Attache les event listeners aux Ã©lÃ©ments de la liste
-         * @param {HTMLElement} listContainer - Le conteneur spÃ©cifique de la liste
+         * Attache les event listeners aux éléments de la liste
+         * @param {HTMLElement} listContainer - Le conteneur spécifique de la liste
          * @private
          */
     attachEventListeners(listContainer) {

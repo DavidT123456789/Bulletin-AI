@@ -24,7 +24,7 @@ import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
 
 /**
- * Module de gestion de la vue Liste (tableau des Ã©lÃ¨ves)
+ * Module de gestion de la vue Liste (tableau des élèves)
  * @namespace ListViewManager
  */
 export const ListViewManager = {

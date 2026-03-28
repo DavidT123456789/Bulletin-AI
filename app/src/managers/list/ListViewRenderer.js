@@ -444,7 +444,7 @@ export const ListViewRenderer = {
 
     /**
      * Génère les headers de notes avec colonnes d'évolution
-     * @param {Array} periods - PÃ©riodes Ã  afficher
+     * @param {Array} periods - Périodes à afficher
      * @returns {string} HTML des headers
      * @private
      */
@@ -501,9 +501,9 @@ export const ListViewRenderer = {
 
     /**
      * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
-     * @param {Object} periods - DonnÃ©es par pÃ©riode
-     * @param {Array} allPeriods - Liste de toutes les pÃ©riodes
-     * @param {number} currentIndex - Index de la pÃ©riode courante
+     * @param {Object} periods - Données par période
+     * @param {Array} allPeriods - Liste de toutes les périodes
+     * @param {number} currentIndex - Index de la période courante
      * @returns {string} HTML des cellules
      * @private
      */
@@ -542,7 +542,7 @@ export const ListViewRenderer = {
                     </td>
                 `;
 
-                // Cellule d'Ã©volution (entre cette note et la suivante)
+                // Cellule d'évolution (entre cette note et la suivante)
                 if (i < currentIndex) {
                     let evolutionHtml = '';
                     try {
@@ -607,7 +607,7 @@ export const ListViewRenderer = {
         }
         let appreciation = '';
 
-        // 1. PrioritÃ©: apprÃ©ciation stockÃ©e directement dans la pÃ©riode
+        // 1. Priorité: appréciation stockée directement dans la période
         const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
         if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
             appreciation = periodApp.trim();
@@ -622,16 +622,16 @@ export const ListViewRenderer = {
             }
         }
 
-        // Si c'est une autre pÃ©riode, et qu'on n'a rien trouvÃ©, on n'affiche rien (plutÃ´t que l'apprÃ©ciation d'un autre trimestre)
-        // Cela rÃ©pond Ã  la demande : "T1 affiche T1".
+        // Si c'est une autre période, et qu'on n'a rien trouvé, on n'affiche rien (plutôt que l'appréciation d'un autre trimestre)
+        // Cela répond à la demande : "T1 affiche T1".
 
-        // Supprimer les balises HTML pour la vÃ©rification
+        // Supprimer les balises HTML pour la vérification
         const textOnly = appreciation?.replace(/<[^>]*>/g, '').trim().toLowerCase() || '';
 
-        // VÃ©rifier que c'est une vraie apprÃ©ciation, pas un placeholder
+        // Vérifier que c'est une vraie appréciation, pas un placeholder
         const isPlaceholder = !appreciation ||
             textOnly === '' ||
-            textOnly.includes('aucune apprÃ©ciation') ||
+            textOnly.includes('aucune appréciation') ||
             textOnly.includes('en attente') ||
             textOnly.includes('cliquez sur') ||
             textOnly.startsWith('remplissez');
@@ -698,8 +698,8 @@ export const ListViewRenderer = {
         return `<span class="status-badge ${status}">${icon}${label}</span>`;
     },
     /**
-     * GÃ©nÃ¨re le contenu de la colonne Statut (Badges Ã©lÃ¨ve + Erreurs)
-     * @param {Object} result - RÃ©sultat Ã©lÃ¨ve
+     * Génère le contenu de la colonne Statut (Badges élève + Erreurs)
+     * @param {Object} result - Résultat élève
      * @returns {string} HTML des badges
      * @private
      */
