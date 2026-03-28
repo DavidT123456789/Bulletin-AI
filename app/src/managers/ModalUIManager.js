@@ -254,7 +254,8 @@ export const ModalUI = {
                 cancelText = 'Annuler',
                 extraButton = null,
                 isDanger = true, // Par défaut true pour matcher le comportement legacy d'UIManager (bouton rouge)
-                compact = false
+                compact = false,
+                modalClass = ''
             } = options;
 
             const modalId = 'customConfirmModal';
@@ -263,7 +264,7 @@ export const ModalUI = {
 
             modal = document.createElement('div');
             modal.id = modalId;
-            modal.className = 'modal';
+            modal.className = `modal ${modalClass}`;
             // Assurer que le z-index est correct (géré par CSS .modal)
 
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';

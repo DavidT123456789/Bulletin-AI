@@ -1,6 +1,6 @@
 /* ====================================================================
    MODULE: Modales
-   Styles de base pour toutes les fenêtres modales
+   Styles de base pour toutes les fenÃƒÂªtres modales
    ==================================================================== */
 
 .modal {
@@ -56,7 +56,7 @@
     filter: blur(0);
 }
 
-/* Animation de fermeture - Spécificité augmentée pour avoir priorité sur modal-visible */
+/* Animation de fermeture - SpÃƒÂ©cificitÃƒÂ© augmentÃƒÂ©e pour avoir prioritÃƒÂ© sur modal-visible */
 .modal.modal-visible.modal-closing .modal-content {
     opacity: 0 !important;
     transform: scale(0.95) translateY(8px) !important;
@@ -75,7 +75,7 @@
 }
 
 .modal-content-confirm {
-    max-width: 500px;
+    max-width: 540px;
 }
 
 .modal-content-confirm .modal-body p {
@@ -143,13 +143,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Style: Icone seule colorée (Bleu primaire) sans fond */
+    /* Style: Icone seule colorÃƒÂ©e (Bleu primaire) sans fond */
     width: auto;
     height: auto;
     background: transparent;
     color: var(--primary-color);
     font-size: 26px;
-    /* Taille harmonisée pour toutes les modales */
+    /* Taille harmonisÃƒÂ©e pour toutes les modales */
     flex-shrink: 0;
     padding: 0;
     margin: 0;
@@ -292,7 +292,7 @@
     border-radius: var(--radius-pill) !important;
 }
 
-/* Unified footer info pill — shared across all wizard modals */
+/* Unified footer info pill Ã¢â‚¬â€ shared across all wizard modals */
 .modal-footer-info {
     display: inline-flex;
     align-items: center;
@@ -320,8 +320,8 @@
 }
 
 /* ====================================================================
-   Désactivation de l'élévation des cartes au survol dans les modales
-   Pour une expérience plus sobre dans l'espace modal confiné
+   DÃƒÂ©sactivation de l'ÃƒÂ©lÃƒÂ©vation des cartes au survol dans les modales
+   Pour une expÃƒÂ©rience plus sobre dans l'espace modal confinÃƒÂ©
    ==================================================================== */
 .modal .nebula-card:hover,
 .modal .card-content-wrapper:hover,
@@ -330,7 +330,7 @@
 .modal .ui-accordion:hover,
 .modal .sidebar-card:hover {
     box-shadow: var(--shadow-sm);
-    /* Maintenir l'ombre de base sans élévation */
+    /* Maintenir l'ombre de base sans ÃƒÂ©lÃƒÂ©vation */
 }
 
 /* Utilities Modales (from lines 711-768) */
@@ -425,7 +425,7 @@
     margin-top: 12px;
     max-height: 350px;
     overflow-y: auto;
-    /* Empêche l'élargissement du conteneur parent */
+    /* EmpÃƒÂªche l'ÃƒÂ©largissement du conteneur parent */
     word-break: break-word;
     overflow-wrap: break-word;
     width: 100%;
@@ -439,7 +439,7 @@
     border-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Inspecteur de Prompt - Hauteur adaptative sans barre de défilement interne */
+/* Inspecteur de Prompt - Hauteur adaptative sans barre de dÃƒÂ©filement interne */
 .prompt-preview-auto-height {
     max-height: none;
     overflow-y: visible;
@@ -527,7 +527,7 @@
 
 
 /* ====================================================================
-   API Status Summary - Récapitulatif des connexions API
+   API Status Summary - RÃƒÂ©capitulatif des connexions API
    ==================================================================== */
 
 .api-status-summary {
@@ -564,7 +564,7 @@
     padding: 5px 10px;
 }
 
-/* Indicateur du modèle actif */
+/* Indicateur du modÃƒÂ¨le actif */
 .api-status-active-model {
     font-size: 0.85em;
     color: var(--text-secondary);
@@ -585,7 +585,7 @@
     color: var(--text-primary);
 }
 
-/* Dropdown inline pour le modèle actif */
+/* Dropdown inline pour le modÃƒÂ¨le actif */
 .inline-model-label {
     margin: 0;
     font-weight: 500;
@@ -711,7 +711,7 @@
 .api-status-item.warning .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
     color: var(--warning-hover);
-    /* Garder foncé pour contraste sur fond clair, mais idéalement var(--warning-dark) */
+    /* Garder foncÃƒÂ© pour contraste sur fond clair, mais idÃƒÂ©alement var(--warning-dark) */
 }
 
 .api-status-item.inactive .api-status-badge {
@@ -719,7 +719,7 @@
     color: var(--text-secondary);
 }
 
-/* État pending - clé présente mais non validée */
+/* Ãƒâ€°tat pending - clÃƒÂ© prÃƒÂ©sente mais non validÃƒÂ©e */
 .api-status-item.pending {
     cursor: pointer;
 }
@@ -878,7 +878,7 @@
     font-size: 0.9em;
     color: var(--text-secondary);
     line-height: 1.5;
-    font-weight: 400;
+    font-weight: normal; font-style: normal; opacity: 0.95;
 }
 
 .modal-choice-item.checked .modal-choice-title {
@@ -942,7 +942,7 @@
     background: rgba(34, 197, 94, 0.08);
 }
 
-/* État quota-warning - clé valide mais quota limité */
+/* Ãƒâ€°tat quota-warning - clÃƒÂ© valide mais quota limitÃƒÂ© */
 .api-status-item.quota-warning {
     cursor: pointer;
 }
@@ -961,7 +961,7 @@
     color: var(--warning-color);
 }
 
-/* État invalid - clé invalide */
+/* Ãƒâ€°tat invalid - clÃƒÂ© invalide */
 .api-status-item.invalid {
     cursor: pointer;
 }
@@ -990,7 +990,7 @@
     }
 }
 
-/* === Styles pour la sélection de matière === */
+/* === Styles pour la sÃƒÂ©lection de matiÃƒÂ¨re === */
 .subject-selection-row {
     display: flex;
     justify-content: space-between;
@@ -1011,7 +1011,7 @@
     margin: 0;
 }
 
-/* Message inline "Personnalisation désactivée" */
+/* Message inline "Personnalisation dÃƒÂ©sactivÃƒÂ©e" */
 .generic-info-inline {
     display: none;
     font-size: 0.85em;
@@ -1074,7 +1074,7 @@
     font-size: 13px;
 }
 
-/* Boutons icônes carrés */
+/* Boutons icÃƒÂ´nes carrÃƒÂ©s */
 .subject-header-controls .btn i:only-child {
     margin: 0;
 }
@@ -1096,7 +1096,7 @@
 }
 
 
-/* === Avertissement clé manquante === */
+/* === Avertissement clÃƒÂ© manquante === */
 .missing-key-warning {
     display: flex;
     align-items: center;
@@ -1119,7 +1119,7 @@
     font-weight: 600;
 }
 
-/* === Container des clés API dans l'accordion === */
+/* === Container des clÃƒÂ©s API dans l'accordion === */
 .api-keys-container {
     display: flex;
     flex-direction: column;
@@ -1156,7 +1156,7 @@
 .api-key-provider iconify-icon {
     font-size: 1.1em;
     opacity: 1;
-    /* Fix 'icone atténuée' */
+    /* Fix 'icone attÃƒÂ©nuÃƒÂ©e' */
 }
 
 .api-key-header .btn-link {
@@ -1201,13 +1201,13 @@
     margin-top: 8px;
 }
 
-/* === Pied de page des Modales (Uniformisé) === */
-/* (Déjà géré en haut du fichier) */
+/* === Pied de page des Modales (UniformisÃƒÂ©) === */
+/* (DÃƒÂ©jÃƒÂ  gÃƒÂ©rÃƒÂ© en haut du fichier) */
 
-/* Boutons dans modal-footer : héritent de components.css */
-/* Overrides supprimés pour utiliser le système unifié */
+/* Boutons dans modal-footer : hÃƒÂ©ritent de components.css */
+/* Overrides supprimÃƒÂ©s pour utiliser le systÃƒÂ¨me unifiÃƒÂ© */
 
-/* === Dark Mode pour les Cartes Paramètres === */
+/* === Dark Mode pour les Cartes ParamÃƒÂ¨tres === */
 /* Dark mode styles handled by variables */
 
 /* === Compact API Status Mode (Refactoring) === */
@@ -1388,7 +1388,7 @@
     gap: 24px;
     display: flex;
     flex-direction: column;
-    background: var(--surface-color);
+    background: var(--bg-secondary); /* Restoring the subtle gray background */
     border: 1px solid var(--glass-base-border);
     box-shadow: var(--shadow-xl);
     border-radius: var(--radius-lg);
@@ -1467,7 +1467,7 @@
 
 /* ====================================================================
    Support Card - Donate Section
-   Design premium adapté aux deux modes (clair/sombre)
+   Design premium adaptÃƒÂ© aux deux modes (clair/sombre)
    ==================================================================== */
 /* ====================================================================
    MODEL SELECTOR MODAL - Quick Switcher Styles
@@ -1480,7 +1480,7 @@
 }
 
 .model-selection-content .modal-header {
-    background: var(--surface-color);
+    background: var(--bg-secondary); /* Restoring the subtle gray background */
     border-bottom: 1px solid var(--border-color);
     padding: 16px 20px;
 }
@@ -1638,7 +1638,7 @@
 }
 
 /* ====================================================================
-   HARD CONFIRM MODAL — Type-to-confirm pattern
+   HARD CONFIRM MODAL Ã¢â‚¬â€ Type-to-confirm pattern
    ==================================================================== */
 .hard-confirm-input-wrapper {
     display: flex;
@@ -1672,7 +1672,7 @@
     font-family: var(--font-sans);
     letter-spacing: 0.08em;
     color: var(--text-primary);
-    background: var(--surface-color);
+    background: var(--bg-secondary); /* Restoring the subtle gray background */
     border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
     outline: none;
@@ -1690,8 +1690,86 @@
 }
 
 .hard-confirm-input::placeholder {
-    font-weight: 400;
+    font-weight: normal; font-style: normal; opacity: 0.95;
     letter-spacing: normal;
     color: var(--text-tertiary);
     opacity: 0.7;
 }
+/* ====================================================================
+   PROMPT PREVIEW MODAL â€” Direct reading experience
+   ==================================================================== */
+.modal-prompt-preview .modal-content {
+    max-width: 640px; 
+    width: 95%;
+}
+
+.modal-prompt-preview .modal-body {
+    padding: 20px 28px; 
+    background: var(--bg-secondary); /* Restoring the subtle gray background */ 
+    overflow-y: auto !important; 
+    min-height: 480px;
+}
+
+.modal-prompt-preview .modal-body p {
+    display: block !important;
+    margin: 0;
+    height: auto;
+}
+
+.prompt-preview-container {
+    width: 100%;
+}
+
+.prompt-preview-content {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: normal; 
+    font-style: normal; 
+    opacity: 0.95; 
+    line-height: 1.65;
+    white-space: pre-wrap;
+    user-select: text;
+    cursor: text;
+    outline: none;
+    background: transparent;
+    border: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile Adjustments for Prompt Preview */
+@media (max-width: 480px) {
+    .modal-prompt-preview .modal-body {
+        padding: 20px 24px;
+    }
+    
+    .prompt-preview-content {
+        font-size: 0.82rem;
+        line-height: 1.55;
+    }
+}
+
+.modal-prompt-preview .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-prompt-preview .modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-prompt-preview .modal-body::-webkit-scrollbar-thumb {
+    background: var(--text-quaternary);
+    border-radius: 10px;
+    opacity: 0.5;
+}
+
+[data-theme='dark'] .modal-prompt-preview .modal-body {
+    background: #0d0d0f; 
+}
+
+
+
+
+

@@ -153,6 +153,7 @@
 
     /* --- Typography System --- */
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Consolas', 'Monaco', 'SF Mono', ui-monospace, monospace;
 
     /* Type Scale */
     --font-xs: 0.75rem;

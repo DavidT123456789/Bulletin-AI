@@ -57,20 +57,8 @@ export const FocusPanelRefinement = {
         const escapedText = Utils.escapeHtml(promptText);
 
         const message = `
-            <div style="text-align: left;">
-                <textarea readonly class="prompt-preview-textarea" style="
-                    width: 100%; 
-                    height: 400px; 
-                    padding: 12px; 
-                    border-radius: var(--radius-sm); 
-                    border: 1px solid var(--border-color); 
-                    background: var(--bg-secondary); 
-                    color: var(--text-primary); 
-                    font-family: 'SF Mono', Consolas, monospace; 
-                    font-size: 0.85rem; 
-                    line-height: 1.5;
-                    white-space: pre-wrap;
-                    resize: vertical;">${escapedText}</textarea>
+            <div class="prompt-preview-container">
+                <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
             </div>
         `;
 
@@ -79,7 +67,8 @@ export const FocusPanelRefinement = {
             confirmText: 'Copier',
             cancelText: 'Fermer',
             isDanger: false,
-            compact: false
+            compact: false,
+            modalClass: 'modal-prompt-preview'
         });
 
         if (confirmed) {

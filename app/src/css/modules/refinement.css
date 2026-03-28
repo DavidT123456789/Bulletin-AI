@@ -604,19 +604,19 @@ button[data-refine-type="polish"].is-generating iconify-icon {
    ==================================================================== */
 
 /* Boutons avec icône baguette magique (Générer) */
-.btn:hover iconify-icon[icon*="magic-stick"],
-button:hover iconify-icon[icon*="magic-stick"],
+.btn:not(.menu-item):hover iconify-icon[icon*="magic-stick"],
+button:not(.menu-item):hover iconify-icon[icon*="magic-stick"],
 .focus-nav-btn:hover iconify-icon[icon*="magic-stick"],
-.dropdown-item:hover iconify-icon[icon*="magic-stick"] {
+.dropdown-item:not(.menu-item):hover iconify-icon[icon*="magic-stick"] {
     animation: magic-polish 1.2s ease-in-out infinite;
     display: inline-block;
 }
 
 /* Boutons avec icône de rafraîchissement (Régénérer / Mettre à jour) */
-.btn:hover iconify-icon[icon*="refresh"],
-button:hover iconify-icon[icon*="refresh"],
+.btn:not(.menu-item):hover iconify-icon[icon*="refresh"],
+button:not(.menu-item):hover iconify-icon[icon*="refresh"],
 .focus-nav-btn:hover iconify-icon[icon*="refresh"],
-.dropdown-item:hover iconify-icon[icon*="refresh"] {
+.dropdown-item:not(.menu-item):hover iconify-icon[icon*="refresh"] {
     animation: rotate-soft 1.5s linear infinite;
     display: inline-block;
 }
