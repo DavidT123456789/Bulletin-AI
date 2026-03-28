@@ -289,7 +289,7 @@ describe('ExportManager', () => {
 
     describe('exportToCsv', () => {
         it('should show warning if no data to export', () => {
-            appState.generatedResults = [];
+            appState.filteredResults = [];
 
             ExportManager.exportToCsv();
 
@@ -297,7 +297,7 @@ describe('ExportManager', () => {
         });
 
         it('should call _downloadFile with correct parameters', () => {
-            appState.generatedResults = [{
+            appState.filteredResults = [{
                 nom: 'MARTIN',
                 prenom: 'Lucas',
                 appreciation: 'Test',
@@ -323,13 +323,13 @@ describe('ExportManager', () => {
             const [content, filename, mimeType] = StorageManager._downloadFile.mock.calls[0];
             expect(content).toContain('MARTIN');
             expect(content).toContain('Lucas');
-            expect(filename).toContain('bulletin-assistant_export_');
+            expect(filename).toContain('bulletin-ai');
             expect(filename).toContain('.csv');
             expect(mimeType).toBe('text/csv;charset=utf-8;');
         });
 
         it('should show success notification', () => {
-            appState.generatedResults = [{
+            appState.filteredResults = [{
                 nom: 'MARTIN',
                 prenom: 'Lucas',
                 appreciation: 'Test',
@@ -341,10 +341,11 @@ describe('ExportManager', () => {
                     periods: { T1: {}, T2: {}, T3: {} }
                 }
             }];
+            appState.currentPeriod = 'T1';
 
             ExportManager.exportToCsv();
 
-            expect(UI.showNotification).toHaveBeenCalledWith('Exporté en CSV.', 'success');
+            expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('CSV exporté'), 'success');
         });
     });
 

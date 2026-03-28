@@ -135,59 +135,77 @@ export const ExportManager = {
     },
 
     /**
-     * Exporte toutes les appréciations au format CSV.
+     * Exporte les appréciations visibles au format CSV.
+     * Scope : classe active, périodes actuelles et précédentes uniquement.
      */
     exportToCsv() {
-        if (appState.generatedResults.length === 0) {
+        const results = appState.filteredResults;
+
+        if (!results || results.length === 0) {
             UI.showNotification('Aucune donnée à exporter.', 'warning');
             return;
         }
 
-        const periods = Utils.getPeriods();
+        const allPeriods = Utils.getPeriods();
+        const currentPeriod = appState.currentPeriod;
+
         const headers = [
             "Nom", "Prénom", "Statuts",
-            ...periods.flatMap(p => [`Moy ${p}`, `App ${p}`]),
-            "App Générée", "Période", "Matière", "Instructions",
-            "Forces/Faiblesses", "Pistes", "Date", "Erreur"
+            ...allPeriods.flatMap(p => [`Moy ${p}`, `App ${p}`]),
+            "Matière", "Instructions", "Forces/Faiblesses", "Pistes", "Date"
         ];
 
         const clean = (txt) => {
             if (txt == null) return '';
-            let str = String(txt).replace(/"/g, '""');
-            return (/[",;\n\r]/).test(str) ? `"${str}"` : str;
+            let str = Utils.stripMarkdown(String(txt));
+            str = str.replace(/[\n\r]+/g, ' ').trim();
+            str = str.replace(/"/g, '""');
+            return (/[",;]/).test(str) ? `"${str}"` : str;
         };
 
-        const rows = appState.generatedResults.map(r => {
-            let row = [r.nom, r.prenom, (r.studentData.statuses || []).join(', ')];
+        const rows = results.map(r => {
+            const sd = r.studentData || {};
+            let row = [r.nom, r.prenom, (sd.statuses || []).join(', ')];
 
-            periods.forEach(p => {
-                const d = r.studentData.periods[p];
+            allPeriods.forEach(p => {
+                const d = sd.periods?.[p];
                 const grade = d?.grade;
+                
+                // SINGLE SOURCE OF TRUTH:
+                // 1. If an appreciation is actively assigned to this period in periods[p], use it.
+                // 2. Fallback: If AI generated an appreciation for *this* period but hasn't synced to periods[p] yet, use it.
+                let targetApp = d?.appreciation || '';
+                if (!targetApp && r.generationPeriod === p && r.appreciation) {
+                    targetApp = r.appreciation;
+                }
+
                 row.push(
                     typeof grade === 'number' ? String(grade).replace('.', ',') : '',
-                    p === r.studentData.currentPeriod ? '' : d?.appreciation || ''
+                    targetApp
                 );
             });
 
             row.push(
-                Utils.stripMarkdown(r.appreciation),
-                r.studentData.currentPeriod,
-                r.studentData.subject,
-                r.studentData.periods?.[r.studentData.currentPeriod]?.context || '',
-                r.strengthsWeaknesses,
-                r.nextSteps?.join('; '),
-                new Date(r.timestamp).toLocaleString(),
-                r.errorMessage
+                sd.subject || appState.currentSubject || '',
+                sd.periods?.[currentPeriod]?.context || '',
+                r.strengthsWeaknesses ?? '',
+                r.nextSteps?.join('; ') ?? '',
+                r.timestamp ? new Date(r.timestamp).toLocaleString() : ''
             );
 
             return row.map(clean).join(';');
         });
 
         const csvContent = "\uFEFF" + headers.join(';') + '\n' + rows.join('\n');
-        const filename = `bulletin-assistant_export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+        const classLabel = appState.classes?.find(c => c.id === appState.currentClassId)?.name || '';
+        const safeName = classLabel ? `_${classLabel.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-')}` : '';
+        const filename = `bulletin-ai${safeName}_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.csv`;
 
         StorageManager._downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
-        UI.showNotification('Exporté en CSV.', 'success');
+
+        const count = results.length;
+        UI.showNotification(`CSV exporté (${count} élève${count > 1 ? 's' : ''}, ${Utils.getPeriodLabel(currentPeriod, true)}).`, 'success');
     },
 
     /**

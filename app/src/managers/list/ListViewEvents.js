@@ -9,6 +9,7 @@ import { HistoryManager } from '../HistoryManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
+import { ExportManager } from '../ExportManager.js';
 import { MassImportManager } from '../MassImportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
@@ -421,8 +422,8 @@ export const ListViewEvents = {
 
         // Export
         addAction('#exportJsonBtn', () => StorageManager.exportToJson());
-        addAction('#exportCsvBtn', AppreciationsManager.exportToCsv);
-        addAction('#exportPdfBtn', AppreciationsManager.exportToPdf);
+        addAction('#exportCsvBtn', () => ExportManager.exportToCsv());
+        addAction('#exportPdfBtn', () => ExportManager.exportToPdf());
 
         // Analyze class (in dropdown menu)
         addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
