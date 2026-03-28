@@ -151,7 +151,7 @@ export const ExportManager = {
 
         const headers = [
             "Nom", "Prénom", "Statuts",
-            ...allPeriods.flatMap(p => [`Moy ${p}`, `App ${p}`]),
+            ...allPeriods.flatMap(p => [`Moy ${p}`, `Évo ${p}`, `App ${p}`]),
             "Matière", "Instructions", "Forces/Faiblesses", "Pistes", "Date"
         ];
 
@@ -171,6 +171,14 @@ export const ExportManager = {
                 const d = sd.periods?.[p];
                 const grade = d?.grade;
                 
+                // Calcul de l'évolution
+                let evolutionStr = '';
+                const evo = Utils.getRelevantEvolution(r.evolutions, p);
+                if (evo && typeof evo.delta === 'number') {
+                    const sign = evo.delta > 0 ? '+' : '';
+                    evolutionStr = `${sign}${String(evo.delta).replace('.', ',')}`;
+                }
+
                 // SINGLE SOURCE OF TRUTH:
                 // 1. If an appreciation is actively assigned to this period in periods[p], use it.
                 // 2. Fallback: If AI generated an appreciation for *this* period but hasn't synced to periods[p] yet, use it.
@@ -181,6 +189,7 @@ export const ExportManager = {
 
                 row.push(
                     typeof grade === 'number' ? String(grade).replace('.', ',') : '',
+                    evolutionStr,
                     targetApp
                 );
             });
@@ -210,6 +219,7 @@ export const ExportManager = {
 
     /**
      * Lance l'impression de la page pour générer un PDF.
+     * Injecte un en-tête imprimable avec classe, période et date.
      */
     exportToPdf() {
         if (appState.filteredResults.length === 0) {
@@ -217,14 +227,44 @@ export const ExportManager = {
             return;
         }
 
-        const originalTitle = document.title;
-        document.title = `Appréciations - ${appState.currentSubject} - ${Utils.getPeriodLabel(appState.currentPeriod, true)}`;
+        const classLabel = appState.classes?.find(c => c.id === appState.currentClassId)?.name || '';
+        const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
+        const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        window.onafterprint = () => {
+        const originalTitle = document.title;
+        document.title = `Appréciations${classLabel ? ` - ${classLabel}` : ''} - ${periodLabel}`;
+
+        const printHeader = document.createElement('div');
+        printHeader.id = 'print-header';
+        printHeader.setAttribute('style',
+            'display:none; padding: 12px 0 8px; margin-bottom: 12px; border-bottom: 2px solid #111;'
+        );
+        printHeader.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <h1 style="margin:0; font-size:16pt; font-weight:700; color:#111;">
+                    ${classLabel || 'Appréciations'}
+                    <span style="font-weight:400; font-size:12pt; color:#6b7280; margin-left:8px;">${periodLabel}</span>
+                </h1>
+                <span style="font-size:9pt; color:#9ca3af;">${dateStr}</span>
+            </div>
+        `;
+
+        const mainContent = document.querySelector('.main-content');
+        mainContent?.insertBefore(printHeader, mainContent.firstChild);
+
+        const printStyle = document.createElement('style');
+        printStyle.id = 'print-header-style';
+        printStyle.textContent = '@media print { #print-header { display: block !important; } }';
+        document.head.appendChild(printStyle);
+
+        const cleanup = () => {
             document.title = originalTitle;
+            printHeader.remove();
+            printStyle.remove();
             window.onafterprint = null;
         };
 
+        window.onafterprint = cleanup;
         window.print();
     },
 

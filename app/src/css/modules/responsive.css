@@ -331,44 +331,245 @@
 
 /* ====================================================================
    PRINT STYLES
+   Single source of truth for all print rules.
    ==================================================================== */
 @media print {
+    /* --- Reset --- */
     body {
-        background: white;
-        color: black;
+        background: white !important;
+        color: black !important;
+        font-size: 11pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
-    .app-layout,
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* --- Hide UI chrome (NOT .app-layout — it's the root wrapper) --- */
     .sidebar,
     .header,
     .output-toolbar,
+    .output-header,
     .stats-container,
     .stats-header,
     .appreciation-actions,
-    #backToTopBtn {
+    .fab-add-student,
+    .focus-panel-backdrop,
+    .focus-panel,
+    .modal-backdrop,
+    .modal,
+    .selection-toolbar,
+    #backToTopBtn,
+    #period-mismatch-container,
+    .pwa-install-prompt,
+    .notification-container {
         display: none !important;
     }
 
-    .main-content-wrapper,
+    /* --- Root layout: flow mode --- */
+    .app-layout {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .main-content-wrapper {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
     .main-content {
-        overflow: visible;
-        height: auto;
-        padding: 0;
+        padding: 0 !important;
+        max-width: none !important;
+        overflow: visible !important;
+        height: auto !important;
     }
 
-    #results {
-        display: block;
+    /* --- Card/Table: clean print output --- */
+    body, html, .app-layout, .main-content-wrapper, .main-content, #root {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+    }
+
+    .student-list-view {
+        overflow: visible !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
+    .student-list-table {
+        width: 100% !important;
+        border-collapse: separate !important; /* Changed to separate to allow spacing between cards */
+        border-spacing: 0 16px !important; /* Space between cards */
+        font-size: 10pt;
+        background: transparent !important;
+    }
+
+    /* Le thead se transforme en carte vide sur mobile/print, on le masque purement et simplement pour l'impression type "bulletin" */
+    .student-list-table thead {
+        display: none !important;
+    }
+
+    .student-list-table tbody tr {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important; /* Crisp gray border for print */
+        box-shadow: none !important; /* Remove shadows for cleaner print */
+        border-radius: 8px !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 24px !important; /* Increase spacing if printed without table semantics */
+        display: flex !important;
+        flex-wrap: wrap !important;
+        padding: 16px !important;
+    }
+
+    .student-list-table th {
+        background: #ffffff !important;
+        color: black !important;
+        font-weight: 600;
+        padding: 6px 8px !important;
+        border-bottom: 2px solid #d1d5db !important;
+        font-size: 9pt;
+        position: static !important;
+    }
+
+    .student-list-table td {
+        padding: 0 !important; /* Reset padding to let flex layout handle spacing */
+        border-bottom: none !important; /* Remove td borders inside the card */
+        vertical-align: top;
+        background: transparent !important;
+    }
+
+    .student-list-table tbody tr {
+        break-inside: avoid;
         page-break-inside: avoid;
     }
 
-    .appreciation-result {
-        page-break-inside: avoid;
-        margin-bottom: 20px;
-        box-shadow: none;
-        border: 1px solid #ccc;
+    /* --- Hide interactive-only columns --- */
+    .action-cell,
+    .action-header,
+    .btn-copy-appreciation,
+    .btn-action-menu,
+    .btn-action-menu-header,
+    .global-actions-dropdown-menu,
+    .action-dropdown,
+    .inline-search-trigger-btn,
+    .inline-search-container,
+    .appreciation-header-actions,
+    .header-action-trigger,
+    .sort-icon-placeholder,
+    .appreciation-toggle-icon,
+    .header-tooltip-target,
+    .dirty-indicator {
+        display: none !important;
     }
 
-    .card-content-wrapper {
-        box-shadow: none;
+    /* --- Name Column (Row 1 Left) --- */
+    .student-name-cell {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        display: block !important;
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important; /* Remove bottom margin since badges are on same line */
+    }
+
+    /* --- Badges / Status row (Row 1 Right) --- */
+    .status-cell, .grade-cell, .evolution-cell {
+        margin-bottom: 0 !important;
+        padding: 0 !important; /* Reset nested padding */
+        margin-left: 16px !important; /* Standard spacing for all badges */
+        margin-right: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    /* Hide empty status cells so they don't mess up layout */
+    .status-cell:empty {
+        display: none !important;
+    }
+
+    /* Crystal-clear separation between Status (Qualitative) and Grades (Quantitative) */
+    .status-cell:not(:empty) {
+        margin-right: 24px !important;
+        padding-right: 24px !important;
+        border-right: 1px solid #d1d5db !important;
+    }
+
+    /* --- Appreciation Block (Row 2 Full Width) --- */
+    .appreciation-cell {
+        width: 100% !important;
+        display: block !important;
+        border-top: none !important; /* Removed separator line to favor the clean bubble background */
+        padding-top: 16px !important;
+    }
+
+    /* --- Force full text display for appreciations --- */
+    .appreciation-preview {
+        -webkit-line-clamp: unset !important;
+        line-clamp: unset !important;
+        max-height: none !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        font-size: 10pt;
+        line-height: 1.5;
+        background: #f9fafb !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: block !important;
+    }
+
+    .appreciation-preview-wrapper {
+        width: 100% !important;
+        display: block !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* --- Grade cells: ensure colors print --- */
+    .grade-value {
+        font-weight: 600;
+    }
+
+    /* --- Status badges: compact print --- */
+    .status-badge-tag {
+        font-size: 8pt;
+        padding: 1px 4px;
+        border: 1px solid #d1d5db;
+        background: transparent !important;
+        color: black !important;
+    }
+
+    /* --- Evolution icons: ensure visibility --- */
+    .grade-evolution {
+        font-size: 10pt;
+    }
+
+    /* --- Avatar: proportionate to card layout --- */
+    .student-avatar {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        font-size: 16px !important;
+    }
+
+    /* --- Skeleton: hide (shouldn't print pending states) --- */
+    .appreciation-skeleton,
+    .status-badge.pending,
+    .status-badge.generating {
+        display: none !important;
+    }
+
+    /* --- Name column: ensure readable width --- */
+    .student-name-cell {
+        min-width: 120px;
+        white-space: nowrap;
     }
 }

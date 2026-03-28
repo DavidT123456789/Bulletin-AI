@@ -71,34 +71,7 @@ body.side-panel-open {
     }
 }
 
-@media print {
-
-    .sidebar,
-    .header {
-        display: none !important;
-    }
-
-    .app-layout {
-        display: block;
-        height: auto;
-    }
-
-    .main-content-wrapper {
-        height: auto;
-        overflow: visible;
-    }
-
-    .main-content {
-        padding: 0;
-        max-width: none;
-    }
-
-    .appreciation-result {
-        break-inside: avoid;
-        border: 1px solid var(--border-color);
-        box-shadow: none;
-    }
-}
+/* Print styles: see modules/responsive.css (single source of truth) */
 
 /* Correction kbd-hint dans les tooltips */
 .tippy-box .kbd-hint {
