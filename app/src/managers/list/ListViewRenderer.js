@@ -642,27 +642,15 @@ export const ListViewRenderer = {
         const hasContent = appreciation && !isPlaceholder;
 
         if (hasContent) {
-            // === COPY BUTTON INTEGRATION ===
-            const btnClass = result.copied ? 'btn-copy-appreciation was-copied' : 'btn-copy-appreciation';
-            const icon = result.copied ? '<iconify-icon icon="ph:check"></iconify-icon>' : '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
-            const title = result.copied ? 'Appréciation copiée' : 'Copier l\'appréciation';
-
-            const copyButtonHTML = `
-                <button class="${btnClass}" data-action="copy-appreciation" aria-label="${title}" data-tooltip="${title}">
-                    ${icon}
-                </button>
-            `;
-
             // === DIRTY STATE INDICATOR ===
             let dirtyBadge = '';
             if (this.isResultDirty(result)) {
                 dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
             }
 
-            return `${copyButtonHTML}
-            <div class="appreciation-preview-wrapper">
+            return `<div class="appreciation-preview-wrapper">
                 ${dirtyBadge}
-                <div class="appreciation-preview has-copy-btn">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
+                <div class="appreciation-preview">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
             </div>`;
         }
 

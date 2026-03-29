@@ -1235,15 +1235,7 @@ export const UI = {
     },
     // DEPRECATED: Use ImportWizardManager.openWithData() instead
     openImportPreviewModal() { console.warn('[UI] openImportPreviewModal is deprecated. Use ImportWizardManager.openWithData() instead.'); },
-    resetCopyButtonState(buttonEl) {
-        if (buttonEl) {
-            const isCopied = buttonEl.closest('.appreciation-result')?.querySelector('.copy-btn.was-copied');
-            if (!isCopied) {
-                buttonEl.classList.remove('copied');
-                buttonEl.innerHTML = '<iconify-icon icon="solar:copy-bold"></iconify-icon>';
-            }
-        }
-    },
+
     setMassImportProcessingState(isProcessing) { ImportUI.setMassImportProcessingState(isProcessing); },
 
     // ====================================================================

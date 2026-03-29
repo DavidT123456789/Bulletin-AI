@@ -41,10 +41,11 @@ export const ExportManager = {
         const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
         if (resultIndex === -1) return;
 
-        const visibleResult = appState.filteredResults.find(r => r.id === id);
-        const appreciationToCopy = visibleResult ? visibleResult.appreciation : appState.generatedResults[resultIndex].appreciation;
+        const result = appState.generatedResults[resultIndex];
+        const currentPeriod = appState.currentPeriod;
+        const appreciationToCopy = result.studentData?.periods?.[currentPeriod]?.appreciation || result.appreciation;
 
-        if (!appreciationToCopy) {
+        if (!appreciationToCopy?.trim()) {
             UI.showNotification('Appréciation vide.', 'error');
             return;
         }
@@ -117,9 +118,19 @@ export const ExportManager = {
             return;
         }
 
-        const text = appState.filteredResults.map(r =>
-            `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(r.appreciation))}`
-        ).join('\n\n');
+        const currentPeriod = appState.currentPeriod;
+        const text = appState.filteredResults
+            .map(r => {
+                const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+                return appreciation?.trim() ? `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}` : null;
+            })
+            .filter(Boolean)
+            .join('\n\n');
+
+        if (!text) {
+            UI.showNotification("Aucune appréciation à copier pour cette période.", "warning");
+            return;
+        }
 
         navigator.clipboard.writeText(text).then(() => {
             if (button) {
@@ -276,17 +287,22 @@ export const ExportManager = {
     async copyBulkAppreciations(ids) {
         if (!ids || ids.length === 0) return 0;
 
+        const currentPeriod = appState.currentPeriod;
         const resultsToCopy = appState.generatedResults.filter(r => ids.includes(r.id));
-        const activeResults = resultsToCopy.filter(r => r.appreciation && r.appreciation.trim());
+        const activeResults = resultsToCopy.filter(r => {
+            const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+            return appreciation?.trim();
+        });
 
         if (activeResults.length === 0) {
             UI.showNotification('Aucune appréciation à copier parmi la sélection.', 'warning');
             return 0;
         }
 
-        const text = activeResults.map(r =>
-            `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(r.appreciation))}`
-        ).join('\n\n');
+        const text = activeResults.map(r => {
+            const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
+            return `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}`;
+        }).join('\n\n');
 
         try {
             await navigator.clipboard.writeText(text);
