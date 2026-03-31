@@ -155,7 +155,7 @@ export const CrossClassSearchManager = {
             html += `
                 <div class="cross-class-group">
                     <span class="cross-class-group-badge">
-                        <iconify-icon icon="ph:users-bold"></iconify-icon>
+                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                         ${this._escapeHtml(group.className)}
                     </span>
             `;
