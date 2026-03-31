@@ -86,10 +86,10 @@ export const ListViewManager = {
             if (existingTable && tbody) {
                 const emptyRowHtml = `
                     <tr class="empty-state-row">
-                        <td colspan="100%" style="text-align:center; padding: 40px; color: var(--text-tertiary);">
-                            <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                                <iconify-icon icon="solar:magnifer-linear" style="font-size:24px; opacity:0.5;"></iconify-icon>
-                                <span>Aucun élève trouvé</span>
+                        <td colspan="100%" style="text-align:center; padding: 48px 20px;">
+                            <div class="empty-state" style="display:flex; flex-direction:column; align-items:center; gap:12px; color: var(--text-tertiary); padding: 0;">
+                                <iconify-icon icon="solar:magnifer-linear" style="font-size:32px;"></iconify-icon>
+                                <span style="font-weight: 500; font-size: 14px;">Aucun élève trouvé</span>
                             </div>
                         </td>
                     </tr>
