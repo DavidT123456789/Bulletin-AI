@@ -143,7 +143,7 @@ export const CrossClassSearchManager = {
             <div class="cross-class-header">
                 <span class="cross-class-divider-line"></span>
                 <span class="cross-class-divider-text">
-                    <iconify-icon icon="solar:magnifer-bold"></iconify-icon>
+                    <iconify-icon icon="ph:magnifying-glass-bold"></iconify-icon>
                     Autres classes
                 </span>
                 <span class="cross-class-divider-line"></span>
@@ -155,7 +155,7 @@ export const CrossClassSearchManager = {
             html += `
                 <div class="cross-class-group">
                     <span class="cross-class-group-badge">
-                        <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
+                        <iconify-icon icon="ph:users-bold"></iconify-icon>
                         ${this._escapeHtml(group.className)}
                     </span>
             `;
@@ -176,7 +176,7 @@ export const CrossClassSearchManager = {
                             <span class="cross-class-prenom">${this._escapeHtml(student.prenom)}</span>
                         </span>
                         <div class="cross-class-overlay">
-                            <iconify-icon icon="solar:arrow-right-bold"></iconify-icon>
+                            <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
                             <span>Voir dans ${this._escapeHtml(group.className)}</span>
                         </div>
                     </div>
