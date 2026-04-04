@@ -13,7 +13,7 @@
     border-radius: var(--radius-pill);
     padding: var(--sc-padding);
     width: fit-content;
-    height: 38px;
+    height: 34px;
     border: none;
     isolation: isolate;
     /* Create stacking context */
@@ -41,11 +41,11 @@
     justify-content: center !important;
     border: none;
     background: transparent;
-    color: var(--icon-btn-muted);
+    color: var(--text-tertiary);
     font-size: 13px !important;
-    font-weight: 500 !important;
+    font-weight: 400 !important;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: color var(--transition-base), filter var(--transition-base);
     height: 100%;
     padding: 0 10px !important;
     margin: 0 !important;
@@ -56,11 +56,23 @@
     white-space: nowrap;
 }
 
-/* Handle Icons */
+/* Handle Icons — desaturate in inactive state */
 .ui-segment i,
 .ui-segment iconify-icon {
     font-size: 16px;
     pointer-events: none;
+    filter: grayscale(1);
+    opacity: 0.6;
+    transition: filter var(--transition-base), opacity var(--transition-base), color var(--transition-base);
+}
+
+/* Active icons — restore full color */
+.ui-segment.active i,
+.ui-segment.active iconify-icon,
+.ui-segmented-control input[type="radio"]:checked + .ui-segment i,
+.ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
+    filter: grayscale(0);
+    opacity: 1;
 }
 
 /* Handle Radio inputs */
@@ -71,7 +83,7 @@
 /* Hover state */
 .ui-segment:hover,
 .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
-    color: var(--icon-btn-hover);
+    color: var(--text-secondary);
 }
 
 /* Active state */
@@ -147,10 +159,10 @@
     -webkit-backdrop-filter: blur(4px);
 }
 
-/* Ensure text is visible and glows subtly on active */
+/* Ensure text is visible on inactive segments */
 [data-theme="dark"] .ui-segment,
 [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment {
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
 }
 
 [data-theme="dark"] .ui-segment:hover,

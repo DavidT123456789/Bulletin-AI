@@ -11,6 +11,7 @@ import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
+import { SeatingChartManager } from './SeatingChartManager.js';
 
 let UI;
 let StorageManager;
@@ -348,7 +349,12 @@ export const ClassUIManager = {
 
             // Force refresh interactions
             AppreciationsManager.renderResults();
-            UI?.updateStats?.(); // Refresh stats panel
+            UI?.updateStats?.();
+
+            // Notify seating chart
+            const newClassId = appState.currentClassId;
+            const hasResults = newClassId && (appState.generatedResults || []).some(r => r.classId === newClassId);
+            SeatingChartManager.onClassChange(!!hasResults);
 
             // Check migration if 0 classes left
             this.checkAndOfferMigration();
@@ -361,7 +367,7 @@ export const ClassUIManager = {
     async handleClassSwitch(classId) {
         // Trigger generic page refresh animation
         // Target dynamic containers ONLY to keep the title "Bilan de la classe" visible (avoiding black screen)
-        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header');
+        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header, #seatingChartView');
 
         containersToAnimate.forEach(el => {
             el.classList.remove('card-refresh-animation');
@@ -379,6 +385,10 @@ export const ClassUIManager = {
         // Refresh the results list with the new class data
         AppreciationsManager.renderResults();
         UI?.updateStats?.();
+
+        // Notify seating chart of class change
+        const hasResults = (appState.generatedResults || []).some(r => r.classId === classId);
+        SeatingChartManager.onClassChange(hasResults);
 
         // Cleanup after animation finishes (400ms + buffer)
         setTimeout(() => {

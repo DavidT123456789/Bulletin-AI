@@ -37,6 +37,8 @@ export const userSettings = {
         // Multi-class support
         classes: [],           // Array of Class objects: { id, name, year, subject, createdAt, updatedAt }
         currentClassId: null,  // Currently selected class ID (null = default/legacy mode)
+        // Seating chart grid configuration
+        seatingGrid: null,     // { rows, cols }
     },
 
     /** Configuration API */
@@ -157,6 +159,7 @@ const propertyMap = {
     journalThreshold: () => userSettings.academic,
     classes: () => userSettings.academic,
     currentClassId: () => userSettings.academic,
+    seatingGrid: () => userSettings.academic,
 
     // userSettings.api
     currentAIModel: () => userSettings.api,

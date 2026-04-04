@@ -182,7 +182,9 @@
 .header-center {
     display: flex;
     justify-content: center;
+    align-items: center;
     flex-grow: 1;
+    gap: 12px;
     /* pour centrer le sélecteur de période */
 }
 

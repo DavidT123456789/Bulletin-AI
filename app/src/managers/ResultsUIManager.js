@@ -462,6 +462,10 @@ export const ResultsUIManager = {
             DOM.analyzeClassBtn.disabled = sourceResults.length === 0;
         }
 
+        // === SEATING CHART VIEW TOGGLE ===
+        const viewToggle = document.getElementById('viewToggle');
+        if (viewToggle) viewToggle.classList.toggle('visible', sourceResults.length > 0);
+
         // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
         if (UI?.updateGenerateChipState) {
             UI.updateGenerateChipState(pendingCount);

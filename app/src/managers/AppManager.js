@@ -27,6 +27,7 @@ import { PwaInstallManager } from './PwaInstallManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { SeatingChartManager } from './SeatingChartManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -103,6 +104,14 @@ export const App = {
 
         // Trombinoscope Photo Import: Initialize
         TrombinoscopeManager.init();
+
+        // Seating Chart: Initialize
+        SeatingChartManager.init();
+
+        // Show view toggle if the current class has results
+        SeatingChartManager.updateToggleVisibility(
+            (appState.generatedResults || []).some(r => r.classId === appState.currentClassId)
+        );
     },
 
     // --- Initialisation et Setup ---

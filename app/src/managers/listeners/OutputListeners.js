@@ -71,6 +71,9 @@ export const OutputListeners = {
             analyzeBtn.addEventListener('click', () => ClassDashboardManager.openDashboard());
         }
 
+
+
+
         DOM.activeFilterInfo?.addEventListener('click', EventHandlersManager.handleActiveFilterInfoClick.bind(EventHandlersManager));
 
         document.querySelectorAll('.stat-card[role="button"], .legend-item[role="button"], .detail-item[role="button"], .hist-bar-group[role="button"]').forEach(card => {

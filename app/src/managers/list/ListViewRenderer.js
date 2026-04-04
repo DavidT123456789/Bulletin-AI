@@ -322,6 +322,9 @@ export const ListViewRenderer = {
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
                                             <iconify-icon icon="solar:pie-chart-2-linear"></iconify-icon> Analyser la classe
                                         </button>
+                                        <button class="action-dropdown-item" id="seatingChartBtn-shortcut">
+                                            <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon> Plan de classe
+                                        </button>
 
 
 
