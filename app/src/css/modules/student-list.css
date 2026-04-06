@@ -1215,6 +1215,23 @@
         display: none !important;
     }
 
+    /* FIX: Utiliser display:contents pour "aplatir" le wrapper
+       tout en gardant ses enfants interactifs dans le flux flex du TH parent.
+       Les enfants (appreciation-header-actions, etc.) deviennent directement 
+       des flex items du TH, ce qui permet aux propriétés order/flex de fonctionner. */
+    .student-list-table th.action-header .header-content-wrapper {
+        display: flex !important;
+    }
+
+    .student-list-table th.appreciation-toggle-header .header-content-wrapper {
+        display: contents !important;
+    }
+
+    /* Cacher uniquement le texte "Appréciation" (span enfant direct du wrapper) */
+    .student-list-table th.appreciation-toggle-header .header-content-wrapper > span {
+        display: none !important;
+    }
+
     /* Keep Search, Actions, and Global Menu visible */
     .student-list-table th.name-header-with-search,
     .student-list-table th.appreciation-toggle-header,
