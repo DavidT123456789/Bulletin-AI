@@ -197,8 +197,11 @@
 }
 
 /* Expanded view dynamically adjusts to perfectly align with the new text position */
-.student-list-table.appreciation-full-view th[data-sort-field="name"] {
-    padding-left: 96px !important; /* Expanded view: 16px cell + 8px wrapper + 56px avatar + 16px gap */
+/* Desktop only: prevent high-specificity !important from overriding mobile flex layout */
+@media (min-width: 769px) {
+    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
+        padding-left: 96px !important; /* Expanded view: 16px cell + 8px wrapper + 56px avatar + 16px gap */
+    }
 }
 
 .student-list-table th[data-sort-field="name"] .header-content-wrapper {
@@ -711,17 +714,25 @@
     opacity: 0.8;
 }
 
-/* === FULL VIEW STATE (Expanded Content) === */
+/* Desktop only: width optimizations are irrelevant on mobile card layout */
+@media (min-width: 769px) {
+    /* 1. Animate cell height transition */
+    /* Expanded View - Width Optimization */
+    .student-list-table.appreciation-full-view .appreciation-cell {
+        /* Control width explicitly: Wider than normal (340px) but capped */
+        width: clamp(360px, 40vw, 515px);
+        min-width: 360px;
+        max-width: 515px;
+    }
 
-/* 1. Animate cell height transition */
-/* Expanded View - Width Optimization */
-.student-list-table.appreciation-full-view .appreciation-cell {
-    /* Control width explicitly: Wider than normal (340px) but capped */
-    width: clamp(360px, 40vw, 515px);
-    min-width: 360px;
-    max-width: 515px;
+    /* Shrink name column in expanded view to profit from vertical stacking */
+    .student-list-table.appreciation-full-view .student-name-cell {
+        min-width: 230px;
+        width: 230px;
+    }
 }
 
+/* === FULL VIEW STATE (Expanded Content) === */
 /* 2. Transform the preview bubble into full content */
 .student-list-table.appreciation-full-view .appreciation-preview {
     white-space: pre-wrap;
@@ -748,12 +759,6 @@
 /* Wrapper manages structural margin in full view to prevent badge floating */
 .student-list-table.appreciation-full-view .appreciation-preview-wrapper {
     margin: 4px 0;
-}
-
-/* Shrink name column in expanded view to profit from vertical stacking */
-.student-list-table.appreciation-full-view .student-name-cell {
-    min-width: 230px;
-    width: 230px;
 }
 
 
