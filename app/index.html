@@ -320,6 +320,106 @@
             transform: translateX(100%);
         }
 
+        /* ── Workflow Section Enhancements ── */
+        .workflow-connector {
+            position: absolute;
+            top: 40px;
+            left: 16%;
+            right: 16%;
+            height: 2px;
+            z-index: 0;
+            overflow: visible;
+        }
+
+        .workflow-connector-line {
+            width: 100%;
+            height: 2px;
+            border-radius: 1px;
+            background: linear-gradient(90deg, #3b82f6 0%, #a855f7 50%, #22c55e 100%);
+            opacity: 0.35;
+        }
+
+        .workflow-connector-trace {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 2px;
+            width: 60px;
+            border-radius: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+            animation: connectorTrace 3s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .workflow-connector.is-visible .workflow-connector-trace {
+            opacity: 1;
+        }
+
+        @keyframes connectorTrace {
+            0% { left: -60px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .workflow-step-icon {
+            position: relative;
+        }
+
+        .workflow-step-icon::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 1.125rem;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: none;
+        }
+
+        .workflow-step-icon.is-revealed::before {
+            animation: pulseRing 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .workflow-step-icon--blue::before {
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+        }
+
+        .workflow-step-icon--purple::before {
+            background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%);
+        }
+
+        .workflow-step-icon--green::before {
+            background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+        }
+
+        @keyframes pulseRing {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+        }
+
+        .workflow-float {
+            animation: workflowFloat 4s ease-in-out infinite;
+        }
+
+        .workflow-float--delay-1 { animation-delay: 0s; }
+        .workflow-float--delay-2 { animation-delay: 1.3s; }
+        .workflow-float--delay-3 { animation-delay: 2.6s; }
+
+        @keyframes workflowFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .blur-word {
                 transition: none !important;
@@ -333,6 +433,21 @@
 
             .bg-orb {
                 animation: none !important;
+            }
+
+            .workflow-float {
+                animation: none !important;
+            }
+
+            .workflow-connector-trace {
+                animation: none !important;
+                opacity: 0 !important;
+            }
+
+            .workflow-step-icon.is-revealed::before {
+                animation: none !important;
+                opacity: 0.5 !important;
+                transform: scale(1) !important;
             }
 
             .mockup-3d {
@@ -604,11 +719,14 @@
                     <p>Import des notes, analyse du contexte et génération par IA.</p>
                 </div>
                 <div class="grid md:grid-cols-3 gap-12 md:gap-8 relative">
-                    <div class="hidden md:block absolute top-10 left-[16%] right-[16%] h-px bg-zinc-100 z-0"
-                        aria-hidden="true"></div>
+                    <div class="hidden md:block workflow-connector reveal-on-scroll"
+                        aria-hidden="true">
+                        <div class="workflow-connector-line"></div>
+                        <div class="workflow-connector-trace"></div>
+                    </div>
 
                     <div class="relative z-10 group reveal-on-scroll">
-                        <div class="relative w-20 h-20 mx-auto mb-6">
+                        <div class="workflow-step-icon workflow-step-icon--blue relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-1">
                             <div
                                 class="absolute inset-0 bg-blue-50 rounded-2xl border border-blue-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:import-linear" width="32"
@@ -626,7 +744,7 @@
                     </div>
 
                     <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 100ms;">
-                        <div class="relative w-20 h-20 mx-auto mb-6">
+                        <div class="workflow-step-icon workflow-step-icon--purple relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-2">
                             <div
                                 class="absolute inset-0 bg-purple-50 rounded-2xl border border-purple-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:magic-stick-3-linear" width="32"
@@ -644,7 +762,7 @@
                     </div>
 
                     <div class="relative z-10 group reveal-on-scroll" style="transition-delay: 200ms;">
-                        <div class="relative w-20 h-20 mx-auto mb-6">
+                        <div class="workflow-step-icon workflow-step-icon--green relative w-20 h-20 mx-auto mb-6 workflow-float workflow-float--delay-3">
                             <div
                                 class="absolute inset-0 bg-green-50 rounded-2xl border border-green-100/50 flex items-center justify-center transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-sm">
                                 <iconify-icon icon="solar:export-linear" width="32"
@@ -969,6 +1087,16 @@
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal-on-scroll').forEach(el => revealObserver.observe(el));
+
+        const workflowIconObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-revealed');
+                    workflowIconObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+        document.querySelectorAll('.workflow-step-icon').forEach(el => workflowIconObserver.observe(el));
 
         /* ── Carousel ── */
         const carouselData = [
