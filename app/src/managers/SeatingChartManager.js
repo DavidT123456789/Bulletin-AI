@@ -9,6 +9,7 @@ import { appState } from '../state/State.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { StorageManager } from './StorageManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 
 const DEFAULT_COLS = 6;
@@ -73,65 +74,15 @@ export const SeatingChartManager = {
         view.id = 'seatingChartView';
         view.style.display = 'none';
         view.innerHTML = `
-            <div class="sc-toolbar">
-                <div class="sc-toolbar-info" id="scFooterInfo"><strong>0</strong>/0 placés <span class="sc-edit-hint">— Cliquez ou glissez les élèves pour les placer</span></div>
-                <div class="sc-toolbar-spacer"></div>
-                <div class="sc-toolbar-group sc-toolbar-primary">
-                    <button class="sc-toolbar-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique">
-                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                        <span>Placer auto</span>
-                    </button>
-                    <button class="sc-toolbar-btn" id="scShuffleBtn" aria-label="Mélanger">
-                        <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                        <span>Mélanger</span>
-                    </button>
-                </div>
-                <div class="sc-toolbar-divider"></div>
-                <div class="sc-toolbar-group sc-toolbar-secondary">
-                    <div class="sc-config-wrapper">
-                        <button class="sc-toolbar-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille">
-                            <iconify-icon icon="solar:settings-linear"></iconify-icon>
-                            <span>Grille</span>
-                        </button>
-                        <div class="sc-config-popover" id="scConfigPopover">
-                            <div class="sc-config-row">
-                                <label class="sc-config-label" for="scColsSlider">Colonnes</label>
-                                <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
-                                <span class="sc-config-value" id="scColsValue">${DEFAULT_COLS}</span>
-                            </div>
-                            <div class="sc-config-row">
-                                <label class="sc-config-label" for="scRowsSlider">Rangées</label>
-                                <input type="range" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
-                                <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="sc-toolbar-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser">
-                        <iconify-icon icon="solar:restart-linear"></iconify-icon>
-                        <span>Réinitialiser</span>
-                    </button>
-                </div>
-                <div class="sc-toolbar-divider"></div>
-                <div class="sc-toolbar-group sc-toolbar-persistent">
-                    <button class="sc-toolbar-btn sc-lock-btn" id="scLockBtn" aria-label="Verrouiller">
-                        <iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon>
-                        <span>Édition</span>
-                    </button>
-                    <button class="sc-toolbar-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer">
-                        <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                        <span>Imprimer</span>
-                    </button>
-                </div>
-            </div>
             <div class="sc-progress-track"><div class="sc-progress-fill" id="scProgressFill"></div></div>
             <div class="sc-body">
                 <div class="sc-sidebar" id="scSidebar">
                     <div class="sc-sidebar-header">
-                        <div class="sc-sidebar-title">Élèves non placés</div>
+                        <div class="sc-sidebar-title" id="scSidebarTitle">Élèves non placés</div>
                         <div class="sc-search-box">
                             <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scSearchInput" placeholder="Filtrer…" autocomplete="off">
-                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
+                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
+                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
                         </div>
@@ -139,18 +90,65 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-                    <div class="sc-onboarding-overlay" id="scOnboarding">
-                        <button class="sc-onboarding-cta" id="scOnboardingAutoPlace">
-                            <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                            Placer automatiquement
+                    <div class="sc-toolbar">
+                        <!-- Left: Unified Pill -->
+                        <div class="sc-toolbar-pill">
+                            <button class="sc-toolbar-btn sc-lock-btn" id="scLockBtn" aria-label="Verrouiller">
+                                <iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon>
+                                <span>Édition</span>
+                            </button>
+                            
+                            <div class="sc-pill-divider sc-edit-only"></div>
+                            
+                            <div class="sc-pill-edit-tools sc-edit-only">
+                                <button class="sc-toolbar-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique">
+                                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                                    <span>Placer auto</span>
+                                </button>
+                                <button class="sc-toolbar-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
+                                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                                </button>
+                                <div class="sc-config-wrapper">
+                                    <button class="sc-toolbar-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
+                                        <iconify-icon icon="solar:settings-linear"></iconify-icon>
+                                    </button>
+                                    <div class="sc-config-popover" id="scConfigPopover">
+                                        <div class="sc-config-row">
+                                            <label class="sc-config-label" for="scColsSlider">Colonnes</label>
+                                            <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
+                                            <span class="sc-config-value" id="scColsValue">${DEFAULT_COLS}</span>
+                                        </div>
+                                        <div class="sc-config-row">
+                                            <label class="sc-config-label" for="scRowsSlider">Rangées</label>
+                                            <input type="range" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
+                                            <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="sc-toolbar-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
+                                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right: Isolated Button -->
+                        <button class="sc-toolbar-btn sc-isolated-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer">
+                            <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                            <span>Imprimer</span>
                         </button>
                     </div>
+
                     <div class="sc-grid-container" id="scGridContainer"></div>
                     <div class="sc-desk-row">
                         <div class="sc-desk" id="scDesk">
                             <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
                             Bureau
                         </div>
+                    </div>
+
+                    <!-- Bottom Status Pill -->
+                    <div class="sc-floating-status">
+                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
                     </div>
                 </div>
             </div>
@@ -196,7 +194,6 @@ export const SeatingChartManager = {
             document.getElementById('scSearchClear')?.classList.remove('visible');
             this._renderSidebar();
         });
-        document.getElementById('scOnboardingAutoPlace')?.addEventListener('click', () => this._autoPlace());
 
         document.getElementById('viewToggle')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.view-toggle-btn');
@@ -289,6 +286,7 @@ export const SeatingChartManager = {
             this._loadPositionsFromState();
             this._render();
             this._animateViewEnter(viewEl);
+            this._scrollToDesk();
         }
 
         document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -322,6 +320,8 @@ export const SeatingChartManager = {
         const desk = document.getElementById('scDesk');
         desk?.classList.add('sc-desk-entering');
         setTimeout(() => desk?.classList.remove('sc-desk-entering'), 500);
+
+        this._scrollToDesk();
     },
 
     updateToggleVisibility(hasResults) {
@@ -548,14 +548,15 @@ export const SeatingChartManager = {
         });
     },
 
-    /** Counter bump when placed count changes */
     _animateCounterBump() {
-        const info = document.getElementById('scFooterInfo');
-        if (!info) return;
-        info.classList.remove('sc-counter-bump');
-        void info.offsetWidth;
-        info.classList.add('sc-counter-bump');
-        info.addEventListener('animationend', () => info.classList.remove('sc-counter-bump'), { once: true });
+        ['scFooterInfo', 'scSidebarTitle'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('sc-counter-bump');
+            void el.offsetWidth;
+            el.classList.add('sc-counter-bump');
+            el.addEventListener('animationend', () => el.classList.remove('sc-counter-bump'), { once: true });
+        });
     },
 
     /** Lock/Unlock morph animation */
@@ -631,26 +632,64 @@ export const SeatingChartManager = {
         appState.seatingGrid = {
             rows: this._getRows(),
             cols: this._getCols(),
-            locked: this._isLocked
+            locked: this._isLocked,
+            specialLayout: appState.seatingGrid?.specialLayout || {}
         };
         StorageManager.saveAppState();
     },
 
     _onGridConfigChange() {
-        const rows = this._getRows();
-        const cols = this._getCols();
+        const newRows = this._getRows();
+        const newCols = this._getCols();
+        const oldRows = this._gridState ? this._gridState.length : newRows;
+        
         const placed = this._getPlacedMap();
-        this._initGrid(rows, cols);
+        this._initGrid(newRows, newCols);
 
+        // Calcule le décalage pour ajouter/supprimer les rangées par le haut (éloigné du bureau)
+        // car le bureau (bottom) est l'origine visuelle.
+        const rowOffset = newRows - oldRows;
+
+        // Repositionne les étudiants
         for (const [resultId, pos] of Object.entries(placed)) {
-            if (pos.row < rows && pos.col < cols) {
-                this._gridState[pos.row][pos.col] = resultId;
+            const newR = pos.row + rowOffset;
+            if (newR >= 0 && newR < newRows && pos.col < newCols) {
+                this._gridState[newR][pos.col] = resultId;
             }
         }
 
+        // Repositionne également la cartographie des places spéciales (allées, AESH...)
+        if (appState.seatingGrid?.specialLayout && rowOffset !== 0) {
+            const newSpecialLayout = {};
+            for (const [key, type] of Object.entries(appState.seatingGrid.specialLayout)) {
+                const [r, c] = key.split(',').map(Number);
+                const newR = r + rowOffset;
+                if (newR >= 0 && newR < newRows && c < newCols) {
+                    newSpecialLayout[`${newR},${c}`] = type;
+                }
+            }
+            appState.seatingGrid.specialLayout = newSpecialLayout;
+        }
+
+        this._savePositionsToState(); // Persiste immédiatement les nouvelles coordonnées
         this._render();
         this._saveGridConfig();
         this._staggerCellEntrance();
+    },
+
+    _setCellSpecialType(row, col, type) {
+        if (!appState.seatingGrid) appState.seatingGrid = {};
+        if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
+        
+        const key = `${row},${col}`;
+        if (type) {
+            appState.seatingGrid.specialLayout[key] = type;
+        } else {
+            delete appState.seatingGrid.specialLayout[key];
+        }
+        
+        this._saveGridConfig();
+        this._render();
     },
 
     // ========================================================================
@@ -724,6 +763,7 @@ export const SeatingChartManager = {
         this._renderSidebar();
         this._updateFooter();
         this._updateSidebarLockState();
+        TooltipsUI.initTooltips();
     },
 
     _renderGrid() {
@@ -764,10 +804,10 @@ export const SeatingChartManager = {
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
                 <span class="sc-cell-name">${student.prenom || ''} ${(student.nom || '')[0] || ''}.</span>
-                <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer">
+                <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
-                <button class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}">
+                <button class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
                 ${this._getEvolutionDotHTML(student)}
@@ -822,17 +862,62 @@ export const SeatingChartManager = {
             }
         } else {
             cell.classList.add('empty');
+            
+            const isSpecial = appState.seatingGrid?.specialLayout?.[`${row},${col}`];
+            if (isSpecial) {
+                cell.classList.add(`sc-cell-special-${isSpecial}`);
+                if (isSpecial === 'aesh') {
+                    cell.innerHTML = `
+                        <iconify-icon icon="solar:user-speak-rounded-linear" class="sc-special-icon"></iconify-icon>
+                        <span class="sc-cell-name">AESH</span>
+                    `;
+                } else if (isSpecial === 'blocked') {
+                    cell.innerHTML = `
+                        <iconify-icon icon="solar:forbidden-circle-linear" class="sc-special-icon"></iconify-icon>
+                        <span class="sc-cell-name">Condamné</span>
+                    `;
+                }
+            }
+
             const totalRows = this._getRows();
             cell.style.setProperty('--row-depth', totalRows > 1 ? row / (totalRows - 1) : 0.5);
 
+            if (!this._isLocked) {
+                const tools = document.createElement('div');
+                tools.className = 'sc-cell-special-tools';
+                if (!isSpecial) {
+                    tools.innerHTML = `
+                        <button class="sc-special-btn" data-type="aisle" data-tooltip="Allée (Vide)" aria-label="Allée (Vide)"><iconify-icon icon="solar:ghost-linear"></iconify-icon></button>
+                        <button class="sc-special-btn" data-type="aesh" data-tooltip="Place AESH" aria-label="Place AESH"><iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon></button>
+                        <button class="sc-special-btn" data-type="blocked" data-tooltip="Condamné" aria-label="Condamné"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></button>
+                    `;
+                } else {
+                    tools.innerHTML = `
+                        <button class="sc-special-btn" data-type="normal" data-tooltip="Rétablir" aria-label="Rétablir"><iconify-icon icon="solar:refresh-linear"></iconify-icon></button>
+                    `;
+                }
+                cell.appendChild(tools);
+
+                tools.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const btn = e.target.closest('.sc-special-btn');
+                    if (!btn) return;
+                    const type = btn.dataset.type;
+                    this._setCellSpecialType(row, col, type === 'normal' ? null : type);
+                });
+            }
+
             cell.addEventListener('click', () => {
-                if (this._isLocked || this._selectedChipIds.length === 0) return;
+                if (this._isLocked || this._selectedChipIds.length === 0 || isSpecial) return;
                 this._placeSelectedAt(row, col);
             });
         }
 
         cell.addEventListener('dragover', (e) => {
             if (this._isLocked) return;
+            const isSpecial = !student && appState.seatingGrid?.specialLayout?.[`${row},${col}`];
+            if (isSpecial) return;
+            
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             cell.classList.add('drag-over');
@@ -874,8 +959,10 @@ export const SeatingChartManager = {
             : unplaced;
 
         list.innerHTML = filtered.length === 0
-            ? `<div class="sc-empty-sidebar">
-                 ${unplaced.length === 0 ? 'Tous les élèves sont placés ✓' : 'Aucun résultat'}
+            ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
+                 ${unplaced.length === 0 
+                    ? `<div class="sc-empty-text"><strong>Bravo !</strong> Votre plan de classe est complet !</div>`
+                    : 'Aucun résultat'}
                </div>`
             : filtered.map(s => `
                 <div class="sc-student-chip" draggable="true" data-result-id="${s.id}">
@@ -936,14 +1023,39 @@ export const SeatingChartManager = {
         const view = document.getElementById('seatingChartView');
         if (view) view.dataset.placedCount = placed;
 
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const specialLayout = appState.seatingGrid?.specialLayout || {};
+        let specialSpotsCount = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (specialLayout[`${r},${c}`]) specialSpotsCount++;
+            }
+        }
+        const availableSeats = Math.max(0, (rows * cols) - specialSpotsCount - placed);
+
         const prev = this._prevPlacedCount;
         const unplaced = total - placed;
+
+        // --- Sidebar Title Dynamic Progress ---
+        const sidebarTitle = document.getElementById('scSidebarTitle');
+        if (sidebarTitle) {
+            if (total === 0) {
+                sidebarTitle.textContent = 'Élèves non placés';
+            } else if (unplaced === 0) {
+                sidebarTitle.textContent = 'Tous les élèves sont placés';
+            } else {
+                sidebarTitle.innerHTML = `Élèves non placés (<span class="sc-dynamic-value">${unplaced}</span>)`;
+            }
+        }
+
+        // --- Toolbar Pill Info ---
         if (this._isLocked) {
             info.innerHTML = unplaced > 0
-                ? `<strong>${total}</strong> élève${total > 1 ? 's' : ''} <span class="sc-unplaced-hint">· ${unplaced} non placé${unplaced > 1 ? 's' : ''}</span>`
-                : `<strong>${total}</strong> élève${total > 1 ? 's' : ''}`;
+                ? `<span class="sc-unplaced-hint" style="color: var(--error-color, #ef4444); display: flex; align-items: center; gap: 4px;"><iconify-icon icon="solar:danger-triangle-linear" style="font-size: 1.2em;"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span>`
+                : `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}`;
         } else {
-            info.innerHTML = `<strong>${placed}</strong>/${total} placés <span class="sc-edit-hint">— Cliquez ou glissez les élèves pour les placer</span>`;
+            info.innerHTML = `<span style="color: var(--text-secondary); font-weight: 500;"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
@@ -967,8 +1079,6 @@ export const SeatingChartManager = {
             }
         }
 
-        const onboarding = document.getElementById('scOnboarding');
-        if (onboarding) onboarding.classList.toggle('hidden', placed > 0 || this._isLocked);
     },
 
     // ========================================================================
@@ -979,6 +1089,9 @@ export const SeatingChartManager = {
         if (!this._dragSource || this._isLocked) return;
 
         const { type, resultId, row: srcRow, col: srcCol, ids } = this._dragSource;
+
+        const isTargetSpecial = appState.seatingGrid?.specialLayout?.[`${targetRow},${targetCol}`];
+        if (isTargetSpecial) return;
 
         if (type === 'multi-cell') {
             this._selectedChipIds = ids;
@@ -1171,7 +1284,7 @@ export const SeatingChartManager = {
         const availableSpots = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (!this._gridState[r][c]) {
+                if (!this._gridState[r][c] && !appState.seatingGrid?.specialLayout?.[`${r},${c}`]) {
                     availableSpots.push({ r, c });
                 }
             }
@@ -1210,6 +1323,8 @@ export const SeatingChartManager = {
                 }, { once: true });
             });
         });
+
+        this._scrollToDesk();
 
         const remaining = unplaced.length - placed;
         if (remaining > 0) {
@@ -1348,5 +1463,20 @@ export const SeatingChartManager = {
                 evolution: r.evolution
             }))
             .sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`));
+    },
+
+    _scrollToDesk() {
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                const gridArea = document.getElementById('scGridArea');
+                if (gridArea) {
+                    // Force absolute bottom scroll, bypassing element boundaries to ensure padding is visible
+                    gridArea.scrollTo({
+                        top: gridArea.scrollHeight + 500,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100); // Slight delay to ensure DOM layout and animations have updated height
+        });
     }
 };
