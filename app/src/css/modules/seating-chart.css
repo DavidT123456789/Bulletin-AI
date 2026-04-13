@@ -486,7 +486,13 @@
 .sc-config-row input[type="range"] {
     flex: 1;
     accent-color: var(--primary-color);
-    height: 4px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    height: 20px;
+    cursor: pointer;
 }
 
 .sc-config-value {
@@ -649,7 +655,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 16px;
     padding: 24px var(--content-padding-x, 24px);
     overflow: auto;
@@ -688,6 +694,7 @@
     transition: grid-template-columns 0.35s var(--ease-spring),
                 grid-template-rows 0.35s var(--ease-spring);
     flex-shrink: 0;
+    margin-top: auto;
 }
 
 /* ────────── GRID CELL ────────── */
@@ -750,6 +757,41 @@
 .sc-cell.occupied:active {
     cursor: grabbing;
     z-index: 20;
+}
+
+.sc-cell.sc-chip-selected {
+    border-color: var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb, 79, 70, 229), 0.08);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2), var(--shadow-sm);
+    transform: translateY(-2px);
+}
+
+.sc-cell.sc-chip-selected .sc-cell-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.sc-drag-clone.sc-drag-multi, .sc-touch-ghost.sc-drag-multi {
+    box-shadow: 4px 4px 0 var(--border-color), 8px 8px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.sc-drag-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    height: 20px;
+    min-width: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    box-shadow: 0 2px 4px var(--shadow-sm);
+    z-index: 10;
 }
 
 .sc-cell.dragging {
@@ -1075,6 +1117,7 @@
     display: flex;
     justify-content: center;
     flex-shrink: 0;
+    margin-bottom: auto;
 }
 
 .sc-desk {

@@ -621,7 +621,7 @@ label {
 
 /* --- Inputs & Forms (Nebula Style) --- */
 /* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
-input,
+input:not([type="range"]),
 textarea,
 select {
     padding: 12.5px 14.5px;
@@ -753,7 +753,7 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
-input,
+input:not([type="range"]),
 textarea,
 select {
     border: 1px solid var(--border-color);

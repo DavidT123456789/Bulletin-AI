@@ -25,6 +25,8 @@ export const SeatingChartManager = {
     _configPopoverOpen: false,
     _prevPlacedCount: 0,
     _selectedChipIds: [],
+    _lastSelectedGridPos: null,
+    _lastSelectedSidebarIndex: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -99,7 +101,7 @@ export const SeatingChartManager = {
                             </div>
                             <div class="sc-config-row">
                                 <label class="sc-config-label" for="scRowsSlider">Rangées</label>
-                                <input type="range" id="scRowsSlider" min="2" max="8" value="${DEFAULT_ROWS}">
+                                <input type="range" id="scRowsSlider" min="2" max="10" value="${DEFAULT_ROWS}">
                                 <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
                             </div>
                         </div>
@@ -432,17 +434,54 @@ export const SeatingChartManager = {
         this._updateSelectionAttribute();
     },
 
+    _selectGridRange(r1, c1, r2, c2) {
+        const minR = Math.min(r1, r2);
+        const maxR = Math.max(r1, r2);
+        const minC = Math.min(c1, c2);
+        const maxC = Math.max(c1, c2);
+
+        for (let r = minR; r <= maxR; r++) {
+            for (let c = minC; c <= maxC; c++) {
+                const id = this._gridState[r][c];
+                if (id && !this._selectedChipIds.includes(id)) {
+                    const student = this._studentMap?.get(id);
+                    if (student && !student.seatingPosition?.pinned) {
+                        this._selectedChipIds.push(id);
+                    }
+                }
+            }
+        }
+        this._applyChipSelectionUI();
+        this._updateSelectionAttribute();
+    },
+
+    _selectSidebarRange(idx1, idx2, filteredList) {
+        const min = Math.min(idx1, idx2);
+        const max = Math.max(idx1, idx2);
+        
+        for (let i = min; i <= max; i++) {
+            const id = filteredList[i].id;
+            if (id && !this._selectedChipIds.includes(id)) {
+                this._selectedChipIds.push(id);
+            }
+        }
+        this._applyChipSelectionUI();
+        this._updateSelectionAttribute();
+    },
+
     _clearSelection() {
         if (this._selectedChipIds.length === 0) return;
         this._selectedChipIds = [];
+        this._lastSelectedGridPos = null;
+        this._lastSelectedSidebarIndex = null;
         this._applyChipSelectionUI();
         this._updateSelectionAttribute();
     },
 
     _applyChipSelectionUI() {
-        document.querySelectorAll('.sc-student-chip').forEach(chip => {
-            const id = chip.dataset.resultId;
-            chip.classList.toggle('sc-chip-selected', this._selectedChipIds.includes(id));
+        document.querySelectorAll('.sc-student-chip, .sc-cell.occupied').forEach(el => {
+            const id = el.dataset.resultId;
+            if (id) el.classList.toggle('sc-chip-selected', this._selectedChipIds.includes(id));
         });
     },
 
@@ -457,6 +496,15 @@ export const SeatingChartManager = {
 
         const cols = this._getCols();
         const rows = this._getRows();
+        
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (ids.includes(this._gridState[r][c])) {
+                    this._gridState[r][c] = null;
+                }
+            }
+        }
+
         let currentRow = startRow;
         let currentCol = startCol;
         const placedCells = [];
@@ -707,6 +755,7 @@ export const SeatingChartManager = {
         const student = resultId ? this._studentMap?.get(resultId) ?? null : null;
 
         if (student) {
+            cell.dataset.resultId = student.id;
             const isPinned = student.seatingPosition?.pinned || false;
             cell.classList.add('occupied');
             if (isPinned) cell.classList.add('pinned');
@@ -726,7 +775,16 @@ export const SeatingChartManager = {
 
             cell.addEventListener('click', (e) => {
                 if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
-                FocusPanelManager.open(student.id);
+                if (this._isLocked) {
+                    FocusPanelManager.open(student.id);
+                } else if (!isPinned) {
+                    if (e.shiftKey && this._lastSelectedGridPos) {
+                        this._selectGridRange(this._lastSelectedGridPos.row, this._lastSelectedGridPos.col, row, col);
+                    } else {
+                        this._toggleChipSelection(student.id);
+                        this._lastSelectedGridPos = { row, col };
+                    }
+                }
             });
 
             cell.querySelector('.sc-cell-remove')?.addEventListener('click', (e) => {
@@ -741,10 +799,17 @@ export const SeatingChartManager = {
 
             if (!this._isLocked && !isPinned) {
                 cell.addEventListener('dragstart', (e) => {
-                    this._dragSource = { type: 'cell', resultId: student.id, row, col };
+                    const isSelected = this._selectedChipIds.includes(student.id);
+                    if (!isSelected) {
+                        this._clearSelection();
+                        this._dragSource = { type: 'cell', resultId: student.id, row, col };
+                        e.dataTransfer.setData('text/plain', student.id);
+                    } else {
+                        this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+                        e.dataTransfer.setData('text/plain', 'multi');
+                    }
                     e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', student.id);
-                    this._setCleanDragImage(e, cell);
+                    this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
                     requestAnimationFrame(() => cell.classList.add('dragging'));
                 });
 
@@ -821,15 +886,21 @@ export const SeatingChartManager = {
 
         if (this._isLocked) return;
 
-        list.querySelectorAll('.sc-student-chip').forEach(chip => {
+        list.querySelectorAll('.sc-student-chip').forEach((chip, index) => {
             const id = chip.dataset.resultId;
 
             chip.addEventListener('dragstart', (e) => {
-                this._clearSelection();
-                this._dragSource = { type: 'sidebar', resultId: id };
+                const isSelected = this._selectedChipIds.includes(id);
+                if (!isSelected) {
+                    this._clearSelection();
+                    this._dragSource = { type: 'sidebar', resultId: id };
+                    e.dataTransfer.setData('text/plain', id);
+                } else {
+                    this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+                    e.dataTransfer.setData('text/plain', 'multi');
+                }
                 e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', id);
-                this._setCleanDragImage(e, chip);
+                this._setCleanDragImage(e, chip, isSelected ? this._selectedChipIds.length : 1);
                 requestAnimationFrame(() => chip.classList.add('dragging'));
             });
 
@@ -840,7 +911,12 @@ export const SeatingChartManager = {
 
             chip.addEventListener('click', (e) => {
                 if (e.defaultPrevented) return;
-                this._toggleChipSelection(id);
+                if (e.shiftKey && this._lastSelectedSidebarIndex !== null) {
+                    this._selectSidebarRange(this._lastSelectedSidebarIndex, index, filtered);
+                } else {
+                    this._toggleChipSelection(id);
+                    this._lastSelectedSidebarIndex = index;
+                }
             });
 
             this._addTouchDrag(chip, { type: 'sidebar', resultId: id });
@@ -902,7 +978,14 @@ export const SeatingChartManager = {
     _handleDrop(targetRow, targetCol) {
         if (!this._dragSource || this._isLocked) return;
 
-        const { type, resultId, row: srcRow, col: srcCol } = this._dragSource;
+        const { type, resultId, row: srcRow, col: srcCol, ids } = this._dragSource;
+
+        if (type === 'multi-cell') {
+            this._selectedChipIds = ids;
+            this._placeSelectedAt(targetRow, targetCol);
+            this._dragSource = null;
+            return;
+        }
 
         const targetId = this._gridState[targetRow]?.[targetCol];
         if (targetId) {
@@ -985,7 +1068,14 @@ export const SeatingChartManager = {
             startX = touch.clientX;
             startY = touch.clientY;
             hasMoved = false;
-            this._touchSourceInfo = sourceInfo;
+            
+            let activeSourceInfo = { ...sourceInfo };
+            if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
+                activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+            } else if (sourceInfo.resultId) {
+                this._clearSelection();
+            }
+            this._touchSourceInfo = activeSourceInfo;
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
@@ -1024,6 +1114,17 @@ export const SeatingChartManager = {
         this._removeTouchGhost();
         const ghost = element.cloneNode(true);
         ghost.className = 'sc-touch-ghost';
+        ghost.classList.remove('sc-chip-selected');
+        ghost.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+
+        if (this._touchSourceInfo?.type === 'multi-cell' && this._touchSourceInfo.ids.length > 1) {
+            const badge = document.createElement('div');
+            badge.className = 'sc-drag-badge';
+            badge.textContent = `+${this._touchSourceInfo.ids.length - 1}`;
+            ghost.appendChild(badge);
+            ghost.classList.add('sc-drag-multi');
+        }
+
         ghost.style.left = `${touch.clientX - 30}px`;
         ghost.style.top = `${touch.clientY - 30}px`;
         document.body.appendChild(ghost);
@@ -1065,22 +1166,33 @@ export const SeatingChartManager = {
 
         const rows = this._getRows();
         const cols = this._getCols();
+
+        // Collecter toutes les places vides dans l'ordre de lecture classique (haut vers bas, gauche vers droite)
+        const availableSpots = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (!this._gridState[r][c]) {
+                    availableSpots.push({ r, c });
+                }
+            }
+        }
+
+        const k = Math.min(availableSpots.length, unplaced.length);
+        if (k === 0) return;
+
+        // On prend les K dernières places (les plus proches du bureau au fond)
+        const spotsToFill = availableSpots.slice(-k);
         let placed = 0;
         const placedCells = [];
 
-        for (const student of unplaced) {
-            let done = false;
-            for (let r = 0; r < rows && !done; r++) {
-                for (let c = 0; c < cols && !done; c++) {
-                    if (!this._gridState[r][c]) {
-                        this._gridState[r][c] = student.id;
-                        placedCells.push({ row: r, col: c, index: placed });
-                        done = true;
-                        placed++;
-                    }
-                }
-            }
-            if (!done) break;
+        // On assigne les élèves non placés dans l'ordre alphabétique à ces places
+        for (let i = 0; i < k; i++) {
+            const spot = spotsToFill[i];
+            const student = unplaced[i];
+            
+            this._gridState[spot.r][spot.c] = student.id;
+            placedCells.push({ row: spot.r, col: spot.c, index: placed });
+            placed++;
         }
 
         this._render();
@@ -1159,14 +1271,24 @@ export const SeatingChartManager = {
     },
 
     /** Hides native ghost and creates a floating clone that follows the cursor */
-    _setCleanDragImage(e, sourceEl) {
+    _setCleanDragImage(e, sourceEl, count = 1) {
         const blank = new Image();
         blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         e.dataTransfer.setDragImage(blank, 0, 0);
 
         const clone = sourceEl.cloneNode(true);
         clone.className = 'sc-drag-clone';
+        clone.classList.remove('sc-chip-selected');
         clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+
+        if (count > 1) {
+            const badge = document.createElement('div');
+            badge.className = 'sc-drag-badge';
+            badge.textContent = `+${count - 1}`;
+            clone.appendChild(badge);
+            clone.classList.add('sc-drag-multi');
+        }
+
         clone.style.left = `${e.clientX}px`;
         clone.style.top = `${e.clientY}px`;
         document.body.appendChild(clone);
