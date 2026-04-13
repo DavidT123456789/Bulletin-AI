@@ -1081,17 +1081,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 20px;
-    border-radius: var(--radius-md);
+    gap: 8px;
+    padding: 10px 28px;
+    border-radius: var(--radius-pill);
     background: var(--surface-color);
-    border: 1.5px solid var(--border-color);
-    color: var(--text-tertiary);
-    font-size: 0.82rem;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
     font-weight: 600;
     user-select: none;
     box-shadow: var(--shadow-sm);
-    transition: opacity 0.3s, transform 0.3s var(--ease-spring);
+    transition: opacity 0.3s, transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
 }
 
 .sc-desk iconify-icon { font-size: 1.1em; }
@@ -1191,7 +1191,7 @@
 
 [data-theme="dark"] .sc-desk {
     background: var(--surface-color);
-    border-color: var(--border-color);
+    border-color: transparent;
     box-shadow: var(--shadow-sm);
 }
 
