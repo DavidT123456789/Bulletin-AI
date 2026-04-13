@@ -226,6 +226,14 @@
     100% { transform: scale(1); }
 }
 
+/* Lock button toggle pulse */
+@keyframes scLockToggle {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(0.88); }
+    70%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
 /* ────────── ANIMATION CLASSES ────────── */
 
 /* View enter */
@@ -293,6 +301,11 @@
     animation: scCounterBump 0.3s var(--ease-bounce);
 }
 
+/* Lock button toggle animation */
+.sc-toolbar-btn.sc-lock-btn.sc-lock-toggling {
+    animation: scLockToggle 0.35s var(--ease-bounce);
+}
+
 /* ────────── PLAN TOOLBAR ────────── */
 .sc-toolbar {
     display: flex;
@@ -300,15 +313,18 @@
     gap: 10px;
     padding: 10px var(--content-padding-x, var(--space-6));
     flex-shrink: 0;
-    border-bottom: 1px solid var(--border-color);
     background: var(--bg-color);
 }
 
 .sc-toolbar-info {
+    position: relative;
     font-size: 0.82rem;
     font-weight: 500;
     color: var(--text-tertiary);
+    cursor: default;
 }
+
+
 
 .sc-toolbar-info strong {
     color: var(--text-primary);
@@ -316,6 +332,45 @@
 }
 
 .sc-toolbar-spacer { flex: 1; }
+
+.sc-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sc-toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+/* ────────── PROGRESS BAR ────────── */
+.sc-progress-track {
+    height: 2px;
+    background: var(--border-color);
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: opacity 0.5s var(--ease-material);
+}
+
+.sc-progress-track.sc-progress-complete {
+    opacity: 0;
+}
+
+.sc-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-color);
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    transition: width 0.5s var(--ease-spring), background-color 0.5s var(--ease-material);
+}
+
+.sc-progress-fill[data-ratio="full"] {
+    background: var(--success-color);
+}
 
 .sc-toolbar-btn {
     display: flex;
@@ -353,8 +408,15 @@
 }
 
 .sc-toolbar-btn.sc-lock-btn.locked {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-tertiary);
+}
+
+/* Edit mode — subtle accent to signal "you're actively editing" */
+#seatingChartView[data-locked="false"] .sc-toolbar-btn.sc-lock-btn {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
     color: var(--primary-color);
 }
 
@@ -365,7 +427,7 @@
 }
 
 .sc-toolbar-btn.sc-reset-btn:hover {
-    background: var(--bg-hover);
+    background: color-mix(in srgb, var(--error-color) 8%, transparent);
     border-color: var(--error-color);
     color: var(--error-color);
 }
@@ -435,13 +497,7 @@
     text-align: center;
 }
 
-/* Auto-place — toolbar button with accent hover */
-.sc-auto-place-btn {
-    background: transparent;
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    color: var(--primary-color);
-}
-
+/* Auto-place — accent only on hover */
 .sc-auto-place-btn:hover {
     background: rgba(var(--primary-color-rgb), 0.08);
     border-color: var(--primary-color);
@@ -491,7 +547,7 @@
 
 .sc-search-box input {
     width: 100%;
-    padding: 7px 10px 7px 30px;
+    padding: 7px 28px 7px 30px;
     border: var(--input-border-width) solid var(--border-color);
     border-radius: var(--radius-sm);
     background: var(--surface-color);
@@ -511,6 +567,37 @@
     font-size: 0.9em;
     color: var(--text-quaternary);
     pointer-events: none;
+}
+
+.sc-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: var(--bg-hover);
+    border-radius: 50%;
+    color: var(--text-tertiary);
+    font-size: 0.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-search-clear.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.sc-search-clear:hover {
+    background: var(--error-light);
+    color: var(--error-color);
 }
 
 .sc-student-list {
@@ -557,6 +644,7 @@
 
 /* ────────── GRID AREA ────────── */
 .sc-grid-area {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -596,6 +684,7 @@
 .sc-grid-container {
     display: grid;
     gap: 8px;
+    padding: 12px;
     transition: grid-template-columns 0.35s var(--ease-spring),
                 grid-template-rows 0.35s var(--ease-spring);
     flex-shrink: 0;
@@ -618,6 +707,25 @@
     cursor: default;
 }
 
+.sc-cell.empty {
+    opacity: calc(0.35 + var(--row-depth, 0.5) * 0.3);
+    border-width: 1.5px;
+}
+
+/* Empty cells become clickable when sidebar selection is active */
+#seatingChartView[data-has-selection="true"] .sc-cell.empty {
+    cursor: pointer;
+    opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+}
+
+#seatingChartView[data-has-selection="true"] .sc-cell.empty:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.06);
+    transform: scale(1.04);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
 .sc-cell.drag-over {
     border-color: var(--primary-color);
     background: rgba(var(--primary-color-rgb), 0.06);
@@ -627,7 +735,7 @@
 
 .sc-cell.occupied {
     border-style: solid;
-    border-color: var(--border-color);
+    border-color: transparent;
     background: var(--surface-color);
     cursor: grab;
     box-shadow: var(--shadow-sm);
@@ -636,18 +744,66 @@
 .sc-cell.occupied:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+    z-index: 10;
 }
 
 .sc-cell.occupied:active {
     cursor: grabbing;
-    transform: scale(1.08);
-    box-shadow: var(--shadow-lg);
     z-index: 20;
 }
 
 .sc-cell.dragging {
     opacity: 0.35;
-    transform: scale(0.9);
+    transform: scale(0.95);
+    box-shadow: none;
+}
+
+/* Prevent native image drag + unify grab zone */
+.sc-cell .student-avatar,
+.sc-cell .sc-cell-name,
+.sc-cell .sc-evolution-dot {
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+/* Custom floating drag clone — follows cursor, replaces native ghost */
+.sc-drag-clone {
+    position: fixed !important;
+    z-index: 10000 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 80px !important;
+    height: 88px !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
+    opacity: 0.92 !important;
+    border: 2px solid var(--border-color) !important;
+    transform: translate(-50%, -50%) scale(1.05) !important;
+    transition: none !important;
+    overflow: visible !important;
+}
+
+/* Touch drag ghost — follows finger */
+.sc-touch-ghost {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(1.1);
+    transition: transform 0.15s;
 }
 
 .sc-cell .student-avatar {
@@ -735,18 +891,13 @@
     transform: scale(1);
 }
 
-/* Pinned — always visible */
+/* Pinned — icon always visible */
 .sc-cell.pinned .sc-cell-pin {
     opacity: 1;
     transform: scale(1);
     background: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
-}
-
-.sc-cell.pinned {
-    border-color: rgba(var(--primary-color-rgb), 0.35);
-    box-shadow: var(--shadow-sm), 0 0 0 1px rgba(var(--primary-color-rgb), 0.15);
 }
 
 /* Evolution dot */
@@ -767,39 +918,54 @@
 
 /* ────────── LOCKED STATE ────────── */
 
-/* Sidebar: full collapse only when locked AND all students placed */
-#seatingChartView[data-locked="true"][data-all-placed="true"] .sc-sidebar {
+/* Sidebar: fully hidden in locked mode — clean read-only view */
+#seatingChartView[data-locked="true"] .sc-sidebar {
     width: 0;
     opacity: 0;
     margin-left: -1px;
     pointer-events: none;
+    overflow: hidden;
 }
 
-/* Sidebar: read-only compact when locked but unplaced students remain */
-#seatingChartView[data-locked="true"][data-all-placed="false"] .sc-sidebar {
+/* Progress bar: hidden in locked mode — it's an editing affordance */
+#seatingChartView[data-locked="true"] .sc-progress-track {
+    opacity: 0;
+    height: 0;
     pointer-events: none;
-    opacity: 0.7;
 }
 
-#seatingChartView[data-locked="true"][data-all-placed="false"] .sc-search-box {
-    display: none;
+/* Unplaced indicator styling */
+.sc-unplaced-hint {
+    display: inline;
+    font-weight: 400;
+    color: var(--text-quaternary);
+    font-size: 0.78rem;
+    animation: scUnplacedFade 0.5s var(--ease-material) both;
 }
 
-#seatingChartView[data-locked="true"][data-all-placed="false"] .sc-sidebar-title::after {
-    content: " ⚠";
+@keyframes scUnplacedFade {
+    from { opacity: 0; transform: translateX(-4px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
-#seatingChartView[data-locked="true"][data-all-placed="false"] .sc-student-chip {
-    cursor: default;
-    opacity: 0.65;
+/* ────────── CHIP SELECTION ────────── */
+.sc-student-chip.sc-chip-selected {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.35);
 }
 
-/* Empty cells subtle in locked mode for spatial reference */
+[data-theme="dark"] .sc-student-chip.sc-chip-selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
+}
+
+/* Empty cells nearly invisible in locked mode — minimal spatial reference */
 #seatingChartView[data-locked="true"] .sc-cell.empty {
-    opacity: 0.4;
-    transform: scale(0.98);
+    opacity: 0.12;
+    transform: scale(0.96);
     pointer-events: none;
     background: transparent;
+    border-color: transparent;
 }
 
 /* Occupied cells non-draggable in locked mode */
@@ -813,22 +979,95 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Hide remove/pin in locked (except pinned indicator) */
+/* Hide remove/pin in locked — clean read-only view */
 #seatingChartView[data-locked="true"] .sc-cell-remove,
 #seatingChartView[data-locked="true"] .sc-cell-pin {
     display: none !important;
 }
 
-#seatingChartView[data-locked="true"] .sc-cell.pinned .sc-cell-pin {
-    display: flex !important;
+/* Edit-only toolbar groups hidden when locked — persistent group stays */
+#seatingChartView[data-locked="true"] .sc-toolbar-primary,
+#seatingChartView[data-locked="true"] .sc-toolbar-secondary,
+#seatingChartView[data-locked="true"] .sc-toolbar-divider {
+    display: none;
+}
+
+/* Hide avatar selection checkmark in seating chart context */
+#seatingChartView .avatar-selection-overlay {
+    display: none !important;
+}
+
+/* Disable auto-place when all placed */
+#seatingChartView[data-all-placed="true"][data-locked="false"] .sc-auto-place-btn {
+    opacity: 0.4;
     pointer-events: none;
 }
 
-/* Edit-only toolbar buttons hidden when locked */
-#seatingChartView[data-locked="true"] .sc-reset-btn,
-#seatingChartView[data-locked="true"] .sc-auto-place-btn,
-#seatingChartView[data-locked="true"] .sc-config-wrapper {
-    display: none;
+/* Disable shuffle when < 2 placed */
+#seatingChartView[data-placed-count="0"] #scShuffleBtn,
+#seatingChartView[data-placed-count="1"] #scShuffleBtn {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Lock button pulse when all students placed — invite to lock */
+@keyframes scLockInvite {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0); }
+    50% { box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.12); }
+}
+
+#seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn {
+    animation: scLockInvite 2s ease-in-out infinite;
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
+}
+
+/* ────────── ONBOARDING OVERLAY ────────── */
+.sc-onboarding-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease-material);
+}
+
+.sc-onboarding-overlay.hidden {
+    opacity: 0;
+}
+
+.sc-onboarding-cta {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1.5px solid rgba(var(--primary-color-rgb), 0.25);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--primary-color);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast),
+                transform var(--transition-fast);
+}
+
+.sc-onboarding-cta:hover {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.sc-onboarding-cta:active {
+    transform: scale(0.97);
+}
+
+.sc-onboarding-cta iconify-icon {
+    font-size: 1em;
+    color: inherit;
 }
 
 /* ────────── TEACHER DESK ────────── */
@@ -845,12 +1084,13 @@
     gap: 6px;
     padding: 8px 20px;
     border-radius: var(--radius-md);
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--accent-rgb, var(--primary-color-rgb)), 0.06));
-    border: 1.5px solid rgba(var(--primary-color-rgb), 0.2);
-    color: var(--primary-color);
+    background: var(--surface-color);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-tertiary);
     font-size: 0.82rem;
     font-weight: 600;
     user-select: none;
+    box-shadow: var(--shadow-sm);
     transition: opacity 0.3s, transform 0.3s var(--ease-spring);
 }
 
@@ -872,7 +1112,9 @@
     }
 
     .sc-toolbar,
+    .sc-progress-track,
     .sc-sidebar,
+    .sc-onboarding-overlay,
     .sc-cell-remove,
     .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;
@@ -911,8 +1153,8 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    /* Locked sidebar collapses vertically on mobile — only when all placed */
-    #seatingChartView[data-locked="true"][data-all-placed="true"] .sc-sidebar {
+    /* Locked sidebar collapses vertically on mobile */
+    #seatingChartView[data-locked="true"] .sc-sidebar {
         width: 100%;
         max-height: 0;
         margin-left: 0;
@@ -934,6 +1176,7 @@
     }
 
     .view-toggle-btn span { display: none; }
+    .sc-toolbar-btn span { display: none; }
 }
 
 /* ────────── DARK MODE ────────── */
@@ -947,8 +1190,9 @@
 }
 
 [data-theme="dark"] .sc-desk {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.12), rgba(var(--accent-rgb, var(--primary-color-rgb)), 0.1));
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: var(--surface-color);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
 }
 
 [data-theme="dark"] .sc-toolbar { background: var(--bg-color); }
@@ -992,7 +1236,8 @@
     .sc-desk.sc-desk-entering,
     #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
-    #seatingChartView.sc-exiting {
+    #seatingChartView.sc-exiting,
+    .sc-toolbar-btn.sc-lock-btn.sc-lock-toggling {
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
     }

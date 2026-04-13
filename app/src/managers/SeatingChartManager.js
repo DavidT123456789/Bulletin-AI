@@ -24,6 +24,7 @@ export const SeatingChartManager = {
     _touchSourceInfo: null,
     _configPopoverOpen: false,
     _prevPlacedCount: 0,
+    _selectedChipIds: [],
 
     // ========================================================================
     // INITIALIZATION
@@ -71,43 +72,56 @@ export const SeatingChartManager = {
         view.style.display = 'none';
         view.innerHTML = `
             <div class="sc-toolbar">
-                <div class="sc-toolbar-info" id="scFooterInfo"><strong>0</strong>/0 placés <span class="sc-edit-hint">— Glissez les élèves pour les placer</span></div>
+                <div class="sc-toolbar-info" id="scFooterInfo"><strong>0</strong>/0 placés <span class="sc-edit-hint">— Cliquez ou glissez les élèves pour les placer</span></div>
                 <div class="sc-toolbar-spacer"></div>
-                <button class="sc-toolbar-btn sc-lock-btn" id="scLockBtn" aria-label="Verrouiller">
-                    <iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon>
-                    <span>Édition</span>
-                </button>
-                <button class="sc-toolbar-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique">
-                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                    <span>Placer auto</span>
-                </button>
-                <div class="sc-config-wrapper">
-                    <button class="sc-toolbar-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille">
-                        <iconify-icon icon="solar:settings-linear"></iconify-icon>
-                        <span>Grille</span>
+                <div class="sc-toolbar-group sc-toolbar-primary">
+                    <button class="sc-toolbar-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique">
+                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                        <span>Placer auto</span>
                     </button>
-                    <div class="sc-config-popover" id="scConfigPopover">
-                        <div class="sc-config-row">
-                            <label class="sc-config-label" for="scColsSlider">Colonnes</label>
-                            <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
-                            <span class="sc-config-value" id="scColsValue">${DEFAULT_COLS}</span>
-                        </div>
-                        <div class="sc-config-row">
-                            <label class="sc-config-label" for="scRowsSlider">Rangées</label>
-                            <input type="range" id="scRowsSlider" min="2" max="8" value="${DEFAULT_ROWS}">
-                            <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
+                    <button class="sc-toolbar-btn" id="scShuffleBtn" aria-label="Mélanger">
+                        <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                        <span>Mélanger</span>
+                    </button>
+                </div>
+                <div class="sc-toolbar-divider"></div>
+                <div class="sc-toolbar-group sc-toolbar-secondary">
+                    <div class="sc-config-wrapper">
+                        <button class="sc-toolbar-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille">
+                            <iconify-icon icon="solar:settings-linear"></iconify-icon>
+                            <span>Grille</span>
+                        </button>
+                        <div class="sc-config-popover" id="scConfigPopover">
+                            <div class="sc-config-row">
+                                <label class="sc-config-label" for="scColsSlider">Colonnes</label>
+                                <input type="range" id="scColsSlider" min="2" max="10" value="${DEFAULT_COLS}">
+                                <span class="sc-config-value" id="scColsValue">${DEFAULT_COLS}</span>
+                            </div>
+                            <div class="sc-config-row">
+                                <label class="sc-config-label" for="scRowsSlider">Rangées</label>
+                                <input type="range" id="scRowsSlider" min="2" max="8" value="${DEFAULT_ROWS}">
+                                <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
+                            </div>
                         </div>
                     </div>
+                    <button class="sc-toolbar-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser">
+                        <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                        <span>Réinitialiser</span>
+                    </button>
                 </div>
-                <button class="sc-toolbar-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser">
-                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
-                    <span>Réinitialiser</span>
-                </button>
-                <button class="sc-toolbar-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer">
-                    <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                    <span>Imprimer</span>
-                </button>
+                <div class="sc-toolbar-divider"></div>
+                <div class="sc-toolbar-group sc-toolbar-persistent">
+                    <button class="sc-toolbar-btn sc-lock-btn" id="scLockBtn" aria-label="Verrouiller">
+                        <iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon>
+                        <span>Édition</span>
+                    </button>
+                    <button class="sc-toolbar-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer">
+                        <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                        <span>Imprimer</span>
+                    </button>
+                </div>
             </div>
+            <div class="sc-progress-track"><div class="sc-progress-fill" id="scProgressFill"></div></div>
             <div class="sc-body">
                 <div class="sc-sidebar" id="scSidebar">
                     <div class="sc-sidebar-header">
@@ -115,12 +129,20 @@ export const SeatingChartManager = {
                         <div class="sc-search-box">
                             <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                             <input type="text" id="scSearchInput" placeholder="Filtrer…" autocomplete="off">
+                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
                         </div>
                     </div>
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-
+                    <div class="sc-onboarding-overlay" id="scOnboarding">
+                        <button class="sc-onboarding-cta" id="scOnboardingAutoPlace">
+                            <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                            Placer automatiquement
+                        </button>
+                    </div>
                     <div class="sc-grid-container" id="scGridContainer"></div>
                     <div class="sc-desk-row">
                         <div class="sc-desk" id="scDesk">
@@ -143,6 +165,7 @@ export const SeatingChartManager = {
         document.getElementById('scPrintBtn')?.addEventListener('click', () => window.print());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
         document.getElementById('scAutoPlaceBtn')?.addEventListener('click', () => this._autoPlace());
+        document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scLockBtn')?.addEventListener('click', () => this._toggleLock());
 
         document.getElementById('scConfigBtn')?.addEventListener('click', (e) => {
@@ -160,7 +183,18 @@ export const SeatingChartManager = {
             this._onGridConfigChange();
         });
 
-        document.getElementById('scSearchInput')?.addEventListener('input', () => this._renderSidebar());
+        document.getElementById('scSearchInput')?.addEventListener('input', (e) => {
+            document.getElementById('scSearchClear')?.classList.toggle('visible', e.target.value.length > 0);
+            this._renderSidebar();
+        });
+
+        document.getElementById('scSearchClear')?.addEventListener('click', () => {
+            const input = document.getElementById('scSearchInput');
+            if (input) { input.value = ''; input.focus(); }
+            document.getElementById('scSearchClear')?.classList.remove('visible');
+            this._renderSidebar();
+        });
+        document.getElementById('scOnboardingAutoPlace')?.addEventListener('click', () => this._autoPlace());
 
         document.getElementById('viewToggle')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.view-toggle-btn');
@@ -171,6 +205,15 @@ export const SeatingChartManager = {
         document.addEventListener('click', (e) => {
             if (this._configPopoverOpen && !e.target.closest('.sc-config-wrapper')) {
                 this._closeConfigPopover();
+            }
+            if (this._selectedChipIds.length > 0 && !e.target.closest('.sc-student-chip') && !e.target.closest('.sc-cell')) {
+                this._clearSelection();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this._selectedChipIds.length > 0) {
+                this._clearSelection();
             }
         });
     },
@@ -215,6 +258,7 @@ export const SeatingChartManager = {
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
                 this._isActive = false;
+                this._clearSelection();
                 this._savePositionsToState();
                 this._saveGridConfig();
                 this._closeConfigPopover();
@@ -230,7 +274,15 @@ export const SeatingChartManager = {
             viewEl.style.display = '';
             if (fab) fab.style.display = 'none';
             this._isActive = true;
+            this._isLocked = appState.seatingGrid?.locked ?? false;
             viewEl.dataset.locked = this._isLocked;
+            const lockBtn = document.getElementById('scLockBtn');
+            if (lockBtn) {
+                lockBtn.classList.toggle('locked', this._isLocked);
+                lockBtn.innerHTML = this._isLocked
+                    ? '<iconify-icon icon="solar:lock-linear"></iconify-icon><span>Verrouillé</span>'
+                    : '<iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon><span>Édition</span>';
+            }
             this._loadGridConfig();
             this._loadPositionsFromState();
             this._render();
@@ -258,7 +310,7 @@ export const SeatingChartManager = {
             return;
         }
 
-        // Data updating synchronously — ClassUIManager handles the blur animation timing
+        this._prevPlacedCount = 0;
         this._students = this._getCurrentClassStudents();
         this._loadGridConfig();
         this._loadPositionsFromState();
@@ -302,32 +354,15 @@ export const SeatingChartManager = {
         viewEl.classList.remove('sc-entering');
         viewEl.classList.add('sc-exiting');
 
+        let called = false;
         const done = () => {
+            if (called) return;
+            called = true;
             viewEl.classList.remove('sc-exiting');
             onComplete();
         };
         viewEl.addEventListener('animationend', done, { once: true });
         setTimeout(done, 350);
-    },
-
-    /** Class switch — grid crossfade with blur */
-    _animateClassSwitch(onMidpoint) {
-        const gridArea = document.getElementById('scGridArea');
-        if (!gridArea) { onMidpoint(); return; }
-
-        gridArea.classList.add('sc-class-switching');
-
-        setTimeout(() => {
-            onMidpoint();
-
-            const desk = document.getElementById('scDesk');
-            desk?.classList.add('sc-desk-entering');
-            setTimeout(() => desk?.classList.remove('sc-desk-entering'), 500);
-        }, 200);
-
-        const cleanup = () => gridArea.classList.remove('sc-class-switching');
-        gridArea.addEventListener('animationend', cleanup, { once: true });
-        setTimeout(cleanup, 600);
     },
 
     /** Stagger cell entrance (used after render) */
@@ -371,12 +406,88 @@ export const SeatingChartManager = {
         if (!cell) { onComplete(); return; }
 
         cell.classList.add('sc-cell-removing');
+        let called = false;
         const done = () => {
+            if (called) return;
+            called = true;
             cell.classList.remove('sc-cell-removing');
             onComplete();
         };
         cell.addEventListener('animationend', done, { once: true });
         setTimeout(done, 350);
+    },
+
+    // ========================================================================
+    // SELECTION — Click-to-select + Click-to-place
+    // ========================================================================
+
+    _toggleChipSelection(id) {
+        const idx = this._selectedChipIds.indexOf(id);
+        if (idx >= 0) {
+            this._selectedChipIds.splice(idx, 1);
+        } else {
+            this._selectedChipIds.push(id);
+        }
+        this._applyChipSelectionUI();
+        this._updateSelectionAttribute();
+    },
+
+    _clearSelection() {
+        if (this._selectedChipIds.length === 0) return;
+        this._selectedChipIds = [];
+        this._applyChipSelectionUI();
+        this._updateSelectionAttribute();
+    },
+
+    _applyChipSelectionUI() {
+        document.querySelectorAll('.sc-student-chip').forEach(chip => {
+            const id = chip.dataset.resultId;
+            chip.classList.toggle('sc-chip-selected', this._selectedChipIds.includes(id));
+        });
+    },
+
+    _updateSelectionAttribute() {
+        const view = document.getElementById('seatingChartView');
+        if (view) view.dataset.hasSelection = this._selectedChipIds.length > 0;
+    },
+
+    _placeSelectedAt(startRow, startCol) {
+        const ids = [...this._selectedChipIds];
+        if (ids.length === 0) return;
+
+        const cols = this._getCols();
+        const rows = this._getRows();
+        let currentRow = startRow;
+        let currentCol = startCol;
+        const placedCells = [];
+
+        for (const id of ids) {
+            let found = false;
+            while (currentRow < rows && !found) {
+                if (!this._gridState[currentRow][currentCol]) {
+                    this._gridState[currentRow][currentCol] = id;
+                    placedCells.push({ row: currentRow, col: currentCol, index: placedCells.length });
+                    found = true;
+                }
+                currentCol++;
+                if (currentCol >= cols) {
+                    currentCol = 0;
+                    currentRow++;
+                }
+            }
+        }
+
+        this._selectedChipIds = [];
+        this._render();
+        this._updateSidebarLockState();
+        this._savePositionsToState();
+        this._updateSelectionAttribute();
+
+        requestAnimationFrame(() => {
+            placedCells.forEach(({ row, col, index }) => {
+                this._animateCellPlaced(row, col);
+            });
+        });
     },
 
     /** Mark new sidebar chips as "returning" for entrance animation */
@@ -423,14 +534,21 @@ export const SeatingChartManager = {
         btn.innerHTML = this._isLocked
             ? '<iconify-icon icon="solar:lock-linear"></iconify-icon><span>Verrouillé</span>'
             : '<iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon><span>Édition</span>';
+        btn.classList.remove('sc-lock-toggling');
+        void btn.offsetWidth;
+        btn.classList.add('sc-lock-toggling');
+        btn.addEventListener('animationend', () => btn.classList.remove('sc-lock-toggling'), { once: true });
 
+        this._clearSelection();
         if (this._isLocked) this._closeConfigPopover();
+
         this._render();
         this._updateSidebarLockState();
         this._animateLockMorph();
+        this._saveGridConfig();
     },
 
-    /** Smart sidebar collapse: only full-collapse when ALL students placed */
+    /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
     _updateSidebarLockState() {
         const view = document.getElementById('seatingChartView');
         if (!view) return;
@@ -464,7 +582,8 @@ export const SeatingChartManager = {
     _saveGridConfig() {
         appState.seatingGrid = {
             rows: this._getRows(),
-            cols: this._getCols()
+            cols: this._getCols(),
+            locked: this._isLocked
         };
         StorageManager.saveAppState();
     },
@@ -482,6 +601,7 @@ export const SeatingChartManager = {
         }
 
         this._render();
+        this._saveGridConfig();
         this._staggerCellEntrance();
     },
 
@@ -564,6 +684,7 @@ export const SeatingChartManager = {
 
         const rows = this._getRows();
         const cols = this._getCols();
+        this._studentMap = new Map(this._students.map(s => [s.id, s]));
 
         container.style.gridTemplateColumns = `repeat(${cols}, 80px)`;
         container.style.gridTemplateRows = `repeat(${rows}, 88px)`;
@@ -583,7 +704,7 @@ export const SeatingChartManager = {
         cell.dataset.col = col;
 
         const resultId = this._gridState[row]?.[col];
-        const student = resultId ? this._students.find(s => s.id === resultId) : null;
+        const student = resultId ? this._studentMap?.get(resultId) ?? null : null;
 
         if (student) {
             const isPinned = student.seatingPosition?.pinned || false;
@@ -623,6 +744,7 @@ export const SeatingChartManager = {
                     this._dragSource = { type: 'cell', resultId: student.id, row, col };
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', student.id);
+                    this._setCleanDragImage(e, cell);
                     requestAnimationFrame(() => cell.classList.add('dragging'));
                 });
 
@@ -635,6 +757,13 @@ export const SeatingChartManager = {
             }
         } else {
             cell.classList.add('empty');
+            const totalRows = this._getRows();
+            cell.style.setProperty('--row-depth', totalRows > 1 ? row / (totalRows - 1) : 0.5);
+
+            cell.addEventListener('click', () => {
+                if (this._isLocked || this._selectedChipIds.length === 0) return;
+                this._placeSelectedAt(row, col);
+            });
         }
 
         cell.addEventListener('dragover', (e) => {
@@ -657,8 +786,7 @@ export const SeatingChartManager = {
     },
 
     _getEvolutionDotHTML(student) {
-        const result = appState.generatedResults?.find(r => r.id === student.id);
-        const evo = result?.evolution;
+        const evo = student.evolution;
         if (!evo) return '';
 
         const cls = evo === 'up' ? 'progress'
@@ -697,9 +825,11 @@ export const SeatingChartManager = {
             const id = chip.dataset.resultId;
 
             chip.addEventListener('dragstart', (e) => {
+                this._clearSelection();
                 this._dragSource = { type: 'sidebar', resultId: id };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', id);
+                this._setCleanDragImage(e, chip);
                 requestAnimationFrame(() => chip.classList.add('dragging'));
             });
 
@@ -708,8 +838,15 @@ export const SeatingChartManager = {
                 this._dragSource = null;
             });
 
+            chip.addEventListener('click', (e) => {
+                if (e.defaultPrevented) return;
+                this._toggleChipSelection(id);
+            });
+
             this._addTouchDrag(chip, { type: 'sidebar', resultId: id });
         });
+
+        this._applyChipSelectionUI();
 
         if (returningId) this._animateSidebarChipReturn(returningId);
     },
@@ -720,11 +857,42 @@ export const SeatingChartManager = {
         const info = document.getElementById('scFooterInfo');
         if (!info) return;
 
+        const view = document.getElementById('seatingChartView');
+        if (view) view.dataset.placedCount = placed;
+
         const prev = this._prevPlacedCount;
-        info.innerHTML = `<strong>${placed}</strong>/${total} placés <span class="sc-edit-hint">— Glissez les élèves pour les placer</span>`;
+        const unplaced = total - placed;
+        if (this._isLocked) {
+            info.innerHTML = unplaced > 0
+                ? `<strong>${total}</strong> élève${total > 1 ? 's' : ''} <span class="sc-unplaced-hint">· ${unplaced} non placé${unplaced > 1 ? 's' : ''}</span>`
+                : `<strong>${total}</strong> élève${total > 1 ? 's' : ''}`;
+        } else {
+            info.innerHTML = `<strong>${placed}</strong>/${total} placés <span class="sc-edit-hint">— Cliquez ou glissez les élèves pour les placer</span>`;
+        }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
         this._prevPlacedCount = placed;
+
+        const fill = document.getElementById('scProgressFill');
+        if (fill) {
+            const ratio = total > 0 ? (placed / total) * 100 : 0;
+            fill.style.width = `${ratio}%`;
+            const isFull = placed === total && total > 0;
+            fill.dataset.ratio = isFull ? 'full' : '';
+            const track = fill.closest('.sc-progress-track');
+            if (track) {
+                if (isFull) {
+                    clearTimeout(this._progressFadeTimer);
+                    this._progressFadeTimer = setTimeout(() => track.classList.add('sc-progress-complete'), 2000);
+                } else {
+                    clearTimeout(this._progressFadeTimer);
+                    track.classList.remove('sc-progress-complete');
+                }
+            }
+        }
+
+        const onboarding = document.getElementById('scOnboarding');
+        if (onboarding) onboarding.classList.toggle('hidden', placed > 0 || this._isLocked);
     },
 
     // ========================================================================
@@ -780,6 +948,7 @@ export const SeatingChartManager = {
             this._renderGrid();
             this._renderSidebar(removedId);
             this._updateFooter();
+            this._updateSidebarLockState();
             this._savePositionsToState();
         });
     },
@@ -855,17 +1024,8 @@ export const SeatingChartManager = {
         this._removeTouchGhost();
         const ghost = element.cloneNode(true);
         ghost.className = 'sc-touch-ghost';
-        Object.assign(ghost.style, {
-            position: 'fixed',
-            left: `${touch.clientX - 30}px`,
-            top: `${touch.clientY - 30}px`,
-            width: '60px', height: '60px',
-            opacity: '0.85', pointerEvents: 'none', zIndex: '9999',
-            borderRadius: 'var(--radius-md)', background: 'var(--surface-color)',
-            boxShadow: 'var(--shadow-lg)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            transform: 'scale(1.1)', transition: 'transform 0.15s'
-        });
+        ghost.style.left = `${touch.clientX - 30}px`;
+        ghost.style.top = `${touch.clientY - 30}px`;
         document.body.appendChild(ghost);
         this._touchDragEl = ghost;
     },
@@ -943,6 +1103,88 @@ export const SeatingChartManager = {
         if (remaining > 0) {
             UI.showNotification(`${placed} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
         }
+    },
+
+    /** Shuffles non-pinned students among their CURRENT positions only (empty cells stay empty) */
+    _shuffle() {
+        if (this._isLocked) return;
+
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const movableEntries = [];
+        const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const id = this._gridState[r][c];
+                if (!id) continue;
+                if (resultsMap.get(id)?.seatingPosition?.pinned) continue;
+                movableEntries.push({ id, row: r, col: c });
+            }
+        }
+
+        if (movableEntries.length < 2) {
+            UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
+            return;
+        }
+
+        const movableIds = movableEntries.map(e => e.id);
+        const movableCells = movableEntries.map(e => ({ row: e.row, col: e.col }));
+        movableEntries.forEach(e => { this._gridState[e.row][e.col] = null; });
+
+        for (let i = movableIds.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [movableIds[i], movableIds[j]] = [movableIds[j], movableIds[i]];
+        }
+
+        movableIds.forEach((id, i) => {
+            this._gridState[movableCells[i].row][movableCells[i].col] = id;
+        });
+
+        this._render();
+        this._savePositionsToState();
+
+        requestAnimationFrame(() => {
+            movableCells.forEach(({ row, col }, index) => {
+                const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+                if (!cell) return;
+                cell.style.setProperty('--place-i', index);
+                cell.classList.add('sc-auto-placed');
+                cell.addEventListener('animationend', () => {
+                    cell.classList.remove('sc-auto-placed');
+                    cell.style.removeProperty('--place-i');
+                }, { once: true });
+            });
+        });
+    },
+
+    /** Hides native ghost and creates a floating clone that follows the cursor */
+    _setCleanDragImage(e, sourceEl) {
+        const blank = new Image();
+        blank.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer.setDragImage(blank, 0, 0);
+
+        const clone = sourceEl.cloneNode(true);
+        clone.className = 'sc-drag-clone';
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
+        clone.style.left = `${e.clientX}px`;
+        clone.style.top = `${e.clientY}px`;
+        document.body.appendChild(clone);
+
+        const onDrag = (ev) => {
+            if (ev.clientX === 0 && ev.clientY === 0) return;
+            clone.style.left = `${ev.clientX}px`;
+            clone.style.top = `${ev.clientY}px`;
+        };
+
+        const onDragEnd = () => {
+            clone.remove();
+            sourceEl.removeEventListener('drag', onDrag);
+            sourceEl.removeEventListener('dragend', onDragEnd);
+        };
+
+        sourceEl.addEventListener('drag', onDrag);
+        sourceEl.addEventListener('dragend', onDragEnd);
     },
 
     _clearAll() {

@@ -37,6 +37,7 @@ export const StorageManager = {
                     // Multi-class support
                     if (settings.classes !== undefined) userSettings.academic.classes = settings.classes;
                     if (settings.currentClassId !== undefined) userSettings.academic.currentClassId = settings.currentClassId;
+                    if (settings.seatingGrid !== undefined) userSettings.academic.seatingGrid = settings.seatingGrid;
 
                     // Journal threshold
                     if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
@@ -375,6 +376,7 @@ export const StorageManager = {
             evolutionThresholds: userSettings.academic.evolutionThresholds,
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId || null,
+            seatingGrid: userSettings.academic.seatingGrid || null,
 
             currentAIModel: userSettings.api.currentAIModel,
             enableApiFallback: userSettings.api.enableApiFallback,
