@@ -132,17 +132,17 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
+                    <!-- Top Status Pill -->
+                    <div class="sc-floating-status">
+                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
+                    </div>
+
                     <div class="sc-grid-container" id="scGridContainer"></div>
                     <div class="sc-desk-row">
                         <div class="sc-desk" id="scDesk">
                             <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
                             Bureau
                         </div>
-                    </div>
-
-                    <!-- Bottom Status Pill -->
-                    <div class="sc-floating-status">
-                        <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
                     </div>
                 </div>
 
@@ -592,6 +592,7 @@ export const SeatingChartManager = {
         setTimeout(() => this._saveGridConfig(), 100);
 
         this._updateSidebarLockState();
+        this._updateFooter();
 
         // Update grid draggability without rebuilding DOM
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
@@ -1064,7 +1065,7 @@ export const SeatingChartManager = {
                 ? `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span>`
                 : `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}`;
         } else {
-            info.innerHTML = `<span class="sc-footer-seats"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
+            info.innerHTML = `<span class="sc-footer-seats">Places libres : <strong class="sc-dynamic-value">${availableSeats}</strong></span>`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();

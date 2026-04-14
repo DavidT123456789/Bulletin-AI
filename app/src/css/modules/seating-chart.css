@@ -577,14 +577,15 @@
 /* ────────── FLOATING STATUS PILL ────────── */
 .sc-floating-status {
     position: sticky;
-    bottom: 16px;
+    top: var(--space-4);
     width: 100%;
     display: flex;
     justify-content: flex-end; /* Align to right */
-    padding: 0 12px;
+    padding: 0;
+    margin-right: -12px; /* Dépasse la marge du parent (24px) pour se rapprocher du bord */
     pointer-events: none;
     z-index: 100;
-    margin-top: -48px; /* Slightly adjusted margin */
+    margin-bottom: calc(var(--space-10) * -1.1); /* Slightly more than its height to avoid pushing grid */
 }
 
 .sc-floating-status .sc-toolbar-info {
@@ -664,18 +665,16 @@
     border-color: rgba(var(--primary-color-rgb), 0.2);
 }
 
+/* Receiving/Target cell state (Drag over or Selection hover) */
+.sc-cell.drag-over,
 #seatingChartView[data-has-selection="true"] .sc-cell.empty:hover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.06);
-    transform: scale(1.04);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-}
-
-.sc-cell.drag-over {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.06);
-    transform: scale(1.06);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--primary-color) !important;
+    border-style: dashed !important;
+    background: rgba(var(--primary-color-rgb), 0.08) !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.15), var(--shadow-md) !important;
+    z-index: 50;
+    opacity: 1 !important;
 }
 
 .sc-cell.occupied {
@@ -771,8 +770,8 @@
 /* Touch drag ghost — follows finger */
 .sc-touch-ghost {
     position: fixed;
-    width: 60px;
-    height: 60px;
+    width: 72px;
+    height: 78px;
     opacity: 0.85;
     pointer-events: none;
     z-index: 9999;
@@ -780,16 +779,20 @@
     background: var(--surface-color);
     box-shadow: var(--shadow-lg);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     transform: scale(1.1);
     transition: transform 0.15s;
+    border: 1px solid var(--border-color);
 }
 
-.sc-cell .student-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 0.72rem;
+.sc-cell .student-avatar,
+.sc-drag-clone .student-avatar,
+.sc-touch-ghost .student-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 0.82rem;
     flex-shrink: 0;
 }
 
@@ -800,7 +803,9 @@
     border-radius: 50%;
 }
 
-.sc-cell-name {
+.sc-cell-name,
+.sc-drag-clone .sc-student-chip-name,
+.sc-touch-ghost .sc-student-chip-name {
     font-size: 0.65rem;
     font-weight: 500;
     color: var(--text-secondary);
@@ -1185,7 +1190,7 @@
 
     .sc-cell { width: 60px; height: 68px; }
 
-    .sc-cell .student-avatar { width: 28px; height: 28px; font-size: 0.6rem; }
+    .sc-cell .student-avatar { width: 32px; height: 32px; font-size: 0.65rem; }
 
     .sc-cell-name { font-size: 0.55rem; max-width: 54px; margin-top: 4px; }
 
