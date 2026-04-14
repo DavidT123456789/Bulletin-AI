@@ -143,14 +143,14 @@
 }
 
 @keyframes scBodyEnter {
-    from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
-    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* View exit: smooth dissolve for returning to list */
 @keyframes scViewExit {
-    from { opacity: 1; transform: scale(1); filter: blur(0); }
-    to   { opacity: 0; transform: scale(0.97); filter: blur(6px); }
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.97); }
 }
 
 /* Cell entrance (staggered per cell via --cell-i) */
@@ -206,11 +206,7 @@
     100% { opacity: 1; transform: scale(1); }
 }
 
-/* Lock / Unlock: sidebar + grid morph */
-@keyframes scLockReveal {
-    from { opacity: 0; transform: scale(0.96); filter: blur(3px); }
-    to   { opacity: 1; transform: scale(1); filter: blur(0); }
-}
+
 
 /* Auto-place cascade (staggered via --place-i) */
 @keyframes scAutoPlaceDrop {
@@ -284,11 +280,6 @@
     animation: scDeskPulse 0.4s var(--ease-spring) 0.15s both;
 }
 
-/* Lock/Unlock morph */
-.sc-grid-area.sc-lock-morph {
-    animation: scLockReveal 0.35s var(--ease-spring) both;
-}
-
 /* Auto-place cascade */
 .sc-cell.sc-auto-placed {
     animation: scAutoPlaceDrop 0.4s var(--ease-bounce) both;
@@ -312,21 +303,7 @@
     animation: scLockToggle 0.35s var(--ease-bounce);
 }
 
-/* ────────── PLAN TOOLBAR ────────── */
-.sc-toolbar {
-    position: sticky;
-    top: 16px;
-    z-index: 100;
-    pointer-events: none;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-top: 16px;
-    margin-bottom: 24px; /* Slightly more clearance */
-    padding: 0 12px;
-}
+/* ────────── PLAN TOOLBAR (REMOVED - Replaced by Sidebar Toolbar) ────────── */
 
 .sc-toolbar-info {
     justify-self: auto;
@@ -353,39 +330,9 @@
 
 
 
-/* Unified Edit Tools Pill */
-.sc-toolbar-pill {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-surface-border);
-    border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-sm);
-    padding: 4px;
-    gap: 4px;
-    pointer-events: auto;
-    transition: all var(--transition-fast);
-}
-
-.sc-pill-edit-tools {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: opacity 0.3s ease, margin 0.3s ease;
-}
-
 /* Hide edit tools strictly gracefully */
 #seatingChartView[data-locked="true"] .sc-edit-only {
-    display: none;
-}
-
-.sc-pill-divider {
-    width: 1px;
-    height: 18px;
-    background: var(--border-color);
-    margin: 0 4px;
+    display: none !important;
 }
 
 /* ────────── PROGRESS BAR ────────── */
@@ -394,7 +341,7 @@
     background: var(--border-color);
     flex-shrink: 0;
     overflow: hidden;
-    transition: opacity 0.5s var(--ease-material);
+    transition: opacity 0.5s var(--ease-material), height 0.5s var(--ease-spring);
 }
 
 .sc-progress-track.sc-progress-complete {
@@ -411,190 +358,6 @@
 
 .sc-progress-fill[data-ratio="full"] {
     background: var(--success-color);
-}
-
-/* Base styles for all buttons */
-.sc-toolbar-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 8px 14px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    pointer-events: auto;
-    border: none;
-    outline: none;
-    background: transparent;
-    transition: background var(--transition-fast), border-color var(--transition-fast),
-                color var(--transition-fast), transform var(--transition-fast),
-                box-shadow var(--transition-fast);
-}
-
-.sc-toolbar-btn:focus-visible {
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.3);
-}
-
-/* Isolated buttons (like Info, Print outside the pill) */
-.sc-isolated-btn {
-    border: 1px solid var(--glass-surface-border);
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-sm);
-}
-
-.sc-toolbar-btn.sc-isolated-btn.sc-print-btn {
-    justify-self: auto;
-}
-
-.sc-isolated-btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--text-quaternary);
-    color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.sc-isolated-btn:active {
-    transform: translateY(0) scale(0.97);
-}
-
-/* Pill buttons (inside the unified block) */
-.sc-toolbar-pill .sc-toolbar-btn {
-    border: none;
-    border-radius: var(--radius-pill);
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    padding: 6px 12px; /* slightly smaller padding inside pill */
-    margin: 0;
-}
-
-.sc-toolbar-pill .sc-toolbar-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    /* No scale transform for pill inner items to avoid jagged edges */
-}
-
-.sc-toolbar-pill .sc-toolbar-btn:active {
-    transform: scale(0.97);
-}
-
-.sc-toolbar-btn iconify-icon { 
-    font-size: 1em; 
-    transition: transform var(--transition-fast) var(--ease-spring);
-}
-
-.sc-toolbar-btn.sc-lock-btn {
-    transition: background 0.35s var(--ease-spring), color 0.35s var(--ease-spring);
-}
-
-.sc-toolbar-pill .sc-toolbar-btn.sc-lock-btn:hover iconify-icon {
-    transform: scale(1.15) rotate(-8deg);
-    color: var(--primary-color);
-}
-
-.sc-toolbar-btn.sc-lock-btn.locked {
-    background: transparent; /* Rely on pill background */
-    color: var(--text-tertiary);
-}
-
-/* Edit mode — subtle accent to signal "you're actively editing" */
-#seatingChartView[data-locked="false"] .sc-toolbar-btn.sc-lock-btn {
-    background: transparent;
-    color: var(--primary-color);
-}
-
-#seatingChartView[data-locked="false"] .sc-toolbar-pill .sc-toolbar-btn.sc-lock-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-}
-
-.sc-toolbar-btn.sc-print-btn:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-.sc-toolbar-btn.sc-reset-btn:hover {
-    background: color-mix(in srgb, var(--error-color) 8%, transparent);
-    border-color: var(--error-color);
-    color: var(--error-color);
-}
-
-/* ────────── CONFIG POPOVER ────────── */
-.sc-config-wrapper {
-    position: relative;
-}
-
-.sc-config-trigger.active {
-    background: var(--bg-hover);
-    border-color: var(--text-quaternary);
-    color: var(--text-primary);
-}
-
-.sc-config-popover {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: var(--surface-color);
-    border: 1px solid var(--glass-surface-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    padding: 14px 16px;
-    min-width: 220px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    opacity: 0;
-    transform: translateY(-6px) scale(0.95);
-    pointer-events: none;
-    transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
-}
-
-.sc-config-popover.open {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.sc-config-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.sc-config-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    width: 58px;
-    flex-shrink: 0;
-}
-
-.sc-config-row input[type="range"] {
-    flex: 1;
-    accent-color: var(--primary-color);
-    margin: 0;
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    height: 20px;
-    cursor: pointer;
-}
-
-.sc-config-value {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    min-width: 18px;
-    text-align: center;
 }
 
 /* Auto-place — Gentle icon waggle when empty */
@@ -617,15 +380,6 @@
     transform: scale(1.15) rotate(-10deg);
 }
 
-.sc-auto-place-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-}
-
-.sc-auto-place-btn:hover iconify-icon {
-    transform: scale(1.15) rotate(-10deg);
-}
-
 /* ────────── BODY ────────── */
 .sc-body {
     display: flex;
@@ -642,10 +396,11 @@
     flex-direction: column;
     border-right: 1px solid var(--border-color);
     background: var(--surface-color);
-    transition: width 0.4s var(--ease-spring),
-                opacity 0.3s var(--ease-material),
-                margin 0.4s var(--ease-spring);
+    transition: margin-left 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1);
     overflow: hidden;
+    will-change: margin-left, opacity;
+    contain: layout style;
 }
 
 .sc-sidebar-header {
@@ -657,6 +412,9 @@
 }
 
 .sc-sidebar-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: none;
@@ -761,7 +519,7 @@
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: grab;
     transition: background var(--transition-fast), transform var(--transition-fast),
                 box-shadow var(--transition-fast), opacity var(--transition-fast);
@@ -769,11 +527,15 @@
     -webkit-user-select: none;
 }
 
-.sc-student-chip:hover { background: var(--bg-hover); }
+.sc-student-chip:hover {
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
 
 .sc-student-chip:active {
     cursor: grabbing;
-    transform: scale(1.03);
+    transform: scale(1.03) translateY(0);
     box-shadow: var(--shadow-md);
     z-index: 10;
 }
@@ -784,11 +546,17 @@
 
 .sc-student-chip-name {
     font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-primary);
+    font-weight: 400;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: font-weight var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-student-chip:hover .sc-student-chip-name {
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 /* ────────── GRID AREA ────────── */
@@ -1132,9 +900,8 @@
 
 /* Sidebar: fully hidden in locked mode — clean read-only view */
 #seatingChartView[data-locked="true"] .sc-sidebar {
-    width: 0;
+    margin-left: -260px;
     opacity: 0;
-    margin-left: -1px;
     pointer-events: none;
     overflow: hidden;
 }
@@ -1148,11 +915,22 @@
 
 /* Unplaced indicator styling */
 .sc-unplaced-hint {
-    display: inline;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-weight: 400;
-    color: var(--text-quaternary);
+    color: var(--error-color);
     font-size: 0.78rem;
     animation: scUnplacedFade 0.5s var(--ease-material) both;
+}
+
+.sc-unplaced-hint iconify-icon {
+    font-size: 1.2em;
+}
+
+.sc-footer-seats {
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 @keyframes scUnplacedFade {
@@ -1357,7 +1135,6 @@
     .sc-toolbar,
     .sc-progress-track,
     .sc-sidebar,
-    .sc-sidebar,
     .sc-cell-remove,
     .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;
@@ -1492,8 +1269,8 @@
 }
 
 @keyframes scFadeUp {
-    from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
-    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ────────── REDUCE MOTION ────────── */
@@ -1515,4 +1292,274 @@
         animation-duration: 0.01ms !important;
         animation-delay: 0ms !important;
     }
+}
+
+/* ---------- SIDEBAR TOOLBAR ---------- */
+.sc-sidebar-toolbar {
+    padding: 20px var(--content-padding-x, 24px) 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sc-sidebar-toolbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sc-toolbar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Toggle Switch */
+.sc-toggle-switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    background: var(--bg-secondary);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid transparent; /* Pour �viter les layout shifts si on ajoute un outline */
+    outline: none;
+    padding: 0;
+}
+
+/* Checked/ON state (Edit Mode) */
+.sc-toggle-switch[aria-checked="true"] {
+    background: var(--primary-color);
+}
+
+.sc-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Checked/ON state knob position */
+.sc-toggle-switch[aria-checked="true"] .sc-toggle-knob {
+    transform: translateX(16px);
+}
+
+/* Sidebar Actions */
+.sc-sidebar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.sc-sidebar-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    padding: 4px;
+}
+
+#seatingChartView[data-locked="true"] .sc-edit-only {
+    display: none !important;
+}
+
+/* Action Buttons */
+.sc-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sc-action-btn:hover {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.sc-action-btn:active {
+    transform: scale(0.95);
+}
+
+.sc-action-btn iconify-icon {
+    font-size: 1.1rem;
+}
+
+.sc-action-btn.sc-print-btn {
+    background: var(--bg-secondary);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+}
+.sc-action-btn.sc-print-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.sc-action-btn.sc-reset-btn:hover {
+    background: color-mix(in srgb, var(--error-color) 12%, transparent);
+    color: var(--error-color);
+}
+
+.sc-action-btn#scAutoPlaceBtn:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.sc-action-btn#scAutoPlaceBtn:hover iconify-icon {
+    transform: scale(1.15) rotate(-10deg);
+}
+
+/* ---------- CONFIG POPOVER (Restored) ---------- */
+.sc-config-wrapper {
+    position: relative;
+}
+
+.sc-action-btn.sc-config-trigger.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+.sc-config-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 45%;
+    background: var(--surface-color);
+    border: 1px solid var(--glass-surface-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 12px;
+    min-width: 170px;
+    transform-origin: top center;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateX(-40%) translateY(-6px) scale(0.95);
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
+}
+
+.sc-config-popover.open {
+    opacity: 1;
+    transform: translateX(-40%) translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.sc-config-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sc-config-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    width: 58px;
+    flex-shrink: 0;
+}
+
+.sc-config-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--primary-color);
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    height: 20px;
+    cursor: pointer;
+}
+
+.sc-config-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 18px;
+    text-align: center;
+}
+
+/* ---------- READING MODE FLOATING ACTIONS ---------- */
+/* Re-entry point and Print button when sidebar is hidden */
+.sc-floating-actions {
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(-8px);
+    z-index: 100;
+    visibility: hidden;
+}
+
+#seatingChartView[data-locked="true"] .sc-floating-actions.sc-read-only-only {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    visibility: visible;
+     /* Slight delay to let sidebar close */
+}
+
+/* Base state for read-only items */
+.sc-read-only-only {
+    display: none;
+}
+
+#seatingChartView[data-locked="true"] .sc-read-only-only {
+    display: flex;
+}
+
+.sc-floating-actions .sc-action-btn {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-surface-border);
+    box-shadow: var(--shadow-sm);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+}
+
+.sc-floating-actions .sc-action-btn:hover {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+
+[data-theme="dark"] .sc-floating-actions .sc-action-btn {
+    background: rgba(30, 30, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
+    background: rgba(50, 50, 50, 0.95);
+    color: var(--primary-color);
 }

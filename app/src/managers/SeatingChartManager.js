@@ -65,7 +65,8 @@ export const SeatingChartManager = {
     },
 
     _injectView() {
-        if (document.getElementById('seatingChartView')) return;
+        const existing = document.getElementById('seatingChartView');
+        if (existing) existing.remove();
 
         const mainContent = document.querySelector('.main-content .output-section');
         if (!mainContent) return;
@@ -77,39 +78,23 @@ export const SeatingChartManager = {
             <div class="sc-progress-track"><div class="sc-progress-fill" id="scProgressFill"></div></div>
             <div class="sc-body">
                 <div class="sc-sidebar" id="scSidebar">
-                    <div class="sc-sidebar-header">
-                        <div class="sc-sidebar-title" id="scSidebarTitle">Élèves non placés</div>
-                        <div class="sc-search-box">
-                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
-                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
-                                <iconify-icon icon="ph:x"></iconify-icon>
-                            </button>
+                    <div class="sc-sidebar-toolbar" id="scSidebarToolbar">
+                        <div class="sc-sidebar-toolbar-header">
+                            <span class="sc-toolbar-label">Mode Édition</span>
+                            <div class="sc-toggle-switch" id="scLockBtn" role="switch" aria-checked="true" aria-label="Mode Édition">
+                                <div class="sc-toggle-knob"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="sc-student-list" id="scStudentList"></div>
-                </div>
-                <div class="sc-grid-area" id="scGridArea">
-                    <div class="sc-toolbar">
-                        <!-- Left: Unified Pill -->
-                        <div class="sc-toolbar-pill">
-                            <button class="sc-toolbar-btn sc-lock-btn" id="scLockBtn" aria-label="Verrouiller">
-                                <iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon>
-                                <span>Édition</span>
-                            </button>
-                            
-                            <div class="sc-pill-divider sc-edit-only"></div>
-                            
-                            <div class="sc-pill-edit-tools sc-edit-only">
-                                <button class="sc-toolbar-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique">
+                        <div class="sc-sidebar-actions">
+                            <div class="sc-edit-only sc-sidebar-actions-group">
+                                <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique" data-tooltip="Placer auto">
                                     <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                                    <span>Placer auto</span>
                                 </button>
-                                <button class="sc-toolbar-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
+                                <button class="sc-action-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
                                     <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
-                                    <button class="sc-toolbar-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
+                                    <button class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
@@ -125,19 +110,28 @@ export const SeatingChartManager = {
                                         </div>
                                     </div>
                                 </div>
-                                <button class="sc-toolbar-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
+                                <button class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
                                     <iconify-icon icon="solar:restart-linear"></iconify-icon>
                                 </button>
                             </div>
+                            <button class="sc-action-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer" data-tooltip="Imprimer le plan">
+                                <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                            </button>
                         </div>
-
-                        <!-- Right: Isolated Button -->
-                        <button class="sc-toolbar-btn sc-isolated-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer">
-                            <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                            <span>Imprimer</span>
-                        </button>
                     </div>
-
+                    <div class="sc-sidebar-header">
+                        <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
+                        <div class="sc-search-box">
+                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
+                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="sc-student-list" id="scStudentList"></div>
+                </div>
+                <div class="sc-grid-area" id="scGridArea">
                     <div class="sc-grid-container" id="scGridContainer"></div>
                     <div class="sc-desk-row">
                         <div class="sc-desk" id="scDesk">
@@ -151,6 +145,16 @@ export const SeatingChartManager = {
                         <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
                     </div>
                 </div>
+
+                <!-- Floating Actions (Read-Only Mode) -->
+                <div class="sc-floating-actions sc-read-only-only">
+                    <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer" data-tooltip="Imprimer le plan">
+                        <iconify-icon icon="solar:printer-linear"></iconify-icon>
+                    </button>
+                    <button class="sc-action-btn" id="scUnlockFloatingBtn" aria-label="Déverrouiller" data-tooltip="Mode Édition">
+                        <iconify-icon icon="solar:lock-linear"></iconify-icon>
+                    </button>
+                </div>
             </div>
         `;
 
@@ -163,10 +167,12 @@ export const SeatingChartManager = {
 
     _setupEventListeners() {
         document.getElementById('scPrintBtn')?.addEventListener('click', () => window.print());
+        document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => window.print());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
         document.getElementById('scAutoPlaceBtn')?.addEventListener('click', () => this._autoPlace());
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scLockBtn')?.addEventListener('click', () => this._toggleLock());
+        document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
 
         document.getElementById('scConfigBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -278,9 +284,7 @@ export const SeatingChartManager = {
             const lockBtn = document.getElementById('scLockBtn');
             if (lockBtn) {
                 lockBtn.classList.toggle('locked', this._isLocked);
-                lockBtn.innerHTML = this._isLocked
-                    ? '<iconify-icon icon="solar:lock-linear"></iconify-icon><span>Verrouillé</span>'
-                    : '<iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon><span>Édition</span>';
+                lockBtn.setAttribute('aria-checked', (!this._isLocked).toString());
             }
             this._loadGridConfig();
             this._loadPositionsFromState();
@@ -578,23 +582,31 @@ export const SeatingChartManager = {
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
 
-        view.dataset.locked = this._isLocked;
         btn.classList.toggle('locked', this._isLocked);
-        btn.innerHTML = this._isLocked
-            ? '<iconify-icon icon="solar:lock-linear"></iconify-icon><span>Verrouillé</span>'
-            : '<iconify-icon icon="solar:lock-unlocked-linear"></iconify-icon><span>Édition</span>';
-        btn.classList.remove('sc-lock-toggling');
-        void btn.offsetWidth;
-        btn.classList.add('sc-lock-toggling');
-        btn.addEventListener('animationend', () => btn.classList.remove('sc-lock-toggling'), { once: true });
+        btn.setAttribute('aria-checked', (!this._isLocked).toString());
 
         this._clearSelection();
         if (this._isLocked) this._closeConfigPopover();
+        
+        // Defer intensive serialization to allow CSS transition to start instantly
+        setTimeout(() => this._saveGridConfig(), 100);
 
-        this._render();
         this._updateSidebarLockState();
-        this._animateLockMorph();
-        this._saveGridConfig();
+
+        // Update grid draggability without rebuilding DOM
+        document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
+            const isPinned = cell.classList.contains('pinned');
+            cell.draggable = !this._isLocked && !isPinned;
+        });
+
+        if (this._isLocked) {
+            view.dataset.locked = this._isLocked;
+        } else {
+            // Defer unlocking view datatset to let the sidebar populate first
+            requestAnimationFrame(() => {
+                view.dataset.locked = this._isLocked;
+            });
+        }
     },
 
     /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
@@ -882,30 +894,28 @@ export const SeatingChartManager = {
             const totalRows = this._getRows();
             cell.style.setProperty('--row-depth', totalRows > 1 ? row / (totalRows - 1) : 0.5);
 
-            if (!this._isLocked) {
-                const tools = document.createElement('div');
-                tools.className = 'sc-cell-special-tools';
-                if (!isSpecial) {
-                    tools.innerHTML = `
-                        <button class="sc-special-btn" data-type="aisle" data-tooltip="Allée (Vide)" aria-label="Allée (Vide)"><iconify-icon icon="solar:ghost-linear"></iconify-icon></button>
-                        <button class="sc-special-btn" data-type="aesh" data-tooltip="Place AESH" aria-label="Place AESH"><iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon></button>
-                        <button class="sc-special-btn" data-type="blocked" data-tooltip="Condamné" aria-label="Condamné"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></button>
-                    `;
-                } else {
-                    tools.innerHTML = `
-                        <button class="sc-special-btn" data-type="normal" data-tooltip="Rétablir" aria-label="Rétablir"><iconify-icon icon="solar:refresh-linear"></iconify-icon></button>
-                    `;
-                }
-                cell.appendChild(tools);
-
-                tools.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const btn = e.target.closest('.sc-special-btn');
-                    if (!btn) return;
-                    const type = btn.dataset.type;
-                    this._setCellSpecialType(row, col, type === 'normal' ? null : type);
-                });
+            const tools = document.createElement('div');
+            tools.className = 'sc-cell-special-tools';
+            if (!isSpecial) {
+                tools.innerHTML = `
+                    <button class="sc-special-btn" data-type="aisle" data-tooltip="Allée (Vide)" aria-label="Allée (Vide)"><iconify-icon icon="solar:ghost-linear"></iconify-icon></button>
+                    <button class="sc-special-btn" data-type="aesh" data-tooltip="Place AESH" aria-label="Place AESH"><iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon></button>
+                    <button class="sc-special-btn" data-type="blocked" data-tooltip="Condamné" aria-label="Condamné"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></button>
+                `;
+            } else {
+                tools.innerHTML = `
+                    <button class="sc-special-btn" data-type="normal" data-tooltip="Rétablir" aria-label="Rétablir"><iconify-icon icon="solar:refresh-linear"></iconify-icon></button>
+                `;
             }
+            cell.appendChild(tools);
+
+            tools.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const btn = e.target.closest('.sc-special-btn');
+                if (!btn) return;
+                const type = btn.dataset.type;
+                this._setCellSpecialType(row, col, type === 'normal' ? null : type);
+            });
 
             cell.addEventListener('click', () => {
                 if (this._isLocked || this._selectedChipIds.length === 0 || isSpecial) return;
@@ -971,8 +981,7 @@ export const SeatingChartManager = {
                 </div>
             `).join('');
 
-        if (this._isLocked) return;
-
+        // Attach listeners regardless of lock state — sidebar is pointer-events: none when locked anyway
         list.querySelectorAll('.sc-student-chip').forEach((chip, index) => {
             const id = chip.dataset.resultId;
 
@@ -1041,21 +1050,21 @@ export const SeatingChartManager = {
         const sidebarTitle = document.getElementById('scSidebarTitle');
         if (sidebarTitle) {
             if (total === 0) {
-                sidebarTitle.textContent = 'Élèves non placés';
+                sidebarTitle.innerHTML = '<span>Élèves non placés</span>';
             } else if (unplaced === 0) {
-                sidebarTitle.textContent = 'Tous les élèves sont placés';
+                sidebarTitle.innerHTML = '<span>Tous les élèves sont placés</span>';
             } else {
-                sidebarTitle.innerHTML = `Élèves non placés (<span class="sc-dynamic-value">${unplaced}</span>)`;
+                sidebarTitle.innerHTML = `<span>Élèves non placés</span><span class="sc-dynamic-value">${unplaced}</span>`;
             }
         }
 
         // --- Toolbar Pill Info ---
         if (this._isLocked) {
             info.innerHTML = unplaced > 0
-                ? `<span class="sc-unplaced-hint" style="color: var(--error-color, #ef4444); display: flex; align-items: center; gap: 4px;"><iconify-icon icon="solar:danger-triangle-linear" style="font-size: 1.2em;"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span>`
+                ? `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span>`
                 : `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}`;
         } else {
-            info.innerHTML = `<span style="color: var(--text-secondary); font-weight: 500;"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
+            info.innerHTML = `<span class="sc-footer-seats"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
