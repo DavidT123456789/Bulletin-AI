@@ -877,6 +877,10 @@
     transform: scale(1);
 }
 
+.sc-cell-pin:hover {
+    transform: scale(1.15) !important;
+}
+
 /* Pinned — icon always visible */
 .sc-cell.pinned .sc-cell-pin {
     opacity: 1;
