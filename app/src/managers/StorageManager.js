@@ -686,7 +686,8 @@ export const StorageManager = {
                 evolutionThresholds: appState.evolutionThresholds,
                 massImportFormats: appState.massImportFormats,
                 currentAIModel: appState.currentAIModel,
-                refinementEdits: appState.refinementEdits
+                refinementEdits: appState.refinementEdits,
+                seatingGrid: userSettings.academic.seatingGrid || null
             },
             // Classes
             classes: userSettings.academic.classes || [],
@@ -761,7 +762,8 @@ export const StorageManager = {
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     refinementEdits: settings.refinementEdits || {},
-                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS }
+                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
+                    seatingGrid: settings.seatingGrid || appState.seatingGrid
                 });
                 stats.settingsImported = true;
             }
@@ -890,7 +892,8 @@ export const StorageManager = {
                     massImportFormats: settings.massImportFormats || { trimestres: {}, semestres: {} },
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     refinementEdits: settings.refinementEdits || {},
-                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS }
+                    privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
+                    seatingGrid: settings.seatingGrid || appState.seatingGrid
                 });
                 if (appState.wordCountLimit) {
                     delete appState.wordCountLimit;

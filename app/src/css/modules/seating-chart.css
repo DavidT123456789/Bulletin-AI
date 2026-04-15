@@ -398,9 +398,10 @@
     background: var(--surface-color);
     transition: margin-left 0.45s cubic-bezier(0.32, 0.72, 0, 1),
                 opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1);
-    overflow: hidden;
+    overflow: visible;
     will-change: margin-left, opacity;
-    contain: layout style;
+    position: relative;
+    z-index: 200;
 }
 
 .sc-sidebar-header {
@@ -648,21 +649,21 @@
 .sc-cell.empty {
     /* Smooth fade for locked mode (more discrete) */
     opacity: calc(0.25 + var(--row-depth, 0.5) * 0.2);
-    border-width: 1.5px;
 }
 
 /* In edit mode, standard empty cells are very visible (inviting placement) */
 #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 0.85;
-    border: 2px dashed var(--border-color);
-    background: var(--bg-secondary);
+    border: 2px dashed rgba(var(--primary-color-rgb), 0.25);
+    background: rgba(var(--primary-color-rgb), 0.03);
 }
 
 /* Empty cells become clickable when sidebar selection is active */
 #seatingChartView[data-has-selection="true"] .sc-cell.empty {
     cursor: pointer;
     opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
-    border-color: rgba(var(--primary-color-rgb), 0.2);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: rgba(var(--primary-color-rgb), 0.05);
 }
 
 /* Receiving/Target cell state (Drag over or Selection hover) */
@@ -761,7 +762,7 @@
     background: var(--surface-color) !important;
     box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
     opacity: 0.92 !important;
-    border: 2px solid var(--border-color) !important;
+    border: 2px solid var(--primary-color) !important;
     transform: translate(-50%, -50%) scale(1.05) !important;
     transition: none !important;
     overflow: visible !important;
@@ -784,7 +785,7 @@
     justify-content: center;
     transform: scale(1.1);
     transition: transform 0.15s;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--primary-color);
 }
 
 .sc-cell .student-avatar,
@@ -954,13 +955,13 @@
     box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
 }
 
-/* Empty cells nearly invisible in locked mode — minimal spatial reference */
-#seatingChartView[data-locked="true"] .sc-cell.empty {
-    opacity: 0.12;
-    transform: scale(0.96);
+/* Empty cells subtly visible in locked mode — provides spatial reference */
+#seatingChartView[data-locked="true"] .sc-cell.empty:not(.sc-cell-special-aisle) {
+    opacity: 1; 
+    transform: scale(0.98);
     pointer-events: none;
-    background: transparent;
-    border-color: transparent;
+    background: color-mix(in srgb, var(--surface-color) 55%, transparent);
+    border-color: color-mix(in srgb, var(--surface-color) 40%, transparent);
 }
 
 /* Occupied cells non-draggable in locked mode */
@@ -1154,7 +1155,13 @@
         print-color-adjust: exact;
     }
 
-    .sc-cell.empty { display: none; }
+    .sc-cell.empty {
+        border: 1px dashed #e0e0e0;
+        background: transparent;
+    }
+    .sc-cell.empty.sc-cell-special-aisle {
+        border-color: transparent;
+    }
     .sc-cell.occupied { border: 1.5px solid #666; }
 
     .sc-desk {
@@ -1308,6 +1315,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    position: relative;
+    z-index: 20;
 }
 
 .sc-sidebar-toolbar-header {
@@ -1425,6 +1434,18 @@
     color: var(--error-color);
 }
 
+.sc-action-btn.sc-undo-btn:not(:disabled):hover,
+.sc-action-btn.sc-redo-btn:not(:disabled):hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.sc-action-btn:disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    cursor: default;
+}
+
 .sc-action-btn#scAutoPlaceBtn:hover {
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
@@ -1496,6 +1517,22 @@
     background: transparent;
     height: 20px;
     cursor: pointer;
+}
+
+.sc-config-row input[type="range"]::-webkit-slider-thumb {
+    cursor: grab;
+}
+
+.sc-config-row input[type="range"]:active::-webkit-slider-thumb {
+    cursor: grabbing;
+}
+
+.sc-config-row input[type="range"]::-moz-range-thumb {
+    cursor: grab;
+}
+
+.sc-config-row input[type="range"]:active::-moz-range-thumb {
+    cursor: grabbing;
 }
 
 .sc-config-value {

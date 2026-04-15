@@ -14,6 +14,7 @@ import { UI } from './UIManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
+const MAX_UNDO_LEVELS = 5;
 
 export const SeatingChartManager = {
     _isActive: false,
@@ -28,6 +29,8 @@ export const SeatingChartManager = {
     _selectedChipIds: [],
     _lastSelectedGridPos: null,
     _lastSelectedSidebarIndex: null,
+    _undoStack: [],
+    _redoStack: [],
 
     // ========================================================================
     // INITIALIZATION
@@ -93,6 +96,12 @@ export const SeatingChartManager = {
                                 <button class="sc-action-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
                                     <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
                                 </button>
+                                <button class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
+                                    <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
+                                </button>
+                                <button class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
+                                    <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
+                                </button>
                                 <div class="sc-config-wrapper">
                                     <button class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
@@ -114,9 +123,6 @@ export const SeatingChartManager = {
                                     <iconify-icon icon="solar:restart-linear"></iconify-icon>
                                 </button>
                             </div>
-                            <button class="sc-action-btn sc-print-btn" id="scPrintBtn" aria-label="Imprimer" data-tooltip="Imprimer le plan">
-                                <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                            </button>
                         </div>
                     </div>
                     <div class="sc-sidebar-header">
@@ -166,11 +172,12 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _setupEventListeners() {
-        document.getElementById('scPrintBtn')?.addEventListener('click', () => window.print());
         document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => window.print());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
         document.getElementById('scAutoPlaceBtn')?.addEventListener('click', () => this._autoPlace());
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
+        document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
+        document.getElementById('scRedoBtn')?.addEventListener('click', () => this._redo());
         document.getElementById('scLockBtn')?.addEventListener('click', () => this._toggleLock());
         document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
 
@@ -179,12 +186,18 @@ export const SeatingChartManager = {
             this._toggleConfigPopover();
         });
 
-        document.getElementById('scColsSlider')?.addEventListener('input', (e) => {
+        const captureBeforeSlide = () => this._snapshotGrid();
+        
+        const colsSlider = document.getElementById('scColsSlider');
+        colsSlider?.addEventListener('pointerdown', captureBeforeSlide);
+        colsSlider?.addEventListener('input', (e) => {
             document.getElementById('scColsValue').textContent = e.target.value;
             this._onGridConfigChange();
         });
 
-        document.getElementById('scRowsSlider')?.addEventListener('input', (e) => {
+        const rowsSlider = document.getElementById('scRowsSlider');
+        rowsSlider?.addEventListener('pointerdown', captureBeforeSlide);
+        rowsSlider?.addEventListener('input', (e) => {
             document.getElementById('scRowsValue').textContent = e.target.value;
             this._onGridConfigChange();
         });
@@ -288,6 +301,8 @@ export const SeatingChartManager = {
             }
             this._loadGridConfig();
             this._loadPositionsFromState();
+            this._undoStack = [];
+            this._redoStack = [];
             this._render();
             this._animateViewEnter(viewEl);
             this._scrollToDesk();
@@ -497,6 +512,7 @@ export const SeatingChartManager = {
     _placeSelectedAt(startRow, startCol) {
         const ids = [...this._selectedChipIds];
         if (ids.length === 0) return;
+        this._snapshotGrid();
 
         const cols = this._getCols();
         const rows = this._getRows();
@@ -672,14 +688,14 @@ export const SeatingChartManager = {
         }
 
         // Repositionne également la cartographie des places spéciales (allées, AESH...)
+        // La condition de limites a été sciemment retirée : on conserve les attributs en mémoire
+        // même s'ils "tombent" momentanément hors de la grille. S'ils reviennent, ils s'afficheront !
         if (appState.seatingGrid?.specialLayout && rowOffset !== 0) {
             const newSpecialLayout = {};
             for (const [key, type] of Object.entries(appState.seatingGrid.specialLayout)) {
                 const [r, c] = key.split(',').map(Number);
                 const newR = r + rowOffset;
-                if (newR >= 0 && newR < newRows && c < newCols) {
-                    newSpecialLayout[`${newR},${c}`] = type;
-                }
+                newSpecialLayout[`${newR},${c}`] = type;
             }
             appState.seatingGrid.specialLayout = newSpecialLayout;
         }
@@ -733,6 +749,74 @@ export const SeatingChartManager = {
     },
 
     // ========================================================================
+    // UNDO / REDO (Full-snapshot, two-stack)
+    // ========================================================================
+
+    _captureSnapshot() {
+        return {
+            gridState: this._gridState.map(row => [...row]),
+            specialLayout: JSON.parse(JSON.stringify(appState.seatingGrid?.specialLayout || {})),
+            rows: this._getRows(),
+            cols: this._getCols()
+        };
+    },
+
+    _snapshotGrid() {
+        try {
+            this._undoStack.push(this._captureSnapshot());
+            if (this._undoStack.length > MAX_UNDO_LEVELS) this._undoStack.shift();
+            this._redoStack = [];
+            this._updateUndoRedoButtons();
+        } catch (_) { /* never block caller */ }
+    },
+
+    _undo() {
+        if (this._undoStack.length === 0 || this._isLocked) return;
+        this._redoStack.push(this._captureSnapshot());
+        const snapshot = this._undoStack.pop();
+        this._restoreSnapshot(snapshot);
+    },
+
+    _redo() {
+        if (this._redoStack.length === 0 || this._isLocked) return;
+        this._undoStack.push(this._captureSnapshot());
+        const snapshot = this._redoStack.pop();
+        this._restoreSnapshot(snapshot);
+    },
+
+    _restoreSnapshot(snapshot) {
+        this._gridState = snapshot.gridState;
+        if (appState.seatingGrid) {
+            appState.seatingGrid.specialLayout = snapshot.specialLayout;
+            if (snapshot.rows) appState.seatingGrid.rows = snapshot.rows;
+            if (snapshot.cols) appState.seatingGrid.cols = snapshot.cols;
+        }
+        
+        const rowSlider = document.getElementById('scRowsSlider');
+        const colSlider = document.getElementById('scColsSlider');
+        if (rowSlider && snapshot.rows) { 
+            rowSlider.value = snapshot.rows; 
+            document.getElementById('scRowsValue').textContent = snapshot.rows; 
+        }
+        if (colSlider && snapshot.cols) { 
+            colSlider.value = snapshot.cols; 
+            document.getElementById('scColsValue').textContent = snapshot.cols; 
+        }
+
+        this._render();
+        this._savePositionsToState();
+        this._saveGridConfig();
+        this._staggerCellEntrance();
+    },
+
+    _updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('scUndoBtn');
+        const redoBtn = document.getElementById('scRedoBtn');
+        if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
+        if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
+    },
+
+    // ========================================================================
     // PERSISTENCE
     // ========================================================================
 
@@ -776,6 +860,7 @@ export const SeatingChartManager = {
         this._renderSidebar();
         this._updateFooter();
         this._updateSidebarLockState();
+        this._updateUndoRedoButtons();
         TooltipsUI.initTooltips();
     },
 
@@ -1116,12 +1201,15 @@ export const SeatingChartManager = {
             if (targetStudent?.seatingPosition?.pinned) return;
         }
 
+        if (type === 'cell' && targetRow === srcRow && targetCol === srcCol) return;
+
+        this._snapshotGrid();
+
         const isSwap = type === 'cell' && targetId;
 
         if (type === 'sidebar') {
             this._gridState[targetRow][targetCol] = resultId;
         } else if (type === 'cell') {
-            if (targetRow === srcRow && targetCol === srcCol) return;
             if (targetId) {
                 this._gridState[srcRow][srcCol] = targetId;
                 this._gridState[targetRow][targetCol] = resultId;
@@ -1146,6 +1234,7 @@ export const SeatingChartManager = {
 
     _removeFromCell(row, col) {
         if (this._isLocked) return;
+        this._snapshotGrid();
 
         const removedId = this._gridState[row][col];
 
@@ -1286,6 +1375,7 @@ export const SeatingChartManager = {
             UI.showNotification('Tous les élèves sont déjà placés.', 'info');
             return;
         }
+        this._snapshotGrid();
 
         const rows = this._getRows();
         const cols = this._getCols();
@@ -1342,47 +1432,67 @@ export const SeatingChartManager = {
         }
     },
 
-    /** Shuffles non-pinned students among their CURRENT positions only (empty cells stay empty) */
+    /** Shuffles non-pinned students across ALL valid available seats */
     _shuffle() {
         if (this._isLocked) return;
+        this._snapshotGrid();
 
         const rows = this._getRows();
         const cols = this._getCols();
-        const movableEntries = [];
+        const movableIds = [];
+        const validCells = [];
         const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
 
+        // Gather all movable students and all valid places
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const id = this._gridState[r][c];
-                if (!id) continue;
-                if (resultsMap.get(id)?.seatingPosition?.pinned) continue;
-                movableEntries.push({ id, row: r, col: c });
+                const isSpecial = appState.seatingGrid?.specialLayout?.[`${r},${c}`];
+                
+                if (id) {
+                    if (!resultsMap.get(id)?.seatingPosition?.pinned) {
+                        movableIds.push(id);
+                        validCells.push({ row: r, col: c });
+                    }
+                } else if (!isSpecial) {
+                    validCells.push({ row: r, col: c });
+                }
             }
         }
 
-        if (movableEntries.length < 2) {
+        if (movableIds.length < 2) {
             UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
             return;
         }
 
-        const movableIds = movableEntries.map(e => e.id);
-        const movableCells = movableEntries.map(e => ({ row: e.row, col: e.col }));
-        movableEntries.forEach(e => { this._gridState[e.row][e.col] = null; });
-
-        for (let i = movableIds.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [movableIds[i], movableIds[j]] = [movableIds[j], movableIds[i]];
+        // Clear the grid cells where movable students currently are
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const id = this._gridState[r][c];
+                if (id && !resultsMap.get(id)?.seatingPosition?.pinned) {
+                    this._gridState[r][c] = null;
+                }
+            }
         }
 
+        // Shuffle all valid cells to randomly distribute the students
+        for (let i = validCells.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [validCells[i], validCells[j]] = [validCells[j], validCells[i]];
+        }
+
+        // Assign each movable student a randomly selected cell
+        const selectedCells = validCells.slice(0, movableIds.length);
         movableIds.forEach((id, i) => {
-            this._gridState[movableCells[i].row][movableCells[i].col] = id;
+            const cell = selectedCells[i];
+            this._gridState[cell.row][cell.col] = id;
         });
 
         this._render();
         this._savePositionsToState();
 
         requestAnimationFrame(() => {
-            movableCells.forEach(({ row, col }, index) => {
+            selectedCells.forEach(({ row, col }, index) => {
                 const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
                 if (!cell) return;
                 cell.style.setProperty('--place-i', index);
@@ -1440,6 +1550,7 @@ export const SeatingChartManager = {
         if (placedCount === 0) return;
 
         UI.showCustomConfirm(`Retirer les ${placedCount} élèves de la grille ?`, () => {
+            this._snapshotGrid();
             const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
             let delay = 0;
 

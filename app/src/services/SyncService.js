@@ -592,6 +592,7 @@ export const SyncService = {
                 theme: userSettings.ui.theme,
                 periodSystem: userSettings.academic.periodSystem,
                 subjects: userSettings.academic.subjects,
+                seatingGrid: userSettings.academic.seatingGrid || null,
             },
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId,

@@ -472,9 +472,7 @@
     height: 100%;
     /* Occupe toute la hauteur pour faciliter le centrage */
     padding: 0;
-    position: relative;
-    z-index: 2;
-    pointer-events: none;
+    pointer-events: auto;
     border: none;
     outline: none;
 }

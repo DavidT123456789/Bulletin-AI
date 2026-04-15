@@ -1339,7 +1339,7 @@ export const TrombinoscopeManager = {
         const sliderHtml = `
             <div class="size-slider-container">
                 <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
-                <input type="range" class="size-slider" 
+                <input type="range" class="control-slider size-slider" 
                        min="${minR}" max="${maxR}" value="${currentR}" step="1">
             </div>
         `;
