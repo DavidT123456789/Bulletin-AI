@@ -829,7 +829,7 @@
     border-radius: 50%;
     background: var(--error-color);
     color: white;
-    border: 2px solid var(--surface-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -857,9 +857,9 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
-    border: 2px solid var(--surface-color);
+    background: var(--text-secondary);
+    color: var(--surface-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
