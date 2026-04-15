@@ -638,7 +638,7 @@
     justify-content: center;
     width: 80px;
     height: 88px;
-    border: 2px dashed var(--border-color);
+    border: 1.5px dashed var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
     transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease-spring),
@@ -654,7 +654,7 @@
 /* In edit mode, standard empty cells are very visible (inviting placement) */
 #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 0.85;
-    border: 2px dashed rgba(var(--primary-color-rgb), 0.25);
+    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
     background: rgba(var(--primary-color-rgb), 0.03);
 }
 
@@ -762,7 +762,7 @@
     background: var(--surface-color) !important;
     box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
     opacity: 0.92 !important;
-    border: 2px solid var(--primary-color) !important;
+    border: 1.5px solid var(--primary-color) !important;
     transform: translate(-50%, -50%) scale(1.05) !important;
     transition: none !important;
     overflow: visible !important;
@@ -785,7 +785,7 @@
     justify-content: center;
     transform: scale(1.1);
     transition: transform 0.15s;
-    border: 2px solid var(--primary-color);
+    border: 1.5px solid var(--primary-color);
 }
 
 .sc-cell .student-avatar,
@@ -1026,7 +1026,7 @@
 }
 
 #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle {
-    border: 2px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.15);
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.15);
     opacity: 0.3;
 }
 
