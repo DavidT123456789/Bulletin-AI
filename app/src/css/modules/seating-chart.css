@@ -112,7 +112,7 @@
 
 /* CRITICAL: Plan view must fill the viewport and not scroll at page level */
 .main-content-wrapper[data-view="plan"] .main-content {
-    padding: 56px 0 0 0;
+    padding: 0;
     overflow: hidden;
     flex: 1;
     display: flex;
@@ -312,7 +312,7 @@
     font-weight: 500;
     color: var(--text-secondary);
     cursor: default;
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     padding: 7px 16px;
@@ -337,10 +337,15 @@
 
 /* ────────── PROGRESS BAR ────────── */
 .sc-progress-track {
-    height: 2px;
+    position: fixed;
+    top: 55px; /* Overlaps exactly on the header 1px border */
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    height: 1px;
     background: var(--border-color);
     flex-shrink: 0;
-    overflow: hidden;
+    overflow: visible; /* To allow glow effect */
     transition: opacity 0.5s var(--ease-material), height 0.5s var(--ease-spring);
 }
 
@@ -349,10 +354,11 @@
 }
 
 .sc-progress-fill {
-    height: 100%;
+    height: 2px; /* Légèrement plus épaisse que la piste pour accentuer la dynamique */
+    transform: translateY(-0.5px); /* Centre le remplissage de 2px sur la piste de 1px */
     width: 0%;
     background: var(--primary-color);
-    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    border-radius: 0 2px 2px 0;
     transition: width 0.5s var(--ease-spring), background-color 0.5s var(--ease-material);
 }
 
@@ -402,6 +408,7 @@
     will-change: margin-left, opacity;
     position: relative;
     z-index: 200;
+    padding-top: 56px;
 }
 
 .sc-sidebar-header {
@@ -562,14 +569,13 @@
 
 /* ────────── GRID AREA ────────── */
 .sc-grid-area {
-    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     gap: 16px;
-    padding: 0 var(--content-padding-x, 24px) 24px;
+    padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) 24px;
     overflow: auto;
     min-width: 0;
     min-height: 0;
@@ -577,16 +583,16 @@
 
 /* ────────── FLOATING STATUS PILL ────────── */
 .sc-floating-status {
-    position: sticky;
-    top: var(--space-4);
-    width: 100%;
+    position: absolute;
+    top: calc(56px + var(--content-padding-x, 24px));
+    right: var(--content-padding-x, 24px);
     display: flex;
-    justify-content: flex-end; /* Align to right */
+    justify-content: flex-end;
+    align-items: center;
+    height: 38px;
     padding: 0;
-    margin-right: -12px; /* Dépasse la marge du parent (24px) pour se rapprocher du bord */
     pointer-events: none;
     z-index: 100;
-    margin-bottom: calc(var(--space-10) * -1.1); /* Slightly more than its height to avoid pushing grid */
 }
 
 .sc-floating-status .sc-toolbar-info {
@@ -626,7 +632,6 @@
     transition: grid-template-columns 0.35s var(--ease-spring),
                 grid-template-rows 0.35s var(--ease-spring);
     flex-shrink: 0;
-    margin-top: auto;
 }
 
 /* ────────── GRID CELL ────────── */
@@ -1105,7 +1110,7 @@
     display: flex;
     justify-content: center;
     flex-shrink: 0;
-    margin-bottom: auto;
+    margin-top: 24px;
 }
 
 .sc-desk {
@@ -1551,8 +1556,8 @@
 /* Re-entry point and Print button when sidebar is hidden */
 .sc-floating-actions {
     position: absolute;
-    top: 16px;
-    left: 24px;
+    top: calc(56px + var(--content-padding-x, 24px));
+    left: var(--content-padding-x, 24px);
     display: flex;
     gap: 8px;
     opacity: 0;

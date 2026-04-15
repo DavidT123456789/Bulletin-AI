@@ -1298,7 +1298,7 @@
     border-radius: 50%;
     background: var(--error-color);
     color: white;
-    border: 2px solid var(--surface-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1325,9 +1325,7 @@
 }
 
 .filter-close-btn:hover {
-    background: var(--error-hover, #dc2626);
     transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .filter-close-btn:active {

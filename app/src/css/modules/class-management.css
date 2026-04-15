@@ -78,7 +78,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.08);
     background: var(--bg-secondary);
     font-weight: 600;
     font-size: 0.85em;
@@ -109,8 +109,8 @@
 }
 
 .class-dropdown-title-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .class-dropdown-title-btn:hover i {
@@ -125,7 +125,7 @@
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -135,15 +135,15 @@
 }
 
 .btn-icon-small:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    border-color: transparent;
 }
 
 .btn-icon-small.danger:hover {
     background: var(--error-light, rgba(239, 68, 68, 0.08));
     color: var(--error-color);
-    border-color: var(--error-color);
+    border-color: transparent;
 }
 
 /* Rotation spécifique au bouton "+" du dropdown header */
@@ -178,9 +178,18 @@
 }
 
 .class-dropdown-item.active {
-    background: var(--item-active-bg);
-    box-shadow: inset 4px 0 0 var(--primary-color);
-    border-color: var(--border-color);
+    background: rgba(var(--primary-color-rgb), 0.05);
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.class-dropdown-item.active .class-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.class-dropdown-item.active .class-meta {
+    color: rgba(var(--primary-color-rgb), 0.7);
 }
 
 .class-dropdown-item .class-info {
@@ -213,25 +222,28 @@
     justify-content: center;
     min-width: 28px;
     height: 24px;
-    background: var(--bg-secondary);
+    background: transparent;
     border-radius: var(--radius-sm);
     font-size: 0.8em;
     font-weight: 600;
     color: var(--text-secondary);
+    border: 1px solid rgba(128, 128, 128, 0.15);
 }
 
 [data-theme="dark"] .class-dropdown-item .class-student-count {
-    background: rgba(255, 255, 255, 0.08);
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .class-dropdown-item.active .class-student-count {
-    background: var(--item-hover-bg-elevated);
-    color: var(--text-primary);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    border-color: transparent;
 }
 
 .class-dropdown-item:hover .class-student-count {
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    border-color: var(--border-color);
 }
 
 /* ====================================================================
@@ -274,11 +286,13 @@
     font-weight: 600;
     background: var(--bg-secondary);
     color: var(--text-secondary);
+    border: none;
     transition: all var(--transition-fast);
 }
 
 [data-theme="dark"] .progress-count {
     background: rgba(255, 255, 255, 0.08);
+    border: none;
 }
 
 .progress-count i {
@@ -309,9 +323,20 @@
     transform: scale(1.05);
 }
 
+.class-dropdown-item:hover:not(.active) .progress-count {
+    background: var(--surface-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .class-dropdown-item:hover:not(.active) .progress-count {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: none;
+}
+
 .class-dropdown-item.active .progress-count {
-    background: var(--item-hover-bg-elevated);
-    color: var(--text-primary);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-color);
+    border-color: transparent;
 }
 
 .class-dropdown-item.active .progress-count.is-complete {
