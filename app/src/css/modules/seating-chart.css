@@ -1134,53 +1134,178 @@
 
 /* ────────── PRINT ────────── */
 @media print {
-    body * { visibility: hidden !important; }
-
-    #seatingChartView,
-    #seatingChartView * {
-        visibility: visible !important;
+    @page { 
+        size: landscape; 
     }
 
-    #seatingChartView {
-        position: fixed;
-        inset: 0;
-        background: white;
+    /* 1. CHIRURGICAL HIDING: Hide EVERYTHING except the direct path to the seating chart AND the header */
+    body > *:not(.app-layout),
+    .app-layout > *:not(.main-content-wrapper),
+    .main-content-wrapper > *:not(.main-content):not(.header),
+    .main-content > *:not(.output-section),
+    .output-section > *:not(#seatingChartView) {
+        display: none !important;
     }
 
+    /* 2. RESET PATH CONTAINERS: Strip all dimensions, margins, and absolute positioning */
+    html, body, .app-layout, .main-content-wrapper, .main-content, .output-section {
+        display: block !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+        overflow: visible !important;
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Undo generic hidden visibility if it was applied elsewhere */
+    body * { visibility: visible !important; }
+
+    /* 2.b REAL HEADER RESTORATION (Classe & Nb élèves) */
+    .header {
+        display: flex !important;
+        position: static !important;
+        flex-direction: row;
+        justify-content: center !important;
+        align-items: center !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 5px 0 15px 0 !important;
+        margin-bottom: 20px !important;
+        border-bottom: 2px solid #555 !important;
+        height: auto !important;
+        width: 100%;
+        overflow: visible !important;
+    }
+
+    .header-center, .header-actions, .header-logo, .class-chevron, #classDropdown { display: none !important; }
+    
+    .class-selector-wrapper { 
+        width: 100%; 
+        margin: 0 !important; 
+        display: flex; 
+        justify-content: center; 
+    }
+
+    #headerClassChip {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: baseline !important;
+        gap: 12px !important;
+        background: transparent !important;
+        border: none !important;
+        color: #000 !important;
+        font-size: 1.6rem !important;
+        font-weight: 700 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .student-count-badge {
+        background: transparent !important;
+        color: #666 !important;
+        font-size: 1.2rem !important;
+        font-weight: normal !important;
+        border: none !important;
+    }
+    
+    /* Adds " élèves" automatically visually after the count */
+    .student-count-badge::before { content: "- "; }
+    .student-count-badge::after { content: " élèves"; }
+
+    /* 3. DEFAULT INNER HIDING: Hide specific interactions inside the chart */
     .sc-toolbar,
     .sc-progress-track,
     .sc-sidebar,
     .sc-cell-remove,
+    .sc-floating-actions,
+    .avatar-selection-overlay,
+    .sc-floating-status, /* Hidden since using header */
     .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;
     }
 
-    .sc-body { display: block; }
-    .sc-grid-area { padding: 16px; justify-content: flex-start; }
+    /* 4. CHART DISPLAY RESTORATION */
+    #seatingChartView {
+        display: flex !important;
+        flex-direction: column;
+        width: 100%;
+        position: static !important; /* Back to static so it stays strictly in flow */
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+    }
 
+    .sc-body { display: block; flex: none; }
+    
+    .sc-grid-area { 
+        padding: 0; 
+        justify-content: center; 
+        align-items: center;
+        overflow: visible !important;
+    }
+
+    /* 5. COMPONENTS STYLING */
+    .sc-grid-container {
+        gap: 6px !important;
+        margin: 0 auto;
+        zoom: 0.90; /* Marginally scaled down to guarantee the new header fits on page 1 */
+    }
+
+    /* 5. COMPONENTS STYLING */
     .sc-cell {
         border: 1px solid #ccc;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        break-inside: avoid;
+    }
+
+    .sc-cell .student-avatar {
+        font-size: 0.75rem !important;
+    }
+
+    .sc-cell-name {
+        margin-top: 4px !important;
     }
 
     .sc-cell.empty {
-        border: 1px dashed #e0e0e0;
-        background: transparent;
+        border: 1.5px dashed #999 !important; /* Darker, more visible dashed line */
+        background: rgba(0, 0, 0, 0.02) !important;
+        opacity: 0.8 !important; /* Heavily increased opacity so it prints */
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important; /* Force a tiny ink layout */
     }
+    
     .sc-cell.empty.sc-cell-special-aisle {
-        border-color: transparent;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 0 !important;
     }
-    .sc-cell.occupied { border: 1.5px solid #666; }
+    
+    .sc-cell.occupied { 
+        border: 1.5px solid #555 !important; 
+        opacity: 1 !important; 
+    }
+
+    .sc-desk-row {
+        margin-top: 16px !important;
+    }
 
     .sc-desk {
-        border: 2px solid #333;
+        border: 2px solid #333 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        break-inside: avoid;
+        padding: 8px 24px !important;
+        font-size: 0.8rem !important;
     }
 
     /* Kill all animations in print */
-    * { animation: none !important; }
+    * { animation: none !important; transition: none !important; }
 }
 
 /* ────────── RESPONSIVE ────────── */
