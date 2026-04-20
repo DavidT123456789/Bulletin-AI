@@ -23,6 +23,7 @@
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    backface-visibility: hidden;
     /* Bento Layout Interne */
     display: grid;
     grid-template-areas:

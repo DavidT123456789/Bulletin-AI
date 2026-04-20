@@ -1443,6 +1443,16 @@
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
 
+    /* Fix row-moving border-radius for mobile cards (FLIP animation) */
+    .student-list-table tbody tr.row-moving {
+        border-radius: var(--radius-lg);
+    }
+
+    .student-list-table tbody tr.row-moving td:first-child,
+    .student-list-table tbody tr.row-moving td:last-child {
+        border-radius: 0;
+    }
+
     .student-list-table td {
         border-bottom: none !important;
         padding: 0 !important;

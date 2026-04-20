@@ -8,7 +8,6 @@
 
 import { appState } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
-import { FocusPanelManager } from './FocusPanelManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
@@ -259,17 +258,9 @@ export const CrossClassSearchManager = {
             searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        // Switch de classe
-        await ClassManager.switchClass(classId);
-
-        // Mettre à jour immédiatement l'affichage du header
-        ClassUIManager.updateHeaderDisplay();
-
-        // Attendre un tick pour que le rendu se fasse
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Ouvrir le Focus Panel sur l'élève
-        FocusPanelManager.open(studentId);
+        // Utiliser handleClassSwitch de ClassUIManager et lui passer l'ID de l'élève
+        // pour déclencher le re-rendu avec scroll automatique et mise en surbrillance
+        await ClassUIManager.handleClassSwitch(classId, studentId);
 
         // Notification de feedback
         UI?.showNotification(`Basculé vers ${className}`, 'info');

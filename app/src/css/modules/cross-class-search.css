@@ -131,6 +131,7 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    will-change: transform, opacity;
     transition:
         background var(--transition-fast),
         border-color var(--transition-fast),
@@ -138,10 +139,12 @@
         box-shadow var(--transition-fast);
 }
 
-.cross-class-result:hover {
-    background: rgba(var(--primary-color-rgb), 0.05);
-    border-color: rgba(var(--primary-color-rgb), 0.2);
-    transform: translateX(4px);
+@media (hover: hover) {
+    .cross-class-result:hover {
+        background: rgba(var(--primary-color-rgb), 0.05);
+        border-color: rgba(var(--primary-color-rgb), 0.2);
+        transform: translateX(4px);
+    }
 }
 
 .cross-class-result:focus-visible {
@@ -205,13 +208,15 @@
     transition: transform 0.2s ease;
 }
 
-.cross-class-result:hover .cross-class-overlay {
-    opacity: 1;
-    transform: translateX(0);
-}
+@media (hover: hover) {
+    .cross-class-result:hover .cross-class-overlay {
+        opacity: 1;
+        transform: translateX(0);
+    }
 
-.cross-class-result:hover .cross-class-overlay i {
-    transform: translateX(3px);
+    .cross-class-result:hover .cross-class-overlay i {
+        transform: translateX(3px);
+    }
 }
 
 /* ========================================
@@ -281,9 +286,11 @@
     background: var(--bg-secondary);
 }
 
-[data-theme="dark"] .cross-class-result:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+@media (hover: hover) {
+    [data-theme="dark"] .cross-class-result:hover {
+        background: rgba(var(--primary-color-rgb), 0.1);
+        border-color: rgba(var(--primary-color-rgb), 0.3);
+    }
 }
 
 [data-theme="dark"] .cross-class-group-badge {
@@ -315,9 +322,34 @@
         font-size: var(--font-sm);
     }
 
-    /* Sur mobile, overlay toujours visible mais discret */
+    /* Sur mobile, overlay toujours visible mais on le réintègre dans le flux flex */
     .cross-class-overlay {
-        opacity: 0.7;
+        position: relative;
+        top: auto;
+        bottom: auto;
+        right: auto;
+        padding: 0;
+        opacity: 1; /* Pleine opacité puisqu'il ne superpose plus */
         transform: translateX(0);
+        margin-left: auto;
+        flex-shrink: 0;
+        color: var(--primary-color);
+        background: transparent;
+    }
+
+    /* Le contexte de classe (ex: "3°G5") est déjà clair grâce au badge du groupe au-dessus.
+       Masquer le texte redondant permet de gagner un espace précieux pour les noms longs. */
+    .cross-class-overlay span {
+        display: none;
+    }
+
+    /* On agrandit légèrement la flèche pour compenser l'absence de texte et améliorer la zone de touch */
+    .cross-class-overlay i {
+        font-size: 1.1rem;
+        transform: none; /* Reset le transform du hover desktop */
+    }
+
+    .cross-class-result:active .cross-class-overlay i {
+        transform: translateX(2px); /* Micro-interaction au tap/active mobile (remplace hover) */
     }
 }

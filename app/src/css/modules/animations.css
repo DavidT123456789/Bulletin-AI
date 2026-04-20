@@ -32,19 +32,46 @@
     animation: pulse-update 0.6s ease-out;
 }
 
-@keyframes highlight-new {
+@keyframes premium-row-focus {
     0% {
-        box-shadow: var(--shadow-sm);
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(var(--primary-color-rgb), 0);
     }
-
-    50% {
-        box-shadow: 0 0 0 4px var(--success-light), var(--shadow-md);
+    15% {
+        transform: scale(1.015);
+        box-shadow: 0 14px 28px rgba(var(--primary-color-rgb), 0.15), 0 0 0 1.5px rgba(var(--primary-color-rgb), 0.5);
     }
-
+    80% {
+        transform: scale(1.015);
+        box-shadow: 0 14px 28px rgba(var(--primary-color-rgb), 0.08), 0 0 0 1.5px rgba(var(--primary-color-rgb), 0.3);
+    }
     100% {
-        box-shadow: var(--shadow-sm);
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(var(--primary-color-rgb), 0);
     }
 }
+
+.highlight-new {
+    animation: premium-row-focus 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    position: relative;
+    z-index: 50;
+    /* On force le fond à être blanc/dark pour bloquer la transparence pendant qu'il lévite */
+    background: var(--surface-color) !important;
+    border-radius: var(--radius-sm);
+}
+
+.highlight-new td {
+    background: var(--surface-color) !important;
+}
+
+.highlight-new td:first-child {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.highlight-new td:last-child {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
 
 @keyframes flash-bg {
     0% {

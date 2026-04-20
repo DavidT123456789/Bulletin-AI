@@ -62,8 +62,10 @@
     box-shadow: none !important;
 }
 
-.view-toggle-btn:hover {
-    color: var(--text-secondary);
+@media (hover: hover) {
+    .view-toggle-btn:hover {
+        color: var(--text-secondary);
+    }
 }
 
 .view-toggle-btn.active {
@@ -381,9 +383,11 @@
     animation: scIconWaggle 3.5s infinite var(--ease-material);
 }
 
-#seatingChartView[data-placed-count="0"][data-locked="false"] .sc-auto-place-btn:hover iconify-icon {
-    animation: none;
-    transform: scale(1.15) rotate(-10deg);
+@media (hover: hover) {
+    #seatingChartView[data-placed-count="0"][data-locked="false"] .sc-auto-place-btn:hover iconify-icon {
+        animation: none;
+        transform: scale(1.15) rotate(-10deg);
+    }
 }
 
 /* ────────── BODY ────────── */
@@ -535,10 +539,17 @@
     -webkit-user-select: none;
 }
 
-.sc-student-chip:hover {
-    background: var(--surface-color);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+@media (hover: hover) {
+    .sc-student-chip:hover {
+        background: var(--surface-color);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    .sc-student-chip:hover .sc-student-chip-name {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
 }
 
 .sc-student-chip:active {
@@ -562,23 +573,30 @@
     transition: font-weight var(--transition-fast), color var(--transition-fast);
 }
 
-.sc-student-chip:hover .sc-student-chip-name {
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
 /* ────────── GRID AREA ────────── */
 .sc-grid-area {
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    /* Use safe center to avoid cutting off left content on mobile when the grid overflows */
+    align-items: safe center;
     justify-content: flex-start;
     gap: 16px;
     padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) 24px;
     overflow: auto;
     min-width: 0;
     min-height: 0;
+}
+
+/* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
+@supports not (align-items: safe center) {
+    .sc-grid-area {
+        align-items: flex-start;
+    }
+    .sc-grid-area > * {
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
 
 /* ────────── FLOATING STATUS PILL ────────── */
@@ -691,10 +709,12 @@
     box-shadow: var(--shadow-sm);
 }
 
-.sc-cell.occupied:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    z-index: 10;
+@media (hover: hover) {
+    .sc-cell.occupied:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        z-index: 10;
+    }
 }
 
 .sc-cell.occupied:active {
@@ -846,13 +866,15 @@
     z-index: 5;
 }
 
-.sc-cell.occupied:hover .sc-cell-remove {
-    opacity: 1;
-    transform: scale(1);
-}
+@media (hover: hover) {
+    .sc-cell.occupied:hover .sc-cell-remove {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-.sc-cell-remove:hover {
-    transform: scale(1.15) !important;
+    .sc-cell-remove:hover {
+        transform: scale(1.15) !important;
+    }
 }
 
 .sc-cell-pin {
@@ -877,13 +899,15 @@
     z-index: 5;
 }
 
-.sc-cell.occupied:hover .sc-cell-pin {
-    opacity: 1;
-    transform: scale(1);
-}
+@media (hover: hover) {
+    .sc-cell.occupied:hover .sc-cell-pin {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-.sc-cell-pin:hover {
-    transform: scale(1.15) !important;
+    .sc-cell-pin:hover {
+        transform: scale(1.15) !important;
+    }
 }
 
 /* Pinned — icon always visible */
@@ -1020,8 +1044,10 @@
     animation: scIconWaggle 3.5s infinite var(--ease-material);
 }
 
-#seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn:hover iconify-icon {
-    animation: none;
+@media (hover: hover) {
+    #seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn:hover iconify-icon {
+        animation: none;
+    }
 }
 
 
@@ -1071,9 +1097,11 @@
 }
 
 /* Show tools on hover, only when unlocked and no chips selected */
-#seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
-    opacity: 1;
-    pointer-events: auto;
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not(.drag-over):hover .sc-cell-special-tools {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 .sc-special-btn {
@@ -1092,17 +1120,19 @@
     font-size: 0.85rem;
 }
 
-.sc-special-btn:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    transform: scale(1.15);
-}
+@media (hover: hover) {
+    .sc-special-btn:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+        transform: scale(1.15);
+    }
 
-.sc-special-btn[data-type="blocked"]:hover,
-.sc-special-btn[data-type="normal"]:hover {
-    background: var(--error-color);
-    border-color: var(--error-color);
+    .sc-special-btn[data-type="blocked"]:hover,
+    .sc-special-btn[data-type="normal"]:hover {
+        background: var(--error-color);
+        border-color: var(--error-color);
+    }
 }
 
 /* ────────── TEACHER DESK ────────── */
@@ -1538,10 +1568,37 @@
     transition: all var(--transition-fast);
 }
 
-.sc-action-btn:hover {
-    background: var(--surface-color);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
+@media (hover: hover) {
+    .sc-action-btn:hover {
+        background: var(--surface-color);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .sc-action-btn.sc-print-btn:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .sc-action-btn.sc-reset-btn:hover {
+        background: color-mix(in srgb, var(--error-color) 12%, transparent);
+        color: var(--error-color);
+    }
+
+    .sc-action-btn.sc-undo-btn:not(:disabled):hover,
+    .sc-action-btn.sc-redo-btn:not(:disabled):hover {
+        background: rgba(var(--primary-color-rgb), 0.1);
+        color: var(--primary-color);
+    }
+
+    .sc-action-btn#scAutoPlaceBtn:hover {
+        background: rgba(var(--primary-color-rgb), 0.1);
+        color: var(--primary-color);
+    }
+
+    .sc-action-btn#scAutoPlaceBtn:hover iconify-icon {
+        transform: scale(1.15) rotate(-10deg);
+    }
 }
 
 .sc-action-btn:active {
@@ -1558,35 +1615,11 @@
     height: 38px;
     border-radius: 50%;
 }
-.sc-action-btn.sc-print-btn:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.sc-action-btn.sc-reset-btn:hover {
-    background: color-mix(in srgb, var(--error-color) 12%, transparent);
-    color: var(--error-color);
-}
-
-.sc-action-btn.sc-undo-btn:not(:disabled):hover,
-.sc-action-btn.sc-redo-btn:not(:disabled):hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
 
 .sc-action-btn:disabled {
     opacity: 0.3;
     pointer-events: none;
     cursor: default;
-}
-
-.sc-action-btn#scAutoPlaceBtn:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-.sc-action-btn#scAutoPlaceBtn:hover iconify-icon {
-    transform: scale(1.15) rotate(-10deg);
 }
 
 /* ---------- CONFIG POPOVER (Restored) ---------- */
@@ -1722,10 +1755,12 @@
     color: var(--text-secondary);
 }
 
-.sc-floating-actions .sc-action-btn:hover {
-    background: var(--surface-color);
-    color: var(--primary-color);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) {
+    .sc-floating-actions .sc-action-btn:hover {
+        background: var(--surface-color);
+        color: var(--primary-color);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 
@@ -1735,7 +1770,9 @@
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
-    background: rgba(50, 50, 50, 0.95);
-    color: var(--primary-color);
+@media (hover: hover) {
+    [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
+        background: rgba(50, 50, 50, 0.95);
+        color: var(--primary-color);
+    }
 }

@@ -364,7 +364,7 @@ export const ClassUIManager = {
     /**
      * Gère le changement de classe
      */
-    async handleClassSwitch(classId) {
+    async handleClassSwitch(classId, highlightId = null) {
         // Trigger generic page refresh animation
         // Target dynamic containers ONLY to keep the title "Bilan de la classe" visible (avoiding black screen)
         const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header, #seatingChartView');
@@ -383,7 +383,7 @@ export const ClassUIManager = {
         this.updateHeaderDisplay();
         this.closeDropdown();
         // Refresh the results list with the new class data
-        AppreciationsManager.renderResults();
+        AppreciationsManager.renderResults(highlightId, 'new');
         UI?.updateStats?.();
 
         // Notify seating chart of class change
