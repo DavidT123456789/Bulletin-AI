@@ -499,6 +499,7 @@
 /* Tablets and larger phones (481px – 768px) */
 @media (min-width: 481px) and (max-width: 768px) {
     .pwa-install-banner {
+        width: fit-content;
         max-width: 440px;
         left: 50%;
         right: auto;
@@ -516,18 +517,20 @@
     }
 }
 
-/* Mobile phones (max-width 480px) */
+/* Mobile phones (max-width 480px) — Stacked 2-row layout */
 @media (max-width: 480px) {
     .pwa-install-banner {
         margin: var(--space-3);
         margin-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
         padding: var(--space-3);
         border-radius: var(--radius-md);
-        gap: var(--space-2);
+        gap: var(--space-3);
     }
 
+    /* Stack: icon+text row on top, actions row below */
     .pwa-banner-content {
-        gap: var(--space-2);
+        flex-wrap: wrap;
+        gap: var(--space-3);
     }
 
     .pwa-banner-icon {
@@ -549,18 +552,22 @@
         font-size: var(--font-xs);
     }
 
+    /* Actions row: full-width, CTA stretches */
+    .pwa-banner-actions {
+        width: 100%;
+        gap: var(--space-2);
+    }
+
     .pwa-install-banner .btn-install {
-        padding: calc(var(--space-2) - 1px) var(--space-3);
-        font-size: var(--font-xs);
+        flex: 1;
+        justify-content: center;
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-sm);
     }
 
     .pwa-install-banner .btn-dismiss {
-        width: 28px;
-        height: 28px;
-    }
-
-    .pwa-install-banner .btn-dismiss iconify-icon {
-        font-size: 0.85rem;
+        width: 36px;
+        height: 36px;
     }
 
     .pwa-ios-step {
@@ -574,6 +581,7 @@
         margin: var(--space-2);
         margin-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
         padding: var(--space-2) var(--space-3);
+        gap: var(--space-2);
     }
 
     .pwa-banner-icon {
@@ -595,13 +603,12 @@
     }
 
     .pwa-install-banner .btn-install {
-        padding: calc(var(--space-2) - 2px) calc(var(--space-3) - 2px);
         font-size: var(--font-xs);
     }
 
     .pwa-install-banner .btn-dismiss {
-        width: 26px;
-        height: 26px;
+        width: 32px;
+        height: 32px;
     }
 }
 
