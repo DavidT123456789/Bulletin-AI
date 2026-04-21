@@ -214,6 +214,12 @@ export const SeatingChartManager = {
             this._renderSidebar();
         });
 
+        document.querySelector('.sc-search-box')?.addEventListener('click', (e) => {
+            if (!e.target.closest('input') && !e.target.closest('.sc-search-clear')) {
+                document.getElementById('scSearchInput')?.focus();
+            }
+        });
+
         document.getElementById('viewToggle')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.view-toggle-btn');
             if (!btn) return;
