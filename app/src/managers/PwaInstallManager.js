@@ -12,8 +12,9 @@ import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 
 const STORAGE_KEY = 'pwa_install_dismissed';
-const BANNER_DELAY_MS = 3000; // Show banner after 3 seconds
-const NEVER_SHOW_AGAIN_DAYS = 30; // Respect "don't show again" for 30 days
+const SESSION_KEY = 'pwa_install_later';
+const BANNER_DELAY_MS = 3000;
+const DISMISS_DURATION_DAYS = 90;
 
 /**
  * Platform detection utilities
@@ -92,18 +93,16 @@ export const PwaInstallManager = {
      * Check if we should show the install prompt
      */
     _shouldShowBanner() {
-        // Already installed
         if (Platform.isStandalone()) return false;
 
-        // User dismissed recently
+        // "Plus tard" — session only
+        if (sessionStorage.getItem(SESSION_KEY)) return false;
+
+        // "Ne plus afficher" — persistent
         const dismissed = this._getDismissedState();
         if (dismissed) {
-            const dismissedDate = new Date(dismissed.date);
-            const daysSince = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24);
-
-            if (dismissed.permanent || daysSince < NEVER_SHOW_AGAIN_DAYS) {
-                return false;
-            }
+            const daysSince = (Date.now() - new Date(dismissed.date).getTime()) / 864e5;
+            if (daysSince < DISMISS_DURATION_DAYS) return false;
         }
 
         return true;
@@ -211,9 +210,9 @@ export const PwaInstallManager = {
             this._hideBanner();
         });
 
-        // Maybe later (dismiss for now)
+        // Maybe later — session only, will reappear next visit
         laterBtn?.addEventListener('click', () => {
-            this._setDismissed(false);
+            sessionStorage.setItem(SESSION_KEY, '1');
             this._hideBanner();
         });
     },
