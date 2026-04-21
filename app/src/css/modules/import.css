@@ -398,6 +398,8 @@
 #welcomeModal .welcome-api-key-group input,
 .welcome-api-key-group input:focus,
 .welcome-api-key-group input:active {
+    -webkit-text-security: disc;
+    text-security: disc;
     border: none !important;
     /* Arrondi à gauche seulement pour se connecter au bouton */
     border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important;

@@ -2,6 +2,12 @@
    SEATING CHART MODULE — Integrated View (Plan de Classe)
    ==================================================================== */
 
+/* ────────── CELL DIMENSION TOKENS (Single Source of Truth) ────────── */
+:root {
+    --sc-cell-w: 80px;
+    --sc-cell-h: 88px;
+}
+
 /* ────────── VIEW TOGGLE (Header) ────────── */
 .view-toggle {
     display: none;
@@ -659,8 +665,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 80px;
-    height: 88px;
+    width: var(--sc-cell-w, 80px);
+    height: var(--sc-cell-h, 88px);
     border: 1.5px dashed var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
@@ -781,8 +787,8 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 80px !important;
-    height: 88px !important;
+    width: var(--sc-cell-w, 80px) !important;
+    height: var(--sc-cell-h, 88px) !important;
     border-radius: var(--radius-md) !important;
     background: var(--surface-color) !important;
     box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
@@ -796,8 +802,8 @@
 /* Touch drag ghost — follows finger */
 .sc-touch-ghost {
     position: fixed;
-    width: 72px;
-    height: 78px;
+    width: calc(var(--sc-cell-w, 80px) - 8px);
+    height: calc(var(--sc-cell-h, 88px) - 10px);
     opacity: 0.85;
     pointer-events: none;
     z-index: 9999;
@@ -1359,7 +1365,14 @@
 
     .sc-grid-area { padding: 12px; }
 
-    .sc-cell { width: 60px; height: 68px; }
+    :root {
+        --sc-cell-w: 60px;
+        --sc-cell-h: 68px;
+    }
+
+    .sc-grid-container {
+        gap: 6px;
+    }
 
     .sc-cell .student-avatar { width: 32px; height: 32px; font-size: 0.65rem; }
 

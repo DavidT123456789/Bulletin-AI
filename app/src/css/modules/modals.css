@@ -1182,6 +1182,13 @@
     padding-bottom: 0;
     margin: 0 !important;
     font-size: 13px;
+    -webkit-text-security: disc;
+    text-security: disc;
+}
+
+.api-key-section .api-key-actions .api-key-input-container input:focus {
+    -webkit-text-security: none;
+    text-security: none;
 }
 
 .api-key-section .api-key-actions .btn {
