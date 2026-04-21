@@ -349,7 +349,7 @@
     top: 55px; /* Overlaps exactly on the header 1px border */
     left: 0;
     width: 100%;
-    z-index: 9999;
+    z-index: 800; /* Above header (700), below modal-backdrop (900) */
     height: 1px;
     background: var(--border-color);
     flex-shrink: 0;
@@ -1184,21 +1184,30 @@
 .sc-desk iconify-icon { font-size: 1.1em; }
 
 /* ────────── PRINT ────────── */
+/* ── Print header (hidden on screen, injected by JS) ── */
+.sc-print-header { display: none; }
+
 @media print {
     @page { 
-        size: landscape; 
+        size: landscape;
     }
 
-    /* 1. CHIRURGICAL HIDING: Hide EVERYTHING except the direct path to the seating chart AND the header */
+    /* ── 0. Force Desktop cell dimensions ── */
+    :root {
+        --sc-cell-w: 80px;
+        --sc-cell-h: 88px;
+    }
+
+    /* ── 1. Chirurgical hiding: only show the path to seating chart ── */
     body > *:not(.app-layout),
     .app-layout > *:not(.main-content-wrapper),
-    .main-content-wrapper > *:not(.main-content):not(.header),
+    .main-content-wrapper > *:not(.main-content),
     .main-content > *:not(.output-section),
     .output-section > *:not(#seatingChartView) {
         display: none !important;
     }
 
-    /* 2. RESET PATH CONTAINERS: Strip all dimensions, margins, and absolute positioning */
+    /* ── 2. Reset path containers to static flow ── */
     html, body, .app-layout, .main-content-wrapper, .main-content, .output-section {
         display: block !important;
         height: auto !important;
@@ -1212,122 +1221,126 @@
         box-shadow: none !important;
     }
 
-    /* Undo generic hidden visibility if it was applied elsewhere */
     body * { visibility: visible !important; }
 
-    /* 2.b REAL HEADER RESTORATION (Classe & Nb élèves) */
-    .header {
+    /* ── 3. Injected print header ── */
+    .sc-print-header {
         display: flex !important;
-        position: static !important;
-        flex-direction: row;
-        justify-content: center !important;
-        align-items: center !important;
-        box-shadow: none !important;
-        background: transparent !important;
-        padding: 5px 0 15px 0 !important;
-        margin-bottom: 20px !important;
-        border-bottom: 2px solid #555 !important;
-        height: auto !important;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 24px 0;
+        margin: 0 0 12px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .sc-print-warning {
         width: 100%;
-        overflow: visible !important;
+        text-align: center;
+        font-size: 9pt;
+        color: #999;
+        margin-top: 6px;
     }
 
-    .header-center, .header-actions, .header-logo, .class-chevron, #classDropdown { display: none !important; }
-    
-    .class-selector-wrapper { 
-        width: 100%; 
-        margin: 0 !important; 
-        display: flex; 
-        justify-content: center; 
+    .sc-print-date {
+        font-size: 9pt;
+        color: #888;
+        flex-shrink: 0;
+        min-width: 80px;
     }
 
-    #headerClassChip {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: baseline !important;
-        gap: 12px !important;
-        background: transparent !important;
-        border: none !important;
-        color: #000 !important;
-        font-size: 1.6rem !important;
-        font-weight: 700 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        box-shadow: none !important;
+    .sc-print-class {
+        font-size: 14pt;
+        font-weight: 700;
+        color: #111;
+        text-align: center;
     }
 
-    .student-count-badge {
-        background: transparent !important;
-        color: #666 !important;
-        font-size: 1.2rem !important;
-        font-weight: normal !important;
-        border: none !important;
+    .sc-print-count {
+        font-weight: 400;
+        font-size: 11pt;
+        color: #555;
+        margin-left: 10px;
     }
-    
-    /* Adds " élèves" automatically visually after the count */
-    .student-count-badge::before { content: "- "; }
-    .student-count-badge::after { content: " élèves"; }
 
-    /* 3. DEFAULT INNER HIDING: Hide specific interactions inside the chart */
+    .sc-print-brand {
+        font-size: 9pt;
+        color: #aaa;
+        flex-shrink: 0;
+        font-weight: 500;
+        min-width: 80px;
+        text-align: right;
+    }
+
+    /* ── 4. Hide interactive elements ── */
     .sc-toolbar,
     .sc-progress-track,
     .sc-sidebar,
     .sc-cell-remove,
     .sc-floating-actions,
     .avatar-selection-overlay,
-    .sc-floating-status, /* Hidden since using header */
+    .sc-floating-status,
+    .header,
     .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;
     }
 
-    /* 4. CHART DISPLAY RESTORATION */
+    /* ── 5. Chart layout ── */
     #seatingChartView {
         display: flex !important;
         flex-direction: column;
         width: 100%;
-        position: static !important; /* Back to static so it stays strictly in flow */
+        position: static !important;
+        min-height: 100vh !important;
         height: auto !important;
         overflow: visible !important;
         margin: 0 !important;
+        padding: 8mm 10mm !important;
     }
 
-    .sc-body { display: block; flex: none; }
+    .sc-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
     
     .sc-grid-area { 
-        padding: 0; 
+        padding: 0 !important;
         justify-content: center; 
         align-items: center;
         overflow: visible !important;
     }
 
-    /* 5. COMPONENTS STYLING */
+    /* ── 6. Grid & cells ── */
     .sc-grid-container {
         gap: 6px !important;
         margin: 0 auto;
-        zoom: 0.90; /* Marginally scaled down to guarantee the new header fits on page 1 */
     }
 
-    /* 5. COMPONENTS STYLING */
     .sc-cell {
-        border: 1px solid #ccc;
+        border: 1.5px solid #ccc;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         break-inside: avoid;
     }
 
     .sc-cell .student-avatar {
-        font-size: 0.75rem !important;
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 0.8rem !important;
     }
 
     .sc-cell-name {
         margin-top: 4px !important;
+        font-size: 0.65rem !important;
     }
 
     .sc-cell.empty {
-        border: 1.5px dashed #999 !important; /* Darker, more visible dashed line */
+        border: 1.5px dashed #999 !important;
         background: rgba(0, 0, 0, 0.02) !important;
-        opacity: 0.8 !important; /* Heavily increased opacity so it prints */
-        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important; /* Force a tiny ink layout */
+        opacity: 0.8 !important;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05) !important;
     }
     
     .sc-cell.empty.sc-cell-special-aisle {
@@ -1342,20 +1355,43 @@
         opacity: 1 !important; 
     }
 
+    /* ── 7. Pinned indicator (discrete print marker) ── */
+    .sc-cell.pinned .sc-cell-pin {
+        display: flex !important;
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: auto;
+        height: auto;
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #999 !important;
+        font-size: 0.5rem !important;
+        pointer-events: none;
+        opacity: 0.5;
+        padding: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+    }
+
+    /* ── 8. Teacher desk ── */
     .sc-desk-row {
-        margin-top: 16px !important;
+        margin-top: 20px !important;
     }
 
     .sc-desk {
-        border: 2px solid #333 !important;
+        border: 1.5px solid #555 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
         break-inside: avoid;
-        padding: 8px 24px !important;
-        font-size: 0.8rem !important;
+        padding: 10px 32px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        background: #fafafa !important;
     }
 
-    /* Kill all animations in print */
+    /* ── 9. Kill all motion ── */
     * { animation: none !important; transition: none !important; }
 }
 

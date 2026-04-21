@@ -172,7 +172,7 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _setupEventListeners() {
-        document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => window.print());
+        document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => this._printChart());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
         document.getElementById('scAutoPlaceBtn')?.addEventListener('click', () => this._autoPlace());
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
@@ -638,6 +638,53 @@ export const SeatingChartManager = {
         if (!view) return;
         const allPlaced = this._getUnplacedStudents().length === 0;
         view.dataset.allPlaced = allPlaced;
+    },
+
+    // ========================================================================
+    // PRINT
+    // ========================================================================
+
+    _printChart() {
+        const classData = appState.classes?.find(c => c.id === appState.currentClassId);
+        const className = classData?.name || 'Plan de classe';
+        const studentCount = this._students?.length || 0;
+        const dateStr = new Date().toLocaleDateString('fr-FR');
+
+        const originalTitle = document.title;
+        const safeName = className.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-');
+        document.title = `Plan-de-classe_${safeName}_${new Date().toISOString().slice(0, 10)}`;
+
+        const placed = this._getPlacedIds().size;
+        const unplaced = studentCount - placed;
+        const unplacedHtml = unplaced > 0
+            ? `<div class="sc-print-warning">⚠ ${unplaced} élève${unplaced > 1 ? 's' : ''} non placé${unplaced > 1 ? 's' : ''}</div>`
+            : '';
+
+        const header = document.createElement('div');
+        header.className = 'sc-print-header';
+        header.innerHTML = `
+            <span class="sc-print-date">${dateStr}</span>
+            <span class="sc-print-class">${className} <span class="sc-print-count">(${studentCount} élèves)</span></span>
+            <span class="sc-print-brand">Bulletin AI</span>
+            ${unplacedHtml}
+        `;
+
+        const pageStyle = document.createElement('style');
+        pageStyle.textContent = '@page { margin: 0 !important; }';
+        document.head.appendChild(pageStyle);
+
+        const view = document.getElementById('seatingChartView');
+        view?.insertBefore(header, view.firstChild);
+
+        const cleanup = () => {
+            document.title = originalTitle;
+            header.remove();
+            pageStyle.remove();
+            window.onafterprint = null;
+        };
+
+        window.onafterprint = cleanup;
+        window.print();
     },
 
     // ========================================================================

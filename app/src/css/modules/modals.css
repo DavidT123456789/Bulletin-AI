@@ -1262,8 +1262,9 @@
 .compact-model-select:hover:not(:focus),
 .model-selector-wrapper .custom-dropdown-trigger:hover:not(.disabled):not(:focus) {
     border-color: rgba(var(--primary-color-rgb), 0.4);
+    background-color: rgba(var(--primary-color-rgb), 0.04);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.06);
     background-image: none;
-    /* override gradient from default trigger if needed */
 }
 
 .btn-icon-only {
