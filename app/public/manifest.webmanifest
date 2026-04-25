@@ -1,7 +1,7 @@
 {
     "name": "Bulletin AI",
     "short_name": "Bulletin AI",
-    "description": "Assistant intelligent pour la rédaction d'appréciations scolaires",
+    "description": "L'assistant numérique des enseignants — appréciations, plan de classe et plus",
     "start_url": "./app.html",
     "display": "standalone",
     "background_color": "#1a1a2e",

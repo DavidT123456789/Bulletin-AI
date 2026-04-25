@@ -1774,7 +1774,7 @@
 }
 
 [data-theme='dark'] .modal-prompt-preview .modal-body {
-    background: #0d0d0f; 
+    background: var(--bg-color); 
 }
 
 

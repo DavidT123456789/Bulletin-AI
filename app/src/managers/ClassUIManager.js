@@ -1107,7 +1107,7 @@ export const ClassUIManager = {
                     </div>
                 `;
 
-                row.style.background = 'rgba(239, 68, 68, 0.1)';
+                row.style.background = 'rgba(var(--error-rgb), 0.1)';
                 row.style.borderColor = 'var(--error-color)';
                 row.style.display = 'block';
                 row.classList.add('editing');

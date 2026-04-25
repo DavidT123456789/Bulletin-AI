@@ -15,6 +15,7 @@
 
     /* Neutres : Palette Zinc (True Neutral) */
     --bg-color: #f7f7f8;
+    --bg-color-rgb: 247, 247, 248;
     /* Zinc 50 */
     --bg-secondary: #f4f4f5;
     /* Zinc 100 */
@@ -33,6 +34,7 @@
     --text-primary: #18181b;
     /* Zinc 900 */
     --text-secondary: #52525b;
+    --text-secondary-rgb: 82, 82, 91;
     /* Zinc 600 */
     --text-tertiary: #71717a;
     /* Zinc 500 — WCAG AA compliant on Zinc 50 */
@@ -87,18 +89,51 @@
 
     /* --- Couleurs Sémantiques (Vives mais dosées) --- */
     --success-color: #10b981;
+    --success-dark: #16a34a;
+    --success-bright: #22c55e;
     --success-rgb: 16, 185, 129;
+    --success-color-rgb: 16, 185, 129;
     --success-light: rgba(16, 185, 129, 0.15);
 
     --warning-color: #f59e0b;
+    --warning-dark: #ca8a04;
+    --warning-bright: #facc15;
     --warning-rgb: 245, 158, 11;
+    --warning-color-rgb: 245, 158, 11;
     --warning-light: rgba(245, 158, 11, 0.12);
 
     --error-color: #ef4444;
     --error-hover: #dc2626;
-    /* Red 600 */
+    --error-bright: #f87171;
     --error-rgb: 239, 68, 68;
+    --error-color-rgb: 239, 68, 68;
+    --danger-color-rgb: 239, 68, 68;
     --error-light: rgba(239, 68, 68, 0.15);
+
+    /* --- Accent Colors (Palette unifiée) --- */
+    --color-violet: #8b5cf6;
+    --color-violet-bright: #a78bfa;
+    --color-violet-deep: #6d28d9;
+    --color-indigo: #6366f1;
+    --color-cyan: #06b6d4;
+    --color-cyan-bright: #22d3ee;
+    --color-cyan-deep: #0891b2;
+    --color-sky: #0ea5e9;
+    --color-sky-bright: #38bdf8;
+    --color-sky-deep: #0369a1;
+    --color-rose: #f43f5e;
+    --color-rose-bright: #fb7185;
+    --color-rose-deep: #be123c;
+    --color-amber: #f59e0b;
+    --color-amber-bright: #fbbf24;
+    --color-amber-deep: #b45309;
+    --color-orange: #f97316;
+    --color-orange-deep: #ea580c;
+    --color-emerald: #10b981;
+    --color-emerald-bright: #34d399;
+    --color-emerald-deep: #047857;
+    --color-teal: #14b8a6;
+    --color-blue-bright: #60a5fa;
 
     /* Close Button Design Tokens */
     --close-btn-bg: transparent;
@@ -108,19 +143,14 @@
 
     /* Icon Button States (Single Source of Truth) */
     --icon-btn-color: #8f8f98;
-    /* Intermédiaire parfait entre Zinc 400 et 500 */
     --icon-stroke-width: 1.3px;
-    /* Epaisseur harmonisée pour toutes les icônes (Lucide et Solar) */
-    /* Encore allégé (Zinc-400) pour un design ultra-aérien */
     --icon-btn-hover: var(--primary-color);
     --icon-btn-muted: rgba(161, 161, 170, 0.7);
-    /* Zinc 400 with opacity */
 
     /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */
     --item-idle-bg: rgba(0, 0, 0, 0.025);
     --item-hover-bg: rgba(0, 0, 0, 0.04);
     --item-active-bg: rgba(0, 0, 0, 0.06);
-    /* Elevated variant: for items already on --bg-secondary */
     --item-hover-bg-elevated: var(--bg-tertiary);
 
     --purple-color: #9333ea;
@@ -128,11 +158,26 @@
     --purple-light: rgba(147, 51, 234, 0.15);
 
     --neutral-light: rgba(161, 161, 170, 0.15);
-    /* Zinc 400 with opacity */
 
     --info-color: #3b82f6;
     --info-rgb: 59, 130, 246;
+    --info-color-rgb: 59, 130, 246;
     --info-light: rgba(59, 130, 246, 0.15);
+
+    /* Aliases — resolve orphan token references */
+    --bg-primary: var(--bg-color);
+    --bg-surface: var(--surface-color);
+    --bg-secondary-dark: var(--bg-tertiary);
+    --surface-secondary: var(--bg-secondary);
+    --surface-alert-bg: rgba(var(--error-rgb), 0.06);
+    --input-background: var(--surface-color);
+    --primary-color-light: rgba(var(--primary-color-rgb), 0.12);
+    --text-tertiary-rgb: 113, 113, 122;
+    --text-quaternary-rgb: 161, 161, 170;
+    --radius-full: 9999px;
+    --warning-light-text: var(--warning-dark);
+    --danger-color: var(--error-color);
+    --secondary-color: var(--accent-color);
 
     /* Grade Range Colors */
     --grade-range-0-4: #EF4444;
@@ -189,6 +234,7 @@
     /* --- Gradients --- */
     --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
     --gradient-ai: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    --gradient-brand: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
 
     --gradient-warning: linear-gradient(135deg, var(--warning-color) 0%, #ea580c 100%);
     --warning-hover: #ea580c;
@@ -207,6 +253,7 @@
     --z-modal: 1000;
     --z-tooltip: 1100;
     --z-toast: 2000;
+    --z-modal-content: 1001;
     --z-skip-link: 10000;
 
     /* --- Global Component Variables --- */
@@ -274,6 +321,7 @@
     /* Zinc 400 tint */
 
     --bg-color: #09090b;
+    --bg-color-rgb: 9, 9, 11;
     /* Zinc 950 */
     --bg-secondary: #18181b;
     /* Zinc 900 */
@@ -295,6 +343,10 @@
     /* Zinc 400 */
     --text-tertiary: #71717a;
     /* Zinc 500 */
+    --text-tertiary-rgb: 113, 113, 122;
+    --text-quaternary-rgb: 161, 161, 170;
+    --surface-alert-bg: rgba(var(--error-rgb), 0.08);
+    --warning-light-text: var(--warning-dark);
 
     /* Glass Dark */
     --glass-base-bg: rgba(9, 9, 11, 0.7);
@@ -321,11 +373,41 @@
     --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
     --gradient-ai: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
 
+    /* --- Semantic Colors (Dark Mode) --- */
+    --success-dark: #4ade80;
+    --success-bright: #34d399;
+    --warning-dark: #facc15;
+    --warning-bright: #fbbf24;
+    --error-bright: #fca5a5;
+
+    /* --- Accent Colors (Dark Mode — brighter variants for readability) --- */
+    --color-violet: #a78bfa;
+    --color-violet-bright: #c4b5fd;
+    --color-violet-deep: #8b5cf6;
+    --color-indigo: #818cf8;
+    --color-cyan: #22d3ee;
+    --color-cyan-bright: #67e8f9;
+    --color-cyan-deep: #06b6d4;
+    --color-sky: #38bdf8;
+    --color-sky-bright: #7dd3fc;
+    --color-sky-deep: #0ea5e9;
+    --color-rose: #fb7185;
+    --color-rose-bright: #fda4af;
+    --color-rose-deep: #f43f5e;
+    --color-amber: #fbbf24;
+    --color-amber-bright: #fcd34d;
+    --color-amber-deep: #f59e0b;
+    --color-orange: #fb923c;
+    --color-orange-deep: #f97316;
+    --color-emerald: #34d399;
+    --color-emerald-bright: #6ee7b7;
+    --color-emerald-deep: #10b981;
+    --color-teal: #2dd4bf;
+    --color-blue-bright: #93c5fd;
+
     /* --- Universal Card Style --- */
     --card-glass-bg: #18181b;
-    /* Solid Zinc 900 for dark mode */
     --card-glass-border: rgba(255, 255, 255, 0.08);
-    /* Balanced globally */
 
     /* --- Guide Panel Tokens --- */
     --guide-panel-bg: rgba(255, 255, 255, 0.03);
@@ -341,6 +423,5 @@
     --item-idle-bg: rgba(255, 255, 255, 0.03);
     --item-hover-bg: rgba(255, 255, 255, 0.07);
     --item-active-bg: rgba(255, 255, 255, 0.10);
-    /* Elevated variant: for items already on --bg-secondary */
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
 }

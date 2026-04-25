@@ -696,7 +696,7 @@
 
 [data-theme="dark"] .focus-context-info-trigger>iconify-icon:first-child {
     background: rgba(96, 165, 250, 0.12);
-    color: #60a5fa;
+    color: var(--color-blue-bright);
 }
 
 .focus-context-info-trigger {
@@ -1131,14 +1131,14 @@
     height: 26px;
     border-radius: 50%;
     background: rgba(139, 92, 246, 0.1);
-    color: #8b5cf6;
+    color: var(--color-violet);
     font-size: 14px;
     flex-shrink: 0;
 }
 
 [data-theme="dark"] .focus-appreciation-label>iconify-icon:first-child {
     background: rgba(167, 139, 250, 0.12);
-    color: #a78bfa;
+    color: var(--color-violet-bright);
 }
 
 .focus-appreciation-meta {
@@ -1636,8 +1636,7 @@
 .history-model {
     font-size: 0.65rem;
     font-weight: 600;
-    color: #6366f1;
-    /* Indigo-500 */
+    color: var(--color-indigo);
     background: rgba(99, 102, 241, 0.08);
     padding: 0 6px;
     border-radius: 10px;
@@ -1877,22 +1876,22 @@
 
 /* Source Indicator - Imported from file (Download icon) */
 .ai-indicator.source-imported {
-    color: var(--info-color, #06b6d4);
+    color: var(--color-cyan);
 }
 
 .ai-indicator.source-imported:hover {
     background: rgba(6, 182, 212, 0.12);
-    color: #06b6d4;
+    color: var(--color-cyan);
     transform: scale(1.15);
 }
 
 [data-theme="dark"] .ai-indicator.source-imported {
-    color: rgba(6, 182, 212, 0.9);
+    color: var(--color-cyan);
 }
 
 [data-theme="dark"] .ai-indicator.source-imported:hover {
     background: rgba(6, 182, 212, 0.18);
-    color: #06b6d4;
+    color: var(--color-cyan);
 }
 
 
@@ -2082,63 +2081,63 @@
 /* === Per-chip accent colors (inspired by premium mockups) === */
 /* .btn prefix needed to beat .btn:hover:not(:disabled) from components.css */
 .btn[data-refine-type="concise"] {
-    --chip-color: var(--warning-color);
-    --chip-hover-color: #b45309;
+    --chip-color: var(--color-amber);
+    --chip-hover-color: var(--color-amber-deep);
     --chip-rgb: 245, 158, 11;
 }
 
 .btn[data-refine-type="detailed"] {
-    --chip-color: #0ea5e9;
-    --chip-hover-color: #0369a1;
+    --chip-color: var(--color-sky);
+    --chip-hover-color: var(--color-sky-deep);
     --chip-rgb: 14, 165, 233;
 }
 
 .btn[data-refine-type="encouraging"] {
-    --chip-color: #f43f5e;
-    --chip-hover-color: #be123c;
+    --chip-color: var(--color-rose);
+    --chip-hover-color: var(--color-rose-deep);
     --chip-rgb: 244, 63, 94;
 }
 
 .btn[data-refine-type="variations"] {
-    --chip-color: var(--success-color);
-    --chip-hover-color: #047857;
+    --chip-color: var(--color-emerald);
+    --chip-hover-color: var(--color-emerald-deep);
     --chip-rgb: 16, 185, 129;
 }
 
 .btn[data-refine-type="polish"] {
-    --chip-color: #8b5cf6;
-    --chip-hover-color: #6d28d9;
+    --chip-color: var(--color-violet);
+    --chip-hover-color: var(--color-violet-deep);
     --chip-rgb: 139, 92, 246;
 }
 
-/* Dark mode: brighter tints */
+/* Dark mode: brighter tints — auto-adapted via token overrides */
 [data-theme="dark"] .btn[data-refine-type="concise"] {
-    --chip-color: #fbbf24;
-    --chip-hover-color: #fcd34d;
+    --chip-color: var(--color-amber-bright);
+    --chip-hover-color: var(--color-amber-bright);
     --chip-rgb: 251, 191, 36;
 }
 
 [data-theme="dark"] .btn[data-refine-type="detailed"] {
-    --chip-color: #38bdf8;
-    --chip-hover-color: #7dd3fc;
+    --chip-color: var(--color-sky-bright);
+    --chip-hover-color: var(--color-sky-bright);
     --chip-rgb: 56, 189, 248;
 }
 
 [data-theme="dark"] .btn[data-refine-type="encouraging"] {
-    --chip-color: #fb7185;
-    --chip-hover-color: #fda4af;
+    --chip-color: var(--color-rose-bright);
+    --chip-hover-color: var(--color-rose-bright);
     --chip-rgb: 251, 113, 133;
 }
 
 [data-theme="dark"] .btn[data-refine-type="variations"] {
-    --chip-color: #34d399;
-    --chip-hover-color: #6ee7b7;
+    --chip-color: var(--color-emerald-bright);
+    --chip-hover-color: var(--color-emerald-bright);
     --chip-rgb: 52, 211, 153;
 }
 
 [data-theme="dark"] .btn[data-refine-type="polish"] {
-    --chip-color: #a78bfa;
-    --chip-hover-color: #c4b5fd;
+    --chip-color: var(--color-violet-bright);
+    --chip-hover-color: var(--color-violet-bright);
     --chip-rgb: 167, 139, 250;
 }
 
@@ -2184,13 +2183,13 @@
 
 .btn-ai-outline.active {
     background: rgb(var(--chip-rgb, var(--primary-color-rgb)));
-    color: #ffffff !important;
+    color: white !important;
     box-shadow: 0 4px 12px rgba(var(--chip-rgb, var(--primary-color-rgb)), 0.25);
 }
 
 .btn-ai-outline.active i,
 .btn-ai-outline.active iconify-icon {
-    color: #ffffff !important;
+    color: white !important;
 }
 
 /* État désactivé pour les boutons de raffinement */
@@ -2387,8 +2386,7 @@
 
 [data-theme="dark"] #focusGenerateBtn.btn-warning {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
-    color: #fbbf24;
-    /* Matches concise tag */
+    color: var(--color-amber-bright);
 }
 
 [data-theme="dark"] #focusGenerateBtn.btn-warning:hover {
@@ -3265,7 +3263,7 @@
 
 .analysis-icon.suggestions {
     background: rgba(99, 102, 241, 0.15);
-    color: #6366f1;
+    color: var(--color-indigo);
 }
 
 /* Card Body - Content */

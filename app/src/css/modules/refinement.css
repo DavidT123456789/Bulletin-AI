@@ -54,7 +54,7 @@
     height: 28px;
     background: var(--gradient-primary);
     /* Use shared gradient */
-    color: #fff;
+    color: white;
     font-size: 0.9rem;
     font-weight: 700;
     border-radius: 50%;

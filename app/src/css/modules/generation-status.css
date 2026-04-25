@@ -350,7 +350,7 @@
     align-items: center;
     gap: 6px;
     background: transparent;
-    color: #f87171;
+    color: var(--error-bright);
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0;
@@ -384,7 +384,7 @@
 }
 
 .generation-error-badge:hover {
-    color: #fca5a5;
+    color: var(--error-bright);
 }
 
 .generation-error-badge:hover i {

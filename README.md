@@ -1,6 +1,6 @@
 # 📝 Bulletin AI
 
-> **Assistant intelligent pour la rédaction d'appréciations scolaires**
+> **L'assistant numérique des enseignants**
 
 [![Version](https://img.shields.io/badge/version-0.1.0_Beta-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-orange.svg)](./LICENSE.txt)
@@ -14,13 +14,14 @@
 
 ## 🎯 Description
 
-Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour aider les enseignants à rédiger des appréciations uniques et personnalisées pour leurs élèves. L'application supporte l'import en masse, la personnalisation par matière, et génère des textes adaptés au profil de chaque élève.
+Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour aider les enseignants à gérer leurs fins de trimestre. L'application génère des appréciations personnalisées, propose un plan de classe interactif par glisser-déposer, et offre un journal de bord pour suivre chaque élève au fil du temps.
 
 ## ✨ Fonctionnalités
 
-- 🤖 **Génération IA** — Support multi-provider (Google Gemini, OpenAI, OpenRouter)
+- 🤖 **Génération IA** — Support multi-provider (Mistral AI, Google Gemini, OpenRouter, Ollama)
 - 📊 **Import en masse** — Copier-coller depuis Excel/Google Sheets ou import de fichiers
 - 🎨 **Personnalisation par matière** — Ton, longueur, voix, vocabulaire spécifique
+- 🗺️ **Plan de classe** — Disposition interactive par glisser-déposer, export PDF
 - 📈 **Statistiques** — Moyennes, évolutions, filtres interactifs
 - 🎙️ **Dictée vocale** — Reconnaissance vocale pour le contexte et les appréciations
 - 🌙 **Mode sombre** — Thème clair/sombre adaptatif
@@ -78,14 +79,16 @@ npm run dev
 
 L'application nécessite une clé API pour fonctionner :
 
-1. **Google Gemini (recommandé, gratuit)** :
-   - Aller sur [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-   - Créer une clé API
+1. **Mistral AI (recommandé, gratuit 🇫🇷)** :
+   - Créer un compte sur [console.mistral.ai](https://console.mistral.ai/api-keys/)
+   - Générer une clé API (1 milliard de tokens/mois gratuits)
    - La coller dans les paramètres de l'application
 
-2. **OpenAI** (payant) : Créer une clé sur [platform.openai.com](https://platform.openai.com/api-keys)
+2. **Google Gemini** (gratuit) : Créer une clé sur [aistudio.google.com](https://aistudio.google.com/app/apikey)
 
 3. **OpenRouter** : Créer une clé sur [openrouter.ai](https://openrouter.ai/)
+
+4. **Ollama** (100% hors ligne) : Installer [Ollama](https://ollama.com/) et configurer l'URL locale
 
 ## ⌨️ Raccourcis clavier
 

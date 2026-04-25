@@ -532,7 +532,7 @@
 /* État actif : affiche la version originale */
 .toggle-version-btn.showing-original {
     background: rgba(249, 115, 22, 0.15);
-    color: #f97316;
+    color: var(--color-orange);
 }
 
 .toggle-version-btn.showing-original:hover:not(:disabled) {
