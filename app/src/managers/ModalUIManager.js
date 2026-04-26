@@ -417,12 +417,9 @@ export const ModalUI = {
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-alert-ios">
                 <div class="modal-alert-body">
-                    <div style="color: ${iconColorVar}; font-size: 32px; margin-bottom: -8px;">
-                        <iconify-icon icon="${iconClass}"></iconify-icon>
-                    </div>
                     <h3 class="modal-alert-title">${title}</h3>
                     <div class="modal-alert-message">${message}</div>
-                    <div class="modal-choices-container" style="margin-top: 12px;">
+                    <div class="modal-choices-container">
                         ${choicesHTML}
                     </div>
                 </div>
@@ -543,15 +540,12 @@ export const ModalUI = {
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-alert-ios">
                 <div class="modal-alert-body">
-                    <div style="color: var(--error-color); font-size: 36px; margin-bottom: -8px;">
-                        <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
-                    </div>
                     <h3 class="modal-alert-title">${title}</h3>
                     <div class="modal-alert-message">${message}</div>
                     
-                    <div class="hard-confirm-input-wrapper" style="margin-top: 12px;">
-                        <label class="hard-confirm-label" for="hardConfirmInput" style="display: block; margin-bottom: 12px; font-size: 0.9em; color: var(--text-secondary);">
-                            Tapez <strong class="hard-confirm-word" style="color: var(--text-primary); user-select: all;">${confirmWord}</strong> pour confirmer :
+                    <div class="hard-confirm-input-wrapper">
+                        <label class="hard-confirm-label" for="hardConfirmInput">
+                            Tapez <strong class="hard-confirm-word">${confirmWord}</strong> pour confirmer :
                         </label>
                         <input 
                             type="text" 
@@ -560,7 +554,6 @@ export const ModalUI = {
                             placeholder="${placeholder}" 
                             autocomplete="off" 
                             spellcheck="false"
-                            style="width: 100%; box-sizing: border-box; text-align: center; border-radius: 12px; padding: 12px; border: 1px solid var(--border-color); background: var(--bg-secondary); font-size: 1rem; color: var(--text-primary);"
                         >
                     </div>
                 </div>

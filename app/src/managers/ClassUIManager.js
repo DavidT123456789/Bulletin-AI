@@ -1251,28 +1251,24 @@ export const ClassUIManager = {
         modalEl.className = 'modal modal-small';
         modalEl.id = 'moveStudentModal';
         modalEl.innerHTML = `
-            <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-content modal-content-confirm">
                 <div class="modal-header">
                     <h2 class="modal-title">
                         <span class="modal-title-icon"><iconify-icon icon="solar:transfer-horizontal-bold"></iconify-icon></span>
                         <span class="modal-title-text">${title}</span>
                     </h2>
-                    <button class="close-button close-move-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
+                    <button class="close-button close-move-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                 </div>
-                <div class="modal-body" style="padding: 16px;">
-                    <p style="margin-bottom: 16px; color: var(--text-secondary);">
+                <div class="modal-body">
+                    <p class="modal-instruction-text">
                         ${description}
                     </p>
-                    <div class="move-class-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="move-class-list">
                         ${classes.map(cls => `
-                            <button class="btn btn-secondary move-target-btn" data-class-id="${cls.id}" style="
-                                justify-content: flex-start;
-                                padding: 12px 16px;
-                                text-align: left;
-                            ">
-                                <iconify-icon icon="solar:mortarboard-bold" style="margin-right: 10px; opacity: 0.7;"></iconify-icon>
+                            <button class="btn btn-secondary move-target-btn" data-class-id="${cls.id}">
+                                <iconify-icon icon="solar:mortarboard-bold"></iconify-icon>
                                 ${this._escapeHtml(cls.name)}
-                                <span style="margin-left: auto; font-size: 0.85em; opacity: 0.6;">${cls.year || ''}</span>
+                                <span class="move-target-year">${cls.year || ''}</span>
                             </button>
                         `).join('')}
                     </div>

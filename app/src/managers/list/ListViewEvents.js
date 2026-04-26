@@ -183,7 +183,11 @@ export const ListViewEvents = {
                 closeAllMenus();
                 const row = target.closest('.student-row');
                 const studentId = row?.dataset.studentId;
-                if (studentId) ClassUIManager.showMoveStudentsModal([studentId]);
+                if (studentId) {
+                    import('../ClassUIManager.js').then(({ ClassUIManager }) => {
+                        ClassUIManager.showMoveStudentsModal([studentId]);
+                    });
+                }
                 return;
             }
 

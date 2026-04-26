@@ -7,7 +7,6 @@ import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
-import { ClassUIManager } from '../ClassUIManager.js';
 import { UI } from '../UIManager.js';
 import { ModalUI as ModalUIManager } from '../ModalUIManager.js';
 import { MassImportManager } from '../MassImportManager.js';
@@ -364,6 +363,7 @@ export const ListSelectionManager = {
     },
 
     async bulkMove(ids) {
+        const { ClassUIManager } = await import('../ClassUIManager.js');
         ClassUIManager.showMoveStudentsModal(ids, () => {
             this.clearSelections();
         });

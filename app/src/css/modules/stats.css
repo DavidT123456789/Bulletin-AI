@@ -938,9 +938,10 @@
     gap: 8px;
     padding: 16px 12px;
     margin: 4px 0;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: var(--text-tertiary);
-    font-weight: 500;
+    font-weight: 400;
+    opacity: 0.8;
     text-align: center;
     line-height: 1.4;
     flex: 1;
