@@ -2975,7 +2975,7 @@
                     <div class="welcome-split-layout">
                         <div class="welcome-split-info">
                             <p class="welcome-split-desc">
-                                L'application a besoin d'une connexion IA.<br>
+                                L'application a besoin d'une connexion&nbsp;IA.<br>
                                 Chaque option propose un accès gratuit.
                             </p>
                             <div class="welcome-info-pill welcome-info-pill--success">
@@ -3011,7 +3011,7 @@
 
                             <div class="welcome-api-key-group">
                                 <input type="text" id="welcomeApiKeyInput"
-                                    placeholder="Collez votre clé API Mistral ici...">
+                                    placeholder="Clé API Mistral...">
                                 <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                             </div>
                             <div class="error-message" id="welcomeApiKeyError"
@@ -3026,7 +3026,7 @@
                                     ma clé</a>
                                 <span class="action-separator">•</span>
                                 <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
-                                    Continuer sans clé
+                                    Configurer plus tard
                                 </button>
                             </div>
                         </div>
@@ -3101,9 +3101,11 @@
                         class="dot"></span><span class="dot"></span></div>
                 <button class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
                 <div id="welcome-finish-options">
-                    <button class="btn btn-secondary" id="welcomeFinishBtn">Terminer</button>
-                    <button class="btn btn-primary" id="welcomeFinishAndHideBtn">Terminer et ne plus
-                        afficher</button>
+                    <button class="btn btn-secondary" id="welcomeFinishBtn">Fermer</button>
+                    <button class="btn btn-primary" id="welcomeFinishAndHideBtn">
+                        <iconify-icon class="iconify-inline" icon="solar:rocket-bold" style="margin-right: 6px;"></iconify-icon>
+                        Commencer
+                    </button>
                 </div>
             </div>
         </div>

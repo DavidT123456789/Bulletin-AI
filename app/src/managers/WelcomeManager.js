@@ -120,17 +120,17 @@ export const WelcomeManager = {
         // Provider configuration
         const providerConfig = {
             mistral: {
-                placeholder: "Collez votre clé API Mistral ici...",
+                placeholder: "Clé API Mistral...",
                 linkUrl: "https://console.mistral.ai/api-keys/",
                 linkIcon: '<iconify-icon icon="solar:cat-linear" style="color: #fd6f00;"></iconify-icon>'
             },
             google: {
-                placeholder: "Collez votre clé API Google ici (AIzaSy...)",
+                placeholder: "Clé API Google (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
                 linkIcon: '<iconify-icon icon="logos:google-icon"></iconify-icon>'
             },
             openrouter: {
-                placeholder: "Collez votre clé API OpenRouter ici (sk-or-...)",
+                placeholder: "Clé API OpenRouter (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
                 linkIcon: '<iconify-icon icon="solar:bolt-linear" style="color: var(--secondary-color);"></iconify-icon>'
             }

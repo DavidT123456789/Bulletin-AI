@@ -340,17 +340,6 @@
 
 
 
-#welcomeNextBtn::after {
-    content: ' →';
-    display: inline-block;
-    margin-left: 6px;
-    transition: transform 0.2s ease;
-}
-
-#welcomeNextBtn:hover::after {
-    transform: translateX(4px);
-}
-
 #welcome-dots {
     display: flex;
     gap: 8px;
@@ -388,11 +377,15 @@
     transition: all var(--transition-fast);
     /* No background - let the modal background show through */
     background: transparent;
-    box-shadow: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     position: relative;
 }
 
-/* État hover/focus - pas d'effet spécial pour un look clean (Supprimé pour éviter lint) */
+.welcome-api-key-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.25);
+}
+
+
 
 /* Input interne - style propre unifié avec le bouton */
 #welcomeModal .welcome-api-key-group input,
@@ -850,11 +843,15 @@
 
 .welcome-split-layout {
     display: grid;
-    grid-template-columns: 1fr 1.3fr;
-    gap: 40px;
-    align-items: center;
-    padding: 0 52px;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: flex-start;
+    padding: 0 40px;
     text-align: left;
+}
+
+.welcome-split-info, .welcome-split-action {
+    min-width: 0; /* Prevents flex/grid blowouts */
 }
 
 /* Breathing room between centered title and split content */
@@ -865,6 +862,7 @@
 .welcome-split-info {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
 }
 
 .welcome-split-desc {
@@ -880,6 +878,15 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
+    margin-top: 8px; /* Slightly lower the right block for better optical alignment with the left text */
+}
+
+/* For Step 3, since the right block is short, vertically center it for better balance */
+#welcome-step-3 .welcome-split-layout {
+    align-items: center;
+}
+#welcome-step-3 .welcome-split-action {
+    margin-top: 0;
 }
 
 /* Animation "Coucou" pour la clé */
@@ -1040,10 +1047,20 @@
         grid-template-columns: 1fr;
         text-align: center;
         gap: 20px;
+        padding: 0 10px;
     }
 
     .welcome-split-info {
         align-items: center;
+    }
+
+    .welcome-title-premium+.welcome-split-layout {
+        margin-top: 24px;
+    }
+
+    .welcome-step h3,
+    .welcome-title-premium {
+        font-size: 1.4em;
     }
 }
 
@@ -1107,7 +1124,6 @@
 }
 
 /* Full-width CTA Button - Extends .btn-organic via HTML class */
-/* NOTE: Ajouter les classes .btn-organic .btn-organic--rounded dans le HTML */
 .btn-cta-full {
     display: flex;
     align-items: center;
