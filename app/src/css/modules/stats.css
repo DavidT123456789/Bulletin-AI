@@ -930,6 +930,37 @@
     color: var(--error-color);
 }
 
+/* Empty State — première période sans données d'évolution */
+.evolution-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 12px;
+    margin: 4px 0;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.evolution-empty-state iconify-icon {
+    font-size: 1.15rem;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+/* Muted variant for homogeneity badge — insufficient data */
+.homogeneity-badge.muted {
+    background: transparent;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
 /* ====================================================================
    DONUT CHART VIEW (Alternative)
    ==================================================================== */

@@ -316,6 +316,9 @@ export const StatsUI = {
 
         const animationPromises = [];
 
+        // --- Empty State: Evolution card ---
+        this._updateEvolutionCardEmptyState(previousPeriod, filtered.length);
+
         // Utilise calculateStats existant
         const stats = this.calculateStats(filtered, activePeriod, previousPeriod);
 
@@ -443,10 +446,15 @@ export const StatsUI = {
         // Update Heterogeneity Badge (dans dispersion-card header)
         const hetBadge = document.getElementById('heterogeneityLabel');
         if (hetBadge && stats.heterogeneity) {
-            hetBadge.textContent = stats.heterogeneity.label;
-            hetBadge.className = `homogeneity-badge ${stats.heterogeneity.colorClass}`;
+            if (stats.heterogeneity.label === 'Indéterminée') {
+                hetBadge.textContent = filtered.length === 0 ? '' : '⩾ 2 notes requises';
+                hetBadge.className = 'homogeneity-badge muted';
+            } else {
+                hetBadge.textContent = stats.heterogeneity.label;
+                hetBadge.className = `homogeneity-badge ${stats.heterogeneity.colorClass}`;
+            }
         } else if (hetBadge) {
-            hetBadge.textContent = '--';
+            hetBadge.textContent = '';
             hetBadge.className = 'homogeneity-badge';
         }
 
@@ -570,5 +578,45 @@ export const StatsUI = {
 
         // Initial check
         updateActiveDot();
+    },
+
+    /**
+     * Gère l'état vide de la carte Dynamique.
+     * Masque les compteurs inutiles quand il n'y a pas de période précédente.
+     * @param {string|null} previousPeriod - Période précédente
+     * @param {number} studentCount - Nombre d'élèves affichés
+     * @private
+     */
+    _updateEvolutionCardEmptyState(previousPeriod, studentCount) {
+        const evolutionCard = document.getElementById('evolutionCard');
+        if (!evolutionCard) return;
+
+        const bar = evolutionCard.querySelector('.evolution-distribution-bar');
+        const legend = evolutionCard.querySelector('.evolution-legend');
+        let emptyMsg = evolutionCard.querySelector('.evolution-empty-state');
+
+        const hasEvolutionData = previousPeriod !== null;
+
+        if (!hasEvolutionData) {
+            if (bar) bar.style.display = 'none';
+            if (legend) legend.style.display = 'none';
+
+            if (!emptyMsg) {
+                emptyMsg = document.createElement('p');
+                emptyMsg.className = 'evolution-empty-state';
+                const insertTarget = bar?.parentNode;
+                if (insertTarget) insertTarget.insertBefore(emptyMsg, bar);
+            }
+
+            const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
+            emptyMsg.innerHTML = studentCount === 0
+                ? `<iconify-icon icon="solar:chart-2-linear"></iconify-icon> Ajoutez des élèves pour voir la dynamique`
+                : `<iconify-icon icon="solar:chart-2-linear"></iconify-icon> Disponible à partir du prochain ${appState.periodSystem === 'semestres' ? 'semestre' : 'trimestre'}`;
+            emptyMsg.style.display = '';
+        } else {
+            if (bar) bar.style.display = '';
+            if (legend) legend.style.display = '';
+            if (emptyMsg) emptyMsg.style.display = 'none';
+        }
     }
 };

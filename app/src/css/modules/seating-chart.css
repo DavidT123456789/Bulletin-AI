@@ -1183,6 +1183,124 @@
 
 .sc-desk iconify-icon { font-size: 1.1em; }
 
+/* ────────── ONBOARDING GHOST HINT ────────── */
+
+@keyframes scBtnPulse {
+    0%   { transform: scale(1); color: var(--text-secondary); }
+    50%  { transform: scale(1.2); color: var(--primary-color); }
+    100% { transform: scale(1); color: var(--text-secondary); }
+}
+
+.sc-action-btn.sc-has-pulse iconify-icon {
+    animation: scBtnPulse 1.8s infinite var(--ease-material);
+}
+
+@keyframes scOnboardingFadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes scOnboardingFadeOut {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    to   { opacity: 0; transform: translate(-50%, -50%) scale(0.95) translateY(6px); }
+}
+
+@keyframes scOnboardingDragHand {
+    0%, 100% { transform: translate(0, 0); opacity: 0.7; }
+    15%      { transform: translate(-2px, -2px); opacity: 1; }
+    50%      { transform: translate(28px, 6px); opacity: 0.9; }
+    55%      { transform: translate(28px, 6px) scale(0.9); opacity: 0.6; }
+    75%      { transform: translate(28px, 6px) scale(1); opacity: 0; }
+    76%      { transform: translate(0, 0); opacity: 0; }
+}
+
+.sc-onboarding-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 32px 20px;
+    border-radius: var(--radius-xl, 16px);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-surface-border, rgba(255, 255, 255, 0.3));
+    box-shadow: 0 8px 40px -8px rgba(0, 0, 0, 0.12), 0 2px 12px rgba(0, 0, 0, 0.04);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    animation: scOnboardingFadeIn 0.5s var(--ease-spring) both;
+    transition: opacity 0.3s, transform 0.3s;
+    max-width: 320px;
+    width: max-content;
+    text-align: center;
+}
+
+[data-theme="dark"] .sc-onboarding-hint {
+    background: rgba(30, 30, 40, 0.78);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 40px -8px rgba(0, 0, 0, 0.4), 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sc-onboarding-hint.sc-hint-exiting {
+    animation: scOnboardingFadeOut 0.35s var(--ease-material) forwards;
+    pointer-events: none;
+}
+
+.sc-onboarding-hint-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--primary-color);
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.sc-onboarding-hint-icon .sc-hint-hand {
+    animation: scOnboardingDragHand 2.8s infinite var(--ease-material);
+}
+
+.sc-onboarding-hint-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
+}
+
+.sc-hint-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.sc-hint-main {
+    text-align: center;
+}
+
+.sc-onboarding-hint-text iconify-icon {
+    font-size: 1.1em;
+    color: var(--text-tertiary);
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+}
+
+.sc-onboarding-hint-text strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 /* ────────── PRINT ────────── */
 /* ── Print header (hidden on screen, injected by JS) ── */
 .sc-print-header { display: none; }
@@ -1280,6 +1398,7 @@
     .sc-floating-actions,
     .avatar-selection-overlay,
     .sc-floating-status,
+    .sc-onboarding-hint,
     .header,
     .sc-cell-pin:not(.pinned .sc-cell-pin) {
         display: none !important;

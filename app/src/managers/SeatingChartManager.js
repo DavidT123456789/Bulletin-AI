@@ -247,6 +247,9 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _toggleConfigPopover() {
+        if (!this._configPopoverOpen) {
+            document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
+        }
         this._configPopoverOpen ? this._closeConfigPopover() : this._openConfigPopover();
     },
 
@@ -312,6 +315,7 @@ export const SeatingChartManager = {
             this._render();
             this._animateViewEnter(viewEl);
             this._scrollToDesk();
+            this._maybeShowOnboardingHint();
         }
 
         document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -552,6 +556,7 @@ export const SeatingChartManager = {
         }
 
         this._selectedChipIds = [];
+        this._dismissOnboardingHint();
         this._render();
         this._updateSidebarLockState();
         this._savePositionsToState();
@@ -1273,6 +1278,7 @@ export const SeatingChartManager = {
         }
 
         this._dragSource = null;
+        this._dismissOnboardingHint();
         this._render();
         this._savePositionsToState();
 
@@ -1461,6 +1467,7 @@ export const SeatingChartManager = {
             placed++;
         }
 
+        this._dismissOnboardingHint();
         this._render();
         this._savePositionsToState();
 
@@ -1652,5 +1659,51 @@ export const SeatingChartManager = {
                 }
             }, 100); // Slight delay to ensure DOM layout and animations have updated height
         });
+    },
+
+    // ========================================================================
+    // ONBOARDING — Contextual Ghost Hint (first visit only)
+    // ========================================================================
+
+    _maybeShowOnboardingHint() {
+        const LS_KEY = 'bulletin_sc_onboarding_seen';
+        if (localStorage.getItem(LS_KEY)) return;
+        if (this._getPlacedIds().size > 0) return;
+
+        const gridArea = document.getElementById('scGridArea');
+        if (!gridArea || gridArea.querySelector('.sc-onboarding-hint')) return;
+
+        const hasConfiguredGrid = !!appState.seatingGrid;
+
+        const hint = document.createElement('div');
+        hint.className = 'sc-onboarding-hint';
+        hint.innerHTML = `
+            <div class="sc-onboarding-hint-text">
+                ${!hasConfiguredGrid ? `<div class="sc-hint-settings">Ajustez le plan de la salle <iconify-icon icon="solar:settings-linear"></iconify-icon></div>` : ''}
+                <div class="sc-hint-main"><strong>${!hasConfiguredGrid ? 'Puis glissez' : 'Glissez'} un élève</strong> sur un bureau</div>
+            </div>
+            <div class="sc-onboarding-hint-icon">
+                <iconify-icon icon="solar:hand-shake-linear" class="sc-hint-hand"></iconify-icon>
+            </div>
+        `;
+
+        hint.addEventListener('click', () => this._dismissOnboardingHint());
+        gridArea.appendChild(hint);
+
+        if (!hasConfiguredGrid) {
+            document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
+        }
+    },
+
+    _dismissOnboardingHint() {
+        const hint = document.querySelector('.sc-onboarding-hint');
+        if (!hint || hint.classList.contains('sc-hint-exiting')) return;
+
+        localStorage.setItem('bulletin_sc_onboarding_seen', '1');
+        hint.classList.add('sc-hint-exiting');
+
+        const cleanup = () => hint.remove();
+        hint.addEventListener('animationend', cleanup, { once: true });
+        setTimeout(cleanup, 400);
     }
 };
