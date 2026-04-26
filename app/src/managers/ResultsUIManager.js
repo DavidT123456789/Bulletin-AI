@@ -787,7 +787,7 @@ export const ResultsUIManager = {
             this.renderResults();
             StorageManager.saveAppState();
             UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
-        }, null, { title: 'Supprimer définitivement les élèves ?', confirmText: 'Tout supprimer', isDanger: true });
+        }, null, { title: 'Supprimer définitivement les élèves', confirmText: 'Tout supprimer', isDanger: true });
     },
 
     /**
@@ -841,7 +841,7 @@ export const ResultsUIManager = {
             this.renderResults();
             StorageManager.saveAppState();
             UI.showNotification(`${clearedCount} appréciations effacées.`, 'success');
-        }, null, { title: 'Effacer les appréciations ?', confirmText: 'Effacer le texte', isDanger: true });
+        }, null, { title: 'Effacer les appréciations', confirmText: 'Effacer le texte', isDanger: true });
     },
     /**
      * Clears journal entries for visible students (Reset AI Context)
@@ -891,6 +891,6 @@ export const ResultsUIManager = {
                 // But this is a bulk action, usually done from the list view.
             }
             UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
-        }, null, { title: 'Effacer les journaux ?', confirmText: 'Effacer Journaux', isDanger: true });
+        }, null, { title: 'Effacer les journaux', confirmText: 'Effacer Journaux', isDanger: true });
     }
 };

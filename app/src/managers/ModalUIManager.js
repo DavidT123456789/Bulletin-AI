@@ -270,49 +270,25 @@ export const ModalUI = {
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
 
             let buttonsHTML = `
-                <button class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button>
+                <button class="btn btn-ghost" id="confirmCancelBtn">${cancelText}</button>
                 <button class="btn ${confirmBtnClass}" id="confirmOkBtn">${confirmText}</button>
             `;
 
             if (extraButton) {
-                buttonsHTML = `<button class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
+                buttonsHTML = `<button class="btn ${extraButton.class || 'btn-ghost'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
             }
 
-            if (compact) {
-                modal.innerHTML = `
-                <div class="modal-content modal-content-confirm modal-compact">
-                    <div class="modal-compact-body">
-                        <div class="modal-icon-wrapper">
-                             <iconify-icon icon="solar:question-circle-linear" style="color: var(--warning-color); font-size: 24px;"></iconify-icon>
-                        </div>
-                        <div class="modal-text-wrapper">
-                            <p>${message}</p>
-                        </div>
-                    </div>
-                    <div class="modal-compact-actions">
-                        ${buttonsHTML}
-                    </div>
-                </div>`;
-            } else {
-                modal.innerHTML = `
-                <div class="modal-content modal-content-confirm">
-                    <div class="modal-header">
-                        <h3 class="modal-title">
-                            <iconify-icon icon="solar:question-circle-linear" class="modal-title-icon" style="color: var(--warning-color);"></iconify-icon>
-                            ${title}
-                        </h3>
-                        <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>${message}</p>
-                    </div>
-                    <div class="modal-footer">
-                        ${buttonsHTML}
-                    </div>
-                </div>`;
-            }
+            // Design minimaliste et élégant (Gold Standard / iOS-like)
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-alert-ios">
+                <div class="modal-alert-body">
+                    <h3 class="modal-alert-title">${title}</h3>
+                    <div class="modal-alert-message">${message}</div>
+                </div>
+                <div class="modal-alert-actions">
+                    ${buttonsHTML}
+                </div>
+            </div>`;
 
             document.body.appendChild(modal);
 
@@ -439,29 +415,22 @@ export const ModalUI = {
             }).join('');
 
             modal.innerHTML = `
-                <div class="modal-content modal-content-confirm">
-                    <div class="modal-header">
-                        <h3 class="modal-title">
-                            <div class="modal-title-icon" style="color: ${iconColorVar};">
-                                <iconify-icon icon="${iconClass}"></iconify-icon>
-                            </div>
-                            ${title}
-                        </h3>
-                        <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
+            <div class="modal-content modal-content-confirm modal-alert-ios">
+                <div class="modal-alert-body">
+                    <div style="color: ${iconColorVar}; font-size: 32px; margin-bottom: -8px;">
+                        <iconify-icon icon="${iconClass}"></iconify-icon>
                     </div>
-                    <div class="modal-body">
-                        <p style="margin-bottom:20px; color: var(--text-secondary);">${message}</p>
-                        <div class="modal-choices-container">
-                            ${choicesHTML}
-                        </div>
+                    <h3 class="modal-alert-title">${title}</h3>
+                    <div class="modal-alert-message">${message}</div>
+                    <div class="modal-choices-container" style="margin-top: 12px;">
+                        ${choicesHTML}
                     </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" id="choicesCancelBtn">${cancelText}</button>
-                        <button class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
-                    </div>
-                </div>`;
+                </div>
+                <div class="modal-alert-actions">
+                    <button class="btn btn-ghost" id="choicesCancelBtn">${cancelText}</button>
+                    <button class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
+                </div>
+            </div>`;
 
             document.body.appendChild(modal);
             this.openModal(modal);
@@ -572,37 +541,34 @@ export const ModalUI = {
             const placeholder = inputPlaceholder || `Tapez ${confirmWord} pour confirmer`;
 
             modal.innerHTML = `
-                <div class="modal-content modal-content-confirm">
-                    <div class="modal-header">
-                        <h3 class="modal-title">
-                            <iconify-icon icon="solar:danger-triangle-bold" class="modal-title-icon" style="color: var(--error-color);"></iconify-icon>
-                            ${title}
-                        </h3>
-                        <button class="close-button" aria-label="Fermer">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
+            <div class="modal-content modal-content-confirm modal-alert-ios">
+                <div class="modal-alert-body">
+                    <div style="color: var(--error-color); font-size: 36px; margin-bottom: -8px;">
+                        <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                     </div>
-                    <div class="modal-body">
-                        <div style="margin-bottom: 20px; color: var(--text-secondary);">${message}</div>
-                        <div class="hard-confirm-input-wrapper">
-                            <label class="hard-confirm-label" for="hardConfirmInput">
-                                Tapez <strong class="hard-confirm-word">${confirmWord}</strong> pour confirmer :
-                            </label>
-                            <input 
-                                type="text" 
-                                id="hardConfirmInput" 
-                                class="hard-confirm-input" 
-                                placeholder="${placeholder}" 
-                                autocomplete="off" 
-                                spellcheck="false"
-                            >
-                        </div>
+                    <h3 class="modal-alert-title">${title}</h3>
+                    <div class="modal-alert-message">${message}</div>
+                    
+                    <div class="hard-confirm-input-wrapper" style="margin-top: 12px;">
+                        <label class="hard-confirm-label" for="hardConfirmInput" style="display: block; margin-bottom: 12px; font-size: 0.9em; color: var(--text-secondary);">
+                            Tapez <strong class="hard-confirm-word" style="color: var(--text-primary); user-select: all;">${confirmWord}</strong> pour confirmer :
+                        </label>
+                        <input 
+                            type="text" 
+                            id="hardConfirmInput" 
+                            class="hard-confirm-input" 
+                            placeholder="${placeholder}" 
+                            autocomplete="off" 
+                            spellcheck="false"
+                            style="width: 100%; box-sizing: border-box; text-align: center; border-radius: 12px; padding: 12px; border: 1px solid var(--border-color); background: var(--bg-secondary); font-size: 1rem; color: var(--text-primary);"
+                        >
                     </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
-                        <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
-                    </div>
-                </div>`;
+                </div>
+                <div class="modal-alert-actions" style="margin-top: 12px;">
+                    <button class="btn btn-ghost" id="hardConfirmCancelBtn">${cancelText}</button>
+                    <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
+                </div>
+            </div>`;
 
             document.body.appendChild(modal);
             this.openModal(modal);

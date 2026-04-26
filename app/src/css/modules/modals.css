@@ -75,12 +75,49 @@
 }
 
 .modal-content-confirm {
-    max-width: 540px;
+    max-width: 460px;
 }
 
-.modal-content-confirm .modal-body p {
+.modal-alert-ios {
+    border-radius: 28px;
+    padding: 32px 32px 24px;
+    gap: 24px;
+    text-align: left;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .modal-alert-ios {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-alert-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-alert-title {
     margin: 0;
-    line-height: 1.6;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.modal-alert-message {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.modal-alert-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
 }
 
 .modal-input {

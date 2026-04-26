@@ -327,7 +327,7 @@ export const ListSelectionManager = {
 
         const dataLines = [
             withAppreciation > 0 ? `<li>${withAppreciation} appréciation${withAppreciation > 1 ? 's' : ''} générée${withAppreciation > 1 ? 's' : ''}</li>` : '',
-            withJournal > 0 ? `<li>${withJournal} journal${withJournal > 1 ? 'x' : ''} de bord</li>` : '',
+            withJournal > 0 ? `<li>${withJournal} ${withJournal > 1 ? 'journaux' : 'journal'} de bord</li>` : '',
             withPhoto > 0 ? `<li>${withPhoto} photo${withPhoto > 1 ? 's' : ''}</li>` : ''
         ].filter(Boolean).join('');
 
@@ -343,7 +343,7 @@ export const ListSelectionManager = {
             null,
             null,
             {
-                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`,
+                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''}`,
                 confirmText: 'Supprimer',
                 isDanger: true
             }
@@ -673,7 +673,7 @@ export const ListSelectionManager = {
             UI?.updateStats?.();
             const parts = [];
             if (counts.appreciation > 0) parts.push(`${counts.appreciation} appréciation${counts.appreciation > 1 ? 's' : ''}`);
-            if (counts.journal > 0) parts.push(`${counts.journal} journal${counts.journal > 1 ? 'x' : ''}`);
+            if (counts.journal > 0) parts.push(`${counts.journal} ${counts.journal > 1 ? 'journaux' : 'journal'}`);
             if (counts.context > 0) parts.push(`${counts.context} contexte${counts.context > 1 ? 's' : ''}`);
             if (counts.photo > 0) parts.push(`${counts.photo} photo${counts.photo > 1 ? 's' : ''}`);
 
