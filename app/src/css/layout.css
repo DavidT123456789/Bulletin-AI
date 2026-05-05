@@ -1065,7 +1065,7 @@
 }
 
 .cloud-reconnect-item:hover {
-    color: var(--warning-hover);
+    color: var(--primary-color);
 }
 
 .cloud-reconnect-item iconify-icon {
@@ -1073,11 +1073,12 @@
     display: inline-flex;
     min-width: 24px;
     justify-content: center;
-    transition: opacity var(--transition-fast);
+    transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
 .cloud-reconnect-item:hover iconify-icon {
-    opacity: 0.85;
+    color: var(--icon-btn-hover);
+    opacity: 1;
 }
 
 /* Separator Line */
