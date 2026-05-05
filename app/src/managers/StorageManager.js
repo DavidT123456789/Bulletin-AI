@@ -96,20 +96,17 @@ export const StorageManager = {
 
             } else {
                 userSettings.academic.subjects = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
-                userSettings.ui.theme = 'light'; // Always default to light for new users
+                userSettings.ui.theme = 'light';
             }
 
             const dbResults = await DBService.getAll('generatedResults');
             if (dbResults && dbResults.length > 0) {
                 runtimeState.data.generatedResults = dbResults;
                 runtimeState.data.generatedResults = this.migrateData(runtimeState.data.generatedResults);
-                // Dédupliquer pour éviter les cartes en double
                 const originalCount = runtimeState.data.generatedResults.length;
                 runtimeState.data.generatedResults = Utils.deduplicateResults(runtimeState.data.generatedResults);
 
-                // Si des doublons ont été supprimés, sauvegarder les données nettoyées dans IndexedDB
                 if (runtimeState.data.generatedResults.length < originalCount) {
-
                     await DBService.clear('generatedResults');
                     await DBService.putAll('generatedResults', runtimeState.data.generatedResults);
                 }
@@ -117,14 +114,29 @@ export const StorageManager = {
                 runtimeState.data.generatedResults = [];
             }
 
-            // CORRECTIF: Initialiser filteredResults au démarrage
+            // Purge detection: classes exist but IndexedDB was evicted
+            const classes = userSettings.academic.classes || [];
+            const hasClasses = classes.length > 0;
+            const hasNoStudents = runtimeState.data.generatedResults.length === 0;
+            const hadSyncBefore = !!localStorage.getItem('bulletin_sync_provider');
+
+            if (hasClasses && hasNoStudents && hadSyncBefore) {
+                runtimeState._dataPurgeDetected = true;
+                setTimeout(() => {
+                    UI?.showNotification(
+                        'Données élèves manquantes — Ouvrez le menu puis « Restaurer depuis le Cloud »',
+                        'warning',
+                        8000
+                    );
+                }, 1500);
+            }
+
             const currentClassId = userSettings.academic.currentClassId;
             if (currentClassId) {
                 runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
                     r => r.classId === currentClassId
                 );
             } else {
-                // Pas de classe sélectionnée: afficher tous les résultats sans classId
                 runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
                     r => !r.classId
                 );
@@ -135,12 +147,82 @@ export const StorageManager = {
             if (UI) UI.showNotification("Erreur au chargement des données.", 'error');
         }
 
-
         this._ensureDefaultState();
         this._ensureConfigUpgrades();
 
         this._isFirstLoadSave = true;
         this.saveAppState();
+
+        this._requestPersistentStorage();
+        this._checkPendingRestore();
+    },
+
+    async _requestPersistentStorage() {
+        if (!navigator.storage?.persist) return;
+        try {
+            const alreadyPersisted = await navigator.storage.persisted();
+            if (alreadyPersisted) return;
+            await navigator.storage.persist();
+        } catch { /* non-critical */ }
+    },
+
+    async savePreRestoreSnapshot() {
+        try {
+            const results = runtimeState.data.generatedResults || [];
+            if (results.length === 0) return;
+
+            const snapshot = {
+                key: 'pre_restore_backup',
+                createdAt: Date.now(),
+                settings: {
+                    theme: userSettings.ui.theme,
+                    periodSystem: userSettings.academic.periodSystem,
+                    subjects: userSettings.academic.subjects,
+                    seatingGrid: userSettings.academic.seatingGrid || null
+                },
+                classes: userSettings.academic.classes || [],
+                currentClassId: userSettings.academic.currentClassId,
+                generatedResults: results
+            };
+            await DBService.put('appData', snapshot);
+            localStorage.setItem('bulletin_restore_pending', Date.now().toString());
+        } catch { /* best-effort */ }
+    },
+
+    async _checkPendingRestore() {
+        const flag = localStorage.getItem('bulletin_restore_pending');
+        if (!flag) return;
+        localStorage.removeItem('bulletin_restore_pending');
+
+        const elapsed = Date.now() - parseInt(flag);
+        if (elapsed > 3600000) return;
+
+        try {
+            const backup = await DBService.get('appData', 'pre_restore_backup');
+            if (!backup?.generatedResults?.length) return;
+
+            const count = backup.generatedResults.length;
+            setTimeout(() => {
+                UI?.showCustomConfirm(
+                    `Vos données ont été restaurées depuis le Cloud.<br><br>L'état précédent (<strong>${count} élève${count > 1 ? 's' : ''}</strong>) a été sauvegardé automatiquement.`,
+                    async () => {
+                        await DBService.delete('appData', 'pre_restore_backup');
+                    },
+                    async () => {
+                        await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true });
+                        await DBService.delete('appData', 'pre_restore_backup');
+                        UI?.showNotification('État précédent restauré.', 'success');
+                        setTimeout(() => window.location.reload(), 800);
+                    },
+                    {
+                        title: 'Restauration effectuée',
+                        confirmText: 'C\'est bon',
+                        cancelText: 'Annuler la restauration',
+                        isDanger: false
+                    }
+                );
+            }, 1200);
+        } catch { /* snapshot unavailable */ }
     },
 
     _ensureDefaultState() {

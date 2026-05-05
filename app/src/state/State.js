@@ -124,6 +124,9 @@ export const runtimeState = {
         ollama: false,
     },
 
+    /** Détecté si les données IndexedDB ont été purgées par le navigateur */
+    _dataPurgeDetected: false,
+
     /** Données de travail */
     data: {
         generatedResults: [],

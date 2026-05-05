@@ -334,16 +334,55 @@ export const GeneralListeners = {
             } catch { /* Ignore */ }
         });
 
-        // --- Save button: auto-reconnect then save ---
+        // --- Save button: guard empty data + confirmation + auto-reconnect ---
         cloudSaveBtn.addEventListener('click', async () => {
             const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
             const originalLabel = labelEl?.textContent;
 
             try {
                 const { SyncService } = await import('../../services/SyncService.js');
+                const { runtimeState, userSettings } = await import('../../state/State.js');
+
+                const studentCount = runtimeState.data.generatedResults?.length || 0;
+                const classCount = userSettings.academic.classes?.length || 0;
+
+                if (studentCount === 0) {
+                    closeMenu();
+                    const isPurge = runtimeState._dataPurgeDetected;
+                    const message = isPurge
+                        ? `Vos données élèves semblent avoir été <strong>effacées par le navigateur</strong> après une longue inactivité.<br><br>Envoyer des données vides écraserait votre sauvegarde Cloud.<br><br>Souhaitez-vous <strong>restaurer</strong> vos données depuis le Cloud ?`
+                        : `Vos données locales sont <strong>vides</strong> (0 élève).<br><br>Envoyer des données vides écraserait votre sauvegarde Cloud existante.<br><br>Souhaitez-vous plutôt <strong>restaurer</strong> vos données depuis le Cloud ?`;
+                    const shouldRestore = await UI.showCustomConfirm(
+                        message,
+                        null, null,
+                        {
+                            title: isPurge ? 'Données effacées par le navigateur' : 'Données locales vides',
+                            confirmText: 'Restaurer depuis le Cloud',
+                            cancelText: 'Annuler',
+                            isDanger: false
+                        }
+                    );
+                    if (shouldRestore) {
+                        document.getElementById('cloudLoadMenuBtn')?.click();
+                    }
+                    return;
+                }
+
+                closeMenu();
+                const confirmed = await UI.showCustomConfirm(
+                    `Envoyer vos données vers le Cloud ?<br><br><strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.<br><span style="opacity:0.7;">Ceci remplacera la sauvegarde Cloud existante.</span>`,
+                    null, null,
+                    {
+                        title: 'Sauvegarder vers le Cloud',
+                        confirmText: 'Sauvegarder',
+                        cancelText: 'Annuler',
+                        isDanger: false
+                    }
+                );
+                if (!confirmed) return;
+
                 cloudSaveBtn.classList.add('saving');
 
-                // Auto-reconnect if needed
                 if (!SyncService.isConnected()) {
                     if (labelEl) labelEl.textContent = 'Connexion...';
                     const connected = await ensureConnected(SyncService);
@@ -353,7 +392,7 @@ export const GeneralListeners = {
                     }
                 }
 
-                if (labelEl) labelEl.textContent = 'Enreg...';
+                if (labelEl) labelEl.textContent = 'Envoi...';
                 await SyncService.saveToCloud();
 
                 const hintEl = document.getElementById('cloudSaveTimeHint');
@@ -363,12 +402,10 @@ export const GeneralListeners = {
                     hintEl.classList.remove('cloud-save-stale');
                 }
 
-                // Clear reminder indicators after successful save
                 cloudSaveBtn.classList.remove('cloud-stale');
                 DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
 
                 UI.showNotification('Données envoyées sur le Cloud !', 'success');
-                closeMenu();
             } catch (error) {
                 UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
             } finally {
@@ -392,27 +429,37 @@ export const GeneralListeners = {
                         if (!connected) return;
                     }
 
+                    closeMenu();
                     UI.showCustomConfirm(
-                        "⚠️ ÉCRASER LES DONNÉES LOCALES ?\n\nVous êtes sur le point de récupérer la sauvegarde du Cloud.\nCeci remplacera TOUTES vos données actuelles (élèves, paramètres) par celles du Cloud.\n\nCette action est irréversible.",
+                        `Restaurer vos données depuis le Cloud ?<br><br>Ceci remplacera <strong>toutes</strong> vos données locales actuelles (élèves, paramètres) par celles du Cloud.<br><br><span style="opacity:0.7;">Vos données locales seront écrasées.</span>`,
                         async () => {
                             try {
                                 cloudLoadBtn.classList.add('saving');
-                                if (labelEl) labelEl.textContent = 'Récupération...';
+                                if (labelEl) labelEl.textContent = 'Restauration...';
+
+                                const { StorageManager } = await import('../../managers/StorageManager.js');
+                                await StorageManager.savePreRestoreSnapshot();
 
                                 const result = await SyncService.loadFromCloud();
                                 if (result.success) {
-                                    UI.showNotification('Données récupérées avec succès !', 'success');
+                                    UI.showNotification('Données restaurées avec succès !', 'success');
                                     setTimeout(() => window.location.reload(), 1000);
                                 } else {
                                     UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
                                 }
-                                closeMenu();
                             } catch (error) {
-                                UI.showNotification('Erreur de récupération : ' + error.message, 'error');
+                                UI.showNotification('Erreur de restauration : ' + error.message, 'error');
                             } finally {
                                 cloudLoadBtn.classList.remove('saving');
                                 if (labelEl) labelEl.textContent = originalLabel;
                             }
+                        },
+                        null,
+                        {
+                            title: 'Restaurer depuis le Cloud',
+                            confirmText: 'Oui, restaurer',
+                            cancelText: 'Annuler',
+                            isDanger: true
                         }
                     );
                 } catch (error) {

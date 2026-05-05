@@ -180,20 +180,20 @@ export const SyncService = {
             const config = {
                 connected: {
                     icon: 'solar:cloud-check-bold',
-                    label: 'Enregistrer (Cloud)'
+                    label: 'Sauvegarder'
                 },
                 expired: {
                     icon: 'solar:cloud-warning-bold',
-                    label: 'Enregistrer (Cloud)'
+                    label: 'Sauvegarder'
                 },
                 syncing: {
                     icon: 'solar:spinner-bold-duotone',
-                    label: 'Enregistrement...',
+                    label: 'Envoi...',
                     spin: true
                 },
                 local: {
                     icon: 'solar:cloud-upload-bold',
-                    label: 'Enregistrer (Cloud)'
+                    label: 'Sauvegarder'
                 }
             };
 
