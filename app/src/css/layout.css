@@ -951,7 +951,7 @@
 }
 
 .cloud-save-menu-item:hover>iconify-icon {
-    color: var(--text-primary);
+    color: var(--icon-btn-hover);
 }
 
 .cloud-save-menu-item .cloud-save-label {

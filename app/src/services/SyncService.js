@@ -179,11 +179,11 @@ export const SyncService = {
 
             const config = {
                 connected: {
-                    icon: 'solar:cloud-check-bold',
+                    icon: 'solar:cloud-check-linear',
                     label: 'Sauvegarder'
                 },
                 expired: {
-                    icon: 'solar:cloud-warning-bold',
+                    icon: 'solar:cloud-warning-linear',
                     label: 'Sauvegarder'
                 },
                 syncing: {
@@ -192,7 +192,7 @@ export const SyncService = {
                     spin: true
                 },
                 local: {
-                    icon: 'solar:cloud-upload-bold',
+                    icon: 'solar:cloud-upload-linear',
                     label: 'Sauvegarder'
                 }
             };
