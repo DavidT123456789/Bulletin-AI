@@ -553,7 +553,7 @@ export const SettingsModalListeners = {
 
             historyRows += `
                 <tr class="overview-row ${isCurrent ? 'current-period' : ''}">
-                    <td class="period-cell">${period}${isCurrent ? ' <span class="actuel-badge">ACTUEL</span>' : ''}</td>
+                    <td class="period-cell">${period}${isCurrent ? ' <span class="current-badge">ACTUEL</span>' : ''}</td>
                     <td class="grade-cell" style="text-align:center;">${gradeHtml}</td>
                     <td class="appreciation-cell">${pApp}</td>
                 </tr>

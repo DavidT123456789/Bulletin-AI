@@ -354,10 +354,10 @@
 }
 
 .preview-history-table {
-    width: 100%;
+    width: calc(100% + 32px);
+    margin: 8px -16px 0 -16px;
     border-collapse: collapse;
     font-size: 0.85em;
-    margin-top: 8px;
 }
 
 .preview-history-table th,
@@ -365,6 +365,16 @@
     padding: 6px 8px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+}
+
+.preview-history-table th:first-child,
+.preview-history-table td:first-child {
+    padding-left: 16px;
+}
+
+.preview-history-table th:last-child,
+.preview-history-table td:last-child {
+    padding-right: 16px;
 }
 
 .preview-history-table th {

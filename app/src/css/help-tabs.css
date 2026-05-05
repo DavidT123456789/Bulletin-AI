@@ -282,6 +282,15 @@
     font-size: 0.75rem;
 }
 
+.about-build-date {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+}
+
 .about-tagline {
     font-size: 0.95rem;
     color: var(--text-secondary);
