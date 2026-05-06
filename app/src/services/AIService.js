@@ -276,16 +276,8 @@ export const AIService = {
                 outTokens = res.eval_count || 0;
             }
 
-            // Calcul du coût de la session et accumulation des tokens
+            // Calcul du coût de la session
             const totalTokens = inTokens + outTokens;
-            appState.sessionTokens += totalTokens;
-            if (DOM.sessionTokens) DOM.sessionTokens.textContent = appState.sessionTokens.toLocaleString('fr-FR');
-
-            const modelKey = (options.modelOverride || appState.currentAIModel).replace('openai-', '');
-            if (COSTS_PER_MILLION_TOKENS[modelKey]) {
-                const cost = (inTokens / 1e6 * COSTS_PER_MILLION_TOKENS[modelKey].input) + (outTokens / 1e6 * COSTS_PER_MILLION_TOKENS[modelKey].output);
-                appState.sessionCost += cost;
-            }
 
             return {
                 text,

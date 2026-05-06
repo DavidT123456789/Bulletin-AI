@@ -196,7 +196,6 @@ export function initDOM() {
     DOM.ollamaModelsInfo = document.getElementById('ollamaModelsInfo');
     DOM.ollamaModelsText = document.getElementById('ollamaModelsText');
     DOM.ollamaApiStatus = document.getElementById('ollamaApiStatus');
-    DOM.sessionTokens = document.getElementById('sessionTokens');
     DOM.testAllConnectionsBtn = document.getElementById('testAllConnectionsBtn');
     DOM.activeModelName = document.getElementById('activeModelName');
     DOM.studentDetailsModal = document.getElementById('studentDetailsModal');

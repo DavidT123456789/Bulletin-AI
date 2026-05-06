@@ -137,7 +137,6 @@ export const FormUI = {
         if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
-        if (DOM.sessionTokens) DOM.sessionTokens.textContent = (appState.sessionTokens || 0).toLocaleString('fr-FR');
 
         // Confidentialité
         if (DOM.settingsPrivacyAnonymizeToggle) {

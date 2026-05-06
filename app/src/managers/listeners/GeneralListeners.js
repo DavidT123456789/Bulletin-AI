@@ -350,16 +350,20 @@ export const GeneralListeners = {
                     closeMenu();
                     const isPurge = runtimeState._dataPurgeDetected;
                     const message = isPurge
-                        ? `Vos données élèves semblent avoir été <strong>effacées par le navigateur</strong> après une longue inactivité.<br><br>Envoyer des données vides écraserait votre sauvegarde Cloud.<br><br>Souhaitez-vous <strong>restaurer</strong> vos données depuis le Cloud ?`
-                        : `Vos données locales sont <strong>vides</strong> (0 élève).<br><br>Envoyer des données vides écraserait votre sauvegarde Cloud existante.<br><br>Souhaitez-vous plutôt <strong>restaurer</strong> vos données depuis le Cloud ?`;
+                        ? `Vos données élèves semblent avoir été <strong>effacées par le navigateur</strong> après une longue inactivité.`
+                        : `Vos données locales sont <strong>vides</strong> (0 élève).`;
                     const shouldRestore = await UI.showCustomConfirm(
                         message,
                         null, null,
                         {
-                            title: isPurge ? 'Données effacées par le navigateur' : 'Données locales vides',
+                            title: isPurge ? 'Restaurer depuis le Cloud ?' : 'Données locales vides',
                             confirmText: 'Restaurer depuis le Cloud',
                             cancelText: 'Annuler',
-                            isDanger: false
+                            isDanger: false,
+                            detailsHtml: `
+                                <p style="margin-bottom:8px;">Envoyer des données vides écraserait votre sauvegarde Cloud existante.</p>
+                                <p>Nous vous recommandons de <strong>restaurer</strong> vos données depuis le Cloud pour récupérer votre travail.</p>
+                            `
                         }
                     );
                     if (shouldRestore) {
@@ -370,13 +374,14 @@ export const GeneralListeners = {
 
                 closeMenu();
                 const confirmed = await UI.showCustomConfirm(
-                    `Envoyer vos données vers le Cloud ?<br><br><strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.<br><span style="opacity:0.7;">Ceci remplacera la sauvegarde Cloud existante.</span>`,
+                    `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
                     null, null,
                     {
-                        title: 'Sauvegarder vers le Cloud',
+                        title: 'Sauvegarder vers le Cloud ?',
                         confirmText: 'Sauvegarder',
                         cancelText: 'Annuler',
-                        isDanger: false
+                        isDanger: false,
+                        detailsHtml: `<p>Ceci remplacera la sauvegarde Cloud existante. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`
                     }
                 );
                 if (!confirmed) return;
@@ -431,7 +436,7 @@ export const GeneralListeners = {
 
                     closeMenu();
                     UI.showCustomConfirm(
-                        `Restaurer vos données depuis le Cloud ?<br><br>Ceci remplacera <strong>toutes</strong> vos données locales actuelles (élèves, paramètres) par celles du Cloud.<br><br><span style="opacity:0.7;">Vos données locales seront écrasées.</span>`,
+                        `Ceci remplacera <strong>toutes</strong> vos données locales actuelles.`,
                         async () => {
                             try {
                                 cloudLoadBtn.classList.add('saving');
@@ -456,10 +461,14 @@ export const GeneralListeners = {
                         },
                         null,
                         {
-                            title: 'Restaurer depuis le Cloud',
+                            title: 'Restaurer depuis le Cloud ?',
                             confirmText: 'Oui, restaurer',
                             cancelText: 'Annuler',
-                            isDanger: true
+                            isDanger: true,
+                            detailsHtml: `
+                                <p style="margin-bottom:8px;">Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>
+                                <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>
+                            `
                         }
                     );
                 } catch (error) {

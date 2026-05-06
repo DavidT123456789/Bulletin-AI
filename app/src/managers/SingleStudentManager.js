@@ -412,7 +412,7 @@ export const SingleStudentManager = {
      * @param {string} id - Identifiant de l'élève
      */
     delete(id) {
-        UI.showCustomConfirm('Supprimer cette appréciation ?', async () => {
+        UI.showCustomConfirm('L\'élève et ses données seront supprimés définitivement.', async () => {
             const visibleIds = new Set(appState.filteredResults.map(r => r.id));
             const student = appState.generatedResults.find(r => r.id === id);
 
@@ -445,6 +445,6 @@ export const SingleStudentManager = {
             }
 
             StorageManager.saveAppState();
-        }, null, { compact: true });
+        }, null, { title: 'Supprimer cet élève ?', isDanger: true, compact: true });
     }
 };

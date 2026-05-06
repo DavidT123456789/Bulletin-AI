@@ -193,11 +193,11 @@ export const SettingsUIManager = {
      * Réinitialise le style personnalisé aux valeurs par défaut.
      */
     resetPersonalStyle() {
-        UI.showCustomConfirm("Réinitialiser votre style personnalisé ?", () => {
+        UI.showCustomConfirm("Les réglages de « Ma Patte » seront restaurés aux valeurs par défaut.", () => {
             appState.subjects['MonStyle'] = { iaConfig: JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG)) };
             UI.updateSettingsPromptFields();
             UI.showNotification("Style réinitialisé.", "success");
-        }, null, { compact: true });
+        }, null, { title: 'Réinitialiser le style ?', compact: true });
     },
 
     /**

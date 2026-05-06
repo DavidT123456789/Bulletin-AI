@@ -77,8 +77,6 @@ export const userSettings = {
 export const runtimeState = {
     /** Statistiques de session */
     session: {
-        sessionCost: 0,
-        sessionTokens: 0,
         isDemoMode: false,
         isUpdateAvailable: false,
     },
@@ -184,8 +182,6 @@ const propertyMap = {
     privacy: () => userSettings,
 
     // runtimeState.session
-    sessionCost: () => runtimeState.session,
-    sessionTokens: () => runtimeState.session,
     isDemoMode: () => runtimeState.session,
     isUpdateAvailable: () => runtimeState.session,
 

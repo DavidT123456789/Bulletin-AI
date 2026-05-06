@@ -25,7 +25,6 @@ vi.mock('../state/State.js', () => ({
         openrouterApiKey: '',
         anthropicApiKey: '',
         mistralApiKey: '',
-        sessionTokens: 0,
         settingsPrivacyAnonymize: false
     }
 }));
@@ -56,7 +55,6 @@ vi.mock('../utils/DOM.js', () => ({
         anthropicApiKey: { value: '' },
         mistralApiKey: { value: '' },
         appVersionDisplay: { textContent: '' },
-        sessionTokens: { textContent: '' },
         settingsPrivacyAnonymizeToggle: { checked: false },
         settingsModal: {
             querySelectorAll: vi.fn(() => []),

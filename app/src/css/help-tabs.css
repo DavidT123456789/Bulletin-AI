@@ -237,14 +237,13 @@
 
 
 /* === About Section Redesign (Premium) === */
-/* === About Section Redesign (Premium) === */
 .about-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     /* Push items to edges */
     gap: 16px;
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     padding-bottom: 0px;
     border-bottom: none;
 }
@@ -256,16 +255,26 @@
 }
 
 .about-logo {
-    width: 80px;
-    height: auto;
-    filter: drop-shadow(0 4px 6px rgba(var(--primary-color-rgb), 0.2));
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(var(--primary-color-rgb), 0.15));
+}
+
+.about-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .about-title-group h3 {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-family: 'Outfit', sans-serif;
     letter-spacing: -0.02em;
-    margin: 0 0 2px 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -273,22 +282,25 @@
 }
 
 .about-version {
+    -webkit-text-fill-color: var(--primary-color);
     display: inline-block;
     background: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 20px;
     font-weight: 600;
     font-size: 0.75rem;
+    letter-spacing: normal;
+    box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .about-build-date {
-    font-size: 0.7rem;
-    color: var(--text-tertiary);
-    margin-top: 3px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
     font-family: 'SF Mono', 'Fira Code', monospace;
     letter-spacing: 0.02em;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .about-tagline {
@@ -302,31 +314,36 @@
 /* Feedback button styling in header */
 .about-header .btn {
     margin-top: 0;
-    background: transparent;
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    font-weight: 500;
-    padding: 6px 12px;
-    font-size: 0.85em;
+    font-weight: 600;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
 
 .about-header .btn:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: var(--text-tertiary);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .about-actions {
-    display: none;
+    display: flex;
+    gap: 8px;
 }
 
 .support-card-premium {
-    /* Warm, welcoming gradient */
-    background: linear-gradient(135deg, #FFFCF7 0%, #FFF4F6 100%);
-    border: 1px solid rgba(255, 94, 91, 0.15);
-    padding: 16px 20px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    padding: 28px 32px;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
     margin-bottom: 12px;
     position: relative;
     overflow: hidden;
@@ -334,15 +351,30 @@
     max-width: 90%;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 48px;
+    margin-top: 32px;
+}
+
+/* Add a subtle organic background shape to the card */
+.support-card-premium::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 0%, rgba(255, 94, 91, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.support-card-premium > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* Dark mode adjustment for support card - Premium glassmorphism */
 [data-theme="dark"] .support-card-premium {
-    background: linear-gradient(135deg,
-            rgba(99, 102, 241, 0.12) 0%,
-            rgba(168, 85, 247, 0.12) 50%,
-            rgba(236, 72, 153, 0.08) 100%);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
     box-shadow:
@@ -351,34 +383,30 @@
 }
 
 [data-theme="dark"] .support-card-premium::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(168, 85, 247, 0.3) 50%,
-            transparent 100%);
+    background: radial-gradient(circle at 50% 0%, rgba(255, 94, 91, 0.1) 0%, transparent 50%);
 }
 
 .support-card-premium h4 {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
+    font-family: 'Outfit', sans-serif;
     margin-top: 0;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     color: var(--text-primary);
+    font-weight: 600;
 }
 
 .support-card-premium p {
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.4;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Bouton Ko-fi */
@@ -387,20 +415,18 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 8px 20px;
-    font-size: 0.9rem;
+    padding: 10px 24px;
+    font-size: 0.95rem;
     font-weight: 600;
 
-    /* État Pastel (Défaut) */
-    background: #FFFFFF;
-    color: #EA580C;
-    border: 1px solid #FED7AA;
-
-    border-radius: var(--radius-md);
+    background: #FF5E5B !important; /* Ko-fi Brand Color */
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: var(--radius-lg);
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 10px rgba(255, 94, 91, 0.25) !important;
     position: relative;
     overflow: hidden;
 }
@@ -411,58 +437,76 @@
     position: absolute;
     top: 0;
     left: -100%;
-    width: 100%;
+    width: 50%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-    transition: left 0.6s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.7s ease;
     z-index: 1;
 }
 
 .btn-kofi:hover::before {
-    left: 100%;
+    left: 200%;
 }
 
 .btn-kofi:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(135deg, #FF9A6C 0%, #FF6B8B 100%) !important;
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 6px 20px rgba(255, 107, 139, 0.3);
+    transform: translateY(-2px) scale(1.02);
+    background: #FF4A47 !important;
+    color: white !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 16px rgba(255, 94, 91, 0.35) !important;
 }
 
 .btn-kofi:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 6px rgba(255, 94, 91, 0.2);
 }
 
 /* === Dark Mode Specifics for Ko-fi Button === */
 [data-theme="dark"] .btn-kofi {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    background: #FF5E5B;
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 94, 91, 0.2);
 }
 
 [data-theme="dark"] .btn-kofi:hover {
-    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%) !important;
-    color: white;
-    border-color: transparent;
-    box-shadow:
-        0 8px 24px rgba(139, 92, 246, 0.35),
-        0 4px 12px rgba(236, 72, 153, 0.25);
-    transform: translateY(-2px);
+    background: #FF4A47 !important;
+    box-shadow: 0 6px 16px rgba(255, 94, 91, 0.3) !important;
 }
 
 [data-theme="dark"] .btn-kofi::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .about-footer {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-tertiary);
     text-align: center;
-    margin-top: auto;
-    padding-top: 32px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.about-footer p {
+    margin: 0;
+}
+
+.license-text {
+    margin-top: 5px;
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.license-text a {
+    color: inherit;
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.license-text a:hover {
+    opacity: 0.8;
 }

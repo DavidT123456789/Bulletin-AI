@@ -330,21 +330,20 @@ export const ListSelectionManager = {
             withPhoto > 0 ? `<li>${withPhoto} photo${withPhoto > 1 ? 's' : ''}</li>` : ''
         ].filter(Boolean).join('');
 
-        const dataSection = dataLines
-            ? `<p class="modal-confirm-detail-label">Données perdues :</p><ul class="modal-confirm-detail-list">${dataLines}</ul>`
-            : '';
+        const detailsContent = `
+            <p style="margin-top:0; margin-bottom:12px;">Supprimer définitivement ${namesList} ?</p>
+            ${dataLines ? `<p class="modal-confirm-detail-label">Données perdues :</p><ul class="modal-confirm-detail-list">${dataLines}</ul>` : ''}
+        `;
 
         const confirmed = await ModalUIManager.showCustomConfirm(
-            `<div>
-                <p>Supprimer définitivement ${namesList} ?</p>
-                ${dataSection}
-            </div>`,
+            'Cette action est irréversible et effacera toutes les données associées.',
             null,
             null,
             {
-                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''}`,
+                title: `Supprimer ${ids.length} élève${ids.length > 1 ? 's' : ''} ?`,
                 confirmText: 'Supprimer',
-                isDanger: true
+                isDanger: true,
+                detailsHtml: detailsContent
             }
         );
 

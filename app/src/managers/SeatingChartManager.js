@@ -1609,7 +1609,7 @@ export const SeatingChartManager = {
         const placedCount = this._getPlacedIds().size;
         if (placedCount === 0) return;
 
-        UI.showCustomConfirm(`Retirer les ${placedCount} élèves de la grille ?`, () => {
+        UI.showCustomConfirm('Les élèves seront retirés du plan mais resteront dans la liste.', () => {
             this._snapshotGrid();
             const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
             let delay = 0;
@@ -1626,7 +1626,7 @@ export const SeatingChartManager = {
                 this._savePositionsToState();
                 this._staggerCellEntrance();
             }, Math.min(delay * 30 + 300, 600));
-        });
+        }, null, { title: `Vider le plan de classe (${placedCount}) ?`, isDanger: false });
     },
 
     // ========================================================================

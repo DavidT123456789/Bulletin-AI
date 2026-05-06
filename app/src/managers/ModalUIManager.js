@@ -255,7 +255,8 @@ export const ModalUI = {
                 extraButton = null,
                 isDanger = true, // Par défaut true pour matcher le comportement legacy d'UIManager (bouton rouge)
                 compact = false,
-                modalClass = ''
+                modalClass = '',
+                detailsHtml = '' // Permet d'ajouter un accordéon "En savoir plus"
             } = options;
 
             const modalId = 'customConfirmModal';
@@ -278,15 +279,42 @@ export const ModalUI = {
                 buttonsHTML = `<button class="btn ${extraButton.class || 'btn-ghost'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
             }
 
+            // Optional message
+            const messageHtml = message ? `<div class="modal-alert-message">${message}</div>` : '';
+
+            // Accordion content (without the button)
+            const accordionContentHtml = detailsHtml ? `
+                <div class="modal-alert-details" id="modalAlertDetails">
+                    <div class="modal-alert-details-content-wrapper">
+                        <div class="modal-alert-details-content-inner">
+                            <div class="modal-alert-details-content">
+                                ${detailsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            // Details button for the footer
+            const detailsBtnHtml = detailsHtml ? `
+                <button type="button" class="btn btn-ghost modal-details-toggle" id="modalAlertDetailsBtn">
+                    <span>Détails</span> <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                </button>
+            ` : '';
+
             // Design minimaliste et élégant (Gold Standard / iOS-like)
             modal.innerHTML = `
             <div class="modal-content modal-content-confirm modal-alert-ios">
                 <div class="modal-alert-body">
                     <h3 class="modal-alert-title">${title}</h3>
-                    <div class="modal-alert-message">${message}</div>
+                    ${messageHtml}
+                    ${accordionContentHtml}
                 </div>
-                <div class="modal-alert-actions">
-                    ${buttonsHTML}
+                <div class="modal-alert-actions" style="justify-content: ${detailsHtml ? 'space-between' : 'flex-end'}; width: 100%; align-items: center;">
+                    ${detailsHtml ? `<div class="modal-alert-actions-left">${detailsBtnHtml}</div>` : ''}
+                    <div class="modal-alert-actions-right" style="display: flex; gap: 12px;">
+                        ${buttonsHTML}
+                    </div>
                 </div>
             </div>`;
 
@@ -299,6 +327,18 @@ export const ModalUI = {
             const cancelBtn = document.getElementById('confirmCancelBtn');
             const extraBtn = document.getElementById('confirmExtraBtn');
             const closeBtn = modal.querySelector('.close-button');
+            const detailsBtn = document.getElementById('modalAlertDetailsBtn');
+
+            // Toggle fluid accordion and button active state
+            if (detailsBtn) {
+                detailsBtn.addEventListener('click', () => {
+                    const detailsContainer = document.getElementById('modalAlertDetails');
+                    if (detailsContainer) {
+                        detailsContainer.classList.toggle('is-open');
+                        detailsBtn.classList.toggle('is-open');
+                    }
+                });
+            }
 
             // Wrappers pour gérer à la fois Callback et Promise, et la fermeture
             let keyHandler; // Définition en amont pour le cleanup

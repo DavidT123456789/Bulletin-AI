@@ -1085,18 +1085,6 @@
     padding: 0;
 }
 
-/* Session cost container */
-.session-cost-label {
-    font-size: 0.85em;
-    color: var(--text-secondary);
-}
-
-/* Session cost value with monospace font */
-.session-cost-value {
-    font-family: monospace;
-    color: var(--text-primary);
-}
-
 /* API key header links container */
 .api-key-links {
     display: flex;

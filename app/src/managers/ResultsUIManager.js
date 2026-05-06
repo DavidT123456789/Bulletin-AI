@@ -516,7 +516,11 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(`Régénérer les ${toRegen.length} appréciations ${onlyErrors ? 'en erreur' : 'visibles'} ?`, async () => {
+        const regenTitle = onlyErrors
+            ? `Corriger ${toRegen.length} erreur${toRegen.length > 1 ? 's' : ''} ?`
+            : `Régénérer ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
+
+        UI.showCustomConfirm('Les appréciations existantes seront remplacées par de nouvelles générations.', async () => {
             // Create new abort controller for this regeneration
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
@@ -621,7 +625,7 @@ export const ResultsUIManager = {
             // Pas besoin de re-render complet, les lignes sont mises à jour individuellement
             UI.updateStats();
             UI.updateControlButtons();
-        });
+        }, null, { title: regenTitle, isDanger: false });
     },
 
     /**
@@ -655,16 +659,16 @@ export const ResultsUIManager = {
         const errorCount = toRegen.filter(r => r.errorMessage).length;
         const dirtyCount = toRegen.length - errorCount;
 
-        let message = `Actualiser ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
+        let dirtyTitle = `Actualiser ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
         if (errorCount > 0 && dirtyCount > 0) {
-            message = `Actualiser ${dirtyCount} appréciation${dirtyCount > 1 ? 's' : ''} modifiée${dirtyCount > 1 ? 's' : ''} et ${errorCount} en erreur ?`;
+            dirtyTitle = `Actualiser ${dirtyCount} modifiée${dirtyCount > 1 ? 's' : ''} + ${errorCount} en erreur ?`;
         } else if (errorCount > 0) {
-            message = `Régénérer ${errorCount} appréciation${errorCount > 1 ? 's' : ''} en erreur ?`;
+            dirtyTitle = `Corriger ${errorCount} erreur${errorCount > 1 ? 's' : ''} ?`;
         } else {
-            message = `Actualiser ${dirtyCount} appréciation${dirtyCount > 1 ? 's' : ''} modifiée${dirtyCount > 1 ? 's' : ''} ?`;
+            dirtyTitle = `Actualiser ${dirtyCount} appréciation${dirtyCount > 1 ? 's' : ''} ?`;
         }
 
-        UI.showCustomConfirm(message, async () => {
+        UI.showCustomConfirm('Les appréciations concernées seront régénérées avec les données actuelles.', async () => {
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
 
@@ -757,7 +761,7 @@ export const ResultsUIManager = {
             // CRITICAL FIX: Update button state after regeneration completes
             // This ensures the "Actualiser" button disappears when no more dirty appreciations exist
             this.updateGenerateButtonState();
-        });
+        }, null, { title: dirtyTitle, isDanger: false });
     },
 
     clearAllResults() {
@@ -769,25 +773,31 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(`
-            <div style="text-align:left;">
-                <p><strong>Attention : Action destructrice !</strong></p>
-                <p>Vous êtes sur le point de supprimer définitivement <strong>${count} élèves</strong> de la liste.</p>
-                <p>Cette action supprimera :</p>
-                <ul style="margin-left:20px; margin-bottom:10px;">
-                    <li>Les données de scolarité (notes, absences...)</li>
-                    <li>Les appréciations générées</li>
-                    <li>L'historique des modifications</li>
-                </ul>
-                <p>Si vous souhaitez uniquement effacer les textes générés, utilisez l'option "Effacer les appréciations".</p>
-            </div>
-        `, () => {
-            appState.generatedResults = appState.generatedResults.filter(r => !visibleIds.has(r.id));
-
-            this.renderResults();
-            StorageManager.saveAppState();
-            UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
-        }, null, { title: 'Supprimer définitivement les élèves', confirmText: 'Tout supprimer', isDanger: true });
+        UI.showCustomConfirm(
+            'Cette action est irréversible et supprimera définitivement vos données.',
+            () => {
+                appState.generatedResults = appState.generatedResults.filter(r => !visibleIds.has(r.id));
+    
+                this.renderResults();
+                StorageManager.saveAppState();
+                UI.showNotification(`${count} élèves ont été supprimés.`, 'success');
+            },
+            null,
+            { 
+                title: `Supprimer ${count} élève${count > 1 ? 's' : ''} ?`, 
+                confirmText: 'Tout supprimer', 
+                isDanger: true,
+                detailsHtml: `
+                    <p style="margin-bottom:8px;">Cette action supprimera :</p>
+                    <ul style="margin-left:20px; margin-bottom:10px;">
+                        <li>Les données de scolarité (notes, absences...)</li>
+                        <li>Les appréciations générées</li>
+                        <li>L'historique des modifications</li>
+                    </ul>
+                    <p style="opacity:0.8;">Si vous souhaitez uniquement effacer les textes générés, utilisez l'option "Effacer les appréciations".</p>
+                `
+            }
+        );
     },
 
     /**
@@ -803,45 +813,50 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(`Voulez-vous effacer le texte des ${count} appréciations visibles ?<br><span style="font-size:0.9em; opacity:0.8;">Les notes et les données élèves seront conservées.</span>`, () => {
-            let clearedCount = 0;
-            const now = Date.now();
+        UI.showCustomConfirm(
+            'Cette action effacera le texte de toutes les appréciations visibles.',
+            () => {
+                let clearedCount = 0;
+                const now = Date.now();
 
-            appState.generatedResults.forEach(r => {
-                if (visibleIds.has(r.id)) {
-                    // Clear global appreciation
-                    r.appreciation = '';
+                appState.generatedResults.forEach(r => {
+                    if (visibleIds.has(r.id)) {
+                        r.appreciation = '';
 
-                    // Clear period-specific appreciation WITH timestamp for sync
-                    if (r.studentData && r.studentData.periods && r.studentData.periods[currentPeriod]) {
-                        r.studentData.periods[currentPeriod].appreciation = '';
-                        r.studentData.periods[currentPeriod]._lastModified = now;
+                        if (r.studentData?.periods?.[currentPeriod]) {
+                            r.studentData.periods[currentPeriod].appreciation = '';
+                            r.studentData.periods[currentPeriod]._lastModified = now;
+                        }
+
+                        r._lastModified = now;
+                        r.copied = false;
+                        r.promptHash = null;
+                        r.generationSnapshot = null;
+                        r.generationPeriod = null;
+                        r.wasGenerated = false;
+                        r.appreciationSource = null;
+
+                        if (r.historyPerPeriod?.[currentPeriod]) {
+                            r.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                        }
+                        r.historyState = null;
+
+                        clearedCount++;
                     }
+                });
 
-                    // Update result timestamp for sync
-                    r._lastModified = now;
-
-                    r.copied = false;
-                    r.promptHash = null;
-                    r.generationSnapshot = null;
-                    r.generationPeriod = null;
-                    r.wasGenerated = false;
-                    r.appreciationSource = null;
-
-                    // Clear per-period history to prevent S1 history showing in S2
-                    if (r.historyPerPeriod?.[currentPeriod]) {
-                        r.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-                    }
-                    r.historyState = null;
-
-                    clearedCount++;
-                }
-            });
-
-            this.renderResults();
-            StorageManager.saveAppState();
-            UI.showNotification(`${clearedCount} appréciations effacées.`, 'success');
-        }, null, { title: 'Effacer les appréciations', confirmText: 'Effacer le texte', isDanger: true });
+                this.renderResults();
+                StorageManager.saveAppState();
+                UI.showNotification(`${clearedCount} appréciations effacées.`, 'success');
+            },
+            null,
+            {
+                title: `Effacer ${count} appréciation${count > 1 ? 's' : ''} ?`,
+                confirmText: 'Effacer le texte',
+                isDanger: true,
+                detailsHtml: `<p>Les notes, données élèves et journaux de bord ne seront pas modifiés. Seul le texte des appréciations générées sera supprimé.</p>`
+            }
+        );
     },
     /**
      * Clears journal entries for visible students (Reset AI Context)
@@ -855,42 +870,48 @@ export const ResultsUIManager = {
             return;
         }
 
-        UI.showCustomConfirm(`
-            <div style="text-align:left;">
-                <p><strong>Réinitialiser le contexte IA ?</strong></p>
-                <p>Vous allez supprimer tous les <strong>journaux de bord</strong> des ${count} élèves affichés.</p>
-                <p>Cela effacera :</p>
-                <ul style="margin-left:20px; margin-bottom:10px;">
-                    <li>Les observations manuelles</li>
-                    <li>L'historique des interactions pour ces élèves</li>
-                </ul>
-                <p style="font-size:0.9em; opacity:0.8;">Les appréciations déjà générées et les notes ne seront PAS modifiées.</p>
-            </div>
-        `, () => {
-            let clearedCount = 0;
-            appState.generatedResults.forEach(r => {
-                if (visibleIds.has(r.id)) {
-                    if (r.journal && r.journal.length > 0) {
-                        r.journal = [];
-                        clearedCount++;
+        UI.showCustomConfirm(
+            'Cette action effacera les journaux de bord de ces élèves.',
+            () => {
+                let clearedCount = 0;
+                appState.generatedResults.forEach(r => {
+                    if (visibleIds.has(r.id)) {
+                        if (r.journal && r.journal.length > 0) {
+                            r.journal = [];
+                            clearedCount++;
+                        }
                     }
+                });
+    
+                this.renderResults();
+                StorageManager.saveAppState();
+                // Force refresh of focus panel if open, as it might show the journal
+                const focusPanel = document.getElementById('focusPanel');
+                if (focusPanel && focusPanel.classList.contains('open')) {
+                    // Trigger a refresh event or similar if needed, 
+                    // but re-rendering the list might be enough as interactions usually reload the panel data
+                    // However, FocusPanelJournal listens to 'journalThresholdChanged' but not necessarily generic updates
+                    // We'll rely on global UI refresh if possible, or user re-opening.
+                    // Actually ListViewManager.openFocusPanel re-renders. 
+                    // If the panel is open for a student whose journal was just cleared, it might be stale.
+                    // But this is a bulk action, usually done from the list view.
                 }
-            });
-
-            this.renderResults();
-            StorageManager.saveAppState();
-            // Force refresh of focus panel if open, as it might show the journal
-            const focusPanel = document.getElementById('focusPanel');
-            if (focusPanel && focusPanel.classList.contains('open')) {
-                // Trigger a refresh event or similar if needed, 
-                // but re-rendering the list might be enough as interactions usually reload the panel data
-                // However, FocusPanelJournal listens to 'journalThresholdChanged' but not necessarily generic updates
-                // We'll rely on global UI refresh if possible, or user re-opening.
-                // Actually ListViewManager.openFocusPanel re-renders. 
-                // If the panel is open for a student whose journal was just cleared, it might be stale.
-                // But this is a bulk action, usually done from the list view.
+                UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
+            },
+            null,
+            { 
+                title: `Réinitialiser le contexte IA (${count}) ?`, 
+                confirmText: 'Effacer Journaux', 
+                isDanger: true,
+                detailsHtml: `
+                    <p style="margin-bottom:8px;">Cela effacera :</p>
+                    <ul style="margin-left:20px; margin-bottom:10px;">
+                        <li>Les observations manuelles</li>
+                        <li>L'historique des interactions pour ces élèves</li>
+                    </ul>
+                    <p style="opacity:0.8;">Les appréciations déjà générées et les notes ne seront PAS modifiées.</p>
+                `
             }
-            UI.showNotification(`${clearedCount} journaux de bord effacés.`, 'success');
-        }, null, { title: 'Effacer les journaux', confirmText: 'Effacer Journaux', isDanger: true });
+        );
     }
 };

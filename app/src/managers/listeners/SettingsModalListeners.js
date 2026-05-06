@@ -1093,9 +1093,8 @@ export const SettingsModalListeners = {
         const cloudLoadBtn = document.getElementById('cloudLoadBtn');
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
-                // Confirm before overwriting local data
                 UI.showCustomConfirm(
-                    'Charger les données depuis Google Drive ? Vos données locales seront remplacées.',
+                    'Vos données locales seront remplacées par celles du Cloud.',
                     async () => {
                         try {
                             cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Chargement...';
@@ -1106,18 +1105,24 @@ export const SettingsModalListeners = {
 
                             if (result.success) {
                                 UI.showNotification('Données chargées depuis Google Drive !', 'success');
-                                // Reload page to reflect new data
                                 setTimeout(() => window.location.reload(), 1000);
                             } else {
                                 UI.showNotification('Aucune donnée trouvée sur Google Drive.', 'warning');
                             }
                         } catch (error) {
-                            console.error('Cloud load error:', error);
                             UI.showNotification('Erreur de chargement : ' + error.message, 'error');
                         } finally {
                             cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Charger';
                             cloudLoadBtn.disabled = false;
                         }
+                    },
+                    null,
+                    {
+                        title: 'Restaurer depuis Google Drive ?',
+                        confirmText: 'Oui, restaurer',
+                        cancelText: 'Annuler',
+                        isDanger: true,
+                        detailsHtml: '<p>Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>'
                     }
                 );
             });

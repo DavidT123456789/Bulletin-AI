@@ -201,11 +201,11 @@ export const ListViewManager = {
 
         // Confirmation via modale personnalisée
         const confirmed = await ModalUI.showCustomConfirm(
-            `Êtes-vous sûr de vouloir supprimer définitivement <strong>${studentName}</strong> ?`,
+            'Cette action est irréversible et supprimera toutes les données associées.',
             null,
             null,
             {
-                title: 'Supprimer l\'élève',
+                title: `Supprimer ${studentName} ?`,
                 confirmText: 'Supprimer',
                 cancelText: 'Annuler',
                 isDanger: true
