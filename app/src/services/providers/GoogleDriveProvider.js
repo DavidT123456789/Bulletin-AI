@@ -44,11 +44,13 @@ export const GoogleDriveProvider = {
                 return;
             }
 
+            const timeout = setTimeout(() => reject(new Error('Google API load timeout')), 8000);
+
             // Load Google Identity Services
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Failed to load Google API'));
+            script.onload = () => { clearTimeout(timeout); resolve(); };
+            script.onerror = () => { clearTimeout(timeout); reject(new Error('Failed to load Google API')); };
             document.head.appendChild(script);
         });
     },
@@ -64,6 +66,8 @@ export const GoogleDriveProvider = {
                 return;
             }
 
+            const timeout = setTimeout(() => reject(new Error('GAPI client load timeout')), 8000);
+
             const script = document.createElement('script');
             script.src = 'https://apis.google.com/js/api.js';
             script.onload = () => {
@@ -73,13 +77,15 @@ export const GoogleDriveProvider = {
                             apiKey: GOOGLE_API_KEY,
                             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
                         });
+                        clearTimeout(timeout);
                         resolve();
                     } catch (e) {
+                        clearTimeout(timeout);
                         reject(e);
                     }
                 });
             };
-            script.onerror = () => reject(new Error('Failed to load GAPI'));
+            script.onerror = () => { clearTimeout(timeout); reject(new Error('Failed to load GAPI')); };
             document.head.appendChild(script);
         });
     },

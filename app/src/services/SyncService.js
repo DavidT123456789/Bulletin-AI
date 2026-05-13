@@ -73,6 +73,13 @@ export const SyncService = {
         // Start network and token monitoring
         this._startMonitoring();
 
+        // OFFLINE GUARD: Skip connect() entirely when offline.
+        // Loading Google API scripts from CDN would hang indefinitely.
+        if (!this._isOnline) {
+            this._updateCloudIndicator('local');
+            return;
+        }
+
         if (savedProvider && PROVIDERS[savedProvider]) {
             try {
                 const connected = await this.connect(savedProvider, { silent: true });

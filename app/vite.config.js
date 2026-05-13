@@ -50,6 +50,30 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: { maxAgeSeconds: 86400 * 365 }
             }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-static',
+              expiration: { maxAgeSeconds: 86400 * 365 }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/code\.iconify\.design\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'iconify-cdn-cache',
+              expiration: { maxAgeSeconds: 86400 * 30 }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/api\.iconify\.design\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'iconify-api-cache',
+              expiration: { maxEntries: 500, maxAgeSeconds: 86400 * 30 }
+            }
           }
         ]
       }
