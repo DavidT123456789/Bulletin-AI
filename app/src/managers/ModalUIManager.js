@@ -216,7 +216,7 @@ export const ModalUI = {
                 this.activeModal = null;
 
                 // Supprimer les modales de confirmation dynamiques
-                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal'];
+                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal', 'promptPreviewModal'];
                 if (dynamicModals.includes(modal.id) && modal.parentNode) {
                     modal.parentNode.removeChild(modal);
                 }
@@ -670,6 +670,7 @@ export const ModalUI = {
             document.getElementById('customChoicesModal'),
             document.getElementById('hardConfirmModal'),
             document.getElementById('classDashboardModal'),
+            document.getElementById('promptPreviewModal'),
             DOM.classAnalysisModal,
             DOM.importPreviewModal
         ];

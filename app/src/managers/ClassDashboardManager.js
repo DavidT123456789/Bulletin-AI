@@ -10,7 +10,6 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { StorageManager } from './StorageManager.js';
-import { ModalUI } from './ModalUIManager.js';
 
 /**
  * Class Dashboard Manager
@@ -705,49 +704,8 @@ RÈGLES STRICTES :
 
         const prompt = this.buildAIPrompt(this.cachedStats);
 
-        // Simple HTML reset/escape for display
-        const escapedText = Utils.escapeHtml(prompt);
-
-        // Create HTML content for the modal
-        const message = `
-            <div style="text-align: left;">
-                <p style="margin-bottom: 10px; font-size: 0.9em; color: var(--text-secondary);">
-                    Voici le prompt exact qui sera envoyé à l'IA. Vous pouvez le copier pour tester dans une autre interface.
-                </p>
-                <textarea readonly id="promptPreviewTextarea" style="
-                    width: 100%; 
-                    height: 400px; 
-                    padding: 12px; 
-                    border-radius: var(--radius-sm); 
-                    border: 1px solid var(--border-color); 
-                    background: var(--bg-secondary); 
-                    color: var(--text-primary); 
-                    font-family: 'SF Mono', Consolas, monospace; 
-                    font-size: 0.85rem; 
-                    line-height: 1.5;
-                    white-space: pre-wrap;
-                    resize: vertical;">${escapedText}</textarea>
-            </div>
-        `;
-
-        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
-            title: 'Prévisualisation du Prompt',
-            confirmText: 'Copier',
-            cancelText: 'Fermer',
-            isDanger: false,
-            compact: false
-        });
-
-        if (confirmed) {
-            try {
-                // We use the raw text for clipboard
-                await navigator.clipboard.writeText(prompt);
-                UI.showNotification('Prompt copié dans le presse-papier', 'success');
-            } catch (err) {
-                console.error('Failed to copy: ', err);
-                UI.showNotification('Échec de la copie', 'error');
-            }
-        }
+        const { FocusPanelRefinement } = await import('./FocusPanelRefinement.js');
+        await FocusPanelRefinement.displayPromptModal(prompt, 'Prévisualisation du Prompt');
     },
 
 

@@ -56,29 +56,81 @@ export const FocusPanelRefinement = {
     async displayPromptModal(promptText, title) {
         const escapedText = Utils.escapeHtml(promptText);
 
-        const message = `
-            <div class="prompt-preview-container">
-                <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
+        const modalId = 'promptPreviewModal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal modal-prompt-preview';
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <span class="modal-title-icon color-accent"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
+                        <span class="modal-title-text">${title}</span>
+                    </h2>
+                    <button class="close-button" aria-label="Fermer">
+                        <iconify-icon icon="ph:x"></iconify-icon>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="prompt-preview-container">
+                        <div class="prompt-preview-content" tabindex="0">${escapedText}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>
+                    <button class="btn btn-primary" id="promptPreviewCopyBtn">
+                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                        Copier
+                    </button>
+                </div>
             </div>
         `;
 
-        const confirmed = await ModalUI.showCustomConfirm(message, null, null, {
-            title: title,
-            confirmText: 'Copier',
-            cancelText: 'Fermer',
-            isDanger: false,
-            compact: false,
-            modalClass: 'modal-prompt-preview'
-        });
+        document.body.appendChild(modal);
+        ModalUI.openModal(modal);
 
-        if (confirmed) {
-            try {
-                await navigator.clipboard.writeText(promptText);
-                UI.showNotification('Prompt copié dans le presse-papier', 'success');
-            } catch (err) {
-                UI.showNotification('Échec de la copie', 'error');
-            }
-        }
+        return new Promise((resolve) => {
+            const copyBtn = document.getElementById('promptPreviewCopyBtn');
+            const closeBtn = document.getElementById('promptPreviewCloseBtn');
+            const xBtn = modal.querySelector('.close-button');
+            let closed = false;
+
+            const handleCopy = async () => {
+                try {
+                    await navigator.clipboard.writeText(promptText);
+                    UI.showNotification('Prompt copié dans le presse-papier', 'success');
+                    copyBtn.innerHTML = '<iconify-icon icon="solar:check-read-linear"></iconify-icon> Copié';
+                    copyBtn.classList.replace('btn-primary', 'btn-success');
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon> Copier';
+                        copyBtn.classList.replace('btn-success', 'btn-primary');
+                    }, 2000);
+                } catch (err) {
+                    UI.showNotification('Échec de la copie', 'error');
+                }
+            };
+
+            const handleClose = () => {
+                if (closed) return;
+                closed = true;
+                resolve();
+                ModalUI.closeModal(modal);
+            };
+
+            copyBtn.addEventListener('click', handleCopy);
+            closeBtn.addEventListener('click', handleClose, { once: true });
+            xBtn?.addEventListener('click', handleClose, { once: true });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) handleClose();
+            });
+            modal.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') handleClose();
+            });
+        });
     },
 
     /**
