@@ -297,11 +297,15 @@ export const FocusPanelManager = {
             }
 
             if (changed) {
-                // Refresh Status (Badge) - This dispatch event for List View update
-                FocusPanelStatus.refreshAppreciationStatus();
-                // Note: We deliberately update the model LIVE so ListViewManager._isResultDirty sees changes immediately
-                // LIVE UPDATE: Update the List View row immediately to show/hide dirty indicator
-                this._updateListRow(result);
+                // Debounce UI updates to prevent typing lag
+                clearTimeout(this._uiUpdateTimeout);
+                this._uiUpdateTimeout = setTimeout(() => {
+                    // Refresh Status (Badge) - This dispatch event for List View update
+                    FocusPanelStatus.refreshAppreciationStatus();
+                    // Note: We deliberately update the model LIVE so ListViewManager._isResultDirty sees changes immediately
+                    // LIVE UPDATE: Update the List View row immediately to show/hide dirty indicator
+                    this._updateListRow(result);
+                }, 300);
             }
         };
 
@@ -396,9 +400,13 @@ export const FocusPanelManager = {
                         }
                     }
 
-                    FocusPanelStatus.updateSourceIndicator(result);
-                    FocusPanelStatus.updateAppreciationStatus(result);
-                    this._updateListRow(result);
+                    // Debounce UI updates to prevent typing lag
+                    clearTimeout(this._appreciationUITimeout);
+                    this._appreciationUITimeout = setTimeout(() => {
+                        FocusPanelStatus.updateSourceIndicator(result);
+                        FocusPanelStatus.updateAppreciationStatus(result);
+                        this._updateListRow(result);
+                    }, 300);
                 }
             });
 
@@ -468,8 +476,12 @@ export const FocusPanelManager = {
         if (contextInput) {
             contextInput.addEventListener('input', () => {
                 this._autoResizeTextarea(contextInput);
-                this._saveContext(); // Immediate save to prevent data loss
-                FocusPanelStatus.refreshAppreciationStatus(); // Check dirty state
+                // Note: state is updated live in handleDataChange. 
+                // Saving to localStorage on every keystroke causes severe UI lag, moved to blur.
+            });
+            contextInput.addEventListener('blur', () => {
+                this._saveContext();
+                FocusPanelStatus.refreshAppreciationStatus();
             });
         }
 
