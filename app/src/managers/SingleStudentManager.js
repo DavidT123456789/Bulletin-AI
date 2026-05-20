@@ -168,10 +168,10 @@ export const SingleStudentManager = {
                 // Transfer all generation metadata for dirty detection
                 StudentDataManager.transferGenerationMetadata(existingResult, newResult);
                 newResult.id = existingResult.id;
-            } else {
             }
 
             AppreciationsManager.renderResults(newResult.id, 'new');
+            UI.showNotification('Appréciation générée !', 'success');
             this.resetForm(true);
 
         } catch (error) {
@@ -242,6 +242,7 @@ export const SingleStudentManager = {
 
                 await ListViewManager.updateRow(newResult.id, newResult, true);
                 UI.updateStats();
+                UI.showNotification('Appréciation mise à jour !', 'success');
             }
         } catch (error) {
             const msg = Utils.translateErrorMessage(error.message);
@@ -328,6 +329,8 @@ export const SingleStudentManager = {
 
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result) return;
+
+        UI.showNotification(`Modification de ${result.prenom} ${result.nom.toUpperCase()}.`, 'info');
 
         appState.currentEditingId = id;
 
@@ -444,6 +447,7 @@ export const SingleStudentManager = {
                 }
             }
 
+            UI.showNotification('Supprimée.', 'success');
             StorageManager.saveAppState();
         }, null, { title: 'Supprimer cet élève ?', isDanger: true, compact: true });
     }

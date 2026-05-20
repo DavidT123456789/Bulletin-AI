@@ -277,9 +277,13 @@ export const StorageManager = {
         }
 
         // Migration de modèles obsolètes vers la version stable actuelle
-        const deprecatedModels = ['gemini-1.5-flash', 'gemini-1.5-flash-001', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-3.1-flash'];
+        const deprecatedModels = [
+            'gemini-1.5-flash', 'gemini-1.5-flash-001', 'gemini-2.0-flash', 
+            'gemini-2.0-flash-lite', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
+            'gemini-3.1-flash-lite-preview'
+        ];
         if (deprecatedModels.includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-2.5-flash';
+            userSettings.api.currentAIModel = 'gemini-3.5-flash';
         }
         // Migration Claude 4.5 → 4.6
         if (userSettings.api.currentAIModel === 'anthropic-claude-sonnet-4.5') {
@@ -292,7 +296,7 @@ export const StorageManager = {
         if (userSettings.api.currentAIModel === 'devstral-free') {
             userSettings.api.currentAIModel = 'llama-3.3-70b-free';
         }
-        // Migration ancien Gemini 3 Pro
+        // Migration anciens Gemini Pro / Previews
         if (userSettings.api.currentAIModel === 'gemini-3-pro') {
             userSettings.api.currentAIModel = 'gemini-3.1-pro-preview';
         }

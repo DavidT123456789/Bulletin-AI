@@ -37,7 +37,11 @@ vi.mock('../utils/DOM.js', () => ({
 vi.mock('../utils/Utils.js', () => ({
     Utils: {
         normalizeName: (nom, prenom) => `${nom}_${prenom}`.toLowerCase(),
-        translateErrorMessage: (msg) => msg
+        translateErrorMessage: (msg) => msg,
+        detectGender: (prenom) => 'M',
+        getPeriodLabel: (period, long) => period,
+        getPeriods: () => ['T1', 'T2', 'T3'],
+        countWords: (text) => text.split(/\s+/).length
     }
 }));
 

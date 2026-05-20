@@ -30,6 +30,7 @@ export const GlobalListeners = {
         this._setupBodyClickListener();
         this._setupResizeListener();
         this._setupStudentsUpdatedListener();
+        this._setupRoleButtonKeyboardListener();
     },
 
     /**
@@ -140,6 +141,31 @@ export const GlobalListeners = {
                 }
 
                 EventHandlersManager.handleResultListKeyboardNav(e);
+            }
+        });
+    },
+
+    _setupRoleButtonKeyboardListener() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const target = e.target;
+                if (!target || !target.closest) return;
+
+                const button = target.closest('[role="button"]');
+                if (!button) return;
+
+                const tagName = target.tagName;
+                const isNativeButton = tagName === 'BUTTON' || (tagName === 'INPUT' && ['button', 'submit', 'reset', 'checkbox', 'radio'].includes(target.type));
+                const isNativeLink = tagName === 'A' && target.hasAttribute('href');
+
+                // Éviter le double déclenchement sur les contrôles natifs
+                if (isNativeButton) return;
+                if (isNativeLink && e.key === 'Enter') return;
+
+                if (e.key === ' ') {
+                    e.preventDefault(); // Évite le défilement de page
+                }
+                button.click();
             }
         });
     },

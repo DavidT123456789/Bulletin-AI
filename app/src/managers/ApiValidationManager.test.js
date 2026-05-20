@@ -54,7 +54,7 @@ vi.mock('../services/AIService.js', () => ({
         callAI: vi.fn(),
         getAvailableModels: vi.fn(),
         _hasApiKeyForModel: vi.fn(() => true),
-        getOpenRouterCredits: vi.fn(() => Promise.resolve({ usage: 0 }))
+        getOpenRouterCredits: vi.fn(() => Promise.resolve(10.5))
     }
 }));
 
@@ -188,7 +188,7 @@ describe('ApiValidationManager', () => {
                 expect.objectContaining({
                     isValidation: true,
                     validationProvider: 'openai',
-                    modelOverride: 'openai-gpt-3.5-turbo'
+                    modelOverride: 'openai-o3-mini'
                 })
             );
         });

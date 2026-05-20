@@ -661,6 +661,7 @@ export const ModalUI = {
     },
 
     closeAllModals() {
+        this.stackedModal = null; // Prevent restoring stacked modals when closing all
         const modals = [
             DOM.settingsModal,
             DOM.studentDetailsModal,

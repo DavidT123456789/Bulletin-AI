@@ -213,7 +213,7 @@ describe('UIManager', () => {
 
             const modal = document.getElementById('customConfirmModal');
             expect(modal).not.toBeNull();
-            expect(modal.querySelector('.modal-body p').textContent).toBe('Are you sure?');
+            expect(modal.querySelector('.modal-alert-message').textContent).toBe('Are you sure?');
         });
 
         it('should display custom button texts', () => {

@@ -48,7 +48,8 @@ vi.mock('../utils/Utils.js', () => ({
         validateGrade: vi.fn(() => true),
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         normalizeName: vi.fn((nom, prenom) => `${nom}_${prenom}`.toLowerCase()),
-        translateErrorMessage: vi.fn(msg => msg)
+        translateErrorMessage: vi.fn(msg => msg),
+        detectGender: vi.fn(() => 'M')
     }
 }));
 

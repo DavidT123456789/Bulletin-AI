@@ -66,7 +66,7 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-2.5-flash';
+                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-3.5-flash';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
@@ -106,7 +106,15 @@ export const ApiValidationManager = {
                     // Si la validation réussit, on vérifie les crédits
                     const credits = await AIService.getOpenRouterCredits();
                     if (credits !== null) {
-                        errorEl.innerHTML = `<iconify-icon icon="ph:check-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${credits.toFixed(3)}$</strong>`;
+                        let creditsNum = 0;
+                        if (typeof credits === 'number') {
+                            creditsNum = credits;
+                        } else if (credits && typeof credits === 'object') {
+                            creditsNum = typeof credits.usage === 'number' ? credits.usage : (typeof credits.credits === 'number' ? credits.credits : 0);
+                        } else if (credits && !isNaN(Number(credits))) {
+                            creditsNum = Number(credits);
+                        }
+                        errorEl.innerHTML = `<iconify-icon icon="ph:check-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${creditsNum.toFixed(3)}$</strong>`;
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
                     }
@@ -171,7 +179,7 @@ export const ApiValidationManager = {
                     const modelIds = models.map(m => m.name.replace('models/', ''));
 
                     // Check if we can fallback to a known working model
-                    const fallbackModel = 'gemini-2.5-flash';
+                    const fallbackModel = 'gemini-3.5-flash';
                     if (modelIds.includes(fallbackModel)) {
                         appState.currentAIModel = fallbackModel;
 
@@ -215,7 +223,7 @@ export const ApiValidationManager = {
                             // Le modèle n'est pas disponible - ce n'est pas un problème de quota
                             appState.apiKeyStatus[provider] = 'invalid';
                             SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-3-flash-preview".`;
+                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-3.5-flash" ou "gemini-2.5-pro".`;
                             errorEl.style.display = 'block';
                             errorEl.style.color = 'var(--error-color)';
                             inputEl.classList.add('input-error');

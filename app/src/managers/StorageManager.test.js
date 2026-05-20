@@ -161,7 +161,9 @@ describe('StorageManager', () => {
                 'bulletin-assistant-state',
                 expect.any(String)
             );
-            const savedData = JSON.parse(localStorage.setItem.mock.calls[0][1]);
+            const stateCall = localStorage.setItem.mock.calls.find(c => c[0] === 'bulletin-assistant-state');
+            expect(stateCall).toBeDefined();
+            const savedData = JSON.parse(stateCall[1]);
             expect(savedData.settings.theme).toBe('dark');
             expect(savedData.generatedResults).toBeUndefined(); // Should NOT be in LS
 

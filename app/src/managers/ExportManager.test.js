@@ -58,7 +58,8 @@ vi.mock('../utils/Utils.js', () => ({
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         getPeriodLabel: vi.fn((p, short) => short ? p : `Trimestre ${p.slice(1)}`),
         decodeHtmlEntities: vi.fn(text => text),
-        stripMarkdown: vi.fn(text => text)
+        stripMarkdown: vi.fn(text => text),
+        getRelevantEvolution: vi.fn(() => null)
     }
 }));
 

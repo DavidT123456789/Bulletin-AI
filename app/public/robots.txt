@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /app.html
+
+Sitemap: https://bulletin-ai.app/sitemap.xml

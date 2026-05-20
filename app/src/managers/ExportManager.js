@@ -119,13 +119,13 @@ export const ExportManager = {
         }
 
         const currentPeriod = appState.currentPeriod;
-        const text = appState.filteredResults
+        const items = appState.filteredResults
             .map(r => {
                 const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
                 return appreciation?.trim() ? `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}` : null;
             })
-            .filter(Boolean)
-            .join('\n\n');
+            .filter(Boolean);
+        const text = items.join('\n\n');
 
         if (!text) {
             UI.showNotification("Aucune appréciation à copier pour cette période.", "warning");
@@ -142,6 +142,7 @@ export const ExportManager = {
                     button.disabled = false;
                 }, 2000);
             }
+            UI.showNotification(`${items.length} appréciation${items.length > 1 ? 's' : ''} copiée${items.length > 1 ? 's' : ''} !`, 'success');
         });
     },
 
@@ -238,12 +239,15 @@ export const ExportManager = {
             return;
         }
 
+        UI.showNotification("Préparation de l'export PDF...", 'info');
+
         const classLabel = appState.classes?.find(c => c.id === appState.currentClassId)?.name || '';
         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
         const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        const subjectLabel = appState.currentSubject || '';
 
         const originalTitle = document.title;
-        document.title = `Appréciations${classLabel ? ` - ${classLabel}` : ''} - ${periodLabel}`;
+        document.title = `Appréciations${subjectLabel ? ` ${subjectLabel}` : ''}${classLabel ? ` - ${classLabel}` : ''} - ${periodLabel}`;
 
         const printHeader = document.createElement('div');
         printHeader.id = 'print-header';

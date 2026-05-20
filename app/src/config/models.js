@@ -1,15 +1,14 @@
 /**
  * @fileoverview Configuration des modèles IA, coûts et fallback.
- * Dernière vérification : 20 mars 2026
+ * Dernière vérification : 20 mai 2026
  * @module config/models
  */
 
 export const COSTS_PER_MILLION_TOKENS = {
     // Google (clé API directe)
+    'gemini-3.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
-    'gemini-3-flash-preview': { input: 0.20, output: 0.80 },
-    'gemini-3.1-flash-lite-preview': { input: 0.25, output: 1.50 },
     'gemini-3.1-pro-preview': { input: 1.25, output: 5.00 },
     // OpenAI
     'openai-o3-mini': { input: 1.10, output: 4.40 },
@@ -41,10 +40,9 @@ export const MODEL_DESCRIPTIONS = {
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
     'openai-gpt-4o-mini': "Économique et performant (fin de vie prévue).",
     // Google
+    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Le nouveau standard, rapide et intelligent.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
     'gemini-2.5-pro': "<strong>Standard.</strong> Excellent pour les tâches complexes.",
-    'gemini-3-flash-preview': "<strong>⭐ Performant.</strong> +50% plus performant que 2.5 Flash.",
-    'gemini-3.1-flash-lite-preview': "<strong>🆕 Ultra-rapide.</strong> Le plus rapide/économique de la série Gemini 3.",
     'gemini-3.1-pro-preview': "<strong>🔥 Puissant.</strong> Dernier Gemini Pro, raisonnement avancé.",
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT</strong> Llama 3.3 70B. Quota partagé quotidien.",
@@ -75,7 +73,7 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèles les plus récents d'abord, stables en fallback
-    google: ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview', 'gemini-2.5-pro', 'gemini-3.1-pro-preview'],
+    google: ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.1-pro-preview', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
     openrouter: ['llama-3.3-70b-free', 'claude-sonnet-4.6', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen3:8b', 'ollama-mistral', 'ollama-deepseek-r1:8b', 'ollama-gemma3:4b'],
@@ -93,7 +91,7 @@ export const FALLBACK_CONFIG = {
  * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
  */
 export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-2.5-flash (stable, fiable)
+    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash (stable, recommandé)
     openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
     openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
     ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen3:8b
@@ -105,10 +103,9 @@ export const PROVIDER_DEFAULT_MODELS = {
  * Noms courts des modèles pour l'affichage dans l'interface
  */
 export const MODEL_SHORT_NAMES = {
+    'gemini-3.5-flash': 'Gemini 3.5 Flash',
     'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
-    'gemini-3-flash-preview': 'Gemini 3 Flash',
-    'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash-Lite',
     'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
     'openai-o3-mini': 'o3 Mini',
     'openai-gpt-4o-mini': 'GPT-4o Mini',
@@ -151,11 +148,10 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
+            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
             { id: 'gemini-2.5-flash', qualifier: 'Stable' },
-            { id: 'gemini-3-flash-preview', qualifier: 'Rapide' },
-            { id: 'gemini-3.1-flash-lite-preview', qualifier: 'Ultra-rapide' },
-            { id: 'gemini-2.5-pro', qualifier: 'Équilibré' },
-            { id: 'gemini-3.1-pro-preview', qualifier: 'Puissant' },
+            { id: 'gemini-3.1-pro-preview', qualifier: 'Puissant (Raisonnement)' },
+            { id: 'gemini-2.5-pro', qualifier: 'Stable - Puissant' },
         ]
     },
     {
