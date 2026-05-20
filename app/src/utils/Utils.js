@@ -32,15 +32,19 @@ export const Utils = {
      * @returns {{className: string, label: string}} Informations pour le rendu
      */
     getStatusBadgeInfo(status) {
-        let badgeClass = 'tag-badge'; // Default gray
+        let badgeClass = 'tag-badge';
         const lowerTag = (status || '').toLowerCase();
 
-        if (lowerTag.includes('ppre') || lowerTag.includes('pai') || lowerTag.includes('pap') || lowerTag.includes('ulis') || lowerTag.includes('segpa')) {
-            badgeClass += ' tag-warning'; // Yellow
+        if (lowerTag.includes('ppre')) {
+            badgeClass += ' tag-success';
+        } else if (lowerTag.includes('pap')) {
+            badgeClass += ' tag-purple';
+        } else if (lowerTag.includes('ulis') || lowerTag.includes('segpa') || lowerTag.includes('pai')) {
+            badgeClass += ' tag-warning';
         } else if (lowerTag.includes('nouveau')) {
-            badgeClass += ' tag-info'; // Blue
-        } else if (lowerTag.includes('départ')) {
-            badgeClass += ' tag-danger'; // Red
+            badgeClass += ' tag-info';
+        } else if (lowerTag.includes('départ') || lowerTag.includes('depart')) {
+            badgeClass += ' tag-danger';
         }
 
         return { className: badgeClass, label: status };

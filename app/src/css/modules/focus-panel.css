@@ -3564,7 +3564,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
     white-space: nowrap;
     flex-shrink: 0;
     text-transform: uppercase;
@@ -3579,6 +3579,12 @@
     background: var(--bg-secondary);
     border-color: transparent;
     color: var(--text-primary);
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.status-pill-check:active {
+    transform: scale(0.96);
 }
 
 /* Selected State */
@@ -3586,7 +3592,7 @@
     background: var(--bg-tertiary);
     border-color: transparent;
     color: var(--text-primary);
-    box-shadow: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* Specific colors for statuses (Hover & Checked) */
@@ -3595,6 +3601,20 @@
 .status-pill-check.tag-warning:has(input:checked) {
     background: color-mix(in srgb, var(--warning-color) 15%, var(--surface-color));
     color: var(--warning-color);
+}
+
+/* Success (PPRE) */
+.status-pill-check.tag-success:hover,
+.status-pill-check.tag-success:has(input:checked) {
+    background: color-mix(in srgb, var(--success-color) 15%, var(--surface-color));
+    color: var(--success-color);
+}
+
+/* Purple (PAP) */
+.status-pill-check.tag-purple:hover,
+.status-pill-check.tag-purple:has(input:checked) {
+    background: color-mix(in srgb, var(--purple-color) 15%, var(--surface-color));
+    color: var(--purple-color);
 }
 
 /* Info (Nouveau) */

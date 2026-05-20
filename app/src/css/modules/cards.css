@@ -844,19 +844,36 @@
     letter-spacing: 0.5px;
 }
 
+.tag-badge.tag-success {
+    background: color-mix(in srgb, var(--success-color) 12%, var(--surface-color));
+    color: var(--success-color);
+}
+
+.tag-badge.tag-purple {
+    background: color-mix(in srgb, var(--purple-color) 12%, var(--surface-color));
+    color: var(--purple-color);
+}
+
 .tag-badge.tag-warning {
-    background: color-mix(in srgb, var(--warning-color) 15%, var(--surface-color));
+    background: color-mix(in srgb, var(--warning-color) 12%, var(--surface-color));
     color: var(--warning-color);
 }
 
 .tag-badge.tag-info {
-    background: color-mix(in srgb, var(--info-color) 15%, var(--surface-color));
+    background: color-mix(in srgb, var(--info-color) 12%, var(--surface-color));
     color: var(--info-color);
 }
 
 .tag-badge.tag-danger {
-    background: color-mix(in srgb, var(--error-color) 15%, var(--surface-color));
+    background: color-mix(in srgb, var(--error-color) 12%, var(--surface-color));
     color: var(--error-color);
+}
+
+/* Compact variant for dense table contexts (import wizard) */
+.tag-badge.tag-badge--sm {
+    padding: 2px 6px;
+    font-size: 10px;
+    letter-spacing: 0.3px;
 }
 
 /* Clickable status badges in focus panel header */

@@ -59,7 +59,7 @@ export const FocusPanelHeader = {
         const focusEditSaveBtn = document.getElementById('focusEditSaveBtn');
         const nomInput = document.getElementById('headerNomInput');
         const prenomInput = document.getElementById('headerPrenomInput');
-        const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes');
+        const statusesContainer = document.querySelector('.focus-header-edit .status-checkboxes') || document.querySelector('.focus-header-edit .focus-status-selection');
 
         const initiateEdit = () => {
             const header = document.querySelector('.focus-header');

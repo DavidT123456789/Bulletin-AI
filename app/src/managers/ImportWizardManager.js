@@ -1011,15 +1011,12 @@ export const ImportWizardManager = {
                 const isStatusCol = initialMappings[i] === 'STATUT';
 
                 if (isStatusCol && cellContent.trim()) {
-                    const statusLower = cellContent.toLowerCase();
-                    let statusType = 'default';
-                    if (statusLower.includes('ppre')) statusType = 'ppre';
-                    else if (statusLower.includes('pap')) statusType = 'pap';
-                    else if (statusLower.includes('ulis')) statusType = 'ulis';
-                    else if (statusLower.includes('nouveau')) statusType = 'nouveau';
-                    else if (statusLower.includes('départ') || statusLower.includes('depart')) statusType = 'depart';
-
-                    html += `<td${needsTooltip ? ` title="${fullContent}"` : ''}><span class="status-badge-cell status-${statusType}" data-status="${cellContent}">${cellContent}</span></td>`;
+                    const statusValues = cellContent.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
+                    const badgesHtml = statusValues.map(status => {
+                        const badgeInfo = Utils.getStatusBadgeInfo(status);
+                        return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
+                    }).join(' ');
+                    html += `<td${needsTooltip ? ` title="${fullContent}"` : ''}>${badgesHtml}</td>`;
                 } else {
                     html += `<td${needsTooltip ? ` class="has-tooltip" title="${fullContent}"` : ''}>${cellContent}</td>`;
                 }
@@ -1688,14 +1685,11 @@ export const ImportWizardManager = {
 
         // Status badge
         if (tag === 'STATUT' && value) {
-            const statusLower = value.toLowerCase();
-            let statusType = 'default';
-            if (statusLower.includes('ppre')) statusType = 'ppre';
-            else if (statusLower.includes('pap')) statusType = 'pap';
-            else if (statusLower.includes('ulis')) statusType = 'ulis';
-            else if (statusLower.includes('nouveau')) statusType = 'nouveau';
-            else if (statusLower.includes('départ') || statusLower.includes('depart')) statusType = 'depart';
-            return `<span class="preview-status-badge status-${statusType}">${value}</span>`;
+            const statusValues = value.split(/[,;+]/).map(s => s.trim()).filter(Boolean);
+            return statusValues.map(status => {
+                const badgeInfo = Utils.getStatusBadgeInfo(status);
+                return `<span class="${badgeInfo.className} tag-badge--sm">${badgeInfo.label}</span>`;
+            }).join(' ');
         }
 
         // Truncate long text (appreciation, context)

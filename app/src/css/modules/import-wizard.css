@@ -2579,61 +2579,6 @@
 }
 
 
-/* === STATUS BADGES (Shared — Step 2 & 3) === */
-.status-badge-cell,
-.preview-status-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    background: rgba(107, 114, 128, 0.12);
-    color: rgb(107, 114, 128);
-}
-
-.status-badge-cell:empty {
-    display: none;
-}
-
-.status-badge-cell.status-ppre,
-.preview-status-badge.status-ppre {
-    background: rgba(var(--success-rgb), 0.12);
-    color: rgb(16, 185, 129);
-}
-
-.status-badge-cell.status-pap,
-.preview-status-badge.status-pap {
-    background: rgba(139, 92, 246, 0.12);
-    color: rgb(139, 92, 246);
-}
-
-.status-badge-cell.status-ulis,
-.preview-status-badge.status-ulis {
-    background: rgba(245, 158, 11, 0.12);
-    color: rgb(245, 158, 11);
-}
-
-.status-badge-cell.status-nouveau,
-.preview-status-badge.status-nouveau {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: rgb(59, 130, 246);
-}
-
-.status-badge-cell.status-depart,
-.preview-status-badge.status-depart {
-    background: rgba(249, 115, 22, 0.12);
-    color: rgb(249, 115, 22);
-}
-
-.status-badge-cell.status-default,
-.preview-status-badge.status-default {
-    background: rgba(107, 114, 128, 0.12);
-    color: rgb(107, 114, 128);
-}
-
 
 .guide-legend-list {
     display: flex;
