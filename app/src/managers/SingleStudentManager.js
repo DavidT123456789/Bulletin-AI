@@ -135,7 +135,10 @@ export const SingleStudentManager = {
             if (currentPeriodIndex > 0) {
                 const hasPreviousData = periods.slice(0, currentPeriodIndex).some(p => {
                     const periodData = data.periods[p];
-                    return periodData && (typeof periodData.grade === 'number' || (periodData.appreciation && periodData.appreciation.trim() !== ''));
+                    if (!periodData) return false;
+                    const gradeRaw = periodData.grade;
+                    const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    return (!isNaN(gradeVal)) || (periodData.appreciation && periodData.appreciation.trim() !== '');
                 });
                 if (!hasPreviousData) {
                     data.statuses.push(`Nouveau ${appState.currentPeriod}`);
@@ -381,16 +384,19 @@ export const SingleStudentManager = {
         Utils.getPeriods().forEach(p => {
             const d = result.studentData.periods[p];
             const isCurrent = (p === appState.currentPeriod);
+            const gradeRaw = d?.grade;
+            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            const gradeStr = !isNaN(gradeVal) ? String(gradeVal).replace('.', ',') : '';
 
             // Option G: Populate currentPeriodGrade for current period
             if (isCurrent && DOM.currentPeriodGrade) {
-                DOM.currentPeriodGrade.value = typeof d?.grade === 'number' ? String(d.grade).replace('.', ',') : '';
+                DOM.currentPeriodGrade.value = gradeStr;
             }
 
             // Also populate accordion fields
             const gInput = document.getElementById(`moy${p}`);
             const aInput = document.getElementById(`app${p}`);
-            if (gInput) gInput.value = typeof d?.grade === 'number' ? String(d.grade).replace('.', ',') : '';
+            if (gInput) gInput.value = gradeStr;
             if (aInput) aInput.value = d?.appreciation ?? '';
         });
 

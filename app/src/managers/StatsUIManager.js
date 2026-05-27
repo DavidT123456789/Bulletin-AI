@@ -178,9 +178,10 @@ export const StatsUI = {
 
         filteredResults.forEach(res => {
             // Statistique 1: Notes (Indépendant des erreurs d'appréciation)
-            const currentGrade = res.studentData?.periods?.[activePeriod]?.grade;
+            const currentGradeRaw = res.studentData?.periods?.[activePeriod]?.grade;
+            const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
 
-            if (typeof currentGrade === 'number') {
+            if (!isNaN(currentGrade)) {
                 totalGrades += currentGrade;
                 gradeCount++;
                 minCurrentGrade = Math.min(minCurrentGrade, currentGrade);
@@ -189,8 +190,9 @@ export const StatsUI = {
 
                 // Statistique 2: Évolution
                 if (previousPeriod) {
-                    const prevGrade = res.studentData.periods[previousPeriod]?.grade;
-                    if (typeof prevGrade === 'number') {
+                    const prevGradeRaw = res.studentData.periods[previousPeriod]?.grade;
+                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
+                    if (!isNaN(prevGrade)) {
                         totalPrevGrades += prevGrade;
                         prevGradeCount++;
 

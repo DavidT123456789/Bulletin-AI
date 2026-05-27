@@ -617,89 +617,92 @@
 .performance-card .detail-item {
     flex: 1;
     text-align: center;
-    padding: 10px 8px;
+    padding: 12px 8px; /* Alignement parfait avec les légendes */
     border-radius: var(--radius-md);
-    background: var(--item-idle-bg);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--item-idle-bg); /* Fond plat et neutre par défaut pour éviter le card-on-card */
+    border: 1px solid transparent; /* Pas de contour par défaut */
+    box-shadow: none; /* Pas d'ombre par défaut pour la clarté */
+    transition: transform 0.4s var(--ease-spring), 
+                box-shadow 0.4s var(--ease-spring), 
+                background-color 0.3s ease, 
+                border-color 0.3s ease;
     position: relative;
+}
+
+[data-theme="dark"] .performance-card .detail-item {
+    background: var(--item-idle-bg);
+    border-color: transparent;
+    box-shadow: none;
 }
 
 /* Item non cliquable - style différencié */
 .performance-card .detail-item:not([role="button"]) {
-    opacity: 0.7;
+    opacity: 0.75;
 }
 
 .performance-card .detail-item[role="button"] {
     cursor: pointer;
-    border: 1px solid transparent;
 }
 
-/* Hover style dynamique (exclut l'état actif) */
-.performance-card .detail-item[role="button"]:not(.active-filter):hover {
-    background: var(--item-active-bg);
-    border-color: transparent;
+/* Hover réactif avec élévation et halo de marque (Uniquement ordinateur via hover query) */
+@media (hover: hover) {
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover {
+        transform: translateY(-4px);
+        background: var(--surface-color);
+        border-color: rgba(var(--primary-color-rgb), 0.3);
+        box-shadow: 0 10px 20px -5px rgba(var(--primary-color-rgb), 0.15), var(--shadow-sm);
+    }
+
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value {
+        color: var(--primary-color);
+    }
+
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label {
+        color: var(--primary-color);
+    }
+
+    [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover {
+        background: var(--bg-tertiary);
+    }
 }
 
-.performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label {
-    color: var(--text-primary);
-}
-
-.performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value {
-    color: var(--text-primary);
-}
-
-/* État actif pour les filtres - Style hover + bordure rotative */
+/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
 .performance-card .detail-item.active-filter {
-    background-color: transparent;
-    border: 1px solid transparent !important;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--primary-color-rgb), 0.08) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.12) !important;
+    animation: none !important;
 }
 
 .performance-card .detail-item.active-filter .detail-label {
     color: var(--primary-color);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .performance-card .detail-item.active-filter .detail-value {
     color: var(--primary-color);
 }
 
-/* Valeurs et labels - Compacts */
+/* Valeurs et labels - Typographie Outlined & Bento */
 .performance-card .detail-item .detail-value {
     display: block;
-    font-size: 1.1rem;
+    font-family: 'Outfit', var(--font-sans); /* Typographie moderne géométrique */
+    font-size: 1.5rem; /* Grand format identique aux légendes */
     font-weight: 700;
-    color: var(--text-secondary);
-    line-height: 1.2;
-    margin-bottom: 2px;
+    color: var(--text-secondary); /* Gris anthracite doux au lieu de noir primaire brut */
+    line-height: 1.1;
+    margin-bottom: 0;
     font-variant-numeric: tabular-nums;
-    transition: color var(--transition-fast);
+    transition: color 0.3s ease;
 }
 
 .performance-card .detail-item .detail-label {
     font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.2px;
-    color: var(--text-secondary);
-    transition: color var(--transition-fast);
-    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: var(--text-tertiary);
+    transition: color 0.3s ease;
+    font-weight: 600;
 }
 
 /* ====================================================================
@@ -740,22 +743,31 @@
 .evolution-card .evolution-distribution-bar {
     display: flex;
     width: 100%;
-    height: 20px;
+    height: 10px; /* Plus fin et ultra-élégant */
     border-radius: var(--radius-pill);
-    overflow: hidden;
+    overflow: hidden; /* Masque les débordements des bordures segments */
     background-color: var(--bg-secondary);
-    margin: 8px 0;
+    margin: 16px 0; /* Plus d'espace de respiration */
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
     flex-shrink: 0;
 }
 
-/* Segments de la barre avec animation */
+/* Segments de la barre avec animation fluide */
 .evolution-card .bar-segment {
     height: 100%;
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: var(--radius-pill);
+    /* Border-mask technique to create beautiful, responsive gaps without flex layout math failures */
+    border: 2px solid var(--card-glass-bg);
+    box-sizing: border-box;
+    transition: width 0.5s var(--ease-spring);
     position: relative;
-    transform-origin: left center;
     cursor: pointer;
+}
+
+/* Masquer proprement les segments vides pour éviter les micro-gaps indésirables */
+.evolution-card .bar-segment[style*="width: 0%"],
+.evolution-card .bar-segment[style*="width:0%"] {
+    display: none !important;
 }
 
 /* Tooltip pourcentage au hover */
@@ -782,29 +794,28 @@
     transform: translateX(-50%) scale(1);
 }
 
-/* Animation d'entrée staggerée pour chaque segment */
+/* Gradients premium bicolores vibrants et contrastés - Sans fade gris/blanc */
 .evolution-card .bar-segment.progress {
-    background: linear-gradient(90deg, var(--success-color) 0%, rgba(var(--success-rgb), 0.8) 100%);
+    background: linear-gradient(90deg, var(--success-color) 0%, var(--color-emerald-bright) 100%);
     animation: segment-grow 0.5s ease-out 0.1s backwards;
 }
 
 .evolution-card .bar-segment.stable {
-    background: linear-gradient(90deg, var(--text-tertiary) 0%, var(--bg-tertiary) 100%);
+    background: linear-gradient(90deg, var(--text-secondary) 0%, var(--text-quaternary) 100%);
     animation: segment-grow 0.5s ease-out 0.25s backwards;
 }
 
 .evolution-card .bar-segment.regression {
-    background: linear-gradient(90deg, var(--error-color) 0%, rgba(var(--error-rgb), 0.8) 100%);
+    background: linear-gradient(90deg, var(--error-color) 0%, var(--color-rose-bright) 100%);
     animation: segment-grow 0.5s ease-out 0.4s backwards;
 }
 
-/* === Légende - Marges homogènes (iOS 2025 mockup) === */
+/* === Légende Interactive Premium Floating Bento === */
 .evolution-card .evolution-legend {
     display: flex;
     gap: 12px;
-    margin-top: 8px;
+    margin-top: 12px;
     flex-wrap: nowrap;
-    /* Reset margins for uniform spacing */
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 0;
@@ -815,109 +826,153 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 10px 8px;
+    gap: 6px;
+    padding: 12px 8px;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    background: var(--item-idle-bg);
+    background: var(--item-idle-bg); /* Fond plat et neutre par défaut pour éviter le card-on-card */
+    border: 1px solid transparent; /* Pas de contour par défaut */
+    box-shadow: none; /* Pas d'ombre par défaut pour la clarté */
     flex: 1;
     min-width: unset;
-    border: 1px solid transparent;
     text-align: center;
+    transition: transform 0.4s var(--ease-spring), 
+                box-shadow 0.4s var(--ease-spring), 
+                background-color 0.3s ease, 
+                border-color 0.3s ease;
 }
 
-/* Hover style dynamique (exclut l'état actif) */
-.evolution-card .legend-item:not(.active-filter):hover {
-    background: var(--item-active-bg);
+[data-theme="dark"] .evolution-card .legend-item {
+    background: var(--item-idle-bg);
     border-color: transparent;
+    box-shadow: none;
 }
 
-.evolution-card .legend-item:not(.active-filter):hover .legend-label {
-    color: var(--text-primary);
+/* Hover réactif avec élévation et halo de couleur sémantique (Uniquement ordinateur via hover query) */
+@media (hover: hover) {
+    .evolution-card .legend-item[data-filter-id="progressCount"]:not(.active-filter):hover {
+        transform: translateY(-4px);
+        background: var(--surface-color);
+        border-color: rgba(var(--success-rgb), 0.3);
+        box-shadow: 0 10px 20px -5px rgba(var(--success-rgb), 0.15), var(--shadow-sm);
+    }
+
+    .evolution-card .legend-item[data-filter-id="stableCount"]:not(.active-filter):hover {
+        transform: translateY(-4px);
+        background: var(--surface-color);
+        border-color: rgba(var(--text-secondary-rgb), 0.25);
+        box-shadow: 0 10px 20px -5px rgba(var(--text-secondary-rgb), 0.12), var(--shadow-sm);
+    }
+
+    .evolution-card .legend-item[data-filter-id="regressionCount"]:not(.active-filter):hover {
+        transform: translateY(-4px);
+        background: var(--surface-color);
+        border-color: rgba(var(--error-rgb), 0.3);
+        box-shadow: 0 10px 20px -5px rgba(var(--error-rgb), 0.15), var(--shadow-sm);
+    }
+
+    [data-theme="dark"] .evolution-card .legend-item:not(.active-filter):hover {
+        background: var(--bg-tertiary);
+    }
+    
+    /* Micro-déplacement des flèches au survol */
+    .evolution-card .legend-item[data-filter-id="progressCount"]:hover .legend-count::before {
+        transform: translate(2px, -2px) scale(1.1);
+    }
+
+    .evolution-card .legend-item[data-filter-id="stableCount"]:hover .legend-count::before {
+        transform: translateX(3px) scale(1.1);
+    }
+
+    .evolution-card .legend-item[data-filter-id="regressionCount"]:hover .legend-count::before {
+        transform: translate(2px, 2px) scale(1.1);
+    }
 }
 
-/* États actifs pour les filtres - Style hover + bordure rotative */
-.evolution-card .legend-item.active-filter {
-    background-color: transparent;
-    border: 1px solid transparent !important;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
+.evolution-card .legend-item[data-filter-id="progressCount"].active-filter {
+    background: rgba(var(--success-rgb), 0.08);
+    border-color: var(--success-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--success-rgb), 0.12);
+}
+
+.evolution-card .legend-item[data-filter-id="stableCount"].active-filter {
+    background: rgba(var(--text-secondary-rgb), 0.08);
+    border-color: var(--text-tertiary) !important;
+    box-shadow: 0 2px 8px rgba(var(--text-secondary-rgb), 0.12);
+}
+
+.evolution-card .legend-item[data-filter-id="regressionCount"].active-filter {
+    background: rgba(var(--error-rgb), 0.08);
+    border-color: var(--error-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--error-rgb), 0.12);
 }
 
 .evolution-card .legend-item.active-filter .legend-label {
-    color: var(--primary-color);
-    font-weight: 600;
+    font-weight: 700;
 }
 
-.evolution-card .legend-item.active-filter .legend-count {
-    color: var(--primary-color);
-}
-
-/* Points colorés de la légende - Masqués, couleur appliquée au chiffre */
+/* Points colorés de la légende - Remplacés par les flèches */
 .evolution-card .legend-dot {
     display: none;
-    /* Couleur maintenant sur le chiffre */
 }
 
-.evolution-card .legend-dot.progress {
-    background: linear-gradient(135deg, var(--success-color) 0%, rgba(var(--success-rgb), 0.8) 100%);
-}
-
-.evolution-card .legend-dot.stable {
-    background: linear-gradient(135deg, var(--text-tertiary) 0%, var(--bg-tertiary) 100%);
-}
-
-.evolution-card .legend-dot.regression {
-    background: linear-gradient(135deg, var(--error-color) 0%, rgba(var(--error-rgb), 0.8) 100%);
-}
-
-/* Texte de la légende - Layout horizontal compact */
+/* Mise en page de la légende */
 .evolution-card .legend-text {
     display: flex;
     flex-direction: column-reverse;
-    /* Count on top, Label on bottom */
     align-items: center;
-    gap: 0;
+    gap: 2px;
 }
 
 .evolution-card .legend-label {
     font-size: 0.65rem;
-    /* Match detail-label */
     text-transform: uppercase;
-    letter-spacing: 0.2px;
-    font-weight: 500;
-    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    font-weight: 600;
+    color: var(--text-tertiary);
     transition: color 0.2s ease;
 }
 
 .evolution-card .legend-count {
-    font-size: 1.1rem;
+    font-family: 'Outfit', var(--font-sans); /* Typographie géométrique moderne */
+    font-size: 1.5rem; /* Grand format lisible */
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-    margin-bottom: 2px;
-    /* Default color, will be overridden by semantic colors */
-    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
-/* Semantic colors applied directly to the count */
+/* Flèches indicatrices de tendance Unicode intégrées */
+.evolution-card .legend-item[data-filter-id="progressCount"] .legend-count::before {
+    content: '↗';
+    font-size: 0.85em;
+    font-weight: 500;
+    display: inline-block;
+    transition: transform 0.4s var(--ease-spring);
+}
+
+.evolution-card .legend-item[data-filter-id="stableCount"] .legend-count::before {
+    content: '→';
+    font-size: 0.85em;
+    font-weight: 500;
+    display: inline-block;
+    transition: transform 0.4s var(--ease-spring);
+}
+
+.evolution-card .legend-item[data-filter-id="regressionCount"] .legend-count::before {
+    content: '↘';
+    font-size: 0.85em;
+    font-weight: 500;
+    display: inline-block;
+    transition: transform 0.4s var(--ease-spring);
+}
+
+/* Couleurs sémantiques directes */
 .evolution-card .legend-item[data-filter-id="progressCount"] .legend-count {
     color: var(--success-color);
 }
@@ -1184,60 +1239,56 @@
 /* Tooltip géré par Tippy.js via data-tooltip (voir updateHistogram) */
 
 .hist-label {
-    font-size: 0.6rem;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    font-weight: 500;
-    transition: color 0.2s ease;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+    font-weight: 600;
+    transition: color 0.3s ease;
 }
 
 /* === Histogram Bars - Interactivité (Filtres cliquables) === */
 .hist-bar-group[role="button"] {
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    padding: 4px 2px;
-    margin: -4px -2px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: var(--radius-md); /* Alignement parfait des arrondis Bento */
+    padding: 8px 4px; /* Plus d'espace de respiration vertical */
+    margin: -8px -4px;
     border: 1px solid transparent;
+    transition: transform 0.4s var(--ease-spring), 
+                box-shadow 0.4s var(--ease-spring), 
+                background-color 0.3s ease, 
+                border-color 0.3s ease;
 }
 
-/* Hover style dynamique (exclut l'état actif) */
-.hist-bar-group[role="button"]:not(.active-filter):hover {
-    background: var(--item-active-bg);
+/* Hover style dynamique (exclut l'état actif) - Élévation et Bento vertical */
+@media (hover: hover) {
+    .hist-bar-group[role="button"]:not(.active-filter):hover {
+        transform: translateY(-4px); /* Élévation ressort identique à -4px */
+        background: var(--surface-color);
+        border-color: var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-bar {
+        filter: brightness(1.1) saturate(1.15);
+    }
+
+    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-label {
+        color: var(--primary-color);
+    }
+
+    [data-theme="dark"] .hist-bar-group[role="button"]:not(.active-filter):hover {
+        background: var(--bg-tertiary);
+    }
 }
 
-.hist-bar-group[role="button"]:not(.active-filter):hover .hist-bar {
-    filter: brightness(1.15) saturate(1.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.hist-bar-group[role="button"]:not(.active-filter):hover .hist-label {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-/* État actif pour les filtres - Style avec bordure rotative */
+/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
 .hist-bar-group[role="button"].active-filter {
-    background-color: transparent;
-    border: 1px solid transparent !important;
-    background-image: linear-gradient(var(--surface-color), var(--surface-color)),
-        conic-gradient(from var(--gradient-angle),
-            rgba(var(--primary-color-rgb), 0.5) 0%,
-            rgba(var(--primary-color-rgb), 0.5) 18%,
-            var(--glow-highlight) 23%,
-            var(--glow-highlight) 27%,
-            rgba(var(--primary-color-rgb), 0.5) 32%,
-            rgba(var(--primary-color-rgb), 0.5) 50%,
-            rgba(var(--primary-color-rgb), 0.5) 68%,
-            var(--glow-highlight) 73%,
-            var(--glow-highlight) 77%,
-            rgba(var(--primary-color-rgb), 0.5) 82%,
-            rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, border-box;
-    background-clip: padding-box, border-box;
-    animation: rotate-gradient 10s linear infinite;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08),
-        0 4px 12px rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--primary-color-rgb), 0.08) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.12) !important;
+    animation: none !important;
 }
 
 .hist-bar-group[role="button"].active-filter .hist-label {

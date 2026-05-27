@@ -2025,8 +2025,9 @@ export const FocusPanelManager = {
             readGradePeriod.textContent = Utils.getPeriodLabel(currentPeriod, false);
         }
         if (readGradeValue) {
-            const grade = result.studentData.periods?.[currentPeriod]?.grade;
-            readGradeValue.textContent = typeof grade === 'number' ? grade.toFixed(1).replace('.', ',') : '--';
+            const gradeRaw = result.studentData.periods?.[currentPeriod]?.grade;
+            const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            readGradeValue.textContent = !isNaN(grade) ? grade.toFixed(1).replace('.', ',') : '--';
         }
 
         // Check if previous period exists  

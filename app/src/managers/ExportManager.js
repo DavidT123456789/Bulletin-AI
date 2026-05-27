@@ -181,7 +181,8 @@ export const ExportManager = {
 
             allPeriods.forEach(p => {
                 const d = sd.periods?.[p];
-                const grade = d?.grade;
+                const gradeRaw = d?.grade;
+                const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
                 
                 // Calcul de l'évolution
                 let evolutionStr = '';
@@ -200,7 +201,7 @@ export const ExportManager = {
                 }
 
                 row.push(
-                    typeof grade === 'number' ? String(grade).replace('.', ',') : '',
+                    !isNaN(grade) ? String(grade).replace('.', ',') : '',
                     evolutionStr,
                     targetApp
                 );

@@ -107,7 +107,9 @@ export const PromptService = {
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
         let periodsInfo = relevantPeriods.map(p => {
             const d = periods[p] || {};
-            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') + '/20' : 'N/A';
+            const gradeRaw = d.grade;
+            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             // Pour la période courante, on n'inclut pas l'appréciation existante
             const isCurrentPeriod = p === currentPeriod;
@@ -165,7 +167,9 @@ export const PromptService = {
         // Build periods info for analysis - use stored appreciation per period
         let periodsInfoForAnalysis = relevantPeriods.map(p => {
             const d = periods[p] || {};
-            const g = typeof d.grade === 'number' ? d.grade.toFixed(1).replace('.', ',') + '/20' : 'N/A';
+            const gradeRaw = d.grade;
+            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             return `${p} : Moy ${g}${evalCount}, App "${d.appreciation || 'N/A'}"`;
         }).join('\n');

@@ -259,7 +259,10 @@ export const StudentDataManager = {
                     const currentPeriodIndex = periods.indexOf(appState.currentPeriod);
                     const hasDataInPreviousPeriods = periods.slice(0, currentPeriodIndex).some(p => {
                         const periodData = importedData.periods[p];
-                        return periodData && (typeof periodData.grade === 'number' || periodData.appreciation);
+                        if (!periodData) return false;
+                        const gradeRaw = periodData.grade;
+                        const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                        return (!isNaN(gradeVal)) || periodData.appreciation;
                     });
 
                     if (currentPeriodIndex > 0 && !hasDataInPreviousPeriods && importedData.statuses.length === 0) {

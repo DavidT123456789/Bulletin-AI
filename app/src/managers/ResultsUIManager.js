@@ -76,7 +76,9 @@ export const ResultsUIManager = {
                 }
 
                 const periodDataForView = sd.periods[activePeriod] || { grade: null, appreciation: '' };
-                const isPlaceholder = !periodDataForView.appreciation && typeof periodDataForView.grade !== 'number' && !originalResult.errorMessage;
+                const gradeRaw = periodDataForView.grade;
+                const gradeParsed = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                const isPlaceholder = !periodDataForView.appreciation && isNaN(gradeParsed) && !originalResult.errorMessage;
 
                 return {
                     ...originalResult,
@@ -94,8 +96,9 @@ export const ResultsUIManager = {
         let maxGrade = -Infinity;
         if (filter === 'minGrade' || filter === 'maxGrade') {
             viewableResults.forEach(r => {
-                const grade = r.studentData.periods[activePeriod]?.grade;
-                if (typeof grade === 'number') {
+                const gradeRaw = r.studentData.periods[activePeriod]?.grade;
+                const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                if (!isNaN(grade)) {
                     minGrade = Math.min(minGrade, grade);
                     maxGrade = Math.max(maxGrade, grade);
                 }
@@ -109,29 +112,50 @@ export const ResultsUIManager = {
                 if (filter === 'totalCount') return true;
 
                 if (filter === 'minGrade') {
-                    const grade = r.studentData.periods[activePeriod]?.grade;
-                    return typeof grade === 'number' && grade === minGrade;
+                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
+                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    return !isNaN(grade) && grade === minGrade;
                 }
                 if (filter === 'maxGrade') {
-                    const grade = r.studentData.periods[activePeriod]?.grade;
-                    return typeof grade === 'number' && grade === maxGrade;
+                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
+                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    return !isNaN(grade) && grade === maxGrade;
                 }
 
                 const statuses = r.studentData.statuses || [];
                 if (filter === 'newCount') return statuses.some(s => s.startsWith('Nouveau') && s.endsWith(activePeriod));
                 if (filter === 'departedCount') return statuses.some(s => s.startsWith('Départ') && s.endsWith(activePeriod));
 
-                const evo = Utils.getRelevantEvolution(r.evolutions, r.studentData.currentPeriod);
-                if (filter === 'progressCount') return evo && ['very-positive', 'positive'].includes(evo.type);
-                if (filter === 'stableCount') return !evo || evo.type === 'stable';
-                if (filter === 'regressionCount') return evo && ['very-negative', 'negative'].includes(evo.type);
+                // CORRECTIF CRITIQUE : Calculer l'évolution dynamique basée directement sur les notes de scolarité
+                // pour s'assurer que le filtrage correspond toujours à 100% aux compteurs de statistiques.
+                const periods = Utils.getPeriods();
+                const activePeriodIndex = periods.indexOf(activePeriod);
+                const previousPeriod = activePeriodIndex > 0 ? periods[activePeriodIndex - 1] : null;
+                let evoType = null;
+                if (previousPeriod) {
+                    const currentGradeRaw = r.studentData?.periods?.[activePeriod]?.grade;
+                    const prevGradeRaw = r.studentData?.periods?.[previousPeriod]?.grade;
+                    
+                    const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
+                    const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
+                    
+                    if (!isNaN(currentGrade) && !isNaN(prevGrade)) {
+                        const dist = currentGrade - prevGrade;
+                        evoType = Utils.getEvolutionType(dist);
+                    }
+                }
+
+                if (filter === 'progressCount') return evoType && ['very-positive', 'positive'].includes(evoType);
+                if (filter === 'stableCount') return !evoType || evoType === 'stable';
+                if (filter === 'regressionCount') return evoType && ['very-negative', 'negative'].includes(evoType);
 
                 // Filtrage par tranche de notes (histogramme)
                 if (filter.startsWith('gradeRange_')) {
                     const range = filter.replace('gradeRange_', '');
                     const [min, max] = range.split('-').map(Number);
-                    const grade = r.studentData.periods[activePeriod]?.grade;
-                    if (typeof grade !== 'number') return false;
+                    const gradeRaw = r.studentData.periods[activePeriod]?.grade;
+                    const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    if (isNaN(grade)) return false;
                     // Inclusif sur min, exclusif sur max (sauf pour 16-20 qui est inclusif sur 20)
                     if (max === 20) {
                         return grade >= min && grade <= max;
@@ -197,9 +221,22 @@ export const ResultsUIManager = {
 
                 if (field === 'evolution') {
                     const p = param || activePeriod;
+                    const periodsList = Utils.getPeriods();
+                    const pIndex = periodsList.indexOf(p);
+                    const prevP = pIndex > 0 ? periodsList[pIndex - 1] : null;
+
                     const getRank = r => {
-                        const e = Utils.getRelevantEvolution(r.evolutions, p); // Use specific period
-                        return e ? { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[e.type] || 0 : 0;
+                        if (!prevP) return 0;
+                        const currentGradeRaw = r.studentData?.periods?.[p]?.grade;
+                        const prevGradeRaw = r.studentData?.periods?.[prevP]?.grade;
+                        const currentGrade = typeof currentGradeRaw === 'number' ? currentGradeRaw : parseFloat(String(currentGradeRaw || '').replace(',', '.'));
+                        const prevGrade = typeof prevGradeRaw === 'number' ? prevGradeRaw : parseFloat(String(prevGradeRaw || '').replace(',', '.'));
+                        if (!isNaN(currentGrade) && !isNaN(prevGrade)) {
+                            const dist = currentGrade - prevGrade;
+                            const type = Utils.getEvolutionType(dist);
+                            return { 'very-positive': 5, 'positive': 4, 'stable': 3, 'negative': 2, 'very-negative': 1 }[type] || 0;
+                        }
+                        return 0;
                     };
                     return (getRank(a) - getRank(b)) * dir;
                 }
@@ -237,7 +274,9 @@ export const ResultsUIManager = {
                 const periods = r.studentData?.periods || {};
 
                 for (const [p, data] of Object.entries(periods)) {
-                    const hasDataInPeriod = data && ((typeof data.grade === 'number' && !isNaN(data.grade)) || (data.appreciation && data.appreciation.replace(/<[^>]*>/g, '').trim() !== ''));
+                    const gradeRaw = data?.grade;
+                    const gradeParsed = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                    const hasDataInPeriod = data && ((!isNaN(gradeParsed)) || (data.appreciation && data.appreciation.replace(/<[^>]*>/g, '').trim() !== ''));
                     if (hasDataInPeriod) {
                         if (currentSystemPeriods.includes(p)) hasDataInCurrentSystem = true;
                         else hasDataInOtherSystem = true;

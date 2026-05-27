@@ -56,8 +56,11 @@ export const AppreciationService = {
         };
         const periods = Utils.getPeriods();
         for (let i = 1; i < periods.length; i++) {
-            const v1 = periodsData[periods[i - 1]]?.grade, v2 = periodsData[periods[i]]?.grade;
-            if (typeof v1 === 'number' && typeof v2 === 'number') {
+            const v1Raw = periodsData[periods[i - 1]]?.grade;
+            const v2Raw = periodsData[periods[i]]?.grade;
+            const v1 = typeof v1Raw === 'number' ? v1Raw : parseFloat(String(v1Raw || '').replace(',', '.'));
+            const v2 = typeof v2Raw === 'number' ? v2Raw : parseFloat(String(v2Raw || '').replace(',', '.'));
+            if (!isNaN(v1) && !isNaN(v2)) {
                 const diff = parseFloat((v2 - v1).toFixed(2));
                 evolutions.push({ type: getType(diff), valeur: diff, periode: `${periods[i - 1]}-${periods[i]}` });
             }
@@ -146,7 +149,10 @@ export const AppreciationService = {
                     const currentPeriodIndex = periods.indexOf(currentPeriod);
                     const hasDataInPreviousPeriods = periods.slice(0, currentPeriodIndex).some(p => {
                         const periodData = importedData.periods[p];
-                        return periodData && (typeof periodData.grade === 'number' || periodData.appreciation);
+                        if (!periodData) return false;
+                        const gradeRaw = periodData.grade;
+                        const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+                        return (!isNaN(gradeVal)) || periodData.appreciation;
                     });
 
                     if (currentPeriodIndex > 0 && !hasDataInPreviousPeriods && importedData.statuses.length === 0) {
