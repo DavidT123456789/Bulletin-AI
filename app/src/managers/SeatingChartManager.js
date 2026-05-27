@@ -301,15 +301,12 @@ export const SeatingChartManager = {
             viewEl.style.display = '';
             if (fab) fab.style.display = 'none';
             this._isActive = true;
-            this._isLocked = appState.seatingGrid?.locked ?? false;
-            viewEl.dataset.locked = this._isLocked;
-            const lockBtn = document.getElementById('scLockBtn');
-            if (lockBtn) {
-                lockBtn.classList.toggle('locked', this._isLocked);
-                lockBtn.setAttribute('aria-checked', (!this._isLocked).toString());
-            }
             this._loadGridConfig();
             this._loadPositionsFromState();
+            const locked = this._getPlacedIds().size === 0
+                ? false
+                : appState.seatingGrid?.locked ?? false;
+            this._applyLockState(locked);
             this._undoStack = [];
             this._redoStack = [];
             this._render();
@@ -343,6 +340,11 @@ export const SeatingChartManager = {
         this._students = this._getCurrentClassStudents();
         this._loadGridConfig();
         this._loadPositionsFromState();
+
+        if (this._getPlacedIds().size === 0) {
+            this._applyLockState(false);
+        }
+
         this._render();
         this._staggerCellEntrance();
         
@@ -351,6 +353,7 @@ export const SeatingChartManager = {
         setTimeout(() => desk?.classList.remove('sc-desk-entering'), 500);
 
         this._scrollToDesk();
+        this._maybeShowOnboardingHint();
     },
 
     updateToggleVisibility(hasResults) {
@@ -602,6 +605,17 @@ export const SeatingChartManager = {
     // ========================================================================
     // LOCK
     // ========================================================================
+
+    _applyLockState(locked) {
+        this._isLocked = locked;
+        const view = document.getElementById('seatingChartView');
+        if (view) view.dataset.locked = locked;
+        const btn = document.getElementById('scLockBtn');
+        if (btn) {
+            btn.classList.toggle('locked', locked);
+            btn.setAttribute('aria-checked', (!locked).toString());
+        }
+    },
 
     _toggleLock() {
         this._isLocked = !this._isLocked;
@@ -1130,6 +1144,7 @@ export const SeatingChartManager = {
             const id = chip.dataset.resultId;
 
             chip.addEventListener('dragstart', (e) => {
+                this._dismissOnboardingHint();
                 const isSelected = this._selectedChipIds.includes(id);
                 if (!isSelected) {
                     this._clearSelection();
@@ -1335,6 +1350,7 @@ export const SeatingChartManager = {
 
         element.addEventListener('touchstart', (e) => {
             if (e.touches.length !== 1 || this._isLocked) return;
+            this._dismissOnboardingHint();
             const touch = e.touches[0];
             startX = touch.clientX;
             startY = touch.clientY;
@@ -1622,9 +1638,12 @@ export const SeatingChartManager = {
 
             setTimeout(() => {
                 this._initGrid(this._getRows(), this._getCols());
+                this._applyLockState(false);
                 this._render();
                 this._savePositionsToState();
+                this._saveGridConfig();
                 this._staggerCellEntrance();
+                this._maybeShowOnboardingHint();
             }, Math.min(delay * 30 + 300, 600));
         }, null, { title: `Vider le plan de classe (${placedCount}) ?`, isDanger: false });
     },
@@ -1661,36 +1680,42 @@ export const SeatingChartManager = {
         });
     },
 
-    // ========================================================================
-    // ONBOARDING — Contextual Ghost Hint (first visit only)
-    // ========================================================================
-
     _maybeShowOnboardingHint() {
-        const LS_KEY = 'bulletin_sc_onboarding_seen';
-        if (localStorage.getItem(LS_KEY)) return;
         if (this._getPlacedIds().size > 0) return;
 
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea || gridArea.querySelector('.sc-onboarding-hint')) return;
 
-        const hasConfiguredGrid = !!appState.seatingGrid;
-
         const hint = document.createElement('div');
         hint.className = 'sc-onboarding-hint';
         hint.innerHTML = `
             <div class="sc-onboarding-hint-text">
-                ${!hasConfiguredGrid ? `<div class="sc-hint-settings">Ajustez le plan de la salle <iconify-icon icon="solar:settings-linear"></iconify-icon></div>` : ''}
-                <div class="sc-hint-main"><strong>${!hasConfiguredGrid ? 'Puis glissez' : 'Glissez'} un élève</strong> sur un bureau</div>
+                <div class="sc-hint-title">Plan de classe vide</div>
+                <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
             </div>
-            <div class="sc-onboarding-hint-icon">
-                <iconify-icon icon="solar:hand-shake-linear" class="sc-hint-hand"></iconify-icon>
+            <div class="sc-onboarding-actions">
+                <button type="button" class="sc-onboarding-btn primary" id="scHintAutoBtn">
+                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                    <span>Placer automatiquement (A-Z)</span>
+                </button>
+                <button type="button" class="sc-onboarding-btn secondary" id="scHintManualBtn">
+                    <span>Placer manuellement</span>
+                </button>
             </div>
         `;
 
-        hint.addEventListener('click', () => this._dismissOnboardingHint());
         gridArea.appendChild(hint);
 
-        if (!hasConfiguredGrid) {
+        hint.querySelector('#scHintAutoBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace();
+        });
+        hint.querySelector('#scHintManualBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._dismissOnboardingHint();
+        });
+
+        if (!appState.seatingGrid) {
             document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
         }
     },
@@ -1699,7 +1724,6 @@ export const SeatingChartManager = {
         const hint = document.querySelector('.sc-onboarding-hint');
         if (!hint || hint.classList.contains('sc-hint-exiting')) return;
 
-        localStorage.setItem('bulletin_sc_onboarding_seen', '1');
         hint.classList.add('sc-hint-exiting');
 
         const cleanup = () => hint.remove();
