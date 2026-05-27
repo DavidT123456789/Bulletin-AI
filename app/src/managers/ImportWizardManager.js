@@ -166,14 +166,14 @@ export const ImportWizardManager = {
         document.getElementById('wizardStep3PrevBtn')?.addEventListener('click', () => this.prevStep());
 
         // STEPPER NAVIGATION - Clickable steps
-        document.querySelectorAll('.ui-stepper .ui-stepper-step[role="button"]').forEach(stepEl => {
+        document.querySelectorAll('#importWizardModal .ui-stepper-step[role="button"]').forEach(stepEl => {
             stepEl.addEventListener('click', () => {
                 const targetStep = parseInt(stepEl.dataset.step);
-                if (targetStep && targetStep !== this.state.currentStep) {
+                if (targetStep && targetStep !== this.currentStep) {
                     // Only allow going back, or forward if valid
-                    if (targetStep < this.state.currentStep) {
+                    if (targetStep < this.currentStep) {
                         this._setStep(targetStep);
-                    } else if (targetStep === this.state.currentStep + 1 && this._canProceedToNextStep()) {
+                    } else if (targetStep === this.currentStep + 1 && this._canProceedToNextStep()) {
                         this._setStep(targetStep);
                     }
                 }
@@ -412,12 +412,7 @@ export const ImportWizardManager = {
      */
     _updateUI() {
         // Update stepper visual states
-        document.querySelectorAll('.ui-stepper .ui-stepper-step').forEach(el => {
-            const step = parseInt(el.dataset.step);
-            el.classList.remove('active', 'completed');
-            if (step === this.currentStep) el.classList.add('active');
-            if (step < this.currentStep) el.classList.add('completed');
-        });
+        this._updateStepper();
 
 
 
@@ -440,6 +435,24 @@ export const ImportWizardManager = {
         if (this.currentStep === 3) {
             this._updatePreview();
         }
+    },
+
+    /**
+     * Update only the stepper visual states and clickability
+     * @private
+     */
+    _updateStepper() {
+        document.querySelectorAll('#importWizardModal .ui-stepper-step').forEach(el => {
+            const step = parseInt(el.dataset.step);
+            el.classList.remove('active', 'completed', 'clickable');
+            if (step === this.currentStep) {
+                el.classList.add('active');
+            } else if (step < this.currentStep) {
+                el.classList.add('completed', 'clickable');
+            } else if (step === this.currentStep + 1 && this._canProceedToNextStep()) {
+                el.classList.add('clickable');
+            }
+        });
     },
 
     /**
@@ -734,6 +747,9 @@ export const ImportWizardManager = {
 
         // Warn if only 1 column detected (likely wrong separator)
         this._checkSingleColumnWarning();
+
+        // Refresh stepper clickability when data is processed
+        this._updateStepper();
     },
 
     /**
