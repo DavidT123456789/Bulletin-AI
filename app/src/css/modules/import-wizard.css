@@ -1134,8 +1134,7 @@
 }
 
 .import-mapping-table td.has-tooltip::after {
-    content: '...';
-    color: var(--text-tertiary);
+    display: none;
 }
 
 /* === MAPPING TABLE === */

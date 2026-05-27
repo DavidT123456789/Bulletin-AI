@@ -1006,7 +1006,8 @@ export const ImportWizardManager = {
             for (let i = 0; i < cols; i++) {
                 const fullContent = (line[i] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                 const cellContent = fullContent.length > 50 ? fullContent.substring(0, 47) + '...' : fullContent;
-                const needsTooltip = fullContent.length > 50;
+                const isNameCol = initialMappings[i] === 'NOM_PRENOM' || i === 0;
+                const needsTooltip = fullContent.length > 50 || isNameCol;
 
                 const isStatusCol = initialMappings[i] === 'STATUT';
 
@@ -1016,9 +1017,9 @@ export const ImportWizardManager = {
                         const badgeInfo = Utils.getStatusBadgeInfo(status);
                         return `<span class="${badgeInfo.className} tag-badge--sm" data-status="${status}">${badgeInfo.label}</span>`;
                     }).join(' ');
-                    html += `<td${needsTooltip ? ` title="${fullContent}"` : ''}>${badgesHtml}</td>`;
+                    html += `<td${needsTooltip ? ` data-tooltip="${fullContent}"` : ''}>${badgesHtml}</td>`;
                 } else {
-                    html += `<td${needsTooltip ? ` class="has-tooltip" title="${fullContent}"` : ''}>${cellContent}</td>`;
+                    html += `<td${needsTooltip ? ` class="has-tooltip" data-tooltip="${fullContent}"` : ''}>${cellContent}</td>`;
                 }
             }
             html += `</tr>`;
@@ -1043,6 +1044,11 @@ export const ImportWizardManager = {
         this._applyColumnClasses();
         this._validateMappings();
         this._updatePreview();
+
+        // Initialize custom Tippy.js tooltips for the Step 2 table cells
+        if (UI && UI.initTooltips) {
+            UI.initTooltips();
+        }
     },
 
     /**
@@ -1566,11 +1572,12 @@ export const ImportWizardManager = {
 
                 html += `<tr${rowClass}>`;
 
-                // Name cell with status dot
+                // Name cell with status dot and custom tooltip for the full name
+                const fullName = `${s.prenom || ''} ${s.nom || ''}`.trim();
                 html += `<td>
                     <div class="preview-student-cell">
                         <span class="preview-status-dot dot-${row.type}"></span>
-                        <span class="preview-student-name">${s.prenom || ''} <strong>${s.nom || ''}</strong></span>
+                        <span class="preview-student-name" data-tooltip="${fullName.replace(/"/g, '&quot;')}">${s.prenom || ''} <strong>${s.nom || ''}</strong></span>
                     </div>
                 </td>`;
 
@@ -1594,6 +1601,11 @@ export const ImportWizardManager = {
 
         // Store columns state
         this.state._enabledColumns = new Set(dataColumns.map(c => c.tag));
+
+        // Initialize custom Tippy.js tooltips for the new table rows/headers
+        if (UI && UI.initTooltips) {
+            UI.initTooltips();
+        }
     },
 
     /**
@@ -1696,7 +1708,7 @@ export const ImportWizardManager = {
         const str = String(value);
         if (str.length > 60) {
             const escaped = str.substring(0, 57).replace(/</g, '&lt;');
-            return `<span title="${str.replace(/"/g, '&quot;')}">${escaped}…</span>`;
+            return `<span data-tooltip="${str.replace(/"/g, '&quot;')}">${escaped}…</span>`;
         }
 
         return str.replace(/</g, '&lt;');

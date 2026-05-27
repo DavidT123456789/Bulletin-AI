@@ -219,6 +219,19 @@ export function convertMbnBilan(rawData) {
         }
     };
 
+    // Helper : fusionne pendingName + lastName détecté sur la ligne suivante
+    // Gère la concaténation directe (MAKARS--TREUTENA + ERE) vs espace (DOUILLOT + DARDENNE)
+    const mergePendingName = (pending, detectedLastName) => {
+        if (!pending) return detectedLastName;
+        const startsLowercase = /^[a-zàâäéèêëïîôùûüç]/.test(detectedLastName);
+        const pendingEndsHyphen = pending.endsWith('-');
+        const isCompoundSplit = pending.includes('--') && /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ]{1,4}$/.test(detectedLastName);
+        const needsDirectConcat = startsLowercase || pendingEndsHyphen || isCompoundSplit;
+        return needsDirectConcat
+            ? pending + detectedLastName
+            : `${pending} ${detectedLastName}`;
+    };
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
@@ -231,7 +244,8 @@ export function convertMbnBilan(rawData) {
         if (match) {
             saveCurrentStudent();
             const [, lastName, firstName, dev, moy, appreciationStart] = match;
-            currentStudent = { name: `${lastName} ${firstName}`, dev, moy, appreciation: [appreciationStart] };
+            const fullLastName = mergePendingName(pendingName, lastName);
+            currentStudent = { name: `${fullLastName} ${firstName}`, dev, moy, appreciation: [appreciationStart] };
             pendingName = null;
             continue;
         }
@@ -242,7 +256,8 @@ export function convertMbnBilan(rawData) {
         if (match) {
             saveCurrentStudent();
             const [, lastName, firstName, dev, moy] = match;
-            currentStudent = { name: `${lastName} ${firstName}`, dev, moy, appreciation: [] };
+            const fullLastName = mergePendingName(pendingName, lastName);
+            currentStudent = { name: `${fullLastName} ${firstName}`, dev, moy, appreciation: [] };
             pendingName = null;
             continue;
         }
@@ -253,7 +268,8 @@ export function convertMbnBilan(rawData) {
         if (match) {
             saveCurrentStudent();
             const [, lastName, firstName, appreciationStart] = match;
-            currentStudent = { name: `${lastName} ${firstName}`, dev: '', moy: '', appreciation: [appreciationStart] };
+            const fullLastName = mergePendingName(pendingName, lastName);
+            currentStudent = { name: `${fullLastName} ${firstName}`, dev: '', moy: '', appreciation: [appreciationStart] };
             pendingName = null;
             continue;
         }
@@ -264,7 +280,8 @@ export function convertMbnBilan(rawData) {
         if (match) {
             saveCurrentStudent();
             const [, lastName, firstName] = match;
-            currentStudent = { name: `${lastName} ${firstName}`, dev: '', moy: '', appreciation: [] };
+            const fullLastName = mergePendingName(pendingName, lastName);
+            currentStudent = { name: `${fullLastName} ${firstName}`, dev: '', moy: '', appreciation: [] };
             pendingName = null;
             continue;
         }
@@ -302,8 +319,8 @@ export function convertMbnBilan(rawData) {
             continue;
         }
 
-        // === PATTERN 5 : NOM seul (nom composé sur 2 lignes) ===
-        const lastNameOnlyPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]+)+)$/;
+        // === PATTERN 5 : NOM seul (nom composé ou simple sur 2 lignes) ===
+        const lastNameOnlyPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)$/;
         if (!pendingName && lastNameOnlyPattern.test(line)) {
             saveCurrentStudent();
             pendingName = line;
@@ -325,18 +342,22 @@ export function convertMbnBilan(rawData) {
         }
 
         // === PATTERN 6 : Prénom seul ou Prénom+données (suite d'un nom composé / multi-lignes) ===
-        if (pendingName) {
+        // Gère aussi le cas où un élève complet a été créé (sans notes) mais son prénom continue sur la ligne suivante (ex: SALI Zeynel Abedin \n Yasir 2 12,0)
+        const isStudentAwaitingGrades = currentStudent && !currentStudent.moy && !currentStudent.dev;
+        if (pendingName || isStudentAwaitingGrades) {
+            const activeName = pendingName || currentStudent.name;
+
             const fn6a = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+(\d+)\s+(\d{1,2}[.,]\d)\s+(.+)$/;
             match = line.match(fn6a);
             if (match) {
                 const [, firstName, dev, moy, appText] = match;
-                if (currentStudent && currentStudent.name === pendingName) {
-                    currentStudent.name = `${pendingName} ${firstName}`;
-                    if (!currentStudent.dev) currentStudent.dev = dev;
-                    if (!currentStudent.moy) currentStudent.moy = moy;
+                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                    currentStudent.name = `${activeName} ${firstName}`;
+                    currentStudent.dev = dev;
+                    currentStudent.moy = moy;
                     currentStudent.appreciation.push(appText);
                 } else {
-                    currentStudent = { name: `${pendingName} ${firstName}`, dev, moy, appreciation: [appText] };
+                    currentStudent = { name: `${activeName} ${firstName}`, dev, moy, appreciation: [appText] };
                 }
                 pendingName = null;
                 continue;
@@ -346,12 +367,12 @@ export function convertMbnBilan(rawData) {
             match = line.match(fn6b);
             if (match) {
                 const [, firstName, dev, moy] = match;
-                if (currentStudent && currentStudent.name === pendingName) {
-                    currentStudent.name = `${pendingName} ${firstName}`;
-                    if (!currentStudent.dev) currentStudent.dev = dev;
-                    if (!currentStudent.moy) currentStudent.moy = moy;
+                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                    currentStudent.name = `${activeName} ${firstName}`;
+                    currentStudent.dev = dev;
+                    currentStudent.moy = moy;
                 } else {
-                    currentStudent = { name: `${pendingName} ${firstName}`, dev, moy, appreciation: [] };
+                    currentStudent = { name: `${activeName} ${firstName}`, dev, moy, appreciation: [] };
                 }
                 pendingName = null;
                 continue;
@@ -361,11 +382,11 @@ export function convertMbnBilan(rawData) {
             match = line.match(fn6c);
             if (match) {
                 const [, firstName, appText] = match;
-                if (currentStudent && currentStudent.name === pendingName) {
-                    currentStudent.name = `${pendingName} ${firstName}`;
+                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                    currentStudent.name = `${activeName} ${firstName}`;
                     currentStudent.appreciation.push(appText);
                 } else {
-                    currentStudent = { name: `${pendingName} ${firstName}`, dev: '', moy: '', appreciation: [appText] };
+                    currentStudent = { name: `${activeName} ${firstName}`, dev: '', moy: '', appreciation: [appText] };
                 }
                 pendingName = null;
                 continue;
@@ -373,10 +394,10 @@ export function convertMbnBilan(rawData) {
 
             const firstNameOnlyPattern = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)$/;
             if (firstNameOnlyPattern.test(line)) {
-                if (currentStudent && currentStudent.name === pendingName) {
-                    currentStudent.name = `${pendingName} ${line}`;
+                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                    currentStudent.name = `${activeName} ${line}`;
                 } else {
-                    currentStudent = { name: `${pendingName} ${line}`, dev: '', moy: '', appreciation: [] };
+                    currentStudent = { name: `${activeName} ${line}`, dev: '', moy: '', appreciation: [] };
                 }
                 pendingName = null;
                 continue;
