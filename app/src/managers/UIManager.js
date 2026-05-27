@@ -50,10 +50,10 @@ import { NotificationCoalescer } from './NotificationManager.js';
 let App;
 
 const NOTIF_ICONS = {
-    success: '<iconify-icon icon="ph:check"></iconify-icon>',
-    error: '<iconify-icon icon="solar:close-circle-linear"></iconify-icon>',
-    warning: '<iconify-icon icon="solar:danger-circle-linear"></iconify-icon>',
-    info: '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>'
+    success: '<iconify-icon icon="ph:check" aria-hidden="true"></iconify-icon>',
+    error: '<iconify-icon icon="solar:close-circle-linear" aria-hidden="true"></iconify-icon>',
+    warning: '<iconify-icon icon="solar:danger-circle-linear" aria-hidden="true"></iconify-icon>',
+    info: '<iconify-icon icon="solar:info-circle-linear" aria-hidden="true"></iconify-icon>'
 };
 
 
@@ -154,6 +154,15 @@ export const UI = {
         const notif = document.createElement('div');
         notif.className = `notification ${type}`;
 
+        // Accessibility (A11y) Roles
+        if (type === 'error' || type === 'warning') {
+            notif.setAttribute('role', 'alert');
+            notif.setAttribute('aria-live', 'assertive');
+        } else {
+            notif.setAttribute('role', 'status');
+            notif.setAttribute('aria-live', 'polite');
+        }
+
         notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
 
         // Interaction: Click to dismiss
@@ -213,6 +222,15 @@ export const UI = {
         const notif = document.createElement('div');
         notif.className = `notification ${type} actionable`;
 
+        // Accessibility (A11y) Roles
+        if (type === 'error' || type === 'warning') {
+            notif.setAttribute('role', 'alert');
+            notif.setAttribute('aria-live', 'assertive');
+        } else {
+            notif.setAttribute('role', 'status');
+            notif.setAttribute('aria-live', 'polite');
+        }
+
         notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
         notif.style.cursor = 'pointer';
         container.appendChild(notif);
@@ -260,6 +278,10 @@ export const UI = {
 
         const notif = document.createElement('div');
         notif.className = `notification ${type} notification-undo`;
+
+        // Accessibility (A11y) Roles
+        notif.setAttribute('role', 'alert');
+        notif.setAttribute('aria-live', 'assertive');
 
         notif.innerHTML = `
             ${NOTIF_ICONS[type] || NOTIF_ICONS.warning}

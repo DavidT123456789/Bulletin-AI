@@ -9,6 +9,7 @@ import { ListViewManager } from './ListViewManager.js';
 import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
+import { PromptService } from '../services/PromptService.js';
 
 let Am;
 let App;
@@ -250,18 +251,38 @@ export const MassImportManager = {
                 if (!existingResult.studentData.periods) {
                     existingResult.studentData.periods = {};
                 }
-                existingResult.studentData.periods[currentPeriod] = studentData.periods[currentPeriod];
+
+                const importedPeriodData = studentData.periods?.[currentPeriod];
+                const importedAppreciation = importedPeriodData?.appreciation ?? '';
+
+                // Conserver l'appréciation existante si l'importée est vide
+                const existingPeriodData = existingResult.studentData.periods[currentPeriod] || {};
+                const finalAppreciation = importedAppreciation || existingPeriodData.appreciation || '';
+
+                // On met à jour l'objet période sans écraser l'appréciation existante par du vide
+                existingResult.studentData.periods[currentPeriod] = {
+                    ...importedPeriodData,
+                    appreciation: finalAppreciation
+                };
+
                 existingResult.studentData.statuses = studentData.statuses || existingResult.studentData.statuses;
 
-                // Sync root appreciation field to match imported period data
-                const importedAppreciation = studentData.periods?.[currentPeriod]?.appreciation ?? '';
-                existingResult.appreciation = importedAppreciation;
+                // Synchronisation du champ d'appréciation racine
+                existingResult.appreciation = finalAppreciation;
 
                 // An imported appreciation is NOT AI-generated — reset the flag
                 // so the AI icon is not shown for data that came from a PDF/manual import
                 if (importedAppreciation) {
                     existingResult.wasGenerated = false;
                     existingResult.appreciationSource = 'imported';
+                    existingResult.generationPeriod = currentPeriod;
+                    try {
+                        existingResult.promptHash = PromptService.getPromptHash({
+                            ...existingResult.studentData,
+                            id: existingResult.id,
+                            currentPeriod: currentPeriod
+                        });
+                    } catch (_) { /* non-critical */ }
                 }
 
                 updatedCount++;

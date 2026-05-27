@@ -163,7 +163,7 @@ export const StudentDataManager = {
         const existingAppreciation = studentData.periods?.[currentPeriod]?.appreciation;
         const hasAppreciation = existingAppreciation && existingAppreciation.trim().length > 0;
 
-        return {
+        const result = {
             id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
             nom: studentData.nom,
             prenom: studentData.prenom,
@@ -193,6 +193,20 @@ export const StudentDataManager = {
             appreciationSource: hasAppreciation ? 'imported' : null,
             history: []
         };
+
+        // Compute promptHash baseline if appreciation is imported
+        if (hasAppreciation) {
+            result.generationPeriod = currentPeriod;
+            try {
+                result.promptHash = PromptService.getPromptHash({
+                    ...result.studentData,
+                    id: result.id,
+                    currentPeriod: currentPeriod
+                });
+            } catch (_) { /* non-critical */ }
+        }
+
+        return result;
     },
 
     _prepareStudentListForImport(lines, formatMap, importMode) {
