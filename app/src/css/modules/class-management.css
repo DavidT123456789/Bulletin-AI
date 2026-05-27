@@ -177,10 +177,22 @@
     background: var(--item-hover-bg);
 }
 
+.class-dropdown-item:focus-visible {
+    background: var(--item-hover-bg);
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    outline: none;
+}
+
 .class-dropdown-item.active {
     background: rgba(var(--primary-color-rgb), 0.05);
     box-shadow: none;
     border-color: transparent;
+}
+
+.class-dropdown-item.active:focus-visible {
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(var(--primary-color-rgb), 0.45);
+    outline: none;
 }
 
 .class-dropdown-item.active .class-name {

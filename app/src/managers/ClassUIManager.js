@@ -39,6 +39,15 @@ export const ClassUIManager = {
             this.toggleDropdown();
         });
 
+        // Support clavier pour le bouton d'en-tête (Entrée/Espace)
+        DOM.headerClassChip?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleDropdown();
+            }
+        });
+
         // Add new class button
         DOM.addNewClassBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -59,10 +68,36 @@ export const ClassUIManager = {
             }
         });
 
-        // Close dropdown on escape
+        // Navigation clavier et fermeture via Échap lorsque le dropdown est ouvert
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isDropdownOpen) {
+            if (!this._isDropdownOpen) return;
+
+            // Ne pas interférer si l'utilisateur saisit du texte dans un champ (ex: création de classe)
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === 'Escape') {
                 this.closeDropdown();
+                DOM.headerClassChip?.focus();
+                return;
+            }
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                const items = Array.from(DOM.classDropdownList?.querySelectorAll('.class-dropdown-item') || []);
+                if (items.length === 0) return;
+
+                e.preventDefault();
+                const activeEl = document.activeElement;
+                const index = items.indexOf(activeEl);
+
+                if (index === -1) {
+                    const activeItem = DOM.classDropdownList.querySelector('.class-dropdown-item.active');
+                    (activeItem || items[0])?.focus();
+                } else {
+                    const nextIndex = e.key === 'ArrowDown'
+                        ? (index + 1) % items.length
+                        : (index - 1 + items.length) % items.length;
+                    items[nextIndex]?.focus();
+                }
             }
         });
     },
@@ -113,6 +148,11 @@ export const ClassUIManager = {
 
         // Render class list
         this.renderClassList();
+
+        // Focus de la classe active pour une accessibilité clavier optimale
+        requestAnimationFrame(() => {
+            DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.focus();
+        });
     },
 
     /**
@@ -282,7 +322,10 @@ export const ClassUIManager = {
 
         DOM.classDropdownList.innerHTML = classes.map(cls => `
             <div class="class-dropdown-item ${cls.id === currentClassId ? 'active' : ''}" 
-                 data-class-id="${cls.id}">
+                 data-class-id="${cls.id}"
+                 tabindex="0"
+                 role="option"
+                 aria-selected="${cls.id === currentClassId ? 'true' : 'false'}">
                 <div class="class-info">
                     <span class="class-name">${this._escapeHtml(cls.name)}</span>
                     <span class="class-meta">
@@ -295,16 +338,31 @@ export const ClassUIManager = {
             </div>
         `).join('');
 
-        // Bind click events on class items
+        // Bind click and keyboard events on class items
         DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
-            item.addEventListener('click', async (e) => {
-                const classId = e.currentTarget.dataset.classId;
+            const selectClass = async () => {
+                const classId = item.dataset.classId;
                 await this.handleClassSwitch(classId);
+            };
+
+            item.addEventListener('click', selectClass);
+            item.addEventListener('keydown', async (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    await selectClass();
+                }
             });
         });
 
         // Update progress indicators asynchronously
         this._updateClassProgressIndicators(classes);
+
+        // Défilement automatique vers la classe active si le dropdown est ouvert
+        if (this._isDropdownOpen) {
+            requestAnimationFrame(() => {
+                DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView({ block: 'nearest' });
+            });
+        }
     },
 
     /**
