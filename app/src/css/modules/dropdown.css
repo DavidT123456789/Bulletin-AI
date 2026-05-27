@@ -251,6 +251,8 @@
     margin-bottom: 2px;
     /* Séparation pour effet "pilule" */
     background: transparent;
+    scroll-margin-top: 6px;
+    scroll-margin-bottom: 6px;
 }
 
 .custom-dropdown-option:last-child {

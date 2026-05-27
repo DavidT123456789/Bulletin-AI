@@ -167,6 +167,8 @@
     transition: all var(--transition-fast);
     margin-bottom: 2px;
     border: 1px solid transparent;
+    scroll-margin-top: 12px;
+    scroll-margin-bottom: 12px;
 }
 
 .class-dropdown-item:last-child {
