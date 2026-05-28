@@ -60,7 +60,7 @@ ERE Lisa 2 14,5 Bon semestre : Lisa fait preuv...`;
             expect(lines[0]).toBe('MAKARS--TREUTENAERE Lisa\t2\t14.5\tBon semestre : Lisa fait preuv...');
         });
 
-        it('should handle multi-line split first names (e.g. SALI Zeynel Abedin \\n Yasir)', () => {
+        it('should handle multi-line split first names (e.g. SALI Zeynel Abedin \n Yasir)', () => {
             const rawData = `Bilan des appréciations du premier semestre
 Élève Dev. Moy. Acquisitions
 SALI Zeynel Abedin
@@ -71,6 +71,74 @@ Yasir 2 12,0 Semestre satisfaisant.`;
 
             expect(lines).toHaveLength(1);
             expect(lines[0]).toBe('SALI Zeynel Abedin Yasir\t2\t12.0\tSemestre satisfaisant.');
+        });
+
+        it('should handle Arthur SONGIS PIERRON with multi-line name and tab-separated appreciation (Arthur \t Trop d\'absence...)', () => {
+            const rawData = `Bilan des appréciations du premier semestre
+Élève Dev. Moy. Acquisitions
+SONGIS PIERRON
+Arthur\tTrop d'absence pour porter un jugement sérieux ce semestre.`;
+
+            const result = convertMbnBilan(rawData);
+            const lines = result.split('\n');
+
+            expect(lines).toHaveLength(1);
+            expect(lines[0]).toBe("SONGIS PIERRON Arthur\t\t\tTrop d'absence pour porter un jugement sérieux ce semestre.");
+        });
+
+        it('should handle multi-line names spanning 3 lines (e.g. DEBANT RAKOTO DIT \n RAZAFINDRANALY \n Michel)', () => {
+            const rawData = `Bilan des appréciations du second semestre
+Élève Dev. Moy. Acquisitions
+DEBANT RAKOTO DIT
+RAZAFINDRANALY
+Michel\t2\t12,5\tBon travail.`;
+
+            const result = convertMbnBilan(rawData);
+            const lines = result.split('\n');
+
+            expect(lines).toHaveLength(1);
+            expect(lines[0]).toBe("DEBANT RAKOTO DIT RAZAFINDRANALY Michel\t2\t12.5\tBon travail.");
+        });
+
+        it('should handle compound first names with hyphens and capital letters (e.g. THIEBAULT \n Rose-Andréa)', () => {
+            const rawData = `Bilan des appréciations du premier semestre
+Élève Dev. Moy. Acquisitions
+THIEBAULT
+Rose-Andréa\t2\t17,5 Très bon semestre : Rose-Andréa...`;
+
+            const result = convertMbnBilan(rawData);
+            const lines = result.split('\n');
+
+            expect(lines).toHaveLength(1);
+            expect(lines[0]).toBe("THIEBAULT Rose-Andréa\t2\t17.5\tTrès bon semestre : Rose-Andréa...");
+        });
+
+        it('should stop parsing immediately when STOP_PATTERN is encountered, ignoring post-tableau text', () => {
+            const rawData = `Bilan des appréciations du premier semestre
+Élève Dev. Moy. Acquisitions
+MARTIN Lucas 2 15,5 Très bon travail.
+Appréciations de la classe
+Classe dynamique et travailleuse.
+Parcours éducatifs
+EPI Change`;
+
+            const result = convertMbnBilan(rawData);
+            const lines = result.split('\n');
+
+            expect(lines).toHaveLength(1);
+            expect(lines[0]).toBe("MARTIN Lucas\t2\t15.5\tTrès bon travail.");
+        });
+
+        it('should clean tab characters leaked inside appreciation text (e.g. Chen Luc)', () => {
+            const rawData = `Bilan des appréciations du premier semestre
+Élève Dev. Moy. Acquisitions
+CHEN Luc\tAucune\t\t\tévaluation ce semestre : impossible d'apprécier le niveau de Luc.`;
+
+            const result = convertMbnBilan(rawData);
+            const lines = result.split('\n');
+
+            expect(lines).toHaveLength(1);
+            expect(lines[0]).toBe("CHEN Luc\t\t\tAucune évaluation ce semestre : impossible d'apprécier le niveau de Luc.");
         });
     });
 });

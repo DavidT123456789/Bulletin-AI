@@ -29,33 +29,35 @@ export function detectSeparator(rawData) {
     if (lines.length === 0) return '\t';
 
     const separators = ['\t', '|', ';', ','];
-    /** @type {Object.<string, SeparatorInfo>} */
-    const counts = {};
+    const scores = {};
 
     separators.forEach(sep => {
-        const sepCounts = lines.map(line => (line.match(new RegExp(`\\${sep}`, 'g')) || []).length);
+        // Compte le nombre de séparateurs par ligne (échappement pour les méta-caractères comme '|')
+        const regexSymbol = ['|', '$', '^', '*', '+', '?', '(', ')', '[', ']', '{', '}'].includes(sep) ? '\\' + sep : sep;
+        const sepCounts = lines.map(line => (line.match(new RegExp(regexSymbol, 'g')) || []).length);
+        
+        // Trouve les fréquences de chaque count non nul
+        const frequencies = {};
+        let maxFreq = 0;
 
-        const validCounts = sepCounts.filter(count => count > 0);
-        if (validCounts.length === 0) return;
+        sepCounts.forEach(count => {
+            if (count > 0) {
+                frequencies[count] = (frequencies[count] || 0) + 1;
+                if (frequencies[count] > maxFreq) {
+                    maxFreq = frequencies[count];
+                }
+            }
+        });
 
-        const firstCount = validCounts[0];
-        const isConsistent = validCounts.every(count => count === firstCount);
-
-        if (isConsistent) {
-            counts[sep] = {
-                count: firstCount,
-                lines: validCounts.length
-            };
-        }
+        // Le score est le nombre maximal de lignes partageant le même count pour ce séparateur
+        scores[sep] = maxFreq;
     });
 
-    // Trie par nombre de lignes cohérentes, puis par nombre d'occurrences
-    const bestSep = Object.keys(counts).sort((a, b) => {
-        if (counts[b].lines !== counts[a].lines) return counts[b].lines - counts[a].lines;
-        return counts[b].count - counts[a].count;
-    })[0];
+    // Sélectionne le séparateur avec le score le plus élevé
+    const bestSep = Object.keys(scores).sort((a, b) => scores[b] - scores[a])[0];
 
-    return bestSep || '\t';
+    // Si aucun séparateur n'a de score > 0, on retourne la tabulation par défaut
+    return scores[bestSep] > 0 ? bestSep : '\t';
 }
 
 /**
@@ -67,9 +69,42 @@ export function detectSeparator(rawData) {
  */
 export function parseLine(line, separator) {
     if (separator === '\t') {
-        return line.split('\t').map(p => p.trim());
+        // Pour les fichiers tabulés (TSV), un split simple est suffisant et performant
+        return line.split('\t').map(p => {
+            let trimmed = p.trim();
+            if (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) {
+                trimmed = trimmed.substring(1, trimmed.length - 1).trim();
+            }
+            return trimmed;
+        });
     }
-    return line.split(separator).map(p => p.trim());
+
+    // Machine à états pour parser le CSV de manière robuste (gestion des guillemets et séparateurs imbriqués)
+    const result = [];
+    let currentField = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+            // Gestion des guillemets échappés ("")
+            if (inQuotes && line[i + 1] === '"') {
+                currentField += '"';
+                i++; // Saute le second guillemet
+            } else {
+                inQuotes = !inQuotes; // Bascule l'état
+            }
+        } else if (char === separator && !inQuotes) {
+            result.push(currentField.trim());
+            currentField = '';
+        } else {
+            currentField += char;
+        }
+    }
+    result.push(currentField.trim());
+
+    return result;
 }
 
 /**

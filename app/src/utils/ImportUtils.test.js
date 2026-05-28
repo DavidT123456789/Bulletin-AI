@@ -80,6 +80,15 @@ Dupont\tMarie\t18`;
 
             expect(detectSeparator(data)).toBe('\t');
         });
+
+        it('should detect tab even if one line has a different tab count due to empty cells', () => {
+            const data = `Nom\tPrénom\tNote
+Martin\tLucas\t15
+Dupont\tMarie\t18
+Chen\tLuc\t\t\tNon évalué`;
+
+            expect(detectSeparator(data)).toBe('\t');
+        });
     });
 
     describe('parseLine()', () => {
@@ -135,6 +144,21 @@ Dupont\tMarie\t18`;
             const result = parseLine('  Nom  |  Prénom  |  Note  ', '|');
 
             expect(result).toEqual(['Nom', 'Prénom', 'Note']);
+        });
+
+        it('should handle quoted values and strip surrounding double quotes', () => {
+            const result = parseLine('"ALASHKAR Mohamed Rayan";"2h00";"";"2 sur 3";"8,40"', ';');
+            expect(result).toEqual(['ALASHKAR Mohamed Rayan', '2h00', '', '2 sur 3', '8,40']);
+        });
+
+        it('should handle internal separators inside quoted fields without splitting them', () => {
+            const result = parseLine('"ALASHKAR Mohamed Rayan","8,40","Malgré des difficultés, vous progressez."', ',');
+            expect(result).toEqual(['ALASHKAR Mohamed Rayan', '8,40', 'Malgré des difficultés, vous progressez.']);
+        });
+
+        it('should handle escaped double quotes ("") inside quoted fields', () => {
+            const result = parseLine('"LEROY Théo";"6,22";"Il dit ""merci"" et participe."', ';');
+            expect(result).toEqual(['LEROY Théo', '6,22', 'Il dit "merci" et participe.']);
         });
     });
 

@@ -49,6 +49,10 @@ function isFirstNameOnly(line) {
         /[a-zàâäéèêëïîôùûüç]/.test(line);
 }
 
+// Pattern pour un mot de prénom (ex: "Marie", "Rose-Andréa", "Jean-Pierre")
+// Autorise une majuscule ou minuscule après un trait d'union pour les prénoms composés.
+const FIRST_NAME_WORD = /[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç']*(?:-[a-zA-ZÀ-ÿ][a-zàâäéèêëïîôùûüç']*)*/.source;
+
 // ============================================================================
 // PARSER : FORMAT BILAN PRONOTE
 // ============================================================================
@@ -141,7 +145,7 @@ function extractStudents(lines) {
     const patternWithGrade = /^(.+[a-zàâäéèêëïîôùûüç])(\d{1,2}?)(\d{1,2}[.,]\d)$/;
 
     // Pattern élève sans notes (NOM MAJUSCULES + Prénom)
-    const patternNoGrade = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)*)$/;
+    const patternNoGrade = new RegExp(`^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*\\s+${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})*)$`);
 
     for (const line of lines) {
         // Skip headers
@@ -205,16 +209,18 @@ export function convertMbnBilan(rawData) {
     let pendingName = null; // Pour les noms sur 2 lignes
 
     // Pattern unifié pour lignes à ignorer (header/footer/matières)
-    const IGNORE_PATTERN = /^(Bilan des appréciations|Collège|Année scolaire|TECHNOLOGIE|FRANÇAIS|MATHÉMATIQUES|HISTOIRE|ANGLAIS|ESPAGNOL|ARTS|Éléments travaillés|Appréciations individuelles|Élève\s+Dev\.|et difficultés|Édité le|Page \d|EA\s*:|Appréciations de la classe|Premier semestre|Second semestre|Parcours|Algorithme|Programmation)/i;
+    const IGNORE_PATTERN = /^(Bilan des appréciations|Collège|Année scolaire|TECHNOLOGIE|FRANÇAIS|MATHÉMATIQUES|HISTOIRE|ANGLAIS|ESPAGNOL|ARTS|Éléments travaillés|Appréciations individuelles|Élève\s+Dev\.|et difficultés|Édité le|Page \d|EA\s*:|Premier semestre|Second semestre|Algorithme|Programmation|EPI\s|--?\s*EPI\b|\d+\s+\d+\s*:)/i;
     const isIgnorableLine = (line) => IGNORE_PATTERN.test(line);
+    const STOP_PATTERN = /^(Appréciations de la classe|Parcours éducatifs|Parcours\s)/i;
 
     // Fonction pour sauvegarder l'élève courant
     const saveCurrentStudent = () => {
         if (currentStudent) {
-            const appreciation = currentStudent.appreciation.join(' ').trim();
+            const appreciation = currentStudent.appreciation.join(' ').replace(/\t+/g, ' ').trim();
             const dev = currentStudent.dev || '';
             const moy = currentStudent.moy ? currentStudent.moy.replace(',', '.') : '';
-            students.push(`${currentStudent.name}\t${dev}\t${moy}\t${appreciation}`);
+            const cleanName = currentStudent.name.replace(/\t+/g, ' ').trim();
+            students.push(`${cleanName}\t${dev}\t${moy}\t${appreciation}`);
             currentStudent = null;
         }
     };
@@ -235,11 +241,17 @@ export function convertMbnBilan(rawData) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
+        // Arrêt immédiat si on rencontre un bloc de fin de document/page
+        if (STOP_PATTERN.test(line)) {
+            saveCurrentStudent();
+            break;
+        }
+
         // Ignorer les lignes de header/footer
         if (isIgnorableLine(line)) continue;
 
         // === PATTERN 1 : NOM Prénom Dev Moy Texte (avec notes ET appréciation) ===
-        const fullPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+(\d+)\s+(\d{1,2}[.,]\d)\s+(.+)$/;
+        const fullPattern = new RegExp(`^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\\s+(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+(\\d+)\\s+(\\d{1,2}[.,]\\d)\\s+(.+)$`);
         let match = line.match(fullPattern);
         if (match) {
             saveCurrentStudent();
@@ -251,7 +263,7 @@ export function convertMbnBilan(rawData) {
         }
 
         // === PATTERN 2 : NOM Prénom Dev Moy (avec notes, SANS appréciation) ===
-        const noAppPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+(\d+)\s+(\d{1,2}[.,]\d)$/;
+        const noAppPattern = new RegExp(`^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\\s+(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+(\\d+)\\s+(\\d{1,2}[.,]\\d)$`);
         match = line.match(noAppPattern);
         if (match) {
             saveCurrentStudent();
@@ -263,7 +275,7 @@ export function convertMbnBilan(rawData) {
         }
 
         // === PATTERN 3 : NOM Prénom Texte (sans notes, avec texte) ===
-        const noGradeWithTextPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç].{10,})$/;
+        const noGradeWithTextPattern = new RegExp(`^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\\s+(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç].{10,})$`);
         match = line.match(noGradeWithTextPattern);
         if (match) {
             saveCurrentStudent();
@@ -275,7 +287,7 @@ export function convertMbnBilan(rawData) {
         }
 
         // === PATTERN 4 : NOM Prénom seul (sans notes, sans texte) ===
-        const nameOnlyPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\s+([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)$/;
+        const nameOnlyPattern = new RegExp(`^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)\\s+(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)$`);
         match = line.match(nameOnlyPattern);
         if (match) {
             saveCurrentStudent();
@@ -319,11 +331,15 @@ export function convertMbnBilan(rawData) {
             continue;
         }
 
-        // === PATTERN 5 : NOM seul (nom composé ou simple sur 2 lignes) ===
+        // === PATTERN 5 : NOM seul (nom composé ou simple sur 2+ lignes) ===
         const lastNameOnlyPattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ'-]*)*)$/;
-        if (!pendingName && lastNameOnlyPattern.test(line)) {
-            saveCurrentStudent();
-            pendingName = line;
+        if (lastNameOnlyPattern.test(line)) {
+            if (pendingName) {
+                pendingName = `${pendingName} ${line}`;
+            } else {
+                saveCurrentStudent();
+                pendingName = line;
+            }
             continue;
         }
 
@@ -347,7 +363,7 @@ export function convertMbnBilan(rawData) {
         if (pendingName || isStudentAwaitingGrades) {
             const activeName = pendingName || currentStudent.name;
 
-            const fn6a = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+(\d+)\s+(\d{1,2}[.,]\d)\s+(.+)$/;
+            const fn6a = new RegExp(`^(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+(\\d+)\\s+(\\d{1,2}[.,]\\d)\\s+(.+)$`);
             match = line.match(fn6a);
             if (match) {
                 const [, firstName, dev, moy, appText] = match;
@@ -363,7 +379,7 @@ export function convertMbnBilan(rawData) {
                 continue;
             }
 
-            const fn6b = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+(\d+)\s+(\d{1,2}[.,]\d)$/;
+            const fn6b = new RegExp(`^(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+(\\d+)\\s+(\\d{1,2}[.,]\\d)$`);
             match = line.match(fn6b);
             if (match) {
                 const [, firstName, dev, moy] = match;
@@ -378,29 +394,49 @@ export function convertMbnBilan(rawData) {
                 continue;
             }
 
-            const fn6c = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)\s+([a-zàâäéèêëïîôùûüç].{5,})$/;
-            match = line.match(fn6c);
-            if (match) {
-                const [, firstName, appText] = match;
-                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
-                    currentStudent.name = `${activeName} ${firstName}`;
-                    currentStudent.appreciation.push(appText);
-                } else {
-                    currentStudent = { name: `${activeName} ${firstName}`, dev: '', moy: '', appreciation: [appText] };
-                }
-                pendingName = null;
-                continue;
-            }
+            // Détection si l'élève courant a déjà un prénom (lettre minuscule dans le nom)
+            const hasFirstName = currentStudent && /[a-zàâäéèêëïîôùûüç]/.test(currentStudent.name);
 
-            const firstNameOnlyPattern = /^([A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+(?:\s+[A-ZÀ-ÿ][a-zàâäéèêëïîôùûüç'-]+)?)$/;
-            if (firstNameOnlyPattern.test(line)) {
-                if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
-                    currentStudent.name = `${activeName} ${line}`;
-                } else {
-                    currentStudent = { name: `${activeName} ${line}`, dev: '', moy: '', appreciation: [] };
+            if (!hasFirstName) {
+                // fn6Tab : Prénom \t Appréciation (avec tabulations spatiales)
+                const fn6Tab = new RegExp(`^(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\t+(.+)$`);
+                match = line.match(fn6Tab);
+                if (match) {
+                    const [, firstName, appText] = match;
+                    if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                        currentStudent.name = `${activeName} ${firstName}`;
+                        currentStudent.appreciation.push(appText);
+                    } else {
+                        currentStudent = { name: `${activeName} ${firstName}`, dev: '', moy: '', appreciation: [appText] };
+                    }
+                    pendingName = null;
+                    continue;
                 }
-                pendingName = null;
-                continue;
+
+                const fn6c = new RegExp(`^(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)\\s+([a-zàâäéèêëïîôùûüç].{5,})$`);
+                match = line.match(fn6c);
+                if (match) {
+                    const [, firstName, appText] = match;
+                    if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                        currentStudent.name = `${activeName} ${firstName}`;
+                        currentStudent.appreciation.push(appText);
+                    } else {
+                        currentStudent = { name: `${activeName} ${firstName}`, dev: '', moy: '', appreciation: [appText] };
+                    }
+                    pendingName = null;
+                    continue;
+                }
+
+                const firstNameOnlyPattern = new RegExp(`^(${FIRST_NAME_WORD}(?: +${FIRST_NAME_WORD})?)$`);
+                if (firstNameOnlyPattern.test(line)) {
+                    if (currentStudent && (currentStudent.name === pendingName || isStudentAwaitingGrades)) {
+                        currentStudent.name = `${activeName} ${line}`;
+                    } else {
+                        currentStudent = { name: `${activeName} ${line}`, dev: '', moy: '', appreciation: [] };
+                    }
+                    pendingName = null;
+                    continue;
+                }
             }
 
             pendingName = null;

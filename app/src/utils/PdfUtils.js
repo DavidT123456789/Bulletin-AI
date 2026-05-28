@@ -70,17 +70,20 @@ export async function extractTextFromPdf(file) {
             const currentY = item.transform[5];
             const currentX = item.transform[4];
 
-            // Détecte les sauts de ligne basés sur la position Y
-            // Utilise un seuil relatif à la hauteur du texte
             const lineHeight = item.height || 10;
-            if (lastY !== null && Math.abs(currentY - lastY) > lineHeight * 0.5) {
+            const dyDown = lastY !== null && (lastY - currentY) > lineHeight * 0.5;
+            const dyUp = lastY !== null && (currentY - lastY) > lineHeight * 0.5;
+            const returnToLeft = lastX !== null && currentX < lastX - 20;
+
+            if (dyUp && lastX !== null && (currentX - lastX) > 50) {
+                pageText.push('\t');
+            } else if (dyDown || dyUp || returnToLeft) {
                 pageText.push('\n');
-            }
-            // Sinon, ajoute un espace si les items sont séparés horizontalement
-            else if (lastX !== null && pageText.length > 0) {
+            } else if (lastX !== null && pageText.length > 0) {
                 const gap = currentX - (lastX + lastWidth);
-                // Si gap significatif entre items sur même ligne, ajoute un espace
-                if (gap > 2) {
+                if (gap > 15) {
+                    pageText.push('\t');
+                } else if (gap > 2) {
                     pageText.push(' ');
                 }
             }
