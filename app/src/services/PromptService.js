@@ -48,14 +48,18 @@ export const PromptService = {
         // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
         const isAnonymous = appState.anonymizeData ?? true;
         const studentIdentifier = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
-
+        const isNeutralVoice = iaConfig.voice === 'neutre';
         const promptParts = [];
 
         // Introduction du prompt (avec discipline si renseignée)
         const disciplineContext = iaConfig.discipline
             ? ` en ${iaConfig.discipline}`
             : '';
-        promptParts.push(`Rédige l'appréciation de l'élève ${studentIdentifier}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        if (isNeutralVoice) {
+            promptParts.push(`Rédige l'appréciation d'un élève${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        } else {
+            promptParts.push(`Rédige l'appréciation de l'élève ${studentIdentifier}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        }
 
         // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
         promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
@@ -78,6 +82,7 @@ export const PromptService = {
         const voiceInstruction = {
             'je': 'Utilise impérativement la première personne du singulier ("Je", "J\'observe", "mon avis").',
             'nous': 'Utilise impérativement la première personne du pluriel ("Nous", "Nous notons", "notre avis") ou une forme impersonnelle institutionnelle.',
+            'neutre': 'Rédige de manière totalement neutre et impersonnelle. N\'utilise JAMAIS le prénom de l\'élève, ni "je", ni "nous", ni "vous". Utilise exclusivement la troisième personne et des tournures impersonnelles (ex: "L\'élève fait preuve de...", "Le travail fourni...", "Les résultats traduisent...", "Un investissement régulier est constaté.").',
         }[iaConfig.voice];
 
         if (voiceInstruction) {
@@ -95,8 +100,6 @@ export const PromptService = {
         }
 
         promptParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.join('\n'));
-
-
 
         // Anonymisation : on n'envoie PAS le nom de famille, seulement les notes
         // On n'envoie que les périodes jusqu'à la période à évaluer (incluse)
@@ -147,12 +150,17 @@ export const PromptService = {
 
         // Note: Le nom de famille n'est JAMAIS envoyé, même si l'anonymisation est désactivée.
         // Seul le prénom est partagé si l'utilisateur le permet.
-        const nameContext = studentIdentifier;
+        // En mode neutre, on ne mentionne aucun identifiant personnel.
 
         // Si on envoie le vrai prénom, on laisse l'IA déduire le genre (sauf si indéterminé)
-        // Si anonyme ([PRÉNOM]), on DOIT fournir le genre.
-        const showGender = isAnonymous || gender === 'indéterminé';
+        // Si anonyme ([PRÉNOM]) ou neutre, on DOIT fournir le genre pour l'accord grammatical.
+        const showGender = isAnonymous || isNeutralVoice || gender === 'indéterminé';
         const genderSuffix = showGender ? ` (${genderLabel})` : '';
+
+        // En mode neutre: "Genre : féminin" au lieu de "Élève : Élève (féminin)"
+        const studentLine = isNeutralVoice
+            ? `Genre : ${genderLabel}`
+            : `Élève : ${studentIdentifier}${genderSuffix}`;
 
         // --- CONTEXTE SCOLAIRE ---
         const currentClass = appState.classes?.find(c => c.id === appState.currentClassId);
@@ -167,10 +175,7 @@ export const PromptService = {
             promptParts.push(contextText);
         }
 
-        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${nameContext}${genderSuffix}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
-
-        // Instruction finale simple (déplacée dans les instructions de style)
-        // promptParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
+        promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\n${studentLine}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
 
         const appreciationPrompt = promptParts.join('\n\n');
 
