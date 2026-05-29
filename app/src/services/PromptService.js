@@ -3,6 +3,7 @@ import { DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../config/Config.js
 import { Utils } from '../utils/Utils.js';
 import { DOM } from '../utils/DOM.js';
 import { StatsService } from './StatsService.js';
+import { LEVELS, detectLevelFromName } from '../utils/LevelDetector.js';
 import { JournalManager } from '../managers/JournalManager.js';
 
 export const PromptService = {
@@ -152,6 +153,19 @@ export const PromptService = {
         // Si anonyme ([PRÉNOM]), on DOIT fournir le genre.
         const showGender = isAnonymous || gender === 'indéterminé';
         const genderSuffix = showGender ? ` (${genderLabel})` : '';
+
+        // --- CONTEXTE SCOLAIRE ---
+        const currentClass = appState.classes?.find(c => c.id === appState.currentClassId);
+        if (currentClass) {
+            const classLevel = currentClass.level || detectLevelFromName(currentClass.name);
+            const levelMeta = LEVELS[classLevel] || LEVELS.generique;
+            
+            let contextText = `--- CONTEXTE SCOLAIRE ---\nClasse : ${currentClass.name}`;
+            if (classLevel && classLevel !== 'generique') {
+                contextText += `\nNiveau : ${levelMeta.label}`;
+            }
+            promptParts.push(contextText);
+        }
 
         promptParts.push(`--- DONNÉES DE L'ÉLÈVE ---\nÉlève : ${nameContext}${genderSuffix}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
 

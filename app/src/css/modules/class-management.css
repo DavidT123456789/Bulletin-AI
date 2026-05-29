@@ -1240,3 +1240,39 @@
     display: flex;
     gap: 8px;
 }
+
+
+/* ====================================================================
+   INLINE CREATE FORM (Modal variant)
+   ==================================================================== */
+
+.inline-create-class-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: var(--surface-color);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+    animation: slideDownExpand 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.inline-create-class-form .form-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+}
+
+.inline-create-class-form .new-class-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    outline: none;
+}

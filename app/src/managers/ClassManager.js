@@ -7,6 +7,7 @@
 
 import { appState, userSettings } from '../state/State.js';
 import { DBService } from '../services/DBService.js';
+import { detectLevelFromName } from '../utils/LevelDetector.js';
 
 let UI;
 let StorageManager;
@@ -89,7 +90,7 @@ export const ClassManager = {
      * @param {string} [subject] - Matière par défaut
      * @returns {Object} La classe créée
      */
-    createClass(name, year = null, subject = null) {
+    createClass(name, year = null, subject = null, level = null) {
         if (!name || !name.trim()) {
             throw new Error('Le nom de la classe est requis');
         }
@@ -102,6 +103,7 @@ export const ClassManager = {
             name: name.trim(),
             year: currentYear,
             subject: subject || appState.currentSubject || 'Français',
+            level: level || detectLevelFromName(name),
             createdAt: now,
             updatedAt: now
         };
@@ -137,6 +139,11 @@ export const ClassManager = {
         if (classIndex === -1) {
             console.warn(`[ClassManager] Classe non trouvée: ${classId}`);
             return null;
+        }
+
+        // Si le nom change et qu'aucun niveau n'est fourni explicitement, re-détecter silencieusement
+        if (updates.name && !updates.level) {
+            updates.level = detectLevelFromName(updates.name);
         }
 
         // Mettre à jour

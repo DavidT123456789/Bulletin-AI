@@ -9,6 +9,7 @@ import { DOM } from '../utils/DOM.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { detectLevelFromName } from '../utils/LevelDetector.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
@@ -271,18 +272,18 @@ export const ClassUIManager = {
                 input.disabled = true;
                 await this._createAndSwitchClass(className);
                 removeForm();
-                // Note: renderClassList() is already called in _createAndSwitchClass()
             }
         };
     },
+
 
     /**
      * Crée une classe et bascule vers elle
      * @private
      */
-    async _createAndSwitchClass(className) {
+    async _createAndSwitchClass(className, level = null) {
         try {
-            const newClass = ClassManager.createClass(className);
+            const newClass = ClassManager.createClass(className, null, null, level);
             await ClassManager.switchClass(newClass.id);
             this.updateHeaderDisplay();
             this.renderClassList();
@@ -676,6 +677,14 @@ export const ClassUIManager = {
         } else {
             // Si des classes existent, mettre à jour l'affichage
             this.updateHeaderDisplay();
+
+            // Migration silencieuse des classes existantes n'ayant pas de niveau
+            for (const cls of classes) {
+                if (!cls.level) {
+                    const detectedLevel = detectLevelFromName(cls.name);
+                    ClassManager.updateClass(cls.id, { level: detectedLevel });
+                }
+            }
         }
     },
 
@@ -954,38 +963,19 @@ export const ClassUIManager = {
                 modalEl.querySelector('.class-management-content');
 
             const formHtml = `
-                <div class="inline-create-class-form" style="
-                    display: flex;
-                    gap: 6px;
-                    align-items: center;
-                    padding: 6px; 
-                    background: var(--surface-color);
-                    border: 1px solid var(--primary-color);
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                    border-radius: var(--radius-lg);
-                    margin-bottom: 16px;
-                    animation: slideDownExpand 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-                ">
-                    <input type="text" class="new-class-input" 
-                           placeholder="Nom de la nouvelle classe..." 
-                           maxlength="50"
-                           style="
-                               flex: 1;
-                               padding: 10px 14px;
-                               border: none;
-                               background: transparent;
-                               font-size: 1rem;
-                               font-weight: 500;
-                               color: var(--text-primary);
-                               outline: none;
-                           "
-                           autocomplete="off">
-                    <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);" disabled>
-                        <iconify-icon icon="ph:check-bold"></iconify-icon>
-                    </button>
-                    <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 6px 10px; min-width: 32px;">
-                        <iconify-icon icon="ph:x"></iconify-icon>
-                    </button>
+                <div class="inline-create-class-form">
+                    <div class="form-row">
+                        <input type="text" class="new-class-input" 
+                               placeholder="Nom de la nouvelle classe..." 
+                               maxlength="50"
+                               autocomplete="off">
+                        <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);" disabled>
+                            <iconify-icon icon="ph:check-bold"></iconify-icon>
+                        </button>
+                        <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 6px 10px; min-width: 32px;">
+                            <iconify-icon icon="ph:x"></iconify-icon>
+                        </button>
+                    </div>
                 </div>
             `;
 
