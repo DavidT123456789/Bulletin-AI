@@ -197,6 +197,7 @@ export const SettingsUIManager = {
             appState.subjects['MonStyle'] = { iaConfig: JSON.parse(JSON.stringify(DEFAULT_IA_CONFIG)) };
             UI.updateSettingsPromptFields();
             UI.showNotification("Style réinitialisé.", "success");
+            document.dispatchEvent(new CustomEvent('personalizationReset'));
         }, null, { title: 'Réinitialiser le style ?', compact: true });
     },
 

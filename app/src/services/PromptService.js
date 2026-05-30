@@ -82,7 +82,11 @@ export const PromptService = {
         const voiceInstruction = {
             'je': 'Utilise impérativement la première personne du singulier ("Je", "J\'observe", "mon avis").',
             'nous': 'Utilise impérativement la première personne du pluriel ("Nous", "Nous notons", "notre avis") ou une forme impersonnelle institutionnelle.',
-            'neutre': 'Rédige de manière totalement neutre et impersonnelle. N\'utilise JAMAIS le prénom de l\'élève, ni "je", ni "nous", ni "vous". Utilise exclusivement la troisième personne et des tournures impersonnelles (ex: "L\'élève fait preuve de...", "Le travail fourni...", "Les résultats traduisent...", "Un investissement régulier est constaté.").',
+            'neutre': 'Rédige de manière administrative, factuelle et concise (maximum 3 phrases) :\n' +
+                      '- AUCUN PRÉNOM.\n' +
+                      '- AUCUN PRONOM PERSONNEL : Interdiction totale d\'utiliser "Je", "Nous", "Vous", "Il" ou "Elle".\n' +
+                      '- PAS DE DÉBUT EN "L\'ÉLÈVE" : Ne commence jamais une phrase par "L\'élève" pour éviter la monotonie.\n' +
+                      '- STYLE : Utilise exclusivement des sujets inanimés (ex: "Le travail", "Les résultats", "L\'attitude") ou des formes impersonnelles (ex: "Il est nécessaire de", "On note").',
         }[iaConfig.voice];
 
         if (voiceInstruction) {

@@ -34,6 +34,16 @@ export const SettingsModalListeners = {
      * @private
      */
     _getCurrentSettings() {
+        if (!appState.useSubjectPersonalization) {
+            return {
+                length: DEFAULT_IA_CONFIG.length,
+                tone: 3,
+                styleInstructions: '',
+                enableStyleInstructions: false,
+                voice: 'default',
+                discipline: ''
+            };
+        }
         return {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length),
             tone: parseInt(DOM.iaToneSlider?.value || 3),
@@ -63,6 +73,7 @@ export const SettingsModalListeners = {
             SettingsUIManager.updatePersonalizationState();
             // Rafraîchir les valeurs affichées (sliders) pour refléter les nouvelles valeurs
             FormUI.updateSettingsFields();
+            this._updateStudentContextAndPrompt();
         });
 
         // Toggle pour le basculement automatique entre APIs
@@ -111,6 +122,11 @@ export const SettingsModalListeners = {
 
         // Reset Lab Style button
         addClickListener(DOM.resetLabStyleBtn, () => SettingsUIManager.resetPersonalStyle());
+
+        // Listen for reset events to update prompt preview
+        document.addEventListener('personalizationReset', () => {
+            this._updateStudentContextAndPrompt();
+        });
     },
 
     /**
@@ -219,6 +235,7 @@ export const SettingsModalListeners = {
                 appState.subjects['MonStyle'].iaConfig.length = lengthVal;
 
                 SettingsUIManager.showPreviewRefreshHint();
+                this._updateStudentContextAndPrompt();
             });
         }
 
@@ -236,11 +253,16 @@ export const SettingsModalListeners = {
                 if (toneDisplay) toneDisplay.textContent = toneLabels[toneVal] || 'Libre (par défaut)';
 
                 // [FIX] Update appState in real-time so generation uses current value immediately
-                if (appState.subjects['MonStyle']?.iaConfig) {
-                    appState.subjects['MonStyle'].iaConfig.tone = toneVal;
+                if (!appState.subjects['MonStyle']) {
+                    appState.subjects['MonStyle'] = { iaConfig: {} };
                 }
+                if (!appState.subjects['MonStyle'].iaConfig) {
+                    appState.subjects['MonStyle'].iaConfig = {};
+                }
+                appState.subjects['MonStyle'].iaConfig.tone = toneVal;
 
                 SettingsUIManager.showPreviewRefreshHint();
+                this._updateStudentContextAndPrompt();
             });
 
             // Rendre les repères cliquables
@@ -269,6 +291,10 @@ export const SettingsModalListeners = {
 
                 SettingsUIManager.showPreviewRefreshHint();
             });
+
+            DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
+                this._updateStudentContextAndPrompt();
+            }, 300));
 
             DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
                 StorageManager.saveAppState();
@@ -374,22 +400,7 @@ export const SettingsModalListeners = {
             }
         });
 
-        // Settings changes should update prompt preview automatically
-        if (DOM.iaLengthSlider) {
-            DOM.iaLengthSlider.addEventListener('input', () => {
-                this._updateStudentContextAndPrompt();
-            });
-        }
-        if (DOM.iaToneSlider) {
-            DOM.iaToneSlider.addEventListener('input', () => {
-                this._updateStudentContextAndPrompt();
-            });
-        }
-        if (DOM.iaStyleInstructions) {
-            DOM.iaStyleInstructions.addEventListener('input', Utils.debounce(() => {
-                this._updateStudentContextAndPrompt();
-            }, 300));
-        }
+
 
         // Preview refresh button - only for AI generation
         if (DOM.refreshPreviewBtn) {
@@ -756,8 +767,8 @@ export const SettingsModalListeners = {
             if (previewResult) {
                 const cleanText = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
                 previewResult.classList.remove('has-error', 'placeholder');
-                // Apply word-by-word reveal animation
-                await UI.typewriterReveal(previewResult, cleanText, { speed: 'fast' });
+                // Apply word-by-word reveal animation (compatible with HTML tags)
+                await UI.animateHtmlReveal(previewResult, cleanText, { speed: 'fast' });
             }
 
             const wordCountEl = document.getElementById('settingsPreviewWordCount');
