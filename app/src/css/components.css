@@ -44,20 +44,19 @@
 
 .btn-secondary {
     background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border: none;
     box-shadow: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
     background: var(--item-hover-bg);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
     color: var(--primary-color);
     box-shadow: none;
 }
 
 [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-    color: var(--text-primary);
+    color: var(--primary-color);
 }
 
 .btn-danger {
@@ -248,19 +247,18 @@
 .btn-ghost {
     background: transparent;
     color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    border: none;
     box-shadow: none;
 }
 
 .btn-ghost:hover:not(:disabled) {
     background: var(--item-hover-bg);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
     color: var(--primary-color);
     box-shadow: none;
 }
 
 [data-theme="dark"] .btn-ghost:hover:not(:disabled) {
-    color: var(--text-primary);
+    color: var(--primary-color);
 }
 
 .btn-ghost:active:not(:disabled) {
@@ -1395,10 +1393,10 @@ textarea {
 
 .btn-dropdown-item:hover {
     background-color: var(--item-hover-bg);
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
-[data-theme="dark"] .btn-dropdown-item:hover {
+.btn-dropdown-item:hover i {
     color: var(--text-primary);
 }
 
@@ -1406,6 +1404,7 @@ textarea {
     width: 16px;
     text-align: center;
     color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
 .btn-dropdown-item.danger {
@@ -1413,6 +1412,15 @@ textarea {
 }
 
 .btn-dropdown-item.danger i {
+    color: var(--error-color);
+}
+
+.btn-dropdown-item.danger:hover {
+    background-color: var(--error-light);
+    color: var(--error-color);
+}
+
+.btn-dropdown-item.danger:hover i {
     color: var(--error-color);
 }
 

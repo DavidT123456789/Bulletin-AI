@@ -133,37 +133,6 @@
     font-size: 1.1em;
 }
 
-/* --- Responsive Mobile --- */
-@media (max-width: 768px) {
-    .modal-tabs-layout {
-        flex-direction: column;
-    }
-
-    .modal-tabs-sidebar {
-        width: 100%;
-        flex-direction: row;
-        overflow-x: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        padding: 8px;
-        gap: 8px;
-        /* masquer l'action button en bas en mobile si besoin ou le replacer */
-    }
-
-    .modal-tab-btn {
-        white-space: nowrap;
-        padding: 8px 12px;
-        font-size: 0.85em;
-    }
-
-    .modal-tabs-sidebar .sidebar-action-btn {
-        display: none;
-        /* Simplification mobile */
-    }
-
-    /* Responsive mobile pour tableaux = géré par .ui-table.responsive-table */
-}
-
 /* --- Action Buttons in Help --- */
 .help-action-button {
     margin-top: 20px;

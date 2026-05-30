@@ -127,19 +127,26 @@ export const ClassUIManager = {
         DOM.headerClassChip?.classList.add('active');
         DOM.classDropdown.style.display = 'block';
 
-        // On narrow screens, teleport to body to escape header clipping (backdrop-filter creates containing block)
+        // Teleport to body on all screens to escape header clipping & nested backdrop-filter rendering bug in Chromium
+        this._originalDropdownParent = DOM.classDropdown.parentElement;
+        const chipRect = DOM.headerClassChip?.getBoundingClientRect();
+        document.body.appendChild(DOM.classDropdown);
+        DOM.classDropdown.style.position = 'fixed';
+        DOM.classDropdown.style.top = `${(chipRect?.bottom || 56) + 8}px`;
+        DOM.classDropdown.style.zIndex = '9999';
+
         if (window.innerWidth < 768) {
-            this._originalDropdownParent = DOM.classDropdown.parentElement;
-            const chipRect = DOM.headerClassChip?.getBoundingClientRect();
-            document.body.appendChild(DOM.classDropdown);
-            DOM.classDropdown.style.position = 'fixed';
-            DOM.classDropdown.style.top = `${(chipRect?.bottom || 56) + 8}px`;
             DOM.classDropdown.style.left = '12px';
             DOM.classDropdown.style.right = '12px';
             DOM.classDropdown.style.minWidth = 'unset';
             DOM.classDropdown.style.maxWidth = 'none';
             DOM.classDropdown.style.width = 'auto';
-            DOM.classDropdown.style.zIndex = '9999';
+        } else {
+            DOM.classDropdown.style.left = `${chipRect?.left || 16}px`;
+            DOM.classDropdown.style.right = 'unset';
+            DOM.classDropdown.style.minWidth = '280px';
+            DOM.classDropdown.style.maxWidth = '340px';
+            DOM.classDropdown.style.width = 'auto';
         }
 
         // Trigger animation

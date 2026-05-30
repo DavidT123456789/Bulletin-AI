@@ -1469,7 +1469,7 @@
 /* High specificity to override generic .btn styles */
 .btn-icon-only:hover:not(:disabled) {
     background-color: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    color: var(--icon-btn-hover);
     box-shadow: none;
 }
 

@@ -1013,13 +1013,18 @@
 
 .action-dropdown-item:hover {
     background: var(--item-hover-bg);
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
+}
+
+.action-dropdown-item:hover i {
+    color: var(--text-primary);
 }
 
 .action-dropdown-item i {
     width: 16px;
     text-align: center;
     color: var(--icon-btn-color);
+    transition: color var(--transition-fast);
 }
 
 .action-dropdown-item.danger {
@@ -1028,6 +1033,10 @@
 
 .action-dropdown-item.danger:hover {
     background: rgba(var(--error-rgb), 0.1);
+    color: var(--error-color);
+}
+
+.action-dropdown-item.danger:hover i {
     color: var(--error-color);
 }
 

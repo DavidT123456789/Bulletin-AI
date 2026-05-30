@@ -259,11 +259,10 @@
     margin-bottom: 0;
 }
 
-/* Hover harmonisé et coloré (Teinte primaire légère) */
+/* Hover harmonisé et épuré (Fond neutre, texte foncé) */
 .custom-dropdown-option:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-    /* Texte coloré au survol aussi pour plus de peps */
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 /* Sélection subtile et cohérente */
@@ -377,10 +376,10 @@
     transition: background-color var(--transition-fast);
 }
 
-/* Hover harmonisé avec le global (Primary tint) */
+/* Hover harmonisé avec le global (Fond neutre, texte foncé) */
 .custom-dropdown[data-for="sortSelect"] .custom-dropdown-option:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 /* Cacher la coche dans le dropdown de tri */
@@ -422,8 +421,8 @@
 }
 
 .custom-dropdown[data-for="loadStudentSelect"] .custom-dropdown-option[data-value=""]:hover {
-    color: var(--primary-color);
-    background-color: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--text-primary);
+    background-color: var(--item-hover-bg);
     /* Harmonisation */
 }
 

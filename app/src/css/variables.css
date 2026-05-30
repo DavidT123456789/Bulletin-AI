@@ -144,7 +144,7 @@
     /* Icon Button States (Single Source of Truth) */
     --icon-btn-color: #8f8f98;
     --icon-stroke-width: 1.3px;
-    --icon-btn-hover: var(--primary-color);
+    --icon-btn-hover: var(--text-primary);
     --icon-btn-muted: rgba(161, 161, 170, 0.7);
 
     /* Universal Interactive Item Hover (Neutral — NOT primary-tinted) */

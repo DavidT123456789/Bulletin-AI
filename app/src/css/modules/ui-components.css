@@ -236,32 +236,24 @@
 
 .ui-tabs-btn:hover {
     background: var(--item-hover-bg);
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
 }
 
 .ui-tabs-btn.active {
-    background: var(--item-active-bg);
-    color: var(--icon-btn-hover);
+    background: var(--primary-color);
+    color: #ffffff !important;
     font-weight: 600;
     position: relative;
-    box-shadow: none;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .ui-tabs-btn.active iconify-icon,
 .ui-tabs-btn.active i {
-    color: inherit;
+    color: #ffffff !important;
 }
 
 .ui-tabs-btn.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 55%;
-    width: 3px;
-    background: linear-gradient(180deg, var(--primary-color), rgba(var(--primary-color-rgb), 0.4));
-    border-radius: 0 4px 4px 0;
+    display: none;
 }
 
 .ui-tabs-btn iconify-icon {
@@ -272,10 +264,14 @@
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
-.ui-tabs-btn:hover iconify-icon,
-.ui-tabs-btn.active iconify-icon {
+.ui-tabs-btn:hover iconify-icon {
     transform: scale(1.1);
-    color: var(--icon-btn-hover);
+    color: var(--primary-color);
+}
+
+.ui-tabs-btn.active iconify-icon {
+    transform: scale(1.05);
+    color: #ffffff !important;
 }
 
 .ui-tabs-action-btn {
@@ -285,7 +281,7 @@
     gap: 10px;
     padding: 9px 14px;
     width: 100%;
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--icon-btn-muted);
@@ -294,10 +290,18 @@
     transition: all var(--transition-fast);
 }
 
+.ui-tabs-action-btn iconify-icon {
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
 .ui-tabs-action-btn:hover {
     background: var(--item-hover-bg);
     color: var(--icon-btn-hover);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.ui-tabs-action-btn:hover iconify-icon {
+    transform: scale(1.1);
+    color: var(--primary-color);
 }
 
 .ui-tabs-content {

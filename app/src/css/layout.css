@@ -213,39 +213,32 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    /* Reduced gap for compactness */
     background-color: transparent;
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     padding: 0 12px;
-    /* Harmonized padding */
     height: 38px;
-    /* Harmonized fixed height */
     font-size: 0.95rem;
-    /* Increased for hierarchy: the class is the main subject */
     font-weight: 600;
-    /* Standardized bold weight */
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s var(--ease-spring);
-    border: 1px solid transparent;
+    transition: all var(--transition-fast);
     box-shadow: none;
-    /* Removed shadow */
     position: relative;
     overflow: visible;
-    /* To allow potential dropdowns or effects */
 }
 
 .header-context-chip:hover,
 .header-context-chip.active {
     border-color: transparent;
     background-color: var(--surface-color);
-    /* Restore background on hover */
-    /* Sharp pixel-perfect shadow (matched with Theme Selector) */
     box-shadow: var(--shadow-elevation);
     transform: translateY(-1px);
-    /* Slight lift */
     color: var(--text-primary);
-    /* Keep text primary on hover, simpler */
+}
+
+[data-theme="dark"] .header-context-chip {
+    background-color: transparent;
 }
 
 [data-theme="dark"] .header-context-chip:hover,
@@ -254,24 +247,25 @@
 }
 
 .header-context-chip:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
     box-shadow: none;
     background-color: rgba(0, 0, 0, 0.08);
-    /* Slightly darker on press */
 }
 
 .header-context-chip .icon {
-    color: var(--text-secondary);
-    transition: color var(--transition-fast);
+    color: var(--primary-color);
+    opacity: 0.85;
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    /* Slightly larger icon to match larger text */
 }
 
 .header-context-chip:hover .icon {
-    color: var(--primary-color);
+    color: var(--primary-hover);
+    opacity: 1;
+    transform: scale(1.05);
 }
 
 /* Chip spécifique pour le modèle IA */
@@ -902,13 +896,8 @@
 /* Hover effects for clickable items */
 .menu-item:hover,
 .menu-item-row:hover {
-    color: var(--primary-color);
-    background-color: var(--item-hover-bg);
-}
-
-[data-theme="dark"] .menu-item:hover,
-[data-theme="dark"] .menu-item-row:hover {
     color: var(--text-primary);
+    background-color: var(--item-hover-bg);
 }
 
 .menu-item i,
@@ -924,7 +913,7 @@
 
 .menu-item:hover i,
 .menu-item:hover iconify-icon {
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
 }
 
 /* Cloud Save Menu Item */
@@ -951,7 +940,7 @@
 }
 
 .cloud-save-menu-item:hover>iconify-icon {
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
 }
 
 .cloud-save-menu-item .cloud-save-label {
@@ -965,10 +954,6 @@
 }
 
 .cloud-save-menu-item:hover .cloud-save-label {
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .cloud-save-menu-item:hover .cloud-save-label {
     color: var(--text-primary);
 }
 
