@@ -4,7 +4,7 @@
  * @module managers/GliderManager
  */
 
-const GLIDER_TRANSITION = 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+const GLIDER_TRANSITION = 'left 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
 
 export const GliderManager = {
 
@@ -18,7 +18,7 @@ export const GliderManager = {
      * Initialise les animations "Glider" pour les sélecteurs.
      */
     init() {
-        const containers = document.querySelectorAll('.input-mode-tabs, .provider-pills:not(#welcomeModal .provider-pills), .ui-segmented-control');
+        const containers = document.querySelectorAll('.ui-segmented-control');
 
         if (!this._observer) {
             this._observer = new ResizeObserver((entries) => {
@@ -93,8 +93,6 @@ export const GliderManager = {
                     activeEl = checked.nextElementSibling;
                 }
             }
-        } else if (container.classList.contains('provider-pills')) {
-            activeEl = container.querySelector('.provider-pill.active');
         } else {
             activeEl = container.querySelector('.active');
         }

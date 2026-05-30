@@ -660,9 +660,6 @@ export const UI = {
         if (DOM.massImportTab) { DOM.massImportTab.classList.toggle('active', isMass); DOM.massImportTab.setAttribute('aria-selected', String(isMass)); }
         if (DOM.singleStudentTab) { DOM.singleStudentTab.classList.toggle('active', !isMass); DOM.singleStudentTab.setAttribute('aria-selected', String(!isMass)); }
 
-        // Update glider animation (le conteneur est le parent des tabs)
-        const tabsContainer = document.querySelector('.input-mode-tabs');
-        if (tabsContainer) this.updateGlider(tabsContainer);
 
         if (!isMass) {
             AppreciationsManager.resetForm();

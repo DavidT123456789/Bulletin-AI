@@ -51,20 +51,23 @@ export const SeatingChartManager = {
         if (!headerActions || document.getElementById('viewToggle')) return;
 
         const toggle = document.createElement('div');
-        toggle.className = 'view-toggle';
+        toggle.className = 'ui-segmented-control view-toggle';
         toggle.id = 'viewToggle';
         toggle.innerHTML = `
-            <button class="view-toggle-btn active" data-view="list" aria-label="Vue liste">
+            <button class="ui-segment view-toggle-btn active" data-view="list" aria-label="Vue liste">
                 <iconify-icon icon="solar:list-linear"></iconify-icon>
                 <span>Liste</span>
             </button>
-            <button class="view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
+            <button class="ui-segment view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
                 <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>
                 <span>Plan</span>
             </button>
         `;
 
         headerActions.prepend(toggle);
+        if (window.UI && typeof window.UI.initGliders === 'function') {
+            window.UI.initGliders();
+        }
     },
 
     _injectView() {
@@ -319,7 +322,9 @@ export const SeatingChartManager = {
         
         const toggleWrapper = document.getElementById('viewToggle');
         if (toggleWrapper) {
-            toggleWrapper.classList.toggle('plan-active', view === 'plan');
+            if (window.UI && typeof window.UI.updateGlider === 'function') {
+                window.UI.updateGlider(toggleWrapper);
+            }
         }
     },
 

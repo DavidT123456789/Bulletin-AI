@@ -39,6 +39,7 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 6px !important;
     border: none;
     background: transparent;
     color: var(--text-tertiary);
@@ -66,11 +67,15 @@
     transition: filter var(--transition-base), opacity var(--transition-base), color var(--transition-base);
 }
 
-/* Active icons — restore full color */
+/* Active & Hover icons — restore full color */
 .ui-segment.active i,
 .ui-segment.active iconify-icon,
+.ui-segment:hover i,
+.ui-segment:hover iconify-icon,
 .ui-segmented-control input[type="radio"]:checked + .ui-segment i,
-.ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
+.ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon,
+.ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover i,
+.ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover iconify-icon {
     filter: grayscale(0);
     opacity: 1;
 }
@@ -80,10 +85,11 @@
     display: none;
 }
 
-/* Hover state */
-.ui-segment:hover,
+/* Hover state — maximiser le contraste et ajouter le fond de survol pilule inactif */
+.ui-segment:not(.active):hover,
 .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.03);
 }
 
 /* Active state */
@@ -109,7 +115,7 @@
     border-radius: var(--radius-pill);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
     z-index: 1;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), width 0.35s cubic-bezier(0.32, 0.72, 0, 1), left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: none;
 }
 
@@ -118,7 +124,7 @@
 .ui-segmented-control.css-driven .ui-glider {
     left: var(--sc-padding, 3px);
     width: calc((100% - (var(--sc-padding, 3px) * 2)) / 3);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .ui-segmented-control.css-driven[data-active="light"] .ui-glider,
@@ -165,9 +171,10 @@
     color: var(--text-tertiary);
 }
 
-[data-theme="dark"] .ui-segment:hover,
+[data-theme="dark"] .ui-segment:not(.active):hover,
 [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="dark"] .ui-segment.active,
@@ -180,6 +187,8 @@
 
 /* Specific tweaks for icons in active state if needed */
 [data-theme="dark"] .ui-segment.active iconify-icon,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon {
+[data-theme="dark"] .ui-segment:hover iconify-icon,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon,
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover iconify-icon {
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
 }

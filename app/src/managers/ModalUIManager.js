@@ -145,7 +145,7 @@ export const ModalUI = {
             // Initialize and update gliders inside the modal (they weren't created when hidden)
             UI.initGliders();
             // Then update positions for this modal's visible containers
-            modal.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
+            modal.querySelectorAll('.ui-segmented-control').forEach(container => {
                 if (container.classList.contains('has-glider')) {
                     UI.updateGlider(container, true);
                 }

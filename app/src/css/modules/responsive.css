@@ -211,14 +211,6 @@
         width: 100%;
     }
 
-    .input-mode-tabs {
-        flex-direction: column;
-    }
-
-    .input-mode-tab {
-        width: 100%;
-        border-radius: var(--radius-xs);
-    }
 }
 
 /* ====================================================================

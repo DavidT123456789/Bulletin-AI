@@ -293,7 +293,7 @@ export const FormUI = {
                 App.populatePreviewStudentSelect();
             }
             UI.initGliders();
-            newContent.querySelectorAll('.generation-mode-selector, .input-mode-tabs').forEach(container => {
+            newContent.querySelectorAll('.ui-segmented-control').forEach(container => {
                 if (container.classList.contains('has-glider')) {
                     UI.updateGlider(container, true);
                 }

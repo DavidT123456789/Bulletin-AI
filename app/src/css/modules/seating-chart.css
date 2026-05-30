@@ -11,95 +11,12 @@
 /* ────────── VIEW TOGGLE (Header) ────────── */
 .view-toggle {
     display: none;
-    align-items: center;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-pill);
-    padding: 3px;
-    height: 34px;
-    gap: 0;
-    flex-shrink: 0;
-    backdrop-filter: blur(var(--glass-base-blur));
-    -webkit-backdrop-filter: blur(var(--glass-base-blur));
-    position: relative;
     width: 150px;
+    flex-shrink: 0;
 }
 
 .view-toggle.visible {
     display: flex;
-}
-
-/* Sliding pill indicator */
-.view-toggle::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    width: calc(50% - 3px);
-    background: var(--surface-color);
-    border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 1;
-}
-
-.view-toggle.plan-active::after {
-    transform: translateX(100%);
-}
-
-.view-toggle-btn {
-    position: relative;
-    z-index: 2;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border: none;
-    background: transparent !important;
-    color: var(--text-tertiary);
-    font-size: 13px;
-    font-weight: 400;
-    cursor: pointer;
-    height: 100%;
-    border-radius: var(--radius-pill);
-    transition: color var(--transition-base), filter var(--transition-base);
-    white-space: nowrap;
-    box-shadow: none !important;
-}
-
-@media (hover: hover) {
-    .view-toggle-btn:hover {
-        color: var(--text-secondary);
-    }
-}
-
-.view-toggle-btn.active {
-    color: var(--text-primary);
-}
-
-.view-toggle-btn iconify-icon {
-    font-size: 15px;
-    filter: grayscale(1);
-    opacity: 0.6;
-    transition: filter var(--transition-base), opacity var(--transition-base);
-}
-
-.view-toggle-btn.active iconify-icon {
-    filter: grayscale(0);
-    opacity: 1;
-}
-
-[data-theme="dark"] .view-toggle {
-    background: rgba(0, 0, 0, 0.4);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .view-toggle::after {
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */
