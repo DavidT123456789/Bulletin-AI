@@ -2496,8 +2496,8 @@
 
 .dirty-indicator {
     position: absolute;
-    top: -6px;
-    left: -6px;
+    top: -4px;
+    left: -4px;
     z-index: 10;
     display: inline-flex;
     align-items: center;

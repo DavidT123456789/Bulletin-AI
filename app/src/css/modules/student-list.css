@@ -249,7 +249,7 @@
 }
 
 [data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu {
-    background: var(--surface-alert-bg);
+    background: var(--surface-color);
 }
 
 /* Always visible on touch devices */
@@ -793,11 +793,36 @@
     vertical-align: middle;
 }
 
-/* Hover effects apply to the preview INSIDE the wrapper */
+/* Hover effects apply to the preview INSIDE the wrapper (Direct Hover) */
 .appreciation-preview-wrapper:hover .appreciation-preview,
 .appreciation-preview:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+    background: var(--surface-color) !important;
+    border-color: transparent !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .appreciation-preview-wrapper:hover .appreciation-preview,
+[data-theme="dark"] .appreciation-preview:hover {
+    background: var(--bg-color) !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    color: var(--text-primary) !important;
+}
+
+/* When the parent row is hovered, elevate the appreciation preview card to solid white with high contrast */
+.student-list-table tbody tr:hover .appreciation-preview {
+    background: var(--surface-color) !important;
+    border-color: transparent !important;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .student-list-table tbody tr:hover .appreciation-preview {
+    background: var(--bg-color) !important; /* solid deep dark color */
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Appreciation Preview - Truncated inline display */
@@ -812,6 +837,7 @@
     padding: 6px 12px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.02);
+    border: 1px solid transparent; /* Layout stability */
     max-width: 100%;
     max-height: 32px;
 
@@ -822,6 +848,8 @@
         background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-color 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         /* transform and shadow removed from individual transition (handled by wrapper if needed) */
         opacity 0.15s ease;
 
@@ -837,6 +865,7 @@
 
 [data-theme="dark"] .appreciation-preview {
     background: rgba(255, 255, 255, 0.04);
+    border-color: transparent;
 }
 
 /* Harmonization: Apply hover effect to expanded view with enhanced zoom on wrapper */
@@ -845,13 +874,22 @@
     z-index: 5;
 }
 
-/* Disable inner scaling to prevent double zoom */
+/* Direct hover styling for full/expanded view card */
 .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
 .student-list-table.appreciation-full-view .appreciation-preview:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-    box-shadow: none;
+    background: var(--surface-color) !important;
+    border-color: transparent !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--text-primary) !important;
     transform: none;
+}
+
+[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
+[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview:hover {
+    background: var(--bg-color) !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Subtle indicator removed - JS handles truncation with "..." */
