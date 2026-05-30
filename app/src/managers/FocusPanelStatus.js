@@ -428,14 +428,15 @@ export const FocusPanelStatus = {
         if (refinementOptions) {
             const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
             refineButtons.forEach(btn => {
-                btn.disabled = isEmpty;
+                btn.disabled = false; // Always ensure native disabled is removed to allow hover and tooltips
                 btn.classList.toggle('disabled', isEmpty);
             });
         }
 
         const copyBtn = document.getElementById('focusCopyBtn');
         if (copyBtn) {
-            copyBtn.disabled = isEmpty;
+            copyBtn.disabled = false; // Always ensure native disabled is removed to allow contextmenu
+            copyBtn.classList.toggle('disabled', isEmpty);
         }
 
         if (isEmpty) {

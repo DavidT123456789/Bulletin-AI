@@ -147,6 +147,40 @@ export const ExportManager = {
     },
 
     /**
+     * Copie uniquement la liste des élèves (Nom Prénom) dans le presse-papiers.
+     * S'adapte intelligemment : si des élèves sont sélectionnés, copie uniquement la sélection,
+     * sinon copie tous les élèves actuellement visibles (filtrés).
+     */
+    copyStudentList() {
+        const selectedRows = document.querySelectorAll('.student-row.selected');
+        const selectedIds = Array.from(selectedRows).map(row => row.dataset.studentId);
+        
+        let studentsToCopy = appState.filteredResults;
+        
+        if (selectedIds.length > 0) {
+            studentsToCopy = appState.filteredResults.filter(r => selectedIds.includes(r.id));
+        }
+
+        if (!studentsToCopy || studentsToCopy.length === 0) {
+            UI.showNotification("Aucun élève à copier.", "warning");
+            return;
+        }
+
+        // Format: NOM Prénom (un élève par ligne, trié selon l'affichage actif)
+        const text = studentsToCopy.map(r => `${r.nom.toUpperCase()} ${r.prenom}`).join('\n');
+
+        return navigator.clipboard.writeText(text).then(() => {
+            const count = studentsToCopy.length;
+            const selectionMsg = selectedIds.length > 0 ? " de la sélection" : "";
+            UI.showNotification(`${count} élève${count > 1 ? 's' : ''}${selectionMsg} copié${count > 1 ? 's' : ''} dans le presse-papiers !`, 'success');
+        }).catch(err => {
+            UI.showNotification("Échec de la copie.", "error");
+            console.error("Erreur de copie de la liste :", err);
+        });
+    },
+
+
+    /**
      * Exporte les appréciations visibles au format CSV.
      * Scope : classe active, périodes actuelles et précédentes uniquement.
      */

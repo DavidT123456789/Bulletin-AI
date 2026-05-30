@@ -2003,17 +2003,17 @@
     transform-origin: center;
 }
 
-.focus-action-icon-btn:hover {
+.focus-action-icon-btn:hover:not(.disabled) {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 
-.focus-action-icon-btn:hover iconify-icon {
+.focus-action-icon-btn:hover:not(.disabled) iconify-icon {
     opacity: 1;
     transform: scale(1.1);
 }
 
-.focus-action-icon-btn:active {
+.focus-action-icon-btn:active:not(.disabled) {
     transform: scale(0.96);
 }
 
@@ -2023,6 +2023,12 @@
     pointer-events: none;
 }
 
+.focus-action-icon-btn.disabled {
+    opacity: 0.3;
+    cursor: default;
+    /* Interactivity is kept so contextmenu works even when visually disabled */
+}
+
 /* Copy success feedback */
 .focus-action-icon-btn.copied {
     color: var(--success-color, #10b981) !important;
@@ -2030,6 +2036,16 @@
 }
 
 .focus-action-icon-btn.copied iconify-icon {
+    opacity: 1;
+}
+
+/* Copy prompt success feedback (AI Purple theme) */
+.focus-action-icon-btn.copied-prompt {
+    color: var(--purple-color, #9333ea) !important;
+    background: var(--purple-light, rgba(147, 51, 234, 0.15));
+}
+
+.focus-action-icon-btn.copied-prompt iconify-icon {
     opacity: 1;
 }
 
@@ -2196,10 +2212,13 @@
 .btn-ai-outline:disabled,
 .btn-ai-outline.disabled {
     opacity: 0.4;
-    pointer-events: none;
     cursor: not-allowed;
     background: var(--item-idle-bg);
     color: var(--text-tertiary);
+}
+
+.btn-ai-outline:disabled {
+    pointer-events: none;
 }
 
 [data-theme="dark"] .btn-ai-outline:disabled,

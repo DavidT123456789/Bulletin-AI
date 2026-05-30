@@ -219,6 +219,11 @@ export const FocusPanelNavigation = {
      * @private
      */
     _navigateWithAnimation(direction, swipeStartX = null) {
+        // Blur active element to clear any focus rings (e.g. copy button) and trigger text saving
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
+
         // Cancel edit mode before navigating (don't save, just discard)
         const header = document.querySelector('.focus-header');
         if (header && header.classList.contains('editing')) {

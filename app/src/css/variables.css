@@ -315,6 +315,7 @@
     --purple-color: #a78bfa;
     /* Violet 400 */
     --purple-rgb: 167, 139, 250;
+    --purple-light: rgba(167, 139, 250, 0.15);
 
     /* Dark Mode Neutral Tint */
     --neutral-light: rgba(161, 161, 170, 0.15);

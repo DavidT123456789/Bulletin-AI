@@ -391,7 +391,7 @@ export const ResultsUIManager = {
                 }, 100);
             }
         }
-        UI.updateStats(); UI.updateControlButtons(); UI.updateAIButtonsState(); UI.updateCopyAllButton(); StorageManager.saveAppState();
+        UI.updateStats(); UI.updateControlButtons(); UI.updateAIButtonsState(); StorageManager.saveAppState();
         UI.populateLoadStudentSelect();
         UI.updateHeaderContext();
         UI.initTooltips();

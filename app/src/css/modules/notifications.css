@@ -169,6 +169,17 @@
     color: var(--primary-color);
 }
 
+/* Prompt - Premium Solid Purple Accent (AI features) */
+.notification.prompt {
+    border-left-color: var(--purple-color);
+}
+
+.notification.prompt > iconify-icon:first-child,
+.notification.prompt > i:first-child {
+    background: var(--purple-light);
+    color: var(--purple-color);
+}
+
 /* Actionable (clickable) notifications */
 .notification.actionable {
     cursor: pointer;

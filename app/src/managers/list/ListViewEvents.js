@@ -437,6 +437,9 @@ export const ListViewEvents = {
             import('../SeatingChartManager.js').then(m => m.SeatingChartManager.open());
         });
 
+        // Copy Student List
+        addAction('#copyStudentListBtn', () => ExportManager.copyStudentList());
+
         // Attach inline search listeners
         this.attachInlineSearchListeners(listContainer);
     },

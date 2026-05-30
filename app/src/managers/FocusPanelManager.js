@@ -209,21 +209,29 @@ export const FocusPanelManager = {
 
         // Generate
         if (generateBtn) {
-            generateBtn.addEventListener('click', () => this.generate());
+            generateBtn.addEventListener('click', () => {
+                this.generate();
+                generateBtn.blur(); // Remove focus after click to prevent sticky focus rings
+            });
             // [NEW] Right-click to preview the prompt
             generateBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 this._showPromptPreview();
+                generateBtn.blur();
             });
         }
 
         // Copy
         if (copyBtn) {
-            copyBtn.addEventListener('click', () => this.copy());
+            copyBtn.addEventListener('click', () => {
+                this.copy();
+                copyBtn.blur(); // Remove focus after click to prevent sticky focus rings when scrolling/navigating
+            });
             // [NEW] Right-click to copy the prompt directly (symmetric with Generate button)
             copyBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 this._copyPromptToClipboard();
+                copyBtn.blur();
             });
         }
 
@@ -345,7 +353,10 @@ export const FocusPanelManager = {
         if (refinementOptions) {
             refinementOptions.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-refine-type]');
-                if (btn) this._refineAppreciation(btn.dataset.refineType);
+                if (btn && !btn.classList.contains('disabled')) {
+                    this._refineAppreciation(btn.dataset.refineType);
+                    btn.blur(); // Remove focus after click to prevent sticky focus rings
+                }
             });
 
             // [NEW] Right-click to preview the refinement prompt
@@ -354,6 +365,7 @@ export const FocusPanelManager = {
                 if (btn) {
                     e.preventDefault();
                     this._showRefinementPreview(btn.dataset.refineType);
+                    btn.blur();
                 }
             });
         }
@@ -1152,18 +1164,25 @@ export const FocusPanelManager = {
                 const icon = copyBtn.querySelector('iconify-icon');
                 const originalIcon = icon?.getAttribute('icon');
 
-                // Change to check icon and add 'copied' class
+                // Clear any existing copy success animation timeout
+                if (copyBtn.dataset.copyTimeout) {
+                    clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
+                }
+
+                // Change to check icon and add 'copied-prompt' class
                 if (icon) icon.setAttribute('icon', 'ph:check-bold');
-                copyBtn.classList.add('copied');
+                copyBtn.classList.add('copied-prompt');
 
                 // Reset after delay
-                setTimeout(() => {
+                const timeoutId = setTimeout(() => {
                     if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
-                    copyBtn.classList.remove('copied');
+                    copyBtn.classList.remove('copied-prompt');
+                    delete copyBtn.dataset.copyTimeout;
                 }, 1500);
+                copyBtn.dataset.copyTimeout = timeoutId.toString();
             }
 
-            UI.showNotification('Prompt copié dans le presse-papier', 'success');
+            UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
         } catch (err) {
             console.error('Failed to copy prompt:', err);
             UI.showNotification('Échec de la copie du prompt', 'error');
@@ -1506,15 +1525,22 @@ export const FocusPanelManager = {
                 const icon = copyBtn.querySelector('iconify-icon');
                 const originalIcon = icon?.getAttribute('icon');
 
+                // Clear any existing copy success animation timeout
+                if (copyBtn.dataset.copyTimeout) {
+                    clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
+                }
+
                 // Change to check icon and add 'copied' class
                 if (icon) icon.setAttribute('icon', 'ph:check-bold');
                 copyBtn.classList.add('copied');
 
                 // Reset after delay
-                setTimeout(() => {
+                const timeoutId = setTimeout(() => {
                     if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
                     copyBtn.classList.remove('copied');
+                    delete copyBtn.dataset.copyTimeout;
                 }, 1500);
+                copyBtn.dataset.copyTimeout = timeoutId.toString();
             }
 
 
@@ -1531,6 +1557,28 @@ export const FocusPanelManager = {
      * @private
      */
     _renderContent(result) {
+        // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (copyBtn) {
+            if (copyBtn.dataset.copyTimeout) {
+                clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
+                delete copyBtn.dataset.copyTimeout;
+            }
+            copyBtn.classList.remove('copied');
+            const icon = copyBtn.querySelector('iconify-icon');
+            if (icon) {
+                icon.setAttribute('icon', 'solar:copy-linear');
+            }
+        }
+
+        // Reset Refinement Buttons loading states to prevent bleed when switching students
+        const refinementOptions = document.getElementById('focusRefinementOptions');
+        if (refinementOptions) {
+            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
+                btn.classList.remove('is-generating');
+            });
+        }
+
         const currentPeriod = appState.currentPeriod;
 
         // Exit creation mode when viewing existing student

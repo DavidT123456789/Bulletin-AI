@@ -391,4 +391,67 @@ describe('ExportManager', () => {
             // Title should be restored
         });
     });
+
+    describe('copyStudentList', () => {
+        beforeEach(() => {
+            // Mock DOM environment for querySelectorAll
+            document.body.innerHTML = '';
+        });
+
+        it('should show warning if no students to copy', () => {
+            appState.filteredResults = [];
+
+            ExportManager.copyStudentList();
+
+            expect(UI.showNotification).toHaveBeenCalledWith("Aucun élève à copier.", "warning");
+            expect(mockClipboard.writeText).not.toHaveBeenCalled();
+        });
+
+        it('should copy all visible students in NOM Prénom format if none selected', async () => {
+            appState.filteredResults = [
+                { id: '1', nom: 'martin', prenom: 'Lucas' },
+                { id: '2', nom: 'durand', prenom: 'Sophie' }
+            ];
+
+            await ExportManager.copyStudentList();
+
+            const expectedText = 'MARTIN Lucas\nDURAND Sophie';
+            expect(mockClipboard.writeText).toHaveBeenCalledWith(expectedText);
+            expect(UI.showNotification).toHaveBeenCalledWith('2 élèves copiés dans le presse-papiers !', 'success');
+        });
+
+        it('should copy only selected students if a selection exists', async () => {
+            appState.filteredResults = [
+                { id: '1', nom: 'martin', prenom: 'Lucas' },
+                { id: '2', nom: 'durand', prenom: 'Sophie' },
+                { id: '3', nom: 'legrand', prenom: 'Pierre' }
+            ];
+
+            // Mock selected students in the DOM
+            document.body.innerHTML = `
+                <table>
+                    <tr class="student-row selected" data-student-id="1"></tr>
+                    <tr class="student-row" data-student-id="2"></tr>
+                    <tr class="student-row selected" data-student-id="3"></tr>
+                </table>
+            `;
+
+            await ExportManager.copyStudentList();
+
+            const expectedText = 'MARTIN Lucas\nLEGRAND Pierre';
+            expect(mockClipboard.writeText).toHaveBeenCalledWith(expectedText);
+            expect(UI.showNotification).toHaveBeenCalledWith('2 élèves de la sélection copiés dans le presse-papiers !', 'success');
+        });
+
+        it('should handle clipboard errors', async () => {
+            appState.filteredResults = [{ id: '1', nom: 'martin', prenom: 'Lucas' }];
+            mockClipboard.writeText.mockRejectedValueOnce(new Error('Clipboard error'));
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await ExportManager.copyStudentList();
+
+            expect(UI.showNotification).toHaveBeenCalledWith("Échec de la copie.", "error");
+            consoleSpy.mockRestore();
+        });
+    });
 });

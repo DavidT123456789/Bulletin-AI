@@ -131,7 +131,6 @@ export function initDOM() {
     DOM.minAvgGradeOutput = document.getElementById('minAvgGradeOutput');
     DOM.maxAvgGradeOutput = document.getElementById('maxAvgGradeOutput');
     DOM.clearAllResultsBtn = document.getElementById('clearAllResultsBtn-shortcut');
-    DOM.copyAllBtn = document.getElementById('copyAllBtn-shortcut');
     DOM.regenerateAllBtn = document.getElementById('regenerateAllBtn');
     DOM.regenerateErrorsBtn = document.getElementById('regenerateErrorsBtn-shortcut');
     // retryErrorsFloatingBtn removed - headerRetryErrorsBtn is the single source of truth

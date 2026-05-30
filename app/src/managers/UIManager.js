@@ -43,7 +43,7 @@ import { NotificationCoalescer } from './NotificationManager.js';
  */
 
 /**
- * @typedef {'success'|'error'|'warning'|'info'} NotificationType
+ * @typedef {'success'|'error'|'warning'|'info'|'prompt'} NotificationType
  */
 
 /** @type {import('./AppManager.js').App|null} */
@@ -53,7 +53,8 @@ const NOTIF_ICONS = {
     success: '<iconify-icon icon="ph:check" aria-hidden="true"></iconify-icon>',
     error: '<iconify-icon icon="solar:close-circle-linear" aria-hidden="true"></iconify-icon>',
     warning: '<iconify-icon icon="solar:danger-circle-linear" aria-hidden="true"></iconify-icon>',
-    info: '<iconify-icon icon="solar:info-circle-linear" aria-hidden="true"></iconify-icon>'
+    info: '<iconify-icon icon="solar:info-circle-linear" aria-hidden="true"></iconify-icon>',
+    prompt: '<iconify-icon icon="solar:magic-stick-3-bold-duotone" aria-hidden="true"></iconify-icon>'
 };
 
 
@@ -1168,13 +1169,6 @@ export const UI = {
 
         // Update generation dashboard with current counts
         this.updateDashboardCounts();
-    },
-    updateCopyAllButton() {
-        const total = appState.generatedResults.length, filtered = appState.filteredResults.length;
-        if (DOM.copyAllBtn) {
-            DOM.copyAllBtn.innerHTML = `<iconify-icon icon="solar:copy-bold"></iconify-icon> Copier les visibles`;
-            DOM.copyAllBtn.disabled = filtered === 0;
-        }
     },
     _getMappingOptions() { return ImportUI._getMappingOptions(); },
     _guessInitialMapping(selects, firstLineData, availableOptions) { return ImportUI._guessInitialMapping(selects, firstLineData, availableOptions); },

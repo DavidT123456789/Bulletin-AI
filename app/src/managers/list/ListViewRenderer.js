@@ -325,8 +325,9 @@ export const ListViewRenderer = {
                                         <button class="action-dropdown-item" id="seatingChartBtn-shortcut">
                                             <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon> Plan de classe
                                         </button>
-
-
+                                        <button class="action-dropdown-item" id="copyStudentListBtn">
+                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Copier la liste des élèves
+                                        </button>
 
                                         <!-- SECTION EXPORT -->
                                         <h5 class="dropdown-header">EXPORTER</h5>
