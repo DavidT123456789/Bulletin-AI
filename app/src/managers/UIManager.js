@@ -1392,7 +1392,7 @@ export const UI = {
     // ====================================================================
 
     updateHeaderContext() {
-        if (!DOM.headerClassContext || !DOM.headerStudentCount) return;
+        if (!DOM.headerClassChip || !DOM.headerStudentCount) return;
 
         const activePeriod = appState.currentPeriod;
         const activePeriodIndex = Utils.getPeriods().indexOf(activePeriod);
@@ -1446,7 +1446,7 @@ export const UI = {
             tooltipText += '<br>' + tooltipLines.slice(1).join(' | ');
         }
 
-        DOM.headerClassContext.setAttribute('data-tooltip', tooltipText);
+        DOM.headerClassChip.setAttribute('data-tooltip', tooltipText);
 
         this.initTooltips();
     },
