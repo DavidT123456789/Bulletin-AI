@@ -359,6 +359,15 @@
     border-radius: 0 8px 8px 0;
 }
 
+/* Harmonisation des angles pour la dernière ligne lorsqu'elle se déplace (FLIP) */
+.student-list-table tbody tr.row-moving:last-child td:first-child {
+    border-bottom-left-radius: var(--radius-lg) !important;
+}
+
+.student-list-table tbody tr.row-moving:last-child td:last-child {
+    border-bottom-right-radius: var(--radius-lg) !important;
+}
+
 [data-theme="dark"] .student-list-table tbody tr.row-moving {
     background: var(--surface-color) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);

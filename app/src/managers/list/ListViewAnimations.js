@@ -71,6 +71,15 @@ export const ListViewAnimations = {
         this.state.activeFilterTimeout = setTimeout(() => {
             this.state.activeFilterTimeout = null;
 
+            const viewElement = container.querySelector('.student-list-view');
+            let initialHeight = 0;
+            if (viewElement) {
+                initialHeight = viewElement.offsetHeight;
+                viewElement.style.height = `${initialHeight}px`;
+                viewElement.style.transition = 'none';
+                viewElement.style.overflow = 'hidden'; // Keep layout clipping clean during height changes
+            }
+
             // Remove exited rows from DOM
             toExit.forEach(row => row.remove());
 
@@ -118,8 +127,39 @@ export const ListViewAnimations = {
                 }
             });
 
+            // Measure final height and transition the container height in sync with rows
+            let finalHeight = 0;
+            if (viewElement) {
+                viewElement.style.height = '';
+                finalHeight = viewElement.offsetHeight;
+                viewElement.style.height = `${initialHeight}px`;
+            }
+
             // Force layout recalculation
             void tbody.offsetHeight;
+
+            if (viewElement && finalHeight !== initialHeight) {
+                viewElement.style.transition = 'height 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
+                viewElement.style.height = `${finalHeight}px`;
+
+                const onTransitionEnd = (e) => {
+                    if (e.propertyName === 'height') {
+                        viewElement.style.height = '';
+                        viewElement.style.transition = '';
+                        viewElement.style.overflow = '';
+                        viewElement.removeEventListener('transitionend', onTransitionEnd);
+                    }
+                };
+                viewElement.addEventListener('transitionend', onTransitionEnd);
+
+                setTimeout(() => {
+                    if (viewElement.style.height) {
+                        viewElement.style.height = '';
+                        viewElement.style.transition = '';
+                        viewElement.style.overflow = '';
+                    }
+                }, 550);
+            }
 
             // *** LAST + INVERT + PLAY: Animate kept rows to their new positions ***
             requestAnimationFrame(() => {
@@ -165,10 +205,7 @@ export const ListViewAnimations = {
             });
 
             // Re-attach event listeners
-            const viewElement = container.querySelector('.student-list-view');
             if (viewElement) {
-                // [FIX] Do NOT re-attach listeners here as the view element persists
-                // this._attachEventListeners(viewElement); 
                 this.callbacks.updateHeaderSortIcons(viewElement);
             }
 
