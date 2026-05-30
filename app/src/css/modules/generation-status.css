@@ -285,12 +285,13 @@
     height: 100%;
     background: linear-gradient(90deg,
             var(--primary-color) 0%,
-            var(--glow-highlight) 50%,
+            var(--purple-color) 50%,
             var(--primary-color) 100%);
     background-size: 200% 100%;
     border-radius: 2px;
     transition: width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     animation: progress-shimmer 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.5);
 }
 
 @keyframes progress-shimmer {

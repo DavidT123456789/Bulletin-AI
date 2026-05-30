@@ -661,24 +661,8 @@ export const SettingsUIManager = {
      * Affiche un nom court du modèle et le coût de session si > 0.
      */
     updateHeaderAiModelDisplay() {
-        const model = appState.currentAIModel;
-
-        if (DOM.headerAiModelName) {
-            // 1. Affiche le nom court depuis la config centralisée
-            DOM.headerAiModelName.textContent = MODEL_SHORT_NAMES[model] || model.split('-')[0] || model;
-
-            // 2. Tooltip : nom du modèle (depuis le dropdown = Single Source of Truth) + ID technique
-            if (DOM.headerAiChip) {
-                const select = document.getElementById('aiModelSelect');
-                const selectedOption = select?.querySelector(`option[value="${model}"]`);
-                const displayName = selectedOption?.textContent?.replace(/\s+/g, ' ').trim() || MODEL_SHORT_NAMES[model] || model;
-                const tooltipContent = `<strong>${displayName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${model}</span>`;
-                DOM.headerAiChip.setAttribute('data-tooltip', tooltipContent);
-
-                if (DOM.headerAiChip._tippy) {
-                    DOM.headerAiChip._tippy.setContent(tooltipContent);
-                }
-            }
+        if (UI && UI.updateDashboardCounts) {
+            UI.updateDashboardCounts();
         }
 
         // Mettre à jour l'ordre de secours dynamique

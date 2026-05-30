@@ -14,6 +14,7 @@
 
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
+import { PROVIDER_CONFIG } from '../config/providers.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
@@ -938,13 +939,36 @@ export const UI = {
             DOM.dashModelName.textContent = shortModelName;
         }
 
-        // Use consistent icon for all providers (model NAME provides differentiation)
-        const providerIcon = 'solar:cpu-bold';
+        // Determine provider config for active model
+        const model = appState.currentAIModel || '';
+        let providerId = 'openrouter';
+        if (model) {
+            if (model.endsWith('-free')) providerId = 'openrouter';
+            else if (model.startsWith('gemini')) providerId = 'google';
+            else if (model.startsWith('openai')) providerId = 'openai';
+            else if (model.startsWith('anthropic')) providerId = 'anthropic';
+            else if (model.startsWith('ollama')) providerId = 'ollama';
+            else if (model.startsWith('mistral-direct')) providerId = 'mistral';
+        }
+        const providerConfig = PROVIDER_CONFIG[providerId] || PROVIDER_CONFIG.openrouter;
 
-        // Update icon in DOM
-        if (DOM.dashModelLabel) {
+        // Update icon in DOM with specific provider styling
+        if (DOM.dashModelLabel && providerConfig) {
             const iconEl = DOM.dashModelLabel.querySelector('iconify-icon');
-            if (iconEl) iconEl.setAttribute('icon', providerIcon);
+            if (iconEl) {
+                // Clear previous classes/styles to prevent style leaking
+                iconEl.removeAttribute('style');
+                const classesToRemove = Array.from(iconEl.classList).filter(c => c.startsWith('provider-'));
+                classesToRemove.forEach(c => iconEl.classList.remove(c));
+
+                iconEl.setAttribute('icon', providerConfig.icon);
+                if (providerConfig.style) {
+                    iconEl.setAttribute('style', providerConfig.style);
+                }
+                if (providerConfig.class) {
+                    iconEl.classList.add(providerConfig.class);
+                }
+            }
         }
 
         if (DOM.headerGenDashboard) {
