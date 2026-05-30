@@ -1229,6 +1229,13 @@ export const UI = {
         if (!DOM.activeFilterInfo) return;
 
         if (appState.activeStatFilter) {
+            // Restore visual active filter class on corresponding DOM element if not present
+            const targetEl = document.querySelector(`[data-stat-id="${appState.activeStatFilter}"], [data-filter-id="${appState.activeStatFilter}"]`);
+            if (targetEl && !targetEl.classList.contains('active-filter')) {
+                document.querySelectorAll('.stat-card.active-filter, .legend-item.active-filter, .detail-item.active-filter, .hist-bar-group.active-filter').forEach(c => c.classList.remove('active-filter'));
+                targetEl.classList.add('active-filter');
+            }
+
             const filterLabels = {
                 'minGrade': 'Moyenne la plus basse',
                 'maxGrade': 'Moyenne la plus haute',

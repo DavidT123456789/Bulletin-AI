@@ -327,8 +327,11 @@ export const ClassManager = {
                 result.classId = defaultClass.id;
             }
             await DBService.putAll('generatedResults', allResults);
-
         }
+
+        // CORRECTIF: Mettre à jour l'état en mémoire pour éviter d'afficher 0 élèves
+        appState.generatedResults = allResults;
+        appState.filteredResults = allResults.filter(r => r.classId === defaultClass.id);
 
         // Définir comme classe courante
         userSettings.academic.currentClassId = defaultClass.id;

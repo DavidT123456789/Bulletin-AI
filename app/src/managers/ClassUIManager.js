@@ -490,11 +490,11 @@ export const ClassUIManager = {
      * Uses in-memory appState data for immediate reactivity
      */
     updateStudentCount() {
-        // Use in-memory data for immediate reactivity
-        const count = appState.filteredResults?.length || 0;
-
-        // Update header chip
-        if (DOM.headerStudentCount) {
+        // Update header chip via UIManager if available to preserve active filters context
+        if (UI && UI.updateHeaderContext) {
+            UI.updateHeaderContext();
+        } else if (DOM.headerStudentCount) {
+            const count = appState.filteredResults?.length || 0;
             DOM.headerStudentCount.textContent = count;
         }
 
@@ -680,9 +680,24 @@ export const ClassUIManager = {
                 // Migration automatique silencieuse vers "Ma Classe"
                 await ClassManager.migrateToMultiClass();
                 this.updateHeaderDisplay();
+                // CORRECTIF: Rafraîchir les résultats et les stats pour afficher les élèves après migration
+                AppreciationsManager.renderResults();
+                UI?.updateStats?.();
             }
         } else {
             // Si des classes existent, mettre à jour l'affichage
+            // SAUVEGARDE: Si aucune classe courante n'est sélectionnée ou si elle n'existe plus, sélectionner la première classe
+            const currentClassId = appState.currentClassId;
+            const currentClassExists = classes.some(c => c.id === currentClassId);
+            if (!currentClassId || !currentClassExists) {
+                const firstClass = classes[0];
+                if (firstClass) {
+                    await ClassManager.switchClass(firstClass.id);
+                    AppreciationsManager.renderResults();
+                    UI?.updateStats?.();
+                }
+            }
+
             this.updateHeaderDisplay();
 
             // Migration silencieuse des classes existantes n'ayant pas de niveau

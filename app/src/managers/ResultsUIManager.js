@@ -393,6 +393,7 @@ export const ResultsUIManager = {
         }
         UI.updateStats(); UI.updateControlButtons(); UI.updateAIButtonsState(); StorageManager.saveAppState();
         UI.populateLoadStudentSelect();
+        UI.updateActiveFilterInfo();
         UI.updateHeaderContext();
         UI.initTooltips();
 
