@@ -770,32 +770,33 @@ export const ClassUIManager = {
                                     </div>
                                     
                                     <div class="class-management-meta">
-                                        <div class="meta-item" title="Année scolaire">
+                                        <span class="meta-item-inline" title="Année scolaire">
                                             <iconify-icon icon="solar:calendar-linear"></iconify-icon>
-                                            ${cls.year || '2025-2026'}
-                                        </div>
-                                        <div class="meta-item" title="Nombre d'élèves">
+                                            <span>${cls.year || '2025-2026'}</span>
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item-inline" title="Nombre d'élèves">
                                             <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                                            ${stats.total} élèves
-                                        </div>
-                                        <div class="meta-item ${stats.statusClass}" title="Appréciations complétées">
+                                            <span>${stats.total} élèves</span>
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item-inline ${stats.statusClass}" title="Appréciations complétées (Trimestre actif)">
                                             <iconify-icon icon="${stats.icon}"></iconify-icon>
-                                            ${stats.completed}/${stats.total}
-                                        </div>
+                                            <span>${stats.completed}/${stats.total}</span>
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button class="btn-icon-small manage-duplicate-btn" data-class-id="${cls.id}" 
+                                    <button class="manage-duplicate-btn" data-class-id="${cls.id}" 
                                             title="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
-                                    <button class="btn-icon-small manage-rename-btn" data-class-id="${cls.id}" 
+                                    <button class="manage-rename-btn" data-class-id="${cls.id}" 
                                             title="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
-
-                                    <button class="btn-icon-small manage-delete-btn danger" data-class-id="${cls.id}" 
+                                    <button class="manage-delete-btn" data-class-id="${cls.id}" 
                                             title="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
@@ -991,10 +992,10 @@ export const ClassUIManager = {
                                placeholder="Nom de la nouvelle classe..." 
                                maxlength="50"
                                autocomplete="off">
-                        <button class="btn btn-secondary btn-small create-class-confirm" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);" disabled>
+                        <button class="create-class-confirm" title="Confirmer" disabled>
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button class="btn btn-secondary btn-small create-class-cancel" style="padding: 6px 10px; min-width: 32px;">
+                        <button class="create-class-cancel" title="Annuler">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
@@ -1062,39 +1063,20 @@ export const ClassUIManager = {
                 const originalContent = row.innerHTML;
 
                 row.innerHTML = `
-                    <div class="rename-inline-form" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        width: 100%;
-                        animation: slideInConfirm 0.2s ease-out;
-                    ">
+                    <div class="rename-inline-form">
                         <input type="text" class="inline-rename-input" 
                                value="${this._escapeHtml(cls.name)}"
                                maxlength="50"
-                               style="
-                                   flex: 1;
-                                   padding: 8px 12px;
-                                   border: 2px solid var(--primary-color);
-                                   border-radius: var(--radius-sm);
-                                   background: var(--surface-color);
-                                   font-size: 0.95em;
-                                   font-weight: 500;
-                               ">
-                        <button class="btn btn-secondary btn-small save-rename-btn" style="padding: 6px 10px; min-width: 32px; color: var(--primary-color);">
+                               autocomplete="off">
+                        <button class="save-rename-btn" title="Confirmer">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button class="btn btn-secondary btn-small cancel-rename-btn" style="padding: 6px 10px; min-width: 32px;">
+                        <button class="cancel-rename-btn" title="Annuler">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
                 `;
 
-                row.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
-                row.style.borderColor = 'var(--primary-color)';
-                row.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
-                row.style.borderColor = 'var(--primary-color)';
-                row.style.display = 'block';
                 row.classList.add('editing', 'renaming');
 
                 const input = row.querySelector('.inline-rename-input');
@@ -1106,9 +1088,6 @@ export const ClassUIManager = {
 
                 const restore = () => {
                     row.innerHTML = originalContent;
-                    row.style.background = '';
-                    row.style.borderColor = '';
-                    row.style.display = '';
                     row.classList.remove('editing', 'renaming');
                     // Re-bind both buttons
                     const newRenameBtn = row.querySelector('.manage-rename-btn');
@@ -1177,17 +1156,11 @@ export const ClassUIManager = {
                     </div>
                 `;
 
-                row.style.background = 'rgba(var(--error-rgb), 0.1)';
-                row.style.borderColor = 'var(--error-color)';
-                row.style.display = 'block';
                 row.classList.add('editing');
 
                 // Cancel - restore and re-bind
                 row.querySelector('.cancel-delete-btn').onclick = () => {
                     row.innerHTML = originalContent;
-                    row.style.background = '';
-                    row.style.borderColor = '';
-                    row.style.display = '';
                     row.classList.remove('editing');
                     // Re-bind the new delete button
                     const newDeleteBtn = row.querySelector('.manage-delete-btn');
