@@ -261,10 +261,12 @@
 }
 
 .import-hub-card[data-action="individual"]:hover {
+    background: rgba(var(--primary-color-rgb), 0.04);
     border-color: var(--primary-hover);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover {
+    background: rgba(var(--primary-color-rgb), 0.08);
     border-color: rgba(37, 99, 235, 0.5);
 }
 
@@ -290,10 +292,12 @@
 }
 
 .import-hub-card[data-action="mass"]:hover {
+    background: rgba(var(--purple-rgb), 0.04);
     border-color: var(--accent-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
+    background: rgba(var(--purple-rgb), 0.08);
     border-color: rgba(147, 51, 234, 0.5);
 }
 
@@ -319,10 +323,12 @@
 }
 
 .import-hub-card[data-action="photos"]:hover {
+    background: rgba(var(--success-rgb), 0.04);
     border-color: var(--color-emerald-deep);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
+    background: rgba(var(--success-rgb), 0.08);
     border-color: rgba(5, 150, 105, 0.5);
 }
 
