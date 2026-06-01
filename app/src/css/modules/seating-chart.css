@@ -528,6 +528,9 @@
     overflow: auto;
     min-width: 0;
     min-height: 0;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
 }
 
 /* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
@@ -539,6 +542,22 @@
         margin-left: auto;
         margin-right: auto;
     }
+}
+
+/* ────────── CLASSROOM BOARD ────────── */
+.sc-classroom-board {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 32px 40px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    transition: all 0.3s var(--ease-spring);
+    max-width: 100%;
 }
 
 /* ────────── FLOATING STATUS PILL ────────── */
@@ -619,8 +638,8 @@
 /* In edit mode, standard empty cells are very visible (inviting placement) */
 #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 0.85;
-    border: 1.5px dashed rgba(var(--primary-color-rgb), 0.25);
-    background: rgba(var(--primary-color-rgb), 0.03);
+    border: 1.5px dashed rgba(var(--text-secondary-rgb), 0.25);
+    background: rgba(var(--text-secondary-rgb), 0.02);
 }
 
 /* Empty cells become clickable when sidebar selection is active */
@@ -1022,11 +1041,34 @@
     opacity: 0.3;
 }
 
-.sc-cell.empty.sc-cell-special-aesh,
+.sc-cell.empty.sc-cell-special-aesh {
+    border-style: solid;
+    border-color: rgba(var(--purple-rgb), 0.25);
+    background: rgba(var(--purple-rgb), 0.08);
+}
+
+.sc-cell.empty.sc-cell-special-aesh .sc-special-icon {
+    color: var(--purple-color);
+}
+
+.sc-cell.empty.sc-cell-special-aesh .sc-cell-name {
+    color: var(--purple-color);
+    font-weight: 600;
+}
+
 .sc-cell.empty.sc-cell-special-blocked {
     border-style: solid;
-    background: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.05);
-    border-color: var(--border-color);
+    border-color: rgba(var(--error-rgb), 0.25);
+    background: rgba(var(--error-rgb), 0.04);
+}
+
+.sc-cell.empty.sc-cell-special-blocked .sc-special-icon {
+    color: var(--error-color);
+}
+
+.sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    color: var(--error-color);
+    font-weight: 600;
 }
 
 .sc-special-icon {
@@ -1381,6 +1423,20 @@
         justify-content: center; 
         align-items: center;
         overflow: visible !important;
+        background: transparent !important;
+        background-image: none !important;
+    }
+
+    .sc-classroom-board {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
     }
 
     /* ── 6. Grid & cells ── */
@@ -1467,6 +1523,17 @@
 }
 
 @media (max-width: 768px) {
+
+    /* ── Classroom Board: hidden visual frame on mobile to save space ── */
+    .sc-classroom-board {
+        padding: 0;
+        border-radius: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        gap: 12px;
+        width: 100%;
+    }
 
     /* ── Layout: sidebar becomes bottom tray ── */
     .sc-body {
@@ -1715,12 +1782,13 @@
 
 /* ────────── DARK MODE ────────── */
 [data-theme="dark"] .sc-cell {
-    background: var(--bg-secondary);
+    background: var(--bg-color);
     border-color: var(--border-color);
 }
 
 [data-theme="dark"] .sc-cell.occupied {
-    background: var(--surface-color);
+    background: var(--bg-tertiary);
+    border-color: transparent;
 }
 
 [data-theme="dark"] .sc-desk {

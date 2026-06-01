@@ -146,11 +146,13 @@ export const SeatingChartManager = {
                         <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
                     </div>
 
-                    <div class="sc-grid-container" id="scGridContainer"></div>
-                    <div class="sc-desk-row">
-                        <div class="sc-desk" id="scDesk">
-                            <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
-                            Bureau
+                    <div class="sc-classroom-board" id="scClassroomBoard">
+                        <div class="sc-grid-container" id="scGridContainer"></div>
+                        <div class="sc-desk-row">
+                            <div class="sc-desk" id="scDesk">
+                                <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
+                                Bureau
+                            </div>
                         </div>
                     </div>
                 </div>
