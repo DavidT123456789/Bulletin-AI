@@ -87,7 +87,7 @@ export const SeatingChartManager = {
                     <div class="sc-sidebar-toolbar" id="scSidebarToolbar">
                         <div class="sc-sidebar-toolbar-header">
                             <span class="sc-toolbar-label">Mode Édition</span>
-                            <div class="sc-toggle-switch" id="scLockBtn" role="switch" aria-checked="true" aria-label="Mode Édition">
+                            <div class="sc-toggle-switch" id="scLockBtn" role="switch" tabindex="0" aria-checked="true" aria-label="Mode Édition">
                                 <div class="sc-toggle-knob"></div>
                             </div>
                         </div>
@@ -181,7 +181,14 @@ export const SeatingChartManager = {
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
         document.getElementById('scRedoBtn')?.addEventListener('click', () => this._redo());
-        document.getElementById('scLockBtn')?.addEventListener('click', () => this._toggleLock());
+        const lockBtn = document.getElementById('scLockBtn');
+        lockBtn?.addEventListener('click', () => this._toggleLock());
+        lockBtn?.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                this._toggleLock();
+            }
+        });
         document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
 
         document.getElementById('scConfigBtn')?.addEventListener('click', (e) => {
@@ -195,6 +202,8 @@ export const SeatingChartManager = {
         colsSlider?.addEventListener('pointerdown', captureBeforeSlide);
         colsSlider?.addEventListener('input', (e) => {
             document.getElementById('scColsValue').textContent = e.target.value;
+        });
+        colsSlider?.addEventListener('change', () => {
             this._onGridConfigChange();
         });
 
@@ -202,6 +211,8 @@ export const SeatingChartManager = {
         rowsSlider?.addEventListener('pointerdown', captureBeforeSlide);
         rowsSlider?.addEventListener('input', (e) => {
             document.getElementById('scRowsValue').textContent = e.target.value;
+        });
+        rowsSlider?.addEventListener('change', () => {
             this._onGridConfigChange();
         });
 
@@ -243,6 +254,30 @@ export const SeatingChartManager = {
                 this._clearSelection();
             }
         });
+
+        const sidebar = document.querySelector('.sc-sidebar');
+        if (sidebar) {
+            sidebar.addEventListener('dragover', (e) => {
+                if (this._isLocked) return;
+                if (this._dragSource && (this._dragSource.type === 'cell' || this._dragSource.type === 'multi-cell')) {
+                    e.preventDefault();
+                    sidebar.classList.add('drag-over');
+                }
+            });
+
+            sidebar.addEventListener('dragleave', () => {
+                sidebar.classList.remove('drag-over');
+            });
+
+            sidebar.addEventListener('drop', (e) => {
+                if (this._isLocked) return;
+                sidebar.classList.remove('drag-over');
+                if (this._dragSource && (this._dragSource.type === 'cell' || this._dragSource.type === 'multi-cell')) {
+                    e.preventDefault();
+                    this._handleRemoveFromSidebarDrop();
+                }
+            });
+        }
     },
 
     // ========================================================================
@@ -260,6 +295,7 @@ export const SeatingChartManager = {
         const popover = document.getElementById('scConfigPopover');
         if (!popover) return;
         popover.classList.add('open');
+        document.getElementById('scConfigBtn')?.classList.add('active');
         this._configPopoverOpen = true;
     },
 
@@ -267,6 +303,7 @@ export const SeatingChartManager = {
         const popover = document.getElementById('scConfigPopover');
         if (!popover) return;
         popover.classList.remove('open');
+        document.getElementById('scConfigBtn')?.classList.remove('active');
         this._configPopoverOpen = false;
     },
 
@@ -550,7 +587,7 @@ export const SeatingChartManager = {
         for (const id of ids) {
             let found = false;
             while (currentRow < rows && !found) {
-                if (!this._gridState[currentRow][currentCol]) {
+                if (!this._gridState[currentRow][currentCol] && !appState.seatingGrid?.specialLayout?.[`${currentRow},${currentCol}`]) {
                     this._gridState[currentRow][currentCol] = id;
                     placedCells.push({ row: currentRow, col: currentCol, index: placedCells.length });
                     found = true;
@@ -889,8 +926,18 @@ export const SeatingChartManager = {
     _updateUndoRedoButtons() {
         const undoBtn = document.getElementById('scUndoBtn');
         const redoBtn = document.getElementById('scRedoBtn');
+        const clearBtn = document.getElementById('scClearBtn');
+        const shuffleBtn = document.getElementById('scShuffleBtn');
+        const autoPlaceBtn = document.getElementById('scAutoPlaceBtn');
+
+        const placedCount = this._getPlacedIds().size;
+        const unplacedCount = this._getUnplacedStudents().length;
+
         if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
         if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
+        if (clearBtn) clearBtn.disabled = placedCount === 0;
+        if (shuffleBtn) shuffleBtn.disabled = placedCount < 2;
+        if (autoPlaceBtn) autoPlaceBtn.disabled = unplacedCount === 0;
     },
 
     // ========================================================================
@@ -939,6 +986,12 @@ export const SeatingChartManager = {
         this._updateSidebarLockState();
         this._updateUndoRedoButtons();
         TooltipsUI.initTooltips();
+
+        if (this._getPlacedIds().size > 0) {
+            this._dismissOnboardingHint();
+        } else {
+            this._maybeShowOnboardingHint();
+        }
     },
 
     _renderGrid() {
@@ -1087,9 +1140,7 @@ export const SeatingChartManager = {
         }
 
         cell.addEventListener('dragover', (e) => {
-            if (this._isLocked) return;
-            const isSpecial = !student && appState.seatingGrid?.specialLayout?.[`${row},${col}`];
-            if (isSpecial) return;
+            if (!this._isValidDropTarget(row, col)) return;
             
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
@@ -1120,7 +1171,7 @@ export const SeatingChartManager = {
         return cls ? `<div class="sc-evolution-dot ${cls}"></div>` : '';
     },
 
-    _renderSidebar(returningId) {
+    _renderSidebar(returningId, isReset = false) {
         const list = document.getElementById('scStudentList');
         if (!list) return;
 
@@ -1137,8 +1188,8 @@ export const SeatingChartManager = {
                     ? `<div class="sc-empty-text"><strong>Bravo !</strong> Votre plan de classe est complet !</div>`
                     : 'Aucun résultat'}
                </div>`
-            : filtered.map(s => `
-                <div class="sc-student-chip" draggable="true" data-result-id="${s.id}">
+            : filtered.map((s, index) => `
+                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${s.prenom || ''} ${s.nom || ''}</span>
                 </div>
@@ -1259,12 +1310,9 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _handleDrop(targetRow, targetCol) {
-        if (!this._dragSource || this._isLocked) return;
+        if (!this._dragSource || !this._isValidDropTarget(targetRow, targetCol)) return;
 
         const { type, resultId, row: srcRow, col: srcCol, ids } = this._dragSource;
-
-        const isTargetSpecial = appState.seatingGrid?.specialLayout?.[`${targetRow},${targetCol}`];
-        if (isTargetSpecial) return;
 
         if (type === 'multi-cell') {
             this._selectedChipIds = ids;
@@ -1274,10 +1322,6 @@ export const SeatingChartManager = {
         }
 
         const targetId = this._gridState[targetRow]?.[targetCol];
-        if (targetId) {
-            const targetStudent = this._students.find(s => s.id === targetId);
-            if (targetStudent?.seatingPosition?.pinned) return;
-        }
 
         if (type === 'cell' && targetRow === srcRow && targetCol === srcCol) return;
 
@@ -1324,7 +1368,15 @@ export const SeatingChartManager = {
             this._updateFooter();
             this._updateSidebarLockState();
             this._savePositionsToState();
+            this._onRemovalComplete();
         });
+    },
+
+    _onRemovalComplete() {
+        this._updateUndoRedoButtons();
+        if (this._getPlacedIds().size === 0) {
+            this._maybeShowOnboardingHint();
+        }
     },
 
     // ========================================================================
@@ -1393,10 +1445,22 @@ export const SeatingChartManager = {
                 return;
             }
             const touch = e.changedTouches[0];
-            const targetCell = this._getCellUnderPoint(touch.clientX, touch.clientY);
-            if (targetCell) {
-                this._dragSource = this._touchSourceInfo;
-                this._handleDrop(parseInt(targetCell.dataset.row), parseInt(targetCell.dataset.col));
+            if (this._isTouchOverSidebar(touch.clientX, touch.clientY)) {
+                if (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell') {
+                    this._dragSource = this._touchSourceInfo;
+                    this._handleRemoveFromSidebarDrop();
+                }
+            } else {
+                const targetCell = this._getCellUnderPoint(touch.clientX, touch.clientY);
+                if (targetCell) {
+                    const targetRow = parseInt(targetCell.dataset.row);
+                    const targetCol = parseInt(targetCell.dataset.col);
+                    if (this._isValidDropTarget(targetRow, targetCol)) {
+                        this._dragSource = this._touchSourceInfo;
+                        this._handleDrop(targetRow, targetCol);
+                        this._dragSource = null;
+                    }
+                }
             }
             this._cleanupTouch();
         });
@@ -1432,15 +1496,32 @@ export const SeatingChartManager = {
         this._removeTouchGhost();
         this._touchSourceInfo = null;
         document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
+        document.querySelector('.sc-sidebar')?.classList.remove('drag-over');
     },
 
     _highlightCellUnderTouch(x, y) {
         document.querySelectorAll('.sc-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
-        this._getCellUnderPoint(x, y)?.classList.add('drag-over');
+        const sidebar = document.querySelector('.sc-sidebar');
+        if (sidebar) sidebar.classList.remove('drag-over');
+
+        if (this._isTouchOverSidebar(x, y)) {
+            if (sidebar && !this._isLocked && this._touchSourceInfo && (this._touchSourceInfo.type === 'cell' || this._touchSourceInfo.type === 'multi-cell')) {
+                sidebar.classList.add('drag-over');
+            }
+        } else {
+            const cell = this._getCellUnderPoint(x, y);
+            if (cell) {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                if (this._isValidDropTarget(row, col)) {
+                    cell.classList.add('drag-over');
+                }
+            }
+        }
     },
 
     _getCellUnderPoint(x, y) {
-        return document.elementsFromPoint(x, y).find(el => el.classList.contains('sc-cell')) || null;
+        return (document.elementsFromPoint(x, y) || []).find(el => el.classList.contains('sc-cell')) || null;
     },
 
     // ========================================================================
@@ -1633,29 +1714,117 @@ export const SeatingChartManager = {
         UI.showCustomConfirm('Les élèves seront retirés du plan mais resteront dans la liste.', () => {
             this._snapshotGrid();
             const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
-            let delay = 0;
 
-            occupiedCells.forEach(cell => {
-                cell.style.setProperty('--cell-i', delay);
+            occupiedCells.forEach((cell, index) => {
+                cell.style.setProperty('--cell-i', index);
                 cell.classList.add('sc-cell-removing');
-                delay++;
             });
+
+            const animDuration = (occupiedCells.length - 1) * 15 + 300;
 
             setTimeout(() => {
                 this._initGrid(this._getRows(), this._getCols());
                 this._applyLockState(false);
-                this._render();
+                this._renderGrid();
+                this._renderSidebar(null, true);
+                this._updateFooter();
+                this._updateSidebarLockState();
+                this._updateUndoRedoButtons();
                 this._savePositionsToState();
                 this._saveGridConfig();
                 this._staggerCellEntrance();
                 this._maybeShowOnboardingHint();
-            }, Math.min(delay * 30 + 300, 600));
-        }, null, { title: `Vider le plan de classe (${placedCount}) ?`, isDanger: false });
+            }, animDuration);
+        }, null, { title: `Vider le plan de classe (${placedCount}) ?`, isDanger: true });
     },
 
     // ========================================================================
     // HELPERS
     // ========================================================================
+
+    _isValidDropTarget(row, col) {
+        if (this._isLocked) return false;
+        const r = Number(row);
+        const c = Number(col);
+        if (isNaN(r) || isNaN(c)) return false;
+
+        // 1. Check if the cell is a special layout spot (aisle, blocked, aesh, etc.)
+        const isSpecial = appState.seatingGrid?.specialLayout?.[`${r},${c}`];
+        if (isSpecial) return false;
+
+        // 2. Check if there is a pinned student in this cell
+        const targetId = this._gridState[r]?.[c];
+        if (targetId) {
+            const targetStudent = this._students.find(s => s.id === targetId);
+            if (targetStudent?.seatingPosition?.pinned) return false;
+        }
+
+        // 3. Check if dragging cell onto itself
+        const dragSource = this._dragSource || this._touchSourceInfo;
+        if (dragSource) {
+            if (dragSource.type === 'cell' && Number(dragSource.row) === r && Number(dragSource.col) === c) {
+                return false;
+            }
+        }
+
+        return true;
+    },
+
+    _isTouchOverSidebar(x, y) {
+        return (document.elementsFromPoint(x, y) || []).some(el => el.classList.contains('sc-sidebar') || el.closest('.sc-sidebar'));
+    },
+
+    _handleRemoveFromSidebarDrop() {
+        if (!this._dragSource || this._isLocked) return;
+
+        const { type, resultId, row, col, ids } = this._dragSource;
+
+        this._snapshotGrid();
+
+        if (type === 'cell') {
+            this._animateCellRemove(row, col, () => {
+                this._gridState[row][col] = null;
+                this._renderGrid();
+                this._renderSidebar(resultId);
+                this._updateFooter();
+                this._updateSidebarLockState();
+                this._savePositionsToState();
+                this._onRemovalComplete();
+            });
+        } else if (type === 'multi-cell') {
+            const rows = this._getRows();
+            const cols = this._getCols();
+            let delay = 0;
+            const removedIds = [];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const id = this._gridState[r][c];
+                    if (id && ids.includes(id)) {
+                        const cell = document.querySelector(`.sc-cell[data-row="${r}"][data-col="${c}"]`);
+                        if (cell) {
+                            cell.style.setProperty('--cell-i', delay);
+                            cell.classList.add('sc-cell-removing');
+                            delay++;
+                        }
+                        this._gridState[r][c] = null;
+                        removedIds.push(id);
+                    }
+                }
+            }
+
+            setTimeout(() => {
+                this._renderGrid();
+                this._renderSidebar();
+                this._updateFooter();
+                this._updateSidebarLockState();
+                this._savePositionsToState();
+                this._onRemovalComplete();
+            }, Math.min(delay * 30 + 300, 600));
+        }
+
+        this._dragSource = null;
+    },
 
     _getCurrentClassStudents() {
         const classId = appState.currentClassId;

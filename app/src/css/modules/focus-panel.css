@@ -459,19 +459,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-.focus-nav-btn.focus-close-btn:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-}
 
-.focus-nav-btn.focus-analyze-btn:hover {
-    background: var(--bg-secondary);
-    box-shadow: none !important;
-}
-
-[data-theme="dark"] .focus-nav-btn.focus-analyze-btn:hover {
-    background: var(--bg-hover);
-}
 
 /* --- SAVE button: Hidden by default, shown in edit mode --- */
 .focus-nav-btn.focus-save-btn {
@@ -500,43 +488,27 @@
     border: 1px solid transparent;
 }
 
-.focus-header.editing .focus-save-btn:hover {
-    background: rgba(34, 197, 94, 0.15);
-    color: var(--success-color, #22c55e);
-    box-shadow: none !important;
-}
-
 [data-theme="dark"] .focus-header.editing .focus-save-btn {
     background: var(--surface-color);
     border: 1px solid transparent;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="dark"] .focus-header.editing .focus-save-btn:hover {
-    background: rgba(34, 197, 94, 0.2);
-    box-shadow: none !important;
-}
+
 
 /* Close → Cancel style in edit mode */
 .focus-header.editing .focus-close-btn {
     color: var(--error-color);
 }
 
-.focus-header.editing .focus-close-btn:hover {
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-}
+
 
 .focus-nav-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-/* --- ANALYZE button: AI action — distinctive hover --- */
-.focus-nav-btn.focus-analyze-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
+
 
 
 /* ============================
@@ -2165,10 +2137,17 @@
     color: var(--chip-color);
 }
 
-.btn[data-refine-type]:hover {
-    color: var(--chip-hover-color);
-    border-color: rgba(var(--chip-rgb), 0.3);
-    background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.12));
+@media (hover: hover) {
+    .btn[data-refine-type]:hover {
+        color: var(--chip-hover-color) !important;
+        border-color: rgba(var(--chip-rgb), 0.3) !important;
+        background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.12)) !important;
+        box-shadow: none !important;
+    }
+    .btn[data-refine-type]:hover iconify-icon,
+    .btn[data-refine-type]:hover i {
+        color: var(--chip-hover-color) !important;
+    }
 }
 
 /* Effet Shine au survol */
@@ -3996,10 +3975,7 @@ input.context-grade-input {
     background: var(--item-hover-bg);
 }
 
-.focus-analyze-btn:hover {
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
-}
+
 
 .focus-analyze-btn:active {
     transform: scale(0.96);

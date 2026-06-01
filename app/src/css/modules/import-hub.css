@@ -241,38 +241,38 @@
    ==================================================================== */
 
 /* === INDIVIDUAL CARD === */
-/* Color: Blue-600 (#2563eb) */
+/* Color: Blue-500 (#3b82f6) */
 .import-hub-card[data-action="individual"] {
     border-color: rgba(var(--primary-color-rgb), 0.12);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"] {
-    border-color: rgba(37, 99, 235, 0.2);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
 }
 
 .import-hub-card[data-action="individual"] .import-hub-icon {
     background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-hover);
+    color: var(--primary-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: rgba(37, 99, 235, 0.15);
+    background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--color-blue-bright);
 }
 
 .import-hub-card[data-action="individual"]:hover {
     background: rgba(var(--primary-color-rgb), 0.04);
-    border-color: var(--primary-hover);
+    border-color: var(--primary-color);
 }
 
 .import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: var(--primary-hover);
+    background: var(--primary-color);
     color: #ffffff;
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover {
     background: rgba(var(--primary-color-rgb), 0.08);
-    border-color: rgba(37, 99, 235, 0.5);
+    border-color: rgba(var(--primary-color-rgb), 0.5);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover .import-hub-icon {
@@ -282,38 +282,38 @@
 
 
 /* === MASS IMPORT CARD === */
-/* Color: Purple-600 (#9333ea) */
+/* Color: Violet-500 (#8b5cf6) */
 .import-hub-card[data-action="mass"] {
-    border-color: rgba(147, 51, 234, 0.08);
+    border-color: rgba(var(--purple-rgb), 0.08);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"] {
-    border-color: rgba(147, 51, 234, 0.2);
+    border-color: rgba(var(--purple-rgb), 0.2);
 }
 
 .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(147, 51, 234, 0.05);
-    color: var(--accent-color);
+    background: rgba(var(--purple-rgb), 0.05);
+    color: var(--color-violet);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(147, 51, 234, 0.15);
+    background: rgba(var(--purple-rgb), 0.15);
     color: var(--color-violet-bright);
 }
 
 .import-hub-card[data-action="mass"]:hover {
     background: rgba(var(--purple-rgb), 0.04);
-    border-color: var(--accent-color);
+    border-color: var(--color-violet);
 }
 
 .import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: var(--accent-color);
+    background: var(--color-violet);
     color: #ffffff;
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
     background: rgba(var(--purple-rgb), 0.08);
-    border-color: rgba(147, 51, 234, 0.5);
+    border-color: rgba(var(--purple-rgb), 0.5);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="mass"]:hover .import-hub-icon {
@@ -323,38 +323,38 @@
 
 
 /* === PHOTOS CARD === */
-/* Color: Emerald-600 (#059669) */
+/* Color: Emerald-500 (#10b981) */
 .import-hub-card[data-action="photos"] {
     border-color: rgba(var(--success-rgb), 0.15);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"] {
-    border-color: rgba(5, 150, 105, 0.2);
+    border-color: rgba(var(--success-rgb), 0.2);
 }
 
 .import-hub-card[data-action="photos"] .import-hub-icon {
     background: rgba(var(--success-rgb), 0.08);
-    color: var(--color-emerald-deep);
+    color: var(--success-color);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"] .import-hub-icon {
-    background: rgba(5, 150, 105, 0.15);
+    background: rgba(var(--success-rgb), 0.15);
     color: var(--color-emerald-bright);
 }
 
 .import-hub-card[data-action="photos"]:hover {
     background: rgba(var(--success-rgb), 0.04);
-    border-color: var(--color-emerald-deep);
+    border-color: var(--success-color);
 }
 
 .import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: var(--color-emerald-deep);
+    background: var(--success-color);
     color: #ffffff;
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
     background: rgba(var(--success-rgb), 0.08);
-    border-color: rgba(5, 150, 105, 0.5);
+    border-color: rgba(var(--success-rgb), 0.5);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="photos"]:hover .import-hub-icon {

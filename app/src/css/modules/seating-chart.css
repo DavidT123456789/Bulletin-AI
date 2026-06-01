@@ -124,6 +124,18 @@
     }
 }
 
+/* Sidebar chip stagger cascade entrance (on mass reset) */
+@keyframes scChipStaggerIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 
 /* Desk pulse (subtle on class switch) */
 @keyframes scDeskPulse {
@@ -186,6 +198,7 @@
 /* Cell remove animation */
 .sc-cell.sc-cell-removing {
     animation: scCellRemove 0.3s var(--ease-material) forwards;
+    animation-delay: calc(var(--cell-i, 0) * 15ms);
     pointer-events: none;
 }
 
@@ -194,9 +207,15 @@
     animation: scCellSwap 0.35s var(--ease-spring) both;
 }
 
-/* Sidebar chip return */
+/* Sidebar chip return (single chip drag back) */
 .sc-student-chip.sc-chip-returning {
     animation: scChipReturn 0.35s var(--ease-bounce) both;
+}
+
+/* Sidebar chip stagger entrance on reset (smooth liquid cascade) */
+.sc-student-chip.sc-chip-stagger {
+    animation: scChipStaggerIn 0.4s var(--ease-spring) both;
+    animation-delay: calc(var(--chip-i, 0) * 10ms);
 }
 
 
@@ -927,7 +946,7 @@
 }
 
 /* Empty cells subtly visible in locked mode — provides spatial reference */
-#seatingChartView[data-locked="true"] .sc-cell.empty:not(.sc-cell-special-aisle) {
+#seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
     opacity: 1; 
     transform: scale(0.98);
     pointer-events: none;
@@ -1888,33 +1907,30 @@
 }
 
 @media (hover: hover) {
+    /* Default hover for standard edit actions: solid primary blue & white text */
     .sc-action-btn:hover {
+        background: var(--primary-color);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Undo, Redo & Settings actions: white background & dark text */
+    .sc-action-btn.sc-undo-btn:not(:disabled):hover,
+    .sc-action-btn.sc-redo-btn:not(:disabled):hover,
+    .sc-action-btn.sc-config-trigger:hover {
         background: var(--surface-color);
         color: var(--text-primary);
         box-shadow: var(--shadow-sm);
     }
 
-    .sc-action-btn.sc-print-btn:hover {
-        background: var(--primary-color);
-        color: white;
-    }
-
+    /* Reset action: solid warning red & white text */
     .sc-action-btn.sc-reset-btn:hover {
-        background: color-mix(in srgb, var(--error-color) 12%, transparent);
-        color: var(--error-color);
+        background: var(--error-color);
+        color: white;
+        box-shadow: var(--shadow-sm);
     }
 
-    .sc-action-btn.sc-undo-btn:not(:disabled):hover,
-    .sc-action-btn.sc-redo-btn:not(:disabled):hover {
-        background: rgba(var(--primary-color-rgb), 0.1);
-        color: var(--primary-color);
-    }
-
-    .sc-action-btn#scAutoPlaceBtn:hover {
-        background: rgba(var(--primary-color-rgb), 0.1);
-        color: var(--primary-color);
-    }
-
+    /* Micro-interactions: playful icon animations */
     .sc-action-btn#scAutoPlaceBtn:hover iconify-icon {
         transform: scale(1.15) rotate(-10deg);
     }
@@ -1941,6 +1957,13 @@
     cursor: default;
 }
 
+/* Accessibility focus rings */
+.sc-toggle-switch:focus-visible,
+.sc-action-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
 /* ---------- CONFIG POPOVER (Restored) ---------- */
 .sc-config-wrapper {
     position: relative;
@@ -1948,8 +1971,8 @@
 
 .sc-action-btn.sc-config-trigger.active {
     background: var(--surface-color);
-    color: var(--text-primary);
-    box-shadow: inset 0 0 0 1px var(--border-color);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
 }
 
 .sc-config-popover {
@@ -1971,6 +1994,20 @@
     transform: translateX(-40%) translateY(-6px) scale(0.95);
     pointer-events: none;
     transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
+}
+
+/* Tooltip arrow pointing to Settings button */
+.sc-config-popover::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 40%;
+    width: 8px;
+    height: 8px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--glass-surface-border);
+    border-left: 1px solid var(--glass-surface-border);
+    transform: rotate(45deg);
 }
 
 .sc-config-popover.open {
@@ -2094,4 +2131,15 @@
         background: rgba(50, 50, 50, 0.95);
         color: var(--primary-color);
     }
+}
+
+/* Sidebar drag-over target highlight (drag to remove) */
+.sc-sidebar.drag-over {
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.05) !important;
+    box-shadow: inset 0 0 0 2px var(--primary-color, #4f46e5) !important;
+}
+
+[data-theme="dark"] .sc-sidebar.drag-over {
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
+    box-shadow: inset 0 0 0 2px var(--primary-color, #4f46e5) !important;
 }

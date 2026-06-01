@@ -34,9 +34,11 @@
     padding: 0;
 }
 
-.history-nav-btn:hover:not(:disabled) {
-    background: var(--item-hover-bg);
-    color: var(--primary-color);
+@media (hover: hover) {
+    .history-nav-btn:hover:not(:disabled) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
 }
 
 .history-nav-btn:disabled {
@@ -59,9 +61,11 @@
     min-width: unset;
 }
 
-.history-indicator-btn:hover {
-    background: var(--item-hover-bg);
-    color: var(--primary-color);
+@media (hover: hover) {
+    .history-indicator-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
 }
 
 .history-indicator-btn .history-count {
