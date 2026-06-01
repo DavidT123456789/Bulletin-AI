@@ -542,6 +542,9 @@
         margin-left: auto;
         margin-right: auto;
     }
+    .sc-classroom-board {
+        align-items: flex-start;
+    }
 }
 
 /* ────────── CLASSROOM BOARD ────────── */
@@ -553,11 +556,11 @@
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: safe center;
     gap: 20px;
     position: relative;
     transition: all 0.3s var(--ease-spring);
-    max-width: 100%;
+    width: fit-content;
 }
 
 /* ────────── FLOATING STATUS PILL ────────── */
@@ -1532,7 +1535,9 @@
         background: transparent;
         box-shadow: none;
         gap: 12px;
-        width: 100%;
+        width: fit-content;
+        min-width: 100%;
+        align-items: safe center;
     }
 
     /* ── Layout: sidebar becomes bottom tray ── */
@@ -1563,17 +1568,18 @@
 
     /* ── Sidebar Toolbar: single compact pill ── */
     #seatingChartView .sc-sidebar-toolbar {
-        margin: 10px auto 4px;
-        padding: 4px 8px;
-        gap: 0;
+        margin: 10px auto 6px;
+        padding: 6px 12px;
+        gap: 8px;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: center;
         width: fit-content;
         background: var(--bg-secondary);
-        border-radius: 20px;
+        border-radius: 24px;
         border-bottom: none;
+        box-shadow: var(--shadow-sm);
     }
 
     #seatingChartView .sc-toolbar-label {
@@ -1583,7 +1589,7 @@
     #seatingChartView .sc-sidebar-toolbar-header {
         gap: 0;
         flex-shrink: 0;
-        padding: 0 4px 0 2px;
+        padding: 0 6px 0 2px;
     }
 
     #seatingChartView .sc-sidebar-actions {
@@ -1594,18 +1600,18 @@
 
     #seatingChartView .sc-sidebar-actions-group {
         padding: 0;
-        gap: 1px;
+        gap: 4px;
         background: transparent;
         border-radius: 0;
     }
 
     #seatingChartView .sc-action-btn {
-        width: 30px;
-        height: 30px;
+        width: 34px;
+        height: 34px;
     }
 
     #seatingChartView .sc-action-btn iconify-icon {
-        font-size: 1.05rem;
+        font-size: 1.15rem;
     }
 
     /* ── Sidebar Header: inline with horizontal layout ── */
@@ -1805,6 +1811,23 @@
     /* ── Teacher desk: less margin when sidebar is below ── */
     .sc-desk-row {
         margin-top: 16px;
+    }
+
+    /* ── Config Popover mobile alignment ── */
+    #seatingChartView .sc-config-popover {
+        left: auto;
+        right: -15px;
+        transform-origin: top right;
+        transform: translateY(-6px) scale(0.95);
+    }
+
+    #seatingChartView .sc-config-popover.open {
+        transform: translateY(0) scale(1);
+    }
+
+    #seatingChartView .sc-config-popover::before {
+        left: auto;
+        right: 28px;
     }
 }
 
