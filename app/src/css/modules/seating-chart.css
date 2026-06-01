@@ -1850,6 +1850,12 @@
     color: var(--text-primary);
 }
 
+.sc-empty-success-icon {
+    font-size: 2.2rem;
+    color: var(--success-color);
+    margin-bottom: 2px;
+}
+
 @keyframes scFadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }

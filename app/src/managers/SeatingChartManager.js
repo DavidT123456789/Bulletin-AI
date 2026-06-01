@@ -1187,7 +1187,8 @@ export const SeatingChartManager = {
         list.innerHTML = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
-                    ? `<div class="sc-empty-text"><strong>Bravo !</strong> Votre plan de classe est complet !</div>`
+                    ? `<iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>
+                       <div class="sc-empty-text"><strong>Bravo !</strong><br>Le plan est complet !</div>`
                     : 'Aucun résultat'}
                </div>`
             : filtered.map((s, index) => `
