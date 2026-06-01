@@ -604,9 +604,8 @@ export const SeatingChartManager = {
 
         this._selectedChipIds = [];
         this._dismissOnboardingHint();
-        this._render();
-        this._updateSidebarLockState();
         this._savePositionsToState();
+        this._render();
         this._updateSelectionAttribute();
 
         requestAnimationFrame(() => {
@@ -919,8 +918,8 @@ export const SeatingChartManager = {
             document.getElementById('scColsValue').textContent = snapshot.cols; 
         }
 
-        this._render();
         this._savePositionsToState();
+        this._render();
         this._saveGridConfig();
         this._staggerCellEntrance();
     },
@@ -972,6 +971,7 @@ export const SeatingChartManager = {
                 ? { row: pos.row, col: pos.col, pinned: result.seatingPosition?.pinned || false }
                 : null;
             result._lastModified = Date.now();
+            s.seatingPosition = result.seatingPosition;
         });
 
         StorageManager.saveAppState();
@@ -1187,8 +1187,8 @@ export const SeatingChartManager = {
         list.innerHTML = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
-                    ? `<iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>
-                       <div class="sc-empty-text"><strong>Bravo !</strong><br>Le plan est complet !</div>`
+                    ? `<div class="sc-empty-text"><strong>Bravo !</strong><br>Le plan est complet !</div>
+                       <iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>`
                     : 'Aucun résultat'}
                </div>`
             : filtered.map((s, index) => `
@@ -1346,8 +1346,8 @@ export const SeatingChartManager = {
 
         this._dragSource = null;
         this._dismissOnboardingHint();
-        this._render();
         this._savePositionsToState();
+        this._render();
 
         if (type === 'sidebar') {
             this._animateCellPlaced(targetRow, targetCol);
@@ -1366,11 +1366,11 @@ export const SeatingChartManager = {
 
         this._animateCellRemove(row, col, () => {
             this._gridState[row][col] = null;
+            this._savePositionsToState();
             this._renderGrid();
             this._renderSidebar(removedId);
             this._updateFooter();
             this._updateSidebarLockState();
-            this._savePositionsToState();
             this._onRemovalComplete();
         });
     },
@@ -1573,8 +1573,8 @@ export const SeatingChartManager = {
         }
 
         this._dismissOnboardingHint();
-        this._render();
         this._savePositionsToState();
+        this._render();
 
         requestAnimationFrame(() => {
             placedCells.forEach(({ row, col, index }) => {
@@ -1653,8 +1653,8 @@ export const SeatingChartManager = {
             this._gridState[cell.row][cell.col] = id;
         });
 
-        this._render();
         this._savePositionsToState();
+        this._render();
 
         requestAnimationFrame(() => {
             selectedCells.forEach(({ row, col }, index) => {
@@ -1728,12 +1728,12 @@ export const SeatingChartManager = {
             setTimeout(() => {
                 this._initGrid(this._getRows(), this._getCols());
                 this._applyLockState(false);
+                this._savePositionsToState();
                 this._renderGrid();
                 this._renderSidebar(null, true);
                 this._updateFooter();
                 this._updateSidebarLockState();
                 this._updateUndoRedoButtons();
-                this._savePositionsToState();
                 this._saveGridConfig();
                 this._staggerCellEntrance();
                 this._maybeShowOnboardingHint();
@@ -1817,11 +1817,11 @@ export const SeatingChartManager = {
             }
 
             setTimeout(() => {
+                this._savePositionsToState();
                 this._renderGrid();
                 this._renderSidebar();
                 this._updateFooter();
                 this._updateSidebarLockState();
-                this._savePositionsToState();
                 this._onRemovalComplete();
             }, Math.min(delay * 30 + 300, 600));
         }

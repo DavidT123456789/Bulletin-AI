@@ -1716,9 +1716,37 @@
 
     /* Empty sidebar message adapts to horizontal layout */
     .sc-empty-sidebar {
-        flex-direction: row;
+        flex-direction: row !important;
         padding: 8px 12px;
         font-size: 0.78rem;
+        gap: 8px;
+        justify-content: center !important;
+        align-items: center !important;
+        flex: none !important;
+        height: auto !important;
+    }
+
+    .sc-empty-success-icon {
+        font-size: 1.6rem !important;
+        margin-bottom: 0 !important;
+        filter: none !important;
+        order: 1 !important;
+    }
+
+    .sc-empty-text {
+        order: 2 !important;
+        font-size: 0.75rem !important;
+        max-width: none !important;
+        text-align: left !important;
+        margin-bottom: 0 !important;
+    }
+
+    #seatingChartView[data-all-placed="true"] .sc-student-list {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        padding: 8px 12px;
+        height: auto;
     }
 
     /* ── Grid Area ── */
@@ -1820,29 +1848,31 @@
 #seatingChartView[data-all-placed="true"] .sc-student-list {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 20%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0;
 }
 
 .sc-empty-sidebar {
-    padding: 16px;
+    padding: 60px 16px 32px;
     text-align: center;
     color: var(--text-quaternary);
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-start;
+    flex: 1;
     animation: scFadeUp 0.5s var(--ease-spring) both;
 }
-
-
 
 .sc-empty-text {
     font-weight: 400;
     color: var(--text-secondary);
-    max-width: 180px;
-    line-height: 1.45;
+    max-width: 200px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    margin-bottom: auto;
 }
 
 .sc-empty-text strong {
@@ -1851,9 +1881,10 @@
 }
 
 .sc-empty-success-icon {
-    font-size: 2.5rem;
+    font-size: 4.8rem;
     color: var(--primary-color);
-    margin-bottom: 4px;
+    margin-bottom: auto;
+    filter: drop-shadow(0 8px 24px rgba(var(--primary-color-rgb, 79, 70, 229), 0.15));
 }
 
 @keyframes scFadeUp {
@@ -2185,15 +2216,6 @@
     color: var(--text-secondary);
 }
 
-@media (hover: hover) {
-    .sc-floating-actions .sc-action-btn:hover {
-        background: var(--surface-color);
-        color: var(--primary-color);
-        box-shadow: var(--shadow-md);
-    }
-}
-
-
 [data-theme="dark"] .sc-floating-actions .sc-action-btn {
     background: rgba(30, 30, 30, 0.85);
     border-color: rgba(255, 255, 255, 0.1);
@@ -2201,9 +2223,12 @@
 }
 
 @media (hover: hover) {
+    .sc-floating-actions .sc-action-btn:hover,
     [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
-        background: rgba(50, 50, 50, 0.95);
-        color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+        border-color: transparent;
+        box-shadow: var(--shadow-md);
     }
 }
 
