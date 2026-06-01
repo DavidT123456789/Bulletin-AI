@@ -2,8 +2,7 @@
 .history-navigation-group {
     display: inline-flex;
     align-items: center;
-    background: var(--bg-primary);
-    /* Slightly lighter background than card */
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     padding: 2px;
@@ -69,13 +68,7 @@
 }
 
 .history-indicator-btn .history-count {
-    background: var(--bg-secondary);
     color: var(--text-primary);
-    font-size: 0.75rem;
-    padding: 1px 6px;
-    border-radius: 12px;
-    min-width: 18px;
-    text-align: center;
     font-weight: 600;
 }
 
@@ -83,4 +76,10 @@
 .history-indicator-btn.active {
     background: var(--primary-color-light);
     color: var(--primary-color);
+}
+
+/* Dark Mode Harmonization overrides */
+[data-theme="dark"] .history-navigation-group {
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }

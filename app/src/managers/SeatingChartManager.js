@@ -149,10 +149,7 @@ export const SeatingChartManager = {
                     <div class="sc-classroom-board" id="scClassroomBoard">
                         <div class="sc-grid-container" id="scGridContainer"></div>
                         <div class="sc-desk-row">
-                            <div class="sc-desk" id="scDesk">
-                                <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
-                                Bureau
-                            </div>
+                            <div class="sc-desk" id="scDesk"><iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Bureau</span></div>
                         </div>
                     </div>
                 </div>
