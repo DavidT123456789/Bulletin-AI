@@ -1851,9 +1851,9 @@
 }
 
 .sc-empty-success-icon {
-    font-size: 2.2rem;
-    color: var(--success-color);
-    margin-bottom: 2px;
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 4px;
 }
 
 @keyframes scFadeUp {
