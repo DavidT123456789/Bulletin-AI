@@ -133,10 +133,11 @@
     padding: 6px 14px !important;
     min-width: auto;
     border-radius: var(--radius-pill);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-spring);
     cursor: default;
     position: relative;
     opacity: 0.35;
+    will-change: background-color, box-shadow, opacity;
 }
 
 .ui-stepper-step.clickable {
@@ -151,8 +152,9 @@
 
 .ui-stepper-step.active {
     opacity: 1;
-    background: var(--item-active-bg) !important;
+    background: var(--primary-color) !important;
     cursor: default;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .ui-stepper-step.completed {
@@ -166,10 +168,11 @@
     color: var(--text-primary);
     white-space: nowrap;
     display: block !important;
+    transition: color var(--transition-fast);
 }
 
 .ui-stepper-step.active .ui-stepper-label {
-    color: var(--primary-color);
+    color: #ffffff;
 }
 
 .ui-stepper-step.completed .ui-stepper-label {

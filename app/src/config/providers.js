@@ -10,13 +10,15 @@ export const PROVIDER_CONFIG = {
         name: 'Google Gemini',
         icon: 'logos:google-icon',
         class: 'provider-google',
+        description: '<strong>Google Gemini</strong> est une alternative gratuite et performante (soumise à un quota d’utilisation quotidien).'
     },
     openrouter: {
         id: 'openrouter',
         name: 'OpenRouter',
         icon: 'solar:bolt-bold-duotone',
         class: 'provider-openrouter',
-        style: 'color: var(--secondary-color);' // Adapte la couleur si nécessaire
+        style: 'color: var(--secondary-color);', // Adapte la couleur si nécessaire
+        description: '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les meilleurs modèles (DeepSeek, Claude, GPT-4…).'
     },
     openai: {
         id: 'openai',
@@ -35,7 +37,8 @@ export const PROVIDER_CONFIG = {
         name: 'Mistral AI',
         icon: 'solar:cat-bold',
         class: 'provider-mistral',
-        style: 'color: #fd6f00;' // Orange Mistral
+        style: 'color: #fd6f00;', // Orange Mistral
+        description: '<strong>Mistral AI</strong> est une solution française, performante et <strong>gratuite</strong> (1 milliard de tokens/mois).'
     },
     ollama: {
         id: 'ollama',

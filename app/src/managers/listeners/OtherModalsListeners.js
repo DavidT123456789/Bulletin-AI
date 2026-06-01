@@ -9,6 +9,7 @@ import { ClassDashboardManager } from '../ClassDashboardManager.js';
 import { WelcomeManager } from '../WelcomeManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
+import { PROVIDER_CONFIG } from '../../config/providers.js';
 
 let App = null;
 
@@ -91,14 +92,11 @@ export const OtherModalsListeners = {
                 'openrouter': 'helpContentOpenRouter'
             };
 
-            const descMap = {
-                'mistral': '<strong>Mistral AI</strong> est une solution française, performante et <strong>gratuite</strong> (1 milliard de tokens/mois).',
-                'google': '<strong>Google Gemini</strong> est une alternative gratuite et très performante.',
-                'openrouter': '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les meilleurs modèles (DeepSeek, Claude, GPT-4…).'
-            };
-
             const descEl = document.getElementById('helpProviderDesc');
-            if (descEl && descMap[value]) descEl.innerHTML = descMap[value];
+            const providerInfo = PROVIDER_CONFIG[value];
+            if (descEl && providerInfo?.description) {
+                descEl.innerHTML = providerInfo.description;
+            }
 
             const contents = document.querySelectorAll('.provider-help-content');
             contents.forEach(el => {

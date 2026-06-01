@@ -839,6 +839,19 @@
 
 .class-management-item.active-switch {
     background-color: var(--item-active-bg);
+    border-left: 4px solid var(--primary-color);
+    padding-left: 16px;
+}
+
+.class-management-item:focus-visible {
+    background-color: var(--item-hover-bg);
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
+.class-management-item.active-switch:focus-visible {
+    background-color: var(--item-active-bg);
+    box-shadow: inset 0 0 0 2px var(--primary-hover);
 }
 
 /* Drag Handle */
@@ -907,36 +920,36 @@
 }
 
 .class-stat-badge.good {
-    background: rgba(34, 197, 94, 0.08);
+    background: rgba(var(--success-color-rgb), 0.08);
     color: var(--success-dark);
-    border-color: rgba(34, 197, 94, 0.15);
+    border-color: rgba(var(--success-color-rgb), 0.15);
 }
 
 [data-theme="dark"] .class-stat-badge.good {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.2);
+    background: rgba(var(--success-color-rgb), 0.12);
+    border-color: rgba(var(--success-color-rgb), 0.2);
 }
 
 .class-stat-badge.average {
-    background: rgba(234, 179, 8, 0.08);
+    background: rgba(var(--warning-color-rgb), 0.08);
     color: var(--warning-dark);
-    border-color: rgba(234, 179, 8, 0.15);
+    border-color: rgba(var(--warning-color-rgb), 0.15);
 }
 
 [data-theme="dark"] .class-stat-badge.average {
-    background: rgba(234, 179, 8, 0.12);
-    border-color: rgba(234, 179, 8, 0.2);
+    background: rgba(var(--warning-color-rgb), 0.12);
+    border-color: rgba(var(--warning-color-rgb), 0.2);
 }
 
 .class-stat-badge.risk {
     background: rgba(var(--error-rgb), 0.08);
     color: var(--error-hover);
-    border-color: rgba(239, 68, 68, 0.15);
+    border-color: rgba(var(--error-rgb), 0.15);
 }
 
 [data-theme="dark"] .class-stat-badge.risk {
     background: rgba(var(--error-rgb), 0.12);
-    border-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(var(--error-rgb), 0.2);
 }
 
 .stat-value {
@@ -1178,6 +1191,27 @@
 
 .inline-create-form {
     overflow: hidden;
+    padding: 12px;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    animation: slideDownExpand 0.25s ease-out;
+}
+
+.inline-create-form-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.inline-create-form .inline-create-btn {
+    padding: 6px 10px;
+    color: var(--primary-color);
+    min-width: 32px;
+}
+
+.inline-create-form .inline-cancel-btn {
+    padding: 6px 10px;
+    min-width: 32px;
 }
 
 .inline-class-input {
@@ -1212,6 +1246,11 @@
     cursor: default;
     background: rgba(var(--error-rgb), 0.03) !important;
     border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-left: 4px solid var(--error-color);
+    padding-left: 16px;
 }
 
 .class-management-item.editing:hover {
@@ -1222,6 +1261,7 @@
 /* Special case for rename editing (blue instead of red) */
 .class-management-item.editing.renaming {
     background: rgba(var(--primary-color-rgb), 0.03) !important;
+    border-left: 4px solid var(--primary-color);
 }
 
 /* Inline Forms Layout */
@@ -1287,11 +1327,18 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    gap: 16px;
     padding: 2px 4px;
     animation: slideInConfirm 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.delete-confirm-text {
+.delete-confirm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.delete-confirm-title {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1300,13 +1347,21 @@
     font-size: 0.95rem;
 }
 
-.delete-confirm-text iconify-icon {
+.delete-confirm-title iconify-icon {
     font-size: 1.3em;
+}
+
+.delete-confirm-subtext {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    padding-left: 28px;
 }
 
 .delete-confirm-actions {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .inline-delete-btn {

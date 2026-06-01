@@ -251,19 +251,19 @@
     padding: 7px 14px;
     min-height: 30px;
     margin-top: 10px;
-    background: transparent;
-    border: 1px solid var(--border-color);
+    background: rgba(var(--primary-color-rgb), 0.03);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
     border-radius: var(--radius-pill);
     color: var(--primary-color);
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .guide-sample-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.35);
     color: var(--primary-color);
 }
 
@@ -495,15 +495,17 @@
     border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all var(--transition-spring);
     position: relative;
     overflow: hidden;
     margin: 4px;
+    will-change: transform, border-color, background-color;
 }
 
 .import-drop-zone:hover {
     border-color: rgba(var(--primary-color-rgb), 0.5);
     background: rgba(var(--primary-color-rgb), 0.04);
+    transform: translateY(-1.5px);
 }
 
 .import-drop-zone.dragging {
@@ -785,7 +787,6 @@
     flex: 1;
     height: 1px;
     background: var(--border-color);
-    opacity: 0.3;
 }
 
 .import-divider-horizontal span {

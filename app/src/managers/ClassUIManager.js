@@ -217,23 +217,17 @@ export const ClassUIManager = {
 
         // Créer le formulaire inline
         const formHtml = `
-            <form class="inline-create-form" action="javascript:void(0)" autocomplete="off" style="
-                padding: 12px;
-                background: var(--surface-color);
-                border-bottom: 1px solid var(--border-color);
-                animation: slideDownExpand 0.25s ease-out;
-            ">
-                <div style="display: flex; gap: 4px; align-items: center;">
+            <form class="inline-create-form" action="javascript:void(0)" autocomplete="off">
+                <div class="inline-create-form-row">
                     <input type="text" class="inline-class-input" 
                            placeholder="Nom de la classe..." 
                            autocomplete="off"
                            maxlength="50"
-                           style="flex: 1;"
                            name="newClassName_ignore">
-                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" style="padding: 6px 10px; color: var(--primary-color); min-width: 32px;" disabled>
+                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" disabled>
                         <iconify-icon icon="ph:check"></iconify-icon>
                     </button>
-                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn" style="padding: 6px 10px; min-width: 32px;">
+                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -716,100 +710,6 @@ export const ClassUIManager = {
     showManageClassesModal() {
         const classes = ClassManager.getAllClasses();
 
-        // Créer le contenu de la modale avec infos enrichies
-        const modalContent = `
-            <div class="class-management-content">
-                ${classes.length === 0 ? `
-                    <div class="class-management-empty">
-                        <iconify-icon icon="solar:layers-minimalistic-linear"></iconify-icon>
-                        <p class="empty-title">Aucune classe créée</p>
-                        <p class="empty-subtitle">Commencez par ajouter votre première classe.</p>
-                    </div>
-                ` : `
-                    <div class="class-management-list">
-                        ${classes.map(cls => {
-            const stats = this._getClassStats(cls.id);
-            // Get pedagogical stats (Average, Evolution)
-            const pedagoStats = ClassDashboardManager.getStatsForClass(cls.id);
-            const hasGrades = pedagoStats && pedagoStats.count > 0;
-
-            let averageBadge = '';
-            if (hasGrades) {
-                const avg = pedagoStats.average.toFixed(1).replace('.', ',');
-                const colorClass = pedagoStats.average >= 14 ? 'good' : pedagoStats.average >= 10 ? 'average' : 'risk';
-
-                let trendIcon = '';
-                if (pedagoStats.avgEvolution !== null) {
-                    const trend = pedagoStats.avgEvolution;
-                    const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
-                    const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
-                    trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution trimestrielle">${trendArrow}</span>`;
-                }
-
-                averageBadge = `
-                    <div class="class-stat-badge ${colorClass}" title="Moyenne générale de la classe">
-                        <span class="stat-value">${avg}</span>
-                        <span class="stat-suffix">/20</span>
-                        ${trendIcon}
-                    </div>
-                `;
-            } else {
-                averageBadge = `<div class="class-stat-badge no-data"><span class="stat-value">--/20</span></div>`;
-            }
-
-            return `
-                            <div class="class-management-item" data-class-id="${cls.id}" draggable="true">
-                                <div class="class-drag-handle" title="Réorganiser">
-                                    <iconify-icon icon="solar:hamburger-menu-linear"></iconify-icon>
-                                </div>
-                                
-                                <div class="class-management-info">
-                                    <div class="class-info-header">
-                                        <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
-                                        ${averageBadge}
-                                    </div>
-                                    
-                                    <div class="class-management-meta">
-                                        <span class="meta-item-inline" title="Année scolaire">
-                                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
-                                            <span>${cls.year || '2025-2026'}</span>
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline" title="Nombre d'élèves">
-                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                                            <span>${stats.total} élèves</span>
-                                        </span>
-                                        <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline ${stats.statusClass}" title="Appréciations complétées (Trimestre actif)">
-                                            <iconify-icon icon="${stats.icon}"></iconify-icon>
-                                            <span>${stats.completed}/${stats.total}</span>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="class-management-actions">
-                                    <button class="manage-duplicate-btn" data-class-id="${cls.id}" 
-                                            title="Dupliquer la classe">
-                                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
-                                    </button>
-                                    <button class="manage-rename-btn" data-class-id="${cls.id}" 
-                                            title="Renommer">
-                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
-                                    </button>
-                                    <button class="manage-delete-btn" data-class-id="${cls.id}" 
-                                            title="Supprimer la classe">
-                                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                                    </button>
-                                </div>
-                            </div>
-                        `}).join('')}
-                    </div>
-                `}
-            </div>
-        `;
-
-        // Utiliser showCustomConfirm comme base pour afficher le contenu
-        // ou créer une simple alert avec le contenu HTML
         const modalEl = document.createElement('div');
         modalEl.className = 'modal modal-small';
         modalEl.id = 'classManagementModal';
@@ -831,7 +731,7 @@ export const ClassUIManager = {
                     </div>
                 </div>
                 <div class="modal-body" style="padding: 16px;">
-                    ${modalContent}
+                    <!-- Rempli par refreshList -->
                 </div>
             </div>
         `;
@@ -840,136 +740,18 @@ export const ClassUIManager = {
         UI?.openModal(modalEl);
 
         // Bind events
+        const ghostImg = document.createElement('div');
+        ghostImg.style.cssText = 'width:1px;height:1px;position:fixed;top:-100px;opacity:0;';
+        document.body.appendChild(ghostImg);
+
+        const cleanupGhost = () => ghostImg.remove();
+        modalEl.addEventListener('close', cleanupGhost, { once: true });
+
         modalEl.querySelector('.close-manage-modal')?.addEventListener('click', () => {
             UI?.closeModal(modalEl);
+            cleanupGhost();
             setTimeout(() => modalEl.remove(), 300);
         });
-
-        // Bind Row Click (Switch Class)
-        // We use event delegation to handle clicks on the row but ignore clicks on buttons/drag handle
-        modalEl.querySelector('.class-management-list')?.addEventListener('click', async (e) => {
-            const item = e.target.closest('.class-management-item');
-            if (!item) return;
-
-            // Ignore if clicking on actions or drag handle
-            if (e.target.closest('.class-management-actions') || e.target.closest('.class-drag-handle')) {
-                return;
-            }
-
-            const classId = item.dataset.classId;
-            if (classId) {
-                // Add active state visual feedback
-                modalEl.querySelectorAll('.class-management-item').forEach(i => i.classList.remove('active-switch'));
-                item.classList.add('active-switch');
-
-                // Switch class
-                await this.handleClassSwitch(classId);
-
-                // Close modal after short delay for feedback
-                setTimeout(() => {
-                    UI?.closeModal(modalEl);
-                    setTimeout(() => modalEl.remove(), 300);
-                }, 150);
-            }
-        });
-
-        // ========== Drag & Drop Reorder (Rail-Style) ==========
-        let draggedItem = null;
-        const list = modalEl.querySelector('.class-management-list');
-
-        if (list) {
-            // Create invisible drag ghost (1x1 transparent pixel)
-            const ghostImg = document.createElement('div');
-            ghostImg.style.cssText = 'width:1px;height:1px;position:fixed;top:-100px;opacity:0;';
-            document.body.appendChild(ghostImg);
-
-            // Cleanup ghost on modal close
-            const cleanupGhost = () => ghostImg.remove();
-            modalEl.addEventListener('close', cleanupGhost, { once: true });
-
-            list.addEventListener('dragstart', (e) => {
-                const item = e.target.closest('.class-management-item');
-                if (!item) return;
-                draggedItem = item;
-
-                // Hide native ghost - item stays in place visually
-                e.dataTransfer.setDragImage(ghostImg, 0, 0);
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', item.dataset.classId);
-
-                // Mark as dragging after a frame
-                requestAnimationFrame(() => {
-                    item.classList.add('dragging');
-                });
-            });
-
-            list.addEventListener('dragend', () => {
-                if (draggedItem) {
-                    draggedItem.classList.remove('dragging');
-                }
-                draggedItem = null;
-
-                // Persist final order
-                const newOrder = [...list.querySelectorAll('.class-management-item')]
-                    .map(i => i.dataset.classId);
-                ClassManager.reorderClasses(newOrder);
-                this.renderClassList();
-            });
-
-            list.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-
-                const target = e.target.closest('.class-management-item');
-                if (!target || target === draggedItem) return;
-
-                const targetRect = target.getBoundingClientRect();
-                const mouseY = e.clientY;
-                const targetMiddle = targetRect.top + targetRect.height / 2;
-
-                // Check if we need to move
-                const shouldInsertBefore = mouseY < targetMiddle;
-                const isAlreadyBefore = target.previousElementSibling === draggedItem;
-                const isAlreadyAfter = target.nextElementSibling === draggedItem;
-
-                if ((shouldInsertBefore && isAlreadyBefore) || (!shouldInsertBefore && isAlreadyAfter)) {
-                    return; // Already in correct position
-                }
-
-                // FLIP Animation: capture positions before move
-                const items = [...list.querySelectorAll('.class-management-item:not(.dragging)')];
-                const firstRects = new Map();
-                items.forEach(item => {
-                    firstRects.set(item, item.getBoundingClientRect());
-                });
-
-                // Perform DOM move
-                if (shouldInsertBefore) {
-                    target.before(draggedItem);
-                } else {
-                    target.after(draggedItem);
-                }
-
-                // FLIP: animate from old position to new
-                items.forEach(item => {
-                    const firstRect = firstRects.get(item);
-                    const lastRect = item.getBoundingClientRect();
-                    const deltaY = firstRect.top - lastRect.top;
-
-                    if (Math.abs(deltaY) > 1) {
-                        item.style.transition = 'none';
-                        item.style.transform = `translateY(${deltaY}px)`;
-                        item.offsetHeight; // Force reflow
-                        item.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
-                        item.style.transform = '';
-                        setTimeout(() => {
-                            item.style.transition = '';
-                            item.style.transform = '';
-                        }, 250);
-                    }
-                });
-            });
-        }
 
         // Add new class button in modal - inline form
         const addClassBtn = modalEl.querySelector('#addClassFromModalBtn');
@@ -1039,206 +821,425 @@ export const ClassUIManager = {
                     confirmBtn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
 
                     await this._createAndSwitchClass(className);
-
-                    // Refresh modal
-                    UI?.closeModal(modalEl);
-                    setTimeout(() => {
-                        modalEl.remove();
-                        this.showManageClassesModal();
-                    }, 300);
+                    refreshList();
                 }
             };
         });
 
-        // Rename buttons - inline editing
-        const bindRenameHandler = (btn) => {
-            const handler = () => {
-                const classId = btn.dataset.classId;
-                const cls = ClassManager.getClassById(classId);
-                if (!cls) return;
+        // Event delegation and direct bindings inside the list
+        const bindListEvents = () => {
+            const list = modalEl.querySelector('.class-management-list');
+            if (!list) return;
 
-                const row = btn.closest('.class-management-item');
-                if (!row) return;
+            // Bind Row Click (Switch Class)
+            list.addEventListener('click', async (e) => {
+                const item = e.target.closest('.class-management-item');
+                if (!item) return;
 
-                const originalContent = row.innerHTML;
+                // Ignore if row is currently in editing mode (renaming or deleting)
+                if (item.classList.contains('editing')) {
+                    return;
+                }
 
-                row.innerHTML = `
-                    <div class="rename-inline-form">
-                        <input type="text" class="inline-rename-input" 
-                               value="${this._escapeHtml(cls.name)}"
-                               maxlength="50"
-                               autocomplete="off">
-                        <button class="save-rename-btn" title="Confirmer">
-                            <iconify-icon icon="ph:check-bold"></iconify-icon>
-                        </button>
-                        <button class="cancel-rename-btn" title="Annuler">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
-                    </div>
-                `;
+                // Ignore if clicking on actions or drag handle
+                if (e.target.closest('.class-management-actions') || e.target.closest('.class-drag-handle')) {
+                    return;
+                }
 
-                row.classList.add('editing', 'renaming');
+                const classId = item.dataset.classId;
+                if (classId) {
+                    modalEl.querySelectorAll('.class-management-item').forEach(i => i.classList.remove('active-switch'));
+                    item.classList.add('active-switch');
 
-                const input = row.querySelector('.inline-rename-input');
-                const saveBtn = row.querySelector('.save-rename-btn');
-                const cancelBtn = row.querySelector('.cancel-rename-btn');
+                    await this.handleClassSwitch(classId);
 
-                input.focus();
-                input.select();
-
-                const restore = () => {
-                    row.innerHTML = originalContent;
-                    row.classList.remove('editing', 'renaming');
-                    // Re-bind both buttons
-                    const newRenameBtn = row.querySelector('.manage-rename-btn');
-                    const newDeleteBtn = row.querySelector('.manage-delete-btn');
-                    if (newRenameBtn) bindRenameHandler(newRenameBtn);
-                    if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
-                };
-
-                const save = () => {
-                    const newName = input.value.trim();
-                    if (newName && newName !== cls.name) {
-                        ClassManager.updateClass(classId, { name: newName });
-                        UI?.showNotification(`Classe renommée en "${newName}"`, 'success');
-                        this.updateHeaderDisplay();
+                    setTimeout(() => {
                         UI?.closeModal(modalEl);
+                        cleanupGhost();
+                        setTimeout(() => modalEl.remove(), 300);
+                    }, 150);
+                }
+            });
+
+            // ========== Drag & Drop Reorder (Rail-Style) ==========
+            list.addEventListener('dragstart', (e) => {
+                const item = e.target.closest('.class-management-item');
+                if (!item) return;
+                draggedItem = item;
+
+                e.dataTransfer.setDragImage(ghostImg, 0, 0);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', item.dataset.classId);
+
+                requestAnimationFrame(() => {
+                    item.classList.add('dragging');
+                });
+            });
+
+            list.addEventListener('dragend', () => {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                }
+                draggedItem = null;
+
+                const newOrder = [...list.querySelectorAll('.class-management-item')]
+                    .map(i => i.dataset.classId);
+                ClassManager.reorderClasses(newOrder);
+                this.renderClassList();
+            });
+
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const target = e.target.closest('.class-management-item');
+                if (!target || target === draggedItem) return;
+
+                const targetRect = target.getBoundingClientRect();
+                const mouseY = e.clientY;
+                const targetMiddle = targetRect.top + targetRect.height / 2;
+
+                const shouldInsertBefore = mouseY < targetMiddle;
+                const isAlreadyBefore = target.previousElementSibling === draggedItem;
+                const isAlreadyAfter = target.nextElementSibling === draggedItem;
+
+                if ((shouldInsertBefore && isAlreadyBefore) || (!shouldInsertBefore && isAlreadyAfter)) {
+                    return;
+                }
+
+                const items = [...list.querySelectorAll('.class-management-item:not(.dragging)')];
+                const firstRects = new Map();
+                items.forEach(item => {
+                    firstRects.set(item, item.getBoundingClientRect());
+                });
+
+                if (shouldInsertBefore) {
+                    target.before(draggedItem);
+                } else {
+                    target.after(draggedItem);
+                }
+
+                items.forEach(item => {
+                    const firstRect = firstRects.get(item);
+                    const lastRect = item.getBoundingClientRect();
+                    const deltaY = firstRect.top - lastRect.top;
+
+                    if (Math.abs(deltaY) > 1) {
+                        item.style.transition = 'none';
+                        item.style.transform = `translateY(${deltaY}px)`;
+                        item.offsetHeight; // Force reflow
+                        item.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+                        item.style.transform = '';
                         setTimeout(() => {
-                            modalEl.remove();
-                            this.showManageClassesModal();
-                        }, 300);
-                    } else {
-                        restore();
+                            item.style.transition = '';
+                            item.style.transform = '';
+                        }, 250);
                     }
-                };
+                });
+            });
 
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        save();
-                    } else if (e.key === 'Escape') {
-                        restore();
-                    }
-                };
+            // Rename buttons - inline editing
+            const bindRenameHandler = (btn) => {
+                btn.addEventListener('click', () => {
+                    const classId = btn.dataset.classId;
+                    const cls = ClassManager.getClassById(classId);
+                    if (!cls) return;
 
-                saveBtn.onclick = save;
-                cancelBtn.onclick = restore;
+                    const row = btn.closest('.class-management-item');
+                    if (!row) return;
+
+                    const originalContent = row.innerHTML;
+
+                    row.innerHTML = `
+                        <div class="rename-inline-form">
+                            <input type="text" class="inline-rename-input" 
+                                   value="${this._escapeHtml(cls.name)}"
+                                   maxlength="50"
+                                   autocomplete="off">
+                            <button class="save-rename-btn" title="Confirmer">
+                                <iconify-icon icon="ph:check-bold"></iconify-icon>
+                            </button>
+                            <button class="cancel-rename-btn" title="Annuler">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
+                        </div>
+                    `;
+
+                    row.classList.add('editing', 'renaming');
+
+                    const input = row.querySelector('.inline-rename-input');
+                    const saveBtn = row.querySelector('.save-rename-btn');
+                    const cancelBtn = row.querySelector('.cancel-rename-btn');
+
+                    input.focus();
+                    input.select();
+
+                    const restore = () => {
+                        row.innerHTML = originalContent;
+                        row.classList.remove('editing', 'renaming');
+                        const newRenameBtn = row.querySelector('.manage-rename-btn');
+                        const newDeleteBtn = row.querySelector('.manage-delete-btn');
+                        if (newRenameBtn) bindRenameHandler(newRenameBtn);
+                        if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
+                    };
+
+                    const save = () => {
+                        const newName = input.value.trim();
+                        if (newName && newName !== cls.name) {
+                            ClassManager.updateClass(classId, { name: newName });
+                            UI?.showNotification(`Classe renommée en "${newName}"`, 'success');
+                            this.updateHeaderDisplay();
+                            refreshList();
+                        } else {
+                            restore();
+                        }
+                    };
+
+                    input.onkeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            save();
+                        } else if (e.key === 'Escape') {
+                            restore();
+                        }
+                    };
+
+                    saveBtn.onclick = save;
+                    cancelBtn.onclick = restore;
+                });
             };
-            btn.addEventListener('click', handler);
+
+            list.querySelectorAll('.manage-rename-btn').forEach(btn => bindRenameHandler(btn));
+
+            // Delete buttons - inline confirmation
+            const bindDeleteHandler = (btn) => {
+                btn.addEventListener('click', () => {
+                    const classId = btn.dataset.classId;
+                    const row = btn.closest('.class-management-item');
+                    if (!row) return;
+
+                    const originalContent = row.innerHTML;
+                    const cls = ClassManager.getClassById(classId);
+
+                    row.innerHTML = `
+                        <div class="delete-confirm-inline">
+                            <div class="delete-confirm-info">
+                                <span class="delete-confirm-title">
+                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> 
+                                    Supprimer la classe <strong>${this._escapeHtml(cls?.name || '')}</strong> ?
+                                </span>
+                                <span class="delete-confirm-subtext">Ses élèves et données seront définitivement effacés.</span>
+                            </div>
+                            <div class="delete-confirm-actions">
+                                <button class="inline-delete-btn cancel cancel-delete-btn">
+                                    Annuler
+                                </button>
+                                <button class="inline-delete-btn confirm confirm-delete-btn">
+                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    row.classList.add('editing');
+
+                    row.querySelector('.cancel-delete-btn').onclick = () => {
+                        row.innerHTML = originalContent;
+                        row.classList.remove('editing');
+                        const newDeleteBtn = row.querySelector('.manage-delete-btn');
+                        if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
+                        const newRenameBtn = row.querySelector('.manage-rename-btn');
+                        if (newRenameBtn) bindRenameHandler(newRenameBtn);
+                    };
+
+                    row.querySelector('.confirm-delete-btn').onclick = async () => {
+                        row.style.animation = 'slideOutRow 0.3s ease-out forwards';
+
+                        setTimeout(async () => {
+                            await this.handleDeleteClass(classId);
+                            this.updateHeaderDisplay();
+                            this.renderClassList();
+
+                            const remainingClasses = ClassManager.getAllClasses();
+                            if (remainingClasses.length === 0) {
+                                UI?.closeModal(modalEl);
+                                cleanupGhost();
+                                setTimeout(() => {
+                                    modalEl.remove();
+                                    this.openDropdown();
+                                    setTimeout(() => this.showNewClassPrompt(), 100);
+                                }, 300);
+                            } else {
+                                refreshList();
+                            }
+                        }, 280);
+                    };
+                });
+            };
+
+            list.querySelectorAll('.manage-delete-btn').forEach(btn => bindDeleteHandler(btn));
+
+            // Duplicate buttons handler
+            const bindDuplicateHandler = (btn) => {
+                btn.addEventListener('click', async () => {
+                    const classId = btn.dataset.classId;
+                    if (!classId) return;
+
+                    const originalIcon = btn.innerHTML;
+                    btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
+                    btn.disabled = true;
+
+                    try {
+                        await ClassManager.duplicateClass(classId);
+
+                        this.updateHeaderDisplay();
+                        this.renderClassList();
+                        this.updateStudentCount();
+                        refreshList();
+                    } catch {
+                        UI?.showNotification('Erreur lors de la duplication', 'error');
+                        btn.innerHTML = originalIcon;
+                        btn.disabled = false;
+                    }
+                });
+            };
+
+            list.querySelectorAll('.manage-duplicate-btn').forEach(btn => bindDuplicateHandler(btn));
         };
 
-        modalEl.querySelectorAll('.manage-rename-btn').forEach(btn => bindRenameHandler(btn));
+        let draggedItem = null;
 
-        // Delete buttons - inline confirmation
-        const bindDeleteHandler = (btn) => {
-            const handler = () => {
-                const classId = btn.dataset.classId;
-                const row = btn.closest('.class-management-item');
-                if (!row) return;
+        // Render function to dynamically update the list
+        const refreshList = () => {
+            const currentClasses = ClassManager.getAllClasses();
 
-                const originalContent = row.innerHTML;
-                const cls = ClassManager.getClassById(classId);
+            const subtitle = modalEl.querySelector('.modal-subtitle');
+            if (subtitle) {
+                subtitle.textContent = `${currentClasses.length} classes • ${appState.generatedResults?.length || 0} élèves`;
+            }
 
-                row.innerHTML = `
-                    <div class="delete-confirm-inline">
-                        <span class="delete-confirm-text">
-                            <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> 
-                            Supprimer "${this._escapeHtml(cls?.name || '')}" ?
-                        </span>
-                        <div class="delete-confirm-actions">
-                            <button class="inline-delete-btn cancel cancel-delete-btn">
-                                Annuler
-                            </button>
-                            <button class="inline-delete-btn confirm confirm-delete-btn">
-                                <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Supprimer
-                            </button>
+            const modalBody = modalEl.querySelector('.modal-body');
+            if (!modalBody) return;
+
+            if (currentClasses.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="class-management-content">
+                        <div class="class-management-empty">
+                            <iconify-icon icon="solar:layers-minimalistic-linear"></iconify-icon>
+                            <p class="empty-title">Aucune classe créée</p>
+                            <p class="empty-subtitle">Commencez par ajouter votre première classe.</p>
                         </div>
                     </div>
                 `;
+                return;
+            }
 
-                row.classList.add('editing');
+            const listHtml = `
+                <div class="class-management-list" role="listbox" aria-label="Liste des classes">
+                    ${currentClasses.map(cls => {
+                        const stats = this._getClassStats(cls.id);
+                        const pedagoStats = ClassDashboardManager.getStatsForClass(cls.id);
+                        const hasGrades = pedagoStats && pedagoStats.count > 0;
+                        const isActive = cls.id === appState.currentClassId;
 
-                // Cancel - restore and re-bind
-                row.querySelector('.cancel-delete-btn').onclick = () => {
-                    row.innerHTML = originalContent;
-                    row.classList.remove('editing');
-                    // Re-bind the new delete button
-                    const newDeleteBtn = row.querySelector('.manage-delete-btn');
-                    if (newDeleteBtn) {
-                        bindDeleteHandler(newDeleteBtn);
-                    }
-                    // Re-bind rename button too
-                    const newRenameBtn = row.querySelector('.manage-rename-btn');
-                    if (newRenameBtn) {
-                        bindRenameHandler(newRenameBtn);
-                    }
-                };
+                        let averageBadge = '';
+                        if (hasGrades) {
+                            const avg = pedagoStats.average.toFixed(1).replace('.', ',');
+                            const colorClass = pedagoStats.average >= 14 ? 'good' : pedagoStats.average >= 10 ? 'average' : 'risk';
 
-                // Confirm delete
-                row.querySelector('.confirm-delete-btn').onclick = async () => {
-                    row.style.animation = 'slideOutRow 0.3s ease-out forwards';
+                            let trendIcon = '';
+                            if (pedagoStats.avgEvolution !== null) {
+                                const trend = pedagoStats.avgEvolution;
+                                const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
+                                const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
+                                trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution trimestrielle">${trendArrow}</span>`;
+                            }
 
-                    setTimeout(async () => {
-                        await this.handleDeleteClass(classId);
-                        this.updateHeaderDisplay();
-                        this.renderClassList(); // Also refresh the dropdown
-
-                        // Juste retirer la ligne, pas besoin de fermer/rouvrir
-                        row.remove();
-
-                        // Si plus de classes, fermer la modale et proposer d'en créer une
-                        const remainingClasses = ClassManager.getAllClasses();
-                        if (remainingClasses.length === 0) {
-                            UI?.closeModal(modalEl);
-                            setTimeout(() => {
-                                modalEl.remove();
-                                // Ouvrir automatiquement le dropdown et proposer de créer une classe
-                                this.openDropdown();
-                                setTimeout(() => this.showNewClassPrompt(), 100);
-                            }, 300);
+                            averageBadge = `
+                                <div class="class-stat-badge ${colorClass}" title="Moyenne générale de la classe">
+                                    <span class="stat-value">${avg}</span>
+                                    <span class="stat-suffix">/20</span>
+                                    ${trendIcon}
+                                </div>
+                            `;
+                        } else {
+                            averageBadge = `<div class="class-stat-badge no-data"><span class="stat-value">--/20</span></div>`;
                         }
-                    }, 280);
-                };
-            };
-            btn.addEventListener('click', handler);
+
+                        return `
+                            <div class="class-management-item ${isActive ? 'active-switch' : ''}" 
+                                 data-class-id="${cls.id}" 
+                                 draggable="true"
+                                 tabindex="0"
+                                 role="option"
+                                 aria-selected="${isActive ? 'true' : 'false'}">
+                                <div class="class-drag-handle" title="Réorganiser">
+                                    <iconify-icon icon="solar:hamburger-menu-linear"></iconify-icon>
+                                </div>
+                                
+                                <div class="class-management-info">
+                                    <div class="class-info-header">
+                                        <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
+                                        ${averageBadge}
+                                    </div>
+                                    
+                                    <div class="class-management-meta">
+                                        <span class="meta-item-inline" title="Année scolaire">
+                                            <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                                            <span>${cls.year || '2025-2026'}</span>
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item-inline" title="Nombre d'élèves">
+                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                            <span>${stats.total} élèves</span>
+                                        </span>
+                                        <span class="meta-separator">•</span>
+                                        <span class="meta-item-inline ${stats.statusClass}" title="Appréciations complétées (Trimestre actif)">
+                                            <iconify-icon icon="${stats.icon}"></iconify-icon>
+                                            <span>${stats.completed}/${stats.total}</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="class-management-actions">
+                                    <button class="manage-duplicate-btn" data-class-id="${cls.id}" 
+                                            title="Dupliquer la classe">
+                                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                                    </button>
+                                    <button class="manage-rename-btn" data-class-id="${cls.id}" 
+                                            title="Renommer">
+                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
+                                    </button>
+                                    <button class="manage-delete-btn" data-class-id="${cls.id}" 
+                                            title="Supprimer la classe">
+                                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            modalBody.innerHTML = `
+                <div class="class-management-content">
+                    ${listHtml}
+                </div>
+            `;
+
+            bindListEvents();
+
+            // Mettre le focus sur la classe active/nouvelle pour l'accessibilité et le repérage visuel
+            const activeItem = modalEl.querySelector('.class-management-item.active-switch');
+            if (activeItem) {
+                requestAnimationFrame(() => {
+                    activeItem.focus();
+                });
+            }
         };
 
-        modalEl.querySelectorAll('.manage-delete-btn').forEach(btn => bindDeleteHandler(btn));
-
-        // Duplicate buttons handler
-        const bindDuplicateHandler = (btn) => {
-            btn.addEventListener('click', async () => {
-                const classId = btn.dataset.classId;
-                if (!classId) return;
-
-                // Visual feedback - button loading state
-                const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
-                btn.disabled = true;
-
-                try {
-                    await ClassManager.duplicateClass(classId);
-
-                    // Refresh dropdown and header
-                    this.updateHeaderDisplay();
-                    this.renderClassList();
-                    this.updateStudentCount();
-
-                    // Refresh modal to show the new class
-                    UI?.closeModal(modalEl);
-                    setTimeout(() => {
-                        modalEl.remove();
-                        this.showManageClassesModal();
-                    }, 300);
-                } catch {
-                    UI?.showNotification('Erreur lors de la duplication', 'error');
-                    btn.innerHTML = originalIcon;
-                    btn.disabled = false;
-                }
-            });
-        };
-
-        modalEl.querySelectorAll('.manage-duplicate-btn').forEach(btn => bindDuplicateHandler(btn));
+        // Initial render
+        refreshList();
     },
 
     /**
