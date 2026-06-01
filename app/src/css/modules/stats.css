@@ -644,44 +644,7 @@
     cursor: pointer;
 }
 
-/* Hover réactif avec élévation et halo de marque (Uniquement ordinateur via hover query) */
-@media (hover: hover) {
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover {
-        transform: translateY(-4px);
-        background: var(--surface-color);
-        border-color: rgba(var(--primary-color-rgb), 0.3);
-        box-shadow: 0 10px 20px -5px rgba(var(--primary-color-rgb), 0.15), var(--shadow-sm);
-    }
-
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value {
-        color: var(--primary-color);
-    }
-
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label {
-        color: var(--primary-color);
-    }
-
-    [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover {
-        background: var(--bg-tertiary);
-    }
-}
-
-/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
-.performance-card .detail-item.active-filter {
-    background: rgba(var(--primary-color-rgb), 0.08) !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.12) !important;
-    animation: none !important;
-}
-
-.performance-card .detail-item.active-filter .detail-label {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-.performance-card .detail-item.active-filter .detail-value {
-    color: var(--primary-color);
-}
+/* Hover et états actifs unifiés en fin de fichier */
 
 /* Valeurs et labels - Typographie Outlined & Bento */
 .performance-card .detail-item .detail-value {
@@ -879,33 +842,7 @@
     box-shadow: none;
 }
 
-/* Hover réactif avec élévation et halo de couleur sémantique (Uniquement ordinateur via hover query) */
 @media (hover: hover) {
-    .evolution-card .legend-item[data-filter-id="progressCount"]:not(.active-filter):hover {
-        transform: translateY(-4px);
-        background: var(--surface-color);
-        border-color: rgba(var(--success-rgb), 0.3);
-        box-shadow: 0 10px 20px -5px rgba(var(--success-rgb), 0.15), var(--shadow-sm);
-    }
-
-    .evolution-card .legend-item[data-filter-id="stableCount"]:not(.active-filter):hover {
-        transform: translateY(-4px);
-        background: var(--surface-color);
-        border-color: rgba(var(--text-secondary-rgb), 0.25);
-        box-shadow: 0 10px 20px -5px rgba(var(--text-secondary-rgb), 0.12), var(--shadow-sm);
-    }
-
-    .evolution-card .legend-item[data-filter-id="regressionCount"]:not(.active-filter):hover {
-        transform: translateY(-4px);
-        background: var(--surface-color);
-        border-color: rgba(var(--error-rgb), 0.3);
-        box-shadow: 0 10px 20px -5px rgba(var(--error-rgb), 0.15), var(--shadow-sm);
-    }
-
-    [data-theme="dark"] .evolution-card .legend-item:not(.active-filter):hover {
-        background: var(--bg-tertiary);
-    }
-    
     /* Micro-déplacement des flèches au survol */
     .evolution-card .legend-item[data-filter-id="progressCount"]:hover .legend-count::before {
         transform: translate(2px, -2px) scale(1.1);
@@ -918,29 +855,6 @@
     .evolution-card .legend-item[data-filter-id="regressionCount"]:hover .legend-count::before {
         transform: translate(2px, 2px) scale(1.1);
     }
-}
-
-/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
-.evolution-card .legend-item[data-filter-id="progressCount"].active-filter {
-    background: rgba(var(--success-rgb), 0.08);
-    border-color: var(--success-color) !important;
-    box-shadow: 0 2px 8px rgba(var(--success-rgb), 0.12);
-}
-
-.evolution-card .legend-item[data-filter-id="stableCount"].active-filter {
-    background: rgba(var(--text-secondary-rgb), 0.08);
-    border-color: var(--text-tertiary) !important;
-    box-shadow: 0 2px 8px rgba(var(--text-secondary-rgb), 0.12);
-}
-
-.evolution-card .legend-item[data-filter-id="regressionCount"].active-filter {
-    background: rgba(var(--error-rgb), 0.08);
-    border-color: var(--error-color) !important;
-    box-shadow: 0 2px 8px rgba(var(--error-rgb), 0.12);
-}
-
-.evolution-card .legend-item.active-filter .legend-label {
-    font-weight: 700;
 }
 
 /* Points colorés de la légende - Remplacés par les flèches */
@@ -1114,11 +1028,7 @@
 /* ====================================================================
    Focus Visible - Accessibilité
    ==================================================================== */
-.legend-item[role="button"]:focus-visible,
-.detail-item[role="button"]:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.25);
-}
+/* Focus-visible unifié en fin de fichier */
 
 /* ====================================================================
    DISPERSION CARD (Fusionnée: Histogram + Homogénéité)
@@ -1235,7 +1145,7 @@
 
 .hist-bar {
     width: 100%;
-    border-radius: 6px 6px 0 0;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0; /* Coins arrondis standardisés et fluides */
     transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-height: 4px;
     position: relative;
@@ -1292,50 +1202,9 @@
                 border-color 0.3s ease;
 }
 
-/* Hover style dynamique (exclut l'état actif) - Élévation et Bento vertical */
-@media (hover: hover) {
-    .hist-bar-group[role="button"]:not(.active-filter):hover {
-        transform: translateY(-4px); /* Élévation ressort identique à -4px */
-        background: var(--surface-color);
-        border-color: var(--border-color);
-        box-shadow: var(--shadow-sm);
-    }
+/* Hover et états actifs unifiés en fin de fichier */
 
-    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-bar {
-        filter: brightness(1.1) saturate(1.15);
-    }
-
-    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-label {
-        color: var(--primary-color);
-    }
-
-    [data-theme="dark"] .hist-bar-group[role="button"]:not(.active-filter):hover {
-        background: var(--bg-tertiary);
-    }
-}
-
-/* États actifs simplifiés, hautement lisibles et conformes aux règles de sobriété */
-.hist-bar-group[role="button"].active-filter {
-    background: rgba(var(--primary-color-rgb), 0.08) !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.12) !important;
-    animation: none !important;
-}
-
-.hist-bar-group[role="button"].active-filter .hist-label {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-.hist-bar-group[role="button"].active-filter .hist-bar {
-    filter: brightness(1.1) saturate(1.15);
-}
-
-/* Focus Visible - Accessibilité */
-.hist-bar-group[role="button"]:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.25);
-}
+/* Focus-visible unifié en fin de fichier */
 
 /* ====================================================================
    Responsive - Adaptations tablette
@@ -1478,4 +1347,117 @@
 /* Dark mode adjustments */
 [data-theme="dark"] .filter-close-btn {
     border-color: var(--bg-secondary);
+}
+
+/* ====================================================================
+   UNIFICATION DE L'INTERACTIVITÉ DES COMPOSANTS STATS (Bento)
+   Source unique de vérité pour les survols, élévations et filtres actifs.
+   ==================================================================== */
+
+/* 1. Définition des variables d'accentuation sémantique par élément */
+.performance-card .detail-item[data-filter-id="minGrade"],
+.performance-card .detail-item[data-filter-id="maxGrade"] {
+    --accent-color: var(--primary-color);
+    --accent-rgb: var(--primary-color-rgb);
+}
+
+.evolution-card .legend-item[data-filter-id="progressCount"] {
+    --accent-color: var(--success-color);
+    --accent-rgb: var(--success-rgb);
+}
+
+.evolution-card .legend-item[data-filter-id="stableCount"] {
+    --accent-color: var(--text-tertiary);
+    --accent-rgb: var(--text-secondary-rgb);
+}
+
+.evolution-card .legend-item[data-filter-id="regressionCount"] {
+    --accent-color: var(--error-color);
+    --accent-rgb: var(--error-rgb);
+}
+
+.hist-bar-group[data-range="0-4"] {
+    --accent-color: var(--grade-range-0-4);
+    --accent-rgb: var(--error-rgb);
+}
+
+.hist-bar-group[data-range="4-8"] {
+    --accent-color: var(--grade-range-4-8);
+    --accent-rgb: 249, 115, 22;
+}
+
+.hist-bar-group[data-range="8-12"] {
+    --accent-color: var(--grade-range-8-12);
+    --accent-rgb: 234, 179, 8;
+}
+
+.hist-bar-group[data-range="12-16"] {
+    --accent-color: var(--grade-range-12-16);
+    --accent-rgb: 20, 184, 166;
+}
+
+.hist-bar-group[data-range="16-20"] {
+    --accent-color: var(--grade-range-16-20);
+    --accent-rgb: 34, 197, 94;
+}
+
+/* 2. Style de survol unifié sémantique adouci */
+@media (hover: hover) {
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover,
+    .evolution-card .legend-item[role="button"]:not(.active-filter):hover,
+    .hist-bar-group[role="button"]:not(.active-filter):hover {
+        transform: translateY(-4px);
+        background: var(--surface-color);
+        border-color: rgba(var(--accent-rgb), 0.25);
+        box-shadow: 0 10px 20px -5px rgba(var(--accent-rgb), 0.1), var(--shadow-sm);
+    }
+
+    [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover,
+    [data-theme="dark"] .evolution-card .legend-item[role="button"]:not(.active-filter):hover,
+    [data-theme="dark"] .hist-bar-group[role="button"]:not(.active-filter):hover {
+        background: var(--bg-tertiary);
+    }
+
+    /* Harmonisation des textes et valeurs */
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value,
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label,
+    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-label {
+        color: var(--accent-color);
+    }
+
+    .hist-bar-group[role="button"]:not(.active-filter):hover .hist-bar {
+        filter: brightness(1.15) saturate(1.1);
+    }
+}
+
+/* 3. Style d'état actif (filtre actif) unifié */
+.performance-card .detail-item.active-filter,
+.evolution-card .legend-item.active-filter,
+.hist-bar-group.active-filter {
+    background: rgba(var(--accent-rgb), 0.08) !important;
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.12) !important;
+}
+
+.performance-card .detail-item.active-filter .detail-label,
+.performance-card .detail-item.active-filter .detail-value,
+.hist-bar-group.active-filter .hist-label {
+    color: var(--accent-color) !important;
+    font-weight: 700;
+}
+
+.evolution-card .legend-item.active-filter .legend-label {
+    font-weight: 700;
+}
+
+.hist-bar-group.active-filter .hist-bar {
+    filter: brightness(1.1) saturate(1.15);
+}
+
+/* 4. Style de focus d'accessibilité clavier unifié */
+.performance-card .detail-item[role="button"]:focus-visible,
+.evolution-card .legend-item[role="button"]:focus-visible,
+.hist-bar-group[role="button"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.35) !important;
 }
