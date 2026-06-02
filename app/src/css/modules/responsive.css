@@ -338,6 +338,20 @@
         width: 100%;
         text-align: left;
     }
+
+    /* Spacing optimization inside settings/help tabs on small viewports */
+    .ui-tabs-content {
+        padding: 12px;
+    }
+
+    .help-step-card {
+        padding: 12px 14px;
+        margin: 10px 0;
+    }
+
+    .help-step-layout {
+        gap: 12px;
+    }
 }
 
 /* ====================================================================

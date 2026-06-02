@@ -437,7 +437,7 @@
 
 /* Specific modal adjustments (structure classes) */
 .modal-body-flex {
-    padding: 0;
+    padding: 0 !important;
     overflow: hidden;
     display: flex;
     flex-direction: column;
