@@ -1581,8 +1581,7 @@
                             Données
                         </button>
 
-                        <div
-                            style="margin-top: auto; padding-top: 10px; width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="ui-tabs-actions-wrapper">
                             <button class="ui-tabs-action-btn"
                                 onclick="UI.openModal(DOM.helpModal, { isStacked: true })">
                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-bold"></iconify-icon>
@@ -1598,11 +1597,9 @@
                     <!-- Content Area -->
                     <div class="ui-tabs-content">
                         <div id="settings-engine" class="help-tab-content active">
-                            <div class="help-section-header" style="align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div class="help-section-icon"><iconify-icon icon="solar:cpu-bold"></iconify-icon></div>
-                                    <p style="margin: 0; flex: none;">Choix du modèle d'intelligence artificielle et configuration des clés API.</p>
-                                </div>
+                            <div class="help-section-header">
+                                <div class="help-section-icon"><iconify-icon icon="solar:cpu-bold"></iconify-icon></div>
+                                <p>Choix du modèle d'intelligence artificielle et configuration des clés API.</p>
                             </div>
 
                             <div class="help-step-card mb-3">
@@ -2381,7 +2378,7 @@
                         </button>
 
                         <!-- Bottom Action Button -->
-                        <div style="margin-top: auto; padding-top: 10px; width: 100%;">
+                        <div class="ui-tabs-actions-wrapper">
                             <button class="ui-tabs-action-btn" onclick="relaunchSetupWizard()">
                                 <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon> Relancer
                                 setup
@@ -2874,7 +2871,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.0 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build e309c0c · 2 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build b3ef346 · 2 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

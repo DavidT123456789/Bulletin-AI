@@ -79,6 +79,7 @@
     flex: 1;
     padding-top: 3px;
     /* Micro-ajustement pour l'alignement optique texte/numéro */
+    min-width: 0;
 }
 
 .help-step-body p {
