@@ -4,8 +4,8 @@
     "description": "L'assistant numérique des enseignants — appréciations, plan de classe et plus",
     "start_url": "./app.html",
     "display": "standalone",
-    "background_color": "#1a1a2e",
-    "theme_color": "#6c5ce7",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
     "orientation": "any",
     "icons": [
         {

@@ -76,6 +76,12 @@ export const ThemeManager = {
             delete document.documentElement.dataset.theme;
         }
 
+        // Update meta theme-color dynamically to match the header background
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#18181b' : '#ffffff');
+        }
+
         this.currentResolvedTheme = effectiveTheme;
 
         // Update UI state
