@@ -392,7 +392,49 @@ export const ListViewManager = {
             if (mobileBtn) mobileBtn.removeAttribute('title');
         };
 
-        // Toggle UI
+        // --- PREMIUM FLIP ANIMATION FOR CARDS VARYING HEIGHTS ---
+        const previews = Array.from(table.querySelectorAll('.appreciation-preview'));
+
+        // Step 1: Capture the First state (starting heights)
+        const measurements = previews.map(preview => ({
+            element: preview,
+            startHeight: preview.offsetHeight
+        }));
+
+        // Step 2: Set the state to Last by toggling the class
+        table.classList.toggle('appreciation-full-view');
+
+        // Step 3: Measure the Last state (natural target heights)
+        measurements.forEach(m => {
+            // Temporarily set target layout styles to get natural height
+            const origWhiteSpace = m.element.style.whiteSpace;
+            const origMaxHeight = m.element.style.maxHeight;
+
+            // Target state styling: if expanding, wrap text to measure full height. If collapsing, truncate to measure compact height.
+            m.element.style.whiteSpace = isFullView ? 'nowrap' : 'pre-wrap';
+            m.element.style.maxHeight = 'none';
+
+            m.endHeight = m.element.offsetHeight;
+
+            // Restore temporarily changed style properties
+            m.element.style.whiteSpace = origWhiteSpace;
+            m.element.style.maxHeight = origMaxHeight;
+        });
+
+        // Toggle back to setup the animation correctly
+        table.classList.toggle('appreciation-full-view');
+
+        // Step 4: Lock to starting heights to prevent visual jumping
+        measurements.forEach(m => {
+            m.element.style.transition = 'none';
+            m.element.style.whiteSpace = 'pre-wrap'; // Maintain text wrapping during collapse
+            m.element.style.maxHeight = m.startHeight + 'px';
+        });
+
+        // Force browser reflow to apply locked start heights
+        table.offsetHeight;
+
+        // Step 5: Toggle classes for real (this updates DOM class but inline styles lock visuals)
         if (isFullView) {
             // COLLAPSE: Return to truncated view
             table.classList.remove('appreciation-full-view');
@@ -429,6 +471,27 @@ export const ListViewManager = {
 
         // Save preference
         StorageManager.saveAppState();
+
+        // Step 6: Play the transition by setting inline properties to target heights
+        measurements.forEach(m => {
+            // Enable smooth iOS-style cubic-bezier transitions
+            m.element.style.transition = 'max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1), background 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+            m.element.style.maxHeight = m.endHeight + 'px';
+        });
+
+        // Step 7: Clear inline styles after animation is complete
+        if (this._toggleTransitionTimeout) {
+            clearTimeout(this._toggleTransitionTimeout);
+        }
+
+        this._toggleTransitionTimeout = setTimeout(() => {
+            measurements.forEach(m => {
+                m.element.style.transition = '';
+                m.element.style.maxHeight = '';
+                m.element.style.whiteSpace = '';
+            });
+            this._toggleTransitionTimeout = null;
+        }, 500); // 500ms matching transition duration
     }
 };
 

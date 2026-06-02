@@ -1575,13 +1575,13 @@
         min-width: 0 !important;
     }
 
-    .appreciation-preview {
-        box-sizing: border-box !important;
-        width: 100% !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-height: 48px !important;
+    .student-list-view .appreciation-preview {
+        box-sizing: border-box;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 48px;
         background: rgba(0, 0, 0, 0.02);
         padding: 14px;
         border-radius: var(--radius-md);
@@ -1590,10 +1590,10 @@
         line-height: 1.6;
     }
 
-    .student-list-table.appreciation-full-view .appreciation-preview {
-        white-space: pre-wrap !important;
-        max-height: 1000px !important;
-        overflow: visible !important;
+    .student-list-view .student-list-table.appreciation-full-view .appreciation-preview {
+        white-space: pre-wrap;
+        max-height: 1000px;
+        overflow: visible;
     }
 
     [data-theme="dark"] .appreciation-preview {
