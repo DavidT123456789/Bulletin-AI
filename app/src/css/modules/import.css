@@ -321,7 +321,7 @@
     align-items: center;
     padding: var(--modal-footer-padding);
     min-height: var(--modal-footer-height);
-    border-top: var(--modal-footer-border);
+    border-top: 1px solid var(--border-color);
     background: var(--modal-bg);
     flex-shrink: 0;
 }
@@ -335,6 +335,19 @@
     height: var(--modal-btn-height);
     padding: 0 20px;
     font-size: 13px;
+    transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+#welcomeNextBtn:hover:not(:disabled),
+#welcomePrevBtn:hover:not(:disabled),
+#welcome-finish-options .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+#welcomeNextBtn:active:not(:disabled),
+#welcomePrevBtn:active:not(:disabled),
+#welcome-finish-options .btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
 }
 
 
@@ -351,13 +364,14 @@
     border-radius: var(--radius-pill);
     background: var(--border-color);
     /* iOS Spring Transition */
-    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 #welcome-dots .dot.active {
-    background: var(--primary-color);
+    background: var(--gradient-primary);
     width: 24px;
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
 }
 
 #welcome-finish-options {
@@ -373,16 +387,17 @@
     max-width: 480px;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    border: none;
+    border: 1px solid var(--border-color);
     transition: all var(--transition-fast);
     /* No background - let the modal background show through */
     background: transparent;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
     position: relative;
 }
 
 .welcome-api-key-group:focus-within {
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.25);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
 }
 
 
@@ -419,6 +434,7 @@
     margin: 0;
     padding: 0 16px;
     border: none;
+    border-left: 1px solid var(--border-color);
     font-weight: 600;
     font-size: 13px;
     cursor: pointer;
@@ -432,9 +448,13 @@
     align-self: stretch;
     background: var(--bg-secondary);
     color: var(--text-secondary);
-    transition: background 0.25s ease, color 0.25s ease;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     transform: none !important;
     box-shadow: none !important;
+}
+
+.welcome-api-key-group:focus-within .btn-validate-key {
+    border-left-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
 .welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
@@ -545,13 +565,14 @@
 }
 
 /* === WELCOME MODAL STABILIZATION === */
-/* Weighted-center: flex-start + percentage padding = stable title, balanced whitespace */
+/* Flex-center centering: centered vertically and horizontally, avoiding viewport jumps */
 #welcomeModal .modal-body {
     flex: 1 1 480px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 18%;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-10) var(--space-6);
     position: relative;
     overflow-x: hidden;
 }
@@ -560,6 +581,17 @@
     max-width: 800px;
     margin: 0 auto;
     width: 95%;
+    background: var(--glass-overlay-bg);
+    backdrop-filter: blur(var(--glass-overlay-blur));
+    -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
+    border: 1px solid var(--glass-overlay-border);
+    box-shadow: var(--shadow-xl);
+}
+
+#welcomeModal .modal-header {
+    background: transparent;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* Ensure step content is centered and bounded */
@@ -567,6 +599,7 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 0 10px;
+    width: 100%;
 }
 
 .welcome-subtitle {
@@ -591,21 +624,27 @@
 
 /* Specific styling for the premium welcome title (Landing Page Style) */
 .welcome-title-premium {
-    font-size: 2.4em !important;
-    font-weight: 700 !important;
+    font-size: 2.8em !important;
+    font-weight: 800 !important;
     line-height: 1.15;
-    margin-bottom: 20px !important;
-    letter-spacing: -0.03em !important;
+    margin-bottom: 16px !important;
+    letter-spacing: -0.04em !important;
     text-align: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.08));
 }
 
 .welcome-subtitle-premium {
-    font-size: 1.1em;
+    font-size: 1.15em;
     color: var(--text-secondary);
     max-width: 600px;
     margin: 0 auto 32px auto;
     line-height: 1.6;
     font-weight: 400;
+    letter-spacing: -0.01em;
 }
 
 .welcome-title-icon {
@@ -629,26 +668,65 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    padding: 10px 20px;
     border-radius: var(--radius-pill);
-    font-size: 0.9em;
-    font-weight: 500;
-    color: var(--text-secondary);
-    transition: border-color 0.2s ease, color 0.2s ease;
+    font-size: 0.92em;
+    font-weight: 600;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: default;
+    border: 1px solid transparent;
 }
 
-.welcome-chip:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    color: var(--text-primary);
+/* Coloration thématique des chips (Style iOS 2026 Luminous) */
+.welcome-chip:nth-child(1) {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.12);
+    color: var(--color-violet);
+}
+.welcome-chip:nth-child(1) .welcome-chip__icon {
+    color: var(--color-violet);
+}
+.welcome-chip:nth-child(1):hover {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.welcome-chip:nth-child(2) {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.12);
+    color: var(--color-amber);
+}
+.welcome-chip:nth-child(2) .welcome-chip__icon {
+    color: var(--color-amber);
+}
+.welcome-chip:nth-child(2):hover {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.welcome-chip:nth-child(3) {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.12);
+    color: var(--color-emerald);
+}
+.welcome-chip:nth-child(3) .welcome-chip__icon {
+    color: var(--color-emerald);
+}
+.welcome-chip:nth-child(3):hover {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.3);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 .welcome-chip__icon {
     display: flex;
     align-items: center;
-    font-size: 1.05em;
-    color: var(--primary-color);
+    font-size: 1.1em;
 }
 
 .welcome-chip__label {
@@ -944,12 +1022,24 @@
     font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    transition: opacity 0.2s;
+    gap: 6px;
+    transition: opacity 0.2s, transform 0.2s var(--ease-spring);
+}
+
+.get-key-link-mini iconify-icon {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .get-key-link-mini:hover {
-    opacity: 0.8;
+    opacity: 0.95;
+}
+
+.get-key-link-mini:hover iconify-icon {
+    transform: scale(1.2) rotate(8deg);
+}
+
+.get-key-link-mini:active iconify-icon {
+    transform: scale(0.95);
 }
 
 /* Ensure API Group fills width in split view */
@@ -1003,9 +1093,9 @@
     opacity: 0.8;
 }
 
-/* Step 4 has taller content (SVG + title + subtitle + CTA) — pull it up to rebalance */
+/* Step 4 has taller content (SVG + title + subtitle + CTA) — center standardly */
 #welcome-step-4 {
-    margin-top: -8%;
+    margin-top: 0;
 }
 
 /* === WELCOME ILLUSTRATION (STEP 4) === */
@@ -1053,6 +1143,18 @@
     padding: 16px 28px;
     font-size: 1.05em;
     border-radius: var(--radius-pill);
+    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.25);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-position var(--transition-base);
+}
+
+.btn-cta-full:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-cta-full:active:not(:disabled) {
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.15);
+    transform: translateY(0) scale(0.98);
 }
 
 /* ====================================================================

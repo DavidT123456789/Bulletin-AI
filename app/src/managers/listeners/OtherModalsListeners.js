@@ -69,7 +69,7 @@ export const OtherModalsListeners = {
         // --- NEW: Help Provider Selector Logic ---
         const helpProviderRadios = document.querySelectorAll('input[name="helpProvider"]');
         const helpContainer = document.getElementById('helpProviderSelector');
-        const helpGlider = helpContainer?.querySelector('.selector-glider');
+        const helpGlider = helpContainer?.querySelector('.ui-glider');
 
         const updateHelpProviderUI = () => {
             const checked = document.querySelector('input[name="helpProvider"]:checked');
