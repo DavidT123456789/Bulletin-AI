@@ -402,7 +402,8 @@
     /* Prevent column jump when avatar moves above name */
     min-width: 140px;
     padding-right: 8px !important;
-    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     /* Allow avatar zoom to overflow */
     overflow: visible;
     position: relative;
@@ -498,7 +499,10 @@
     max-width: 340px;
     min-width: 280px;
     text-align: left;
-    transition: padding 0.3s ease;
+    transition: padding 0.3s ease,
+                width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+                min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+                max-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
     position: relative;
     /* Anchor for absolute positioning */
 }
@@ -1366,31 +1370,9 @@
         position: relative;
     }
 
-    /* Remet le pill de mots dans la logique Flex en deuxième position */
+    /* Masquer le compteur de mots moyen sur mobile pour garder la barre d'outils sur une seule ligne */
     #avgWordsChip {
-        position: static !important;
-        transform: none !important;
-        order: 2;
-        /* Rendered after actions */
-        margin: 0 0 0 auto !important;
-        /* Pushes it to the extreme right */
-        right: auto !important;
-        left: auto !important;
-        top: auto !important;
-        opacity: 1 !important;
-        /* Full Chip Styling */
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.04) !important;
-        color: var(--text-secondary) !important;
-        padding: 0 14px !important;
-        /* Managed by exact height center alignment */
-        height: 40px !important;
-        /* EXACTLY match other buttons height */
-        box-sizing: border-box !important;
-        border-radius: var(--radius-pill) !important;
-        font-weight: 500 !important;
+        display: none !important;
     }
 
     [data-theme="dark"] #avgWordsChip {
@@ -1529,6 +1511,7 @@
 
     .student-identity-wrapper {
         gap: 12px;
+        padding-left: 0 !important; /* Align avatar with card left edge by overriding desktop full-view indent */
     }
 
     .student-nom-prenom {
@@ -1609,7 +1592,7 @@
 
     .student-list-table.appreciation-full-view .appreciation-preview {
         white-space: pre-wrap !important;
-        max-height: none !important;
+        max-height: 1000px !important;
         overflow: visible !important;
     }
 

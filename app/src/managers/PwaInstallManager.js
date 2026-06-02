@@ -442,10 +442,74 @@ export const PwaInstallManager = {
      * Show generic manual install instructions
      */
     _showManualInstallModal() {
-        UI.showNotification(
-            'Pour installer : Menu du navigateur → "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"',
-            'info',
-            8000
-        );
+        const isAndroid = Platform.isAndroid();
+        const menuIcon = isAndroid ? 'solar:menu-dots-bold' : 'ph:dots-three-vertical';
+        const menuText = isAndroid ? 'Menu du navigateur (⋮)' : 'Menu du navigateur';
+        const actionText = isAndroid ? 'Ajouter à l\'écran' : 'Installer l\'application';
+        const actionIcon = isAndroid ? 'solar:add-square-linear' : 'solar:download-square-linear';
+
+        const modalHtml = `
+            <div class="pwa-modal-overlay" id="pwaModalOverlay">
+                <div class="pwa-modal">
+                    <div class="pwa-modal-header">
+                        <div class="pwa-modal-icon">
+                            <img src="./assets/icon-192.png" alt="Bulletin AI" />
+                        </div>
+                        <h3>Installer Bulletin AI</h3>
+                        <p>Installation manuelle</p>
+                    </div>
+                    <div class="pwa-modal-steps">
+                        <div class="pwa-step">
+                            <div class="pwa-step-number">1</div>
+                            <div class="pwa-step-content">
+                                <span class="pwa-step-text">Ouvrez le</span>
+                                <span class="pwa-step-icon"><iconify-icon icon="${menuIcon}"></iconify-icon></span>
+                                <span class="pwa-step-label">${menuText}</span>
+                            </div>
+                        </div>
+                        <div class="pwa-step">
+                            <div class="pwa-step-number">2</div>
+                            <div class="pwa-step-content">
+                                <span class="pwa-step-text">Sélectionnez</span>
+                                <span class="pwa-step-icon"><iconify-icon icon="${actionIcon}"></iconify-icon></span>
+                                <span class="pwa-step-label">${actionText}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pwa-modal-footer">
+                        <button class="btn btn-primary" id="pwaModalCloseBtn">Compris !</button>
+                        <button class="btn-text" id="pwaModalNeverBtn">Ne plus afficher</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const overlay = document.getElementById('pwaModalOverlay');
+        const closeBtn = document.getElementById('pwaModalCloseBtn');
+        const neverBtn = document.getElementById('pwaModalNeverBtn');
+
+        const closeModal = () => {
+            overlay?.classList.remove('visible');
+            document.removeEventListener('keydown', handleEscape);
+            setTimeout(() => overlay?.remove(), 300);
+        };
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        requestAnimationFrame(() => overlay?.classList.add('visible'));
+
+        closeBtn?.addEventListener('click', closeModal);
+        neverBtn?.addEventListener('click', () => {
+            this._setDismissed(true);
+            closeModal();
+        });
+        overlay?.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
     }
 };

@@ -145,7 +145,8 @@
     /* Smooth transition for expand/collapse layout change */
     transition: flex-direction 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         align-items 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        gap 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+        gap 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        padding-left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Avatar size transition for expand/collapse */
@@ -202,6 +203,7 @@
     font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
+    animation: text-expand-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Style the firstname (span) within the stack */
@@ -210,6 +212,17 @@
     font-weight: 500;
     color: var(--text-secondary);
     margin-top: 2px;
+}
+
+/* Mobile adjustments to keep font size slightly larger than desktop but smaller than default */
+@media (max-width: 768px) {
+    .appreciation-full-view .student-identity-wrapper .student-nom-prenom {
+        font-size: 1rem; /* Slightly smaller than the default 1.1rem */
+    }
+
+    .appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
+        font-size: 0.875rem; /* Proportionate size for mobile first name */
+    }
 }
 
 /* Hover zoom in expanded view - triggered by row hover or focus state */
@@ -226,14 +239,23 @@
 @keyframes identity-expand-reveal {
     0% {
         opacity: 0.6;
-        transform: translateX(-10px);
         filter: blur(2px);
     }
 
     100% {
         opacity: 1;
-        transform: translateX(0);
         filter: blur(0);
+    }
+}
+
+/* Keyframe: text slide only (keeps avatar in place) */
+@keyframes text-expand-slide {
+    0% {
+        transform: translateX(-10px);
+    }
+
+    100% {
+        transform: translateX(0);
     }
 }
 
