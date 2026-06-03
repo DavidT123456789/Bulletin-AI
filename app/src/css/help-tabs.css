@@ -511,3 +511,380 @@
 .license-text a:hover {
     opacity: 0.8;
 }
+
+/* ====================================================================
+   SELECTION DE LA COULEUR D'ACCENTUATION
+   ==================================================================== */
+.accent-color-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.accent-color-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent-swatch-color);
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s var(--ease-bounce), box-shadow 0.3s ease;
+    outline: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .accent-color-btn {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.accent-color-btn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* Inner circle hidden — color fills the entire button directly */
+.accent-swatch-circle {
+    display: none;
+}
+
+/* Checkmark */
+.accent-swatch-check {
+    position: absolute;
+    color: var(--accent-swatch-contrast-color, #ffffff);
+    font-size: 15px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.25s var(--ease-spring), transform 0.25s var(--ease-spring);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.accent-color-btn[data-value="anthracite"] .accent-swatch-check {
+    color: #ffffff;
+}
+[data-theme="dark"] .accent-color-btn[data-value="anthracite"] .accent-swatch-check {
+    color: #18181b;
+}
+
+[data-theme="dark"] .accent-color-btn[data-value="teal"] .accent-swatch-check {
+    color: #18181b;
+}
+
+/* Active State */
+.accent-color-btn.active {
+    box-shadow: 0 0 0 2.5px var(--surface-color), 0 0 0 4.5px var(--accent-swatch-color);
+    transform: scale(1.08);
+}
+
+.accent-color-btn.active .accent-swatch-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Custom Picker — rainbow when no custom color is set */
+.accent-color-btn.custom-picker {
+    background: conic-gradient(
+        from 180deg at 50% 50%,
+        #ef4444 0deg, #f97316 45deg, #facc15 90deg,
+        #22c55e 135deg, #3b82f6 180deg, #6366f1 225deg,
+        #a855f7 270deg, #ec4899 315deg, #ef4444 360deg
+    );
+}
+
+.accent-color-btn.custom-picker:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+/* Eyedropper icon on custom button */
+.accent-swatch-picker-icon {
+    font-size: 16px;
+    color: #ffffff;
+    position: absolute;
+    pointer-events: none;
+    transition: transform 0.25s var(--ease-spring), opacity 0.2s ease;
+    z-index: 2;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* When custom color is active, show the chosen color directly as background */
+.accent-color-btn.custom-picker.active {
+    background: var(--accent-swatch-color);
+}
+
+.accent-color-btn.custom-picker.active .accent-swatch-picker-icon {
+    opacity: 0;
+    transform: scale(0.5);
+}
+
+/* Active ring for custom */
+.accent-color-btn.custom-picker.active {
+    box-shadow: 0 0 0 2.5px var(--surface-color), 0 0 0 4.5px var(--accent-swatch-color);
+}
+
+/* Pipette badge in the corner */
+.custom-picker-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--surface-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.2s ease, transform 0.2s var(--ease-spring);
+    pointer-events: none;
+}
+
+.custom-picker-badge iconify-icon {
+    font-size: 8px;
+    color: var(--text-secondary);
+}
+
+.accent-color-btn.custom-picker.active .custom-picker-badge {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ====================================================================
+   CUSTOM COLOR PICKER PANEL
+   ==================================================================== */
+.custom-picker-panel {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s var(--ease-spring), opacity 0.3s ease, margin-top 0.35s var(--ease-spring), border-color 0.3s ease;
+    margin-top: 0;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+}
+
+.custom-picker-panel.open {
+    max-height: 250px;
+    opacity: 1;
+    margin-top: 14px;
+    padding: 16px 20px;
+    border-color: var(--border-color);
+}
+
+.custom-picker-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.picker-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.picker-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.slider-label {
+    width: 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.slider-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 4px;
+}
+
+/* Range slider styling */
+.picker-range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    outline: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.picker-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2.5px solid var(--slider-thumb-color, var(--primary-color));
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+    cursor: grab;
+    transition: transform 0.15s var(--ease-bounce), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.picker-range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.picker-range-slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
+}
+
+.picker-range-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2.5px solid var(--slider-thumb-color, var(--primary-color));
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+    cursor: grab;
+}
+
+.picker-range-slider:active::-moz-range-thumb {
+    cursor: grabbing;
+}
+
+/* Track Gradients */
+.hue-slider-track {
+    background: linear-gradient(to right,
+        #ff0000 0%, #ffff00 17%, #00ff00 33%,
+        #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+}
+
+.sat-slider-track {
+    background: linear-gradient(to right, var(--sat-start, #71717a), var(--sat-end, #3b82f6));
+}
+
+.lig-slider-track {
+    background: linear-gradient(to right, #000000 0%, var(--lig-mid, #3b82f6) 50%, #ffffff 100%);
+}
+
+/* ====================================================================
+   ACTION ROW: Live preview, Hex input, and Eyedropper
+   ==================================================================== */
+.picker-action-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+/* Live preview swatch */
+.picker-live-preview {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--primary-color);
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+    transition: background 0.1s ease;
+}
+
+[data-theme="dark"] .picker-live-preview {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Hex code input container styled like standard input but size-harmonized */
+.hex-input-container {
+    display: flex;
+    align-items: center;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0 12px;
+    height: 36px;
+    flex: 1;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.hex-input-container:hover:not(:focus-within) {
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.hex-input-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.hex-symbol {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-right: 5px;
+    user-select: none;
+}
+
+/* Force override of default input styling to prevent nested borders/backgrounds */
+.hex-input-container input.hex-text-input,
+.hex-input-container input.hex-text-input:hover,
+.hex-input-container input.hex-text-input:focus,
+.hex-input-container input.hex-text-input:active {
+    border: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    flex: 1 !important;
+    height: 100% !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    animation: none !important;
+}
+
+/* Eyedropper button style-harmonized to match other inputs */
+.picker-eyedropper-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.picker-eyedropper-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.picker-eyedropper-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+

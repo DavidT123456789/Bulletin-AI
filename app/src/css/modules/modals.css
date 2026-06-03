@@ -1469,7 +1469,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
-    font-size: 1.1rem;
+    font-size: 1.75rem;
     transition: all var(--transition-fast);
     margin: 0 !important;
 }
@@ -1477,7 +1477,7 @@
 /* High specificity to override generic .btn styles */
 .btn-icon-only:hover:not(:disabled) {
     background-color: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--icon-btn-hover);
+    color: var(--primary-color);
     box-shadow: none;
 }
 

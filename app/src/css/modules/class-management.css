@@ -845,8 +845,14 @@
 }
 
 .class-management-item.active-switch:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
     box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.35);
+}
+
+[data-theme="dark"] .class-management-item.active-switch:hover {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 .class-management-item:focus-visible {
@@ -856,8 +862,15 @@
 }
 
 .class-management-item.active-switch:focus-visible {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+    outline: none;
+}
+
+[data-theme="dark"] .class-management-item.active-switch:focus-visible {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 /* Active state adjustments for internal elements */
@@ -934,9 +947,9 @@
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 .class-management-item.active-switch .manage-delete-btn:hover {
-    background: var(--error-color);
-    color: #ffffff;
-    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.35);
+    background: #ffffff;
+    color: var(--error-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 
 /* Drag Handle */

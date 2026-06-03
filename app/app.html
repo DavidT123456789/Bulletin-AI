@@ -67,9 +67,112 @@
                     const meta = document.querySelector('meta[name="theme-color"]');
                     if (meta) meta.setAttribute('content', '#ffffff');
                 }
+
+                // Immediate Accent Color Application
+                let accentColor = 'blue';
+                if (state.settings && state.settings.accentColor) {
+                    accentColor = state.settings.accentColor;
+                }
+
+                let colors = {};
+                if (accentColor.startsWith('#')) {
+                    // Quick inline conversion & adjustment
+                    const hexToRgb = function(hex) {
+                        const shorth = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                        const full = hex.replace(shorth, (m, r, g, b) => r + r + g + g + b + b);
+                        const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(full);
+                        return res ? { r: parseInt(res[1], 16), g: parseInt(res[2], 16), b: parseInt(res[3], 16) } : { r: 59, g: 130, b: 246 };
+                    };
+                    const rgbToHsl = function(r, g, b) {
+                        r /= 255; g /= 255; b /= 255;
+                        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                        let h, s, l = (max + min) / 2;
+                        if (max === min) h = s = 0;
+                        else {
+                            const d = max - min;
+                            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                            switch (max) {
+                                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                                case g: h = (b - r) / d + 2; break;
+                                case b: h = (r - g) / d + 4; break;
+                            }
+                            h /= 6;
+                        }
+                        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+                    };
+                    const hslToRgb = function(h, s, l) {
+                        h /= 360; s /= 100; l /= 100;
+                        let r, g, b;
+                        if (s === 0) r = g = b = l;
+                        else {
+                            const hue2rgb = function(p, q, t) {
+                                if (t < 0) t += 1;
+                                if (t > 1) t -= 1;
+                                if (t < 1/6) return p + (q - p) * 6 * t;
+                                if (t < 1/2) return q;
+                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                                return p;
+                            };
+                            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                            const p = 2 * l - q;
+                            r = hue2rgb(p, q, h + 1/3);
+                            g = hue2rgb(p, q, h);
+                            b = hue2rgb(p, q, h - 1/3);
+                        }
+                        return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+                    };
+                    const rgbToHex = function(r, g, b) {
+                        const toHex = function(x) {
+                            const h = x.toString(16);
+                            return h.length === 1 ? '0' + h : h;
+                        };
+                        return '#' + toHex(r) + toHex(g) + toHex(b);
+                    };
+
+                    const baseRgb = hexToRgb(accentColor);
+                    const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+                    
+                    let adjustedL = baseHsl.l;
+                    if (theme === 'dark') {
+                        if (baseHsl.l < 65) adjustedL = 65;
+                    } else {
+                        if (baseHsl.l > 50) adjustedL = 50;
+                    }
+                    
+                    const adjustedRgb = hslToRgb(baseHsl.h, baseHsl.s, adjustedL);
+                    const primaryColor = rgbToHex(adjustedRgb.r, adjustedRgb.g, adjustedRgb.b);
+                    const rgbString = adjustedRgb.r + ', ' + adjustedRgb.g + ', ' + adjustedRgb.b;
+                    
+                    const hoverL = Math.max(0, adjustedL - 10);
+                    const hoverRgb = hslToRgb(baseHsl.h, baseHsl.s, hoverL);
+                    const primaryHover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
+
+                    colors = { color: primaryColor, rgb: rgbString, hover: primaryHover };
+                } else {
+                    const presets = {
+                        blue: {
+                            light: { color: '#3b82f6', rgb: '59, 130, 246', hover: '#2563eb' },
+                            dark: { color: '#4f7df2', rgb: '79, 125, 242', hover: '#3b66f1' }
+                        },
+                        anthracite: {
+                            light: { color: '#3f3f46', rgb: '63, 63, 70', hover: '#27272a' },
+                            dark: { color: '#d4d4d8', rgb: '212, 212, 216', hover: '#a1a1aa' }
+                        },
+                        rose: {
+                            light: { color: '#f5627d', rgb: '245, 98, 125', hover: '#e11d48' },
+                            dark: { color: '#fda4af', rgb: '253, 164, 175', hover: '#fb7185' }
+                        }
+                    };
+                    const preset = presets[accentColor] || presets.blue;
+                    colors = preset[theme] || preset.light;
+                }
+
+                document.documentElement.style.setProperty('--primary-color', colors.color);
+                document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
+                document.documentElement.style.setProperty('--primary-hover', colors.hover);
             }
         } catch (e) {
-            console.error('Theme init error:', e);
+            console.error('Theme/Accent init error:', e);
         }
     </script>
 </head>
@@ -1339,7 +1442,7 @@
             <div class="modal-header">
                 <h2 class="modal-title" id="personalizationModalTitle">
                     <span class="modal-title-icon color-accent"><iconify-icon
-                            icon="solar:magic-stick-3-linear"></iconify-icon></span>
+                            icon="solar:magic-stick-3-bold"></iconify-icon></span>
                     <span class="modal-title-text">Laboratoire de Style</span>
                 </h2>
                 <div class="modal-header-actions spaced">
@@ -1859,7 +1962,7 @@
                                                         <div class="api-key-header">
                                                             <span class="api-key-provider"><iconify-icon
                                                                     class="iconify-inline"
-                                                                    icon="solar:server-square-bold"></iconify-icon>
+                                                                    icon="solar:server-square-bold" style="color: #708090;"></iconify-icon>
                                                                 Ollama (IA
                                                                 Locale)</span>
                                                             <div style="display:flex; gap:10px; align-items:center;">
@@ -1920,27 +2023,19 @@
                                     l'application.
                                 </p>
                             </div>
+
                             <div class="help-step-card mb-3">
                                 <div class="help-step-layout">
                                     <div class="help-step-number"><iconify-icon
                                             icon="solar:shield-user-bold"></iconify-icon></div>
-                                    <div class="help-step-body" style="width: 100%;">
-                                        <strong>Confidentialité & Anonymisation</strong>
-                                        <p>Règles concernant les noms d'élèves envoyés aux IA.</p>
-                                        <div class="setting-row mt-2"
-                                            style="padding: 0; background: transparent; border: none; align-items: center; justify-content: space-between;">
-                                            <div class="setting-info" style="padding-left: 0;">
-                                                <strong
-                                                    style="font-size: 1.05em; display: flex; align-items: center; gap: 8px;">Anonymisation
-                                                    renforcée <span class="privacy-warning-badge"
-                                                        style="font-size: 0.75em; font-weight: normal; margin-left: 0;"
-                                                        title="Peut causer des répétitions"><iconify-icon
-                                                            icon="solar:danger-triangle-bold"></iconify-icon> Moins
-                                                        fluide</span></strong>
-                                                <p
-                                                    style="margin: 4px 0 0 0; font-size: 0.9em; color: var(--text-secondary);">
-                                                    Remplace le vrai prénom par un pseudonyme avant envoi à l'IA.</p>
-                                            </div>
+                                    <div class="help-step-body">
+                                        <div class="privacy-header-row">
+                                            <strong style="font-size: 1.05em; display: flex; align-items: center;">
+                                                Confidentialité & Anonymisation
+                                                <span class="privacy-warning-badge" title="Peut causer des répétitions dans le texte">
+                                                    <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Moins fluide
+                                                </span>
+                                            </strong>
                                             <div class="toggle-switch-container m-0">
                                                 <label class="toggle-switch">
                                                     <input type="checkbox" id="settingsPrivacyAnonymizeToggle" checked>
@@ -1948,11 +2043,89 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="privacy-footer-note mt-3"
-                                            style="display: flex; align-items: center; gap: 8px; font-size: 0.85em; background: rgba(var(--primary-color-rgb), 0.05); color: var(--primary-color); padding: 10px 14px; border-radius: var(--radius-sm);">
-                                            <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"
-                                                style="font-size: 1.2em;"></iconify-icon> Le nom de famille n'est
-                                            <strong>jamais</strong> transmis à l'IA.
+                                        <p style="margin: 6px 0 0 0; font-size: 0.9em; color: var(--text-secondary);">
+                                            Remplace le prénom réel des élèves par un pseudonyme avant envoi à l'IA.
+                                        </p>
+                                        <div class="privacy-footer-note mt-3">
+                                            <iconify-icon class="iconify-inline" icon="solar:shield-check-bold"></iconify-icon>
+                                            Le nom de famille n'est <strong>jamais</strong> transmis à l'IA.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-step-card mb-3">
+                                <div class="help-step-layout">
+                                    <div class="help-step-number"><iconify-icon
+                                            icon="solar:palette-bold"></iconify-icon></div>
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <strong>Thème de couleur</strong>
+                                        <p style="margin-bottom: 16px;">Choisissez la couleur d'accentuation de l'application.</p>
+                                        <div class="accent-color-selector" id="accentColorSelector">
+                                            <button type="button" class="accent-color-btn tooltip" data-value="blue" data-tooltip="Bleu Nebula" style="--accent-swatch-color: #3b82f6;">
+                                                <span class="accent-swatch-circle"></span>
+                                                <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                            </button>
+                                            <button type="button" class="accent-color-btn tooltip" data-value="anthracite" data-tooltip="Gris Anthracite" style="--accent-swatch-color: #3f3f46;">
+                                                <span class="accent-swatch-circle"></span>
+                                                <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                            </button>
+                                            <button type="button" class="accent-color-btn tooltip" data-value="rose" data-tooltip="Rose Cerise" style="--accent-swatch-color: #f5627d;">
+                                                <span class="accent-swatch-circle"></span>
+                                                <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                            </button>
+                                            <button type="button" class="accent-color-btn tooltip" data-value="violet" data-tooltip="Violet Royal" style="--accent-swatch-color: #8b5cf6;">
+                                                <span class="accent-swatch-circle"></span>
+                                                <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                            </button>
+                                            <button type="button" class="accent-color-btn tooltip" data-value="teal" data-tooltip="Vert Lagon" style="--accent-swatch-color: #14b8a6;">
+                                                <span class="accent-swatch-circle"></span>
+                                                <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                            </button>
+                                            <button type="button" class="accent-color-btn custom-picker tooltip" id="customAccentBtn" data-value="custom" data-tooltip="Couleur personnalisée" style="--accent-swatch-color: transparent;">
+                                                 <span class="accent-swatch-circle"></span>
+                                                 <iconify-icon icon="ph:eyedropper-bold" class="accent-swatch-picker-icon"></iconify-icon>
+                                                 <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
+                                                 <span class="custom-picker-badge">
+                                                     <iconify-icon icon="ph:eyedropper-bold"></iconify-icon>
+                                                 </span>
+                                                 <input type="color" id="customColorPicker" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; bottom: 0; right: 0;" value="#3b82f6">
+                                             </button>
+                                        </div>
+                                        
+                                        <div class="custom-picker-panel" id="customPickerPanel">
+                                            <div class="custom-picker-grid">
+                                                <div class="picker-control-group">
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">T</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerHueSlider" min="0" max="360" value="220" class="picker-range-slider hue-slider-track" aria-label="Ajuster la teinte">
+                                                        </div>
+                                                    </div>
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">S</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerSatSlider" min="0" max="100" value="80" class="picker-range-slider sat-slider-track" aria-label="Ajuster la saturation">
+                                                        </div>
+                                                    </div>
+                                                    <div class="picker-slider-row">
+                                                        <span class="slider-label">L</span>
+                                                        <div class="slider-wrapper">
+                                                            <input type="range" id="pickerLigSlider" min="0" max="100" value="60" class="picker-range-slider lig-slider-track" aria-label="Ajuster la luminosité">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="picker-action-group">
+                                                    <div class="picker-live-preview" id="pickerLivePreview"></div>
+                                                    <div class="hex-input-container">
+                                                        <span class="hex-symbol">#</span>
+                                                        <input type="text" id="pickerHexInput" class="hex-text-input" placeholder="3B82F6" maxlength="6" autocomplete="off" spellcheck="false" aria-label="Code hexadécimal de la couleur">
+                                                    </div>
+                                                    <button type="button" id="pickerEyedropperBtn" class="picker-eyedropper-btn tooltip" data-tooltip="Pipette de couleur" aria-label="Sélectionner une couleur à l'écran">
+                                                        <iconify-icon icon="ph:eyedropper-bold"></iconify-icon>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2880,7 +3053,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.0 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 6dd684a · 3 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 773d0f1 · 3 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

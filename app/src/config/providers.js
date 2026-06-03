@@ -45,6 +45,7 @@ export const PROVIDER_CONFIG = {
         name: 'Ollama',
         icon: 'solar:server-square-bold', // Alternative: logos:ollama (si disponible)
         class: 'provider-ollama',
+        style: 'color: #708090;', // Gris acier professionnel
     }
 };
 

@@ -28,6 +28,7 @@ export const StorageManager = {
                     // UI Settings
                     if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
                     if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
+                    if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
 
                     // Academic Settings
                     if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
@@ -79,6 +80,9 @@ export const StorageManager = {
                     // Fallback thème si non défini - always default to light
                     if (!userSettings.ui.theme) {
                         userSettings.ui.theme = 'light';
+                    }
+                    if (!userSettings.ui.accentColor) {
+                        userSettings.ui.accentColor = 'blue';
                     }
                 }
 
@@ -455,6 +459,7 @@ export const StorageManager = {
         const settings = {
             theme: userSettings.ui.theme,
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
+            accentColor: userSettings.ui.accentColor || 'blue',
 
             useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
             periodSystem: userSettings.academic.periodSystem,

@@ -138,6 +138,44 @@ export const FormUI = {
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
         if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
 
+        // Synchroniser le sélecteur de couleur d'accentuation
+        const accentSelector = document.getElementById('accentColorSelector');
+        if (accentSelector) {
+            const currentAccent = appState.accentColor || 'blue';
+            const buttons = accentSelector.querySelectorAll('.accent-color-btn');
+            const picker = document.getElementById('customColorPicker');
+            
+            buttons.forEach(btn => {
+                const val = btn.getAttribute('data-value');
+                if (val === 'custom') {
+                    const isCustomHex = currentAccent && currentAccent.startsWith('#');
+                    if (isCustomHex) {
+                        btn.classList.add('active');
+                        btn.style.setProperty('--accent-swatch-color', currentAccent);
+                        if (picker) picker.value = currentAccent;
+                        
+                        // Calculate contrast color for checkmark
+                        const r = parseInt(currentAccent.slice(1, 3), 16);
+                        const g = parseInt(currentAccent.slice(3, 5), 16);
+                        const b = parseInt(currentAccent.slice(5, 7), 16);
+                        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                        const contrast = yiq >= 128 ? '#18181b' : '#ffffff';
+                        btn.style.setProperty('--accent-swatch-contrast-color', contrast);
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.setProperty('--accent-swatch-color', 'transparent');
+                        btn.style.setProperty('--accent-swatch-contrast-color', '#ffffff');
+                    }
+                } else {
+                    if (val === currentAccent) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        }
+
         // Confidentialité
         if (DOM.settingsPrivacyAnonymizeToggle) {
             DOM.settingsPrivacyAnonymizeToggle.checked = appState.anonymizeData;

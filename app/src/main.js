@@ -66,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // PWA Update Handler
         setupPWAUpdateHandler();
 
+        // Populate Commit Info dynamically in the About section
+        populateAboutBuildDate();
+
     } catch (e) {
         alert(`Erreur d'initialisation : ${e.message}\n${e.stack}`);
         console.error(e);
@@ -201,4 +204,24 @@ function setupPWAUpdateHandler() {
         // virtual:pwa-register not available in dev mode
         console.warn('[PWA] Update handler disabled (dev mode or error):', e);
     });
+}
+
+/**
+ * Fetches version.json and populates the build info dynamically in the About tab.
+ */
+async function populateAboutBuildDate() {
+    try {
+        const res = await fetch('./version.json?t=' + Date.now());
+        if (res.ok) {
+            const data = await res.json();
+            const aboutBuildDateEl = document.getElementById('aboutBuildDate');
+            if (aboutBuildDateEl && data.hash) {
+                const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                const formattedDate = new Date(data.date).toLocaleDateString('fr-FR', options);
+                aboutBuildDateEl.textContent = `Build ${data.hash} · ${formattedDate}`;
+            }
+        }
+    } catch (e) {
+        console.warn('[Version] Failed to populate dynamic build date:', e);
+    }
 }

@@ -43,19 +43,24 @@
 }
 
 .btn-secondary {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.04);
     color: var(--text-secondary);
     border: none;
     box-shadow: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--item-hover-bg);
+    background: rgba(0, 0, 0, 0.08);
     color: var(--primary-color);
     box-shadow: none;
 }
 
+[data-theme="dark"] .btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 [data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
     color: var(--primary-color);
 }
 

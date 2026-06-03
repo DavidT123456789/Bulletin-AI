@@ -24,6 +24,7 @@ export const userSettings = {
     ui: {
         theme: 'light',
         isAppreciationFullView: false,
+        accentColor: 'blue',
     },
 
     /** Configuration académique */
@@ -151,6 +152,7 @@ const propertyMap = {
     // userSettings.ui
     theme: () => userSettings.ui,
     isAppreciationFullView: () => userSettings.ui,
+    accentColor: () => userSettings.ui,
 
     // userSettings.academic
     periodSystem: () => userSettings.academic,

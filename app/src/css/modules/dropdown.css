@@ -178,7 +178,7 @@
 
 /* Ollama (local) */
 .provider-ollama {
-    color: var(--primary-color);
+    color: #708090; /* Gris acier professionnel */
     transform: scale(1.3);
 }
 
