@@ -33,13 +33,13 @@
     <!-- Base gray document (fades out) - SIMPLE RECTANGLE -->
     <g filter="url(#docShadow)">
       <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.1;0.2;1" dur="10s" repeatCount="indefinite"/>
-      <rect x="0" y="40" width="160" height="200" rx="8" fill="#e5e5e5" stroke="#ccc" stroke-width="1"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" fill="#e5e5e5" stroke="#ccc" stroke-width="1"/>
     </g>
 
     <!-- Colorful document background (fades in) - fond blanc - SIMPLE RECTANGLE -->
     <g filter="url(#docShadow)">
       <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.2;0.92;1" dur="10s" repeatCount="indefinite"/>
-      <rect x="0" y="40" width="160" height="200" rx="8" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="2"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="2"/>
     </g>
 
     <!-- Gray lines (fade out as colored ones appear) -->

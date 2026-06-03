@@ -54,15 +54,45 @@ export const WelcomeManager = {
 
         let currentWelcomeStep = 1;
 
-        // Reset demo data button state (in case modal is reopened)
-        if (DOM.welcomeLoadSampleBtn) {
-            DOM.welcomeLoadSampleBtn.disabled = false;
-            DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold"></iconify-icon> Charger une classe exemple';
+        // Reset welcomeFinishAndHideBtn state (in case modal is reopened)
+        if (DOM.welcomeFinishAndHideBtn) {
+            DOM.welcomeFinishAndHideBtn.disabled = false;
+            DOM.welcomeFinishAndHideBtn.innerHTML = `
+                <span class="rocket-container">
+                    <iconify-icon icon="solar:rocket-bold"></iconify-icon>
+                </span>
+                Commencer
+            `.trim();
         }
-        if (DOM.welcomeNextStepInfo) {
-            DOM.welcomeNextStepInfo.style.display = 'none';
+
+        // Reset checkbox and cards selection based on existing classes (in case modal is reopened)
+        const hasExistingClasses = ClassManager.getAllClasses?.().length > 0;
+        const defaultStartMode = hasExistingClasses ? 'empty' : 'demo';
+        
+        const loadDemoCheckbox = document.getElementById('welcomeLoadDemoCheckbox');
+        if (loadDemoCheckbox) {
+            loadDemoCheckbox.checked = !hasExistingClasses;
         }
-        const totalWelcomeSteps = 4;
+        const startCards = document.querySelectorAll('#welcome-step-4 .welcome-start-card');
+        startCards.forEach(c => {
+            const isActive = c.getAttribute('data-value') === defaultStartMode;
+            c.classList.toggle('active', isActive);
+            c.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        // Reset period system cards to current settings (in case modal is reopened)
+        const currentPeriodSystem = appState.periodSystem || 'trimestres';
+        const periodCards = document.querySelectorAll('#welcomePeriodCards .welcome-start-card');
+        periodCards.forEach(c => {
+            const isActive = c.getAttribute('data-value') === currentPeriodSystem;
+            c.classList.toggle('active', isActive);
+            c.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        const activeRadioId = currentPeriodSystem === 'semestres' ? 'welcomePeriodSystemSemestres' : 'welcomePeriodSystemTrimestres';
+        const activeRadio = document.getElementById(activeRadioId);
+        if (activeRadio) activeRadio.checked = true;
+
+        const totalWelcomeSteps = 5;
         let isAnimating = false;
         let currentProvider = 'mistral';
 
@@ -92,6 +122,7 @@ export const WelcomeManager = {
 
             if (input) {
                 input.value = existingKey || '';
+                input.disabled = !!existingKey;
             }
 
             if (validateBtn) {
@@ -202,7 +233,9 @@ export const WelcomeManager = {
             DOM.welcomePrevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
             DOM.welcomeNextBtn.style.display = step === totalWelcomeSteps ? 'none' : 'inline-flex';
             DOM.welcomeFinishOptions.style.display = step === totalWelcomeSteps ? 'flex' : 'none';
-            DOM.welcomeNextStepInfo.style.display = 'none';
+            if (DOM.welcomeNextStepInfo) {
+                DOM.welcomeNextStepInfo.style.display = 'none';
+            }
 
             // Si la clé existe, bouton next actif
             if (step === 2) {
@@ -253,7 +286,6 @@ export const WelcomeManager = {
                 DOM.welcomeNextBtn.disabled = false;
             }
 
-            if (DOM.welcomeLoadSampleBtn.disabled && step === 4) DOM.welcomeNextStepInfo.style.display = 'block';
             currentWelcomeStep = step;
         };
 
@@ -286,6 +318,9 @@ export const WelcomeManager = {
                     DOM.welcomeApiKeyError,
                     DOM.welcomeValidateApiKeyBtn,
                     () => {
+                        if (DOM.welcomeApiKeyInput) {
+                            DOM.welcomeApiKeyInput.disabled = true;
+                        }
                         // ✅ Auto-sélection du modèle compatible avec la clé validée
                         // Évite l'erreur "clé OpenRouter requise" quand l'utilisateur a configuré Mistral
                         const recommendedModel = PROVIDER_DEFAULT_MODELS[currentProvider];
@@ -374,7 +409,9 @@ export const WelcomeManager = {
             DOM.welcomePrevBtn.style.visibility = 'hidden';
             DOM.welcomeNextBtn.style.display = 'inline-flex';
             DOM.welcomeFinishOptions.style.display = 'none';
-            DOM.welcomeNextStepInfo.style.display = 'none';
+            if (DOM.welcomeNextStepInfo) {
+                DOM.welcomeNextStepInfo.style.display = 'none';
+            }
             DOM.welcomeNextBtn.disabled = false;
             currentWelcomeStep = 1;
         };
@@ -414,7 +451,27 @@ export const WelcomeManager = {
 
 
         addClickListener(DOM.welcomeFinishBtn, () => finishWelcome(false));
-        addClickListener(DOM.welcomeFinishAndHideBtn, () => finishWelcome(true));
+        addClickListener(DOM.welcomeFinishAndHideBtn, async () => {
+            const loadDemoCheckbox = document.getElementById('welcomeLoadDemoCheckbox');
+            if (loadDemoCheckbox && loadDemoCheckbox.checked) {
+                const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked').value;
+                if (appState.periodSystem !== selectedSystem) {
+                    appState.periodSystem = selectedSystem;
+                    UI.updatePeriodSystemUI();
+                }
+
+                try {
+                    // Temporarily change button to show loading loop
+                    DOM.welcomeFinishAndHideBtn.disabled = true;
+                    DOM.welcomeFinishAndHideBtn.innerHTML = '<iconify-icon icon="line-md:loading-twotone-loop" style="margin-right: 6px;"></iconify-icon> Initialisation...';
+                    
+                    await this._injectDemoClass(selectedSystem);
+                } catch (error) {
+                    UI.showNotification('Erreur lors de l\'injection des données de démo.', 'error');
+                }
+            }
+            finishWelcome(true);
+        });
         addClickListener(DOM.closeWelcomeModalBtn, () => UI.closeModal(DOM.welcomeModal));
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 
@@ -424,22 +481,54 @@ export const WelcomeManager = {
             DOM.welcomeNextBtn.click();
         });
 
-        addClickListener(DOM.welcomeLoadSampleBtn, async () => {
-            const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked').value;
-            if (appState.periodSystem !== selectedSystem) {
-                appState.periodSystem = selectedSystem;
-                UI.updatePeriodSystemUI();
-            }
+        // Interactivité des cartes d'onboarding (Mode Découverte / Base Vierge)
+        startCards.forEach(card => {
+            const selectCard = () => {
+                startCards.forEach(c => {
+                    c.classList.remove('active');
+                    c.setAttribute('aria-pressed', 'false');
+                });
+                card.classList.add('active');
+                card.setAttribute('aria-pressed', 'true');
+                const val = card.getAttribute('data-value');
+                if (loadDemoCheckbox) {
+                    loadDemoCheckbox.checked = (val === 'demo');
+                }
+            };
 
-            try {
-                await this._injectDemoClass(selectedSystem);
-                DOM.welcomeNextStepInfo.style.display = 'block';
-                DOM.welcomeLoadSampleBtn.disabled = true;
-                DOM.welcomeLoadSampleBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Données chargées !';
-                UI.showNotification('Classe Exemple créée avec 8 élèves ! Cliquez sur "Terminer" pour continuer.', 'success');
-            } catch (error) {
-                UI.showNotification('Erreur lors du chargement des données.', 'error');
-            }
+            card.addEventListener('click', selectCard, { signal });
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectCard();
+                }
+            }, { signal });
+        });
+
+        // Interactivité des cartes de rythme scolaire (Trimestres / Semestres)
+        periodCards.forEach(card => {
+            const selectCard = () => {
+                periodCards.forEach(c => {
+                    c.classList.remove('active');
+                    c.setAttribute('aria-pressed', 'false');
+                });
+                card.classList.add('active');
+                card.setAttribute('aria-pressed', 'true');
+                const val = card.getAttribute('data-value');
+                const radio = document.getElementById(val === 'semestres' ? 'welcomePeriodSystemSemestres' : 'welcomePeriodSystemTrimestres');
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            };
+
+            card.addEventListener('click', selectCard, { signal });
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectCard();
+                }
+            }, { signal });
         });
 
         // Gestion du bouton Mode Démo

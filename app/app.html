@@ -2880,7 +2880,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.0 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build b52dd5c · 2 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 60fdcc5 · 3 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -2948,7 +2948,7 @@
             </div>
             <div class="modal-body">
                 <div id="welcome-step-1" class="welcome-step active">
-                    <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI.</h3>
+                    <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI</h3>
                     <p class="welcome-subtitle-premium">Appréciations, plans de classe et bien plus.</p>
 
                     <div class="welcome-chips">
@@ -3041,44 +3041,84 @@
 
 
                 <div id="welcome-step-3" class="welcome-step">
-                    <h3 class="welcome-title-premium">
-                        <span class="welcome-title-icon">🗓️</span>
-                        Votre rythme scolaire
-                    </h3>
+                    <div class="welcome-step-header">
+                        <h3 class="welcome-title-premium">
+                            <span class="welcome-title-icon">🗓️</span>
+                            Votre rythme scolaire
+                        </h3>
+                        <p class="welcome-subtitle-premium">Ce paramètre calibre l'IA pour qu'elle s'adapte à votre organisation.</p>
+                    </div>
 
-                    <div class="welcome-split-layout">
-                        <div class="welcome-split-info">
-                            <p class="welcome-split-desc">
-                                Ce paramètre calibre l'IA pour qu'elle s'adapte à votre organisation.
-                            </p>
-                            <div class="welcome-info-pill">
-                                <iconify-icon icon="solar:settings-bold"></iconify-icon>
-                                <span>Modifiable dans les réglages</span>
+                    <div class="welcome-start-options" id="welcomePeriodCards">
+                        <div class="welcome-start-card active" data-value="trimestres" tabindex="0" role="button" aria-pressed="true">
+                            <div class="welcome-start-card__icon">
+                                <iconify-icon icon="solar:chart-2-bold-duotone"></iconify-icon>
                             </div>
+                            <div class="welcome-start-card__content">
+                                <strong class="welcome-start-card__title">Trimestres</strong>
+                                <span class="welcome-start-card__desc">3 périodes : T1 • T2 • T3</span>
+                            </div>
+                            <div class="welcome-start-card__radio"></div>
                         </div>
 
-                        <div class="welcome-split-action">
-                            <div class="welcome-period-selector">
-                                <div class="ui-segmented-control" id="welcomePeriodSelector">
-                                    <input type="radio" id="welcomePeriodSystemTrimestres"
-                                        name="welcomePeriodSystemRadio" value="trimestres" checked>
-                                    <label for="welcomePeriodSystemTrimestres" class="ui-segment">
-                                        <iconify-icon class="iconify-inline" icon="solar:chart-2-bold"></iconify-icon>
-                                        <span>Trimestres</span>
-                                    </label>
-                                    <input type="radio" id="welcomePeriodSystemSemestres"
-                                        name="welcomePeriodSystemRadio" value="semestres">
-                                    <label for="welcomePeriodSystemSemestres" class="ui-segment">
-                                        <iconify-icon class="iconify-inline"
-                                            icon="solar:pie-chart-2-bold"></iconify-icon>
-                                        <span>Semestres</span>
-                                    </label>
-                                </div>
+                        <div class="welcome-start-card" data-value="semestres" tabindex="0" role="button" aria-pressed="false">
+                            <div class="welcome-start-card__icon">
+                                <iconify-icon icon="solar:pie-chart-2-bold-duotone"></iconify-icon>
                             </div>
+                            <div class="welcome-start-card__content">
+                                <strong class="welcome-start-card__title">Semestres</strong>
+                                <span class="welcome-start-card__desc">2 périodes : S1 • S2</span>
+                            </div>
+                            <div class="welcome-start-card__radio"></div>
                         </div>
+                    </div>
+
+                    <div style="display: none;">
+                        <input type="radio" id="welcomePeriodSystemTrimestres" name="welcomePeriodSystemRadio" value="trimestres" checked>
+                        <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio" value="semestres">
+                    </div>
+
+                    <div class="welcome-info-pill" style="justify-content: center; width: max-content; margin: 24px auto 0 auto;">
+                        <iconify-icon icon="solar:settings-bold"></iconify-icon>
+                        <span>Modifiable à tout moment dans les réglages</span>
                     </div>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
+                    <div class="welcome-step-header">
+                        <h3 class="welcome-title-premium">
+                            <span class="welcome-title-icon">🚀</span>
+                            Mode de démarrage
+                        </h3>
+                        <p class="welcome-subtitle-premium">Choisissez votre mode de démarrage pour configurer votre espace de travail.</p>
+                    </div>
+
+                    <div class="welcome-start-options">
+                        <div class="welcome-start-card" data-value="empty" tabindex="0" role="button" aria-pressed="false">
+                            <div class="welcome-start-card__icon">
+                                <iconify-icon icon="solar:document-bold-duotone"></iconify-icon>
+                            </div>
+                            <div class="welcome-start-card__content">
+                                <strong class="welcome-start-card__title">Base Vierge</strong>
+                                <span class="welcome-start-card__desc">Démarrez directement de zéro avec vos propres élèves.</span>
+                            </div>
+                            <div class="welcome-start-card__radio"></div>
+                        </div>
+
+                        <div class="welcome-start-card active" data-value="demo" tabindex="0" role="button" aria-pressed="true">
+                            <div class="welcome-start-card__icon">
+                                <iconify-icon icon="solar:document-text-bold-duotone"></iconify-icon>
+                            </div>
+                            <div class="welcome-start-card__content">
+                                <strong class="welcome-start-card__title">Mode Découverte</strong>
+                                <span class="welcome-start-card__desc">Testez l'application avec 8 élèves fictifs pré-remplis.</span>
+                            </div>
+                            <div class="welcome-start-card__radio"></div>
+                        </div>
+                    </div>
+                    <input type="checkbox" id="welcomeLoadDemoCheckbox" checked style="display: none;">
+                </div>
+
+                <div id="welcome-step-5" class="welcome-step">
                     <!-- Transformation Illustration -->
                     <div class="welcome-transformation-svg">
                         <object type="image/svg+xml" data="./welcome-transformation.svg">
@@ -3088,28 +3128,21 @@
 
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">Prêt à commencer !</h3>
-                        <p class="welcome-subtitle-premium">Tout est configuré. Découvrez l'application
-                            avec des données pré-remplies.</p>
+                        <p class="welcome-subtitle-premium">Tout est configuré. Lancez l'assistant pour commencer.</p>
                     </div>
-
-                    <button class="btn btn-organic btn-organic--rounded btn-cta-full" id="welcomeLoadSampleBtn">
-                        <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-bold"></iconify-icon>
-                        Charger une classe exemple
-                    </button>
-
-                    <div id="welcome-next-step-info">Parfait ! Les données sont prêtes.
-                        Cliquez sur "Terminer" pour voir les résultats.</div>
                 </div>
             </div>
             <div class="welcome-nav-container">
                 <button class="btn btn-secondary" id="welcomePrevBtn" style="visibility: hidden;">Précédent</button>
                 <div id="welcome-dots"><span class="dot active"></span><span class="dot"></span><span
-                        class="dot"></span><span class="dot"></span></div>
+                        class="dot"></span><span class="dot"></span><span class="dot"></span></div>
                 <button class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
                 <div id="welcome-finish-options">
                     <button class="btn btn-secondary" id="welcomeFinishBtn">Fermer</button>
                     <button class="btn btn-primary" id="welcomeFinishAndHideBtn">
-                        <iconify-icon class="iconify-inline" icon="solar:rocket-bold" style="margin-right: 6px;"></iconify-icon>
+                        <span class="rocket-container">
+                            <iconify-icon icon="solar:rocket-bold"></iconify-icon>
+                        </span>
                         Commencer
                     </button>
                 </div>
