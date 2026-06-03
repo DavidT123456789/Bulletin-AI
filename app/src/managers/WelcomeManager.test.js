@@ -19,7 +19,6 @@ vi.mock('../utils/DOM', () => {
             welcomeFinishOptions: createElement(),
             welcomeNextStepInfo: createElement(),
             welcomeLoadSampleBtn: Object.assign(createElement(), { disabled: false }),
-            welcomeFinishBtn: createElement(),
             welcomeFinishAndHideBtn: createElement(),
             welcomeValidateApiKeyBtn: createElement(),
             welcomeSkipApiKeyBtn: createElement(),

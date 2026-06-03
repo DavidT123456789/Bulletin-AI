@@ -159,7 +159,6 @@ describe('DOM', () => {
                 <button id="welcomePrevBtn"></button>
                 <button id="welcomeNextBtn"></button>
                 <button id="welcomeLoadSampleBtn"></button>
-                <button id="welcomeFinishBtn"></button>
                 <button id="welcomeFinishAndHideBtn"></button>
                 <div id="welcome-finish-options"></div>
                 <div id="welcome-dots"></div>

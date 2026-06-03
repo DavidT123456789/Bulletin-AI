@@ -158,7 +158,7 @@ export const WelcomeManager = {
             google: {
                 placeholder: "Clé API Google (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
-                linkIcon: '<iconify-icon icon="logos:google-icon"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="ph:google-logo" style="color: #4285f4;"></iconify-icon>'
             },
             openrouter: {
                 placeholder: "Clé API OpenRouter (sk-or-...)",
@@ -290,8 +290,8 @@ export const WelcomeManager = {
         };
 
 
-        const finishWelcome = (hidePermanently) => {
-            if (hidePermanently) localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
+        const finishWelcome = () => {
+            localStorage.setItem(CONFIG.LS_FIRST_VISIT_KEY, 'true');
             const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked').value;
             if (appState.periodSystem !== selectedSystem) {
                 appState.periodSystem = selectedSystem;
@@ -450,7 +450,6 @@ export const WelcomeManager = {
         });
 
 
-        addClickListener(DOM.welcomeFinishBtn, () => finishWelcome(false));
         addClickListener(DOM.welcomeFinishAndHideBtn, async () => {
             const loadDemoCheckbox = document.getElementById('welcomeLoadDemoCheckbox');
             if (loadDemoCheckbox && loadDemoCheckbox.checked) {
@@ -470,7 +469,7 @@ export const WelcomeManager = {
                     UI.showNotification('Erreur lors de l\'injection des données de démo.', 'error');
                 }
             }
-            finishWelcome(true);
+            finishWelcome();
         });
         addClickListener(DOM.closeWelcomeModalBtn, () => UI.closeModal(DOM.welcomeModal));
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
