@@ -917,8 +917,8 @@
 }
 
 /* Cloud Save Menu Item */
-.cloud-save-menu-item {
-    display: grid !important;
+.menu-item.cloud-save-menu-item {
+    display: grid;
     grid-template-columns: 24px 1fr;
     grid-template-rows: auto auto;
     column-gap: 10px;
