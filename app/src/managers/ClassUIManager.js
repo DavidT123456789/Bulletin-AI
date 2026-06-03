@@ -13,6 +13,7 @@ import { detectLevelFromName } from '../utils/LevelDetector.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
+import { Utils } from '../utils/Utils.js';
 
 let UI;
 let StorageManager;
@@ -726,7 +727,7 @@ export const ClassUIManager = {
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button class="btn btn-secondary btn-small add-class-modal-btn" id="addClassFromModalBtn" title="Créer une nouvelle classe">
+                        <button class="btn btn-secondary btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
                             <iconify-icon icon="ph:plus"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
                         <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
@@ -1147,25 +1148,25 @@ export const ClassUIManager = {
                         let averageBadge = '';
                         if (hasGrades) {
                             const avg = pedagoStats.average.toFixed(1).replace('.', ',');
-                            const colorClass = pedagoStats.average >= 14 ? 'good' : pedagoStats.average >= 10 ? 'average' : 'risk';
+                            const colorClass = Utils.getGradeClass(pedagoStats.average);
 
                             let trendIcon = '';
                             if (pedagoStats.avgEvolution !== null) {
                                 const trend = pedagoStats.avgEvolution;
                                 const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
                                 const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
-                                trendIcon = `<span class="trend-indicator ${trendClass}" title="Évolution trimestrielle">${trendArrow}</span>`;
+                                trendIcon = `<span class="trend-indicator ${trendClass}" data-tooltip="Évolution trimestrielle">${trendArrow}</span>`;
                             }
 
                             averageBadge = `
-                                <div class="class-stat-badge ${colorClass}" title="Moyenne générale de la classe">
+                                <div class="class-stat-badge ${colorClass}" data-tooltip="Moyenne générale de la classe">
                                     <span class="stat-value">${avg}</span>
                                     <span class="stat-suffix">/20</span>
                                     ${trendIcon}
                                 </div>
                             `;
                         } else {
-                            averageBadge = `<div class="class-stat-badge no-data"><span class="stat-value">--/20</span></div>`;
+                            averageBadge = `<div class="class-stat-badge no-data" data-tooltip="Pas de moyenne disponible"><span class="stat-value">--/20</span></div>`;
                         }
 
                         return `
@@ -1175,8 +1176,8 @@ export const ClassUIManager = {
                                  tabindex="0"
                                  role="option"
                                  aria-selected="${isActive ? 'true' : 'false'}">
-                                <div class="class-drag-handle" title="Réorganiser">
-                                    <iconify-icon icon="solar:hamburger-menu-linear"></iconify-icon>
+                                <div class="class-drag-handle" data-tooltip="Réorganiser">
+                                    <iconify-icon icon="ph:dots-six-vertical-bold"></iconify-icon>
                                 </div>
                                 
                                 <div class="class-management-info">
@@ -1186,17 +1187,17 @@ export const ClassUIManager = {
                                     </div>
                                     
                                     <div class="class-management-meta">
-                                        <span class="meta-item-inline" title="Année scolaire">
+                                        <span class="meta-item-inline" data-tooltip="Année scolaire">
                                             <iconify-icon icon="solar:calendar-linear"></iconify-icon>
                                             <span>${cls.year || '2025-2026'}</span>
                                         </span>
                                         <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline" title="Nombre d'élèves">
+                                        <span class="meta-item-inline" data-tooltip="Nombre d'élèves">
                                             <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                             <span>${stats.total} élèves</span>
                                         </span>
                                         <span class="meta-separator">•</span>
-                                        <span class="meta-item-inline ${stats.statusClass}" title="Appréciations complétées (Trimestre actif)">
+                                        <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (Trimestre actif)">
                                             <iconify-icon icon="${stats.icon}"></iconify-icon>
                                             <span>${stats.completed}/${stats.total}</span>
                                         </span>
@@ -1205,15 +1206,15 @@ export const ClassUIManager = {
 
                                 <div class="class-management-actions">
                                     <button class="manage-duplicate-btn" data-class-id="${cls.id}" 
-                                            title="Dupliquer la classe">
+                                            data-tooltip="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
                                     <button class="manage-rename-btn" data-class-id="${cls.id}" 
-                                            title="Renommer">
+                                            data-tooltip="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
                                     <button class="manage-delete-btn" data-class-id="${cls.id}" 
-                                            title="Supprimer la classe">
+                                            data-tooltip="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
                                 </div>
@@ -1238,6 +1239,9 @@ export const ClassUIManager = {
                     activeItem.focus();
                 });
             }
+
+            // Initialiser les tooltips pour les nouveaux éléments
+            UI?.initTooltips?.();
         };
 
         // Initial render

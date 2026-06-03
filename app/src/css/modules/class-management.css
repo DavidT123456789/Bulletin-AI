@@ -787,12 +787,17 @@
 
 #classManagementModal .add-class-modal-btn iconify-icon {
     color: var(--primary-color);
+    transition: transform var(--transition-fast);
 }
 
 #classManagementModal .add-class-modal-btn:hover {
     background: rgba(var(--primary-color-rgb), 0.06);
     border-color: rgba(var(--primary-color-rgb), 0.3);
     color: var(--primary-color);
+}
+
+#classManagementModal .add-class-modal-btn:hover iconify-icon {
+    transform: rotate(90deg);
 }
 
 /* ====================================================================
@@ -802,11 +807,12 @@
 .class-management-list {
     display: flex;
     flex-direction: column;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 4px 4px 8px 4px;
+    gap: 8px;
+    box-shadow: none;
     position: relative;
 }
 
@@ -816,42 +822,121 @@
     align-items: center;
     gap: 16px;
     padding: 16px 20px;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--border-color);
-    border-radius: 0;
-    box-shadow: none;
-    transition: background-color var(--transition-fast), transform var(--transition-fast), border-radius var(--transition-fast), box-shadow var(--transition-fast);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast), color var(--transition-fast);
     cursor: pointer;
     position: relative;
     overflow: hidden;
 }
 
-.class-management-item:last-child {
-    border-bottom: none;
-}
-
 .class-management-item:hover {
     background-color: var(--item-hover-bg);
     border-color: var(--border-color);
-    box-shadow: none;
+    box-shadow: var(--shadow-md);
 }
 
 .class-management-item.active-switch {
-    background-color: var(--item-active-bg);
-    border-left: 4px solid var(--primary-color);
-    padding-left: 16px;
+    background-color: var(--primary-color);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.25);
+}
+
+.class-management-item.active-switch:hover {
+    background-color: var(--primary-hover);
+    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.35);
 }
 
 .class-management-item:focus-visible {
     background-color: var(--item-hover-bg);
     outline: none;
-    box-shadow: inset 0 0 0 2px var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .class-management-item.active-switch:focus-visible {
-    background-color: var(--item-active-bg);
-    box-shadow: inset 0 0 0 2px var(--primary-hover);
+    background-color: var(--primary-hover);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+}
+
+/* Active state adjustments for internal elements */
+.class-management-item.active-switch .class-management-name {
+    color: #ffffff;
+}
+
+.class-management-item.active-switch .class-drag-handle {
+    color: #ffffff;
+    opacity: 0.7;
+}
+.class-management-item.active-switch:hover .class-drag-handle {
+    opacity: 1;
+}
+.class-management-item.active-switch .class-drag-handle:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.class-management-item.active-switch .meta-item-inline {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.class-management-item.active-switch .meta-separator {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.class-management-item.active-switch .meta-item-inline.status-complete {
+    color: #4ade80; /* bright green */
+}
+.class-management-item.active-switch .meta-item-inline.status-error {
+    color: #fb7185; /* bright red */
+}
+
+.class-management-item.active-switch .class-stat-badge {
+    background: #ffffff;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.class-management-item.active-switch .class-stat-badge.no-data {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-tertiary);
+    border-color: transparent;
+}
+.class-management-item.active-switch .class-stat-badge .stat-suffix {
+    color: var(--text-tertiary);
+}
+.class-management-item.active-switch .trend-indicator.positive {
+    color: var(--success-color) !important;
+}
+.class-management-item.active-switch .trend-indicator.negative {
+    color: var(--error-color) !important;
+}
+.class-management-item.active-switch .trend-indicator.neutral {
+    color: var(--text-tertiary) !important;
+}
+
+.class-management-item.active-switch .class-management-actions {
+    opacity: 0.85;
+}
+.class-management-item.active-switch:hover .class-management-actions {
+    opacity: 1;
+}
+
+.class-management-item.active-switch .manage-rename-btn,
+.class-management-item.active-switch .manage-duplicate-btn,
+.class-management-item.active-switch .manage-delete-btn {
+    color: rgba(255, 255, 255, 0.85);
+}
+.class-management-item.active-switch .manage-rename-btn:hover,
+.class-management-item.active-switch .manage-duplicate-btn:hover {
+    background: #ffffff;
+    color: var(--primary-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+}
+.class-management-item.active-switch .manage-delete-btn:hover {
+    background: var(--error-color);
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.35);
 }
 
 /* Drag Handle */
@@ -919,37 +1004,25 @@
     transition: all var(--transition-fast);
 }
 
-.class-stat-badge.good {
-    background: rgba(var(--success-color-rgb), 0.08);
-    color: var(--success-dark);
-    border-color: rgba(var(--success-color-rgb), 0.15);
+.class-management-item:not(.active-switch):hover .class-stat-badge {
+    background: var(--surface-color);
 }
 
-[data-theme="dark"] .class-stat-badge.good {
-    background: rgba(var(--success-color-rgb), 0.12);
-    border-color: rgba(var(--success-color-rgb), 0.2);
+/* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
+.class-stat-badge.grade-range-0-4 {
+    color: var(--grade-range-0-4);
 }
-
-.class-stat-badge.average {
-    background: rgba(var(--warning-color-rgb), 0.08);
-    color: var(--warning-dark);
-    border-color: rgba(var(--warning-color-rgb), 0.15);
+.class-stat-badge.grade-range-4-8 {
+    color: var(--grade-range-4-8);
 }
-
-[data-theme="dark"] .class-stat-badge.average {
-    background: rgba(var(--warning-color-rgb), 0.12);
-    border-color: rgba(var(--warning-color-rgb), 0.2);
+.class-stat-badge.grade-range-8-12 {
+    color: var(--grade-range-8-12);
 }
-
-.class-stat-badge.risk {
-    background: rgba(var(--error-rgb), 0.08);
-    color: var(--error-hover);
-    border-color: rgba(var(--error-rgb), 0.15);
+.class-stat-badge.grade-range-12-16 {
+    color: var(--grade-range-12-16);
 }
-
-[data-theme="dark"] .class-stat-badge.risk {
-    background: rgba(var(--error-rgb), 0.12);
-    border-color: rgba(var(--error-rgb), 0.2);
+.class-stat-badge.grade-range-16-20 {
+    color: var(--grade-range-16-20);
 }
 
 .stat-value {
@@ -1045,14 +1118,6 @@
     color: var(--error-hover);
 }
 
-.class-management-meta .status-partial {
-    color: var(--primary-color);
-}
-
-.class-management-meta .status-pending {
-    color: var(--text-tertiary);
-}
-
 /* ====================================================================
    CLASS MANAGEMENT ACTIONS
    ==================================================================== */
@@ -1079,7 +1144,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: none;
+    border: 1px solid transparent;
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
@@ -1087,29 +1152,34 @@
     font-size: 1.15rem;
 }
 
-.manage-rename-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
-}
-
+.manage-rename-btn:hover,
 .manage-duplicate-btn:hover {
-    background: rgba(6, 182, 212, 0.12);
-    color: var(--color-cyan-deep);
+    background: #ffffff;
+    border-color: transparent;
+    color: var(--primary-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
+[data-theme="dark"] .manage-rename-btn:hover,
 [data-theme="dark"] .manage-duplicate-btn:hover {
-    background: rgba(34, 211, 238, 0.15);
-    color: var(--color-cyan-bright);
+    background: var(--bg-secondary);
+    border-color: transparent;
+    color: var(--primary-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 
 .manage-delete-btn:hover {
-    background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-hover);
+    background: var(--error-color);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.25);
 }
 
 [data-theme="dark"] .manage-delete-btn:hover {
-    background: rgba(var(--error-rgb), 0.15);
-    color: var(--error-bright);
+    background: var(--error-hover);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.35);
 }
 
 /* ====================================================================
@@ -1125,6 +1195,16 @@
     box-shadow: var(--shadow-lg);
     z-index: 10;
     transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.class-management-item.active-switch.dragging {
+    background-color: var(--primary-color) !important;
+    border-color: transparent !important;
+}
+
+.class-management-item.dragging,
+.class-management-item.dragging * {
+    cursor: grabbing !important;
 }
 
 .class-management-item:not(.dragging) {
@@ -1301,24 +1381,30 @@
 /* Disable card hover effect when editing */
 .class-management-item.editing {
     cursor: default;
-    background: rgba(var(--error-rgb), 0.03) !important;
-    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color) !important;
+    border: 1px solid var(--error-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.12), var(--shadow-md) !important;
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
     display: flex;
     flex-direction: row;
     align-items: center;
-    border-left: 4px solid var(--error-color);
-    padding-left: 16px;
 }
 
 .class-management-item.editing:hover {
     transform: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.12), var(--shadow-md) !important;
 }
 
 /* Special case for rename editing (blue instead of red) */
 .class-management-item.editing.renaming {
-    background: rgba(var(--primary-color-rgb), 0.03) !important;
-    border-left: 4px solid var(--primary-color);
+    background: var(--surface-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12), var(--shadow-md) !important;
+}
+
+.class-management-item.editing.renaming:hover {
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12), var(--shadow-md) !important;
 }
 
 /* Inline Forms Layout */
@@ -1342,12 +1428,7 @@
     transition: all var(--transition-fast);
 }
 
-.inline-rename-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
-    background: var(--surface-color);
-}
+
 
 .rename-inline-form .save-rename-btn,
 .rename-inline-form .cancel-rename-btn {
@@ -1472,8 +1553,9 @@
     padding: 14px 18px;
     background: var(--surface-color);
     border: 1px dashed var(--primary-color);
-    border-radius: var(--radius-lg);
-    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 0;
+    box-shadow: var(--shadow-sm);
     animation: slideDownExpandModal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1497,12 +1579,6 @@
     transition: all var(--transition-fast);
 }
 
-.inline-create-class-form .new-class-input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
-    background: var(--surface-color);
-}
-
 .inline-create-class-form .create-class-confirm,
 .inline-create-class-form .create-class-cancel {
     width: 36px;
@@ -1520,8 +1596,8 @@
 }
 
 .inline-create-class-form .create-class-confirm:not(:disabled):hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: rgba(var(--success-color-rgb), 0.1);
+    color: var(--success-dark);
 }
 
 .inline-create-class-form .create-class-confirm:disabled {
@@ -1532,4 +1608,59 @@
 .inline-create-class-form .create-class-cancel:hover {
     background: rgba(var(--error-color-rgb), 0.1);
     color: var(--error-hover);
+}
+
+/* ====================================================================
+   ACCESSIBILITY & KEYBOARD NAVIGATION (FOCUS-VISIBLE)
+   ==================================================================== */
+.save-rename-btn:focus-visible,
+.cancel-rename-btn:focus-visible,
+.create-class-confirm:focus-visible,
+.create-class-cancel:focus-visible,
+.manage-rename-btn:focus-visible,
+.manage-duplicate-btn:focus-visible,
+.manage-delete-btn:focus-visible,
+.class-delete-btn:focus-visible,
+.inline-create-form.class-dropdown-item .inline-create-btn:focus-visible,
+.inline-create-form.class-dropdown-item .inline-cancel-btn:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px var(--primary-color) !important;
+}
+
+/* ====================================================================
+   MOBILE TOUCH TARGETS (44px Rule)
+   ==================================================================== */
+@media (max-width: 768px) {
+    .manage-rename-btn,
+    .manage-duplicate-btn,
+    .manage-delete-btn,
+    .class-delete-btn,
+    .save-rename-btn,
+    .cancel-rename-btn,
+    .create-class-confirm,
+    .create-class-cancel,
+    .inline-create-form.class-dropdown-item .inline-create-btn,
+    .inline-create-form.class-dropdown-item .inline-cancel-btn {
+        position: relative;
+    }
+
+    .manage-rename-btn::after,
+    .manage-duplicate-btn::after,
+    .manage-delete-btn::after,
+    .class-delete-btn::after,
+    .save-rename-btn::after,
+    .cancel-rename-btn::after,
+    .create-class-confirm::after,
+    .create-class-cancel::after,
+    .inline-create-form.class-dropdown-item .inline-create-btn::after,
+    .inline-create-form.class-dropdown-item .inline-cancel-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 44px;
+        height: 44px;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+    }
 }
