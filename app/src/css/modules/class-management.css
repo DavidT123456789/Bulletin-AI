@@ -153,7 +153,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em;
+    font-size: 1rem;
     transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
@@ -1169,6 +1169,23 @@
     to {
         opacity: 1;
         max-height: 120px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDownExpandModal {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        max-height: 120px;
         padding-top: 14px;
         padding-bottom: 14px;
         transform: translateY(0);
@@ -1189,56 +1206,96 @@
     }
 }
 
-.inline-create-form {
-    overflow: hidden;
-    padding: 12px;
-    background: var(--surface-color);
-    border-bottom: 1px solid var(--border-color);
+.inline-create-form.class-dropdown-item {
+    cursor: default;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all var(--transition-fast);
     animation: slideDownExpand 0.25s ease-out;
 }
 
-.inline-create-form-row {
-    display: flex;
-    gap: 4px;
-    align-items: center;
+.inline-create-form.class-dropdown-item:hover {
+    background: var(--bg-secondary);
 }
 
-.inline-create-form .inline-create-btn {
-    padding: 6px 10px;
-    color: var(--primary-color);
-    min-width: 32px;
+/* Style the parent card as the focused element */
+.inline-create-form.class-dropdown-item:focus-within {
+    border-color: var(--primary-color);
+    background: var(--surface-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
-.inline-create-form .inline-cancel-btn {
-    padding: 6px 10px;
-    min-width: 32px;
-}
-
-.inline-class-input {
+/* Borderless input that blends seamlessly into the card background */
+.inline-create-form.class-dropdown-item .inline-class-input {
     flex: 1;
-    width: 100%;
-    padding: 10px 12px;
+    padding: 6px 4px;
     font-size: 0.9rem;
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    background: var(--bg-color);
+    font-weight: 500;
+    border: none !important;
+    background: transparent !important;
     color: var(--text-primary);
+    outline: none;
+    margin-right: 8px;
+    width: 0;
+    box-shadow: none !important;
     transition: all var(--transition-fast);
+}
+
+.inline-create-form.class-dropdown-item .inline-create-btn,
+.inline-create-form.class-dropdown-item .inline-cancel-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    transition: all var(--transition-fast);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.inline-create-form.class-dropdown-item .inline-create-btn {
+    color: var(--text-secondary);
+}
+
+.inline-create-form.class-dropdown-item .inline-create-btn:not(:disabled):hover {
+    background: rgba(var(--success-color-rgb), 0.15);
+    color: var(--success-dark);
+}
+
+.inline-create-form.class-dropdown-item .inline-cancel-btn:hover {
+    background: rgba(var(--error-color-rgb), 0.15);
+    color: var(--error-hover);
+}
+
+.inline-create-form.class-dropdown-item button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--text-tertiary);
+}
+
+.inline-create-form.class-dropdown-item .inline-create-btn:focus-visible,
+.inline-create-form.class-dropdown-item .inline-cancel-btn:focus-visible {
+    outline: none;
+    background: rgba(var(--primary-color-rgb), 0.12);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.35);
 }
 
 .inline-class-input::placeholder {
     color: var(--text-tertiary);
-}
-
-.inline-class-input:hover:not(:focus) {
-    background: var(--bg-color);
-    border-color: transparent;
-}
-
-.inline-class-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.08);
 }
 
 /* Disable card hover effect when editing */
@@ -1417,7 +1474,7 @@
     border: 1px dashed var(--primary-color);
     border-radius: var(--radius-lg);
     margin-bottom: 16px;
-    animation: slideDownExpand 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideDownExpandModal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .inline-create-class-form .form-row {

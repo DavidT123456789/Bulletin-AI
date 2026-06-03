@@ -64,7 +64,9 @@ export const ClassUIManager = {
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (this._isDropdownOpen && !e.target.closest('.class-selector-wrapper')) {
+            if (this._isDropdownOpen && 
+                !e.target.closest('.class-selector-wrapper') && 
+                !DOM.classDropdown?.contains(e.target)) {
                 this.closeDropdown();
             }
         });
@@ -144,9 +146,9 @@ export const ClassUIManager = {
         } else {
             DOM.classDropdown.style.left = `${chipRect?.left || 16}px`;
             DOM.classDropdown.style.right = 'unset';
-            DOM.classDropdown.style.minWidth = '280px';
-            DOM.classDropdown.style.maxWidth = '340px';
-            DOM.classDropdown.style.width = 'auto';
+            DOM.classDropdown.style.minWidth = 'unset';
+            DOM.classDropdown.style.maxWidth = 'unset';
+            DOM.classDropdown.style.width = '300px';
         }
 
         // Trigger animation
@@ -217,17 +219,17 @@ export const ClassUIManager = {
 
         // Créer le formulaire inline
         const formHtml = `
-            <form class="inline-create-form" action="javascript:void(0)" autocomplete="off">
-                <div class="inline-create-form-row">
-                    <input type="text" class="inline-class-input" 
-                           placeholder="Nom de la classe..." 
-                           autocomplete="off"
-                           maxlength="50"
-                           name="newClassName_ignore">
-                    <button type="button" class="btn btn-secondary btn-small inline-create-btn" disabled>
+            <form class="inline-create-form class-dropdown-item" action="javascript:void(0)" autocomplete="off">
+                <input type="text" class="inline-class-input" 
+                       placeholder="Nom de la classe..." 
+                       autocomplete="off"
+                       maxlength="50"
+                       name="newClassName_ignore">
+                <div class="inline-create-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                    <button type="button" class="inline-create-btn" disabled title="Valider">
                         <iconify-icon icon="ph:check"></iconify-icon>
                     </button>
-                    <button type="button" class="btn btn-secondary btn-small inline-cancel-btn">
+                    <button type="button" class="inline-cancel-btn" title="Annuler">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
@@ -778,7 +780,7 @@ export const ClassUIManager = {
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
                         <button class="create-class-cancel" title="Annuler">
-                            <iconify-icon icon="ph:x"></iconify-icon>
+                            <iconify-icon icon="ph:x-bold"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -960,7 +962,7 @@ export const ClassUIManager = {
                                 <iconify-icon icon="ph:check-bold"></iconify-icon>
                             </button>
                             <button class="cancel-rename-btn" title="Annuler">
-                                <iconify-icon icon="ph:x"></iconify-icon>
+                                <iconify-icon icon="ph:x-bold"></iconify-icon>
                             </button>
                         </div>
                     `;
