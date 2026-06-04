@@ -228,7 +228,7 @@
 
     /* Layout */
     --sidebar-width: 460px;
-    --glow-highlight: rgba(59, 130, 246, 0.6);
+    --glow-highlight: rgba(var(--primary-color-rgb), 0.6);
     /* Blue Glow */
 
     /* --- Gradients --- */
@@ -306,11 +306,6 @@
 
 [data-theme="dark"] {
     /* Zinc Dark Mode */
-    --primary-color: #4f7df2;
-    /* Bleu Nuit Royal */
-    --primary-color-rgb: 79, 125, 242;
-    --primary-hover: #3b66f1;
-    /* Bleu Nuit Royal Hover */
 
     --purple-color: #a78bfa;
     /* Violet 400 */
@@ -368,7 +363,7 @@
     --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.6);
     --shadow-elevation: 0 2px 8px rgba(0, 0, 0, 0.4);
 
-    --glow-highlight: rgba(79, 125, 242, 0.4);
+    --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
     /* Gradients Dark Mode */
     --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);

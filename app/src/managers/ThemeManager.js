@@ -80,40 +80,14 @@ export const ColorUtils = {
         return '#' + toHex(r) + toHex(g) + toHex(b);
     },
 
-    adjustLuminosity(h, s, l, theme) {
-        let adjustedL = l;
-        if (theme === 'dark') {
-            // Ensure minimum brightness for readability in dark mode (65%)
-            if (l < 65) adjustedL = 65;
-        } else {
-            // Ensure maximum brightness for contrast in light mode (50%)
-            if (l > 50) adjustedL = 50;
-        }
-        return adjustedL;
-    }
 };
 
 export const accentPresets = {
-    blue: {
-        light: { color: '#3b82f6', rgb: '59, 130, 246', hover: '#2563eb' },
-        dark: { color: '#4f7df2', rgb: '79, 125, 242', hover: '#3b66f1' }
-    },
-    anthracite: {
-        light: { color: '#3f3f46', rgb: '63, 63, 70', hover: '#27272a' },
-        dark: { color: '#d4d4d8', rgb: '212, 212, 216', hover: '#a1a1aa' }
-    },
-    rose: {
-        light: { color: '#f5627d', rgb: '245, 98, 125', hover: '#e11d48' },
-        dark: { color: '#fda4af', rgb: '253, 164, 175', hover: '#fb7185' }
-    },
-    violet: {
-        light: { color: '#8b5cf6', rgb: '139, 92, 246', hover: '#7c3aed' },
-        dark: { color: '#a78bfa', rgb: '167, 139, 250', hover: '#8b5cf6' }
-    },
-    teal: {
-        light: { color: '#14b8a6', rgb: '20, 184, 166', hover: '#0d9488' },
-        dark: { color: '#2dd4bf', rgb: '45, 212, 191', hover: '#14b8a6' }
-    }
+    blue:       { color: '#3b82f6', rgb: '59, 130, 246',  hover: '#2563eb' },
+    anthracite: { color: '#52525b', rgb: '82, 82, 91',    hover: '#3f3f46' },
+    rose:       { color: '#f43f5e', rgb: '244, 63, 94',   hover: '#e11d48' },
+    violet:     { color: '#8b5cf6', rgb: '139, 92, 246',  hover: '#7c3aed' },
+    teal:       { color: '#14b8a6', rgb: '20, 184, 166',  hover: '#0d9488' }
 };
 
 export const ThemeManager = {
@@ -122,6 +96,9 @@ export const ThemeManager = {
 
     // Media query match for system preference
     systemMediaQuery: null,
+
+    // Flag to prevent feedback loops and lossy conversions during user drags
+    isDraggingSliders: false,
 
     init() {
         // Initialize system media query listener
@@ -179,51 +156,6 @@ export const ThemeManager = {
         const eyedropperBtn = document.getElementById('pickerEyedropperBtn');
         const livePreview = document.getElementById('pickerLivePreview');
 
-        // Update the sliders, tracks, and inputs UI to match a given hex color
-        const updateCustomPanelUI = (hexColor) => {
-            if (!hexColor || !hexColor.startsWith('#')) return;
-
-            // Update text field if not currently typing
-            if (hexInput && document.activeElement !== hexInput) {
-                hexInput.value = hexColor.slice(1).toUpperCase();
-            }
-
-            // Convert Hex to HSL
-            const rgb = ColorUtils.hexToRgb(hexColor);
-            const hsl = ColorUtils.rgbToHsl(rgb.r, rgb.g, rgb.b);
-
-            // Update range inputs
-            if (hueSlider) {
-                hueSlider.value = hsl.h;
-                hueSlider.style.setProperty('--slider-thumb-color', hexColor);
-            }
-            if (satSlider) {
-                satSlider.value = hsl.s;
-                satSlider.style.setProperty('--slider-thumb-color', hexColor);
-                
-                // Track gradient for Saturation: desaturated grey to saturated HSL
-                const satStart = ColorUtils.hslToRgb(hsl.h, 0, hsl.l);
-                const satStartHex = ColorUtils.rgbToHex(satStart.r, satStart.g, satStart.b);
-                const satEnd = ColorUtils.hslToRgb(hsl.h, 100, hsl.l);
-                const satEndHex = ColorUtils.rgbToHex(satEnd.r, satEnd.g, satEnd.b);
-                
-                satSlider.style.setProperty('--sat-start', satStartHex);
-                satSlider.style.setProperty('--sat-end', satEndHex);
-            }
-            if (ligSlider) {
-                ligSlider.value = hsl.l;
-                ligSlider.style.setProperty('--slider-thumb-color', hexColor);
-                
-                // Track gradient for Lightness: black to pure HSL to white
-                const ligMid = ColorUtils.hslToRgb(hsl.h, hsl.s, 50);
-                const ligMidHex = ColorUtils.rgbToHex(ligMid.r, ligMid.g, ligMid.b);
-                
-                ligSlider.style.setProperty('--lig-mid', ligMidHex);
-            }
-
-            if (livePreview) livePreview.style.background = hexColor;
-        };
-
         // Handle slider inputs
         const handleSliderChange = () => {
             const h = hueSlider ? parseInt(hueSlider.value) : 220;
@@ -233,7 +165,6 @@ export const ThemeManager = {
             const rgb = ColorUtils.hslToRgb(h, s, l);
             const hex = ColorUtils.rgbToHex(rgb.r, rgb.g, rgb.b);
 
-            // Apply immediately to preview style on custom button
             if (customBtn) {
                 customBtn.style.setProperty('--accent-swatch-color', hex);
                 const yiq = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
@@ -241,10 +172,11 @@ export const ThemeManager = {
                 customBtn.style.setProperty('--accent-swatch-contrast-color', contrast);
             }
 
-            // Sync other panel tracks
-            updateCustomPanelUI(hex);
+            ThemeManager.isDraggingSliders = true;
+            ThemeManager.updateCustomPanelUI(hex, h, s, l);
 
             this.setAccentColor(hex);
+            ThemeManager.isDraggingSliders = false;
         };
 
         if (hueSlider) hueSlider.addEventListener('input', handleSliderChange);
@@ -269,7 +201,7 @@ export const ThemeManager = {
                     hex = '#' + hex;
 
                     // Sync and apply color
-                    updateCustomPanelUI(hex);
+                    ThemeManager.updateCustomPanelUI(hex);
                     this.setAccentColor(hex);
                 }
             });
@@ -301,6 +233,10 @@ export const ThemeManager = {
                     if (picker) picker.click();
                 });
                 eyedropperBtn.setAttribute('data-tooltip', 'Palette de couleurs');
+                const eyedropperIcon = eyedropperBtn.querySelector('iconify-icon');
+                if (eyedropperIcon) {
+                    eyedropperIcon.setAttribute('icon', 'ph:palette-bold');
+                }
             }
         }
 
@@ -363,27 +299,24 @@ export const ThemeManager = {
                 if (btnVal === 'custom') {
                     if (isCustom) {
                         btn.classList.add('active');
+
+                        const rgb = ColorUtils.hexToRgb(currentAccent);
                         btn.style.setProperty('--accent-swatch-color', currentAccent);
                         if (picker) picker.value = currentAccent;
 
-                        // Calculate contrast color for checkmark
-                        const r = parseInt(currentAccent.slice(1, 3), 16);
-                        const g = parseInt(currentAccent.slice(3, 5), 16);
-                        const b = parseInt(currentAccent.slice(5, 7), 16);
-                        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                        const yiq = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
                         const contrast = yiq >= 128 ? '#18181b' : '#ffffff';
                         btn.style.setProperty('--accent-swatch-contrast-color', contrast);
 
-                        // Update sliders to match
-                        updateCustomPanelUI(currentAccent);
+                        if (!ThemeManager.isDraggingSliders) {
+                            ThemeManager.updateCustomPanelUI(currentAccent);
+                        }
                     } else {
                         btn.classList.remove('active');
                         btn.style.setProperty('--accent-swatch-color', 'transparent');
 
-                        // Prime the panel sliders with the active preset color for smooth transition
                         const preset = accentPresets[currentAccent] || accentPresets.blue;
-                        const colors = preset[this.currentResolvedTheme] || preset.light;
-                        updateCustomPanelUI(colors.color);
+                        ThemeManager.updateCustomPanelUI(preset.color);
                     }
                 } else {
                     if (btnVal === currentAccent) {
@@ -431,30 +364,20 @@ export const ThemeManager = {
      */
     applyAccentColor(accentColorKey) {
         const key = accentColorKey || 'blue';
-        let colors = {};
-        const effectiveTheme = this.currentResolvedTheme || 'light';
+        let colors;
 
         if (key.startsWith('#')) {
-            // Custom Color Key (Hex)
-            const baseRgb = ColorUtils.hexToRgb(key);
-            const baseHsl = ColorUtils.rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
-            
-            // Adjust luminosity based on theme resolved state to preserve WCAG contrast
-            const adjustedL = ColorUtils.adjustLuminosity(baseHsl.h, baseHsl.s, baseHsl.l, effectiveTheme);
-            const adjustedRgb = ColorUtils.hslToRgb(baseHsl.h, baseHsl.s, adjustedL);
-            const primaryColor = ColorUtils.rgbToHex(adjustedRgb.r, adjustedRgb.g, adjustedRgb.b);
-            const rgbString = `${adjustedRgb.r}, ${adjustedRgb.g}, ${adjustedRgb.b}`;
-            
-            // Hover color: shift luminosity relative to theme (always darken on hover to match presets)
-            const hoverL = Math.max(0, adjustedL - 10);
-            const hoverRgb = ColorUtils.hslToRgb(baseHsl.h, baseHsl.s, hoverL);
+            const rgb = ColorUtils.hexToRgb(key);
+            const hsl = ColorUtils.rgbToHsl(rgb.r, rgb.g, rgb.b);
+            const rgbString = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+
+            const hoverL = Math.max(0, hsl.l - 10);
+            const hoverRgb = ColorUtils.hslToRgb(hsl.h, hsl.s, hoverL);
             const primaryHover = ColorUtils.rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
 
-            colors = { color: primaryColor, rgb: rgbString, hover: primaryHover };
+            colors = { color: key, rgb: rgbString, hover: primaryHover };
         } else {
-            // Preset Color Key
-            const preset = accentPresets[key] || accentPresets.blue;
-            colors = preset[effectiveTheme] || preset.light;
+            colors = accentPresets[key] || accentPresets.blue;
         }
 
         document.documentElement.style.setProperty('--primary-color', colors.color);
@@ -468,21 +391,18 @@ export const ThemeManager = {
     applyTheme() {
         let effectiveTheme = 'light';
 
-        // Determine effective theme
         if (appState.theme === 'system') {
             effectiveTheme = this.systemMediaQuery && this.systemMediaQuery.matches ? 'dark' : 'light';
         } else {
             effectiveTheme = appState.theme;
         }
 
-        // Apply to DOM
         if (effectiveTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         } else {
             delete document.documentElement.dataset.theme;
         }
 
-        // Update meta theme-color dynamically to match the header background
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
         if (metaThemeColor) {
             metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#18181b' : '#ffffff');
@@ -490,10 +410,15 @@ export const ThemeManager = {
 
         this.currentResolvedTheme = effectiveTheme;
 
-        // Apply custom accent color
-        this.applyAccentColor(appState.accentColor);
+        const isCustom = appState.accentColor && appState.accentColor.startsWith('#');
+        if (isCustom) {
+            this.updateCustomPanelUI(appState.accentColor);
+        } else {
+            const preset = accentPresets[appState.accentColor] || accentPresets.blue;
+            this.updateCustomPanelUI(preset.color);
+        }
 
-        // Update UI state
+        this.applyAccentColor(appState.accentColor);
         this.updateUI();
     },
 
@@ -521,5 +446,85 @@ export const ThemeManager = {
                 segment.setAttribute('aria-pressed', 'false');
             }
         });
+    },
+
+
+
+    /**
+     * Update the sliders, tracks, and inputs UI to match a given hex color.
+     * @param {string} hexColor - Hex color code (e.g. '#3b82f6')
+     */
+    updateCustomPanelUI(hexColor, h = null, s = null, l = null) {
+        if (!hexColor || !hexColor.startsWith('#')) return;
+
+        const hexInput = document.getElementById('pickerHexInput');
+        const hueSlider = document.getElementById('pickerHueSlider');
+        const satSlider = document.getElementById('pickerSatSlider');
+        const ligSlider = document.getElementById('pickerLigSlider');
+        const livePreview = document.getElementById('pickerLivePreview');
+
+        if (hexInput && document.activeElement !== hexInput) {
+            hexInput.value = hexColor.slice(1).toUpperCase();
+        }
+
+        let hsl;
+        if (h !== null && s !== null && l !== null) {
+            hsl = { h, s, l };
+        } else {
+            const rgb = ColorUtils.hexToRgb(hexColor);
+            hsl = ColorUtils.rgbToHsl(rgb.r, rgb.g, rgb.b);
+        }
+
+        let activeHue = hsl.h;
+        if (hsl.s === 0 && hueSlider) {
+            activeHue = parseInt(hueSlider.value, 10) || 0;
+        }
+
+        const displayRgb = ColorUtils.hslToRgb(activeHue, hsl.s, hsl.l);
+        const displayHex = ColorUtils.rgbToHex(displayRgb.r, displayRgb.g, displayRgb.b);
+
+        if (hueSlider) {
+            if (hsl.s > 0 && h === null) {
+                hueSlider.value = hsl.h;
+            }
+            hueSlider.style.setProperty('--slider-thumb-color', displayHex);
+        }
+        if (satSlider) {
+            if (s === null) {
+                satSlider.value = hsl.s;
+            }
+            satSlider.style.setProperty('--slider-thumb-color', displayHex);
+
+            const satStart = ColorUtils.hslToRgb(activeHue, 0, hsl.l);
+            const satStartHex = ColorUtils.rgbToHex(satStart.r, satStart.g, satStart.b);
+            const satEnd = ColorUtils.hslToRgb(activeHue, 100, hsl.l);
+            const satEndHex = ColorUtils.rgbToHex(satEnd.r, satEnd.g, satEnd.b);
+
+            satSlider.style.setProperty('--sat-start', satStartHex);
+            satSlider.style.setProperty('--sat-end', satEndHex);
+        }
+        if (ligSlider) {
+            const minL = parseInt(ligSlider.min, 10) || 20;
+            const maxL = parseInt(ligSlider.max, 10) || 85;
+
+            let lVal = hsl.l;
+            if (lVal < minL) lVal = minL;
+            else if (lVal > maxL) lVal = maxL;
+
+            if (l === null) {
+                ligSlider.value = lVal;
+            }
+            ligSlider.style.setProperty('--slider-thumb-color', displayHex);
+
+            const startRgb = ColorUtils.hslToRgb(activeHue, hsl.s, minL);
+            const startHex = ColorUtils.rgbToHex(startRgb.r, startRgb.g, startRgb.b);
+            const endRgb = ColorUtils.hslToRgb(activeHue, hsl.s, maxL);
+            const endHex = ColorUtils.rgbToHex(endRgb.r, endRgb.g, endRgb.b);
+
+            ligSlider.style.setProperty('--lig-start', startHex);
+            ligSlider.style.setProperty('--lig-end', endHex);
+        }
+
+        if (livePreview) livePreview.style.background = displayHex;
     }
 };
