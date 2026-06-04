@@ -477,8 +477,8 @@
 }
 
 .welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
-    /* Hover style aligné sur btn : couleur légèrement plus foncée */
-    background: var(--brand-primary-hover);
+    background-color: var(--brand-primary);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 /* État "validé" : clé confirmée */

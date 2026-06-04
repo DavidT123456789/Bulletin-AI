@@ -243,40 +243,40 @@
 /* === INDIVIDUAL CARD === */
 /* Color: Blue-500 (#3b82f6) */
 .import-hub-card[data-action="individual"] {
-    border-color: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--brand-primary-rgb), 0.12);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"] {
-    border-color: rgba(var(--primary-color-rgb), 0.2);
+    border-color: rgba(var(--brand-primary-rgb), 0.2);
 }
 
 .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    color: var(--primary-color);
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"] .import-hub-icon {
-    background: rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--brand-primary-rgb), 0.15);
     color: var(--color-blue-bright);
 }
 
 .import-hub-card[data-action="individual"]:hover {
-    background: rgba(var(--primary-color-rgb), 0.04);
-    border-color: var(--primary-color);
+    background: rgba(var(--brand-primary-rgb), 0.04);
+    border-color: var(--brand-primary);
 }
 
 .import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: var(--primary-color);
+    background: var(--brand-primary);
     color: #ffffff;
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    border-color: rgba(var(--brand-primary-rgb), 0.5);
 }
 
 [data-theme="dark"] .import-hub-card[data-action="individual"]:hover .import-hub-icon {
-    background: var(--primary-color);
+    background: var(--brand-primary);
     color: #ffffff;
 }
 

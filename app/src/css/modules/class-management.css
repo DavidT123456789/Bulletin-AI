@@ -235,11 +235,13 @@
 }
 
 .class-dropdown-item.active:hover {
-    background: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 .class-dropdown-item.active:focus-visible {
-    background: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
     border-color: rgba(255, 255, 255, 0.6);
     outline: none;
 }
@@ -373,7 +375,7 @@
 
 .progress-count.has-alert {
     background: var(--error-light);
-    color: var(--error-hover);
+    color: var(--error-dark);
 }
 
 .class-progress-badge:hover .progress-count {
@@ -859,6 +861,10 @@
     box-shadow: none;
 }
 
+[data-theme="dark"] .class-management-item:hover {
+    background-color: var(--bg-hover);
+}
+
 .class-management-item.active-switch {
     background-color: var(--primary-color);
     border-bottom-color: transparent;
@@ -867,7 +873,8 @@
 }
 
 .class-management-item.active-switch:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     box-shadow: none;
 }
 
@@ -878,7 +885,8 @@
 }
 
 .class-management-item.active-switch:focus-visible {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
     outline: none;
 }
@@ -1138,7 +1146,7 @@
 }
 
 .class-management-meta .status-error {
-    color: var(--error-hover);
+    color: var(--error-dark);
 }
 
 /* ====================================================================
@@ -1365,7 +1373,7 @@
 
 .inline-create-form.class-dropdown-item .inline-cancel-btn:hover {
     background: rgba(var(--error-color-rgb), 0.15);
-    color: var(--error-hover);
+    color: var(--error-dark);
 }
 
 .inline-create-form.class-dropdown-item button:disabled {
@@ -1462,7 +1470,7 @@
 
 .rename-inline-form .cancel-rename-btn:hover {
     background: rgba(var(--error-color-rgb), 0.1);
-    color: var(--error-hover);
+    color: var(--error-dark);
 }
 
 /* ====================================================================
@@ -1489,7 +1497,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--error-hover);
+    color: var(--error-dark);
     font-weight: 600;
     font-size: 0.95rem;
 }
@@ -1542,7 +1550,8 @@
 }
 
 .inline-delete-btn.confirm:hover {
-    background: var(--error-hover);
+    background-color: var(--error-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(var(--error-rgb), 0.3);
 }
@@ -1616,7 +1625,7 @@
 
 .inline-create-class-form .create-class-cancel:hover {
     background: rgba(var(--error-color-rgb), 0.1);
-    color: var(--error-hover);
+    color: var(--error-dark);
 }
 
 /* ====================================================================

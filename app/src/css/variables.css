@@ -7,7 +7,7 @@
     --primary-color: #3b82f6;
     --primary-color-rgb: 59, 130, 246;
     --primary-hover: #2563eb;
-    /* Blue 600 */
+    /* Dynamically computed hover shade (for text links & gradients only) */
 
     /* Accent: Purple (Tailwind Purple 600) */
     --accent-color: #9333ea;
@@ -103,7 +103,7 @@
     --warning-light: rgba(245, 158, 11, 0.12);
 
     --error-color: #ef4444;
-    --error-hover: #dc2626;
+    --error-dark: #dc2626;
     --error-bright: #f87171;
     --error-rgb: 239, 68, 68;
     --error-color-rgb: 239, 68, 68;
@@ -234,7 +234,6 @@
     /* --- Brand Tokens --- */
     --brand-primary: #3b82f6;
     --brand-primary-rgb: 59, 130, 246;
-    --brand-primary-hover: #2563eb;
     --brand-purple: #9333ea;
     --brand-purple-rgb: 147, 51, 234;
 
@@ -243,8 +242,8 @@
     --gradient-ai: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
     --gradient-brand: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
 
-    --gradient-warning: linear-gradient(135deg, var(--warning-color) 0%, #ea580c 100%);
-    --warning-hover: #ea580c;
+    --gradient-warning: linear-gradient(135deg, var(--warning-deep) 0%, var(--color-amber-deep) 100%);
+    --warning-deep: #ea580c;
 
     /* --- Z-Index Scale --- */
     --z-negative: -1;

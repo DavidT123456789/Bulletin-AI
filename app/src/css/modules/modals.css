@@ -895,8 +895,8 @@
 
 .api-status-item.warning .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
-    color: var(--warning-hover);
-    /* Garder foncÃƒÂ© pour contraste sur fond clair, mais idÃƒÂ©alement var(--warning-dark) */
+    color: var(--warning-deep);
+    /* Garder foncé pour contraste sur fond clair, mais idéalement var(--warning-dark) */
 }
 
 .api-status-item.inactive .api-status-badge {
@@ -1460,7 +1460,8 @@
     background-image: none;
 }
 
-.btn-icon-only {
+.btn-icon-only,
+.api-status-header .btn.btn-icon-only {
     padding: 0;
     width: 38px;
     height: 38px;
@@ -1469,13 +1470,21 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
-    font-size: 1.75rem;
     transition: all var(--transition-fast);
     margin: 0 !important;
 }
 
+/* Ensure the icon is clearly visible, larger and balanced, avoiding any tiny font overrides */
+.btn-icon-only iconify-icon,
+.btn-icon-only i,
+.api-status-header .btn.btn-icon-only iconify-icon,
+.api-status-header .btn.btn-icon-only i {
+    font-size: 1.15rem;
+}
+
 /* High specificity to override generic .btn styles */
-.btn-icon-only:hover:not(:disabled) {
+.btn-icon-only:hover:not(:disabled),
+.api-status-header .btn.btn-icon-only:hover:not(:disabled) {
     background-color: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
     box-shadow: none;

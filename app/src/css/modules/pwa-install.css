@@ -153,7 +153,8 @@
 }
 
 .pwa-install-banner .btn-install:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -635,9 +636,6 @@
     color: white;
 }
 
-[data-theme="dark"] .pwa-install-banner .btn-install:hover {
-    background: var(--primary-hover);
-}
 
 [data-theme="dark"] .pwa-install-banner .btn-dismiss {
     background: var(--item-idle-bg);

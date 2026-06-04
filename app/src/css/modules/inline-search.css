@@ -42,8 +42,9 @@
 }
 
 
-.inline-search-trigger-btn i {
-    font-size: 0.75rem;
+.inline-search-trigger-btn i,
+.inline-search-trigger-btn iconify-icon {
+    font-size: 0.9rem;
 }
 
 /* Parent hover reveals button */
@@ -69,8 +70,8 @@
     /* gap removed - using margin on icon instead to prevent layout issues */
     padding: 0 var(--space-3);
     background: var(--surface-color);
-    border-radius: var(--radius-md);
-    border: 2px solid var(--primary-color);
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--primary-color);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     z-index: 50;
     /* CRITICAL: High z-index to cover all header elements including generation buttons */
@@ -94,7 +95,7 @@
 /* Search icon in active search */
 .inline-search-container .search-icon {
     color: var(--primary-color);
-    font-size: 0.875rem;
+    font-size: 1.05rem;
     flex-shrink: 0;
     /* FIX: Reset global absolute positioning styles */
     position: relative;
