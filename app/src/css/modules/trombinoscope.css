@@ -959,7 +959,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    background: var(--gradient-primary);
     display: flex;
     align-items: center;
     justify-content: center;

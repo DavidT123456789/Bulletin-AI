@@ -371,7 +371,7 @@
     background: var(--gradient-primary);
     width: 24px;
     border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb), 0.35);
 }
 
 #welcome-finish-options {
@@ -396,8 +396,8 @@
 }
 
 .welcome-api-key-group:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
 
@@ -461,24 +461,24 @@
 }
 
 .welcome-api-key-group:focus-within .btn-validate-key {
-    border-left-color: rgba(var(--primary-color-rgb), 0.3);
+    border-left-color: rgba(var(--brand-primary-rgb), 0.3);
 }
 
 .welcome-api-key-group .btn-validate-key:hover:not(:disabled):not(.validated):not(.ready) {
     /* Hover style aligné sur btn-secondary : teinte primaire légère */
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    color: var(--brand-primary);
 }
 
 /* État "prêt" : clé saisie, prête à valider */
 .welcome-api-key-group .btn-validate-key.ready {
-    background: var(--primary-color);
+    background: var(--brand-primary);
     color: white;
 }
 
 .welcome-api-key-group .btn-validate-key.ready:hover:not(:disabled) {
     /* Hover style aligné sur btn : couleur légèrement plus foncée */
-    background: var(--primary-hover);
+    background: var(--brand-primary-hover);
 }
 
 /* État "validé" : clé confirmée */
@@ -540,20 +540,20 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--primary-color);
+    color: var(--brand-primary);
     font-weight: 500;
     font-size: 0.95em;
     text-decoration: none;
     margin-bottom: 24px;
     padding: 8px 16px;
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: rgba(var(--brand-primary-rgb), 0.08);
     border-radius: var(--radius-pill);
     margin-top: 8px;
     transition: all var(--transition-fast);
 }
 
 .get-key-link:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
+    background: rgba(var(--brand-primary-rgb), 0.15);
     text-decoration: none;
     transform: translateY(-1px);
 }
@@ -633,7 +633,7 @@
     font-size: 1.8em;
     font-weight: 800;
     margin-bottom: 24px;
-    background: linear-gradient(135deg, var(--primary-color), var(--purple-color));
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -648,7 +648,7 @@
     margin-bottom: 16px !important;
     letter-spacing: -0.03em !important;
     text-align: center;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1159,7 +1159,7 @@
     font-size: 2.5rem !important;
     font-weight: 800 !important;
     letter-spacing: -0.03em !important;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1219,13 +1219,13 @@
 }
 
 .welcome-start-card.active[data-value="empty"] {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.04);
 }
 
 .welcome-start-card.active[data-value="trimestres"] {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.04);
 }
 
 .welcome-start-card.active[data-value="demo"]:hover,
@@ -1235,7 +1235,7 @@
 
 .welcome-start-card.active[data-value="empty"]:hover,
 .welcome-start-card.active[data-value="trimestres"]:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
+    background: rgba(var(--brand-primary-rgb), 0.06);
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="demo"],
@@ -1245,7 +1245,7 @@
 
 [data-theme="dark"] .welcome-start-card.active[data-value="empty"],
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"] {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: rgba(var(--brand-primary-rgb), 0.08);
 }
 
 [data-theme="dark"] .welcome-start-card.active[data-value="demo"]:hover,
@@ -1255,7 +1255,7 @@
 
 [data-theme="dark"] .welcome-start-card.active[data-value="empty"]:hover,
 [data-theme="dark"] .welcome-start-card.active[data-value="trimestres"]:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: rgba(var(--brand-primary-rgb), 0.12);
 }
 
 .welcome-start-card:active {
@@ -1288,14 +1288,14 @@
 
 /* Blank Slate/Document Icon Color when active */
 .welcome-start-card.active[data-value="empty"] .welcome-start-card__icon {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    color: var(--brand-primary);
 }
 
 /* Trimestres Icon Color when active */
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__icon {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    color: var(--brand-primary);
 }
 
 /* Semestres Icon Color when active */
@@ -1369,8 +1369,8 @@
 /* Accessibility Focus States for onboarding cards */
 .welcome-start-card:focus-visible {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
 .welcome-start-card.active[data-value="demo"]:focus-visible {
@@ -1379,8 +1379,8 @@
 }
 
 .welcome-start-card.active[data-value="trimestres"]:focus-visible {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
 .welcome-start-card.active[data-value="semestres"]:focus-visible {
@@ -1434,11 +1434,11 @@
 }
 
 .welcome-start-card.active[data-value="empty"] .welcome-start-card__radio {
-    border-color: var(--primary-color);
+    border-color: var(--brand-primary);
 }
 
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio {
-    border-color: var(--primary-color);
+    border-color: var(--brand-primary);
 }
 
 .welcome-start-card.active[data-value="semestres"] .welcome-start-card__radio {
@@ -1459,11 +1459,11 @@
 }
 
 .welcome-start-card.active[data-value="empty"] .welcome-start-card__radio::after {
-    background: var(--primary-color);
+    background: var(--brand-primary);
 }
 
 .welcome-start-card.active[data-value="trimestres"] .welcome-start-card__radio::after {
-    background: var(--primary-color);
+    background: var(--brand-primary);
 }
 
 .welcome-start-card.active[data-value="semestres"] .welcome-start-card__radio::after {

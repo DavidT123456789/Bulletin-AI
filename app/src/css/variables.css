@@ -231,10 +231,17 @@
     --glow-highlight: rgba(var(--primary-color-rgb), 0.6);
     /* Blue Glow */
 
-    /* --- Gradients --- */
-    --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
-    --gradient-ai: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
-    --gradient-brand: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    /* --- Brand Tokens --- */
+    --brand-primary: #3b82f6;
+    --brand-primary-rgb: 59, 130, 246;
+    --brand-primary-hover: #2563eb;
+    --brand-purple: #9333ea;
+    --brand-purple-rgb: 147, 51, 234;
+
+    /* --- Gradients (Fixed Brand Colors) --- */
+    --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+    --gradient-ai: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+    --gradient-brand: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
 
     --gradient-warning: linear-gradient(135deg, var(--warning-color) 0%, #ea580c 100%);
     --warning-hover: #ea580c;
@@ -377,9 +384,9 @@
 
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
-    /* Gradients Dark Mode */
-    --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
-    --gradient-ai: linear-gradient(135deg, var(--primary-color) 0%, var(--purple-color) 100%);
+    /* Brand Gradient Colors Overrides */
+    --brand-purple: #a78bfa;
+    --brand-purple-rgb: 167, 139, 250;
 
     /* --- Semantic Colors (Dark Mode) --- */
     --success-dark: #4ade80;

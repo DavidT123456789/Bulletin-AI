@@ -268,7 +268,7 @@
 }
 
 .demo-badge {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color, var(--purple-color)));
+    background: var(--gradient-primary);
     color: white;
     padding: 2px 8px;
     border-radius: var(--radius-xs);
