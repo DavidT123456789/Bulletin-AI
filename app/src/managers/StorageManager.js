@@ -771,6 +771,7 @@ export const StorageManager = {
             },
             settings: {
                 theme: appState.theme,
+                accentColor: appState.accentColor || 'blue',
                 useSubjectPersonalization: appState.useSubjectPersonalization,
                 periodSystem: appState.periodSystem,
                 subjects: appState.subjects,
@@ -815,6 +816,7 @@ export const StorageManager = {
                 exportedAt: new Date().toISOString()
             },
             theme: appState.theme,
+            accentColor: appState.accentColor || 'blue',
             useSubjectPersonalization: appState.useSubjectPersonalization,
             periodSystem: appState.periodSystem, subjects: appState.subjects,
             evolutionThresholds: appState.evolutionThresholds,
@@ -846,6 +848,7 @@ export const StorageManager = {
             if (shouldImport('settings') && settings.subjects) {
                 Object.assign(appState, {
                     theme: settings.theme || appState.theme,
+                    accentColor: settings.accentColor || appState.accentColor || 'blue',
                     useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
                     periodSystem: settings.periodSystem || appState.periodSystem,
                     subjects: settings.subjects,
@@ -977,6 +980,7 @@ export const StorageManager = {
             if (settings.subjects) {
                 Object.assign(appState, {
                     theme: settings.theme || appState.theme,
+                    accentColor: settings.accentColor || appState.accentColor || 'blue',
                     useSubjectPersonalization: settings.useSubjectPersonalization ?? true,
                     periodSystem: settings.periodSystem || appState.periodSystem, subjects: settings.subjects,
                     evolutionThresholds: settings.evolutionThresholds || appState.evolutionThresholds,

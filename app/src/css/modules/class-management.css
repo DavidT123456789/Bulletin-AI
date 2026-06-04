@@ -522,6 +522,14 @@
     max-width: 650px;
 }
 
+#classManagementModal .modal-body {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] #classManagementModal .modal-body {
+    background: var(--bg-color);
+}
+
 .class-card {
     display: flex;
     align-items: center;
@@ -809,12 +817,13 @@
     display: flex;
     flex-direction: column;
     background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 4px 4px 8px 4px;
-    gap: 8px;
-    box-shadow: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0;
+    gap: 0;
+    box-shadow: var(--shadow-sm);
     position: relative;
+    overflow: visible; /* Prevent elevated shadow clipping during drag */
 }
 
 .class-management-item {
@@ -824,41 +833,53 @@
     gap: 16px;
     padding: 16px 20px;
     background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+    box-shadow: none;
     transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast), color var(--transition-fast);
     cursor: pointer;
     position: relative;
-    overflow: hidden;
+}
+
+.class-management-item:first-child {
+    border-top-left-radius: calc(var(--radius-md) - 1px);
+    border-top-right-radius: calc(var(--radius-md) - 1px);
+}
+
+.class-management-item:last-child {
+    border-bottom-left-radius: calc(var(--radius-md) - 1px);
+    border-bottom-right-radius: calc(var(--radius-md) - 1px);
+    border-bottom: none;
 }
 
 .class-management-item:hover {
-    background-color: var(--item-hover-bg);
-    border-color: var(--border-color);
-    box-shadow: var(--shadow-md);
+    background-color: var(--bg-color);
+    border-bottom-color: var(--border-color);
+    box-shadow: none;
 }
 
 .class-management-item.active-switch {
     background-color: var(--primary-color);
-    border-color: transparent;
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.25);
+    border-bottom-color: transparent;
+    box-shadow: none;
+    z-index: 1;
 }
 
 .class-management-item.active-switch:hover {
     background-color: var(--primary-hover);
-    box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: none;
 }
 
 .class-management-item:focus-visible {
     background-color: var(--item-hover-bg);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+    box-shadow: inset 0 0 0 2px var(--primary-color);
 }
 
 .class-management-item.active-switch:focus-visible {
     background-color: var(--primary-hover);
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
     outline: none;
 }
 
@@ -1007,7 +1028,7 @@
 }
 
 .class-management-item:not(.active-switch):hover .class-stat-badge {
-    background: var(--surface-color);
+    background: var(--bg-secondary);
 }
 
 /* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
@@ -1199,7 +1220,7 @@
 }
 
 .class-management-list:has(.dragging) .class-management-item:not(.dragging):hover {
-    background: transparent;
+    background: var(--surface-color);
 }
 
 /* Scrollbar iOS pour la modale */
@@ -1365,13 +1386,13 @@
     color: var(--text-tertiary);
 }
 
-/* Disable card hover effect when editing */
+/* Disable card hover effect when editing — stay flush in flat list */
 .class-management-item.editing {
     cursor: default;
     background: var(--surface-color) !important;
-    border: 1px solid var(--error-color) !important;
-    box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.12), var(--shadow-md) !important;
-    border-radius: var(--radius-md);
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: inset 0 0 0 2px var(--error-color) !important;
+    border-radius: 0;
     padding: 16px 20px;
     display: flex;
     flex-direction: row;
@@ -1380,18 +1401,19 @@
 
 .class-management-item.editing:hover {
     transform: none !important;
-    box-shadow: 0 0 0 3px rgba(var(--error-rgb), 0.12), var(--shadow-md) !important;
+    background: var(--surface-color) !important;
+    box-shadow: inset 0 0 0 2px var(--error-color) !important;
 }
 
 /* Special case for rename editing (blue instead of red) */
 .class-management-item.editing.renaming {
     background: var(--surface-color) !important;
-    border: 1px solid var(--primary-color) !important;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12), var(--shadow-md) !important;
+    box-shadow: inset 0 0 0 2px var(--primary-color) !important;
 }
 
 .class-management-item.editing.renaming:hover {
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12), var(--shadow-md) !important;
+    background: var(--surface-color) !important;
+    box-shadow: inset 0 0 0 2px var(--primary-color) !important;
 }
 
 /* Inline Forms Layout */
@@ -1541,7 +1563,7 @@
     background: var(--surface-color);
     border: 1px dashed var(--primary-color);
     border-radius: var(--radius-md);
-    margin-bottom: 0;
+    margin-bottom: 12px;
     box-shadow: var(--shadow-sm);
     animation: slideDownExpandModal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

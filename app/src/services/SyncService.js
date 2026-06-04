@@ -597,6 +597,7 @@ export const SyncService = {
             },
             settings: {
                 theme: userSettings.ui.theme,
+                accentColor: userSettings.ui.accentColor || 'blue',
                 periodSystem: userSettings.academic.periodSystem,
                 subjects: userSettings.academic.subjects,
                 seatingGrid: userSettings.academic.seatingGrid || null,

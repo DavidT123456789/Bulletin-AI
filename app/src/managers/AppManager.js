@@ -117,6 +117,7 @@ export const App = {
     // --- Initialisation et Setup ---
 
     updateUIOnLoad() {
+        UI.applyTheme();
         UI.updateDarkModeButtonIcon();
         UI.setPeriod(appState.currentPeriod || UI.getPeriods()[0]);
         UI.updatePeriodSystemUI();

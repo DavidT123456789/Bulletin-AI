@@ -428,6 +428,11 @@ export const ThemeManager = {
 
         this.applyAccentColor(appState.accentColor);
         this.updateUI();
+
+        // Dispatch event to update the accent color swatches active state
+        document.dispatchEvent(new CustomEvent('accent-color-changed', {
+            detail: { accentColor: appState.accentColor }
+        }));
     },
 
     /**
