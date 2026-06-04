@@ -59,6 +59,11 @@ export const SettingsModalListeners = {
      * @param {Function} addClickListener - Helper pour ajouter un listener click
      */
     setup(addClickListener) {
+        // Écouter l'ouverture des modales de paramétrage pour créer un snapshot
+        document.addEventListener('settings-modal-open', () => {
+            SettingsUIManager.createSnapshot();
+        });
+
         DOM.periodSystemRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 EventHandlersManager.handlePeriodSystemChange(e);

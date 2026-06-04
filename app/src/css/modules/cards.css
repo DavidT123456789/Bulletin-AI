@@ -1072,7 +1072,7 @@
     background-color: var(--primary-color);
     border: none;
     color: #ffffff;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), 0 6px 20px rgba(var(--primary-color-rgb), 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1085,14 +1085,14 @@
 .fab-add-student:hover {
     transform: translateY(-4px) scale(1.05);
     background-color: var(--primary-hover);
-    box-shadow: var(--shadow-lg), 0 8px 24px rgba(var(--primary-color-rgb), 0.35);
+    box-shadow: var(--shadow-lg), 0 12px 28px rgba(var(--primary-color-rgb), 0.35);
     color: #ffffff;
     outline: none;
 }
 
 .fab-add-student:active {
     transform: translateY(-1px) scale(0.95);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm), 0 4px 10px rgba(var(--primary-color-rgb), 0.15);
 }
 
 .fab-add-student i,

@@ -74,12 +74,12 @@
     left: 0;
     min-width: 280px;
     max-width: 340px;
-    background: var(--glass-overlay-bg);
-    border: 1px solid var(--glass-overlay-border);
+    background: var(--dropdown-bg-glass);
+    border: var(--dropdown-border-glass);
     backdrop-filter: blur(var(--glass-overlay-blur));
     -webkit-backdrop-filter: blur(var(--glass-overlay-blur));
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--dropdown-radius);
+    box-shadow: var(--dropdown-shadow);
     z-index: var(--z-dropdown);
     overflow: hidden;
     opacity: 0;
@@ -205,7 +205,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px;
-    border-radius: var(--radius-md);
+    border-radius: var(--dropdown-item-radius);
     cursor: pointer;
     transition: all var(--transition-fast);
     margin-bottom: 2px;
@@ -576,7 +576,7 @@
 
     .class-dropdown-item {
         padding: 10px 12px;
-        border-radius: var(--radius-md);
+        border-radius: var(--dropdown-item-radius);
     }
 }
 
@@ -606,7 +606,7 @@
 
     .class-dropdown-item {
         padding: 12px;
-        border-radius: var(--radius-md);
+        border-radius: var(--dropdown-item-radius);
     }
 
     .class-dropdown-item .class-name {
@@ -786,18 +786,19 @@
 }
 
 #classManagementModal .add-class-modal-btn iconify-icon {
-    color: var(--primary-color);
-    transition: transform var(--transition-fast);
+    color: var(--text-secondary);
+    transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
 #classManagementModal .add-class-modal-btn:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 #classManagementModal .add-class-modal-btn:hover iconify-icon {
     transform: rotate(90deg);
+    color: var(--text-primary);
 }
 
 /* ====================================================================
@@ -845,14 +846,8 @@
 }
 
 .class-management-item.active-switch:hover {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
+    background-color: var(--primary-hover);
     box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.35);
-}
-
-[data-theme="dark"] .class-management-item.active-switch:hover {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 .class-management-item:focus-visible {
@@ -862,15 +857,9 @@
 }
 
 .class-management-item.active-switch:focus-visible {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
+    background-color: var(--primary-hover);
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
     outline: none;
-}
-
-[data-theme="dark"] .class-management-item.active-switch:focus-visible {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
 }
 
 /* Active state adjustments for internal elements */
@@ -943,7 +932,7 @@
 .class-management-item.active-switch .manage-rename-btn:hover,
 .class-management-item.active-switch .manage-duplicate-btn:hover {
     background: #ffffff;
-    color: var(--primary-color);
+    color: #18181b;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 .class-management-item.active-switch .manage-delete-btn:hover {
@@ -1167,32 +1156,17 @@
 
 .manage-rename-btn:hover,
 .manage-duplicate-btn:hover {
-    background: #ffffff;
+    background: var(--bg-tertiary);
     border-color: transparent;
-    color: var(--primary-color);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .manage-rename-btn:hover,
-[data-theme="dark"] .manage-duplicate-btn:hover {
-    background: var(--bg-secondary);
-    border-color: transparent;
-    color: var(--primary-color);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+    color: var(--text-primary);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
 }
 
 .manage-delete-btn:hover {
-    background: var(--error-color);
+    background: var(--error-light);
     border-color: transparent;
-    color: #ffffff;
-    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.25);
-}
-
-[data-theme="dark"] .manage-delete-btn:hover {
-    background: var(--error-hover);
-    border-color: transparent;
-    color: #ffffff;
-    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.35);
+    color: var(--error-color);
+    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.08);
 }
 
 /* ====================================================================

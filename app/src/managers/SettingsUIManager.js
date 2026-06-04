@@ -148,7 +148,15 @@ export const SettingsUIManager = {
     createSnapshot() {
         UIState.settingsBeforeEdit = {
             useSubjectPersonalization: appState.useSubjectPersonalization,
-            subjects: JSON.parse(JSON.stringify(appState.subjects))
+            subjects: JSON.parse(JSON.stringify(appState.subjects)),
+            theme: appState.theme,
+            accentColor: appState.accentColor,
+            periodSystem: appState.periodSystem,
+            currentPeriod: appState.currentPeriod,
+            currentAIModel: appState.currentAIModel,
+            enableApiFallback: appState.enableApiFallback,
+            ollamaEnabled: appState.ollamaEnabled,
+            ollamaBaseUrl: appState.ollamaBaseUrl
         };
     },
 
@@ -161,8 +169,47 @@ export const SettingsUIManager = {
             appState.useSubjectPersonalization = UIState.settingsBeforeEdit.useSubjectPersonalization;
             appState.subjects = UIState.settingsBeforeEdit.subjects;
 
+            if (UIState.settingsBeforeEdit.theme !== undefined) {
+                appState.theme = UIState.settingsBeforeEdit.theme;
+            }
+            if (UIState.settingsBeforeEdit.accentColor !== undefined) {
+                appState.accentColor = UIState.settingsBeforeEdit.accentColor;
+            }
+            if (UIState.settingsBeforeEdit.periodSystem !== undefined) {
+                appState.periodSystem = UIState.settingsBeforeEdit.periodSystem;
+            }
+            if (UIState.settingsBeforeEdit.currentPeriod !== undefined) {
+                appState.currentPeriod = UIState.settingsBeforeEdit.currentPeriod;
+            }
+            if (UIState.settingsBeforeEdit.currentAIModel !== undefined) {
+                appState.currentAIModel = UIState.settingsBeforeEdit.currentAIModel;
+            }
+            if (UIState.settingsBeforeEdit.enableApiFallback !== undefined) {
+                appState.enableApiFallback = UIState.settingsBeforeEdit.enableApiFallback;
+            }
+            if (UIState.settingsBeforeEdit.ollamaEnabled !== undefined) {
+                appState.ollamaEnabled = UIState.settingsBeforeEdit.ollamaEnabled;
+            }
+            if (UIState.settingsBeforeEdit.ollamaBaseUrl !== undefined) {
+                appState.ollamaBaseUrl = UIState.settingsBeforeEdit.ollamaBaseUrl;
+            }
+
             // Persister immédiatement la restauration pour annuler les sauvegardes auto
             StorageManager.saveAppState();
+
+            // Appliquer les changements visuels de façon sécurisée (pour les tests unitaires)
+            if (typeof UI.applyTheme === 'function') {
+                UI.applyTheme();
+            }
+            if (typeof UI.updatePeriodSystemUI === 'function') {
+                UI.updatePeriodSystemUI();
+            }
+            if (typeof AppreciationsManager.renderResults === 'function') {
+                AppreciationsManager.renderResults();
+            }
+            if (typeof this.updateApiStatusDisplay === 'function') {
+                this.updateApiStatusDisplay();
+            }
 
             // Nettoyer le snapshot après restauration
             UIState.settingsBeforeEdit = {};

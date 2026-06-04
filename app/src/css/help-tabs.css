@@ -543,23 +543,6 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Swatch colors (dynamic theme-aware CSS variables) */
-.accent-color-btn[data-value="blue"] {
-    --accent-swatch-color: #3b82f6;
-}
-.accent-color-btn[data-value="anthracite"] {
-    --accent-swatch-color: #52525b;
-}
-.accent-color-btn[data-value="rose"] {
-    --accent-swatch-color: #f43f5e;
-}
-.accent-color-btn[data-value="violet"] {
-    --accent-swatch-color: #8b5cf6;
-}
-.accent-color-btn[data-value="teal"] {
-    --accent-swatch-color: #14b8a6;
-}
-
 .accent-color-btn:hover {
     transform: scale(1.06);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);

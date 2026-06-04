@@ -121,24 +121,15 @@
 
 .sortable-header.active-sort,
 .sortable-header.active-sort:focus {
-    color: var(--primary-color);
+    color: var(--text-primary);
     background-color: transparent !important;
     outline: none;
 }
 
 /* Léger effet de survol sur la colonne triée active (indique que c'est toujours cliquable) */
 .sortable-header.active-sort:hover {
-    color: var(--primary-color);
+    color: var(--text-primary);
     background-color: var(--item-hover-bg) !important;
-}
-
-[data-theme="dark"] .sortable-header.active-sort:hover {
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .sortable-header.active-sort,
-[data-theme="dark"] .sortable-header.active-sort:focus {
-    color: var(--text-primary);
 }
 
 [data-theme="dark"] .sortable-header .sort-icon-placeholder iconify-icon {
@@ -1020,12 +1011,12 @@
     right: 0;
     margin-top: 4px;
     min-width: 160px;
-    background: var(--surface-color);
+    background: var(--dropdown-bg-glass);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    border: var(--dropdown-border-glass);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     opacity: 0;
     pointer-events: none;
     transform: translateY(-8px) scale(0.95);
@@ -1058,7 +1049,7 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: left;
-    border-radius: 8px;
+    border-radius: var(--dropdown-item-radius-sm);
     /* Harmonisé avec le menu global */
 }
 
@@ -1091,10 +1082,7 @@
     color: var(--error-color);
 }
 
-[data-theme="dark"] .action-dropdown-menu {
-    background: rgba(24, 24, 27, 0.95);
-    border-color: rgba(255, 255, 255, 0.1);
-}
+
 
 /* === GLOBAL ACTIONS DROPDOWN (Table Header) === */
 /* Réutilise .action-dropdown-menu et .action-dropdown-item - source unique de vérité */
@@ -1139,12 +1127,12 @@
     margin-top: 8px;
     min-width: 220px;
     /* Plus large que le menu individuel */
-    background: var(--surface-color);
+    background: var(--dropdown-bg-glass);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    border: var(--dropdown-border-glass);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     display: block;
     /* Ensure block layout but invisible */
     opacity: 0;
@@ -1202,11 +1190,7 @@
     margin: 4px 8px;
 }
 
-[data-theme="dark"] .global-actions-dropdown-menu,
-[data-theme="dark"] .action-dropdown-menu {
-    background: rgba(24, 24, 27, 0.95);
-    border-color: rgba(255, 255, 255, 0.1);
-}
+
 
 /* ====================================================================
    MOBILE RESPONSIVE (CARD LAYOUT) - iOS 2026 Style

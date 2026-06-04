@@ -42,6 +42,11 @@ export const ModalUI = {
         const modal = typeof modalOrId === 'string' ? document.getElementById(modalOrId) : modalOrId;
         if (!modal) return;
 
+        // Déclencher un événement lors de l'ouverture des modales de paramétrage pour créer un snapshot
+        if (modal.id === 'appSettingsModal' || modal.id === 'personalizationModal') {
+            document.dispatchEvent(new CustomEvent('settings-modal-open', { detail: { modalId: modal.id } }));
+        }
+
         // Clear any ongoing close animation timeout to prevent overlaps
         if (this._animTimeouts.has(modal)) {
             clearTimeout(this._animTimeouts.get(modal));

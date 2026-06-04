@@ -1657,9 +1657,9 @@
 }
 
 .modal-compact-actions .btn-secondary:hover {
-    background: rgba(var(--primary-color-rgb), 0.06);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 .modal-compact-actions .btn-danger:hover {

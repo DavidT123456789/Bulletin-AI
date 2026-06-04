@@ -269,7 +269,7 @@
 
 .ui-tabs-btn:hover iconify-icon {
     transform: scale(1.1);
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .ui-tabs-btn.active iconify-icon {
@@ -309,13 +309,13 @@
 
 .ui-tabs-action-btn:hover {
     background: var(--item-hover-bg);
-    color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--text-primary);
+    border-color: var(--border-color);
 }
 
 .ui-tabs-action-btn:hover iconify-icon {
     transform: scale(1.1);
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .ui-tabs-action-btn:active {
@@ -389,8 +389,8 @@
 
     .ui-tabs-action-btn:hover {
         background: var(--item-hover-bg);
-        color: var(--primary-color);
-        border-color: rgba(var(--primary-color-rgb), 0.3);
+        color: var(--text-primary);
+        border-color: var(--border-color);
     }
 
     .ui-tabs-action-btn:active {

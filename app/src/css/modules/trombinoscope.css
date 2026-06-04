@@ -1176,8 +1176,8 @@
 
 .trombi-controls .btn-secondary:hover {
     background: var(--item-hover-bg-elevated);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 .trombi-controls .btn-danger-subtle:hover {

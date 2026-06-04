@@ -835,10 +835,10 @@
     top: calc(100% + 8px);
     right: 0;
     width: 200px;
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 0 10px rgba(0, 0, 0, 0.05);
+    background-color: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius);
+    box-shadow: var(--dropdown-shadow);
     padding: 6px;
     display: none;
     /* Hidden by default */
@@ -847,10 +847,6 @@
     z-index: 1000;
     transform-origin: top right;
     animation: menu-open 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-[data-theme="dark"] .header-dropdown-menu {
-    box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .header-dropdown-menu.open {
@@ -880,7 +876,7 @@
     color: var(--text-secondary);
     background: transparent;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius);
     cursor: pointer;
     text-align: left;
     transition: all var(--transition-fast);
@@ -1050,7 +1046,7 @@
 }
 
 .cloud-reconnect-item:hover {
-    color: var(--primary-color);
+    color: var(--warning-hover);
 }
 
 .cloud-reconnect-item iconify-icon {
@@ -1062,7 +1058,7 @@
 }
 
 .cloud-reconnect-item:hover iconify-icon {
-    color: var(--icon-btn-hover);
+    color: var(--warning-hover);
     opacity: 1;
 }
 

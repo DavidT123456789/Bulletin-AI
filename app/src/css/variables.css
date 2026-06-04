@@ -285,6 +285,18 @@
     --modal-btn-height: 40px;
 
 
+    /* --- Dropdown System Tokens (Core Foundation) --- */
+    --dropdown-radius: var(--radius-lg);         /* 24px - Large panels */
+    --dropdown-radius-sm: var(--radius-md);      /* 16px - Selects/Context menus */
+    --dropdown-item-radius: var(--radius-md);    /* 16px - Large item style */
+    --dropdown-item-radius-sm: var(--radius-sm); /* 8px - Compact item style */
+    --dropdown-bg: var(--surface-color);
+    --dropdown-bg-glass: var(--glass-overlay-bg);
+    --dropdown-border: 1px solid var(--border-color);
+    --dropdown-border-glass: 1px solid var(--glass-overlay-border);
+    --dropdown-shadow: var(--shadow-lg);
+    --dropdown-shadow-sm: var(--shadow-md);
+
     /* --- Close Button Tokens --- */
     --close-btn-size: 32px;
     --close-btn-icon-size: 18px;

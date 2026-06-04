@@ -144,6 +144,14 @@ export const ThemeManager = {
         const selector = document.getElementById('accentColorSelector');
         if (!selector) return;
 
+        // Dynamically assign preset colors to swatches (Single Source of Truth)
+        selector.querySelectorAll('.accent-color-btn').forEach(btn => {
+            const val = btn.getAttribute('data-value');
+            if (val && accentPresets[val]) {
+                btn.style.setProperty('--accent-swatch-color', accentPresets[val].color);
+            }
+        });
+
         const picker = document.getElementById('customColorPicker');
         const customBtn = document.getElementById('customAccentBtn');
 

@@ -18,7 +18,7 @@
     padding: 12.5px 14.5px;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--dropdown-radius-sm);
     font-size: 14px;
     color: var(--text-primary);
     cursor: pointer;
@@ -97,9 +97,9 @@
     /* Glass effect */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     z-index: var(--z-dropdown);
     max-height: 320px;
     overflow-y: auto;
@@ -108,11 +108,6 @@
     transform: translateY(-8px) scale(0.98);
     transition: all var(--transition-fast);
     padding: 6px;
-}
-
-/* En dark mode, ombre plus forte pour détacher le menu */
-[data-theme="dark"] .custom-dropdown-menu {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .custom-dropdown.open .custom-dropdown-menu {
@@ -244,7 +239,7 @@
     align-items: center;
     gap: 10px;
     padding: 6px 12px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius-sm);
     cursor: pointer;
     font-size: 14px;
     color: var(--text-primary);
@@ -352,7 +347,7 @@
     gap: 8px;
     min-width: 120px;
     height: 40px;
-    border-radius: var(--radius-md);
+    border-radius: var(--dropdown-radius-sm);
 }
 
 /* Dropdown de tri : menu harmonisé avec actions-dropdown */
@@ -360,9 +355,9 @@
     min-width: 140px;
     padding: 4px;
     /* Harmonisation avec actions-dropdown */
-    background-color: var(--surface-color);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-md);
+    background-color: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    box-shadow: var(--dropdown-shadow-sm);
 }
 
 /* Dropdown de tri : options sans coche, plus compactes */
@@ -372,7 +367,7 @@
     /* Harmonisation global */
     font-size: 13px;
     gap: 0;
-    border-radius: var(--radius-sm);
+    border-radius: var(--dropdown-item-radius-sm);
     color: var(--text-primary);
     transition: background-color var(--transition-fast);
 }

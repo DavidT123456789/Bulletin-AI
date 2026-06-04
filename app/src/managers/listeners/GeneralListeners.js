@@ -145,7 +145,6 @@ export const GeneralListeners = {
             if (DOM.personalizationBtn) {
                 addClickListener(DOM.personalizationBtn, () => {
                     closeMenu();
-                    SettingsUIManager.createSnapshot();
                     UI.openModal(DOM.personalizationModal);
                     SettingsModalListeners._updateStudentContextAndPrompt();
                 });
@@ -154,7 +153,6 @@ export const GeneralListeners = {
             if (DOM.settingsButton) {
                 addClickListener(DOM.settingsButton, () => {
                     closeMenu();
-                    SettingsUIManager.createSnapshot();
                     UI.openModal(DOM.settingsModal);
                     SettingsUIManager.updateApiStatusDisplay();
                 });
@@ -172,20 +170,23 @@ export const GeneralListeners = {
 
         // Personalization Modal Actions
         const closePersonalization = (isSave = false) => {
-            // If cancelling (not saving), restore the original state
+            // Fermer la modale d'abord pour une animation fluide
+            UI.closeModal(DOM.personalizationModal);
+
+            // If cancelling (not saving), restore the original state after animation (250ms)
             if (!isSave) {
-                const restored = SettingsUIManager.restoreSnapshot();
-                if (restored) {
-                    // Update UI to reflect restored state
-                    SettingsUIManager.updatePersonalizationState();
-                    FormUI.updateSettingsFields();
-                }
+                setTimeout(() => {
+                    const restored = SettingsUIManager.restoreSnapshot();
+                    if (restored) {
+                        // Update UI to reflect restored state
+                        SettingsUIManager.updatePersonalizationState();
+                        FormUI.updateSettingsFields();
+                    }
+                }, 260);
             } else {
                 // Confirm changes: clear snapshot without restoring
                 UIState.settingsBeforeEdit = {};
             }
-
-            UI.closeModal(DOM.personalizationModal);
         };
 
         addClickListener(DOM.closePersonalizationModalBtn, () => closePersonalization(false));
@@ -224,7 +225,6 @@ export const GeneralListeners = {
                 // Ignore clicks on the Cancel button during generation
                 if (e.target.closest('#dashCancelBtn')) return;
 
-                SettingsUIManager.createSnapshot();
                 UI.openModal(DOM.settingsModal);
                 SettingsUIManager.updateApiStatusDisplay();
                 // Highlight the model selector for clear feedback

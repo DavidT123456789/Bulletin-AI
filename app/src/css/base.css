@@ -60,7 +60,7 @@ a.btn-purple:hover {
 }
 
 a.btn-secondary:hover {
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 ::-webkit-scrollbar {

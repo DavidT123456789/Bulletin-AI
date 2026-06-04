@@ -831,10 +831,10 @@
     top: calc(100% + 4px);
     left: 0;
     min-width: 160px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    background: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     z-index: 100;
     opacity: 0;
     visibility: hidden;
@@ -870,11 +870,11 @@
 }
 
 .journal-dropdown-option:first-child {
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--dropdown-radius-sm) var(--dropdown-radius-sm) 0 0;
 }
 
 .journal-dropdown-option:last-child {
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
 }
 
 .journal-dropdown-option i {
@@ -1145,10 +1145,10 @@
     top: calc(100% + 4px);
     left: 0;
     min-width: 160px;
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    background: var(--dropdown-bg);
+    border: var(--dropdown-border);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
     z-index: 100;
     opacity: 0;
     visibility: hidden;
@@ -1184,11 +1184,11 @@
 }
 
 .journal-pill-menu .journal-dropdown-option:first-child {
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--dropdown-radius-sm) var(--dropdown-radius-sm) 0 0;
 }
 
 .journal-pill-menu .journal-dropdown-option:last-child {
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
 }
 
 .journal-pill-menu .journal-dropdown-option iconify-icon {
