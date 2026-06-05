@@ -67,6 +67,12 @@
     background: rgba(9, 9, 11, 0.75);
 }
 
+/* Remove 300ms click delay on mobile for all buttons inside the focus panel */
+.focus-panel button,
+.focus-panel [role="button"] {
+    touch-action: manipulation;
+}
+
 /* Open state - slide in from right */
 .focus-panel.open {
     transform: translateX(0);

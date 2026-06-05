@@ -48,6 +48,12 @@ export const FocusPanelManager = {
     /** Map of active generation controllers by student ID */
     _activeGenerations: new Map(),
 
+    /** Flag indicating that the panel is currently closing (to defer DOM writes/layout/stats updates) */
+    _isClosing: false,
+
+    /** Set of student IDs/results that have deferred row updates */
+    _deferredRowUpdates: new Set(),
+
     /**
      * Initialise le module avec les références nécessaires
      * @param {Object} appreciationsManager - Référence à AppreciationsManager
@@ -158,12 +164,30 @@ export const FocusPanelManager = {
             }, { passive: true });
         }
 
+        // Set _isClosing flag on pointerdown (touch/mouse down) to defer synchronous
+        // blur events and stats updates, preventing animation stutter on mobile
+        const preCloseHandler = () => {
+            const header = document.querySelector('.focus-header');
+            const isEditing = header?.classList.contains('editing');
+            if (!isEditing || this.isCreationMode) {
+                this._isClosing = true;
+                clearTimeout(this._preCloseTimeout);
+                this._preCloseTimeout = setTimeout(() => {
+                    this._isClosing = false;
+                }, 1000);
+            }
+        };
+
         // Close panel
-        if (backdrop) backdrop.addEventListener('click', () => this.close());
+        if (backdrop) {
+            backdrop.addEventListener('pointerdown', preCloseHandler);
+            backdrop.addEventListener('click', () => this.close());
+        }
 
         // Back button: Cancel edit mode if active, otherwise close panel
         // Special case: In creation mode, always close the panel
         if (backBtn) {
+            backBtn.addEventListener('pointerdown', preCloseHandler);
             backBtn.addEventListener('click', () => {
                 const header = document.querySelector('.focus-header');
                 const isEditing = header?.classList.contains('editing');
@@ -202,6 +226,9 @@ export const FocusPanelManager = {
             if (ModalUI.activeModal) return;
 
             if (this.isOpen()) {
+                // Set isClosing flag immediately on popstate to ensure any blur events
+                // triggered by keyboard closing are deferred
+                this._isClosing = true;
                 // Close panel without triggering another history.back()
                 this.close({ causedByHistory: true });
             }
@@ -633,6 +660,7 @@ export const FocusPanelManager = {
 
                 if (currentX > threshold || velocity > 1.5) {
                     // => Fermeture validée
+                    this._isClosing = true;
                     target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = 'translateX(100%)';
 
@@ -676,6 +704,7 @@ export const FocusPanelManager = {
                 const threshold = 100; // 100px pour fermer via pull down
                 if (currentY > threshold) {
                     // => Fermeture validée vers le bas
+                    this._isClosing = true;
                     target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = `translateY(100vh)`;
 
@@ -896,6 +925,9 @@ export const FocusPanelManager = {
         const backdrop = document.getElementById('focusPanelBackdrop');
         const wasOpen = this.isOpen();
 
+        // Mark as closing to defer layout/paint-heavy list and stats updates
+        this._isClosing = true;
+
         // Check if we're in creation mode BEFORE clearing state
         const wasCreationMode = this.isCreationMode;
 
@@ -940,7 +972,20 @@ export const FocusPanelManager = {
             HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
         }
 
-
+        if (wasOpen) {
+            // Defer processing of row updates and stats updates until after the close transition
+            setTimeout(() => {
+                this._isClosing = false;
+                if (this._deferredRowUpdates && this._deferredRowUpdates.size > 0) {
+                    this._deferredRowUpdates.forEach(deferredResult => {
+                        this._updateListRow(deferredResult);
+                    });
+                    this._deferredRowUpdates.clear();
+                }
+            }, 500);
+        } else {
+            this._isClosing = false;
+        }
     },
 
 
@@ -1245,7 +1290,7 @@ export const FocusPanelManager = {
         this._saveContext();
 
         // Get grade from focus panel
-        const gradeInput = document.querySelector('.timeline-period.current .timeline-grade-input');
+        const gradeInput = document.getElementById('focusCurrentGradeInput');
         const grade = gradeInput?.value.trim().replace(',', '.');
 
         if (grade) {
@@ -1815,7 +1860,7 @@ export const FocusPanelManager = {
         }
 
         // Save grade
-        const gradeInput = document.querySelector('.timeline-period.current .timeline-grade-input');
+        const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
             const gradeStr = gradeInput.value.trim().replace(',', '.');
             if (!result.studentData.periods[currentPeriod]) {
@@ -1879,6 +1924,14 @@ export const FocusPanelManager = {
      */
     async _updateListRow(result) {
         if (!result) return;
+
+        if (this._isClosing) {
+            if (!this._deferredRowUpdates) {
+                this._deferredRowUpdates = new Set();
+            }
+            this._deferredRowUpdates.add(result);
+            return;
+        }
 
         try {
             let manager = this.listViewManager;

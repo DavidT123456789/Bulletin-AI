@@ -16,6 +16,11 @@ html, body, a, button, input, select, textarea, [tabindex], [role="button"], .st
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
+/* Remove 300ms touch click delay globally on mobile for all interactive elements */
+a, button, input, select, textarea, [role="button"], .student-row, .student-row * {
+    touch-action: manipulation;
+}
+
 /* Premium Focus Outline System - Disabled on click/touch, enabled on keyboard navigation */
 *:focus {
     outline: none !important;
