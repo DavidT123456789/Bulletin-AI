@@ -9,6 +9,12 @@
     /* Fix square touch feedback on mobile */
 }
 
+/* Force disable native touch highlights on all interactive elements across mobile browsers */
+a, button, input, select, textarea, [tabindex], [role="button"], .student-row, .student-row * {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+}
+
 ::selection {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
