@@ -145,7 +145,9 @@ export const ListViewEvents = {
             const menuBtn = target.closest('[data-action="toggle-menu"]');
             if (menuBtn) {
                 e.stopPropagation();
-                menuBtn.blur(); // Blur immediately to prevent sticky focus highlights on touch/click
+                e.preventDefault(); // Prevent browser default focus behavior on click
+                menuBtn.blur(); // Blur immediately
+                setTimeout(() => menuBtn.blur(), 50); // Defensively blur after click cycle finishes
                 const dropdown = menuBtn.closest('.action-dropdown');
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
 
