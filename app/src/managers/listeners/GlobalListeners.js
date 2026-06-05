@@ -31,6 +31,7 @@ export const GlobalListeners = {
         this._setupResizeListener();
         this._setupStudentsUpdatedListener();
         this._setupRoleButtonKeyboardListener();
+        this._setupTouchFocusListener();
     },
 
     /**
@@ -409,5 +410,35 @@ export const GlobalListeners = {
         window.addEventListener('resize', Utils.debounce(() => {
             // CSS handles responsive layout, no direct action needed
         }, 200));
+    },
+
+    /**
+     * Empêche les surbrillances/focus persistants sur les lignes d'élèves et
+     * leurs sous-composants sur mobile (via pointer: coarse) en les dé-focusant (blur)
+     * immédiatement après le focus (résout le bug du bouton retour).
+     * @private
+     */
+    _setupTouchFocusListener() {
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            document.addEventListener('focus', (e) => {
+                const active = e.target;
+                if (active && active !== document.body) {
+                    const isRowOrChild = active.classList.contains('student-row') || 
+                                         active.closest('.student-row');
+                    const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || 
+                                    active.isContentEditable || 
+                                    active.closest('[contenteditable="true"]');
+                    
+                    if (isRowOrChild && !isInput) {
+                        // Délai minimal pour éviter les conflits d'événements click/focus
+                        setTimeout(() => {
+                            if (document.activeElement === active) {
+                                active.blur();
+                            }
+                        }, 50);
+                    }
+                }
+            }, true);
+        }
     }
 };
