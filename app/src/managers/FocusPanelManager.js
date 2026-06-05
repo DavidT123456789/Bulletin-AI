@@ -1084,10 +1084,17 @@ export const FocusPanelManager = {
         document.querySelectorAll('.student-row.focus-active').forEach(row => {
             row.classList.remove('focus-active');
         });
-        // Also blur any focused rows to remove keyboard focus outline
-        document.querySelectorAll('.student-row:focus').forEach(row => {
-            row.blur();
-        });
+        
+        // Defensively blur any focused elements with a slight delay
+        // to counter browser popstate focus restoration quirks.
+        setTimeout(() => {
+            document.querySelectorAll('.student-row:focus').forEach(row => {
+                row.blur();
+            });
+            if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
+        }, 50);
     },
 
     /**

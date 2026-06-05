@@ -15,6 +15,15 @@ a, button, input, select, textarea, [tabindex], [role="button"], .student-row, .
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
+/* Premium Focus Outline System - Disabled on click/touch, enabled on keyboard navigation */
+*:focus {
+    outline: none !important;
+}
+*:focus-visible {
+    outline: 2px solid var(--primary-color) !important;
+    outline-offset: 2px !important;
+}
+
 ::selection {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
