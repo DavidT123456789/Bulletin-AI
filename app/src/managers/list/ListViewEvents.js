@@ -79,6 +79,12 @@ export const ListViewEvents = {
                 // Trigger exit animation
                 menu.classList.remove('open');
 
+                // Remove open class from parent dropdown
+                const dropdown = menu.closest('.action-dropdown');
+                if (dropdown) {
+                    dropdown.classList.remove('open');
+                }
+
                 // Clear any existing timeout to avoid conflict
                 if (menu.dataset.closeTimeout) {
                     clearTimeout(parseInt(menu.dataset.closeTimeout));
@@ -104,6 +110,10 @@ export const ListViewEvents = {
             // Fermer le menu global du header
             listContainer.querySelectorAll('.global-actions-dropdown-menu.open').forEach(menu => {
                 menu.classList.remove('open');
+                const dropdown = menu.closest('.global-actions-dropdown');
+                if (dropdown) {
+                    dropdown.classList.remove('open');
+                }
             });
         };
 
@@ -137,6 +147,7 @@ export const ListViewEvents = {
 
                 if (!wasOpen) {
                     menu?.classList.add('open');
+                    dropdown?.classList.add('open');
                 }
                 return;
             }
@@ -175,6 +186,7 @@ export const ListViewEvents = {
                     menu.style.zIndex = '';
 
                     menu?.classList.add('open');
+                    dropdown?.classList.add('open');
                 }
                 return;
             }
@@ -329,6 +341,7 @@ export const ListViewEvents = {
                 menu.style.zIndex = '9999';
 
                 menu?.classList.add('open');
+                dropdown?.classList.add('open');
             }
         });
 

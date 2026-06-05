@@ -226,21 +226,25 @@
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Show when row hovered */
-.student-list-table tbody tr:hover .btn-action-menu,
-.student-list-table tbody tr:focus-within .btn-action-menu,
-.student-list-table tbody tr .btn-action-menu:focus,
-.student-list-table tbody tr .action-dropdown-menu.open~.btn-action-menu,
-.student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
-    opacity: 1;
-    transform: scale(1);
-    background: white;
-    /* Pop out effect */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+/* Show when row hovered (Desktop ONLY) */
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .btn-action-menu,
+    .student-list-table tbody tr:focus-within .btn-action-menu,
+    .student-list-table tbody tr .btn-action-menu:focus,
+    .student-list-table tbody tr .action-dropdown.open .btn-action-menu,
+    .student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+        opacity: 1;
+        transform: scale(1);
+        background: white;
+        /* Pop out effect */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-[data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu {
-    background: var(--surface-color);
+    [data-theme="dark"] .student-list-table tbody tr:hover .btn-action-menu,
+    [data-theme="dark"] .student-list-table tbody tr .action-dropdown.open .btn-action-menu,
+    [data-theme="dark"] .student-list-table tbody tr .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+        background: var(--surface-color);
+    }
 }
 
 /* Always visible on touch devices */
@@ -1602,6 +1606,18 @@
         right: 14px;
         width: auto !important;
         background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    .action-dropdown {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
     }
 
     .btn-action-menu {
@@ -1609,9 +1625,10 @@
         background: transparent !important;
         box-shadow: none !important;
         transform: none !important;
-        width: 44px;
-        /* Touch target minimum size */
-        height: 44px;
+        width: 44px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        flex: 0 0 44px !important;
         border: none !important;
         color: var(--text-tertiary);
         outline: none !important;

@@ -55,7 +55,7 @@ export const ListViewRenderer = {
             <td class="appreciation-cell">${appreciationCell}</td>
             <td class="action-cell">
                 <div class="action-dropdown">
-                    <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
+                    <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                     </button>
                     ${this.generateActionMenuHTML(result.id)}
@@ -380,7 +380,7 @@ export const ListViewRenderer = {
                         <td class="appreciation-cell">${appreciationCell}</td>
                         <td class="action-cell">
                             <div class="action-dropdown">
-                                <button class="btn btn-icon-only btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
+                                <button class="btn-action-menu" data-action="toggle-menu" aria-label="Actions" data-tooltip="Actions">
                                     <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
                                 </button>
                                 ${this.generateActionMenuHTML(result.id)}
