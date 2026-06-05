@@ -253,9 +253,13 @@
     }
 }
 
-/* Active row when focus panel is open - maintains visual link */
 .student-list-table tbody tr.focus-active {
     background: var(--item-active-bg);
+}
+
+/* Elevate active row stacking context when dropdown menu is open (prevents clipping under subsequent cards on mobile) */
+.student-list-table tbody tr:has(.action-dropdown-menu.open) {
+    z-index: 50 !important;
 }
 
 .student-list-table tbody tr:last-child td {
@@ -1599,7 +1603,6 @@
         width: auto !important;
     }
 
-    /* Show action buttons clearly on mobile - but keep them minimalist */
     .btn-action-menu {
         opacity: 0.7 !important;
         background: transparent !important;
@@ -1610,6 +1613,9 @@
         height: 44px;
         border: none !important;
         color: var(--text-tertiary);
+        outline: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
     }
 
     [data-theme="dark"] .btn-action-menu {

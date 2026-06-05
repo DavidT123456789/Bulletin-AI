@@ -33,7 +33,10 @@ export const ListViewRenderer = {
         const tr = document.createElement('tr');
         tr.dataset.studentId = result.id;
         tr.className = 'student-row';
-        tr.tabIndex = 0;
+        // Only make focusable on desktop to prevent mobile/touch focus highlight artifacts
+        if (!window.matchMedia('(pointer: coarse)').matches) {
+            tr.tabIndex = 0;
+        }
 
         const studentData = result.studentData || {};
         const appreciationCell = this.getAppreciationCell(result);
@@ -359,11 +362,13 @@ export const ListViewRenderer = {
                 const appreciationCell = this.getAppreciationCell(result);
 
                 const isSelected = ListSelectionManager.selectedIds.has(result.id);
+                const tabIndexAttr = window.matchMedia('(pointer: coarse)').matches ? '' : ' tabindex="0"';
+
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
 
                 html += `
-                    <tr data-student-id="${result.id}" class="student-row" tabindex="0">
+                    <tr data-student-id="${result.id}" class="student-row"${tabIndexAttr}>
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}

@@ -145,6 +145,7 @@ export const ListViewEvents = {
             const menuBtn = target.closest('[data-action="toggle-menu"]');
             if (menuBtn) {
                 e.stopPropagation();
+                menuBtn.blur(); // Blur immediately to prevent sticky focus highlights on touch/click
                 const dropdown = menuBtn.closest('.action-dropdown');
                 const menu = dropdown?.querySelector('.action-dropdown-menu');
 
