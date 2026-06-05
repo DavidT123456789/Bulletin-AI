@@ -984,7 +984,7 @@
     min-height: 36px;
     flex: 0 0 36px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: 50% !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1614,6 +1614,7 @@
         border: none !important;
         color: var(--text-tertiary);
         outline: none !important;
+        border-radius: 50% !important;
         -webkit-tap-highlight-color: transparent !important;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
     }
@@ -1622,11 +1623,30 @@
         background: transparent !important;
     }
 
+    /* Reset sticky hover / focus backgrounds on mobile, but keep active press state */
+    .btn-action-menu:hover,
+    .btn-action-menu:focus,
+    .action-dropdown.open .btn-action-menu,
+    .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        border-radius: 50% !important;
+    }
+
+    [data-theme="dark"] .btn-action-menu:hover,
+    [data-theme="dark"] .btn-action-menu:focus,
+    [data-theme="dark"] .action-dropdown.open .btn-action-menu,
+    [data-theme="dark"] .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
+        background: transparent !important;
+    }
+
     .btn-action-menu:active {
         box-shadow: none !important;
         background: var(--item-active-bg) !important;
-        color: var(--icon-btn-hover);
+        color: var(--icon-btn-hover) !important;
         transform: scale(0.95) !important;
         opacity: 1 !important;
+        border-radius: 50% !important;
     }
 }
