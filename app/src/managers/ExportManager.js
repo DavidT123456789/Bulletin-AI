@@ -122,7 +122,7 @@ export const ExportManager = {
         const items = appState.filteredResults
             .map(r => {
                 const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
-                return appreciation?.trim() ? `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}` : null;
+                return appreciation?.trim() ? `${Utils.formatStudentName(r.nom, r.prenom)}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}` : null;
             })
             .filter(Boolean);
         const text = items.join('\n\n');
@@ -167,7 +167,7 @@ export const ExportManager = {
         }
 
         // Format: NOM Prénom (un élève par ligne, trié selon l'affichage actif)
-        const text = studentsToCopy.map(r => `${r.nom.toUpperCase()} ${r.prenom}`).join('\n');
+        const text = studentsToCopy.map(r => Utils.formatStudentName(r.nom, r.prenom)).join('\n');
 
         return navigator.clipboard.writeText(text).then(() => {
             const count = studentsToCopy.length;
@@ -340,7 +340,7 @@ export const ExportManager = {
 
         const text = activeResults.map(r => {
             const appreciation = r.studentData?.periods?.[currentPeriod]?.appreciation || r.appreciation;
-            return `${r.nom} ${r.prenom}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}`;
+            return `${Utils.formatStudentName(r.nom, r.prenom)}\n${Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciation))}`;
         }).join('\n\n');
 
         try {

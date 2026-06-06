@@ -47,7 +47,7 @@ export const ListViewRenderer = {
             <td class="student-name-cell">
                 <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                     ${avatarHTML}
-                    <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
+                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
                 </div>
             </td>
             <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
@@ -133,7 +133,7 @@ export const ListViewRenderer = {
 
             identityWrapper.innerHTML = `
                 ${avatarHTML}
-                <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
+                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
             `;
         }
 
@@ -372,7 +372,7 @@ export const ListViewRenderer = {
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}
-                                <span class="student-nom-prenom">${result.nom} <span class="student-prenom">${result.prenom}</span></span>
+                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
                             </div>
                         </td>
                         <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>

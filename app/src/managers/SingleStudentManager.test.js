@@ -49,7 +49,8 @@ vi.mock('../utils/Utils.js', () => ({
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
         normalizeName: vi.fn((nom, prenom) => `${nom}_${prenom}`.toLowerCase()),
         translateErrorMessage: vi.fn(msg => msg),
-        detectGender: vi.fn(() => 'M')
+        detectGender: vi.fn(() => 'M'),
+        formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));
 
@@ -359,7 +360,7 @@ describe('SingleStudentManager', () => {
             SingleStudentManager.loadIntoForm('test-id');
 
             expect(UI.showNotification).toHaveBeenCalledWith(
-                'Modification de Lucas MARTIN.',
+                'Modification de MARTIN Lucas.',
                 'info'
             );
         });

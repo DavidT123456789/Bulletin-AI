@@ -45,7 +45,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-    outline: none;
+    outline: none !important;
     /* Le style personnalisé est géré dans components.css */
 }
 

@@ -8,6 +8,7 @@ import { appState } from '../state/State.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
 import { ClassManager } from './ClassManager.js';
+import { Utils } from '../utils/Utils.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -1395,7 +1396,8 @@ export const TrombinoscopeManager = {
                 // Check if this student is assigned to ANOTHER zone
                 const assignedToOther = this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
                 // If assigned to other, maybe disabled or show (assigned)
-                const label = assignedToOther ? `${s.prenom} ${s.nom} (déjà assigné)` : `${s.prenom} ${s.nom}`;
+                const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
+                const label = assignedToOther ? `${studentNameFormatted} (déjà assigné)` : studentNameFormatted;
 
                 return `
                                         <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>
@@ -1598,7 +1600,7 @@ export const TrombinoscopeManager = {
             // Buffer 160x160 for HiDPI, displayed at 80x80 CSS
             previewItem.innerHTML = `
                 <canvas class="preview-canvas" width="160" height="160"></canvas>
-                <span>${student.prenom} ${student.nom}</span>
+                <span>${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
             `;
             list.appendChild(previewItem);
 

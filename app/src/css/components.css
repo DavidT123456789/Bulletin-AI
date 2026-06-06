@@ -776,7 +776,7 @@ textarea:focus {
 
 /* --- Select Focus: Clean ring (no animated gradient — selects close on click) --- */
 select:focus {
-    outline: none;
+    outline: none !important;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }

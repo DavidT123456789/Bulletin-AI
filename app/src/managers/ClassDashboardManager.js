@@ -118,7 +118,7 @@ export const ClassDashboardManager = {
                     id: r.id,
                     nom: r.nom,
                     prenom: r.prenom,
-                    fullName: `${r.prenom} ${r.nom}`,
+                    fullName: Utils.formatStudentName(r.nom, r.prenom),
                     grade: currentGrade,
                     previousGrade: prevGrade,
                     evolution: evolution,

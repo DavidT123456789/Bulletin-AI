@@ -59,7 +59,8 @@ vi.mock('../utils/Utils.js', () => ({
         getPeriodLabel: vi.fn((p, short) => short ? p : `Trimestre ${p.slice(1)}`),
         decodeHtmlEntities: vi.fn(text => text),
         stripMarkdown: vi.fn(text => text),
-        getRelevantEvolution: vi.fn(() => null)
+        getRelevantEvolution: vi.fn(() => null),
+        formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));
 

@@ -2115,7 +2115,7 @@ export const FocusPanelManager = {
         // Update name display
         const readName = document.getElementById('focusReadName');
         if (readName) {
-            readName.textContent = `${result.prenom} ${result.nom}`;
+            readName.textContent = Utils.formatStudentName(result.nom, result.prenom);
         }
 
         // Update badges

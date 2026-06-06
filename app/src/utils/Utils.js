@@ -216,6 +216,23 @@ export const Utils = {
     },
 
     /**
+     * Formate le nom complet d'un élève de manière uniforme
+     * Format favorisé : NOM Prénom (Nom en MAJUSCULES, Prénom normalisé)
+     * @param {string} nom - Nom de famille
+     * @param {string} prenom - Prénom
+     * @param {boolean} [html=false] - Si true, retourne du HTML avec le prénom entouré d'un span
+     * @returns {string} Le nom formaté
+     */
+    formatStudentName(nom, prenom, html = false) {
+        const nomUpper = (nom || '').trim().toUpperCase();
+        const prenomClean = (prenom || '').trim();
+        if (html) {
+            return `${nomUpper} <span class="student-prenom">${prenomClean}</span>`;
+        }
+        return `${nomUpper} ${prenomClean}`.trim();
+    },
+
+    /**
      * Normalise un nom pour comparaison (minuscule, tirets)
      * @param {string} nom - Nom de famille
      * @param {string} prenom - Prénom

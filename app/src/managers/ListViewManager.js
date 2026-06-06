@@ -197,7 +197,7 @@ export const ListViewManager = {
         const student = appState.generatedResults.find(r => r.id === studentId);
         if (!student) return;
 
-        const studentName = `${student.prenom} ${student.nom}`;
+        const studentName = Utils.formatStudentName(student.nom, student.prenom);
 
         // Confirmation via modale personnalisée
         const confirmed = await ModalUI.showCustomConfirm(

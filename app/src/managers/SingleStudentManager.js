@@ -333,7 +333,7 @@ export const SingleStudentManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result) return;
 
-        UI.showNotification(`Modification de ${result.prenom} ${result.nom.toUpperCase()}.`, 'info');
+        UI.showNotification(`Modification de ${Utils.formatStudentName(result.nom, result.prenom)}.`, 'info');
 
         appState.currentEditingId = id;
 

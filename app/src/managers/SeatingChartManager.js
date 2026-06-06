@@ -11,6 +11,7 @@ import { FocusPanelManager } from './FocusPanelManager.js';
 import { StorageManager } from './StorageManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
+import { Utils } from '../utils/Utils.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -1191,7 +1192,7 @@ export const SeatingChartManager = {
             : filtered.map((s, index) => `
                 <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
-                    <span class="sc-student-chip-name">${s.prenom || ''} ${s.nom || ''}</span>
+                    <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                 </div>
             `).join('');
 

@@ -1294,7 +1294,7 @@ export const ClassUIManager = {
         const title = isBulk ? 'Déplacer les élèves' : 'Déplacer l\'élève';
         const description = isBulk
             ? `Déplacer <strong>${students.length} élèves</strong> vers :`
-            : `Déplacer <strong>${this._escapeHtml(firstStudent.prenom + ' ' + firstStudent.nom)}</strong> ${allClassesAreSame ? `depuis <strong>${this._escapeHtml(currentClass?.name || 'Class')}</strong>` : ''} vers :`;
+            : `Déplacer ${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, true)} ${allClassesAreSame ? `depuis <strong>${this._escapeHtml(currentClass?.name || 'Class')}</strong>` : ''} vers :`;
 
         // Créer la modale
         const modalEl = document.createElement('div');
@@ -1390,7 +1390,7 @@ export const ClassUIManager = {
 
                 const notificationText = isBulk
                     ? `${movedCount} élèves déplacés vers "${targetClass?.name}"`
-                    : `${firstStudent.prenom} déplacé vers "${targetClass?.name}"`;
+                    : `${Utils.formatStudentName(firstStudent.nom, firstStudent.prenom, false)} déplacé vers "${targetClass?.name}"`;
 
                 UI?.showNotification(notificationText, 'success');
 

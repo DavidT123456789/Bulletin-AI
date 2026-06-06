@@ -1577,10 +1577,13 @@ export const ImportWizardManager = {
             </th>`;
         }
 
+        // Trailing empty spacer column to absorb extra space and maintain alignment
+        html += '<th class="col-spacer"></th>';
+
         html += '</tr></thead><tbody>';
 
         if (allRows.length === 0) {
-            html += `<tr><td colspan="${dataColumns.length + 1}" class="preview-empty-cell" style="text-align:center;padding:32px;">Aucun élève détecté</td></tr>`;
+            html += `<tr><td colspan="${dataColumns.length + 2}" class="preview-empty-cell" style="text-align:center;padding:32px;">Aucun élève détecté</td></tr>`;
         } else {
             for (const row of allRows) {
                 const s = row.student;
@@ -1590,10 +1593,10 @@ export const ImportWizardManager = {
 
                 // Name cell with status dot and custom tooltip for the full name
                 const fullName = `${s.prenom || ''} ${s.nom || ''}`.trim();
-                html += `<td>
+                html += `<td class="col-name">
                     <div class="preview-student-cell">
                         <span class="preview-status-dot dot-${row.type}"></span>
-                        <span class="preview-student-name" data-tooltip="${fullName.replace(/"/g, '&quot;')}">${s.prenom || ''} <strong>${s.nom || ''}</strong></span>
+                        <span class="preview-student-name" data-tooltip="${fullName.replace(/"/g, '&quot;')}">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                     </div>
                 </td>`;
 
@@ -1602,6 +1605,9 @@ export const ImportWizardManager = {
                     const value = row.hasData ? this._extractCellValue(s, col.tag, currentPeriod) : '';
                     html += `<td class="${this._getColClass(col.tag)}">${this._formatCellValue(value, col.tag)}</td>`;
                 }
+
+                // Trailing empty cell for spacer column
+                html += '<td class="col-spacer"></td>';
 
                 html += '</tr>';
             }

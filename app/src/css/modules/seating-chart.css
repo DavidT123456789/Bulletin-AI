@@ -489,7 +489,6 @@
     }
 
     .sc-student-chip:hover .sc-student-chip-name {
-        font-weight: 500;
         color: var(--text-primary);
     }
 }
@@ -507,12 +506,17 @@
 
 .sc-student-chip-name {
     font-size: 0.8rem;
-    font-weight: 400;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: font-weight var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-student-chip-name .student-prenom {
+    font-weight: 400;
+    color: var(--text-secondary);
 }
 
 /* ────────── GRID AREA ────────── */
