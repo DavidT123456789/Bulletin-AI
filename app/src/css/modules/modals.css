@@ -477,17 +477,17 @@
     border-radius: var(--radius-pill) !important;
 }
 
-/* Unified footer info pill Ã¢â‚¬â€ shared across all wizard modals */
+/* Unified footer info — neutral text, shared across all wizard modals */
 .modal-footer-info {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--success-color);
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
-    padding: 6px 14px;
-    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
     line-height: normal;
     opacity: 0;
     transform: translateY(4px);
@@ -502,6 +502,7 @@
 
 .modal-footer-info strong {
     font-weight: 700;
+    color: var(--text-primary);
 }
 
 /* ====================================================================

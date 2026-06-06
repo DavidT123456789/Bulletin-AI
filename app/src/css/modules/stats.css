@@ -512,6 +512,12 @@
     letter-spacing: -0.02em;
 }
 
+.performance-card .main-average-value:not([class*="grade-range"]) {
+    background: none;
+    -webkit-text-fill-color: var(--text-quaternary);
+    color: var(--text-quaternary);
+}
+
 /* "/20" suffix - subtle denominator */
 .performance-card .average-denominator {
     font-size: 1.1rem;

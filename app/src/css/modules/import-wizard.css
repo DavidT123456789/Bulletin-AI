@@ -2297,19 +2297,7 @@
     font-size: 1rem;
 }
 
-/* Count badge inside button */
-.btn-import-confirm #wizardImportCount {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
-    font-weight: 700;
-}
+/* Count badge styling inside button (removed in favor of clean inline text) */
 
 /* ====================================================================
    STEP 3 REDESIGN — Unified Data Table

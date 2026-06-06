@@ -1501,7 +1501,7 @@ export const ImportWizardManager = {
         }
 
         // Update footer info
-        const mappedCols = Object.keys(formatMap).filter(k => k !== 'NOM_PRENOM');
+        const mappedCols = Object.keys(formatMap);
         const colsBadgeEl = document.getElementById('wizardSelectedColsBadge');
         const colsInfoEl = document.getElementById('wizardSelectedColsInfo');
         if (colsBadgeEl) colsBadgeEl.textContent = mappedCols.length;
@@ -1621,8 +1621,8 @@ export const ImportWizardManager = {
             cb.addEventListener('change', () => this._toggleColumn(cb));
         });
 
-        // Store columns state
-        this.state._enabledColumns = new Set(dataColumns.map(c => c.tag));
+        // Store columns state (including NOM_PRENOM which is always active)
+        this.state._enabledColumns = new Set(['NOM_PRENOM', ...dataColumns.map(c => c.tag)]);
 
         // Initialize custom Tippy.js tooltips for the new table rows/headers
         if (UI && UI.initTooltips) {
