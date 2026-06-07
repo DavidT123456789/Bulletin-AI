@@ -59,7 +59,7 @@ export const WelcomeManager = {
             DOM.welcomeFinishAndHideBtn.disabled = false;
             DOM.welcomeFinishAndHideBtn.innerHTML = `
                 <span class="rocket-container">
-                    <iconify-icon icon="solar:rocket-bold"></iconify-icon>
+                    <iconify-icon icon="solar:rocket-linear"></iconify-icon>
                 </span>
                 Commencer
             `.trim();
