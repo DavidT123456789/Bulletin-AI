@@ -922,7 +922,13 @@
                     <div class="wizard-context-pill">
                         <span class="wizard-context-class" id="wizardClassBadge"></span>
                         <span class="wizard-context-sep">/</span>
-                        <span class="wizard-context-period" id="wizardPeriodBadge">Trimestre 1</span>
+                        <div class="wizard-period-dropdown" id="wizardPeriodDropdown">
+                            <button type="button" class="wizard-period-trigger" id="wizardPeriodTrigger">
+                                <span id="wizardPeriodBadge">Trimestre 1</span>
+                                <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                            </button>
+                            <div class="wizard-period-menu" id="wizardPeriodMenu"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -959,10 +965,10 @@
                         <div class="guide-section">
                             <div class="guide-section-title">
                                 <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                Bon à savoir
+                                Cible de l'import
                             </div>
-                            <p class="guide-text">Les données seront importées pour la période affichée en en-tête.</p>
-                            <p class="guide-hint">Pour changer, fermez et sélectionnez une autre période.</p>
+                            <p class="guide-text">Les données seront importées pour la période sélectionnée.</p>
+                            <p class="guide-hint">Cliquez sur la période dans l'en-tête pour la modifier.</p>
                         </div>
                         <div class="guide-divider"></div>
                         <div class="guide-section">
@@ -986,7 +992,7 @@
                                     <iconify-icon icon="ph:clipboard-text"></iconify-icon>
                                 </div>
                             </div>
-                            <p class="guide-hint" style="margin-top: 8px;">Compatible PDF MBN / Pronote</p>
+                            <p class="guide-hint guide-hint-margin">Compatible PDF MBN / Pronote</p>
                         </div>
                         <div class="guide-divider"></div>
                         <div class="guide-section">
@@ -1040,8 +1046,7 @@
                             <p class="guide-text">Les colonnes sont pré-remplies automatiquement. Ajustez si nécessaire.
                             </p>
                             <!-- Moved Auto-detect Button -->
-                            <button class="guide-sample-btn" id="wizardAutoDetectBtn"
-                                style="margin-top: 8px; width: 100%;">
+                            <button class="guide-sample-btn btn-full" id="wizardAutoDetectBtn">
                                 <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                                 Relancer la détection
                             </button>
@@ -1096,13 +1101,11 @@
                         <div class="guide-section">
                             <div class="guide-section-title">
                                 <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                Bon à savoir
+                                Règles de mise à jour
                             </div>
-                            <p class="guide-text">Les élèves absents du fichier sont conservés. Seules les colonnes
-                                cochées seront importées ou mises à jour.</p>
+                            <p class="guide-text">Les élèves absents du fichier sont conservés. Seules les colonnes cochées seront importées.</p>
                             <p class="guide-hint guide-hint-warning" id="wizardOverwriteWarning" style="display:none;">
-                                <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Les données existantes
-                                seront écrasées.
+                                <iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> Les données existantes seront écrasées.
                             </p>
                         </div>
                     </div>
@@ -1137,13 +1140,15 @@
                                             <div class="file-preview-info">
                                                 <span class="file-preview-name"
                                                     id="wizardFileName">mon_fichier_notes.pdf</span>
-                                                <div id="wizardFileBadgeSlot">
-                                                    <!-- Badge inserted here by JS -->
+                                                <div class="file-preview-meta">
+                                                    <div id="wizardFileBadgeSlot">
+                                                        <!-- Badge inserted here by JS -->
+                                                    </div>
                                                 </div>
                                             </div>
                                             <button class="file-remove-btn" id="wizardRemoveFileBtn"
                                                 aria-label="Supprimer le fichier">
-                                                <iconify-icon icon="ph:x"></iconify-icon>
+                                                <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                             </button>
                                         </div>
                                     </div>
@@ -1326,10 +1331,9 @@
                                 <div class="guide-section">
                                     <div class="guide-section-title">
                                         <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                        Bon à savoir
+                                        Trombinoscope
                                     </div>
-                                    <p class="guide-text">Importez une photo de classe pour générer un trombinoscope
-                                        interactif.</p>
+                                    <p class="guide-text">Importez une photo de classe pour générer un trombinoscope interactif.</p>
                                     <p class="guide-hint">Formats acceptés : JPG, PNG, WebP.</p>
                                 </div>
                                 <div class="guide-divider"></div>
@@ -3050,7 +3054,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.0 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build fbc626b · 7 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build f84d59a · 7 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

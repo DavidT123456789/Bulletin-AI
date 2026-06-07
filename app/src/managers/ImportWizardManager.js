@@ -38,6 +38,12 @@ export const ImportWizardManager = {
     init() {
         this._bindHubEvents();
         this._bindEvents();
+
+        // Listen to global period changed event to sync dropdown header badge and mapping table
+        document.addEventListener('periodChanged', (e) => {
+            const newPeriod = e.detail.period;
+            this._handlePeriodChanged(newPeriod);
+        });
     },
 
     /**
@@ -148,6 +154,24 @@ export const ImportWizardManager = {
     _bindEvents() {
         const modal = document.getElementById('importWizardModal');
         if (!modal) return;
+
+        // Period Dropdown events
+        const dropdown = document.getElementById('wizardPeriodDropdown');
+        const trigger = document.getElementById('wizardPeriodTrigger');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.classList.contains('open');
+                this._togglePeriodDropdown(!isOpen);
+            });
+
+            // Close on click outside
+            document.addEventListener('click', (e) => {
+                if (dropdown && !dropdown.contains(e.target)) {
+                    this._togglePeriodDropdown(false);
+                }
+            });
+        }
 
         // Note: openImportPanelBtn now opens Hub, not wizard directly (handled in _bindHubEvents)
 
@@ -295,20 +319,97 @@ export const ImportWizardManager = {
      * Shows the full period label (Semestre 1, Trimestre 2, etc.) for clarity
      * @private
      */
-    _updateHeaderPeriodBadge() {
-        const periodCode = appState.currentPeriod || 'S1';
-        let label = periodCode;
+    _updateHeaderPeriodBadge(periodCode = null) {
+        const activePeriod = periodCode || appState.currentPeriod || 'S1';
+        let label = activePeriod;
 
         // Convert short codes to full labels
-        if (periodCode.startsWith('S')) {
-            label = `Semestre ${periodCode.substring(1)}`;
-        } else if (periodCode.startsWith('T')) {
-            label = `Trimestre ${periodCode.substring(1)}`;
+        if (activePeriod.startsWith('S')) {
+            label = `Semestre ${activePeriod.substring(1)}`;
+        } else if (activePeriod.startsWith('T')) {
+            label = `Trimestre ${activePeriod.substring(1)}`;
         }
 
         // Update header period badge
         const headerBadge = document.getElementById('wizardPeriodBadge');
         if (headerBadge) headerBadge.textContent = label;
+
+        // Populate the dropdown menu options dynamically
+        const menu = document.getElementById('wizardPeriodMenu');
+        if (menu) {
+            const periods = Utils.getPeriods();
+            menu.innerHTML = periods.map(p => {
+                const isActive = p === activePeriod;
+                let pLabel = p;
+                if (p.startsWith('S')) pLabel = `Semestre ${p.substring(1)}`;
+                else if (p.startsWith('T')) pLabel = `Trimestre ${p.substring(1)}`;
+
+                return `
+                    <button type="button" class="wizard-period-option ${isActive ? 'active' : ''}" data-period="${p}">
+                        <span>${pLabel}</span>
+                        ${isActive ? '<iconify-icon icon="ph:check-bold"></iconify-icon>' : ''}
+                    </button>
+                `;
+            }).join('');
+
+            // Bind click events to options
+            menu.querySelectorAll('.wizard-period-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const newPeriod = btn.dataset.period;
+                    this._changePeriod(newPeriod);
+                    this._togglePeriodDropdown(false);
+                });
+            });
+        }
+    },
+
+    /**
+     * Toggle active period dropdown menu visibility
+     * @private
+     */
+    _togglePeriodDropdown(show) {
+        const dropdown = document.getElementById('wizardPeriodDropdown');
+        const menu = document.getElementById('wizardPeriodMenu');
+        if (dropdown && menu) {
+            dropdown.classList.toggle('open', show);
+            menu.classList.toggle('open', show);
+        }
+    },
+
+    /**
+     * Change the active period and trigger sync
+     * @private
+     */
+    _changePeriod(newPeriod) {
+        if (appState.currentPeriod === newPeriod) return;
+
+        // Sync with the application period (will trigger 'periodChanged' event after delay)
+        UI.setPeriod(newPeriod);
+
+        UI.showNotification(`Période modifiée : ${Utils.getPeriodLabel(newPeriod, true)}`, 'info', 4000, {
+            group: 'period-change',
+            replaceExisting: true
+        });
+    },
+
+    /**
+     * Handle periodChanged custom event
+     * @private
+     */
+    _handlePeriodChanged(newPeriod) {
+        // 1. Refresh header badge and dropdown options
+        this._updateHeaderPeriodBadge(newPeriod);
+
+        // 2. Reprocess raw data to automatically adjust guessed tags & mapping table to the new period
+        if (this.state.rawData) {
+            this._processData();
+
+            // If on step 3, refresh preview
+            if (this.currentStep === 3) {
+                this._updatePreview();
+            }
+        }
     },
 
     /**
@@ -552,22 +653,23 @@ export const ImportWizardManager = {
                 fileIconEl.innerHTML = ''; // Reset content
 
                 if (type === 'file' && file) {
-                    // File Logic
                     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
                         fileIconEl.classList.add('type-pdf');
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-text-linear"></iconify-icon>';
-                    } else if (file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                        fileIconEl.innerHTML = '<iconify-icon icon="ph:file-pdf"></iconify-icon>';
+                    } else if (file.name.match(/\.(xlsx|xls)$/i)) {
                         fileIconEl.classList.add('type-excel');
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:file-right-linear"></iconify-icon>';
+                        fileIconEl.innerHTML = '<iconify-icon icon="ph:file-xls"></iconify-icon>';
+                    } else if (file.name.endsWith('.csv')) {
+                        fileIconEl.classList.add('type-csv');
+                        fileIconEl.innerHTML = '<iconify-icon icon="ph:file-csv"></iconify-icon>';
                     } else {
-                        fileIconEl.innerHTML = '<iconify-icon icon="solar:document-linear"></iconify-icon>';
+                        fileIconEl.classList.add('type-generic');
+                        fileIconEl.innerHTML = '<iconify-icon icon="ph:file"></iconify-icon>';
                     }
                 } else if (type === 'text') {
-                    // Text Logic
                     fileIconEl.classList.add('type-text');
                     fileIconEl.innerHTML = '<iconify-icon icon="solar:keyboard-linear"></iconify-icon>';
                 } else if (type === 'sample') {
-                    // Sample logic
                     fileIconEl.classList.add('type-sample');
                     fileIconEl.innerHTML = '<iconify-icon icon="solar:list-linear"></iconify-icon>';
                 }
@@ -710,6 +812,17 @@ export const ImportWizardManager = {
             this.state.lines = [];
             // Disable Step 1 Next button when no data
             if (step1NextBtn) step1NextBtn.disabled = true;
+
+            // Reset step 1 line count indicator (in footer)
+            const lineCountContainer = document.getElementById('wizardStep1LineCount');
+            const lineCountBadge = document.getElementById('wizardLineCountBadge');
+            if (lineCountContainer) lineCountContainer.style.display = 'none';
+            if (lineCountBadge) lineCountBadge.textContent = '0';
+
+            // Clean up preview and warning UI
+            this._updateStep1Preview();
+            this._checkSingleColumnWarning();
+            this._updateStepper();
             return;
         }
 
@@ -1818,6 +1931,7 @@ export const ImportWizardManager = {
      */
     _reset() {
         this.currentStep = 1;
+        this._togglePeriodDropdown(false);
         this.state = {
             rawData: '',
             lines: [],

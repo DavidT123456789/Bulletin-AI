@@ -267,8 +267,18 @@
     color: var(--primary-color);
 }
 
+.guide-sample-btn.btn-full {
+    width: 100%;
+    align-self: stretch;
+    margin-top: 8px;
+}
+
 .guide-sample-btn i {
     font-size: 0.8rem;
+}
+
+.guide-hint-margin {
+    margin-top: 8px;
 }
 
 /* Textarea clear button - positioned inside */
@@ -376,6 +386,109 @@
     font-size: 1rem;
     font-weight: 500;
     color: var(--text-secondary);
+}
+
+/* Period Dropdown in Wizard Header */
+.wizard-period-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.wizard-period-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    margin: 0 -4px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+}
+
+.wizard-period-trigger:hover {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--primary-color);
+}
+
+.wizard-period-trigger iconify-icon {
+    font-size: 0.9rem;
+    transition: transform var(--transition-fast);
+    opacity: 0.7;
+}
+
+.wizard-period-dropdown.open .wizard-period-trigger {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.wizard-period-dropdown.open .wizard-period-trigger iconify-icon {
+    transform: rotate(180deg);
+}
+
+.wizard-period-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 140px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-radius-sm);
+    box-shadow: var(--dropdown-shadow-sm);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    z-index: 100;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wizard-period-menu.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.wizard-period-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--dropdown-item-radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-fast);
+    width: 100%;
+}
+
+.wizard-period-option:hover {
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--primary-color);
+}
+
+.wizard-period-option.active {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.wizard-period-option iconify-icon {
+    font-size: 0.95rem;
+    color: var(--primary-color);
 }
 
 @media (max-width: 800px) {
@@ -566,7 +679,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     width: 100%;
-    max-width: 450px;
+    max-width: 520px;
     margin: 0 auto;
     transition: all 0.2s ease;
     animation: premiumCardEnter 0.3s ease forwards;
@@ -599,6 +712,16 @@
     color: var(--success-color, #10b981);
 }
 
+.file-preview-icon.type-csv {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.file-preview-icon.type-generic {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
 .file-preview-info {
     flex: 1;
     display: flex;
@@ -608,7 +731,7 @@
 }
 
 .file-preview-name {
-    font-size: 0.95rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -618,26 +741,39 @@
     text-align: left;
 }
 
+.file-preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+
 /* Remove Button - Elegant positioning */
 .file-remove-btn {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 50%;
-    color: var(--text-tertiary);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     z-index: 2;
 }
 
 .file-remove-btn:hover {
-    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.1);
-    color: var(--danger-color, #ef4444);
-    border-color: rgba(var(--danger-color-rgb, 239, 68, 68), 0.2);
+    background: rgba(var(--error-color-rgb), 0.08);
+    color: var(--error-color);
+    border-color: rgba(var(--error-color-rgb), 0.2);
+    transform: scale(1.05);
+}
+
+.file-remove-btn:active {
+    transform: scale(0.95);
 }
 
 /* === DROP ZONE LOADING STATE === */
@@ -3116,8 +3252,8 @@
 }
 
 .file-preview-icon.type-sample {
-    background: rgba(var(--info-color-rgb), 0.1);
-    color: var(--info-color);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
 }
 
 #wizardFileBadgeSlot {

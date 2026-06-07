@@ -134,12 +134,19 @@ export const UI = {
         if (evaluation.action === 'skip') return;
 
         if (evaluation.action === 'coalesce' && evaluation.existingElement) {
-            NotificationCoalescer.updateBadge(evaluation.existingElement, evaluation.count);
-
             const el = evaluation.existingElement;
             const groupKey = coalescingOptions.group || `${type}:${NotificationCoalescer._normalizeMessage(message)}`;
             const groupData = NotificationCoalescer._activeGroups.get(groupKey);
             if (groupData?.timeoutId) clearTimeout(groupData.timeoutId);
+
+            if (coalescingOptions.replaceExisting) {
+                const span = el.querySelector('span');
+                if (span) span.innerHTML = message;
+                const badge = el.querySelector('.notification-coalesce-badge');
+                if (badge) badge.remove();
+            } else {
+                NotificationCoalescer.updateBadge(el, evaluation.count);
+            }
 
             const newTimeout = setTimeout(() => {
                 if (el.dataset.removing) return;
