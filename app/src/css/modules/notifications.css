@@ -19,7 +19,7 @@
 
 /* Base Notification - Premium Solid Design */
 .notification {
-    padding: 16px 18px 16px 22px;
+    padding: 16px 20px;
     border-radius: var(--radius-md);
     font-weight: 500;
     transform: translateX(450px) scale(1);
@@ -45,18 +45,6 @@
     overflow: hidden;
     position: relative;
     opacity: 0;
-    --notification-accent: var(--border-color);
-}
-
-.notification::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 4px;
-    background-color: var(--notification-accent);
-    transition: background-color 0.3s ease;
 }
 
 .notification.show {
@@ -171,10 +159,6 @@
 }
 
 /* Success - Solid with Emerald Accent */
-.notification.success {
-    --notification-accent: var(--success-color);
-}
-
 .notification.success > iconify-icon:first-child,
 .notification.success > i:first-child {
     background: rgba(var(--success-rgb), 0.1);
@@ -182,10 +166,6 @@
 }
 
 /* Error - Solid with Red Accent */
-.notification.error {
-    --notification-accent: var(--error-color);
-}
-
 .notification.error > iconify-icon:first-child,
 .notification.error > i:first-child {
     background: rgba(var(--error-rgb), 0.1);
@@ -193,10 +173,6 @@
 }
 
 /* Warning - Solid with Orange Accent */
-.notification.warning {
-    --notification-accent: var(--warning-color);
-}
-
 .notification.warning > iconify-icon:first-child,
 .notification.warning > i:first-child {
     background: rgba(var(--warning-rgb), 0.1);
@@ -204,10 +180,6 @@
 }
 
 /* Info - Solid with Blue Accent */
-.notification.info {
-    --notification-accent: var(--primary-color);
-}
-
 .notification.info > iconify-icon:first-child,
 .notification.info > i:first-child {
     background: rgba(var(--primary-color-rgb), 0.1);
@@ -215,10 +187,6 @@
 }
 
 /* Prompt - Premium Solid Purple Accent (AI features) */
-.notification.prompt {
-    --notification-accent: var(--purple-color);
-}
-
 .notification.prompt > iconify-icon:first-child,
 .notification.prompt > i:first-child {
     background: var(--purple-light);
