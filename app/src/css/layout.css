@@ -719,13 +719,11 @@
 /* Shared logic for all 3 dots (update & cloud backup reminder) */
 .menu-btn.has-update, .menu-btn.has-cloud-reminder {
     --dot-target-bg: var(--primary-color);
-    --dot-target-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.6);
 }
 
 /* Specific styling for cloud backup reminder (warning color) if no update is present */
 .menu-btn.has-cloud-reminder:not(.has-update) {
     --dot-target-bg: var(--warning-color);
-    --dot-target-shadow: 0 0 6px var(--warning-color);
 }
 
 .menu-btn.has-update::before,
@@ -745,8 +743,8 @@
     border-radius: 50%;
     background-color: var(--text-secondary);
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* Animation base */
-    animation: organic-pulse-dots 2.2s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    /* Animation base: organic floating wave without fuzzy glow */
+    animation: organic-pulse-dots 2.0s infinite cubic-bezier(0.4, 0, 0.2, 1);
     /* Override FA specific styles for the middle dot */
     font-size: 0;
     line-height: 0;
@@ -790,20 +788,16 @@
 }
 
 @keyframes organic-pulse-dots {
-
     0%,
     100% {
         background-color: var(--text-secondary);
-        transform: scale(1);
-        box-shadow: none;
-        opacity: 0.8;
+        transform: translateY(0) scale(1);
+        opacity: 0.65;
     }
 
     50% {
         background-color: var(--dot-target-bg);
-        transform: scale(1.6);
-        /* Glow effect matching target color */
-        box-shadow: var(--dot-target-shadow);
+        transform: translateY(-2px) scale(1.25);
         opacity: 1;
     }
 }
