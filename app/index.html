@@ -588,11 +588,53 @@
                 opacity: 0;
                 box-shadow: -4px 4px 4px rgba(255, 255, 255, 0);
             }
-            100% {
-                transform: translate(-6px, 6px) scale(1.3);
-                opacity: 0;
-                box-shadow: -4px 4px 4px rgba(255, 255, 255, 0);
-            }
+        }
+
+        /* Play button circle drawing animation */
+        .play-icon-container {
+            width: 18px;
+            height: 18px;
+            margin-right: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .play-icon-inner {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+            color: #71717a; /* text-zinc-500 */
+        }
+
+        .play-circle-svg {
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .play-circle-fill {
+            transition: stroke-dashoffset 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Hover states */
+        .landing-play-btn {
+            transition: all 0.3s var(--transition-timing-function-organic);
+        }
+
+        .landing-play-btn:hover {
+            border-color: rgba(59, 130, 246, 0.35) !important;
+            background-color: rgba(59, 130, 246, 0.02) !important;
+        }
+
+        .landing-play-btn:hover .play-icon-inner {
+            transform: scale(1.1) translateX(1px);
+            color: #3b82f6; /* primary blue */
+        }
+
+        .landing-play-btn:hover .play-circle-svg {
+            transform: rotate(90deg); /* organic rotate */
+        }
+
+        .landing-play-btn:hover .play-circle-fill {
+            stroke-dashoffset: 0;
         }
     </style>
 </head>
@@ -699,8 +741,14 @@
                             Commencer maintenant
                         </a>
                         <a href="#how-it-works"
-                            class="h-12 px-6 rounded-full bg-white border border-zinc-200 text-zinc-600 text-sm font-medium flex items-center gap-2 hover:bg-zinc-50 hover:border-zinc-300 transition-all w-full sm:w-auto justify-center shadow-sm">
-                            <iconify-icon icon="solar:play-circle-linear" width="18"></iconify-icon>
+                            class="h-12 px-6 rounded-full bg-white border border-zinc-200 text-zinc-600 text-sm font-medium flex items-center gap-2 hover:bg-zinc-50 hover:border-zinc-300 transition-all w-full sm:w-auto justify-center shadow-sm landing-play-btn">
+                            <span class="play-icon-container">
+                                <iconify-icon icon="solar:play-linear" class="play-icon-inner" width="9" style="position: relative; left: 0.5px;"></iconify-icon>
+                                <svg class="play-circle-svg absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 24 24">
+                                    <circle class="play-circle-bg" cx="12" cy="12" r="10.5" stroke="rgba(100, 116, 139, 0.12)" stroke-width="1.8" fill="none"></circle>
+                                    <circle class="play-circle-fill" cx="12" cy="12" r="10.5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-dasharray="66" stroke-dashoffset="66" stroke-linecap="round"></circle>
+                                </svg>
+                            </span>
                             Voir comment ça marche
                         </a>
                     </div>
