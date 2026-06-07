@@ -1036,7 +1036,11 @@
 }
 
 .class-management-item:not(.active-switch):hover .class-stat-badge {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .class-management-item:not(.active-switch):hover .class-stat-badge {
+    background: var(--bg-color);
 }
 
 /* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
