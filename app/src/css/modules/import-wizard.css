@@ -663,10 +663,12 @@
 @keyframes premiumCardExit {
     from {
         opacity: 1;
+        transform: translateY(0) scale(1);
     }
 
     to {
         opacity: 0;
+        transform: translateY(-8px) scale(0.98);
     }
 }
 
@@ -2104,15 +2106,15 @@
 
 /* === ADDITIONAL PILL COLORS === */
 .mapping-pill.type-status {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: rgb(245, 158, 11);
+    background: rgba(var(--warning-color-rgb), 0.1);
+    border-color: rgba(var(--warning-color-rgb), 0.3);
+    color: var(--warning-color);
 }
 
 .mapping-pill.type-app {
-    background: rgba(var(--success-rgb), 0.1);
-    border-color: rgba(16, 185, 129, 0.3);
-    color: rgb(16, 185, 129);
+    background: rgba(var(--success-color-rgb), 0.1);
+    border-color: rgba(var(--success-color-rgb), 0.3);
+    color: var(--success-color);
 }
 
 /* === FORMAT TOGGLE SWITCH === */
@@ -2251,26 +2253,26 @@
 /* Pill Type Colors */
 .mapping-pill.type-name {
     background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: rgb(59, 130, 246);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--primary-color);
 }
 
 .mapping-pill.type-grade {
     background: rgba(249, 115, 22, 0.1);
     border-color: rgba(249, 115, 22, 0.3);
-    color: rgb(249, 115, 22);
+    color: var(--color-orange);
 }
 
 .mapping-pill.type-context {
     background: rgba(139, 92, 246, 0.1);
     border-color: rgba(139, 92, 246, 0.3);
-    color: rgb(139, 92, 246);
+    color: var(--color-violet);
 }
 
 .mapping-pill.type-ignored {
     background: rgba(107, 114, 128, 0.08);
     border-color: rgba(107, 114, 128, 0.2);
-    color: rgb(107, 114, 128);
+    color: var(--text-tertiary);
     opacity: 0.7;
 }
 
