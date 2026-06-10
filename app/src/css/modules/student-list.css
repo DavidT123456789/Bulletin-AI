@@ -625,7 +625,7 @@
 
 /* Mode Generate (Purple/AI) - Text alone gets the color */
 .btn-smart-action-inline.mode-generate .smart-action-badge {
-    color: var(--primary-color);
+    color: var(--color-violet);
 }
 
 /* Mode Update (Orange/Warning) - Text alone gets the color */
@@ -719,7 +719,7 @@
 }
 
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
-    color: var(--primary-color); /* Keeps the active color state, but inherits opacity:0 */
+    color: var(--color-sky); /* Keeps the active color state, but inherits opacity:0 */
 }
 
 .appreciation-toggle-header.expanded-view:hover .appreciation-toggle-icon {
