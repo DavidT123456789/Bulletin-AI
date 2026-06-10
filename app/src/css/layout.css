@@ -1001,19 +1001,35 @@
     color: var(--text-tertiary);
 }
 
-/* Cloud backup reminder — stale hint (>24h without cloud save) */
-.cloud-save-time.cloud-save-stale {
-    color: var(--warning-color);
+
+
+/* Cloud sync state — synchronized (green hint) */
+.cloud-save-time.cloud-in-sync {
+    color: var(--success-color);
     font-weight: 500;
 }
 
-/* Stale save row — subtle left accent */
-.cloud-save-menu-item.cloud-stale {
+/* Cloud sync state — action recommended (primary accent) */
+.cloud-save-menu-item.cloud-action-recommended {
+    border-left: 2px solid var(--primary-color);
+    padding-left: 10px;
+}
+
+.cloud-save-time.cloud-action-recommended {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Cloud sync state — conflict detected (warning accent) */
+.cloud-save-menu-item.cloud-conflict {
     border-left: 2px solid var(--warning-color);
     padding-left: 10px;
 }
 
-
+.cloud-save-time.cloud-conflict {
+    color: var(--warning-color);
+    font-weight: 500;
+}
 
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */
 .cloud-connect-item {

@@ -180,9 +180,10 @@ export const SyncService = {
 
             if (!saveBtn) return;
 
-            // Reset
-            saveBtn.classList.remove('disabled');
-            if (loadBtn) loadBtn.classList.remove('disabled');
+            // Reset all sync state classes
+            const syncClasses = ['disabled', 'cloud-action-recommended', 'cloud-conflict'];
+            syncClasses.forEach(c => saveBtn.classList.remove(c));
+            if (loadBtn) syncClasses.forEach(c => loadBtn.classList.remove(c));
 
             const config = {
                 connected: {
@@ -257,53 +258,142 @@ export const SyncService = {
                 }
             }
 
-            // Save time hint
+            // --- Sync state computation (connected only) ---
             const timeHint = saveBtn.querySelector('#cloudSaveTimeHint');
-            if (timeHint) {
-                if (state === 'connected' && this.lastSyncTime) {
-                    timeHint.textContent = this._formatLastSyncTime(this.lastSyncTime).replace('Dernière sync : ', '');
-                    timeHint.style.display = 'block';
-                } else {
-                    timeHint.style.display = 'none';
-                }
-            }
-
-            // Load time hint
             const loadTimeHint = document.getElementById('cloudLoadTimeHint');
-            if (loadTimeHint) {
-                if (state === 'connected' && this.remoteSyncTime) {
-                    loadTimeHint.textContent = this._formatLastSyncTime(this.remoteSyncTime).replace('Dernière sync : ', 'Cloud : ');
-                    loadTimeHint.style.display = 'block';
-                } else {
+            const hintClasses = ['cloud-in-sync', 'cloud-action-recommended', 'cloud-conflict'];
+
+            if (state === 'connected') {
+                const syncState = this._computeSyncState();
+                this._lastSyncState = syncState;
+
+                // Reset hint classes
+                if (timeHint) hintClasses.forEach(c => timeHint.classList.remove(c));
+                if (loadTimeHint) hintClasses.forEach(c => loadTimeHint.classList.remove(c));
+
+                this._applySyncStateUI(syncState, saveBtn, loadBtn, timeHint, loadTimeHint);
+            } else {
+                if (timeHint) {
+                    timeHint.style.display = 'none';
+                    hintClasses.forEach(c => timeHint.classList.remove(c));
+                }
+                if (loadTimeHint) {
                     loadTimeHint.style.display = 'none';
+                    hintClasses.forEach(c => loadTimeHint.classList.remove(c));
                 }
             }
         }, 100);
     },
 
+    /** @type {string|null} Last computed sync state for use in confirmation dialogs */
+    _lastSyncState: null,
+
+    /** @private Network clock drift tolerance (ms) */
+    _DRIFT_TOLERANCE_MS: 5000,
+
     /**
-     * Format last sync time as a human-readable relative string.
-     * @param {number} timestamp - Unix timestamp in ms
-     * @returns {string} Relative time string
+     * Compute sync state from 3 timestamps.
+     * @returns {'in-sync'|'local-changes'|'cloud-changes'|'conflict'}
      * @private
      */
-    _formatLastSyncTime(timestamp) {
-        const now = Date.now();
-        const diffMs = now - timestamp;
-        const diffSec = Math.floor(diffMs / 1000);
-        const diffMin = Math.floor(diffSec / 60);
+    _computeSyncState() {
+        const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+        const lSync = this.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0');
+        const rMod = this.remoteSyncTime || 0;
+
+        const hasLocalChanges = lMod > lSync;
+        const hasCloudChanges = rMod > 0 && rMod > (lSync + this._DRIFT_TOLERANCE_MS);
+
+        if (hasLocalChanges && hasCloudChanges) return 'conflict';
+        if (hasLocalChanges) return 'local-changes';
+        if (hasCloudChanges) return 'cloud-changes';
+        return 'in-sync';
+    },
+
+    /**
+     * Apply sync state to UI elements (hints + button classes).
+     * @private
+     */
+    _applySyncStateUI(syncState, saveBtn, loadBtn, timeHint, loadTimeHint) {
+        const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+
+        switch (syncState) {
+            case 'in-sync':
+                if (timeHint) {
+                    timeHint.textContent = 'À jour';
+                    timeHint.classList.add('cloud-in-sync');
+                    timeHint.style.display = 'block';
+                }
+                if (loadTimeHint) {
+                    loadTimeHint.textContent = 'Cloud : identique';
+                    loadTimeHint.classList.add('cloud-in-sync');
+                    loadTimeHint.style.display = 'block';
+                }
+                break;
+
+            case 'local-changes':
+                if (timeHint) {
+                    timeHint.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifié';
+                    timeHint.classList.add('cloud-action-recommended');
+                    timeHint.style.display = 'block';
+                }
+                saveBtn.classList.add('cloud-action-recommended');
+
+                if (loadTimeHint) {
+                    loadTimeHint.textContent = 'Cloud : identique';
+                    loadTimeHint.classList.add('cloud-in-sync');
+                    loadTimeHint.style.display = 'block';
+                }
+                break;
+
+            case 'cloud-changes':
+                if (timeHint) {
+                    timeHint.textContent = 'À jour';
+                    timeHint.classList.add('cloud-in-sync');
+                    timeHint.style.display = 'block';
+                }
+
+                if (loadTimeHint) {
+                    loadTimeHint.textContent = 'Cloud : plus récent';
+                    loadTimeHint.classList.add('cloud-action-recommended');
+                    loadTimeHint.style.display = 'block';
+                }
+                if (loadBtn) loadBtn.classList.add('cloud-action-recommended');
+                break;
+
+            case 'conflict':
+                if (timeHint) {
+                    timeHint.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifié';
+                    timeHint.classList.add('cloud-conflict');
+                    timeHint.style.display = 'block';
+                }
+                saveBtn.classList.add('cloud-conflict');
+
+                if (loadTimeHint) {
+                    loadTimeHint.textContent = 'Cloud : plus récent';
+                    loadTimeHint.classList.add('cloud-conflict');
+                    loadTimeHint.style.display = 'block';
+                }
+                if (loadBtn) loadBtn.classList.add('cloud-conflict');
+                break;
+        }
+    },
+
+    /**
+     * Format a timestamp as a short relative string for hints.
+     * @param {number} timestamp - Unix timestamp in ms
+     * @returns {string}
+     * @private
+     */
+    _formatRelativeTime(timestamp) {
+        const diffMs = Date.now() - timestamp;
+        const diffMin = Math.floor(diffMs / 60000);
         const diffHour = Math.floor(diffMin / 60);
 
-        if (diffSec < 60) {
-            return 'Dernière sync : à l\'instant';
-        } else if (diffMin < 60) {
-            return `Dernière sync : il y a ${diffMin} min`;
-        } else if (diffHour < 24) {
-            return `Dernière sync : il y a ${diffHour}h`;
-        } else {
-            const date = new Date(timestamp);
-            return `Dernière sync : ${date.toLocaleDateString('fr-FR')}`;
-        }
+        if (diffMin < 1) return 'Modifié à l\'instant';
+        if (diffMin < 60) return `Modifié il y a ${diffMin} min`;
+        if (diffHour < 24) return `Modifié il y a ${diffHour}h`;
+        return `Modifié le ${new Date(timestamp).toLocaleDateString('fr-FR')}`;
     },
 
 

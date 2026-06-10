@@ -307,30 +307,14 @@ export const GeneralListeners = {
             });
         }
 
-        // --- Update time hints + cloud reminder on menu open ---
+        // --- Refresh sync state on menu open ---
         DOM.headerMenuBtn?.addEventListener('click', async () => {
             try {
                 const { SyncService } = await import('../../services/SyncService.js');
-                const saveHint = document.getElementById('cloudSaveTimeHint');
-                const loadHint = document.getElementById('cloudLoadTimeHint');
-
                 if (SyncService.isConnected()) {
-                    const lastSync = localStorage.getItem('bulletin_last_sync');
-                    if (saveHint && lastSync) {
-                        const date = new Date(parseInt(lastSync));
-                        saveHint.textContent = `Dernière : ${date.toLocaleDateString('fr-FR')} ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-                    } else if (saveHint) {
-                        saveHint.textContent = 'Prêt à sauvegarder';
-                    }
-
-                    // Refresh remote status for Load hint
-                    if (loadHint) {
-                        await SyncService.checkRemoteStatus();
-                    }
+                    await SyncService.checkRemoteStatus();
                 }
-
-                // Cloud reminder: warn when last save > 24h
-                this._updateCloudReminder(saveHint, cloudSaveBtn);
+                this._updateCloudReminder();
             } catch { /* Ignore */ }
         });
 
@@ -373,6 +357,14 @@ export const GeneralListeners = {
                 }
 
                 closeMenu();
+
+                const syncState = SyncService._lastSyncState;
+                const isCloudNewer = syncState === 'cloud-changes' || syncState === 'conflict';
+                const detailsHtml = isCloudNewer
+                    ? `<p style="margin-bottom:8px;"><strong>Attention :</strong> Le Cloud contient des modifications plus récentes (probablement depuis un autre appareil).</p>
+                       <p>Si vous sauvegardez, la version Cloud sera <strong>écrasée</strong> par vos données locales.</p>`
+                    : `<p>Ceci remplacera la sauvegarde Cloud existante. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`;
+
                 const confirmed = await UI.showCustomConfirm(
                     `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
                     null, null,
@@ -380,8 +372,8 @@ export const GeneralListeners = {
                         title: 'Sauvegarder vers le Cloud ?',
                         confirmText: 'Sauvegarder',
                         cancelText: 'Annuler',
-                        isDanger: false,
-                        detailsHtml: `<p>Ceci remplacera la sauvegarde Cloud existante. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`
+                        isDanger: isCloudNewer,
+                        detailsHtml
                     }
                 );
                 if (!confirmed) return;
@@ -400,14 +392,6 @@ export const GeneralListeners = {
                 if (labelEl) labelEl.textContent = 'Envoi...';
                 await SyncService.saveToCloud();
 
-                const hintEl = document.getElementById('cloudSaveTimeHint');
-                if (hintEl) {
-                    const now = new Date();
-                    hintEl.textContent = `Dernière : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-                    hintEl.classList.remove('cloud-save-stale');
-                }
-
-                cloudSaveBtn.classList.remove('cloud-stale');
                 DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
 
                 UI.showNotification('Données envoyées sur le Cloud !', 'success');
@@ -435,6 +419,15 @@ export const GeneralListeners = {
                     }
 
                     closeMenu();
+
+                    const syncState = SyncService._lastSyncState;
+                    const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
+                    const restoreDetailsHtml = hasLocalChanges
+                        ? `<p style="margin-bottom:8px;"><strong>Attention :</strong> Vous avez des modifications locales non sauvegardées qui seront perdues.</p>
+                           <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>`
+                        : `<p style="margin-bottom:8px;">Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>
+                           <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>`;
+
                     UI.showCustomConfirm(
                         `Ceci remplacera <strong>toutes</strong> vos données locales actuelles.`,
                         async () => {
@@ -465,10 +458,7 @@ export const GeneralListeners = {
                             confirmText: 'Oui, restaurer',
                             cancelText: 'Annuler',
                             isDanger: true,
-                            detailsHtml: `
-                                <p style="margin-bottom:8px;">Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>
-                                <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>
-                            `
+                            detailsHtml: restoreDetailsHtml
                         }
                     );
                 } catch (error) {
@@ -512,39 +502,28 @@ export const GeneralListeners = {
         }
     },
 
-    /** @private */
-    _STALE_THRESHOLD_MS: 24 * 60 * 60 * 1000,
-
     /**
-     * Cloud backup reminder — nudges user when last cloud save is stale.
-     * Shows a warning hint on the Save button and a dot on the menu button.
+     * Update the cloud reminder dot on the menu button.
+     * Delegates to SyncService._computeSyncState for a unified state check.
      * @private
      */
-    _updateCloudReminder(saveHintEl, saveBtnEl) {
+    _updateCloudReminder() {
         if (!localStorage.getItem('bulletin_sync_provider')) return;
 
-        const lastSync = localStorage.getItem('bulletin_last_sync');
-        const lastModified = localStorage.getItem('bulletin_last_modified') || 0;
-        
-        const elapsed = lastSync ? Date.now() - parseInt(lastSync) : Infinity;
-        // Smart condition: stale AND contains un-synced modifications
-        const isStale = (elapsed > this._STALE_THRESHOLD_MS) && (parseInt(lastModified) > parseInt(lastSync || 0));
+        const needsAction = this._hasUnsyncedChanges();
+        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
+    },
 
-        if (saveHintEl) {
-            if (isStale) {
-                const staleDays = lastSync ? Math.floor(elapsed / this._STALE_THRESHOLD_MS) : 0;
-                saveHintEl.textContent = staleDays
-                    ? `${staleDays}j sans sauvegarde`
-                    : 'Jamais sauvegardé';
-                saveHintEl.classList.add('cloud-save-stale');
-                saveHintEl.style.display = 'block';
-            } else {
-                saveHintEl.classList.remove('cloud-save-stale');
-            }
-        }
-
-        saveBtnEl?.classList.toggle('cloud-stale', isStale);
-        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', isStale);
+    /**
+     * Check if local data has unsynced changes (used for menu dot and boot check).
+     * Mirrors SyncService._computeSyncState logic without requiring the service import.
+     * @returns {boolean}
+     * @private
+     */
+    _hasUnsyncedChanges() {
+        const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
+        const lastModified = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+        return lastModified > lastSync;
     },
 
     /**
@@ -554,12 +533,7 @@ export const GeneralListeners = {
     initCloudReminder() {
         if (!localStorage.getItem('bulletin_sync_provider')) return;
 
-        const lastSync = localStorage.getItem('bulletin_last_sync');
-        const lastModified = localStorage.getItem('bulletin_last_modified') || 0;
-        const elapsed = lastSync ? Date.now() - parseInt(lastSync) : Infinity;
-
-        // Smart check at boot
-        if (elapsed > this._STALE_THRESHOLD_MS && parseInt(lastModified) > parseInt(lastSync || 0)) {
+        if (this._hasUnsyncedChanges()) {
             DOM.headerMenuBtn?.classList.add('has-cloud-reminder');
         }
     }
