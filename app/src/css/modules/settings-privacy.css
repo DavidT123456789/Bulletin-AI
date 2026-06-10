@@ -37,7 +37,7 @@
     gap: 4px;
     font-size: 0.72rem;
     background: rgba(var(--warning-rgb), 0.1);
-    color: var(--warning-deep);
+    color: var(--warning-dark);
     /* Amber/Warning */
     padding: 2px 8px;
     border-radius: 4px;
@@ -47,8 +47,6 @@
 }
 
 [data-theme="dark"] .privacy-warning-badge {
-    color: var(--warning-light-text);
-    /* Warning Light */
     background: rgba(var(--warning-rgb), 0.15);
 }
 

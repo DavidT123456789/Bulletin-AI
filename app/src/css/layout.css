@@ -351,7 +351,7 @@
 }
 
 .ai-model-chip.fallback-active #headerAiModelName {
-    color: var(--warning-deep);
+    color: var(--warning-dark);
     font-weight: 600;
 }
 
@@ -1056,7 +1056,7 @@
 }
 
 .cloud-reconnect-item:hover {
-    color: var(--warning-deep);
+    color: var(--warning-dark);
 }
 
 .cloud-reconnect-item iconify-icon {
@@ -1068,7 +1068,7 @@
 }
 
 .cloud-reconnect-item:hover iconify-icon {
-    color: var(--warning-deep);
+    color: var(--warning-dark);
     opacity: 1;
 }
 

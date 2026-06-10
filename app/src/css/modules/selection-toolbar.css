@@ -44,13 +44,6 @@
         0 10px 30px -5px rgba(0, 0, 0, 0.35);
 }
 
-/* Dark Mode Actions Overrides */
-[data-theme="dark"] .btn-selection-action:hover {
-    background: rgba(var(--primary-color-rgb), 0.25);
-    color: var(--primary-color);
-    box-shadow: none;
-}
-
 .selection-toolbar.active {
     transform: translateY(0);
     opacity: 1;
@@ -79,22 +72,21 @@
 .btn-select-all-link {
     background: none;
     border: none;
-    color: var(--primary-color);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     padding: 3px 8px;
     border-radius: var(--radius-sm);
-    opacity: 0.7;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     text-decoration: underline;
     text-underline-offset: 3px;
     white-space: nowrap;
 }
 
 .btn-select-all-link:hover {
-    opacity: 1;
-    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
 }
 
 .btn-deselect {
@@ -107,16 +99,16 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
     flex-shrink: 0;
     border-radius: 50%;
     margin-right: 4px;
 }
 
 .btn-deselect:hover {
-    background: var(--neutral-light);
+    background: var(--item-hover-bg);
     color: var(--text-primary);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 /* Separator between info and actions */
@@ -147,17 +139,17 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: all var(--transition-fast);
     white-space: nowrap;
 }
 
 .btn-selection-action:hover {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .btn-selection-action:active {
-    transform: scale(0.95);
+    transform: scale(0.97);
 }
 
 .btn-selection-action.danger {
@@ -165,7 +157,7 @@
 }
 
 .btn-selection-action.danger:hover {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
+    background: var(--item-hover-bg);
     color: var(--error-color);
 }
 

@@ -896,8 +896,7 @@
 
 .api-status-item.warning .api-status-badge {
     background: rgba(var(--warning-rgb), 0.15);
-    color: var(--warning-deep);
-    /* Garder foncé pour contraste sur fond clair, mais idéalement var(--warning-dark) */
+    color: var(--warning-dark);
 }
 
 .api-status-item.inactive .api-status-badge {

@@ -470,10 +470,6 @@
     height: 60%;
 }
 
-#installPwaBtn i,
-#installPwaBtn iconify-icon {
-    color: var(--primary-color);
-}
 
 /* Pulse animation for attention */
 @keyframes pwa-pulse {
