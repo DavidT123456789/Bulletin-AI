@@ -1928,6 +1928,16 @@ export const FocusPanelManager = {
     async _updateListRow(result) {
         if (!result) return;
 
+        // Sync with appState.filteredResults
+        const filteredIndex = appState.filteredResults?.findIndex(r => r.id === result.id);
+        if (filteredIndex > -1) {
+            appState.filteredResults[filteredIndex] = {
+                ...result,
+                appreciation: result.studentData?.periods?.[appState.currentPeriod]?.appreciation || result.appreciation,
+                isPending: result.isPending
+            };
+        }
+
         if (this._isClosing) {
             if (!this._deferredRowUpdates) {
                 this._deferredRowUpdates = new Set();

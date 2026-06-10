@@ -56,6 +56,13 @@ export const StudentPhotoManager = {
             // CRITICAL: Update timestamp for sync persistence
             result._lastModified = Date.now();
 
+            // Synchronize filteredResults if present
+            const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
+            if (filteredIndex > -1) {
+                appState.filteredResults[filteredIndex].studentPhoto = result.studentPhoto;
+                appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
+            }
+
             // Persist to storage
             await StorageManager.saveAppState();
 
@@ -78,6 +85,13 @@ export const StudentPhotoManager = {
         result.studentPhoto = null;
         // CRITICAL: Update timestamp for sync persistence
         result._lastModified = Date.now();
+
+        // Synchronize filteredResults if present
+        const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
+        if (filteredIndex > -1) {
+            appState.filteredResults[filteredIndex].studentPhoto = null;
+            appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
+        }
 
         await StorageManager.saveAppState();
         return true;
@@ -229,6 +243,14 @@ export const StudentPhotoManager = {
                 };
                 // CRITICAL: Update timestamp for sync persistence
                 result._lastModified = Date.now();
+
+                // Synchronize filteredResults if present
+                const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
+                if (filteredIndex > -1) {
+                    appState.filteredResults[filteredIndex].studentPhoto = result.studentPhoto;
+                    appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
+                }
+
                 count++;
             }
         }

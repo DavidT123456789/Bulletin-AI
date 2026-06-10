@@ -118,6 +118,11 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiStep3PrevBtn')?.addEventListener('click', () => this._goToStep(2));
         document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._confirmImport());
 
+        // Exclude students with photos toggle
+        document.getElementById('trombiExcludeWithPhotos')?.addEventListener('change', () => {
+            this._autoAssignSilent();
+        });
+
         // Global mouse events for drag/resize
         document.addEventListener('mousemove', e => this._handleMouseMove(e));
         document.addEventListener('mouseup', () => this._handleMouseUp());
@@ -194,6 +199,10 @@ export const TrombinoscopeManager = {
         // Reset file input so the same file can be re-imported
         const fileInput = document.getElementById('trombiFileInput');
         if (fileInput) fileInput.value = '';
+
+        // Reset exclude photos filter checkbox to true
+        const excludeCheckbox = document.getElementById('trombiExcludeWithPhotos');
+        if (excludeCheckbox) excludeCheckbox.checked = true;
 
         // Reset dropzone state
         const placeholder = document.getElementById('trombiDropPlaceholder');
@@ -635,7 +644,7 @@ export const TrombinoscopeManager = {
 
         // Default values
         this._gridCols = 4;
-        this._gridRows = Math.ceil((appState.filteredResults?.length || 8) / 4);
+        this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
         this._gapH = 0;  // Horizontal spacing between zones (%)
         this._gapV = 0;  // Vertical spacing between zones (%)
         this._groupedDrag = true; // Grouped drag mode (default = true)
@@ -786,7 +795,7 @@ export const TrombinoscopeManager = {
 
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
             this._gridCols = 4;
-            this._gridRows = Math.ceil((appState.filteredResults?.length || 8) / 4);
+            this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
             this._gapH = 0;
             this._gapV = 0;
             if (colsSlider) { colsSlider.value = this._gridCols; colsValue.textContent = this._gridCols; }
@@ -881,8 +890,17 @@ export const TrombinoscopeManager = {
     // ZONE MANAGEMENT
     // ========================================================================
 
+    _getStudentsForImport() {
+        const allStudents = appState.filteredResults || [];
+        const excludeWithPhotos = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
+        if (excludeWithPhotos) {
+            return allStudents.filter(s => !s.studentPhoto?.data);
+        }
+        return allStudents;
+    },
+
     _createDefaultGrid() {
-        const students = appState.filteredResults || [];
+        const students = this._getStudentsForImport();
         const count = students.length || 8;
 
         // Smart column distribution: aim for ~4-6 columns, scale up for large classes
@@ -963,7 +981,7 @@ export const TrombinoscopeManager = {
      * Auto-assign students to zones silently (no notification)
      */
     _autoAssignSilent() {
-        const students = appState.filteredResults || [];
+        const students = this._getStudentsForImport();
         this._zones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
         });
@@ -1020,7 +1038,7 @@ export const TrombinoscopeManager = {
     },
 
     _autoAssignInOrder() {
-        const students = appState.filteredResults || [];
+        const students = this._getStudentsForImport();
         this._zones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
         });
@@ -1362,7 +1380,7 @@ export const TrombinoscopeManager = {
         const container = document.getElementById('trombiAssignmentGrid');
         if (!container) return;
 
-        const students = appState.filteredResults || [];
+        const allStudents = appState.filteredResults || [];
 
         if (this._zones.length === 0) {
             container.innerHTML = `
@@ -1379,7 +1397,14 @@ export const TrombinoscopeManager = {
 
         container.innerHTML = `
             ${sortedZones.map((zone, index) => {
-            return `
+                const excludeWithPhotos = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
+                const dropdownStudents = allStudents.filter(s => {
+                    if (s.id === zone.studentId) return true; // Always keep currently selected student
+                    if (excludeWithPhotos && s.studentPhoto?.data) return false;
+                    return true;
+                });
+
+                return `
                     <div class="assignment-row" data-zone-id="${zone.id}">
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
@@ -1392,24 +1417,34 @@ export const TrombinoscopeManager = {
                         <div class="assignment-student-select">
                             <select class="assignment-select" data-zone-id="${zone.id}">
                                 <option value="">Choisir un élève...</option>
-                                ${students.map(s => {
-                // Check if this student is assigned to ANOTHER zone
-                const assignedToOther = this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
-                // If assigned to other, maybe disabled or show (assigned)
-                const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
-                const label = assignedToOther ? `${studentNameFormatted} (déjà assigné)` : studentNameFormatted;
+                                ${dropdownStudents.map(s => {
+                                    // Check if this student is assigned to ANOTHER zone
+                                    const assignedToOther = this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
+                                    const hasPhoto = !!s.studentPhoto?.data;
 
-                return `
+                                    const statusParts = [];
+                                    if (assignedToOther) {
+                                        statusParts.push('déjà sélectionné');
+                                    }
+                                    if (hasPhoto) {
+                                        statusParts.push('déjà assigné');
+                                    }
+
+                                    const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
+                                    const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
+                                    const label = `${studentNameFormatted}${statusText}`;
+
+                                    return `
                                         <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>
                                             ${label}
                                         </option>
                                     `;
-            }).join('')}
+                                }).join('')}
                             </select>
                         </div>
                     </div>
                 `;
-        }).join('')}
+            }).join('')}
         `;
 
         // Update zones count in footer

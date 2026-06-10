@@ -662,6 +662,39 @@ export const ListSelectionManager = {
                 counts.photo++;
             }
 
+            // Sync with appState.filteredResults
+            const filteredStudent = appState.filteredResults?.find(r => r.id === id);
+            if (filteredStudent) {
+                if (clearAppreciation) {
+                    filteredStudent.appreciation = '';
+                    if (filteredStudent.studentData?.periods?.[currentPeriod]) {
+                        filteredStudent.studentData.periods[currentPeriod].appreciation = '';
+                        filteredStudent.studentData.periods[currentPeriod]._lastModified = now;
+                    }
+                    filteredStudent._lastModified = now;
+                    filteredStudent.copied = false;
+                    filteredStudent.promptHash = null;
+                    filteredStudent.generationSnapshot = null;
+                    filteredStudent.generationPeriod = null;
+                    filteredStudent.wasGenerated = false;
+                    filteredStudent.historyState = null;
+                    filteredStudent.appreciationSource = null;
+                    if (filteredStudent.historyPerPeriod?.[currentPeriod]) {
+                        filteredStudent.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                    }
+                }
+                if (clearJournal) {
+                    filteredStudent.journal = [];
+                }
+                if (clearContext && filteredStudent.studentData?.periods?.[currentPeriod]) {
+                    filteredStudent.studentData.periods[currentPeriod].context = '';
+                }
+                if (clearPhoto) {
+                    filteredStudent.studentPhoto = null;
+                    filteredStudent._lastModified = now;
+                }
+            }
+
             this.callbacks.updateStudentRow(id);
         });
 
@@ -712,6 +745,36 @@ export const ListSelectionManager = {
                         if (clearPhoto) {
                             student.studentPhoto = snap.studentPhoto;
                             student._lastModified = snap.lastModified;
+                        }
+
+                        // Sync with appState.filteredResults in undo
+                        const filteredStudent = appState.filteredResults?.find(r => r.id === id);
+                        if (filteredStudent) {
+                            if (clearAppreciation) {
+                                filteredStudent.appreciation = snap.appreciation;
+                                if (filteredStudent.studentData?.periods?.[currentPeriod]) {
+                                    filteredStudent.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
+                                    filteredStudent.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
+                                }
+                                filteredStudent._lastModified = snap.lastModified;
+                                filteredStudent.copied = snap.copied;
+                                filteredStudent.promptHash = snap.promptHash;
+                                filteredStudent.generationSnapshot = snap.generationSnapshot;
+                                filteredStudent.generationPeriod = snap.generationPeriod;
+                                filteredStudent.wasGenerated = snap.wasGenerated;
+                                filteredStudent.historyState = snap.historyState;
+                                filteredStudent.appreciationSource = snap.appreciationSource;
+                            }
+                            if (clearJournal) {
+                                filteredStudent.journal = snap.journal;
+                            }
+                            if (clearContext && filteredStudent.studentData?.periods?.[currentPeriod]) {
+                                filteredStudent.studentData.periods[currentPeriod].context = snap.context;
+                            }
+                            if (clearPhoto) {
+                                filteredStudent.studentPhoto = snap.studentPhoto;
+                                filteredStudent._lastModified = snap.lastModified;
+                            }
                         }
 
                         this.callbacks.updateStudentRow(id);
