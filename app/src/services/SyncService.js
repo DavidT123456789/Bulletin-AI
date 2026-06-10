@@ -340,8 +340,7 @@ export const SyncService = {
                 saveBtn.classList.add('cloud-action-recommended');
 
                 if (loadTimeHint) {
-                    loadTimeHint.textContent = 'Cloud : identique';
-                    loadTimeHint.classList.add('cloud-in-sync');
+                    loadTimeHint.textContent = 'Cloud : plus ancien';
                     loadTimeHint.style.display = 'block';
                 }
                 break;

@@ -516,9 +516,6 @@ export const StorageManager = {
         if (!this._isFirstLoadSave) {
             const dataSettings = { ...settings };
             const uiAndNavKeys = [
-                'theme',
-                'isAppreciationFullView',
-                'accentColor',
                 'currentClassId',
                 'currentPeriod',
                 'currentSubject',
@@ -540,9 +537,6 @@ export const StorageManager = {
             // On first load, capture the initial data hash
             const dataSettings = { ...settings };
             const uiAndNavKeys = [
-                'theme',
-                'isAppreciationFullView',
-                'accentColor',
                 'currentClassId',
                 'currentPeriod',
                 'currentSubject',
