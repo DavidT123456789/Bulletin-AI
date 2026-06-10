@@ -444,6 +444,65 @@ export const StorageManager = {
         return migratedResults;
     },
 
+    computeCurrentDataHash() {
+        const settings = {
+            theme: userSettings.ui.theme,
+            isAppreciationFullView: userSettings.ui.isAppreciationFullView,
+            accentColor: userSettings.ui.accentColor || 'blue',
+
+            useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
+            periodSystem: userSettings.academic.periodSystem,
+            subjects: userSettings.academic.subjects,
+            evolutionThresholds: userSettings.academic.evolutionThresholds,
+            classes: userSettings.academic.classes || [],
+            currentClassId: userSettings.academic.currentClassId || null,
+            seatingGrid: userSettings.academic.seatingGrid || null,
+
+            currentAIModel: userSettings.api.currentAIModel,
+            enableApiFallback: userSettings.api.enableApiFallback,
+            openaiApiKey: userSettings.api.openaiApiKey,
+            googleApiKey: userSettings.api.googleApiKey,
+            openrouterApiKey: userSettings.api.openrouterApiKey,
+            anthropicApiKey: userSettings.api.anthropicApiKey,
+            mistralApiKey: userSettings.api.mistralApiKey,
+            apiKeyStatus: runtimeState.apiStatus || {},
+            validatedApiKeys: runtimeState.validatedApiKeys || {},
+
+            ollamaEnabled: userSettings.api.ollamaEnabled,
+            ollamaBaseUrl: userSettings.api.ollamaBaseUrl,
+            ollamaInstalledModels: userSettings.api.ollamaInstalledModels,
+
+            massImportFormats: userSettings.import.massImportFormats,
+
+            privacy: userSettings.privacy,
+
+            currentPeriod: runtimeState.navigation.currentPeriod,
+            currentSubject: runtimeState.navigation.currentSubject,
+
+            currentInputMode: runtimeState.navigation.currentInputMode,
+            activeStatFilter: runtimeState.navigation.activeStatFilter,
+
+            refinementEdits: runtimeState.data.refinementEdits,
+
+            journalThreshold: userSettings.academic.journalThreshold,
+        };
+
+        const dataSettings = { ...settings };
+        const uiAndNavKeys = [
+            'currentClassId',
+            'currentPeriod',
+            'currentSubject',
+            'currentInputMode',
+            'activeStatFilter',
+            'refinementEdits',
+            'apiKeyStatus',
+            'validatedApiKeys'
+        ];
+        uiAndNavKeys.forEach(k => delete dataSettings[k]);
+        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
+        return JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+    },
+
     async saveAppState() {
         while (this._savePromise) {
             await this._savePromise;
@@ -512,42 +571,29 @@ export const StorageManager = {
         }
         this._lastSaveHash = currentHash;
 
-        // If this isn't the invisible first-load serialization, flag as manually dirtied on actual data change
-        if (!this._isFirstLoadSave) {
-            const dataSettings = { ...settings };
-            const uiAndNavKeys = [
-                'currentClassId',
-                'currentPeriod',
-                'currentSubject',
-                'currentInputMode',
-                'activeStatFilter',
-                'refinementEdits',
-                'apiKeyStatus',
-                'validatedApiKeys'
-            ];
-            uiAndNavKeys.forEach(k => delete dataSettings[k]);
-            const currentDataHash = JSON.stringify(dataSettings) + stringifiedResults;
+        // Use computeCurrentDataHash to check only structural/data settings changes
+        const currentDataHash = this.computeCurrentDataHash();
+        const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
 
-            // Only update modified timestamp if data hash has changed
-            if (this._lastDataHash && this._lastDataHash !== currentDataHash) {
-                localStorage.setItem('bulletin_last_modified', Date.now().toString());
+        if (!this._isFirstLoadSave) {
+            if (lastSyncHash && currentDataHash === lastSyncHash) {
+                // If we reverted back to the exact cloud version, clear local changes
+                const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
+                localStorage.setItem('bulletin_last_modified', lastSync.toString());
+            } else {
+                // If data has changed since our last save, update modified timestamp
+                if (this._lastDataHash && this._lastDataHash !== currentDataHash) {
+                    localStorage.setItem('bulletin_last_modified', Date.now().toString());
+                }
             }
             this._lastDataHash = currentDataHash;
         } else {
-            // On first load, capture the initial data hash
-            const dataSettings = { ...settings };
-            const uiAndNavKeys = [
-                'currentClassId',
-                'currentPeriod',
-                'currentSubject',
-                'currentInputMode',
-                'activeStatFilter',
-                'refinementEdits',
-                'apiKeyStatus',
-                'validatedApiKeys'
-            ];
-            uiAndNavKeys.forEach(k => delete dataSettings[k]);
-            this._lastDataHash = JSON.stringify(dataSettings) + stringifiedResults;
+            this._lastDataHash = currentDataHash;
+            // On first load, if we have a sync time but no sync hash, initialize it
+            const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
+            if (lastSync > 0 && !lastSyncHash) {
+                localStorage.setItem('bulletin_last_sync_hash', currentDataHash);
+            }
         }
         this._isFirstLoadSave = false;
 

@@ -610,8 +610,14 @@ export const SyncService = {
 
         // Update remote time since we just wrote the file
         this.remoteSyncTime = this.lastSyncTime;
-        this._updateCloudIndicator('connected');
 
+        // Save data hash at sync time and align modified timestamp
+        const syncHash = StorageManager.computeCurrentDataHash();
+        localStorage.setItem('bulletin_last_sync_hash', syncHash);
+        localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
+        StorageManager._lastDataHash = syncHash;
+
+        this._updateCloudIndicator('connected');
         this._setStatus('idle');
     },
 
@@ -635,6 +641,14 @@ export const SyncService = {
 
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+
+        // Save data hash at sync time and align modified timestamp
+        const syncHash = StorageManager.computeCurrentDataHash();
+        localStorage.setItem('bulletin_last_sync_hash', syncHash);
+        localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
+        StorageManager._lastDataHash = syncHash;
+
+        this._updateCloudIndicator('connected');
         this._setStatus('idle');
     },
 
