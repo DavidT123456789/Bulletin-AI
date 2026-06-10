@@ -130,7 +130,7 @@ export const PromptService = {
 
         if (hasNoData) {
             styleParts.push(
-                `Attention : Cet élève n'a aucune donnée d'évaluation (note, appréciation passée ou observation). Rédige uniquement un constat factuel, bienveillant et très court d'absence de données (pour cette période, ou pour l'année si les périodes précédentes indiquent également une absence totale de données), en une seule phrase simple (maximum 15 à 20 mots), sans inventer de travail ou de réussite, et sans projection sur l'avenir.`
+                `Attention : Cet élève n'a aucune donnée d'évaluation (note, appréciation passée ou observation). Rédige uniquement un constat factuel, bienveillant et très court d'absence de données (pour cette période, ou pour l'année si les périodes précédentes indiquent également une absence totale de données), en une seule phrase simple (maximum 25 mots), sans inventer de travail ou de réussite, et sans projection sur l'avenir.`
             );
         }
 
