@@ -328,8 +328,14 @@ export const ListViewRenderer = {
                                         <button class="action-dropdown-item" id="seatingChartBtn-shortcut">
                                             <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon> Plan de classe
                                         </button>
-                                        <button class="action-dropdown-item" id="copyStudentListBtn">
-                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Copier la liste des élèves
+
+                                        <!-- SECTION COPIER -->
+                                        <h5 class="dropdown-header">COPIER</h5>
+                                        <button class="action-dropdown-item" id="copyAllAppreciationsBtn">
+                                            <iconify-icon icon="solar:copy-linear"></iconify-icon> Toutes les appréciations
+                                        </button>
+                                        <button class="action-dropdown-item" id="copyStudentNamesBtn">
+                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Uniquement les noms
                                         </button>
 
                                         <!-- SECTION EXPORT -->
@@ -612,7 +618,7 @@ export const ListViewRenderer = {
         // Short-circuit: error state takes priority, but ONLY for the period it occurred in
         const currentPeriod = appState.currentPeriod;
         if (result.errorMessage && result.errorPeriod === currentPeriod) {
-            return this.getStatusBadge('error');
+            return this.getStatusBadge('error', result.errorMessage);
         }
         let appreciation = '';
 
@@ -669,10 +675,11 @@ export const ListViewRenderer = {
     /**
      * Génère le badge de statut HTML
      * @param {string} status - Statut ('pending', 'error', 'done')
+     * @param {string} [tooltip=''] - Message d'erreur pour le tooltip
      * @returns {string} HTML du badge
      * @private
      */
-    getStatusBadge(status) {
+    getStatusBadge(status, tooltip = '') {
         const labels = {
             'pending': 'En attente',
             'error': 'Erreur',
@@ -691,6 +698,10 @@ export const ListViewRenderer = {
 
         const label = labels[status] || status;
         const icon = icons[status] ? icons[status] + ' ' : '';
+
+        if (status === 'error' && tooltip) {
+            return `<span class="status-badge ${status} tooltip" data-tooltip="${Utils.escapeHtml(tooltip)}">${icon}${label}</span>`;
+        }
 
         return `<span class="status-badge ${status}">${icon}${label}</span>`;
     },

@@ -288,7 +288,7 @@ export const FocusPanelStatus = {
                 tooltip = 'Génération en cours...';
             } else if (hasError) {
                 state = 'error';
-                tooltip = 'Échec de génération';
+                tooltip = result?.errorMessage || 'Échec de génération';
             } else if (!hasContent) {
                 state = 'empty';
                 tooltip = 'En attente';

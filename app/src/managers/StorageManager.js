@@ -553,7 +553,7 @@ export const StorageManager = {
                 id: 'subjects',
                 label: 'Matières & prompts',
                 sublabel: subjectCount > 0
-                    ? `Restaure les ${subjectCount} matière${subjectCount > 1 ? 's' : ''} par défaut (« Ma Patte », styles IA…).`
+                    ? `Restaure les ${subjectCount} matière${subjectCount > 1 ? 's' : ''} par défaut (styles de rédaction, modèles de prompt).`
                     : 'Configuration par défaut.',
                 checked: true,
                 disabled: false

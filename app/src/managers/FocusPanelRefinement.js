@@ -236,7 +236,7 @@ export const FocusPanelRefinement = {
 
             UI.showNotification(error.message || 'Erreur lors du raffinement', 'error');
             const result = appState.generatedResults.find(r => r.id === refineStudentId);
-            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
+            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: error.message || 'Erreur lors du raffinement' });
             panel._activeGenerations.delete(refineStudentId);
             btn.classList.remove('is-generating');
         } finally {

@@ -109,9 +109,10 @@ export const ExportManager = {
 
     /**
      * Copie toutes les appréciations visibles dans le presse-papiers.
+     * @param {HTMLElement} [buttonEl] - Bouton ayant déclenché l'action pour feedback
      */
-    copyAllResults() {
-        const button = document.getElementById('copyAllBtn-shortcut');
+    copyAllResults(buttonEl = null) {
+        const button = buttonEl || document.getElementById('copyAllBtn-shortcut');
 
         if (appState.filteredResults.length === 0) {
             UI.showNotification("Rien à copier.", "warning");
@@ -150,8 +151,9 @@ export const ExportManager = {
      * Copie uniquement la liste des élèves (Nom Prénom) dans le presse-papiers.
      * S'adapte intelligemment : si des élèves sont sélectionnés, copie uniquement la sélection,
      * sinon copie tous les élèves actuellement visibles (filtrés).
+     * @param {HTMLElement} [buttonEl] - Bouton ayant déclenché l'action pour feedback
      */
-    copyStudentList() {
+    copyStudentList(buttonEl = null) {
         const selectedRows = document.querySelectorAll('.student-row.selected');
         const selectedIds = Array.from(selectedRows).map(row => row.dataset.studentId);
         
@@ -173,6 +175,16 @@ export const ExportManager = {
             const count = studentsToCopy.length;
             const selectionMsg = selectedIds.length > 0 ? " de la sélection" : "";
             UI.showNotification(`${count} élève${count > 1 ? 's' : ''}${selectionMsg} copié${count > 1 ? 's' : ''} dans le presse-papiers !`, 'success');
+
+            if (buttonEl) {
+                const originalIcon = buttonEl.innerHTML;
+                buttonEl.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
+                buttonEl.disabled = true;
+                setTimeout(() => {
+                    buttonEl.innerHTML = originalIcon;
+                    buttonEl.disabled = false;
+                }, 2000);
+            }
         }).catch(err => {
             UI.showNotification("Échec de la copie.", "error");
             console.error("Erreur de copie de la liste :", err);

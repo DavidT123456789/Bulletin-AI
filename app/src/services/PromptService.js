@@ -15,6 +15,8 @@ export const PromptService = {
 
     getAllPrompts(studentData, overrideConfig = null) {
         const { nom, prenom, statuses, periods, currentPeriod } = studentData;
+        const allPeriods = Utils.getPeriods();
+        const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
 
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
@@ -60,6 +62,13 @@ export const PromptService = {
         } else {
             promptParts.push(`Rédige l'appréciation de l'élève ${studentIdentifier}${disciplineContext} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
         }
+
+        const isYearEnd = currentPeriodIndex === allPeriods.length - 1;
+        const temporalite = isYearEnd
+            ? "Bilan de fin d'année (analyse de la période, bilan annuel global et projection)."
+            : "Bilan intermédiaire (analyse de la période écoulée).";
+
+        promptParts.push(`Cadre d'évaluation : ${temporalite}`);
 
         // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
         promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
@@ -107,8 +116,6 @@ export const PromptService = {
 
         // Anonymisation : on n'envoie PAS le nom de famille, seulement les notes
         // On n'envoie que les périodes jusqu'à la période à évaluer (incluse)
-        const allPeriods = Utils.getPeriods();
-        const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
         // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
         // L'appréciation de la période courante ne doit PAS être incluse pour éviter

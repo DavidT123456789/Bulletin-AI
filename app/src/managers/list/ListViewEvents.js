@@ -453,8 +453,17 @@ export const ListViewEvents = {
             import('../SeatingChartManager.js').then(m => m.SeatingChartManager.open());
         });
 
-        // Copy Student List
-        addAction('#copyStudentListBtn', () => ExportManager.copyStudentList());
+        // Copy All Appreciations
+        addAction('#copyAllAppreciationsBtn', () => {
+            const btn = listContainer.querySelector('#copyAllAppreciationsBtn');
+            return ExportManager.copyAllResults(btn);
+        });
+
+        // Copy Student Names Only
+        addAction('#copyStudentNamesBtn', () => {
+            const btn = listContainer.querySelector('#copyStudentNamesBtn');
+            return ExportManager.copyStudentList(btn);
+        });
 
         // Attach inline search listeners
         this.attachInlineSearchListeners(listContainer);

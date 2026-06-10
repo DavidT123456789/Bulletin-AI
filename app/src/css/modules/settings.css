@@ -112,10 +112,15 @@
 }
 
 /* Active state when inspector is visible */
-.inspector-toggle-btn.active {
-    background: var(--item-active-bg);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+.inspector-toggle-btn.active,
+#toggleInspectorBtn.active {
+    background: var(--item-active-bg) !important;
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+#toggleInspectorBtn:hover {
+    color: var(--primary-color) !important;
 }
 
 /* Header actions spacing - increased gap */
@@ -123,6 +128,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+/* Warning styling on hover for style reset button */
+#resetLabStyleBtn:hover {
+    color: var(--warning-color) !important;
+    background-color: var(--warning-light) !important;
 }
 
 /* Force equal height cards in personalization grid */
@@ -222,7 +233,7 @@
     transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-/* "Ma Patte" behavior matching "Inspector" - Fills available space */
+/* "Mes consignes" behavior matching "Inspector" - Fills available space */
 .settings-card-content .form-group:last-child {
     margin-bottom: 0;
     flex: 1;
@@ -232,6 +243,7 @@
 
 .settings-card-content .form-group:last-child textarea {
     flex: 1;
+    max-height: 160px;
     resize: none;
 }
 

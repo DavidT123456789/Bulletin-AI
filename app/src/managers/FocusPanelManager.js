@@ -1369,13 +1369,8 @@ export const FocusPanelManager = {
             if (newResult.errorMessage) {
                 // Only update UI if still on the same student
                 if (this.currentStudentId === generatingForStudentId) {
-                    const appreciationEl = document.getElementById('focusAppreciationText');
-                    // Show error state
-                    if (appreciationEl) {
-                        appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(newResult.errorMessage)}</span>`;
-                    }
-                    // Show error badge
-                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
+                    // Render appreciation text area normally (will show empty/previous) and update badge/tooltip
+                    this._renderAppreciationText(result);
                     UI.showNotification(`Erreur : ${newResult.errorMessage}`, 'error');
                 }
             } else if (newResult.appreciation) {
@@ -1442,11 +1437,8 @@ export const FocusPanelManager = {
             if (this.currentStudentId === generatingForStudentId) {
                 UI.showNotification(`Erreur : ${error.message}`, 'error');
 
-                if (appreciationEl) {
-                    appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(error.message)}</span>`;
-                }
-
-                FocusPanelStatus.updateAppreciationStatus(null, { state: 'error' });
+                // Render normal text (empty or manual) and show error status badge with tooltip
+                this._renderAppreciationText(result);
             }
 
             // Update list row to show error badge
@@ -1476,6 +1468,7 @@ export const FocusPanelManager = {
                     if (result) {
                         FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
                         this._renderAppreciationText(result);
+                        this._updateGenerateButton(result);
                     }
                 }
 
@@ -1805,11 +1798,21 @@ export const FocusPanelManager = {
 
             hasAppreciation = false;
         } else if (result.errorMessage && result.errorPeriod === currentPeriod) {
-            // Error state for current period — show error banner
-            appreciationEl.innerHTML = `<span class="error-text">${Utils.escapeHtml(result.errorMessage)}</span>`;
-            appreciationEl.classList.remove('empty', 'filled');
-            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error' });
-            hasAppreciation = false;
+            // Error state for current period — do not overwrite textarea with error text
+            const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
+
+            if (periodAppreciation && periodAppreciation.trim()) {
+                appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(periodAppreciation));
+                appreciationEl.classList.remove('empty');
+                appreciationEl.classList.add('filled');
+                hasAppreciation = true;
+            } else {
+                appreciationEl.textContent = '';
+                appreciationEl.classList.add('empty');
+                appreciationEl.classList.remove('filled');
+                hasAppreciation = false;
+            }
+            FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: result.errorMessage });
         } else {
             // Normal rendering: Get appreciation for the CURRENT period specifically
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
