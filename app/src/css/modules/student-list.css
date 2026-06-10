@@ -816,9 +816,9 @@
 
 [data-theme="dark"] .appreciation-preview-wrapper:hover .appreciation-preview,
 [data-theme="dark"] .appreciation-preview:hover {
-    background: var(--bg-color) !important;
-    border-color: transparent !important;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    background: var(--bg-secondary) !important; /* Keep it dark, matching row hover */
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
     color: var(--text-primary) !important;
 }
 
@@ -831,9 +831,9 @@
 }
 
 [data-theme="dark"] .student-list-table tbody tr:hover .appreciation-preview {
-    background: var(--bg-color) !important; /* solid deep dark color */
-    border-color: transparent !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    background: var(--bg-secondary) !important; /* soft dark color */
+    border-color: var(--border-color) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
     color: var(--text-primary) !important;
 }
 
@@ -856,11 +856,12 @@
     transition:
         max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
         padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        background 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        border-color 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        box-shadow 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         /* transform and shadow removed from individual transition (handled by wrapper if needed) */
         opacity 0.15s ease;
 
@@ -897,9 +898,9 @@
 
 [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
 [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview:hover {
-    background: var(--bg-color) !important;
-    border-color: transparent !important;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    background: var(--bg-secondary) !important; /* Keep it dark */
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
     color: var(--text-primary) !important;
 }
 
