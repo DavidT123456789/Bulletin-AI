@@ -394,6 +394,7 @@ export const ListViewManager = {
 
         // --- PREMIUM FLIP ANIMATION FOR CARDS VARYING HEIGHTS ---
         const previews = Array.from(table.querySelectorAll('.appreciation-preview'));
+        const cells = Array.from(table.querySelectorAll('.appreciation-cell'));
 
         // Step 1: Capture the First state (starting heights)
         const measurements = previews.map(preview => ({
@@ -401,28 +402,32 @@ export const ListViewManager = {
             startHeight: preview.offsetHeight
         }));
 
+        // Temporarily disable transitions during measurement to force instant target layout calculation (with target padding, width, line-height)
+        previews.forEach(el => { el.style.transition = 'none'; });
+        cells.forEach(el => { el.style.transition = 'none'; });
+
         // Step 2: Set the state to Last by toggling the class
         table.classList.toggle('appreciation-full-view');
 
-        // Step 3: Measure the Last state (natural target heights)
+        // Step 3: Measure the Last state (natural target heights under CSS rules)
         measurements.forEach(m => {
             // Temporarily set target layout styles to get natural height
             const origWhiteSpace = m.element.style.whiteSpace;
-            const origMaxHeight = m.element.style.maxHeight;
 
             // Target state styling: if expanding, wrap text to measure full height. If collapsing, truncate to measure compact height.
             m.element.style.whiteSpace = isFullView ? 'nowrap' : 'pre-wrap';
-            m.element.style.maxHeight = 'none';
 
             m.endHeight = m.element.offsetHeight;
 
             // Restore temporarily changed style properties
             m.element.style.whiteSpace = origWhiteSpace;
-            m.element.style.maxHeight = origMaxHeight;
         });
 
         // Toggle back to setup the animation correctly
         table.classList.toggle('appreciation-full-view');
+
+        // Restore transitions on cells immediately after measurement
+        cells.forEach(el => { el.style.transition = ''; });
 
         // Step 4: Lock to starting heights to prevent visual jumping
         measurements.forEach(m => {
@@ -433,6 +438,11 @@ export const ListViewManager = {
 
         // Force browser reflow to apply locked start heights
         table.offsetHeight;
+
+        // Restore CSS transitions before toggling class so that all properties (padding, line-height, etc.) transition smoothly
+        measurements.forEach(m => {
+            m.element.style.transition = '';
+        });
 
         // Step 5: Toggle classes for real (this updates DOM class but inline styles lock visuals)
         if (isFullView) {
@@ -474,8 +484,6 @@ export const ListViewManager = {
 
         // Step 6: Play the transition by setting inline properties to target heights
         measurements.forEach(m => {
-            // Enable smooth iOS-style cubic-bezier transitions
-            m.element.style.transition = 'max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1), background 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
             m.element.style.maxHeight = m.endHeight + 'px';
         });
 
@@ -491,7 +499,7 @@ export const ListViewManager = {
                 m.element.style.whiteSpace = '';
             });
             this._toggleTransitionTimeout = null;
-        }, 500); // 500ms matching transition duration
+        }, 600); // 600ms (500ms transition + 100ms safety buffer to prevent visual jump/saccade)
     }
 };
 

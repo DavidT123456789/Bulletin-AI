@@ -851,7 +851,6 @@
     background: rgba(0, 0, 0, 0.02);
     border: 1px solid transparent; /* Layout stability */
     max-width: 100%;
-    max-height: 32px;
 
     /* iOS Spring transitions synced with row animation */
     transition:
@@ -1573,7 +1572,6 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-height: 48px;
         background: rgba(0, 0, 0, 0.02);
         padding: 14px;
         border-radius: var(--radius-md);
