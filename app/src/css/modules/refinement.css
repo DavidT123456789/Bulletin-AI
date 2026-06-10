@@ -353,7 +353,7 @@
     color: var(--text-secondary);
     padding: 6px;
     border-radius: var(--radius-xs);
-    transition: background var(--transition-fast);
+    transition: transform 0.4s var(--ease-bounce), background var(--transition-fast), color var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -362,6 +362,31 @@
 .refinement-box-copy-btn:hover {
     background: var(--bg-secondary);
     color: var(--text-primary);
+}
+
+.refinement-box-copy-btn:active {
+    transform: scale(0.9);
+    transition: transform 0.08s ease-out;
+}
+
+.refinement-box-copy-btn.copied {
+    background: rgba(var(--success-rgb), 0.12);
+    color: var(--success-color);
+}
+
+.refinement-box-copy-btn.copied:hover {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success-color);
+}
+
+.refinement-box-copy-btn.copied:active {
+    background: rgba(var(--success-rgb), 0.25);
+    color: var(--success-color);
+}
+
+.refinement-box-copy-btn.copied iconify-icon,
+.refinement-box-copy-btn.copied i {
+    animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
 /* Placeholder - Zone vide en attente */

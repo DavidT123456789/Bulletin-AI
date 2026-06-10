@@ -582,3 +582,18 @@ body.preload-transition {
     animation: text-blur-reveal 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     will-change: transform, opacity, filter, clip-path;
 }
+
+/* Custom Copy Icon Success Bounce (iOS Style) */
+@keyframes icon-pop {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.25);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

@@ -493,10 +493,15 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 14px;
-    transition: all var(--transition-fast);
+    transition: transform 0.4s var(--ease-bounce), background var(--transition-fast), color var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.icon-action-btn:active:not(:disabled) {
+    transform: scale(0.9);
+    transition: transform 0.08s ease-out;
 }
 
 .icon-action-btn:hover:not(:disabled) {
@@ -518,6 +523,22 @@
     background: rgba(var(--success-rgb), 0.12);
     color: var(--success-color);
 }
+
+.copy-btn.copied:hover:not(:disabled) {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success-color);
+}
+
+.copy-btn.copied:active:not(:disabled) {
+    background: rgba(var(--success-rgb), 0.25);
+    color: var(--success-color);
+}
+
+.copy-btn.copied iconify-icon,
+.copy-btn.copied i {
+    animation: icon-pop 0.35s var(--ease-bounce) forwards;
+}
+
 
 /* Bouton toggle-version - Bascule entre versions */
 .toggle-version-btn {
