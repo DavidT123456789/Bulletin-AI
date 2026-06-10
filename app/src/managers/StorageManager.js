@@ -9,6 +9,7 @@ let App;
 export const StorageManager = {
     _savePromise: null,
     _lastSaveHash: null,
+    _lastDataHash: null,
     _isFirstLoadSave: false,
     init(ui, app) {
         UI = ui;
@@ -511,9 +512,48 @@ export const StorageManager = {
         }
         this._lastSaveHash = currentHash;
 
-        // If this isn't the invisible first-load serialization, flag as manually dirtied
+        // If this isn't the invisible first-load serialization, flag as manually dirtied on actual data change
         if (!this._isFirstLoadSave) {
-            localStorage.setItem('bulletin_last_modified', Date.now().toString());
+            const dataSettings = { ...settings };
+            const uiAndNavKeys = [
+                'theme',
+                'isAppreciationFullView',
+                'accentColor',
+                'currentClassId',
+                'currentPeriod',
+                'currentSubject',
+                'currentInputMode',
+                'activeStatFilter',
+                'refinementEdits',
+                'apiKeyStatus',
+                'validatedApiKeys'
+            ];
+            uiAndNavKeys.forEach(k => delete dataSettings[k]);
+            const currentDataHash = JSON.stringify(dataSettings) + stringifiedResults;
+
+            // Only update modified timestamp if data hash has changed
+            if (this._lastDataHash && this._lastDataHash !== currentDataHash) {
+                localStorage.setItem('bulletin_last_modified', Date.now().toString());
+            }
+            this._lastDataHash = currentDataHash;
+        } else {
+            // On first load, capture the initial data hash
+            const dataSettings = { ...settings };
+            const uiAndNavKeys = [
+                'theme',
+                'isAppreciationFullView',
+                'accentColor',
+                'currentClassId',
+                'currentPeriod',
+                'currentSubject',
+                'currentInputMode',
+                'activeStatFilter',
+                'refinementEdits',
+                'apiKeyStatus',
+                'validatedApiKeys'
+            ];
+            uiAndNavKeys.forEach(k => delete dataSettings[k]);
+            this._lastDataHash = JSON.stringify(dataSettings) + stringifiedResults;
         }
         this._isFirstLoadSave = false;
 
