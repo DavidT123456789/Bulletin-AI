@@ -19,25 +19,18 @@ export const PromptService = {
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
 
-        // Détection de l'absence de données scolaires pour cet élève
-        const hasGrades = relevantPeriods.some(p => {
-            const d = periods?.[p] || {};
-            const gradeRaw = d.grade;
-            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
-            return !isNaN(gradeVal);
-        });
+        // Détection de l'absence de données scolaires pour la période courante
+        const currentPeriodData = periods?.[currentPeriod] || {};
+        const gradeRaw = currentPeriodData.grade;
+        const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+        const hasCurrentGrades = !isNaN(gradeVal);
 
-        const hasPastAppreciations = relevantPeriods.slice(0, currentPeriodIndex).some(p => {
-            const app = periods?.[p]?.appreciation;
-            return app && app.trim() !== '' && app.trim() !== 'N/A' && app.trim() !== '""';
-        });
-
-        const periodContext = periods?.[currentPeriod]?.context;
+        const periodContext = currentPeriodData.context;
         const studentId = studentData.id;
         const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
-        const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
+        const hasCurrentContext = !!(periodContext?.trim() || journalSynthesis?.trim());
 
-        const hasNoData = !hasGrades && !hasPastAppreciations && !hasContext;
+        const hasNoData = !hasCurrentGrades && !hasCurrentContext;
 
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
