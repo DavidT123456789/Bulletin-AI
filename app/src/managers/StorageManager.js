@@ -1,3 +1,35 @@
+/**
+ * @fileoverview Gestionnaire de stockage local (LocalStorage, IndexedDB) et de synchronisation Cloud.
+ * 
+ * Contrat de cycle de vie et rôles des clés LocalStorage utilisées pour la synchronisation :
+ * 
+ * 1. bulletin_sync_provider :
+ *    - Rôle : Identifiant du fournisseur Cloud actif (ex: 'google', 'dropbox').
+ *    - Cycle de vie : Configuré à la connexion, persisté, supprimé lors d'une déconnexion/factory reset.
+ * 
+ * 2. bulletin_last_sync :
+ *    - Rôle : Horodatage (timestamp MS) de la dernière action de synchronisation réussie (Push/Pull).
+ *    - Cycle de vie : Mis à jour après chaque forceUpload ou forceDownload. Supprimé lors d'un factory reset.
+ * 
+ * 3. bulletin_last_modified :
+ *    - Rôle : Horodatage (timestamp MS) de la dernière modification locale effectuée par l'utilisateur.
+ *    - Cycle de vie : Mis à jour lors de modifications de données (via saveAppState). Alignée avec bulletin_last_sync après synchro.
+ * 
+ * 4. bulletin_last_sync_hash :
+ *    - Rôle : Empreinte de données (hash JSON) de la configuration (hors clés de navigation/UI) + des élèves au moment de la synchro.
+ *    - Cycle de vie : Permet la détection de retour à l'état initial (modify -> cancel -> back to "À jour").
+ * 
+ * 5. bulletin_device_id :
+ *    - Rôle : Identifiant unique de l'appareil généré au premier démarrage.
+ *    - Cycle de vie : Persisté indéfiniment pour la résolution de conflits de synchro, supprimé au factory reset.
+ * 
+ * 6. bulletin_restore_pending :
+ *    - Rôle : Flag d'annulation de restauration en cours de validité (durée max 1h).
+ *    - Cycle de vie : Temporaire, supprimé dès confirmation de restauration réussie.
+ * 
+ * @module managers/StorageManager
+ */
+
 import { appState, userSettings, runtimeState } from '../state/State.js';
 import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS } from '../config/Config.js';
 import { DBService } from '../services/DBService.js';
@@ -5,6 +37,18 @@ import { Utils } from '../utils/Utils.js';
 
 let UI;
 let App;
+
+/** @const {string[]} Clés de navigation et d'état d'interface à ignorer lors du calcul du hash de données */
+const UI_AND_NAV_KEYS = [
+    'currentClassId',
+    'currentPeriod',
+    'currentSubject',
+    'currentInputMode',
+    'activeStatFilter',
+    'refinementEdits',
+    'apiKeyStatus',
+    'validatedApiKeys'
+];
 
 export const StorageManager = {
     _savePromise: null,
@@ -444,8 +488,13 @@ export const StorageManager = {
         return migratedResults;
     },
 
-    computeCurrentDataHash() {
-        const settings = {
+    /**
+     * Construit un snapshot complet des préférences de l'utilisateur et de l'état de navigation.
+     * @private
+     * @returns {Object} Un objet contenant tous les réglages structurés
+     */
+    _buildSettingsSnapshot() {
+        return {
             theme: userSettings.ui.theme,
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             accentColor: userSettings.ui.accentColor || 'blue',
@@ -486,21 +535,40 @@ export const StorageManager = {
 
             journalThreshold: userSettings.academic.journalThreshold,
         };
+    },
 
+    computeCurrentDataHash() {
+        const settings = this._buildSettingsSnapshot();
         const dataSettings = { ...settings };
-        const uiAndNavKeys = [
+        UI_AND_NAV_KEYS.forEach(k => delete dataSettings[k]);
+        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
+        return JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+    },
+
+    /**
+     * Retourne un snapshot des paramètres utilisateur expurgé des clés API sensibles
+     * et des états de navigation transitoires pour les backups et la synchronisation Cloud.
+     * @returns {Object} Paramètres expurgés
+     */
+    getExportableSettings() {
+        const settings = this._buildSettingsSnapshot();
+        const keysToRemove = [
+            'openaiApiKey',
+            'googleApiKey',
+            'openrouterApiKey',
+            'anthropicApiKey',
+            'mistralApiKey',
+            'apiKeyStatus',
+            'validatedApiKeys',
             'currentClassId',
             'currentPeriod',
             'currentSubject',
             'currentInputMode',
             'activeStatFilter',
-            'refinementEdits',
-            'apiKeyStatus',
-            'validatedApiKeys'
+            'refinementEdits'
         ];
-        uiAndNavKeys.forEach(k => delete dataSettings[k]);
-        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
-        return JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+        keysToRemove.forEach(k => delete settings[k]);
+        return settings;
     },
 
     async saveAppState() {
@@ -516,47 +584,7 @@ export const StorageManager = {
     },
 
     async _doSaveAppState() {
-        const settings = {
-            theme: userSettings.ui.theme,
-            isAppreciationFullView: userSettings.ui.isAppreciationFullView,
-            accentColor: userSettings.ui.accentColor || 'blue',
-
-            useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
-            periodSystem: userSettings.academic.periodSystem,
-            subjects: userSettings.academic.subjects,
-            evolutionThresholds: userSettings.academic.evolutionThresholds,
-            classes: userSettings.academic.classes || [],
-            currentClassId: userSettings.academic.currentClassId || null,
-            seatingGrid: userSettings.academic.seatingGrid || null,
-
-            currentAIModel: userSettings.api.currentAIModel,
-            enableApiFallback: userSettings.api.enableApiFallback,
-            openaiApiKey: userSettings.api.openaiApiKey,
-            googleApiKey: userSettings.api.googleApiKey,
-            openrouterApiKey: userSettings.api.openrouterApiKey,
-            anthropicApiKey: userSettings.api.anthropicApiKey,
-            mistralApiKey: userSettings.api.mistralApiKey,
-            apiKeyStatus: runtimeState.apiStatus || {},
-            validatedApiKeys: runtimeState.validatedApiKeys || {},
-
-            ollamaEnabled: userSettings.api.ollamaEnabled,
-            ollamaBaseUrl: userSettings.api.ollamaBaseUrl,
-            ollamaInstalledModels: userSettings.api.ollamaInstalledModels,
-
-            massImportFormats: userSettings.import.massImportFormats,
-
-            privacy: userSettings.privacy,
-
-            currentPeriod: runtimeState.navigation.currentPeriod,
-            currentSubject: runtimeState.navigation.currentSubject,
-
-            currentInputMode: runtimeState.navigation.currentInputMode,
-            activeStatFilter: runtimeState.navigation.activeStatFilter,
-
-            refinementEdits: runtimeState.data.refinementEdits,
-
-            journalThreshold: userSettings.academic.journalThreshold,
-        };
+        const settings = this._buildSettingsSnapshot();
 
         const lsData = { version: APP_VERSION, settings: settings };
         const stringifiedSettings = JSON.stringify(lsData);
@@ -850,23 +878,12 @@ export const StorageManager = {
                 exportedAtTimestamp: Date.now(),
                 deviceId: this.getDeviceId()
             },
-            settings: {
-                theme: appState.theme,
-                accentColor: appState.accentColor || 'blue',
-                useSubjectPersonalization: appState.useSubjectPersonalization,
-                periodSystem: appState.periodSystem,
-                subjects: appState.subjects,
-                evolutionThresholds: appState.evolutionThresholds,
-                massImportFormats: appState.massImportFormats,
-                currentAIModel: appState.currentAIModel,
-                refinementEdits: appState.refinementEdits,
-                seatingGrid: userSettings.academic.seatingGrid || null
-            },
+            settings: this.getExportableSettings(),
             // Classes
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId,
             // Student data with per-item timestamps
-            generatedResults: (appState.generatedResults || []).map(result => ({
+            generatedResults: (runtimeState.data.generatedResults || []).map(result => ({
                 ...result,
                 _lastModified: result._lastModified || Date.now()
             }))
@@ -896,12 +913,7 @@ export const StorageManager = {
                 exportType: 'settings_only',
                 exportedAt: new Date().toISOString()
             },
-            theme: appState.theme,
-            accentColor: appState.accentColor || 'blue',
-            useSubjectPersonalization: appState.useSubjectPersonalization,
-            periodSystem: appState.periodSystem, subjects: appState.subjects,
-            evolutionThresholds: appState.evolutionThresholds,
-            massImportFormats: appState.massImportFormats, currentAIModel: appState.currentAIModel
+            settings: this.getExportableSettings()
         };
         this._downloadFile(JSON.stringify(settingsToExport, null, 2), `bulletin-ai_settings_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
         UI.showNotification('Paramètres exportés avec succès !', 'success');

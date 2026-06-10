@@ -122,6 +122,25 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain('strict et formel'); // tone 5
             expect(prompts.appreciation).toContain('100 mots');
         });
+
+        it('should handle student with no data correctly', () => {
+            const dataWithNoData = {
+                nom: 'DOE',
+                prenom: 'John',
+                statuses: [],
+                periods: {
+                    'T1': { grade: null, appreciation: '' },
+                    'T2': { grade: undefined, appreciation: 'N/A' }
+                },
+                currentPeriod: 'T2'
+            };
+            Utils.getPeriods.mockReturnValue(['T1', 'T2']);
+            
+            const prompts = PromptService.getAllPrompts(dataWithNoData);
+            
+            expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
+            expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
+        });
     });
 
     describe('getRefinementPrompt', () => {

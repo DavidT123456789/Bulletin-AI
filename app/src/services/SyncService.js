@@ -7,6 +7,7 @@
 
 import { userSettings, runtimeState } from '../state/State.js';
 import { StorageManager } from '../managers/StorageManager.js';
+import { APP_VERSION } from '../config/Config.js';
 
 /** @type {boolean} Enable debug logs (set to false for production) */
 const DEBUG = false;
@@ -693,18 +694,12 @@ export const SyncService = {
     async _getLocalData() {
         return {
             _meta: {
-                appVersion: '0.1.0', // Will be replaced with actual version
+                appVersion: APP_VERSION,
                 exportedAt: new Date().toISOString(),
                 lastSyncTimestamp: this.lastSyncTime || 0,
                 deviceId: StorageManager.getDeviceId()
             },
-            settings: {
-                theme: userSettings.ui.theme,
-                accentColor: userSettings.ui.accentColor || 'blue',
-                periodSystem: userSettings.academic.periodSystem,
-                subjects: userSettings.academic.subjects,
-                seatingGrid: userSettings.academic.seatingGrid || null,
-            },
+            settings: StorageManager.getExportableSettings(),
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId,
             generatedResults: (runtimeState.data.generatedResults || []).map(r => ({

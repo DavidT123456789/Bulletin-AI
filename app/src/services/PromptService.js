@@ -17,6 +17,27 @@ export const PromptService = {
         const { nom, prenom, statuses, periods, currentPeriod } = studentData;
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
+        const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
+
+        // Détection de l'absence de données scolaires pour cet élève
+        const hasGrades = relevantPeriods.some(p => {
+            const d = periods?.[p] || {};
+            const gradeRaw = d.grade;
+            const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
+            return !isNaN(gradeVal);
+        });
+
+        const hasPastAppreciations = relevantPeriods.slice(0, currentPeriodIndex).some(p => {
+            const app = periods?.[p]?.appreciation;
+            return app && app.trim() !== '' && app.trim() !== 'N/A' && app.trim() !== '""';
+        });
+
+        const periodContext = periods?.[currentPeriod]?.context;
+        const studentId = studentData.id;
+        const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
+        const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
+
+        const hasNoData = !hasGrades && !hasPastAppreciations && !hasContext;
 
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
@@ -71,7 +92,9 @@ export const PromptService = {
         promptParts.push(`Cadre d'évaluation : ${temporalite}`);
 
         // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
-        promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
+        if (!hasNoData) {
+            promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
+        }
 
 
         const styleParts = [];
@@ -112,11 +135,16 @@ export const PromptService = {
             styleParts.push(`Note : ${iaConfig.styleInstructions}`);
         }
 
+        if (hasNoData) {
+            styleParts.push(
+                `Attention : Cet élève n'a aucune donnée d'évaluation (note, appréciation passée ou observation). Rédige uniquement un constat factuel et bienveillant d'absence de données (pour cette période, ou pour l'année si les périodes précédentes indiquent également une absence totale de données), sans inventer de travail ou de réussite, et sans projection sur l'avenir.`
+            );
+        }
+
         promptParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.join('\n'));
 
         // Anonymisation : on n'envoie PAS le nom de famille, seulement les notes
         // On n'envoie que les périodes jusqu'à la période à évaluer (incluse)
-        const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
         // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
         // L'appréciation de la période courante ne doit PAS être incluse pour éviter
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
@@ -150,13 +178,10 @@ export const PromptService = {
         // On n'inclut la ligne Statuts que si l'élève a des statuts
         const statusLine = (statuses && statuses.length > 0) ? `\nStatuts : ${statuses.join(', ')}` : '';
 
-        const periodContext = periods?.[currentPeriod]?.context;
         const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
         // === JOURNAL DE BORD: Synthesis for prompt ===
         // Injects tag counts and recent notes to enrich AI context
-        const studentId = studentData.id;
-        const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
         const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
 
         // Note: Le nom de famille n'est JAMAIS envoyé, même si l'anonymisation est désactivée.
