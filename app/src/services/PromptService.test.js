@@ -141,6 +141,44 @@ describe('PromptService', () => {
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
         });
+
+        it('should NOT trigger absence when past periods have real grades', () => {
+            const dataWithPastGrades = {
+                nom: 'DOE',
+                prenom: 'Lina',
+                statuses: [],
+                periods: {
+                    'S1': { grade: 14, appreciation: 'Bon travail' },
+                    'S2': { grade: undefined, appreciation: '' }
+                },
+                currentPeriod: 'S2'
+            };
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            
+            const prompts = PromptService.getAllPrompts(dataWithPastGrades);
+            
+            expect(prompts.appreciation).not.toContain("aucune donnée d'évaluation");
+            expect(prompts.appreciation).toContain("cohérente avec le niveau de réussite");
+        });
+
+        it('should trigger absence when ALL periods lack grades even with generated past appreciations', () => {
+            const dataWithGeneratedAppreciation = {
+                nom: 'DOE',
+                prenom: 'Lina',
+                statuses: [],
+                periods: {
+                    'S1': { grade: null, appreciation: "Aucune donnée d'évaluation disponible pour Lina ce semestre." },
+                    'S2': { grade: undefined, appreciation: '' }
+                },
+                currentPeriod: 'S2'
+            };
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
+            
+            const prompts = PromptService.getAllPrompts(dataWithGeneratedAppreciation);
+            
+            expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
+            expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
+        });
     });
 
     describe('getRefinementPrompt', () => {

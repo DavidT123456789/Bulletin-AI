@@ -19,18 +19,22 @@ export const PromptService = {
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
         const relevantPeriods = allPeriods.slice(0, currentPeriodIndex + 1);
 
-        // Détection de l'absence de données scolaires pour la période courante
-        const currentPeriodData = periods?.[currentPeriod] || {};
-        const gradeRaw = currentPeriodData.grade;
-        const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
-        const hasCurrentGrades = !isNaN(gradeVal);
+        // Détection de l'absence totale de données scolaires
+        // On vérifie les notes sur TOUTES les périodes (données objectives, jamais auto-générées)
+        // mais PAS les appréciations passées (pourraient être nos propres constats d'absence)
+        const hasGrades = relevantPeriods.some(p => {
+            const d = periods?.[p] || {};
+            const raw = d.grade;
+            const val = typeof raw === 'number' ? raw : parseFloat(String(raw || '').replace(',', '.'));
+            return !isNaN(val);
+        });
 
-        const periodContext = currentPeriodData.context;
+        const periodContext = periods?.[currentPeriod]?.context;
         const studentId = studentData.id;
         const journalSynthesis = studentId ? JournalManager.synthesizeForPrompt(studentId, currentPeriod) : '';
-        const hasCurrentContext = !!(periodContext?.trim() || journalSynthesis?.trim());
+        const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
 
-        const hasNoData = !hasCurrentGrades && !hasCurrentContext;
+        const hasNoData = !hasGrades && !hasContext;
 
         // Simplifié: utiliser MonStyle si personnalisation activée, sinon Générique
         // [FIX] Toujours vérifier 'MonStyle' car c'est là que sont sauvegardés les réglages "Style IA" de l'utilisateur
@@ -86,7 +90,7 @@ export const PromptService = {
 
         // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
         if (!hasNoData) {
-            promptParts.push(`L’appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l’élève.`);
+            promptParts.push(`L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l'élève. Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.`);
         }
 
 
