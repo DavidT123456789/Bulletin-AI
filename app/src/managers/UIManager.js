@@ -477,8 +477,23 @@ export const UI = {
                             // Render chip "--" for consistency
                             const chip = document.createElement('span');
                             chip.className = 'previous-grade-chip';
-                            chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(p, false)} :</span> <span class="prev-grade-value">--</span>`;
+                            
+                            const periodLabel = Utils.getPeriodLabel(p, true);
+                            chip.classList.add('tooltip');
+                            chip.setAttribute('data-tooltip', `${periodLabel} : --`);
+                            chip.innerHTML = `<span class="prev-grade-value">--</span>`;
                             prevGradesEl.appendChild(chip);
+
+                            // Render empty evolution arrow placeholder
+                            const nextPeriod = periods[idx + 1];
+                            if (nextPeriod) {
+                                const evoEl = document.createElement('span');
+                                evoEl.className = 'evolution-container-inline';
+                                if (nextPeriod === appState.currentPeriod) {
+                                    evoEl.id = 'focusCurrentEvolutionArrow';
+                                }
+                                prevGradesEl.appendChild(evoEl);
+                            }
                         });
                     }
                 }

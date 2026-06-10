@@ -1661,6 +1661,32 @@ export const FocusPanelManager = {
 
         // === 3. CONTEXT CARD: Previous Grades ===
         const prevGradesEl = document.getElementById('focusPreviousGrades');
+        const getEvolutionHtml = (gradeA, gradeB) => {
+            if (gradeA === null || gradeA === undefined || gradeA === '' ||
+                gradeB === null || gradeB === undefined || gradeB === '') {
+                return '';
+            }
+            const valA = parseFloat(gradeA);
+            const valB = parseFloat(gradeB);
+            if (isNaN(valA) || isNaN(valB)) return '';
+
+            const diff = valB - valA;
+            const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
+            const evoType = Utils.getEvolutionType(diff);
+
+            let arrowIcon = 'ph:arrow-right-bold';
+            let evoClass = 'stable';
+            if (['very-positive', 'positive'].includes(evoType)) {
+                arrowIcon = 'ph:trend-up-bold';
+                evoClass = 'positive';
+            } else if (diff < 0) {
+                arrowIcon = 'ph:trend-down-bold';
+                evoClass = 'negative';
+            }
+
+            return `<span class="grade-evolution ${evoClass} tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="${arrowIcon}"></iconify-icon></span>`;
+        };
+
         if (prevGradesEl) {
             prevGradesEl.innerHTML = '';
             const periods = Utils.getPeriods();
@@ -1679,14 +1705,49 @@ export const FocusPanelManager = {
                     ? parseFloat(grade).toFixed(1).replace('.', ',')
                     : '--';
 
-                // Add tooltip class and data if we have evaluation count
-                if (typeof evalCount === 'number') {
-                    chip.classList.add('tooltip');
-                    chip.setAttribute('data-tooltip', `Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`);
-                }
+                const gradeClass = (grade !== undefined && grade !== null && grade !== '')
+                    ? Utils.getGradeClass(parseFloat(grade))
+                    : '';
 
-                chip.innerHTML = `<span class="prev-grade-label">${Utils.getPeriodLabel(period, false)} :</span> <span class="prev-grade-value">${displayGrade}</span>`;
+                // Add tooltip showing period info and evaluation count if available
+                const periodLabel = Utils.getPeriodLabel(period, true);
+                let tooltipText = `${periodLabel} : ${displayGrade}`;
+                if (typeof evalCount === 'number') {
+                    tooltipText += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
+                }
+                chip.classList.add('tooltip');
+                chip.setAttribute('data-tooltip', tooltipText);
+
+                chip.innerHTML = `<span class="prev-grade-value grade-value ${gradeClass}">${displayGrade}</span>`;
                 prevGradesEl.appendChild(chip);
+
+                // Add evolution arrow between this past grade and the next grade (or current input)
+                const nextPeriod = periods[idx + 1];
+                if (nextPeriod) {
+                    let nextGrade = null;
+                    if (nextPeriod === currentPeriod) {
+                        const currentGradeVal = result.studentData.periods?.[currentPeriod]?.grade;
+                        nextGrade = (currentGradeVal !== undefined && currentGradeVal !== null && currentGradeVal !== '')
+                            ? parseFloat(currentGradeVal)
+                            : null;
+                    } else {
+                        const nextPeriodData = result.studentData.periods?.[nextPeriod] || {};
+                        nextGrade = (nextPeriodData.grade !== undefined && nextPeriodData.grade !== null && nextPeriodData.grade !== '')
+                            ? parseFloat(nextPeriodData.grade)
+                            : null;
+                    }
+
+                    const pastGradeNum = (grade !== undefined && grade !== null && grade !== '') ? parseFloat(grade) : null;
+                    const evoHtml = getEvolutionHtml(pastGradeNum, nextGrade);
+
+                    const evoEl = document.createElement('span');
+                    evoEl.className = 'evolution-container-inline';
+                    if (nextPeriod === currentPeriod) {
+                        evoEl.id = 'focusCurrentEvolutionArrow';
+                    }
+                    evoEl.innerHTML = evoHtml;
+                    prevGradesEl.appendChild(evoEl);
+                }
             });
         }
 
@@ -1706,28 +1767,64 @@ export const FocusPanelManager = {
                 ? parseFloat(currentGrade).toFixed(1).replace('.', ',')
                 : '';
 
-            // Add tooltip showing evaluation count if available
+            const initialGradeClass = (currentGrade !== undefined && currentGrade !== null)
+                ? Utils.getGradeClass(currentGrade)
+                : '';
+            gradeInput.className = `context-grade-input grade-value ${initialGradeClass}`;
+
+            // Add tooltip showing current period details and evaluation count if available
             const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
-            if (gradeWrapper && typeof evalCount === 'number') {
+            const currentPeriodLabel = Utils.getPeriodLabel(currentPeriod, true);
+            let currentTooltipText = `${currentPeriodLabel} (Période actuelle)`;
+            if (typeof evalCount === 'number') {
+                currentTooltipText += ` - Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`;
+            }
+            if (gradeWrapper) {
                 gradeWrapper.classList.add('tooltip');
-                gradeWrapper.setAttribute('data-tooltip', `Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`);
-            } else if (gradeWrapper) {
-                gradeWrapper.classList.remove('tooltip');
-                gradeWrapper.removeAttribute('data-tooltip');
+                gradeWrapper.setAttribute('data-tooltip', currentTooltipText);
             }
 
             // Add input listener for grade changes
             gradeInput.oninput = () => {
                 const val = gradeInput.value.replace(',', '.');
                 const grade = parseFloat(val);
-                if (!isNaN(grade) && this.currentStudentId) {
+                
+                // Reset to default class
+                gradeInput.className = 'context-grade-input grade-value';
+                
+                let gradeToSave = null;
+                if (!isNaN(grade)) {
+                    const gradeClass = Utils.getGradeClass(grade);
+                    if (gradeClass) {
+                        gradeInput.classList.add(gradeClass);
+                    }
+                    gradeToSave = grade;
+                }
+                
+                if (this.currentStudentId) {
                     const r = appState.generatedResults.find(r => r.id === this.currentStudentId);
                     if (r) {
                         if (!r.studentData.periods[currentPeriod]) {
                             r.studentData.periods[currentPeriod] = {};
                         }
-                        r.studentData.periods[currentPeriod].grade = grade;
+                        r.studentData.periods[currentPeriod].grade = gradeToSave;
                         FocusPanelStatus.checkIfDataModified();
+                        
+                        // Update current evolution arrow live
+                        const arrowEl = document.getElementById('focusCurrentEvolutionArrow');
+                        if (arrowEl) {
+                            const periods = Utils.getPeriods();
+                            const currentIdx = periods.indexOf(currentPeriod);
+                            if (currentIdx > 0) {
+                                const prevPeriod = periods[currentIdx - 1];
+                                const prevGradeVal = r.studentData.periods?.[prevPeriod]?.grade;
+                                const prevGradeNum = (prevGradeVal !== undefined && prevGradeVal !== null && prevGradeVal !== '')
+                                    ? parseFloat(prevGradeVal)
+                                    : null;
+                                
+                                arrowEl.innerHTML = getEvolutionHtml(prevGradeNum, gradeToSave);
+                            }
+                        }
                     }
                 }
             };
@@ -1978,257 +2075,5 @@ export const FocusPanelManager = {
     // Refinement functions delegated to FocusPanelRefinement
     _showRefinementPreview(refineType) { return FocusPanelRefinement.showPreview(refineType); },
     _displayPromptModal(promptText, title) { return FocusPanelRefinement.displayPromptModal(promptText, title); },
-    _refineAppreciation(refineType) { return FocusPanelRefinement.apply(refineType); },
-
-
-
-
-    // ===============================
-    // STUDENT CARD (Mode lecture/édition)
-    // ===============================
-
-    /**
-     * Toggle edit mode for student card
-     * @private
-     */
-    _toggleEditMode() {
-        const readMode = document.getElementById('focusReadMode');
-        const editMode = document.getElementById('focusEditMode');
-
-        if (!readMode || !editMode) {
-            console.warn('Student card elements not found');
-            return;
-        }
-
-        // Check if edit mode is currently visible (not hidden)
-        const isInEditMode = !editMode.classList.contains('hidden');
-        this._setEditMode(!isInEditMode);
-    },
-
-    /**
-     * Set edit mode state
-     * @param {boolean} isEdit - Whether to show edit mode
-     * @private
-     */
-    _setEditMode(isEdit) {
-        const readMode = document.getElementById('focusReadMode');
-        const editMode = document.getElementById('focusEditMode');
-        const nameEl = document.getElementById('focusStudentName');
-        const cardTitle = document.getElementById('focusHistoryTitle');
-        const editBtn = document.getElementById('focusEditHistoryBtn');
-
-        if (!readMode || !editMode) return;
-
-        // Get current result data
-        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
-
-        if (isEdit) {
-            // Update card title
-            if (cardTitle) cardTitle.textContent = 'Informations';
-            if (editBtn) editBtn.classList.add('active');
-
-            // Store original values for potential revert
-            if (result) {
-                const currentPeriod = appState.currentPeriod;
-                this._originalIdentity = {
-                    nom: result.nom,
-                    prenom: result.prenom,
-                    statuses: [...(result.studentData.statuses || [])],
-                    // Deep copy periods for revert
-                    periods: JSON.parse(JSON.stringify(result.studentData.periods || {}))
-                };
-            }
-
-            // Animate the transition
-            readMode.classList.add('hiding');
-            setTimeout(() => {
-                readMode.classList.add('hidden');
-                readMode.classList.remove('hiding');
-                editMode.classList.remove('hidden');
-                editMode.classList.add('showing');
-                setTimeout(() => editMode.classList.remove('showing'), 300);
-            }, 150);
-
-            if (nameEl) nameEl.classList.add('editing');
-
-            // Re-render history grades in EDIT mode
-            if (result) {
-                this._renderHistoryGrades(result.studentData.periods || {}, true);
-            }
-
-            // Focus on first input after animation
-            setTimeout(() => {
-                document.getElementById('focusNomInput')?.focus();
-            }, 300);
-        } else {
-            // Update card title
-            if (cardTitle) cardTitle.textContent = 'Historique';
-            if (editBtn) editBtn.classList.remove('active');
-
-            // Animate the transition
-            editMode.classList.add('hiding');
-            setTimeout(() => {
-                editMode.classList.add('hidden');
-                editMode.classList.remove('hiding');
-                readMode.classList.remove('hidden');
-                readMode.classList.add('showing');
-                setTimeout(() => readMode.classList.remove('showing'), 300);
-            }, 150);
-
-            if (nameEl) nameEl.classList.remove('editing');
-
-            // Re-render history grades in READ mode
-            if (result) {
-                this._renderHistoryGrades(result.studentData.periods || {}, false);
-                this._updateReadModeDisplay(result);
-            }
-        }
-    },
-
-    /**
-     * Render student card with current data
-     * @param {Object} result - Student result object
-     * @private
-     */
-    _renderStudentCard(result) {
-        const currentPeriod = appState.currentPeriod;
-
-        // === Populate Edit Mode Fields (Identity) ===
-        const nomInput = document.getElementById('focusNomInput');
-        const prenomInput = document.getElementById('focusPrenomInput');
-
-        if (nomInput) nomInput.value = result.nom || '';
-        if (prenomInput) prenomInput.value = result.prenom || '';
-
-        // Populate status checkboxes
-        const statuses = result.studentData.statuses || [];
-        document.querySelectorAll('#focusStatusPills input[type="checkbox"]').forEach(checkbox => {
-            checkbox.checked = statuses.some(s => s.includes(checkbox.value) || checkbox.value.includes(s.split(' ')[0]));
-        });
-
-        // === Render History Grades (Past) & Current Grade Input ===
-        this._renderHistoryGrades(result.studentData.periods || {}, false); // False because we are not in history edit mode initially
-
-        // === Update Read Mode Display ===
-        this._updateReadModeDisplay(result);
-    },
-
-
-
-    /**
-     * Update read mode display with student data
-     * @param {Object} result - Student result object
-     * @private
-     */
-    _updateReadModeDisplay(result) {
-        const currentPeriod = appState.currentPeriod;
-        const periods = Utils.getPeriods();
-        const currentIndex = periods.indexOf(currentPeriod);
-
-        // Update name display
-        const readName = document.getElementById('focusReadName');
-        if (readName) {
-            readName.textContent = Utils.formatStudentName(result.nom, result.prenom);
-        }
-
-        // Update badges
-        const readBadges = document.getElementById('focusReadBadges');
-        if (readBadges) {
-            const statuses = result.studentData.statuses || [];
-            readBadges.innerHTML = statuses.map(s => `<span class="status-pill">${Utils.escapeHtml(s)}</span>`).join('');
-        }
-
-        // Update grade display
-        const readGradePeriod = document.getElementById('focusReadGradePeriod');
-        const readGradeValue = document.getElementById('focusReadGradeValue');
-
-        if (readGradePeriod) {
-            readGradePeriod.textContent = Utils.getPeriodLabel(currentPeriod, false);
-        }
-        if (readGradeValue) {
-            const gradeRaw = result.studentData.periods?.[currentPeriod]?.grade;
-            const grade = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
-            readGradeValue.textContent = !isNaN(grade) ? grade.toFixed(1).replace('.', ',') : '--';
-        }
-
-        // Check if previous period exists  
-        if (currentIndex > 0) {
-            const prevPeriod = periods[currentIndex - 1];
-            const prevData = result.studentData.periods?.[prevPeriod];
-
-            // Update previous appreciation if available
-            const prevAppSection = document.getElementById('focusPrevAppreciationSection');
-            const prevPeriodLabel = document.getElementById('focusPrevPeriodLabel');
-            const prevAppreciationText = document.getElementById('focusPrevAppreciationText');
-
-            const prevAppreciation = prevData?.appreciation;
-            if (prevAppreciation && !prevAppreciation.includes('Aucune appréciation')) {
-                if (prevAppSection) prevAppSection.style.display = 'block';
-                if (prevPeriodLabel) prevPeriodLabel.textContent = Utils.getPeriodLabel(prevPeriod, false);
-                if (prevAppreciationText) {
-                    // Show first 200 characters with ellipsis
-                    const truncated = prevAppreciation.length > 200
-                        ? prevAppreciation.substring(0, 200) + '...'
-                        : prevAppreciation;
-                    prevAppreciationText.textContent = truncated;
-                }
-            } else {
-                if (prevAppSection) prevAppSection.style.display = 'none';
-            }
-
-            // Update previous context if available
-            const prevCtxSection = document.getElementById('focusPrevContextSection');
-            const prevCtxPeriodLabel = document.getElementById('focusPrevContextPeriodLabel');
-            const prevContextText = document.getElementById('focusPrevContextText');
-
-            const prevContext = prevData?.context;
-            if (prevContext && prevContext.trim()) {
-                if (prevCtxSection) prevCtxSection.style.display = 'block';
-                if (prevCtxPeriodLabel) prevCtxPeriodLabel.textContent = Utils.getPeriodLabel(prevPeriod, false);
-                if (prevContextText) {
-                    // Show first 150 characters with ellipsis
-                    const truncated = prevContext.length > 150
-                        ? prevContext.substring(0, 150) + '...'
-                        : prevContext;
-                    prevContextText.textContent = truncated;
-                }
-            } else {
-                if (prevCtxSection) prevCtxSection.style.display = 'none';
-            }
-        } else {
-            // No previous period - hide both sections
-            const prevAppSection = document.getElementById('focusPrevAppreciationSection');
-            const prevCtxSection = document.getElementById('focusPrevContextSection');
-            if (prevAppSection) prevAppSection.style.display = 'none';
-            if (prevCtxSection) prevCtxSection.style.display = 'none';
-        }
-    },
-
-
-
-    /**
-     * Ouvre le volet latéral "Paramètres Élève"
-     * @private
-     */
-    _openSettingsPanel() {
-        const panel = document.getElementById('focusSettingsPanel');
-        if (panel) panel.classList.add('active');
-
-        // Push Layout: Add class to body to shrink main content
-        document.body.classList.add('sidebar-open');
-    },
-
-    /**
-     * Ferme le volet latéral "Paramètres Élève"
-     * @private
-     */
-    _closeSettingsPanel() {
-        const panel = document.getElementById('focusSettingsPanel');
-        if (panel) panel.classList.remove('active');
-
-        // Release Push Layout
-        document.body.classList.remove('sidebar-open');
-    }
-
-
+    _refineAppreciation(refineType) { return FocusPanelRefinement.apply(refineType); }
 };

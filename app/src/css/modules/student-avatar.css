@@ -22,9 +22,9 @@
 
 /* Size Variants */
 .student-avatar--sm {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
 }
 
 .student-avatar--md {
@@ -182,9 +182,9 @@
 
 /* Larger premium avatar in expanded view */
 .appreciation-full-view .student-identity-wrapper .student-avatar {
-    width: 56px;
-    height: 56px;
-    font-size: 20px;
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
 
     /* Opacity-only animation, transform managed by transition */
     animation: avatar-expand-fade 0.4s ease-out forwards;

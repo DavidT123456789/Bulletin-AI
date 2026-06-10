@@ -18,7 +18,7 @@
 .inline-search-trigger-btn {
     /* Position override - loupe is on the left side (absolute) */
     position: absolute;
-    left: 20px; /* Perfectly centered above the 32px avatar in normal view */
+    left: 22px; /* Perfectly centered above the 36px avatar in normal view */
     right: auto;
     top: 50%;
     transform: translateY(-50%);
@@ -36,9 +36,9 @@
     transform: translateY(-50%) scale(1.1);
 }
 
-/* Move the loupe to stay perfectly centered above the larger 56px avatar in expanded view */
+/* Move the loupe to stay perfectly centered above the larger 60px avatar in expanded view */
 .appreciation-full-view .inline-search-trigger-btn {
-    left: 40px;
+    left: 42px;
 }
 
 

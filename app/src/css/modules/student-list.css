@@ -183,7 +183,7 @@
 /* Ensure Name header is left-aligned with perfect typography alignment */
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
-    padding-left: 58px !important; /* Normal view: 16px cell + 32px avatar + 10px gap */
+    padding-left: 62px !important; /* Normal view: 16px cell + 36px avatar + 10px gap */
     transition: padding-left 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -191,7 +191,7 @@
 /* Desktop only: prevent high-specificity !important from overriding mobile flex layout */
 @media (min-width: 769px) {
     .student-list-table.appreciation-full-view th[data-sort-field="name"] {
-        padding-left: 96px !important; /* Expanded view: 16px cell + 8px wrapper + 56px avatar + 16px gap */
+        padding-left: 100px !important; /* Expanded view: 16px cell + 8px wrapper + 60px avatar + 16px gap */
     }
 }
 
