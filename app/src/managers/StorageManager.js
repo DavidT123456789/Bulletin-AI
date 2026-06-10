@@ -589,9 +589,10 @@ export const StorageManager = {
             this._lastDataHash = currentDataHash;
         } else {
             this._lastDataHash = currentDataHash;
-            // On first load, if we have a sync time but no sync hash, initialize it
+            // On first load, if we have a sync time but no sync hash, initialize it (only if clean)
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
-            if (lastSync > 0 && !lastSyncHash) {
+            const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+            if (lastSync > 0 && !lastSyncHash && lastMod <= lastSync) {
                 localStorage.setItem('bulletin_last_sync_hash', currentDataHash);
             }
         }
