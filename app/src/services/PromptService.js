@@ -118,7 +118,7 @@ export const PromptService = {
             styleParts.push(voiceInstruction);
         }
 
-        if (iaConfig.length) {
+        if (iaConfig.length && !hasNoData) {
             styleParts.push(`Rédige une appréciation d'environ ${iaConfig.length} mots.`);
         }
         styleParts.push(`Ne mentionne pas les notes chiffrées (moyennes) dans le texte.`);
