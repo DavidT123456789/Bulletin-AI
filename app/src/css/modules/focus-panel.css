@@ -1000,6 +1000,15 @@
     gap: 8px;
 }
 
+/* Scoped sizing to make focus panel context grades slightly more compact than table grades */
+.grades-wrapper .grade-value {
+    min-width: 44px;
+    width: 44px !important;
+    max-width: 44px;
+    height: 24px !important;
+    font-size: 12px !important;
+}
+
 .previous-grades-inline {
     display: flex;
     align-items: center;
