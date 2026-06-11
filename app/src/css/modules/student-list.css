@@ -478,7 +478,7 @@
 
 .grade-cell .grade-evolution,
 .evolution-cell .grade-evolution {
-    font-size: 17px;
+    font-size: 16.5px;
     font-weight: 700;
     cursor: help;
     transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
