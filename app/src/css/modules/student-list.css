@@ -478,7 +478,7 @@
 
 .grade-cell .grade-evolution,
 .evolution-cell .grade-evolution {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     cursor: help;
     transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
@@ -487,6 +487,13 @@
     justify-content: center;
     opacity: 0.95;
     -webkit-text-stroke: 0.6px currentColor;
+}
+
+.grade-cell .grade-evolution.positive iconify-icon,
+.evolution-cell .grade-evolution.positive iconify-icon,
+.grade-cell .grade-evolution.negative iconify-icon,
+.evolution-cell .grade-evolution.negative iconify-icon {
+    font-size: 1.25em; /* Compensate for the thinner zigzag graphic design */
 }
 
 .grade-cell .grade-evolution:hover,

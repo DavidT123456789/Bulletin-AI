@@ -572,9 +572,9 @@ export const ListViewRenderer = {
                                 const evoType = Utils.getEvolutionType(diff);
 
                                 if (['very-positive', 'positive'].includes(evoType)) {
-                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-up-right-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution positive tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-up-bold"></iconify-icon></span>`;
                                 } else if (diff < 0) {
-                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-down-right-bold"></iconify-icon></span>`;
+                                    evolutionHtml = `<span class="grade-evolution negative tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:trend-down-bold"></iconify-icon></span>`;
                                 } else {
                                     evolutionHtml = `<span class="grade-evolution stable tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="ph:arrow-right-bold"></iconify-icon></span>`;
                                 }
