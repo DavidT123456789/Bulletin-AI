@@ -1099,7 +1099,7 @@ input.context-grade-input {
     font-size: 12px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    border: none !important;
+    border: 0.75px solid transparent;
     outline: none !important;
     text-align: center;
     background: var(--bg-secondary);
@@ -1111,6 +1111,15 @@ input.context-grade-input {
     transition: all var(--transition-fast);
 }
 
+input.context-grade-input[class*="grade-range-"] {
+    border-color: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+input.context-grade-input[class*="grade-range-"]:hover,
+input.context-grade-input[class*="grade-range-"]:focus {
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
 input.context-grade-input:focus {
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2) !important;
 }
@@ -1118,6 +1127,7 @@ input.context-grade-input:focus {
 input.context-grade-input:not([class*="grade-range-"]) {
     background: var(--bg-secondary);
     color: var(--text-tertiary);
+    border-color: transparent;
 }
 
 input.context-grade-input::placeholder {
