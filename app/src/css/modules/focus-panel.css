@@ -1108,6 +1108,11 @@
     margin: 0;
     font-family: inherit;
     touch-action: manipulation;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-shadow: none;
+    box-sizing: border-box;
     transition: all var(--transition-fast);
 }
 
