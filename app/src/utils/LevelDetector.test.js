@@ -32,25 +32,25 @@ describe('LevelDetector - detectLevelFromName', () => {
         });
     });
 
-    describe('3ème (Préparation Brevet)', () => {
+    describe('3ème', () => {
         it('devrait détecter à partir des suffixes de classe', () => {
-            expect(detectLevelFromName('3ème G1')).toBe('3eme');
-            expect(detectLevelFromName('3ème')).toBe('3eme');
-            expect(detectLevelFromName('3e')).toBe('3eme');
-            expect(detectLevelFromName('3°')).toBe('3eme');
-            expect(detectLevelFromName('3°G1')).toBe('3eme');
-            expect(detectLevelFromName('3 B')).toBe('3eme');
-            expect(detectLevelFromName('3G1')).toBe('3eme');
-            expect(detectLevelFromName('3A2')).toBe('3eme');
+            expect(detectLevelFromName('3ème G1')).toBe('college');
+            expect(detectLevelFromName('3ème')).toBe('college');
+            expect(detectLevelFromName('3e')).toBe('college');
+            expect(detectLevelFromName('3°')).toBe('college');
+            expect(detectLevelFromName('3°G1')).toBe('college');
+            expect(detectLevelFromName('3 B')).toBe('college');
+            expect(detectLevelFromName('3G1')).toBe('college');
+            expect(detectLevelFromName('3A2')).toBe('college');
         });
 
         it('devrait détecter à partir de codes administratifs', () => {
-            expect(detectLevelFromName('305')).toBe('3eme');
+            expect(detectLevelFromName('305')).toBe('college');
         });
 
         it('devrait détecter à partir de mots clés de diplôme', () => {
-            expect(detectLevelFromName('Brevet Blanc')).toBe('3eme');
-            expect(detectLevelFromName('Troisième')).toBe('3eme');
+            expect(detectLevelFromName('Brevet Blanc')).toBe('college');
+            expect(detectLevelFromName('Troisième')).toBe('college');
         });
     });
 
@@ -142,7 +142,7 @@ describe('LevelDetector - detectLevelFromName', () => {
             expect(detectLevelFromName('Année 2025-2026')).toBe('generique');
             expect(detectLevelFromName('2025/2026')).toBe('generique');
             expect(detectLevelFromName('4e - 2025-2026')).toBe('college');
-            expect(detectLevelFromName('3°G1 2024')).toBe('3eme');
+            expect(detectLevelFromName('3°G1 2024')).toBe('college');
         });
 
         it('devrait retourner générique pour les chaînes vides ou inconnues', () => {

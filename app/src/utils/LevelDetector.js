@@ -10,7 +10,6 @@ export const LEVELS = {
     maternelle: { label: "Maternelle", icon: "solar:emoji-funny-circle-linear" },
     elementaire: { label: "Élémentaire", icon: "solar:backpack-linear" },
     college: { label: "Collège", icon: "solar:school-linear" },
-    '3eme': { label: "3ème (Brevet)", icon: "solar:diploma-linear" },
     lycee: { label: "Lycée", icon: "solar:notebook-linear" },
     terminale: { label: "Terminale", icon: "solar:cup-star-linear" },
     superieur: { label: "Supérieur", icon: "solar:mortarboard-linear" }
@@ -69,28 +68,18 @@ export function detectLevelFromName(name) {
         return 'lycee';
     }
 
-    // 5. 3ème (séparé du collège)
-    // Gère "3ème", "3e", "3°", "305", "3 A", "3G1"
-    if (
-        /troisi[eéè]me/i.test(cleanName) ||
-        /\bbrevet\b/i.test(cleanName) ||
-        /\b30[1-9]\b/.test(cleanName) ||
-        /\b3\s*(?:eme|ème|è|e|°|º|o)/i.test(cleanName) ||
-        /\b3\s*[A-Z]\d*\b/i.test(cleanName)
-    ) {
-        return '3eme';
-    }
-
-    // 6. Collège (6e, 5e, 4e)
-    // Gère "6ème", "5e", "4°", "602", "4 B", "Picasso 6ème"
+    // 5. Collège (6e à 3e)
+    // Gère "6ème", "5e", "4°", "3e", "305", "602", "4 B", "Picasso 6ème"
     if (
         /sixi[eéè]me/i.test(cleanName) ||
         /cinqui[eéè]me/i.test(cleanName) ||
         /quatri[eéè]me/i.test(cleanName) ||
+        /troisi[eéè]me/i.test(cleanName) ||
+        /\bbrevet\b/i.test(cleanName) ||
         /coll[eéè]ge/i.test(cleanName) ||
-        /\b[654]0[1-9]\b/.test(cleanName) ||
-        /\b[654]\s*(?:eme|ème|è|e|°|o)/i.test(cleanName) ||
-        /\b[654]\s*[A-Z]\d*\b/i.test(cleanName)
+        /\b[6543]0[1-9]\b/.test(cleanName) ||
+        /\b[6543]\s*(?:eme|ème|è|e|°|º|o)/i.test(cleanName) ||
+        /\b[6543]\s*[A-Z]\d*\b/i.test(cleanName)
     ) {
         return 'college';
     }
