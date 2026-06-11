@@ -1104,7 +1104,7 @@
     text-align: center;
     background: var(--bg-secondary);
     color: var(--text-tertiary);
-    padding: 0;
+    padding: 0 !important;
     margin: 0;
     font-family: inherit;
     touch-action: manipulation;
@@ -1113,6 +1113,8 @@
     -moz-appearance: none;
     box-shadow: none;
     box-sizing: border-box;
+    overflow: hidden;
+    line-height: 1 !important;
     transition: all var(--transition-fast);
 }
 
