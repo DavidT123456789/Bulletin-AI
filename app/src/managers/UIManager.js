@@ -481,7 +481,7 @@ export const UI = {
                             const periodLabel = Utils.getPeriodLabel(p, true);
                             chip.classList.add('tooltip');
                             chip.setAttribute('data-tooltip', `${periodLabel} : --`);
-                            chip.innerHTML = `<span class="prev-grade-value">--</span>`;
+                            chip.innerHTML = `<span class="prev-grade-value grade-value">--</span>`;
                             prevGradesEl.appendChild(chip);
 
                             // Render empty evolution arrow placeholder

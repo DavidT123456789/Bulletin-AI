@@ -1011,18 +1011,20 @@
 }
 
 /* On force la valeur (12,5) à être au centre absolu de la cellule */
-.student-list-table td.grade-cell .grade-value {
+.grade-value {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     min-width: 48px;
-    /* Largeur min pour la pilule colorée */
-    height: 28px;
-    border-radius: var(--radius-sm);
-    /* Le background/color vient des classes grade-range-X-Y ajoutées plus haut */
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    width: 48px !important;
+    max-width: 48px;
+    height: 28px !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: var(--font-sm) !important;
+    line-height: 1 !important;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color var(--transition-fast);
 }
 
 /* La flèche d'évolution est positionnée en absolu à droite pour ne pas décaler la note */
