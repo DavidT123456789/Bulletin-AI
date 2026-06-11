@@ -260,7 +260,7 @@
     right: 0;
     background: transparent;
     border-radius: 12px;
-    transition: background 0.25s ease, left 0.35s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: background 0.25s ease;
     z-index: -1;
     pointer-events: auto;
 }
@@ -291,18 +291,10 @@
     color: var(--text-secondary);
 }
 
-/* Hover on name ONLY extends background behind the name */
-.focus-student-name:hover::before {
-    background: var(--item-hover-bg);
-}
-
-/* Hovering either avatar OR name stretches the background over BOTH */
-/* left: -80px covers the new larger avatar (68px) + gap */
+/* Hovering either avatar OR name highlights the background behind the name */
 .focus-header:has(.focus-header-left:hover) .focus-student-name::before,
 .focus-header:has(.focus-student-name:hover) .focus-student-name::before {
     background: var(--item-hover-bg);
-    left: -80px;
-    border-radius: 40px 12px 12px 40px;
 }
 
 .focus-student-name:active {
@@ -3614,9 +3606,10 @@ input.context-grade-input::placeholder {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-/* Nom prend plus de place que Prénom */
+/* Nom prend plus de place que Prénom et s'affiche toujours en majuscules */
 .focus-header-edit #headerNomInput {
     flex: 1.5;
+    text-transform: uppercase;
 }
 
 .focus-input-header::placeholder {
@@ -3682,10 +3675,10 @@ input.context-grade-input::placeholder {
 
 /* Selected State */
 .status-pill-check:has(input:checked) {
-    background: var(--bg-tertiary);
-    border-color: transparent;
-    color: var(--text-primary);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-color));
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+    color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.08);
 }
 
 /* Specific colors for statuses (Hover & Checked) */

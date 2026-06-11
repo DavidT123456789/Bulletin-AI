@@ -371,7 +371,7 @@ export const FocusPanelHeader = {
             if (!result) return;
 
             // 1. Save Identity
-            if (nomInput) result.nom = nomInput.value.trim() || result.nom;
+            if (nomInput) result.nom = nomInput.value.trim().toUpperCase() || result.nom;
             if (prenomInput) result.prenom = prenomInput.value.trim() || result.prenom;
 
             // 1b. Save History Edits (if any)
