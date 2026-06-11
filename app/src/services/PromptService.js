@@ -83,7 +83,7 @@ export const PromptService = {
 
         const isYearEnd = currentPeriodIndex === allPeriods.length - 1;
         const temporalite = isYearEnd
-            ? "Bilan de fin d'année (analyse de la période, bilan annuel global et projection)."
+            ? "Bilan de fin d'année (analyse de la période et bilan annuel global ; une ouverture vers la suite peut être proposée lorsqu'elle est naturelle)."
             : "Bilan intermédiaire (analyse de la période écoulée).";
 
         promptParts.push(`Cadre d'évaluation : ${temporalite}`);
