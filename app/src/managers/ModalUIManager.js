@@ -135,6 +135,20 @@ export const ModalUI = {
 
         // Focus sur le premier élément focalisable après l'animation (en évitant le bouton de fermeture si possible)
         setTimeout(() => {
+            // Initialize and update gliders inside the modal (they weren't created when hidden)
+            UI.initGliders();
+            // Then update positions for this modal's visible containers
+            modal.querySelectorAll('.ui-segmented-control').forEach(container => {
+                if (container.classList.contains('has-glider')) {
+                    UI.updateGlider(container, true);
+                }
+            });
+
+            // Si le focus est déjà positionné sur un élément à l'intérieur de la modale (par ex. par UIManager), on le conserve
+            if (document.activeElement && modal.contains(document.activeElement) && document.activeElement !== modal) {
+                return;
+            }
+
             const focusableElements = Array.from(modal.querySelectorAll(
                 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
             )).filter(el => el.offsetParent !== null && !el.disabled);
@@ -146,15 +160,6 @@ export const ModalUI = {
             if (!focusable && focusableElements.length > 0) focusable = focusableElements[0];
 
             if (focusable) focusable.focus();
-
-            // Initialize and update gliders inside the modal (they weren't created when hidden)
-            UI.initGliders();
-            // Then update positions for this modal's visible containers
-            modal.querySelectorAll('.ui-segmented-control').forEach(container => {
-                if (container.classList.contains('has-glider')) {
-                    UI.updateGlider(container, true);
-                }
-            });
         }, 150);
 
         // Delay tooltip re-enabling until AFTER focus is set (150ms)
@@ -276,12 +281,12 @@ export const ModalUI = {
             const confirmBtnClass = isDanger ? 'btn-danger' : 'btn-primary';
 
             let buttonsHTML = `
-                <button class="btn btn-ghost" id="confirmCancelBtn">${cancelText}</button>
+                <button class="btn btn-secondary" id="confirmCancelBtn">${cancelText}</button>
                 <button class="btn ${confirmBtnClass}" id="confirmOkBtn">${confirmText}</button>
             `;
 
             if (extraButton) {
-                buttonsHTML = `<button class="btn ${extraButton.class || 'btn-ghost'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
+                buttonsHTML = `<button class="btn ${extraButton.class || 'btn-secondary'}" id="confirmExtraBtn">${extraButton.text}</button>` + buttonsHTML;
             }
 
             // Optional message
@@ -469,7 +474,7 @@ export const ModalUI = {
                     </div>
                 </div>
                 <div class="modal-alert-actions">
-                    <button class="btn btn-ghost" id="choicesCancelBtn">${cancelText}</button>
+                    <button class="btn btn-secondary" id="choicesCancelBtn">${cancelText}</button>
                     <button class="btn ${confirmBtnClass}" id="choicesOkBtn">${confirmText}</button>
                 </div>
             </div>`;
@@ -603,7 +608,7 @@ export const ModalUI = {
                     </div>
                 </div>
                 <div class="modal-alert-actions" style="margin-top: 12px;">
-                    <button class="btn btn-ghost" id="hardConfirmCancelBtn">${cancelText}</button>
+                    <button class="btn btn-secondary" id="hardConfirmCancelBtn">${cancelText}</button>
                     <button class="btn btn-danger" id="hardConfirmOkBtn" disabled>${confirmText}</button>
                 </div>
             </div>`;

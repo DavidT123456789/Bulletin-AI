@@ -1349,8 +1349,8 @@
     min-width: 120px;
 }
 
-.import-wizard-footer .btn-ghost {
-    border: 1px solid var(--border-color);
+.import-wizard-footer .btn-secondary {
+    border: none;
 }
 
 
@@ -2847,7 +2847,7 @@
 }
 
 /* Précédent button with icon */
-.import-wizard-footer .btn-ghost {
+.import-wizard-footer .btn-secondary {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -2931,7 +2931,7 @@
     flex-shrink: 0;
 }
 
-.wizard-step2-footer .btn-ghost {
+.wizard-step2-footer .btn-secondary {
     display: inline-flex;
     align-items: center;
     gap: 8px;
