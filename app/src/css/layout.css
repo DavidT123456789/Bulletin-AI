@@ -957,7 +957,7 @@
     line-height: 1.2;
 }
 
-.cloud-save-menu-item:hover .cloud-save-time {
+.cloud-save-menu-item:hover .cloud-save-time:not(.cloud-in-sync):not(.cloud-action-recommended):not(.cloud-conflict) {
     color: var(--text-secondary);
 }
 
