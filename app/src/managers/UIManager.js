@@ -850,6 +850,13 @@ export const UI = {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
+        // Clear any pending progress hide timeouts
+        if (this._hideProgressTimeout) {
+            clearTimeout(this._hideProgressTimeout);
+            this._hideProgressTimeout = null;
+            dashboard.classList.remove('all-complete');
+        }
+
         // Show generating state
         dashboard.classList.add('generating');
 
@@ -884,22 +891,44 @@ export const UI = {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
-        dashboard.classList.remove('generating');
-
-        // Reset progress
-        if (DOM.dashProgressFill) {
-            DOM.dashProgressFill.style.width = '0%';
+        // Clear any existing timeouts to prevent overlapping runs
+        if (this._hideProgressTimeout) {
+            clearTimeout(this._hideProgressTimeout);
+            this._hideProgressTimeout = null;
         }
 
-        // Refresh the dashboard counts
-        this.updateDashboardCounts();
+        const cleanup = () => {
+            dashboard.classList.remove('generating');
+            if (DOM.dashProgressFill) {
+                DOM.dashProgressFill.style.width = '0%';
+            }
+            this.updateDashboardCounts();
+            dashboard.classList.remove('all-complete');
+            this._hideProgressTimeout = null;
+        };
 
-        // Brief success flash if no errors
         if (!hasErrors) {
+            // Force progress text and progress fill to 100% completed state (e.g. 1/1, 8/8) so the user sees the transition
+            if (DOM.dashProgressText) {
+                const text = DOM.dashProgressText.textContent || '';
+                if (text.includes('/')) {
+                    const parts = text.split('/');
+                    const total = parts[1];
+                    DOM.dashProgressText.textContent = `${total}/${total}`;
+                }
+            }
+            if (DOM.dashProgressFill) {
+                DOM.dashProgressFill.classList.remove('indeterminate');
+                DOM.dashProgressFill.style.width = '100%';
+            }
+
+            // Keep the dynamic pill visible at 100% (e.g. 1/1) for 1 second to let the user see the transition
             dashboard.classList.add('all-complete');
-            setTimeout(() => {
-                dashboard.classList.remove('all-complete');
-            }, 1500);
+            this._hideProgressTimeout = setTimeout(() => {
+                cleanup();
+            }, 1000); // 1 second visibility delay
+        } else {
+            cleanup();
         }
     },
 
@@ -1013,6 +1042,12 @@ export const UI = {
     resetHeaderProgress() {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
+
+        // Clear any pending timeouts
+        if (this._hideProgressTimeout) {
+            clearTimeout(this._hideProgressTimeout);
+            this._hideProgressTimeout = null;
+        }
 
         dashboard.classList.remove('generating', 'all-complete');
 

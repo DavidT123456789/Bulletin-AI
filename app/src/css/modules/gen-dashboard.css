@@ -16,7 +16,6 @@
     border-radius: var(--radius-pill);
     padding: 3px;
     position: relative;
-    overflow: hidden;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     cursor: pointer;
     height: 38px;
@@ -227,7 +226,7 @@
 /* Standard Dynamic Border (Matching App Inputs) */
 /* Subtle generating state - border glow matches Landing Page feel */
 .header-gen-dashboard.generating {
-    border: 1px solid rgba(var(--primary-color-rgb), 0.3) !important;
+    border-color: transparent !important;
     gap: 0;
 
     /* Background starts EMPTY (white/transparent) so the bar can fill it */
@@ -241,14 +240,14 @@
 .header-gen-dashboard.generating::before {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: -1px;
     border-radius: inherit;
     padding: 2px;
     background: conic-gradient(from var(--gradient-angle, 0deg),
             var(--primary-color) 0%,
-            rgba(var(--primary-color-rgb), 0.3) 25%,
-            var(--glow-highlight, rgba(255, 255, 255, 0.8)) 50%,
-            rgba(var(--primary-color-rgb), 0.3) 75%,
+            rgba(var(--primary-color-rgb), 0.65) 25%,
+            rgba(255, 255, 255, 0.9) 50%,
+            rgba(var(--primary-color-rgb), 0.65) 75%,
             var(--primary-color) 100%);
     /* Mask: Inner hole (content-box) excluded from Outer rect (border-box) */
     -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
@@ -311,6 +310,7 @@
     z-index: 0;
     /* Behind text */
     pointer-events: none;
+    overflow: hidden;
 }
 
 /* The actual filling element */
@@ -408,7 +408,7 @@
 /* Fix for Dark Mode Generating State - Allow fill to be visible */
 [data-theme="dark"] .header-gen-dashboard.generating {
     background: var(--surface-color) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: transparent !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
