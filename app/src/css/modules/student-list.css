@@ -485,6 +485,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    height: 28px; /* Matches the 28px height of the grade pills */
+    vertical-align: middle;
     opacity: 0.95;
     -webkit-text-stroke: 0.6px currentColor;
 }
