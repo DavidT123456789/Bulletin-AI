@@ -9,9 +9,9 @@ export const LEVELS = {
     generique: { label: "Générique", icon: "solar:minimalistic-bounds-linear" },
     maternelle: { label: "Maternelle", icon: "solar:emoji-funny-circle-linear" },
     elementaire: { label: "Élémentaire", icon: "solar:backpack-linear" },
-    college: { label: "Collège (6e/5e/4e)", icon: "solar:school-linear" },
+    college: { label: "Collège", icon: "solar:school-linear" },
     '3eme': { label: "3ème (Brevet)", icon: "solar:diploma-linear" },
-    lycee: { label: "Lycée (2nde/1ère)", icon: "solar:notebook-linear" },
+    lycee: { label: "Lycée", icon: "solar:notebook-linear" },
     terminale: { label: "Terminale", icon: "solar:cup-star-linear" },
     superieur: { label: "Supérieur", icon: "solar:mortarboard-linear" }
 };

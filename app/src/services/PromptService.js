@@ -126,7 +126,7 @@ export const PromptService = {
             styleParts.push(`Rédige une appréciation d'environ ${iaConfig.length} mots.`);
         }
         styleParts.push(`Ne mentionne pas les notes chiffrées (moyennes) dans le texte.`);
-        styleParts.push(`Génère l'appréciation directement, sans titre ni préambule.`);
+        styleParts.push(`Génère l'appréciation directement, sans titre, sans préambule et sans guillemets.`);
 
         if (iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false) {
             styleParts.push(`Note : ${iaConfig.styleInstructions}`);
@@ -138,7 +138,7 @@ export const PromptService = {
             );
         }
 
-        promptParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.join('\n'));
+        promptParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.map(s => '- ' + s).join('\n'));
 
         // Anonymisation : on n'envoie PAS le nom de famille, seulement les notes
         // On n'envoie que les périodes jusqu'à la période à évaluer (incluse)
