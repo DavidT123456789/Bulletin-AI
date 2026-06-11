@@ -1087,7 +1087,7 @@
     opacity: 0.6;
 }
 
-input.context-grade-input {
+.context-grade-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1111,26 +1111,17 @@ input.context-grade-input {
     transition: all var(--transition-fast);
 }
 
-input.context-grade-input[class*="grade-range-"] {
-    border-color: color-mix(in srgb, currentColor 12%, transparent);
-}
-
-input.context-grade-input[class*="grade-range-"]:hover,
-input.context-grade-input[class*="grade-range-"]:focus {
-    border-color: color-mix(in srgb, currentColor 35%, transparent);
-}
-
-input.context-grade-input:focus {
+.context-grade-input:focus {
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2) !important;
 }
 
-input.context-grade-input:not([class*="grade-range-"]) {
+.context-grade-input:not([class*="grade-range-"]) {
     background: var(--bg-secondary);
     color: var(--text-tertiary);
     border-color: transparent;
 }
 
-input.context-grade-input::placeholder {
+.context-grade-input::placeholder {
     color: inherit;
     opacity: 0.5;
 }
