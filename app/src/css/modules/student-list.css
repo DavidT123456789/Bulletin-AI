@@ -219,6 +219,22 @@
     background: var(--item-hover-bg);
 }
 
+/* Zoom grade pills and evolution arrows on row hover for unified premium feedback */
+.student-list-table tbody tr:hover td.grade-cell .grade-value {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .student-list-table tbody tr:hover td.grade-cell .grade-value {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.student-list-table tbody tr:hover .grade-cell .grade-evolution,
+.student-list-table tbody tr:hover .evolution-cell .grade-evolution {
+    transform: scale(1.15);
+    opacity: 1;
+}
+
 /* === POLISH: Show Actions on Hover (Desktop) === */
 .student-list-table tbody tr .btn-action-menu {
     opacity: 0;
@@ -411,6 +427,11 @@
 .student-name-cell .student-prenom {
     font-weight: 400;
     color: var(--text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.student-list-table tbody tr:hover .student-name-cell .student-prenom {
+    color: var(--text-primary);
 }
 
 /* Grade columns */
