@@ -198,7 +198,8 @@ export const PromptService = {
         // --- CONTEXTE SCOLAIRE ---
         const currentClass = appState.classes?.find(c => c.id === appState.currentClassId);
         if (currentClass) {
-            const classLevel = currentClass.level || detectLevelFromName(currentClass.name);
+            let classLevel = currentClass.level || detectLevelFromName(currentClass.name);
+            if (classLevel === '3eme') classLevel = 'college';
             const levelMeta = LEVELS[classLevel] || LEVELS.generique;
             
             let contextText = `--- CONTEXTE SCOLAIRE ---\nClasse : ${currentClass.name}`;

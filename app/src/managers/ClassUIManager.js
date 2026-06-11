@@ -699,7 +699,7 @@ export const ClassUIManager = {
 
             // Migration silencieuse des classes existantes n'ayant pas de niveau
             for (const cls of classes) {
-                if (!cls.level) {
+                if (!cls.level || cls.level === '3eme') {
                     const detectedLevel = detectLevelFromName(cls.name);
                     ClassManager.updateClass(cls.id, { level: detectedLevel });
                 }
