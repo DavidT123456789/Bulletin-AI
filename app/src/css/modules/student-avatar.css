@@ -163,13 +163,24 @@
         box-shadow 0.25s ease;
 }
 
-/* Hover zoom triggered by entire row hover - better UX ergonomics */
+/* Hover zoom triggered by entire row hover - photo zooms but has no shadow */
 /* Also maintain zoom when student is focused (panel open) OR selected via checkbox */
 .student-list-table tbody tr:hover .student-avatar,
 .student-list-table tbody tr.focus-active .student-avatar,
 .student-list-table tbody tr .student-avatar.is-selected {
     transform: scale(1.18);
     z-index: 10;
+}
+
+/* Focused or selected states get a shadow to indicate active state */
+.student-list-table tbody tr.focus-active .student-avatar,
+.student-list-table tbody tr .student-avatar.is-selected {
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar,
+[data-theme="dark"] .student-list-table tbody tr .student-avatar.is-selected {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* === EXPANDED VIEW: Avatar Left + Stacked Text (Disposition 2) === */
@@ -228,7 +239,7 @@
     }
 }
 
-/* Hover zoom in expanded view - triggered by row hover or focus state */
+/* Zoom in expanded view - triggered by row hover, focus state or selection */
 .appreciation-full-view tbody tr:hover .student-avatar,
 .appreciation-full-view tbody tr.focus-active .student-avatar,
 .appreciation-full-view tbody tr .student-avatar.is-selected {
@@ -236,6 +247,17 @@
     /* Slightly less zoom as avatar is bigger */
     z-index: 10;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Focused or selected states get a shadow to indicate active state in expanded view */
+.appreciation-full-view tbody tr.focus-active .student-avatar,
+.appreciation-full-view tbody tr .student-avatar.is-selected {
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .appreciation-full-view tbody tr.focus-active .student-avatar,
+[data-theme="dark"] .appreciation-full-view tbody tr .student-avatar.is-selected {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Keyframe: subtle blur-to-sharp masks layout change */

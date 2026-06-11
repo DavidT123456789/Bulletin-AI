@@ -1677,10 +1677,10 @@ export const FocusPanelManager = {
             let arrowIcon = 'ph:arrow-right-bold';
             let evoClass = 'stable';
             if (['very-positive', 'positive'].includes(evoType)) {
-                arrowIcon = 'ph:trend-up-bold';
+                arrowIcon = 'ph:arrow-up-right-bold';
                 evoClass = 'positive';
             } else if (diff < 0) {
-                arrowIcon = 'ph:trend-down-bold';
+                arrowIcon = 'ph:arrow-down-right-bold';
                 evoClass = 'negative';
             }
 
