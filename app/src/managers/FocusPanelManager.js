@@ -1687,6 +1687,19 @@ export const FocusPanelManager = {
             return `<span class="grade-evolution ${evoClass} tooltip" data-tooltip="${diffText} pts"><iconify-icon icon="${arrowIcon}"></iconify-icon></span>`;
         };
 
+        const getTooltipText = (period, gradeVal, evalCount, isCurrent = false) => {
+            const periodLabel = Utils.getPeriodLabel(period, true);
+            const displayGrade = (gradeVal !== undefined && gradeVal !== null && gradeVal !== '')
+                ? parseFloat(gradeVal).toFixed(1).replace('.', ',')
+                : '--';
+            const suffix = isCurrent ? ' (Période actuelle)' : '';
+            let tooltip = `${periodLabel}${suffix} : ${displayGrade}`;
+            if (typeof evalCount === 'number') {
+                tooltip += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
+            }
+            return tooltip;
+        };
+
         if (prevGradesEl) {
             prevGradesEl.innerHTML = '';
             const periods = Utils.getPeriods();
@@ -1710,11 +1723,7 @@ export const FocusPanelManager = {
                     : '';
 
                 // Add tooltip showing period info and evaluation count if available
-                const periodLabel = Utils.getPeriodLabel(period, true);
-                let tooltipText = `${periodLabel} : ${displayGrade}`;
-                if (typeof evalCount === 'number') {
-                    tooltipText += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
-                }
+                const tooltipText = getTooltipText(period, grade, evalCount, false);
                 chip.classList.add('tooltip');
                 chip.setAttribute('data-tooltip', tooltipText);
 
@@ -1774,14 +1783,9 @@ export const FocusPanelManager = {
 
             // Add tooltip showing current period details and evaluation count if available
             const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
-            const currentPeriodLabel = Utils.getPeriodLabel(currentPeriod, true);
-            let currentTooltipText = `${currentPeriodLabel} (Période actuelle)`;
-            if (typeof evalCount === 'number') {
-                currentTooltipText += ` - Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}`;
-            }
             if (gradeWrapper) {
                 gradeWrapper.classList.add('tooltip');
-                gradeWrapper.setAttribute('data-tooltip', currentTooltipText);
+                gradeWrapper.setAttribute('data-tooltip', getTooltipText(currentPeriod, currentGrade, evalCount, true));
             }
 
             // Add input listener for grade changes
@@ -1824,6 +1828,11 @@ export const FocusPanelManager = {
                                 
                                 arrowEl.innerHTML = getEvolutionHtml(prevGradeNum, gradeToSave);
                             }
+                        }
+
+                        // Update current period tooltip live
+                        if (gradeWrapper) {
+                            TooltipsUI.updateTooltip(gradeWrapper, getTooltipText(currentPeriod, gradeToSave, evalCount, true));
                         }
                     }
                 }
