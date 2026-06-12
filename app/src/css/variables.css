@@ -96,8 +96,8 @@
     /* Standard Toggle (Large) */
     --toggle-width-default: 44px;
     --toggle-height-default: 24px;
-    --toggle-knob-size-default: 20px;
-    --toggle-inset-default: 2px;
+    --toggle-knob-size-default: 18px;
+    --toggle-inset-default: 3px;
     --toggle-translate-default: 20px;
 
     /* Small Toggle */
