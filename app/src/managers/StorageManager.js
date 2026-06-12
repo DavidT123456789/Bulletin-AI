@@ -60,8 +60,32 @@ export const StorageManager = {
         App = app;
     },
 
+    _hashString(str) {
+        let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+        h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+        h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+    },
+
     async loadAppState() {
         try {
+            try {
+                const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
+                if (lastSyncHash && (lastSyncHash.length > 64 || lastSyncHash.startsWith('{'))) {
+                    localStorage.setItem('bulletin_last_sync_hash', this._hashString(lastSyncHash));
+                }
+            } catch (e) {
+                console.warn('[StorageManager] Failed to migrate old sync hash:', e);
+                localStorage.removeItem('bulletin_last_sync_hash');
+            }
+
             const savedState = localStorage.getItem(CONFIG.LS_APP_STATE_KEY);
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
@@ -542,7 +566,8 @@ export const StorageManager = {
         const dataSettings = { ...settings };
         UI_AND_NAV_KEYS.forEach(k => delete dataSettings[k]);
         const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
-        return JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+        const rawData = JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+        return this._hashString(rawData);
     },
 
     /**

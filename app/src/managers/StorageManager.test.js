@@ -211,6 +211,21 @@ describe('StorageManager', () => {
             const updatedLS = JSON.parse(localStorage.setItem.mock.calls[0][1]);
             expect(updatedLS.generatedResults).toBeUndefined();
         });
+
+        it('should migrate old massive JSON sync hash to a short hash representation', async () => {
+            const oldHash = '{"version":"4.3.0","settings":{"theme":"dark"},"generatedResults":[{"id":"1"}]}';
+            mockLocalStorage['bulletin_last_sync_hash'] = oldHash;
+
+            DBService.getAll.mockResolvedValue([]);
+
+            await StorageManager.loadAppState();
+
+            const migratedHash = mockLocalStorage['bulletin_last_sync_hash'];
+            expect(migratedHash).toBeDefined();
+            expect(migratedHash.length).toBe(16);
+            expect(migratedHash).not.toBe(oldHash);
+            expect(/^[0-9a-f]{16}$/.test(migratedHash)).toBe(true);
+        });
     });
 
     describe('migrateData', () => {
@@ -225,6 +240,29 @@ describe('StorageManager', () => {
 
             const migrated = StorageManager.migrateData(oldFormatResults);
             expect(migrated[0].studentData.periods.T1.grade).toBe(15);
+        });
+    });
+
+    describe('_hashString & computeCurrentDataHash', () => {
+        it('should hash strings consistently to a 16-character hex representation', () => {
+            const str1 = 'hello world';
+            const str2 = 'hello world';
+            const str3 = 'hello world!';
+
+            const hash1 = StorageManager._hashString(str1);
+            const hash2 = StorageManager._hashString(str2);
+            const hash3 = StorageManager._hashString(str3);
+
+            expect(hash1.length).toBe(16);
+            expect(/^[0-9a-f]{16}$/.test(hash1)).toBe(true);
+            expect(hash1).toBe(hash2);
+            expect(hash1).not.toBe(hash3);
+        });
+
+        it('should compute hash for current data', () => {
+            const hash = StorageManager.computeCurrentDataHash();
+            expect(hash.length).toBe(16);
+            expect(/^[0-9a-f]{16}$/.test(hash)).toBe(true);
         });
     });
 });
