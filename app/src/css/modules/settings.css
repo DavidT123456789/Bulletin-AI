@@ -742,12 +742,10 @@
 .toggle-switch .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    /* plus petit */
-    width: 16px;
-    /* plus petit */
-    left: 4px;
-    bottom: 4px;
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
     background: white;
     transition: 0.3s;
     border-radius: var(--radius-pill);
