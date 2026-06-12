@@ -1561,3 +1561,114 @@ body.is-offline::before {
     border-radius: 0 0 8px 8px;
     z-index: var(--z-modal);
 }
+
+/* ==========================================================================
+   Premium Drop Zones (Shared Styles / Single Source of Truth)
+   ========================================================================== */
+.import-drop-zone,
+.trombi-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--primary-color-rgb), 0.015);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-spring);
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    will-change: transform, border-color, background-color;
+}
+
+.import-drop-zone:hover,
+.trombi-drop-zone:hover {
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.04);
+    transform: translateY(-1.5px);
+}
+
+.import-drop-zone.dragging,
+.import-drop-zone.dragover,
+.trombi-drop-zone.dragging,
+.trombi-drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.05);
+}
+
+/* Shared Dropzone Content */
+.import-drop-zone .drop-zone-content,
+.trombi-drop-zone .drop-zone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+    width: 100%;
+}
+
+/* Shared Icon Container - slightly larger & animated */
+.import-drop-zone .drop-zone-icon,
+.trombi-drop-zone .drop-zone-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-radius: var(--radius-lg);
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    transition: background 0.2s ease, transform var(--transition-spring);
+}
+
+.import-drop-zone:hover .drop-zone-icon,
+.trombi-drop-zone:hover .drop-zone-icon {
+    background: rgba(var(--primary-color-rgb), 0.14);
+}
+
+/* Spring icon animation on hover */
+.import-drop-zone .drop-zone-icon iconify-icon,
+.import-drop-zone .drop-zone-icon i,
+.trombi-drop-zone .drop-zone-icon iconify-icon,
+.trombi-drop-zone .drop-zone-icon i {
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-block;
+}
+
+.import-drop-zone:hover .drop-zone-icon iconify-icon,
+.import-drop-zone:hover .drop-zone-icon i,
+.trombi-drop-zone:hover .drop-zone-icon iconify-icon,
+.trombi-drop-zone:hover .drop-zone-icon i {
+    transform: translateY(-2px) scale(1.04);
+}
+
+/* Shared Text & Title Layout */
+.import-drop-zone .drop-zone-text,
+.trombi-drop-zone .drop-zone-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.import-drop-zone .drop-zone-title,
+.trombi-drop-zone .drop-zone-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.import-drop-zone .drop-zone-hint,
+.trombi-drop-zone .drop-zone-hint {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+.import-drop-zone .drop-zone-hint u,
+.trombi-drop-zone .drop-zone-hint u {
+    color: var(--primary-color);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--primary-color);
+}

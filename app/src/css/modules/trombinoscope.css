@@ -158,87 +158,10 @@
     padding: var(--modal-padding);
 }
 
-/* Drop Zone - Harmonized with import-wizard style */
 .trombi-drop-zone {
     flex: 1 1 auto;
     min-height: 0;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-secondary);
-    border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.trombi-drop-zone:hover,
-.trombi-drop-zone.dragover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.02);
-}
-
-
-.trombi-drop-zone .drop-zone-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    text-align: center;
-    z-index: 1;
-}
-
-/* Icon container matching import-wizard */
-.trombi-drop-zone .drop-zone-icon {
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-radius: var(--radius-lg);
-    color: var(--primary-color);
-    font-size: 1.5rem;
-    transition: transform 0.3s ease, background 0.3s ease;
-}
-
-.trombi-drop-zone:hover .drop-zone-icon {
-    background: rgba(var(--primary-color-rgb), 0.15);
-}
-
-.trombi-drop-zone i {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-
-
-
-.trombi-drop-zone .drop-zone-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.trombi-drop-zone .drop-zone-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.trombi-drop-zone .drop-zone-hint {
-    font-size: 0.85rem;
-    color: var(--text-tertiary);
-}
-
-.trombi-drop-zone .drop-zone-hint u {
-    color: var(--primary-color);
-    text-decoration: none;
-    border-bottom: 1px dashed var(--primary-color);
 }
 
 /* Floating Sample Button */
@@ -373,6 +296,8 @@
     width: 100%;
     height: auto;
     display: block;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .trombi-image-overlay {
@@ -391,6 +316,7 @@
     inset: 0;
     pointer-events: auto;
     cursor: crosshair;
+    user-select: none;
 }
 
 .trombi-zone {
@@ -434,6 +360,23 @@
     box-shadow: 0 4px 20px rgba(var(--primary-color-rgb), 0.4),
         0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 90;
+}
+
+.trombi-zone.is-selected {
+    border-color: #f39c12; /* Warning/orange color */
+    border-width: 3px;
+    background: rgba(243, 156, 18, 0.2);
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.35);
+    z-index: 95;
+}
+
+.trombi-selection-box {
+    position: absolute;
+    border: 1.5px dashed var(--warning-color, #f39c12);
+    background-color: rgba(243, 156, 18, 0.08);
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
 }
 
 .trombi-zone .zone-label {

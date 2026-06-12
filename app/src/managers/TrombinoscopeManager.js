@@ -75,6 +75,12 @@ export const TrombinoscopeManager = {
     /** Timer for grouping keyboard nudges */
     _nudgeTimer: null,
 
+    /** Multi-selection properties */
+    _selectedZoneIds: new Set(),
+    _selectionBox: null,
+    _selectionBoxDragActive: false,
+    _restoreGroupedDrag: false,
+
     // ========================================================================
     // INITIALIZATION
     // ========================================================================
@@ -207,10 +213,15 @@ export const TrombinoscopeManager = {
         this._history = [];
         this._tempSliderSnapshot = null;
         this._tempDragSnapshot = null;
+        this._isNewUpload = false;
         if (this._nudgeTimer) {
             clearTimeout(this._nudgeTimer);
             this._nudgeTimer = null;
         }
+        this._selectedZoneIds.clear();
+        this._selectionBox = null;
+        this._selectionBoxDragActive = false;
+        this._restoreGroupedDrag = false;
 
         // Cleanup observer
         if (this._imgResizeObserver) {
@@ -541,6 +552,7 @@ export const TrombinoscopeManager = {
             this._imageSrc = url;
             this._imageNaturalWidth = img.naturalWidth;
             this._imageNaturalHeight = img.naturalHeight;
+            this._isNewUpload = true; // Mark as new upload
             this._displayImagePreview();
             document.getElementById('trombiStep1NextBtn').disabled = false;
         };
@@ -610,12 +622,11 @@ export const TrombinoscopeManager = {
         const imagePanel = document.getElementById('trombiImageWithZones');
         if (!imagePanel) return;
 
-        // Setup image with overlay
         // Setup image with overlay - wrapped in a container for correct aspect ratio positioning
         imagePanel.innerHTML = `
             <div class="trombi-viewport">
                 <div class="trombi-content-wrapper" style="aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight}">
-                    <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image">
+                    <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image" draggable="false">
                     <div class="trombi-zones-overlay" id="trombiZonesOverlay"></div>
                 </div>
             </div>
@@ -623,11 +634,14 @@ export const TrombinoscopeManager = {
 
         const img = document.getElementById('trombiStep2Image');
         img.onload = () => {
-            // Create default grid if no zones exist
-            if (this._zones.length === 0) {
+            // Create default grid if no zones exist or on new upload
+            if (this._isNewUpload || this._zones.length === 0) {
+                this._zones = []; // Clear previous zones
                 this._createDefaultGrid();
+                this._isNewUpload = false; // Reset upload flag
+            } else {
+                this._renderZones();
             }
-            this._renderZones();
         };
 
         // Fix: Observer for layout changes (aspect-ratio reflow)
@@ -640,10 +654,29 @@ export const TrombinoscopeManager = {
         });
         this._imgResizeObserver.observe(img);
 
-        // Click on overlay to add zone
+        // Click and drag selection / add zone on overlay/viewport
         const overlay = document.getElementById('trombiZonesOverlay');
+        const viewport = imagePanel?.querySelector('.trombi-viewport');
+        
+        viewport?.addEventListener('mousedown', e => {
+            // Start selection box only if clicking background viewport or overlay (not a zone)
+            if (!e.target.closest('.trombi-zone') && !e.target.closest('.zone-delete')) {
+                e.preventDefault();
+                this._selectionBox = {
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    isActive: false,
+                    viewportRect: viewport.getBoundingClientRect()
+                };
+                this._selectionBoxDragActive = false;
+            }
+        });
+
         overlay?.addEventListener('click', e => {
             if (e.target === overlay) {
+                if (this._selectionBoxDragActive) {
+                    return;
+                }
                 this._addZoneAtClick(e);
             }
         });
@@ -818,6 +851,7 @@ export const TrombinoscopeManager = {
 
         groupedToggle?.addEventListener('change', e => {
             this._groupedDrag = e.target.checked;
+            this._restoreGroupedDrag = false;
         });
 
         // Bind Undo slider drag listeners
@@ -859,8 +893,24 @@ export const TrombinoscopeManager = {
 
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
             this._saveState();
-            this._gridCols = 4;
-            this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
+            
+            let cols = 4;
+            let rows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
+
+            // Use smart geometric aspect ratio detection for reset baseline
+            const detected = this._detectGridFromImage();
+            if (detected) {
+                cols = detected.cols;
+                rows = detected.rows;
+            } else if (this._imageNaturalWidth && this._imageNaturalHeight) {
+                const isPortrait = this._imageNaturalHeight / this._imageNaturalWidth > 1.1;
+                const cellRatio = isPortrait ? 0.82 : 1.83;
+                rows = Math.round(cols * (this._imageNaturalHeight / this._imageNaturalWidth) * cellRatio);
+                rows = Math.max(2, Math.min(12, rows));
+            }
+
+            this._gridCols = cols;
+            this._gridRows = rows;
             this._gapH = 0;
             this._gapV = 0;
             if (colsSlider) { colsSlider.value = this._gridCols; colsValue.textContent = this._gridCols; }
@@ -871,8 +921,12 @@ export const TrombinoscopeManager = {
             this._createGridSilent(this._gridCols, this._gridRows);
         });
 
-        // Create initial grid with auto-assignment
-        this._createGridSilent(this._gridCols, this._gridRows);
+        // Only create initial grid if we don't have any zones yet
+        if (this._zones.length === 0) {
+            this._createDefaultGrid();
+        } else {
+            this._syncSlidersToState();
+        }
     },
 
     /**
@@ -975,10 +1029,177 @@ export const TrombinoscopeManager = {
         else if (count <= 24) cols = 6;
         else cols = Math.min(8, Math.ceil(Math.sqrt(count)));
 
-        const rows = Math.ceil(count / cols);
+        let rows = Math.ceil(count / cols);
+
+        // Try automatic grid detection from image
+        const detected = this._detectGridFromImage();
+        if (detected) {
+            cols = detected.cols;
+            rows = detected.rows;
+        } else if (this._imageNaturalWidth && this._imageNaturalHeight) {
+            // FALLBACK GEOMETRIC ESTIMATE (based on image aspect ratio, not class size)
+            cols = 4; // default columns count
+            const ratio = this._imageNaturalWidth / this._imageNaturalHeight;
+            let cellRatio = 0.95;
+            if (ratio > 1.5) {
+                cellRatio = 4.25;
+            } else if (ratio > 1.1) {
+                cellRatio = 1.1;
+            }
+            rows = Math.round(cols * (this._imageNaturalHeight / this._imageNaturalWidth) * cellRatio);
+            rows = Math.max(2, Math.min(12, rows));
+        }
+
         this._gridCols = cols;
         this._gridRows = rows;
-        this._createGrid(cols, rows);
+        this._createGridSilent(cols, rows);
+
+        // Sync control panel sliders if they are already rendered
+        this._syncSlidersToState();
+    },
+
+    _detectGridFromImage() {
+        try {
+            const img = document.getElementById('trombiStep2Image');
+            if (!img || !img.complete || img.naturalWidth === 0) return null;
+
+            // Use a small canvas for fast pixel analysis without overhead
+            const canvas = document.createElement('canvas');
+            const size = 150;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw image on canvas
+            ctx.drawImage(img, 0, 0, size, size);
+
+            let imgData;
+            try {
+                imgData = ctx.getImageData(0, 0, size, size).data;
+            } catch (canvasErr) {
+                // Occurs if image is tainted (CORS) or other canvas context issues
+                console.warn('[Trombinoscope] Unable to read image data (CORS or canvas issue):', canvasErr);
+                return null;
+            }
+
+            // Convert to 2D grayscale array
+            const gray = new Uint8Array(size * size);
+            for (let i = 0; i < size * size; i++) {
+                const r = imgData[i * 4];
+                const g = imgData[i * 4 + 1];
+                const b = imgData[i * 4 + 2];
+                // Standard luma formula
+                gray[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+            }
+
+            // Analyze X projection variance to find grid columns (highly robust, no vertical text)
+            const cols = this._analyzeProjection(gray, size, 'x');
+
+            // Sanity check for columns
+            if (cols >= 2 && cols <= 12) {
+                // Classify layout orientation and cell aspect ratio
+                const ratio = img.naturalWidth / img.naturalHeight;
+                let cellRatio = 0.95; // portrait default
+                if (ratio > 1.5) {
+                    cellRatio = 4.25; // very wide landscape (list layouts)
+                } else if (ratio > 1.1) {
+                    cellRatio = 1.1;  // standard landscape (photos grids)
+                }
+
+                // Geometrically calculate rows (immune to horizontal text interference)
+                const rows = Math.round(cols * (img.naturalHeight / img.naturalWidth) * cellRatio);
+
+                if (rows >= 2 && rows <= 12) {
+                    console.log(`[Trombinoscope] Auto-detected grid: ${cols} cols, ${rows} rows (geometric estimate)`);
+                    return { cols, rows };
+                }
+            }
+        } catch (e) {
+            console.warn('[Trombinoscope] Error during auto-grid detection:', e);
+        }
+        return null;
+    },
+
+    _analyzeProjection(gray, size, axis) {
+        const variances = new Float32Array(size);
+
+        for (let i = 0; i < size; i++) {
+            let sum = 0;
+            let sumSq = 0;
+            for (let j = 0; j < size; j++) {
+                // If axis is 'x', we look at columns (index is column i, j-th row pixel)
+                // If axis is 'y', we look at rows (index is row i, j-th column pixel)
+                const val = (axis === 'x') ? gray[j * size + i] : gray[i * size + j];
+                sum += val;
+                sumSq += val * val;
+            }
+            const mean = sum / size;
+            // Variance: E[X^2] - E[X]^2
+            variances[i] = (sumSq / size) - (mean * mean);
+        }
+
+        // Apply a simple 5-tap moving average filter to smooth noise
+        const smooth = new Float32Array(size);
+        const halfWin = 2;
+        for (let i = 0; i < size; i++) {
+            let valSum = 0;
+            let count = 0;
+            for (let w = -halfWin; w <= halfWin; w++) {
+                const idx = i + w;
+                if (idx >= 0 && idx < size) {
+                    valSum += variances[idx];
+                    count++;
+                }
+            }
+            smooth[i] = valSum / count;
+        }
+
+        // Find min and max to determine threshold
+        let minVar = Infinity;
+        let maxVar = -Infinity;
+        for (let i = 0; i < size; i++) {
+            if (smooth[i] < minVar) minVar = smooth[i];
+            if (smooth[i] > maxVar) maxVar = smooth[i];
+        }
+
+        const range = maxVar - minVar;
+        if (range < 10) return 0; // Very low contrast or solid image
+
+        // Threshold to distinguish "student photo area" from "gutter/margin area"
+        // Since gutters have low variance, threshold is set at 35% of the range above min
+        const threshold = minVar + range * 0.35;
+
+        // Count continuous segments of high variance (photos)
+        let segments = 0;
+        let inSegment = false;
+        let minSegmentWidth = Math.max(3, Math.round(size * 0.03)); // ignore tiny noise spikes
+
+        let currentSegmentWidth = 0;
+        for (let i = 0; i < size; i++) {
+            const isHighVariance = smooth[i] > threshold;
+            if (isHighVariance) {
+                if (!inSegment) {
+                    inSegment = true;
+                    currentSegmentWidth = 1;
+                } else {
+                    currentSegmentWidth++;
+                }
+            } else {
+                if (inSegment) {
+                    if (currentSegmentWidth >= minSegmentWidth) {
+                        segments++;
+                    }
+                    inSegment = false;
+                    currentSegmentWidth = 0;
+                }
+            }
+        }
+        // Handle segment ending at the border
+        if (inSegment && currentSegmentWidth >= minSegmentWidth) {
+            segments++;
+        }
+
+        return segments;
     },
 
     _createGrid(cols, rows, preserveReference = false, silent = false) {
@@ -991,6 +1212,7 @@ export const TrombinoscopeManager = {
 
         this._zones = [];
         this._zoneIdCounter = 0;
+        this._selectedZoneIds.clear();
 
         const w = this._imageNaturalWidth;
         const h = this._imageNaturalHeight;
@@ -1107,6 +1329,7 @@ export const TrombinoscopeManager = {
 
     _removeZone(zoneId) {
         this._saveState();
+        this._selectedZoneIds.delete(zoneId);
         this._zones = this._zones.filter(z => z.id !== zoneId);
         this._renderZones();
         this._renderAssignmentGrid();
@@ -1218,8 +1441,9 @@ export const TrombinoscopeManager = {
             const deleteFontSize = Math.max(7, Math.round(10 * labelScale));
             const borderWidth = diameter < 40 ? 2 : 3;
 
+            const isSel = this._selectedZoneIds?.has(zone.id) ? 'is-selected' : '';
             return `
-                <div class="trombi-zone" 
+                <div class="trombi-zone ${isSel}" 
                      data-zone-id="${zone.id}"
                      style="left: ${dispCx}px; top: ${dispCy}px; 
                             width: ${diameter}px; height: ${diameter}px;
@@ -1269,14 +1493,61 @@ export const TrombinoscopeManager = {
         if (!zone) return;
 
         const overlay = document.getElementById('trombiZonesOverlay');
-        const rect = overlay.getBoundingClientRect();
+        if (!overlay) return;
 
+        const rect = overlay.getBoundingClientRect();
         const scaleX = this._imageNaturalWidth / rect.width;
         const scaleY = this._imageNaturalHeight / rect.height;
 
         // Calculate offset in natural pixels
         const clickNatX = (e.clientX - rect.left) * scaleX;
         const clickNatY = (e.clientY - rect.top) * scaleY;
+
+        // Manage selection on click
+        if (e.shiftKey && this._lastFocusedZoneId !== null) {
+            // Shift + Click range selection (Windows style)
+            const idxAnchor = this._zones.findIndex(z => z.id === this._lastFocusedZoneId);
+            const idxNew = this._zones.findIndex(z => z.id === zoneId);
+            if (idxAnchor !== -1 && idxNew !== -1) {
+                // Clear selection if not holding Ctrl/Cmd too
+                const keepExisting = e.ctrlKey || e.metaKey;
+                if (!keepExisting) {
+                    this._selectedZoneIds.clear();
+                    overlay.querySelectorAll('.trombi-zone').forEach(zEl => {
+                        zEl.classList.remove('is-selected');
+                    });
+                }
+                const startIdx = Math.min(idxAnchor, idxNew);
+                const endIdx = Math.max(idxAnchor, idxNew);
+                for (let i = startIdx; i <= endIdx; i++) {
+                    const z = this._zones[i];
+                    this._selectedZoneIds.add(z.id);
+                    const zEl = overlay.querySelector(`.trombi-zone[data-zone-id="${z.id}"]`);
+                    zEl?.classList.add('is-selected');
+                }
+            }
+        } else if (e.ctrlKey || e.metaKey) {
+            // Ctrl/Cmd + Click toggle selection
+            if (this._selectedZoneIds.has(zoneId)) {
+                this._selectedZoneIds.delete(zoneId);
+                el.classList.remove('is-selected');
+            } else {
+                this._selectedZoneIds.add(zoneId);
+                el.classList.add('is-selected');
+            }
+        } else {
+            // If the zone clicked is not part of the selection, clear selection and select only it
+            if (!this._selectedZoneIds.has(zoneId)) {
+                this._selectedZoneIds.clear();
+                overlay.querySelectorAll('.trombi-zone').forEach(zEl => {
+                    zEl.classList.remove('is-selected');
+                });
+                this._selectedZoneIds.add(zoneId);
+                el.classList.add('is-selected');
+            }
+        }
+
+        this._updateGroupedDragState();
 
         // Store original positions of all zones for synchronized drag
         const originalPositions = new Map();
@@ -1310,6 +1581,11 @@ export const TrombinoscopeManager = {
     },
 
     _handleMouseMove(e) {
+        if (this._selectionBox) {
+            this._updateSelectionBox(e);
+            return;
+        }
+
         if (!this._dragging) return;
 
         const overlay = document.getElementById('trombiZonesOverlay');
@@ -1323,6 +1599,8 @@ export const TrombinoscopeManager = {
         const newCx = (e.clientX - rect.left) * scaleX - offsetX;
         const newCy = (e.clientY - rect.top) * scaleY - offsetY;
 
+        const r = this._globalRadius;
+
         if (this._groupedDrag) {
             // Grouped mode: move ALL zones by the same delta
             const deltaX = newCx - startCx;
@@ -1335,9 +1613,36 @@ export const TrombinoscopeManager = {
                     z.cy = originalPos.cy + deltaY;
                 }
             });
+        } else if (this._selectedZoneIds.size > 1 && this._selectedZoneIds.has(zone.id)) {
+            // Multi-selection mode: move all selected zones by the same delta
+            const deltaX = newCx - startCx;
+            const deltaY = newCy - startCy;
+
+            this._zones.forEach(z => {
+                if (this._selectedZoneIds.has(z.id)) {
+                    const originalPos = this._dragging.originalPositions.get(z.id);
+                    if (originalPos) {
+                        z.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, originalPos.cx + deltaX));
+                        z.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, originalPos.cy + deltaY));
+                    }
+                }
+            });
+        } else if (e.shiftKey) {
+            // Row-mode (Shift key): move all zones in the same row vertically
+            const deltaY = newCy - startCy;
+            // Identify zones on the same horizontal row (based on similar cy coordinate)
+            const rowZones = this._zones.filter(z => Math.abs(z.cy - startCy) < r * 1.5);
+            
+            rowZones.forEach(z => {
+                const originalPos = this._dragging.originalPositions.get(z.id);
+                if (originalPos) {
+                    z.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, originalPos.cy + deltaY));
+                }
+            });
+            // Also move the dragged zone horizontally normally
+            zone.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, newCx));
         } else {
             // Individual mode: move only this zone
-            const r = this._globalRadius;
             zone.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, newCx));
             zone.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, newCy));
         }
@@ -1346,7 +1651,100 @@ export const TrombinoscopeManager = {
         this._updateLivePreviews();
     },
 
+    _updateSelectionBox(e) {
+        const box = this._selectionBox;
+        if (!box) return;
+
+        const imagePanel = document.getElementById('trombiImageWithZones');
+        const viewport = imagePanel?.querySelector('.trombi-viewport');
+        if (!viewport) return;
+
+        // Calculate current width and height
+        const dx = e.clientX - box.startX;
+        const dy = e.clientY - box.startY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // If distance > 5px, activate the box
+        if (!box.isActive && distance > 5) {
+            box.isActive = true;
+            this._selectionBoxDragActive = true;
+            
+            // Create the visual box element inside viewport if not exists
+            let boxEl = document.getElementById('trombiSelectionBox');
+            if (!boxEl) {
+                boxEl = document.createElement('div');
+                boxEl.id = 'trombiSelectionBox';
+                boxEl.className = 'trombi-selection-box';
+                viewport.appendChild(boxEl);
+            }
+            boxEl.style.display = 'block';
+        }
+
+        if (!box.isActive) return;
+
+        const boxEl = document.getElementById('trombiSelectionBox');
+        if (!boxEl) return;
+
+        // Compute geometry relative to viewport
+        const rect = box.viewportRect;
+        const left = Math.min(box.startX, e.clientX) - rect.left;
+        const top = Math.min(box.startY, e.clientY) - rect.top;
+        const width = Math.abs(dx);
+        const height = Math.abs(dy);
+
+        boxEl.style.left = `${left}px`;
+        boxEl.style.top = `${top}px`;
+        boxEl.style.width = `${width}px`;
+        boxEl.style.height = `${height}px`;
+
+        // Detect overlapping zones using client viewport coordinates
+        const boxLeft = Math.min(box.startX, e.clientX);
+        const boxRight = Math.max(box.startX, e.clientX);
+        const boxTop = Math.min(box.startY, e.clientY);
+        const boxBottom = Math.max(box.startY, e.clientY);
+
+        const overlay = document.getElementById('trombiZonesOverlay');
+        if (overlay) {
+            this._zones.forEach(zone => {
+                const el = overlay.querySelector(`.trombi-zone[data-zone-id="${zone.id}"]`);
+                if (el) {
+                    const zRect = el.getBoundingClientRect();
+                    const isOverlapping = !(zRect.left > boxRight || zRect.right < boxLeft || zRect.top > boxBottom || zRect.bottom < boxTop);
+                    if (isOverlapping) {
+                        this._selectedZoneIds.add(zone.id);
+                        el.classList.add('is-selected');
+                    } else {
+                        this._selectedZoneIds.delete(zone.id);
+                        el.classList.remove('is-selected');
+                    }
+                }
+            });
+        }
+        this._updateGroupedDragState();
+    },
+
     _handleMouseUp() {
+        if (this._selectionBox) {
+            const boxEl = document.getElementById('trombiSelectionBox');
+            if (boxEl) {
+                boxEl.style.display = 'none';
+            }
+            if (!this._selectionBox.isActive) {
+                // Click on background overlay: clear selection
+                this._selectedZoneIds.clear();
+                const overlay = document.getElementById('trombiZonesOverlay');
+                overlay?.querySelectorAll('.trombi-zone').forEach(zEl => {
+                    zEl.classList.remove('is-selected');
+                });
+                this._updateGroupedDragState();
+            }
+            this._selectionBox = null;
+            setTimeout(() => {
+                this._selectionBoxDragActive = false;
+            }, 50);
+            return;
+        }
+
         if (this._dragging) {
             const { zone, startCx, startCy } = this._dragging;
             const el = document.querySelector(`[data-zone-id="${zone.id}"]`);
@@ -1363,6 +1761,24 @@ export const TrombinoscopeManager = {
             }
             this._tempDragSnapshot = null;
             this._dragging = null;
+        }
+    },
+
+    _updateGroupedDragState() {
+        if (this._selectedZoneIds.size > 1) {
+            if (this._groupedDrag) {
+                this._restoreGroupedDrag = true;
+                this._groupedDrag = false;
+                const toggle = document.getElementById('groupedDragToggle');
+                if (toggle) toggle.checked = false;
+            }
+        } else {
+            if (this._restoreGroupedDrag) {
+                this._groupedDrag = true;
+                this._restoreGroupedDrag = false;
+                const toggle = document.getElementById('groupedDragToggle');
+                if (toggle) toggle.checked = true;
+            }
         }
     },
 
@@ -1474,6 +1890,20 @@ export const TrombinoscopeManager = {
                 this._zones.forEach(z => {
                     z.cx += deltaX;
                     z.cy += deltaY;
+                });
+            } else if (this._selectedZoneIds.size > 1 && this._selectedZoneIds.has(this._lastFocusedZoneId)) {
+                // Multi-selection mode: move all selected zones
+                let deltaX = 0, deltaY = 0;
+                if (e.key === 'ArrowLeft') deltaX = -step;
+                else if (e.key === 'ArrowRight') deltaX = step;
+                else if (e.key === 'ArrowUp') deltaY = -step;
+                else if (e.key === 'ArrowDown') deltaY = step;
+
+                this._zones.forEach(z => {
+                    if (this._selectedZoneIds.has(z.id)) {
+                        z.cx = Math.max(r, Math.min(this._imageNaturalWidth - r, z.cx + deltaX));
+                        z.cy = Math.max(r, Math.min(this._imageNaturalHeight - r, z.cy + deltaY));
+                    }
                 });
             } else {
                 // Individual mode: move only this zone
@@ -1956,6 +2386,7 @@ export const TrombinoscopeManager = {
         if (!this._history || this._history.length === 0) return;
         const prevState = this._history.pop();
         
+        this._selectedZoneIds.clear();
         this._zones = prevState.zones.map(z => ({ ...z }));
         this._gridCols = prevState.gridCols;
         this._gridRows = prevState.gridRows;
