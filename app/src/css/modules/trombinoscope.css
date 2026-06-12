@@ -651,6 +651,12 @@
     border-color: rgba(var(--primary-color-rgb), 0.3);
 }
 
+.grid-reset-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* Full width row (for size slider) */
 .control-row.full-width {
     grid-column: 1 / -1;
@@ -665,6 +671,7 @@
     color: var(--text-secondary);
     min-width: 60px;
     white-space: nowrap;
+    margin-top: 4px; /* Correction visuelle d'alignement avec la réglette */
 }
 
 .control-row label i {
@@ -681,85 +688,98 @@
     gap: 6px;
 }
 
-/* Slider track wrapper - "Tube" design restored */
+/* Slider track wrapper - épuré et invisible */
 .slider-track {
     flex: 1;
     position: relative;
-    overflow: hidden;
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    height: 20px;
+    overflow: visible; /* Laisser le curseur déborder librement */
+    background: transparent;
+    height: 20px; /* Zone d'interaction compacte et centrée */
     display: flex;
     align-items: center;
 }
 
 .control-slider {
     flex: 1;
-    height: 4px;
+    height: var(--slider-track-height-default);
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
     cursor: pointer;
     /* Extend slider beyond visible bounds to eliminate dead zone */
-    margin: 0 -7px;
-    width: calc(100% + 14px);
+    margin: 0 -8px;
+    width: calc(100% + 16px);
 }
 
 /* Custom slider track */
 .control-slider::-webkit-slider-runnable-track {
-    height: 4px;
-    background: linear-gradient(to right,
-            var(--primary-color) 0%,
-            var(--border-color) 0%);
-    border-radius: 2px;
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
 }
 
 .control-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
+    appearance: none;
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
     cursor: grab;
-    border: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    margin-top: -5px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    margin-top: calc((var(--slider-track-height-default) - var(--slider-thumb-size-default)) / 2);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .control-slider::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--shadow-md);
 }
 
 .control-slider:active::-webkit-slider-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
 }
 
 .control-slider::-moz-range-track {
-    height: 4px;
-    background: var(--bg-secondary);
-    border-radius: 2px;
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
 }
 
 .control-slider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
     cursor: grab;
-    border: none;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .control-slider::-moz-range-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--shadow-md);
 }
 
 .control-slider:active::-moz-range-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
+}
+
+/* Accessibilité : Focus au clavier */
+.control-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.control-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* Slider value - More visible box design */

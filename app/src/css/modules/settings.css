@@ -496,47 +496,49 @@
 .slider-container input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 20px;
-    width: 20px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    box-shadow: var(--shadow-sm);
-    /* Ajustement précis pour centrer le thumb sur la track de 4px */
-    margin-top: -8px;
+    height: var(--slider-thumb-size-premium);
+    width: var(--slider-thumb-size-premium);
+    background: var(--slider-thumb-bg-premium);
+    border: var(--slider-thumb-border-premium);
+    border-radius: var(--radius-full);
+    box-shadow: var(--slider-thumb-shadow-premium);
+    /* Ajustement précis pour centrer le thumb de 18px sur la track de 4px */
+    margin-top: calc((4px - var(--slider-thumb-size-premium)) / 2);
     pointer-events: auto;
     cursor: grab;
-    border: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .slider-container input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 .slider-container input[type="range"]::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    box-shadow: var(--shadow-sm);
+    height: var(--slider-thumb-size-premium);
+    width: var(--slider-thumb-size-premium);
+    background: var(--slider-thumb-bg-premium);
+    border: var(--slider-thumb-border-premium);
+    border-radius: var(--radius-full);
+    box-shadow: var(--slider-thumb-shadow-premium);
     pointer-events: auto;
     cursor: grab;
-    border: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .slider-container input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.15);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 .slider-container input[type="range"]:active::-webkit-slider-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
 }
 
 .slider-container input[type="range"]:active::-moz-range-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
 }
 
 /* Barre de fond personnalisée pour passer sous les ticks */
@@ -827,11 +829,13 @@
 
 /* Atténuer les sliders et labels */
 #settings-controls-panel.disabled .slider-container input[type="range"]::-webkit-slider-thumb {
-    background: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-color: var(--text-tertiary);
 }
 
 #settings-controls-panel.disabled .slider-container input[type="range"]::-moz-range-thumb {
-    background: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-color: var(--text-tertiary);
 }
 
 #settings-controls-panel.disabled .slider-value-display {

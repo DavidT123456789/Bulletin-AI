@@ -2161,34 +2161,89 @@
     color: var(--text-secondary);
     width: 58px;
     flex-shrink: 0;
+    margin-top: 3px; /* Correction visuelle d'alignement avec la réglette */
 }
 
 .sc-config-row input[type="range"] {
     flex: 1;
-    accent-color: var(--primary-color);
-    margin: 0;
-    padding: 0;
-    border: none;
-    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
     background: transparent;
-    height: 20px;
     cursor: pointer;
+    margin: 0 -8px;
+    width: calc(100% + 16px);
+    height: 20px; /* Zone d'interaction compacte et centrée */
+    outline: none;
+}
+
+.sc-config-row input[type="range"]::-webkit-slider-runnable-track {
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
 }
 
 .sc-config-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
     cursor: grab;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    margin-top: calc((var(--slider-track-height-default) - var(--slider-thumb-size-default)) / 2);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sc-config-row input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: var(--shadow-md);
 }
 
 .sc-config-row input[type="range"]:active::-webkit-slider-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
+}
+
+.sc-config-row input[type="range"]::-moz-range-track {
+    height: var(--slider-track-height-default);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xs);
+    border: none;
 }
 
 .sc-config-row input[type="range"]::-moz-range-thumb {
+    width: var(--slider-thumb-size-default);
+    height: var(--slider-thumb-size-default);
+    border-radius: var(--radius-full);
+    background: var(--slider-thumb-bg-default);
     cursor: grab;
+    border: var(--slider-thumb-border-default);
+    box-shadow: var(--slider-thumb-shadow);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sc-config-row input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: var(--shadow-md);
 }
 
 .sc-config-row input[type="range"]:active::-moz-range-thumb {
     cursor: grabbing;
+    transform: scale(1.15);
+}
+
+/* Accessibilité : Focus au clavier */
+.sc-config-row input[type="range"]:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.sc-config-row input[type="range"]:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 .sc-config-value {

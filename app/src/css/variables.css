@@ -72,6 +72,26 @@
     --radius-sm: 8px;
     --radius-xs: 4px;
 
+    /* --- Range Sliders Tokens --- */
+    /* Sliders Génériques */
+    --slider-track-height-default: 4px;
+    --slider-thumb-size-default: 16px;
+    --slider-thumb-bg-default: #ffffff;
+    --slider-thumb-border-default: 1px solid rgba(161, 161, 170, 0.4);
+    --slider-thumb-shadow: 0 1px 4px rgba(15, 23, 42, 0.15), 0 1px 2px rgba(15, 23, 42, 0.1);
+
+    /* Sliders IA / Premium */
+    --slider-thumb-size-premium: 18px;
+    --slider-thumb-bg-premium: #ffffff;
+    --slider-thumb-border-premium: 2px solid var(--primary-color);
+    --slider-thumb-shadow-premium: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
+
+    /* Sliders de Couleur */
+    --slider-track-height-picker: 8px;
+    --slider-thumb-size-picker: 18px;
+    --slider-thumb-bg-picker: #ffffff;
+    --slider-thumb-shadow-picker: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
+
     /* Input border width (single source of truth) */
     --input-border-width: 1px;
     --input-border-width-focus: 2px;
@@ -438,4 +458,7 @@
     --item-hover-bg: rgba(255, 255, 255, 0.07);
     --item-active-bg: rgba(255, 255, 255, 0.10);
     --item-hover-bg-elevated: rgba(255, 255, 255, 0.12);
+
+    /* --- Range Sliders Tokens (Dark Mode Overrides) --- */
+    --slider-thumb-border-default: 1px solid rgba(255, 255, 255, 0.25);
 }

@@ -60,6 +60,21 @@ export const TrombinoscopeManager = {
     /** Last focused zone ID for keyboard positioning */
     _lastFocusedZoneId: null,
 
+    /** History stack for undo */
+    _history: [],
+
+    /** Max history levels */
+    _maxHistoryLevels: 20,
+
+    /** Temporary snapshot for slider dragging */
+    _tempSliderSnapshot: null,
+
+    /** Temporary snapshot for zone dragging */
+    _tempDragSnapshot: null,
+
+    /** Timer for grouping keyboard nudges */
+    _nudgeTimer: null,
+
     // ========================================================================
     // INITIALIZATION
     // ========================================================================
@@ -189,6 +204,13 @@ export const TrombinoscopeManager = {
         this._cachedImage = null;
         this._lastFocusedControl = null;
         this._lastFocusedZoneId = null;
+        this._history = [];
+        this._tempSliderSnapshot = null;
+        this._tempDragSnapshot = null;
+        if (this._nudgeTimer) {
+            clearTimeout(this._nudgeTimer);
+            this._nudgeTimer = null;
+        }
 
         // Cleanup observer
         if (this._imgResizeObserver) {
@@ -636,6 +658,8 @@ export const TrombinoscopeManager = {
         document.getElementById('autoOrderBtn')?.addEventListener('click', () => {
             this._autoAssignInOrder();
         });
+
+        this._updateUndoButton();
     },
 
     _setupControlPanel() {
@@ -714,7 +738,10 @@ export const TrombinoscopeManager = {
                                 <span class="sync-toggle-switch"></span>
                             </span>
                         </label>
-                        <button type="button" class="grid-reset-btn" id="gridResetBtn">
+                        <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled style="margin-left: auto;">
+                            <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
+                        </button>
+                        <button type="button" class="grid-reset-btn" id="gridResetBtn" style="margin-left: 4px;">
                             <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
                         </button>
                     </div>
@@ -793,7 +820,45 @@ export const TrombinoscopeManager = {
             this._groupedDrag = e.target.checked;
         });
 
+        // Bind Undo slider drag listeners
+        const bindSliderUndo = (slider) => {
+            if (!slider) return;
+            const handleStart = () => {
+                this._tempSliderSnapshot = this._getCurrentStateSnapshot();
+            };
+            slider.addEventListener('mousedown', handleStart);
+            slider.addEventListener('touchstart', handleStart);
+            slider.addEventListener('change', () => {
+                if (this._tempSliderSnapshot) {
+                    const hasChanged = this._gridCols !== this._tempSliderSnapshot.gridCols ||
+                                     this._gridRows !== this._tempSliderSnapshot.gridRows ||
+                                     this._gapH !== this._tempSliderSnapshot.gapH ||
+                                     this._gapV !== this._tempSliderSnapshot.gapV ||
+                                     this._globalRadius !== this._tempSliderSnapshot.globalRadius;
+                    if (hasChanged) {
+                        this._history.push(this._tempSliderSnapshot);
+                        if (this._history.length > this._maxHistoryLevels) {
+                            this._history.shift();
+                        }
+                        this._updateUndoButton();
+                    }
+                    this._tempSliderSnapshot = null;
+                }
+            });
+        };
+
+        bindSliderUndo(colsSlider);
+        bindSliderUndo(rowsSlider);
+        bindSliderUndo(gapHSlider);
+        bindSliderUndo(gapVSlider);
+        bindSliderUndo(sizeSlider);
+
+        document.getElementById('trombiUndoBtn')?.addEventListener('click', () => {
+            this._undo();
+        });
+
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
+            this._saveState();
             this._gridCols = 4;
             this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
             this._gapH = 0;
@@ -1004,6 +1069,7 @@ export const TrombinoscopeManager = {
     },
 
     _addZoneAtClick(e) {
+        this._saveState();
         const overlay = document.getElementById('trombiZonesOverlay');
         const img = document.getElementById('trombiStep2Image');
         if (!overlay || !img) return;
@@ -1032,12 +1098,14 @@ export const TrombinoscopeManager = {
     },
 
     _removeZone(zoneId) {
+        this._saveState();
         this._zones = this._zones.filter(z => z.id !== zoneId);
         this._renderZones();
         this._renderAssignmentGrid();
     },
 
     _autoAssignInOrder() {
+        this._saveState();
         const students = this._getStudentsForImport();
         this._zones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
@@ -1165,6 +1233,9 @@ export const TrombinoscopeManager = {
             originalPositions
         };
 
+        // Capture snapshot before dragging
+        this._tempDragSnapshot = this._getCurrentStateSnapshot();
+
         // Track this zone for keyboard navigation
         this._lastFocusedControl = 'zone';
         this._lastFocusedZoneId = zoneId;
@@ -1217,8 +1288,20 @@ export const TrombinoscopeManager = {
 
     _handleMouseUp() {
         if (this._dragging) {
-            const el = document.querySelector(`[data-zone-id="${this._dragging.zone.id}"]`);
+            const { zone, startCx, startCy } = this._dragging;
+            const el = document.querySelector(`[data-zone-id="${zone.id}"]`);
             el?.classList.remove('dragging');
+
+            // Check if it actually moved
+            const hasMoved = Math.abs(zone.cx - startCx) > 0.01 || Math.abs(zone.cy - startCy) > 0.01;
+            if (hasMoved && this._tempDragSnapshot) {
+                this._history.push(this._tempDragSnapshot);
+                if (this._history.length > this._maxHistoryLevels) {
+                    this._history.shift();
+                }
+                this._updateUndoButton();
+            }
+            this._tempDragSnapshot = null;
             this._dragging = null;
         }
     },
@@ -1229,6 +1312,16 @@ export const TrombinoscopeManager = {
      * - When zone select is focused: all 4 arrows move the zone position
      */
     _handleKeyDown(e) {
+        // Handle Ctrl+Z / Cmd+Z
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            const modal = document.getElementById('trombiWizardModal');
+            if (modal?.classList.contains('visible') && this._currentStep === 2) {
+                e.preventDefault();
+                this._undo();
+                return;
+            }
+        }
+
         // Only handle arrow keys
         if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
 
@@ -1242,6 +1335,7 @@ export const TrombinoscopeManager = {
         // Handle gap slider mode
         if (this._lastFocusedControl === 'gaps') {
             e.preventDefault();
+            this._saveStateForNudge();
             const step = e.shiftKey ? 5 : 0.5; // Shift for bigger steps
 
             const gapHSlider = document.getElementById('gapHSlider');
@@ -1276,6 +1370,7 @@ export const TrombinoscopeManager = {
             // Only ↑/↓ adjust size (←/→ are ignored for size)
             if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                 e.preventDefault();
+                this._saveStateForNudge();
                 const step = e.shiftKey ? 10 : 2; // Shift for bigger steps
 
                 const sizeSlider = document.getElementById('sizeSlider');
@@ -1298,6 +1393,7 @@ export const TrombinoscopeManager = {
         // Handle zone positioning mode
         if (this._lastFocusedControl === 'zone' && this._lastFocusedZoneId !== null) {
             e.preventDefault();
+            this._saveStateForNudge();
 
             const zone = this._zones.find(z => z.id === this._lastFocusedZoneId);
             if (!zone) return;
@@ -1457,6 +1553,7 @@ export const TrombinoscopeManager = {
         // Bind select events
         container.querySelectorAll('.assignment-select').forEach(select => {
             select.addEventListener('change', e => {
+                this._saveState();
                 const zoneId = parseInt(select.dataset.zoneId);
                 const studentId = e.target.value || null;
 
@@ -1737,5 +1834,91 @@ export const TrombinoscopeManager = {
             img.onerror = () => reject(new Error('Failed to load image'));
             img.src = src;
         });
+    },
+
+    _getCurrentStateSnapshot() {
+        return {
+            zones: this._zones.map(z => ({ ...z })),
+            gridCols: this._gridCols,
+            gridRows: this._gridRows,
+            gapH: this._gapH,
+            gapV: this._gapV,
+            globalRadius: this._globalRadius
+        };
+    },
+
+    _saveState() {
+        if (!this._history) this._history = [];
+        this._history.push(this._getCurrentStateSnapshot());
+        if (this._history.length > this._maxHistoryLevels) {
+            this._history.shift();
+        }
+        this._updateUndoButton();
+    },
+
+    _undo() {
+        if (!this._history || this._history.length === 0) return;
+        const prevState = this._history.pop();
+        
+        this._zones = prevState.zones.map(z => ({ ...z }));
+        this._gridCols = prevState.gridCols;
+        this._gridRows = prevState.gridRows;
+        this._gapH = prevState.gapH;
+        this._gapV = prevState.gapV;
+        this._globalRadius = prevState.globalRadius;
+
+        // Synchronize sliders UI
+        this._syncSlidersToState();
+        
+        // Re-render
+        this._renderZones();
+        this._renderAssignmentGrid();
+        this._updateLivePreviews();
+        this._updateUndoButton();
+        
+        UI.showNotification('Action annulée', 'info');
+    },
+
+    _updateUndoButton() {
+        const undoBtn = document.getElementById('trombiUndoBtn');
+        if (undoBtn) {
+            undoBtn.disabled = !this._history || this._history.length === 0;
+        }
+    },
+
+    _saveStateForNudge() {
+        if (this._nudgeTimer) {
+            clearTimeout(this._nudgeTimer);
+        } else {
+            this._saveState();
+        }
+        this._nudgeTimer = setTimeout(() => {
+            this._nudgeTimer = null;
+        }, 1000);
+    },
+
+    _syncSlidersToState() {
+        const colsSlider = document.getElementById('colsSlider');
+        const rowsSlider = document.getElementById('rowsSlider');
+        const gapHSlider = document.getElementById('gapHSlider');
+        const gapVSlider = document.getElementById('gapVSlider');
+        const colsValue = document.getElementById('colsValue');
+        const rowsValue = document.getElementById('rowsValue');
+        const gapHValue = document.getElementById('gapHValue');
+        const gapVValue = document.getElementById('gapVValue');
+
+        if (colsSlider) colsSlider.value = this._gridCols;
+        if (colsValue) colsValue.textContent = this._gridCols;
+        
+        if (rowsSlider) rowsSlider.value = this._gridRows;
+        if (rowsValue) rowsValue.textContent = this._gridRows;
+        
+        if (gapHSlider) gapHSlider.value = this._gapH;
+        if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
+        
+        if (gapVSlider) gapVSlider.value = this._gapV;
+        if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
+
+        this._updateSizeSliderValue();
     }
 };
