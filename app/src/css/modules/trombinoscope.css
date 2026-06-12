@@ -927,14 +927,53 @@
 
 .assignment-row {
     display: grid;
-    /* Preview | Zone # | Student Select */
-    grid-template-columns: 40px 40px 1fr;
+    /* Preview | Zone # | Student Select | Actions */
+    grid-template-columns: 40px 40px 1fr auto;
     gap: 8px;
     align-items: center;
     padding: 6px 8px;
     background: var(--bg-secondary);
     border-radius: 6px;
     transition: background 0.2s ease;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.assignment-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.assignment-action-btn:hover {
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: var(--primary-color-light);
+}
+
+.assignment-action-btn.danger:hover {
+    color: var(--error-color);
+    border-color: rgba(var(--error-color-rgb), 0.3);
+    background: var(--error-light);
+}
+
+.assignment-action-btn iconify-icon {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .assignment-row:hover {

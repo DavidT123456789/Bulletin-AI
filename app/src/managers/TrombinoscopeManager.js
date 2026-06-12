@@ -981,7 +981,7 @@ export const TrombinoscopeManager = {
         this._createGrid(cols, rows);
     },
 
-    _createGrid(cols, rows, preserveReference = false) {
+    _createGrid(cols, rows, preserveReference = false, silent = false) {
         // Save the reference zone position if we want to preserve it
         let refCx = null, refCy = null;
         if (preserveReference && this._zones.length > 0) {
@@ -1023,9 +1023,11 @@ export const TrombinoscopeManager = {
             this._applyGapsInternal(cellW, cellH);
         }
 
-        this._renderZones();
-        this._renderAssignmentGrid();
-        this._updateSizeSliderValue();
+        if (!silent) {
+            this._renderZones();
+            this._renderAssignmentGrid();
+            this._updateSizeSliderValue();
+        }
     },
 
     /**
@@ -1036,22 +1038,28 @@ export const TrombinoscopeManager = {
     _createGridSilent(cols, rows) {
         // Preserve reference position if zones already exist (user has adjusted positions)
         const hasExistingZones = this._zones.length > 0;
-        this._createGrid(cols, rows, hasExistingZones);
+        this._createGrid(cols, rows, hasExistingZones, true);
         // Auto-assign students to zones automatically
-        this._autoAssignSilent();
-        this._updateLivePreviews();
+        this._autoAssignSilent(true);
+        
+        // Render once at the end
+        this._renderZones();
+        this._renderAssignmentGrid();
+        this._updateSizeSliderValue();
     },
 
     /**
      * Auto-assign students to zones silently (no notification)
      */
-    _autoAssignSilent() {
+    _autoAssignSilent(silent = false) {
         const students = this._getStudentsForImport();
         this._zones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
         });
-        this._renderZones();
-        this._renderAssignmentGrid();
+        if (!silent) {
+            this._renderZones();
+            this._renderAssignmentGrid();
+        }
     },
 
     _updateSizeSliderValue() {
@@ -1102,6 +1110,58 @@ export const TrombinoscopeManager = {
         this._zones = this._zones.filter(z => z.id !== zoneId);
         this._renderZones();
         this._renderAssignmentGrid();
+    },
+
+    /**
+     * Inserts an empty slot at a given zone index, shifting subsequent assignments down
+     * @param {number} zoneId 
+     */
+    _insertGapAndShiftDown(zoneId) {
+        this._saveState();
+        
+        // Sort zones by ID to keep order stable
+        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
+        const fromIdx = sortedZones.findIndex(z => z.id === zoneId);
+        
+        if (fromIdx === -1) return;
+        
+        // Shift student IDs down
+        for (let j = sortedZones.length - 1; j > fromIdx; j--) {
+            sortedZones[j].studentId = sortedZones[j - 1].studentId;
+        }
+        
+        // Set the current zone to null (empty)
+        sortedZones[fromIdx].studentId = null;
+        
+        this._renderZones();
+        this._renderAssignmentGrid();
+        UI.showNotification('Décalage vers le bas effectué', 'success');
+    },
+
+    /**
+     * Removes the student from a given zone, shifting subsequent assignments up
+     * @param {number} zoneId 
+     */
+    _removeAndShiftUp(zoneId) {
+        this._saveState();
+        
+        // Sort zones by ID to keep order stable
+        const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
+        const fromIdx = sortedZones.findIndex(z => z.id === zoneId);
+        
+        if (fromIdx === -1) return;
+        
+        // Shift student IDs up
+        for (let j = fromIdx; j < sortedZones.length - 1; j++) {
+            sortedZones[j].studentId = sortedZones[j + 1].studentId;
+        }
+        
+        // The last zone becomes unassigned
+        sortedZones[sortedZones.length - 1].studentId = null;
+        
+        this._renderZones();
+        this._renderAssignmentGrid();
+        UI.showNotification('Décalage vers le haut effectué', 'success');
     },
 
     _autoAssignInOrder() {
@@ -1500,6 +1560,10 @@ export const TrombinoscopeManager = {
                     return true;
                 });
 
+                const assignedStudent = dropdownStudents.find(s => s.id === zone.studentId);
+                const assignedName = assignedStudent ? Utils.formatStudentName(assignedStudent.nom, assignedStudent.prenom) : '';
+                const tooltipAttr = assignedName ? `data-tooltip="${assignedName}"` : 'data-tooltip="Choisir un élève..."';
+
                 return `
                     <div class="assignment-row" data-zone-id="${zone.id}">
                         <div class="assignment-preview">
@@ -1511,7 +1575,7 @@ export const TrombinoscopeManager = {
                             #${index + 1}
                         </div>
                         <div class="assignment-student-select">
-                            <select class="assignment-select" data-zone-id="${zone.id}">
+                            <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
                                 <option value="">Choisir un élève...</option>
                                 ${dropdownStudents.map(s => {
                                     // Check if this student is assigned to ANOTHER zone
@@ -1531,12 +1595,24 @@ export const TrombinoscopeManager = {
                                     const label = `${studentNameFormatted}${statusText}`;
 
                                     return `
-                                        <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>
+                                        <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
                                             ${label}
                                         </option>
                                     `;
                                 }).join('')}
                             </select>
+                        </div>
+                        <div class="assignment-actions">
+                            <button type="button" class="assignment-action-btn shift-down-btn" 
+                                    data-zone-id="${zone.id}" 
+                                    data-tooltip="Insérer un vide (décaler vers le bas)">
+                                <iconify-icon icon="solar:alt-arrow-down-linear"></iconify-icon>
+                            </button>
+                            <button type="button" class="assignment-action-btn shift-up-btn danger" 
+                                    data-zone-id="${zone.id}" 
+                                    data-tooltip="Supprimer cet élève et décaler le reste vers le haut">
+                                <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -1589,6 +1665,23 @@ export const TrombinoscopeManager = {
             select.addEventListener('focus', () => this._highlightAssignmentRow(parseInt(select.dataset.zoneId), false));
         });
 
+        // Bind shift buttons
+        container.querySelectorAll('.shift-down-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const zoneId = parseInt(btn.dataset.zoneId);
+                this._insertGapAndShiftDown(zoneId);
+            });
+        });
+
+        container.querySelectorAll('.shift-up-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const zoneId = parseInt(btn.dataset.zoneId);
+                this._removeAndShiftUp(zoneId);
+            });
+        });
+
         // Add click listeners for rows to highlight zones
         container.querySelectorAll('.assignment-row').forEach(row => {
             row.addEventListener('click', (e) => {
@@ -1603,6 +1696,9 @@ export const TrombinoscopeManager = {
 
         // Initial preview render
         this._updateLivePreviews();
+
+        // Re-initialize tooltips for the new/updated select dropdowns
+        UI.initTooltips();
     },
 
     /**
@@ -1873,7 +1969,6 @@ export const TrombinoscopeManager = {
         // Re-render
         this._renderZones();
         this._renderAssignmentGrid();
-        this._updateLivePreviews();
         this._updateUndoButton();
         
         UI.showNotification('Action annulée', 'info');
