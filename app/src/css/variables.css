@@ -92,6 +92,21 @@
     --slider-thumb-bg-picker: #ffffff;
     --slider-thumb-shadow-picker: 0 1px 5px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
 
+    /* --- Toggle Switches Tokens --- */
+    /* Standard Toggle (Large) */
+    --toggle-width-default: 44px;
+    --toggle-height-default: 24px;
+    --toggle-knob-size-default: 20px;
+    --toggle-inset-default: 2px;
+    --toggle-translate-default: 20px;
+
+    /* Small Toggle */
+    --toggle-width-small: 32px;
+    --toggle-height-small: 18px;
+    --toggle-knob-size-small: 14px;
+    --toggle-inset-small: 2px;
+    --toggle-translate-small: 14px;
+
     /* Input border width (single source of truth) */
     --input-border-width: 1px;
     --input-border-width-focus: 2px;

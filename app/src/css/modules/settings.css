@@ -716,10 +716,8 @@
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 44px;
-    /* plus petit */
-    height: 24px;
-    /* plus petit */
+    width: var(--toggle-width-default);
+    height: var(--toggle-height-default);
 }
 
 .toggle-switch input {
@@ -742,10 +740,10 @@
 .toggle-switch .slider:before {
     position: absolute;
     content: "";
-    height: 20px;
-    width: 20px;
-    left: 2px;
-    bottom: 2px;
+    height: var(--toggle-knob-size-default);
+    width: var(--toggle-knob-size-default);
+    left: var(--toggle-inset-default);
+    bottom: var(--toggle-inset-default);
     background: white;
     transition: 0.3s;
     border-radius: var(--radius-pill);
@@ -756,8 +754,7 @@
 }
 
 .toggle-switch input:checked+.slider:before {
-    transform: translatex(20px);
-    /* ajuster translation */
+    transform: translateX(var(--toggle-translate-default));
 }
 
 .settings-card .toggle-switch-label {

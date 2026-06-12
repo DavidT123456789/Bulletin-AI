@@ -1503,20 +1503,20 @@
 }
 
 .toggle-switch.small {
-    width: 32px;
-    height: 18px;
+    width: var(--toggle-width-small);
+    height: var(--toggle-height-small);
     margin-right: 0;
 }
 
 .toggle-switch.small .slider:before {
-    height: 14px;
-    width: 14px;
-    left: 2px;
-    bottom: 2px;
+    height: var(--toggle-knob-size-small);
+    width: var(--toggle-knob-size-small);
+    left: var(--toggle-inset-small);
+    bottom: var(--toggle-inset-small);
 }
 
 .toggle-switch.small input:checked+.slider:before {
-    transform: translateX(14px);
+    transform: translateX(var(--toggle-translate-small));
 }
 
 .toggle-label-text {
