@@ -1,5 +1,6 @@
 .help-tab-content {
     display: none;
+    padding-bottom: 24px;
 }
 
 .help-tab-content.active {

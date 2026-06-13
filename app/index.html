@@ -662,9 +662,9 @@
             <a href="#" class="flex items-center gap-2 group" aria-label="Bulletin AI — Accueil">
                 <img src="./assets/logo.png" alt="" class="w-[38px] h-[38px] object-contain" width="38" height="38">
                 <span class="font-semibold text-[17px] tracking-tight text-zinc-800">Bulletin AI</span>
-                <span
+                <span id="landingVersionDisplay"
                     class="px-1.5 py-0.5 rounded-full bg-zinc-100/80 text-zinc-500 text-[9px] font-medium tracking-wide uppercase ring-1 ring-zinc-900/5 backdrop-blur-sm">
-                    <iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v0.1.0
+                    <iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v0.1.1
                     Beta
                 </span>
             </a>
@@ -1460,6 +1460,17 @@
             });
         }, { threshold: 0.2 });
         heroObserver.observe(document.getElementById('hero'));
+
+        // Dynamically fetch and display version from version.json (single source of truth)
+        fetch('./version.json?t=' + Date.now())
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                const badge = document.getElementById('landingVersionDisplay');
+                if (badge && data && data.version) {
+                    badge.innerHTML = `<iconify-icon icon="solar:test-tube-linear" class="mr-1 relative top-[1px]"></iconify-icon>v${data.version} Beta`;
+                }
+            })
+            .catch(() => {});
     </script>
 </body>
 

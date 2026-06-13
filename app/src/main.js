@@ -220,6 +220,10 @@ async function populateAboutBuildDate() {
                 const formattedDate = new Date(data.date).toLocaleDateString('fr-FR', options);
                 aboutBuildDateEl.textContent = `Build ${data.hash} · ${formattedDate}`;
             }
+            const aboutVersionEl = document.querySelector('.about-version');
+            if (aboutVersionEl && data.version) {
+                aboutVersionEl.textContent = `v${data.version} Beta`;
+            }
         }
     } catch (e) {
         console.warn('[Version] Failed to populate dynamic build date:', e);
