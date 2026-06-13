@@ -476,6 +476,33 @@ export const FocusPanelManager = {
                     FocusPanelStatus.refreshAppreciationStatus();
                 }
             });
+
+            // Handle paste event to strip HTML formatting, styling, and weird margins/paddings
+            appreciationText.addEventListener('paste', (e) => {
+                e.preventDefault();
+                // Get clipboard data as plain text
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                // Strip leading/trailing newlines specifically to avoid empty lines at start/end
+                const cleanText = text.replace(/^[\r\n]+|[\r\n]+$/g, '');
+
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+
+                const range = selection.getRangeAt(0);
+                if (!appreciationText.contains(range.commonAncestorContainer)) return;
+
+                selection.deleteFromDocument();
+
+                const textNode = document.createTextNode(cleanText);
+                range.insertNode(textNode);
+
+                // Move cursor to after the inserted text
+                selection.collapseToEnd();
+
+                // Trigger input event to update word count and data state
+                appreciationText.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
             appreciationText.addEventListener('keydown', (e) => {
                 if (e.ctrlKey || e.metaKey) {
                     if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); FocusPanelHistory.undo(); }

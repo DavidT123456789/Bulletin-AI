@@ -1250,6 +1250,14 @@
     box-sizing: border-box;
 }
 
+/* Ensure nested block elements (like pasted paragraphs/divs) don't create external spacing at the top/bottom */
+.focus-appreciation-text > :first-child {
+    margin-top: 0 !important;
+}
+.focus-appreciation-text > :last-child {
+    margin-bottom: 0 !important;
+}
+
 /* Appreciation Status Badge */
 .appreciation-status-badge {
     height: 26px;
