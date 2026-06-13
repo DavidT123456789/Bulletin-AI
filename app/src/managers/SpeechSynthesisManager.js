@@ -8,6 +8,7 @@
  */
 
 import { UI } from './UIManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 
 const PLAY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -160,15 +161,11 @@ export const SpeechSynthesisManager = {
 
         if (isPlaying) {
             speakBtn.classList.add('playing');
-            speakBtn.setAttribute('data-tooltip', 'Arrêter la lecture');
         } else {
             speakBtn.classList.remove('playing');
-            speakBtn.setAttribute('data-tooltip', 'Écouter l\'appréciation');
         }
 
-        // Rafraîchir le tooltip Tippy s'il existe
-        if (speakBtn._tippy) {
-            speakBtn._tippy.setContent(isPlaying ? 'Arrêter la lecture' : 'Écouter l\'appréciation');
-        }
+        // Rafraîchir le tooltip via le gestionnaire global
+        TooltipsUI.updateTooltip(speakBtn, isPlaying ? 'Arrêter la lecture' : 'Écouter l\'appréciation');
     }
 };
