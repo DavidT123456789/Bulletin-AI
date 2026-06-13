@@ -987,7 +987,17 @@ export const FocusPanelManager = {
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
 
-        // Clear active row highlight
+        // Clear active row highlight and trigger closed flash animation
+        if (this.currentStudentId) {
+            const lastActiveRow = document.querySelector(`.student-row[data-student-id="${this.currentStudentId}"]`);
+            if (lastActiveRow) {
+                lastActiveRow.classList.add('focus-closed-flash');
+                setTimeout(() => {
+                    lastActiveRow.classList.remove('focus-closed-flash');
+                }, 1200); // matches CSS animation duration
+            }
+        }
+
         this._clearActiveRow();
 
         // Reset state
@@ -1148,6 +1158,7 @@ export const FocusPanelManager = {
             const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
             if (row) {
                 row.classList.add('focus-active');
+                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
     },
