@@ -8,8 +8,9 @@ export const StatsService = {
      * @returns {number|string} La médiane ou '--' si vide
      */
     calculateMedian(grades) {
-        if (!grades || grades.length === 0) return '--';
-        const sorted = [...grades].sort((a, b) => a - b);
+        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        if (cleanGrades.length === 0) return '--';
+        const sorted = [...cleanGrades].sort((a, b) => a - b);
         const mid = Math.floor(sorted.length / 2);
         return sorted.length % 2 !== 0
             ? sorted[mid]
@@ -22,21 +23,23 @@ export const StatsService = {
      * @returns {number} L'écart-type
      */
     calculateStandardDeviation(grades) {
-        if (!grades || grades.length === 0) return 0;
-        const n = grades.length;
-        const mean = grades.reduce((a, b) => a + b, 0) / n;
-        const variance = grades.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
+        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        if (cleanGrades.length === 0) return 0;
+        const n = cleanGrades.length;
+        const mean = cleanGrades.reduce((a, b) => a + b, 0) / n;
+        const variance = cleanGrades.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
         return Math.sqrt(variance);
     },
 
     /**
      * Détermine l'hétérogénéité d'une classe basée sur l'écart-type.
-     * @param {number} stdDev - L'écart-type
+     * @param {number[]} grades - Liste des notes
      * @returns {Object} { label: string, colorClass: string, value: number }
      */
     calculateHeterogeneity(grades) {
-        if (!grades || grades.length < 2) return { label: 'Indéterminée', colorClass: 'stable', value: 0 };
-        const stdDev = this.calculateStandardDeviation(grades);
+        const cleanGrades = (grades || []).filter(g => typeof g === 'number' && !isNaN(g));
+        if (cleanGrades.length < 2) return { label: 'Indéterminée', colorClass: 'stable', value: 0 };
+        const stdDev = this.calculateStandardDeviation(cleanGrades);
 
         // Seuils empiriques pour des notes sur 20
         // < 2.5 : Très homogène
@@ -58,7 +61,9 @@ export const StatsService = {
         const distribution = [0, 0, 0, 0, 0];
         if (!grades) return distribution;
 
-        grades.forEach(g => {
+        const cleanGrades = grades.filter(g => typeof g === 'number' && !isNaN(g));
+
+        cleanGrades.forEach(g => {
             if (g < 4) distribution[0]++;
             else if (g < 8) distribution[1]++;
             else if (g < 12) distribution[2]++;

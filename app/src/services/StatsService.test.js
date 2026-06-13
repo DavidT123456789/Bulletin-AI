@@ -145,4 +145,40 @@ describe('StatsService', () => {
             expect(StatsService.getRelevantEvolution({}, 'T2')).toBeNull();
         });
     });
+
+    describe('Math utilities (Median, SD, Heterogeneity, Distribution)', () => {
+        it('should calculate median correctly for clean numbers', () => {
+            expect(StatsService.calculateMedian([10, 12, 14])).toBe(12);
+            expect(StatsService.calculateMedian([10, 12, 14, 16])).toBe(13);
+        });
+
+        it('should calculate median and filter out non-numeric values', () => {
+            expect(StatsService.calculateMedian([10, 'Abs', NaN, 14, undefined, 12])).toBe(12);
+            expect(StatsService.calculateMedian([])).toBe('--');
+            expect(StatsService.calculateMedian(null)).toBe('--');
+        });
+
+        it('should calculate standard deviation and filter out non-numeric values', () => {
+            expect(StatsService.calculateStandardDeviation([10, 10, 10])).toBe(0);
+            expect(StatsService.calculateStandardDeviation([10, 'Abs', 14])).toBe(2); // mean=12, diffs=-2,2, var=(4+4)/2=4, sd=2
+            expect(StatsService.calculateStandardDeviation([])).toBe(0);
+        });
+
+        it('should calculate heterogeneity correctly', () => {
+            // Under 2.5 is Très Homogène/Homogène
+            expect(StatsService.calculateHeterogeneity([10, 11, 10]).label).toBe('Très Homogène');
+            // Over 4.5 is Hétérogène
+            expect(StatsService.calculateHeterogeneity([5, 'Abs', 15]).label).toBe('Hétérogène'); // SD of [5, 15] is 5. SD is < 6.5 so Hétérogène
+            expect(StatsService.calculateHeterogeneity([5, 15]).label).toBe('Hétérogène');
+            expect(StatsService.calculateHeterogeneity([20, 0, 10]).label).toBe('Très Hétérogène'); // SD = sqrt(200/3) = ~8.16 > 6.5
+            // Less than 2 numbers is Indéterminée
+            expect(StatsService.calculateHeterogeneity([10]).label).toBe('Indéterminée');
+            expect(StatsService.calculateHeterogeneity([])).toBeDefined();
+        });
+
+        it('should calculate grade distribution and ignore NaN/strings', () => {
+            const dist = StatsService.getGradeDistribution([3, 'Abs', 7, 11, NaN, 15, 19]);
+            expect(dist).toEqual([1, 1, 1, 1, 1]); // 3 (<4), 7 (<8), 11 (<12), 15 (<16), 19 (>=16)
+        });
+    });
 });

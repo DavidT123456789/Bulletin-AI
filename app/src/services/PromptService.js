@@ -13,7 +13,13 @@ export const PromptService = {
      */
     PRENOM_PLACEHOLDER: '[PRÉNOM]',
 
-    getAllPrompts(studentData, overrideConfig = null) {
+    /**
+     * Cache pour les statistiques de classe calculées
+     * @type {Map<string, string>}
+     */
+    _classStatsCache: new Map(),
+
+    getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false) {
         const { nom, prenom, statuses, periods, currentPeriod } = studentData;
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
@@ -126,6 +132,7 @@ export const PromptService = {
             styleParts.push(`Rédige une appréciation d'environ ${iaConfig.length} mots.`);
         }
         styleParts.push(`Ne mentionne pas les notes chiffrées (moyennes) dans le texte.`);
+        styleParts.push(`Ne mentionne PAS les valeurs chiffrées de la classe (moyenne, min, max de classe) dans le texte. Utilise-les uniquement comme contexte pour situer le niveau de l'élève par rapport au groupe de façon bienveillante et adapter ton niveau d'exigence ou d'encouragement.`);
         styleParts.push(`Génère l'appréciation directement, sans titre, sans préambule et sans guillemets.`);
 
         if (iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false) {
@@ -145,17 +152,19 @@ export const PromptService = {
         // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
         // L'appréciation de la période courante ne doit PAS être incluse pour éviter
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
+        const classId = studentData.classId || appState.currentClassId || null;
         let periodsInfo = relevantPeriods.map(p => {
             const d = periods[p] || {};
             const gradeRaw = d.grade;
             const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
+            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
             // Pour la période courante, on n'inclut pas l'appréciation existante
             const isCurrentPeriod = p === currentPeriod;
             // [FIX] Use brackets for instruction, quotes only for actual appreciation text
             const appText = isCurrentPeriod ? '[à générer]' : `"${d.appreciation || 'N/A'}"`;
-            return `${p} : Moy ${g}${evalCount}, App ${appText}`;
+            return `${p} : Moy ${g}${evalCount}${classStatsStr}, App ${appText}`;
         }).join('\n');
 
         // Use StatsService for evolution analysis
@@ -224,7 +233,8 @@ export const PromptService = {
             const gradeVal = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
-            return `${p} : Moy ${g}${evalCount}, App "${d.appreciation || 'N/A'}"`;
+            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
+            return `${p} : Moy ${g}${evalCount}${classStatsStr}, App "${d.appreciation || 'N/A'}"`;
         }).join('\n');
 
         // Analysis prompts - use the current period's appreciation as reference
@@ -321,6 +331,60 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
     },
 
     /**
+     * Calcule la moyenne, le min et le max de la classe pour une période donnée.
+     * @param {string} classId - ID de la classe
+     * @param {string} period - Période (ex: T1, T2)
+     * @returns {string} Chaîne formatée (ex: " [Classe: Moy 12,5, Min 8,0, Max 18,5]") ou vide
+     * @private
+     */
+    _getClassStatsString(classId, period) {
+        try {
+            if (!appState.generatedResults || !Array.isArray(appState.generatedResults)) return '';
+            
+            // Si pas de classId défini, on prend les élèves n'ayant pas de classId (mode legacy)
+            const classStudents = appState.generatedResults.filter(r => 
+                (!classId && !r.classId) || (classId && r.classId === classId)
+            );
+
+            if (classStudents.length < 3) return ''; // Seuil de représentativité
+
+            // Générer une clé de cache basée sur la signature des notes de la classe
+            const cacheKey = `${classId || 'default'}_${period}_` + classStudents
+                .map(r => r.studentData?.periods?.[period]?.grade ?? '')
+                .join(',');
+
+            if (PromptService._classStatsCache.has(cacheKey)) {
+                return PromptService._classStatsCache.get(cacheKey);
+            }
+
+            const grades = classStudents
+                .map(r => {
+                    const gradeRaw = r.studentData?.periods?.[period]?.grade;
+                    if (gradeRaw === undefined || gradeRaw === null || gradeRaw === '') return NaN;
+                    return typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw).replace(',', '.'));
+                })
+                .filter(g => !isNaN(g));
+
+            if (grades.length < 3) {
+                PromptService._classStatsCache.set(cacheKey, '');
+                return ''; // Au moins 3 notes pour calculer des stats
+            }
+
+            const sum = grades.reduce((acc, g) => acc + g, 0);
+            const avg = sum / grades.length;
+            const min = Math.min(...grades);
+            const max = Math.max(...grades);
+
+            const result = ` [Classe : Moy ${avg.toFixed(1).replace('.', ',')}, Min ${min.toFixed(1).replace('.', ',')}, Max ${max.toFixed(1).replace('.', ',')}]`;
+            PromptService._classStatsCache.set(cacheKey, result);
+            return result;
+        } catch (e) {
+            console.warn('[PromptService] Erreur lors du calcul des statistiques de classe:', e);
+            return '';
+        }
+    },
+
+    /**
      * Formate les données d'évolution en texte concis et lisible pour l'IA
      * Remplace le JSON brut coûteux en tokens
      * @param {Array} evolutions - Tableau issu de StatsService.analyserEvolution
@@ -357,7 +421,7 @@ Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
      */
     getPromptHash(studentData) {
         try {
-            const prompts = this.getAllPrompts(studentData);
+            const prompts = this.getAllPrompts(studentData, null, true);
             const promptText = prompts.appreciation;
 
             // Simple djb2 hash algorithm - fast and good distribution

@@ -58,6 +58,7 @@ describe('PromptService', () => {
         Utils.getPeriods.mockReturnValue(['T1']);
         Utils.getPeriodLabel.mockImplementation((p) => p);
         StatsService.analyserEvolution.mockReturnValue([]);
+        PromptService._classStatsCache.clear();
     });
 
     describe('getAllPrompts', () => {
@@ -179,6 +180,81 @@ describe('PromptService', () => {
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
         });
+
+        it('should calculate and include class statistics in periods info when enough data exists', () => {
+            appState.currentClassId = 'class-A';
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 10 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 12 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 14 } } } }
+            ];
+            
+            const studentWithClass = {
+                ...mockStudentData,
+                classId: 'class-A',
+                periods: { 'T1': { grade: 12, appreciation: 'Good' } }
+            };
+            
+            const prompts = PromptService.getAllPrompts(studentWithClass);
+            
+            expect(prompts.appreciation).toContain('[Classe : Moy 12,0, Min 10,0, Max 14,0]');
+        });
+
+        it('should NOT include class statistics when less than 3 students have grades', () => {
+            appState.currentClassId = 'class-A';
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 10 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: null } } } }
+            ];
+            
+            const studentWithClass = {
+                ...mockStudentData,
+                classId: 'class-A',
+                periods: { 'T1': { grade: 12, appreciation: 'Good' } }
+            };
+            
+            const prompts = PromptService.getAllPrompts(studentWithClass);
+            
+            expect(prompts.appreciation).not.toContain('[Classe :');
+        });
+
+        it('should cache class statistics and invalidate cache when grades change', () => {
+            appState.currentClassId = 'class-A';
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 10 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 12 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 14 } } } }
+            ];
+            
+            const studentWithClass = {
+                ...mockStudentData,
+                classId: 'class-A',
+                periods: { 'T1': { grade: 12, appreciation: 'Good' } }
+            };
+            
+            // First calculation (populates cache)
+            const prompts1 = PromptService.getAllPrompts(studentWithClass);
+            expect(prompts1.appreciation).toContain('[Classe : Moy 12,0, Min 10,0, Max 14,0]');
+            expect(PromptService._classStatsCache.size).toBe(1);
+
+            // Spy on cache to verify hit
+            const cacheGetSpy = vi.spyOn(PromptService._classStatsCache, 'get');
+            const prompts2 = PromptService.getAllPrompts(studentWithClass);
+            expect(prompts2.appreciation).toContain('[Classe : Moy 12,0, Min 10,0, Max 14,0]');
+            expect(cacheGetSpy).toHaveBeenCalled();
+            cacheGetSpy.mockRestore();
+
+            // Change grades to verify cache invalidation (different key signature)
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 8 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 12 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 16 } } } }
+            ];
+            
+            const prompts3 = PromptService.getAllPrompts(studentWithClass);
+            expect(prompts3.appreciation).toContain('[Classe : Moy 12,0, Min 8,0, Max 16,0]');
+            expect(PromptService._classStatsCache.size).toBe(2); // New key is added
+        });
     });
 
     describe('getRefinementPrompt', () => {
@@ -207,6 +283,38 @@ describe('PromptService', () => {
         it('should generate concise prompt', () => {
             const p = PromptService.getRefinementPrompt('concise', originalText);
             expect(p).toContain('concise');
+        });
+    });
+
+    describe('getPromptHash', () => {
+        const mockStudentData = {
+            nom: 'DOE',
+            prenom: 'John',
+            statuses: [],
+            periods: { 'T1': { grade: 12, appreciation: 'Good' } },
+            currentPeriod: 'T1'
+        };
+
+        it('should generate stable hash when other students grades change', () => {
+            appState.currentClassId = 'class-A';
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 10 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 12 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 14 } } } }
+            ];
+
+            const hash1 = PromptService.getPromptHash(mockStudentData);
+
+            // Change other students grades (which changes class stats)
+            appState.generatedResults = [
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 4 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 5 } } } },
+                { classId: 'class-A', studentData: { periods: { 'T1': { grade: 6 } } } }
+            ];
+
+            const hash2 = PromptService.getPromptHash(mockStudentData);
+
+            expect(hash1).toBe(hash2);
         });
     });
 });
