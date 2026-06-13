@@ -676,11 +676,22 @@ export const SeatingChartManager = {
         this._updateSidebarLockState();
         this._updateFooter();
 
-        // Update grid draggability without rebuilding DOM
+        // Update grid draggability and tooltips without rebuilding DOM
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
             cell.draggable = !this._isLocked && !isPinned;
+            if (this._isLocked) {
+                const student = this._studentMap?.get(cell.dataset.resultId);
+                if (student) {
+                    cell.setAttribute('data-tooltip', Utils.formatStudentName(student.nom, student.prenom));
+                }
+            } else {
+                cell.removeAttribute('data-tooltip');
+            }
         });
+
+        // Re-initialize tooltips
+        TooltipsUI.initTooltips();
 
         if (this._isLocked) {
             view.dataset.locked = this._isLocked;
@@ -1028,6 +1039,9 @@ export const SeatingChartManager = {
             cell.classList.add('occupied');
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
+            if (this._isLocked) {
+                cell.setAttribute('data-tooltip', Utils.formatStudentName(student.nom, student.prenom));
+            }
 
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
