@@ -1114,42 +1114,6 @@
     padding: 8px 12px;
 }
 
-/* === AUTO-DETECT BUTTON - Format Applied Highlight === */
-#wizardAutoDetectBtn.format-applied {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    animation: pulse-subtle 2s ease-in-out infinite;
-}
-
-#wizardAutoDetectBtn.format-applied i {
-    animation: sparkle 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-subtle {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.2);
-    }
-
-    50% {
-        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.1);
-    }
-}
-
-@keyframes sparkle {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
-}
-
 /* === FORMAT DETECTION BADGE - Shows detected format (MBN, Pronote, etc.) === */
 .format-detection-badge {
     display: inline-flex;
