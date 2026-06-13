@@ -747,6 +747,71 @@
     background: var(--item-hover-bg);
 }
 
+/* === Speech Synthesis Button (Speaker) === */
+.focus-speaker-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--icon-btn-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.focus-speaker-btn i,
+.focus-speaker-btn iconify-icon,
+.focus-speaker-btn svg {
+    font-size: 14px;
+    line-height: 1;
+    stroke-width: var(--icon-stroke-width) !important;
+}
+
+.focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
+}
+
+.focus-speaker-btn.disabled,
+.focus-speaker-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.focus-speaker-btn.playing {
+    background: var(--primary-color);
+    color: white;
+    animation: speaker-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+}
+
+.focus-speaker-btn.playing:hover {
+    background: var(--primary-color);
+    transform: scale(1.05);
+}
+
+@keyframes speaker-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.15);
+    }
+}
+
+/* Thème sombre */
+[data-theme="dark"] .focus-speaker-btn {
+    background: transparent;
+}
+[data-theme="dark"] .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+    background: var(--item-hover-bg);
+}
+
 /* === History Button - Extension of journal-header-btn === */
 /* Inherits base styles from .journal-header-btn (added in HTML) */
 /* Only defines specifics: positioning and count badge styling */

@@ -11,6 +11,7 @@ import { StatsUI } from './StatsUIManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { JournalManager } from './JournalManager.js';
 import { PromptService } from '../services/PromptService.js';
+import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 
 /**
  * Module de gestion des badges et indicateurs du Focus Panel
@@ -394,6 +395,11 @@ export const FocusPanelStatus = {
      * @param {number|null} [targetCount=null] - Optional target value (use when DOM not ready yet)
      */
     updateWordCount(animate = false, fromCount = null, targetCount = null) {
+        // Cancel speech synthesis on any content change if it is currently playing
+        if (SpeechSynthesisManager.isPlaying()) {
+            SpeechSynthesisManager.cancel();
+        }
+
         const appreciationText = document.getElementById('focusAppreciationText');
         const wordCountEl = document.getElementById('focusWordCount');
 
@@ -437,6 +443,12 @@ export const FocusPanelStatus = {
         if (copyBtn) {
             copyBtn.disabled = false; // Always ensure native disabled is removed to allow contextmenu
             copyBtn.classList.toggle('disabled', isEmpty);
+        }
+
+        const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
+        if (speakBtn) {
+            speakBtn.disabled = isEmpty;
+            speakBtn.classList.toggle('disabled', isEmpty);
         }
 
         if (isEmpty) {

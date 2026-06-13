@@ -29,6 +29,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { VariationsManager } from './VariationsManager.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
+import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -947,6 +948,9 @@ export const FocusPanelManager = {
             this._saveContext();
         }
 
+        // Cancel speech synthesis if active
+        SpeechSynthesisManager.cancel();
+
         // Cancel any in-progress generation
         if (this.currentStudentId) this._cancelGenerationForStudent(this.currentStudentId);
 
@@ -1602,6 +1606,9 @@ export const FocusPanelManager = {
      * @private
      */
     _renderContent(result) {
+        // Cancel speech synthesis when switching students
+        SpeechSynthesisManager.cancel();
+
         // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
         const copyBtn = document.getElementById('focusCopyBtn');
         if (copyBtn) {

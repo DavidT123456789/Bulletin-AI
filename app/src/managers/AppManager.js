@@ -16,6 +16,7 @@ import { EventListenersManager } from './EventListenersManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
 import { PreviewManager } from './PreviewManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
+import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
 import { FormUI } from './FormUIManager.js';
 import { DropdownManager } from './DropdownManager.js';
@@ -67,6 +68,9 @@ export const App = {
 
         // Delegate speech recognition to SpeechRecognitionManager
         SpeechRecognitionManager.init();
+
+        // Initialize speech synthesis (Text-To-Speech)
+        SpeechSynthesisManager.init();
 
         // Initialize custom dropdowns
         DropdownManager.init();
