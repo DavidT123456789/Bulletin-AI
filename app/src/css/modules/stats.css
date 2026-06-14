@@ -1414,21 +1414,27 @@
     .hist-bar-group[role="button"]:not(.active-filter):hover {
         transform: translateY(-4px);
         background: var(--surface-color);
-        border-color: rgba(var(--accent-rgb), 0.25);
-        box-shadow: 0 10px 20px -5px rgba(var(--accent-rgb), 0.1), var(--shadow-sm);
+        border-color: rgba(161, 161, 170, 0.3);
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.06), var(--shadow-sm);
     }
 
     [data-theme="dark"] .performance-card .detail-item[role="button"]:not(.active-filter):hover,
     [data-theme="dark"] .evolution-card .legend-item[role="button"]:not(.active-filter):hover,
     [data-theme="dark"] .hist-bar-group[role="button"]:not(.active-filter):hover {
         background: var(--bg-tertiary);
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.35), var(--shadow-sm);
     }
 
-    /* Harmonisation des textes et valeurs */
+    /* Harmonisation des textes et valeurs (Haute lisibilité neutre au survol) */
     .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-value,
-    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label,
     .hist-bar-group[role="button"]:not(.active-filter):hover .hist-label {
-        color: var(--accent-color);
+        color: var(--text-primary);
+    }
+
+    .performance-card .detail-item[role="button"]:not(.active-filter):hover .detail-label,
+    .evolution-card .legend-item[role="button"]:not(.active-filter):hover .legend-label {
+        color: var(--text-secondary);
     }
 
     .hist-bar-group[role="button"]:not(.active-filter):hover .hist-bar {
@@ -1445,14 +1451,15 @@
     box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.12) !important;
 }
 
-.performance-card .detail-item.active-filter .detail-label,
 .performance-card .detail-item.active-filter .detail-value,
 .hist-bar-group.active-filter .hist-label {
-    color: var(--accent-color) !important;
+    color: var(--text-primary) !important;
     font-weight: 700;
 }
 
+.performance-card .detail-item.active-filter .detail-label,
 .evolution-card .legend-item.active-filter .legend-label {
+    color: var(--text-secondary) !important;
     font-weight: 700;
 }
 

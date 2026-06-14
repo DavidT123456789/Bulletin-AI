@@ -31,8 +31,13 @@ a, button, input, select, textarea, [role="button"], .student-row, .student-row 
 }
 
 ::selection {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.16); /* Bleu de marque doux en thème clair */
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] ::selection {
+    background: rgba(59, 130, 246, 0.38); /* Bleu de marque plus lumineux et visible en thème sombre */
+    color: var(--text-primary);
 }
 
 html {
