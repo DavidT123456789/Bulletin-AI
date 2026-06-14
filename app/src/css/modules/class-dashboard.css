@@ -50,26 +50,33 @@
 .dashboard-context-line {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-2);
-    font-size: var(--font-sm);
+    font-size: var(--font-xs);
     color: var(--text-secondary);
     font-weight: 500;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .dashboard-context-line .context-item {
-    display: inline-block;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
 }
 
 .dashboard-context-line .context-dot {
-    color: var(--text-quaternary);
-    font-size: var(--font-xs);
-    user-select: none;
+    display: none !important;
 }
 
 #dashboardClassBadge {
     font-weight: 600;
     color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.06);
+    border-color: rgba(var(--primary-color-rgb), 0.15);
 }
 
 .cohort-header-metric {
@@ -80,6 +87,9 @@
     padding: 4px 10px;
     border-radius: var(--radius-pill);
     border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 [data-theme="dark"] .cohort-header-metric {
@@ -103,7 +113,7 @@
 
 .dashboard-unified-container {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
     gap: var(--space-5);
     margin-top: var(--space-4);
     align-items: stretch;
@@ -300,6 +310,12 @@
     font-variant-numeric: tabular-nums;
 }
 
+#cohortStatMin, #cohortStatMax {
+    cursor: help;
+    text-decoration: underline dashed 1px var(--text-tertiary);
+    text-underline-offset: 4px;
+}
+
 /* Color-code average values based on grade range */
 .cohort-stat-item .stat-value.grade-range-0-4 {
     color: var(--grade-range-0-4);
@@ -452,28 +468,64 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    flex: 1;
+    min-width: 0;
+    margin-right: var(--space-3);
 }
 
-.highlight-student-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1) 0%, rgba(var(--accent-rgb), 0.05) 100%);
-    color: var(--primary-color);
-    font-size: var(--font-xs);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
-    flex-shrink: 0;
+.highlight-item .student-avatar {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 11px !important;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.highlight-item .avatar-selection-overlay {
+    display: none !important;
+}
+
+.highlight-item .student-avatar .student-avatar__initials {
+    font-size: 11px !important;
+}
+
+#highlightProgressList .student-avatar {
+    background: linear-gradient(135deg, rgba(var(--success-rgb), 0.1) 0%, rgba(var(--success-rgb), 0.05) 100%) !important;
+    color: var(--success-color) !important;
+    border-color: rgba(var(--success-rgb), 0.15) !important;
+}
+
+#highlightProgressList .student-avatar .student-avatar__initials {
+    color: var(--success-color) !important;
+    text-shadow: none;
+}
+
+#highlightRiskList .student-avatar {
+    background: linear-gradient(135deg, rgba(var(--error-rgb), 0.1) 0%, rgba(var(--error-rgb), 0.05) 100%) !important;
+    color: var(--error-color) !important;
+    border-color: rgba(var(--error-rgb), 0.15) !important;
+}
+
+#highlightRiskList .student-avatar .student-avatar__initials {
+    color: var(--error-color) !important;
+    text-shadow: none;
 }
 
 .highlight-student-name {
     font-size: var(--font-sm);
     font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.highlight-student-name .student-prenom {
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-left: 4px;
 }
 
 .highlight-evolution {
@@ -481,6 +533,8 @@
     font-weight: 600;
     padding: 3px 8px;
     border-radius: var(--radius-pill);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .highlight-evolution.positive {
@@ -645,14 +699,14 @@
     z-index: 2;
 }
 
-.synthesis-section-header i {
+.synthesis-section-header iconify-icon {
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 /* CONTENT STYLING */
@@ -661,27 +715,26 @@
     z-index: 2;
 }
 
-.synthesis-section-content ul {
-    margin: 0;
-    padding: 0;
+.synthesis-list {
     list-style: none;
+    padding: 0;
+    margin: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
 }
 
-.synthesis-section-content li {
+.synthesis-list li {
     font-size: var(--font-sm);
     color: var(--text-secondary);
-    padding-left: 0;
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
+    line-height: 1.5;
 }
 
-.synthesis-section-content li::before {
+.synthesis-list li::before {
     content: '';
-    /* Remove old arrow content */
     display: inline-block;
     width: 6px;
     height: 6px;
@@ -689,6 +742,18 @@
     background: currentColor;
     flex-shrink: 0;
     transform: translateY(-2px);
+}
+
+.synthesis-section--success .synthesis-list li::before {
+    background: var(--success-color);
+}
+
+.synthesis-section--warning .synthesis-list li::before {
+    background: var(--warning-dark, #B45309);
+}
+
+.synthesis-section--info .synthesis-list li::before {
+    background: var(--color-violet);
 }
 
 /* THEME VARIANTS (Backgrounds & Colors) */
@@ -707,12 +772,9 @@
 .synthesis-section--primary .synthesis-section-header {
     color: var(--primary-color);
 }
-.synthesis-section--primary .synthesis-section-header i {
+.synthesis-section--primary .synthesis-section-header iconify-icon {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
-}
-.synthesis-section--primary .synthesis-section-content li::before {
-    background: var(--primary-color);
 }
 
 /* 2. POINTS FORTS (Success/Green) */
@@ -729,12 +791,9 @@
 .synthesis-section--success .synthesis-section-header {
     color: var(--success-color);
 }
-.synthesis-section--success .synthesis-section-header i {
+.synthesis-section--success .synthesis-section-header iconify-icon {
     background: rgba(var(--success-rgb), 0.15);
     color: var(--success-color);
-}
-.synthesis-section--success .synthesis-section-content li::before {
-    background: var(--success-color);
 }
 
 /* 3. VIGILANCE (Warning/Orange) */
@@ -751,12 +810,9 @@
 .synthesis-section--warning .synthesis-section-header {
     color: var(--warning-dark, #B45309);
 }
-.synthesis-section--warning .synthesis-section-header i {
+.synthesis-section--warning .synthesis-section-header iconify-icon {
     background: rgba(var(--warning-rgb), 0.15);
     color: var(--warning-dark, #B45309);
-}
-.synthesis-section--warning .synthesis-section-content li::before {
-    background: var(--warning-dark, #B45309);
 }
 
 /* 4. RECOMMANDATIONS (Info/Violet-Blue) */
@@ -773,12 +829,9 @@
 .synthesis-section--info .synthesis-section-header {
     color: var(--color-violet);
 }
-.synthesis-section--info .synthesis-section-header i {
+.synthesis-section--info .synthesis-section-header iconify-icon {
     background: rgba(139, 92, 246, 0.15);
     color: var(--color-violet);
-}
-.synthesis-section--info .synthesis-section-content li::before {
-    background: var(--color-violet);
 }
 
 

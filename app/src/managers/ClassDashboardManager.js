@@ -10,6 +10,8 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { AIService } from '../services/AIService.js';
 import { StorageManager } from './StorageManager.js';
+import { StudentPhotoManager } from './StudentPhotoManager.js';
+import { TooltipsUI } from './TooltipsManager.js';
 
 /**
  * Class Dashboard Manager
@@ -171,6 +173,7 @@ export const ClassDashboardManager = {
                     nom: r.nom,
                     prenom: r.prenom,
                     fullName: Utils.formatStudentName(r.nom, r.prenom),
+                    studentPhoto: r.studentPhoto || null,
                     grade: currentGrade,
                     previousGrade: prevGrade,
                     evolution: evolution,
@@ -237,6 +240,8 @@ export const ClassDashboardManager = {
         const average = sum / n;
         const min = grades[0];
         const max = grades[n - 1];
+        const minStudents = students.filter(s => s.grade === min).map(s => s.fullName);
+        const maxStudents = students.filter(s => s.grade === max).map(s => s.fullName);
         const median = n % 2 === 0
             ? (grades[n / 2 - 1] + grades[n / 2]) / 2
             : grades[Math.floor(n / 2)];
@@ -295,6 +300,8 @@ export const ClassDashboardManager = {
             median: median,
             min: min,
             max: max,
+            minStudents: minStudents,
+            maxStudents: maxStudents,
             stdDev: stdDev,
             successRate: successRate,
             aboveTenCount: aboveTenCount,
@@ -403,9 +410,15 @@ export const ClassDashboardManager = {
             }
             if (statMin) {
                 statMin.textContent = `${min}/20`;
+                const minLabel = stats.minStudents.length > 1 ? 'Élèves' : 'Élève';
+                const minTooltip = `<strong>${minLabel} (${min}/20) :</strong><br>${stats.minStudents.join('<br>')}`;
+                TooltipsUI.updateTooltip(statMin, minTooltip);
             }
             if (statMax) {
                 statMax.textContent = `${max}/20`;
+                const maxLabel = stats.maxStudents.length > 1 ? 'Élèves' : 'Élève';
+                const maxTooltip = `<strong>${maxLabel} (${max}/20) :</strong><br>${stats.maxStudents.join('<br>')}`;
+                TooltipsUI.updateTooltip(statMax, maxTooltip);
             }
         }
 
@@ -435,26 +448,22 @@ export const ClassDashboardManager = {
      * @param {Object} stats 
      */
     updateHighlights(stats) {
-        // Helper to get initials
-        const getInitials = (s) => {
-            const p = s.prenom ? s.prenom.trim().charAt(0) : '';
-            const n = s.nom ? s.nom.trim().charAt(0) : '';
-            return `${p}${n}`.toUpperCase() || '?';
-        };
-
         // Top Progressions
         const progressList = this.modal.querySelector('#highlightProgressList');
         if (progressList) {
+            TooltipsUI.cleanupTooltipsIn(progressList);
             if (stats.topProgressions.length > 0) {
                 progressList.innerHTML = stats.topProgressions.map(s => {
-                    const initials = getInitials(s);
+                    const formattedGrade = s.grade.toFixed(1).replace('.', ',');
+                    const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
+                    const tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20 (+${formattedEvolution} pts)`;
                     return `
-                        <div class="highlight-item" data-student-id="${s.id}">
+                        <div class="highlight-item" data-student-id="${s.id}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                             <div class="highlight-item-left">
-                                <span class="highlight-student-avatar">${initials}</span>
-                                <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
+                                ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                                <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                             </div>
-                            <span class="highlight-evolution positive">+${s.evolution.toFixed(1).replace('.', ',')} pts</span>
+                            <span class="highlight-evolution positive">+${formattedEvolution} pts</span>
                         </div>
                     `;
                 }).join('');
@@ -466,18 +475,29 @@ export const ClassDashboardManager = {
         // At Risk / Regressions
         const riskList = this.modal.querySelector('#highlightRiskList');
         if (riskList) {
+            TooltipsUI.cleanupTooltipsIn(riskList);
             // Combine regressions and low grades
             const atRiskStudents = [...new Map([...stats.topRegressions, ...stats.atRisk].map(s => [s.id, s])).values()].slice(0, 15);
 
             if (atRiskStudents.length > 0) {
                 riskList.innerHTML = atRiskStudents.map(s => {
-                    const initials = getInitials(s);
-                    const evolutionText = s.evolution !== null ? `${s.evolution.toFixed(1).replace('.', ',')} pts` : `Moy: ${s.grade.toFixed(1).replace('.', ',')}`;
+                    const formattedGrade = s.grade.toFixed(1).replace('.', ',');
+                    let tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20`;
+                    let evolutionText = '';
+
+                    if (s.evolution !== null) {
+                        const formattedEvolution = s.evolution.toFixed(1).replace('.', ',');
+                        tooltipText += ` (${formattedEvolution} pts)`;
+                        evolutionText = `${formattedEvolution} pts`;
+                    } else {
+                        evolutionText = `Moy: ${formattedGrade}`;
+                    }
+
                     return `
-                        <div class="highlight-item" data-student-id="${s.id}">
+                        <div class="highlight-item" data-student-id="${s.id}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                             <div class="highlight-item-left">
-                                <span class="highlight-student-avatar">${initials}</span>
-                                <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
+                                ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                                <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
                             </div>
                             <span class="highlight-evolution negative">${evolutionText}</span>
                         </div>
@@ -487,6 +507,9 @@ export const ClassDashboardManager = {
                 riskList.innerHTML = '<div class="highlight-empty">Aucun élève en difficulté</div>';
             }
         }
+
+        // Re-initialize tooltips to bind Tippy.js to the new data-tooltip elements
+        TooltipsUI.initTooltips();
     },
 
     /**
@@ -1001,7 +1024,7 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
             }
 
             const sectionsConfig = [
-                { title: 'Points forts', icon: 'ph:check', color: 'success', items: strengths },
+                { title: 'Points forts', icon: 'ph:check-bold', color: 'success', items: strengths },
                 { title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning', items: vigilances },
                 { title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info', items: recommendations }
             ];
@@ -1014,9 +1037,11 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
                                 <iconify-icon icon="${sec.icon}"></iconify-icon>
                                 <span>${sec.title}</span>
                             </div>
-                            <ul class="synthesis-list">
-                                ${sec.items.map(item => `<li>${Utils.escapeHtml(item)}</li>`).join('')}
-                            </ul>
+                            <div class="synthesis-section-content">
+                                <ul class="synthesis-list">
+                                    ${sec.items.map(item => `<li>${Utils.escapeHtml(item)}</li>`).join('')}
+                                </ul>
+                            </div>
                         </div>
                     `;
                 }
@@ -1081,9 +1106,11 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
                             <iconify-icon icon="${config.icon}"></iconify-icon>
                             <span>${cleanTitle}</span>
                         </div>
-                        <ul class="synthesis-list">
-                            ${items.map(item => `<li>${item}</li>`).join('')}
-                        </ul>
+                        <div class="synthesis-section-content">
+                            <ul class="synthesis-list">
+                                ${items.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
                     </div>
                 `;
                 }

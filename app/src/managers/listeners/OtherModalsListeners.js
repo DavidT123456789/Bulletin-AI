@@ -147,10 +147,8 @@ export const OtherModalsListeners = {
 
         // Close buttons
         const closeBtnHeader = document.getElementById('closeDashboardModalBtn');
-        const closeBtnFooter = document.getElementById('closeDashboardFooterBtn');
 
         addClickListener(closeBtnHeader, () => ClassDashboardManager.closeDashboard());
-        addClickListener(closeBtnFooter, () => ClassDashboardManager.closeDashboard());
 
         // Generate AI Synthesis button
         const generateBtn = document.getElementById('generateSynthesisBtn');
