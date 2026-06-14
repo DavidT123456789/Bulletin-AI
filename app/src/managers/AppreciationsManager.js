@@ -218,9 +218,6 @@ export const AppreciationsManager = {
     getRefinementPrompt(type, original, context = null) {
         return PromptService.getRefinementPrompt(type, original, context);
     },
-
-
-
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
 
@@ -230,12 +227,13 @@ export const AppreciationsManager = {
             const errorMsg = isOllama
                 ? "Ollama non activé. Activez-le dans les paramètres."
                 : "Clé API manquante. Veuillez la configurer dans les paramètres.";
-            // La notification est déjà affichée par checkAPIKeyPresence
             throw new Error(errorMsg);
         }
 
         prompts = this.getAllPrompts({ ...studentData, generatedAppreciation: '' }, overrideConfig);
-        const aiResp = await AIService.callAIWithFallback(prompts.appreciation, { signal, context, studentName: studentData.prenom });
+        const userPrompt = prompts.appreciationUser || prompts.appreciation;
+        const systemPrompt = prompts.appreciationSystem || null;
+        const aiResp = await AIService.callAIWithFallback(userPrompt, { signal, context, studentName: studentData.prenom, systemPrompt });
 
         // Désanonymisation : remplacer [PRÉNOM] par le vrai prénom
         appreciation = this._deanonymizeText(aiResp.text, studentData.prenom);
@@ -245,7 +243,7 @@ export const AppreciationsManager = {
         const modelUsed = aiResp.modelUsed;
 
         if (isPreview) {
-            return { appreciation, prompt: prompts.appreciation, usage: aiResp.usage, generationTimeMs: aiResp.generationTimeMs };
+            return { appreciation, prompt: userPrompt, usage: aiResp.usage, generationTimeMs: aiResp.generationTimeMs };
         }
 
         const evolutions = this.analyserEvolution(studentData.periods);

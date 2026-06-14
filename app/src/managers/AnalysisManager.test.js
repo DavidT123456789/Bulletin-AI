@@ -147,10 +147,9 @@ describe('AnalysisManager', () => {
 
         it('should call AIService with correct prompt', async () => {
             AIService.callAIWithFallback.mockResolvedValueOnce({ text: 'Analysis result', usage: { total_tokens: 100 } });
-
             await AnalysisManager.generateStrengthsWeaknesses('test-id-1');
 
-            expect(AIService.callAIWithFallback).toHaveBeenCalledWith('sw prompt');
+            expect(AIService.callAIWithFallback).toHaveBeenCalledWith('sw prompt', expect.any(Object));
         });
 
         it('should save result to state', async () => {

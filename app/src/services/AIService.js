@@ -47,24 +47,31 @@ export const AIService = {
      * @returns {{apiKey: string, apiUrl: string, headers: Object, payload: Object}}
      * @throws {Error} Si la clé API est manquante
      */
-    _getApiConfig(prompt, { isValidation = false, validationProvider = 'openai', modelOverride = null } = {}) {
+    _getApiConfig(prompt, { isValidation = false, validationProvider = 'openai', modelOverride = null, systemPrompt = null } = {}) {
         const configs = {
             openai: {
                 apiKey: appState.openaiApiKey, apiUrl: `${CONFIG.OPENAI_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }),
-                payload: (p, m) => ({ model: m.replace('openai-', ''), messages: [{ role: "user", content: p }] }),
+                payload: (p, m, sys) => ({
+                    model: m.replace('openai-', ''),
+                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }]
+                }),
             },
             google: {
                 apiKey: appState.googleApiKey, apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent?key=${appState.googleApiKey}`,
                 headers: () => ({ 'Content-Type': 'application/json' }),
-                payload: (p) => ({ contents: [{ role: "user", parts: [{ text: p }] }] }),
+                payload: (p, m, sys) => {
+                    const body = { contents: [{ role: "user", parts: [{ text: p }] }] };
+                    if (sys) {
+                        body.systemInstruction = { parts: [{ text: sys }] };
+                    }
+                    return body;
+                },
             },
             openrouter: {
                 apiKey: appState.openrouterApiKey, apiUrl: `${CONFIG.OPENROUTER_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
-                payload: (p, m) => {
-                    // Mapping des modèles vers leurs identifiants OpenRouter
-                    // IDs vérifiés sur openrouter.ai - Mars 2026
+                payload: (p, m, sys) => {
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
                         'claude-sonnet-4.6': 'anthropic/claude-sonnet-4.6',
@@ -76,36 +83,40 @@ export const AIService = {
                         'mistral-small': 'mistralai/mistral-small-2603',
                         'mistral-large': 'mistralai/mistral-large-2512'
                     };
+                    const messages = sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }];
                     return {
                         model: modelMap[m] || 'deepseek/deepseek-chat',
-                        messages: [{ role: "user", content: p }],
+                        messages,
                         max_tokens: MAX_RESPONSE_TOKENS
                     };
                 },
             },
             ollama: {
-                // Ollama n'a pas besoin de clé API, mais doit être activé
                 apiKey: appState.ollamaEnabled ? 'local' : null,
                 apiUrl: (m) => {
                     const baseUrl = appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl;
                     return `${baseUrl}${OLLAMA_CONFIG.apiEndpoint}`;
                 },
                 headers: () => ({ 'Content-Type': 'application/json' }),
-                payload: (p, m) => ({
-                    model: m.replace('ollama-', ''), // ex: 'ollama-llama3.1:8b' → 'llama3.1:8b'
-                    prompt: p,
-                    stream: false,
-                    // Paramètres de contrôle pour des réponses cohérentes
-                    options: {
-                        temperature: 0.7,      // Moins créatif, plus cohérent
-                        num_predict: MAX_RESPONSE_TOKENS,
-                        top_p: 0.9,
-                        repeat_penalty: 1.1,   // Évite les répétitions
+                payload: (p, m, sys) => {
+                    const body = {
+                        model: m.replace('ollama-', ''),
+                        prompt: p,
+                        stream: false,
+                        options: {
+                            temperature: 0.7,
+                            num_predict: MAX_RESPONSE_TOKENS,
+                            top_p: 0.9,
+                            repeat_penalty: 1.1,
+                        }
+                    };
+                    if (sys) {
+                        body.system = sys;
                     }
-                }),
+                    return body;
+                },
             },
             anthropic: {
-                // Claude (Anthropic) - API directe
                 apiKey: appState.anthropicApiKey,
                 apiUrl: `${CONFIG.ANTHROPIC_API_BASE}/messages`,
                 headers: (key) => ({
@@ -113,25 +124,28 @@ export const AIService = {
                     'x-api-key': key,
                     'anthropic-version': '2023-06-01'
                 }),
-                payload: (p, m) => ({
-                    model: m.replace('anthropic-', ''), // ex: 'anthropic-claude-sonnet-4.6' → 'claude-sonnet-4.6'
-                    messages: [{ role: 'user', content: p }],
-                    max_tokens: MAX_RESPONSE_TOKENS
-                }),
+                payload: (p, m, sys) => {
+                    const body = {
+                        model: m.replace('anthropic-', ''),
+                        messages: [{ role: 'user', content: p }],
+                        max_tokens: MAX_RESPONSE_TOKENS
+                    };
+                    if (sys) {
+                        body.system = sys;
+                    }
+                    return body;
+                },
             },
             mistral: {
-                // Mistral AI - API directe (format OpenAI-compatible)
                 apiKey: appState.mistralApiKey,
                 apiUrl: `${CONFIG.MISTRAL_API_BASE}/chat/completions`,
                 headers: (key) => ({
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m) => ({
-                    // ex: 'mistral-direct-small-latest' → 'mistral-small-latest'
-                    // ex: 'mistral-direct-large-latest' → 'mistral-large-latest'
+                payload: (p, m, sys) => ({
                     model: m.replace('mistral-direct-', 'mistral-'),
-                    messages: [{ role: 'user', content: p }],
+                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
                     max_tokens: MAX_RESPONSE_TOKENS
                 }),
             }
@@ -164,7 +178,7 @@ export const AIService = {
             apiKey,
             apiUrl: typeof config.apiUrl === 'function' ? config.apiUrl(selectedModel) : config.apiUrl,
             headers: config.headers(apiKey),
-            payload: config.payload(prompt, selectedModel)
+            payload: config.payload(prompt, selectedModel, systemPrompt)
         };
     },
 

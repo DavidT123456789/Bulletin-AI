@@ -103,8 +103,8 @@ export const AnalysisManager = {
 
         try {
             const prompts = AppreciationsManager.getAllPrompts({ ...result.studentData, id: result.id });
-            result.studentData.prompts.sw = prompts.sw;
-            const resp = await AIService.callAIWithFallback(prompts.sw);
+            result.studentData.prompts.sw = prompts.swUser || prompts.sw;
+            const resp = await AIService.callAIWithFallback(prompts.swUser || prompts.sw, { systemPrompt: prompts.swSystem || null });
             result.strengthsWeaknesses = resp.text;
             result.tokenUsage.sw = resp.usage;
             StorageManager.saveAppState();
@@ -129,8 +129,8 @@ export const AnalysisManager = {
 
         try {
             const prompts = AppreciationsManager.getAllPrompts({ ...result.studentData, id: result.id });
-            result.studentData.prompts.ns = prompts.ns;
-            const resp = await AIService.callAIWithFallback(prompts.ns);
+            result.studentData.prompts.ns = prompts.nsUser || prompts.ns;
+            const resp = await AIService.callAIWithFallback(prompts.nsUser || prompts.ns, { systemPrompt: prompts.nsSystem || null });
 
             const steps = [];
             const lines = resp.text.split('\n').filter(l => l.trim() !== '');
@@ -151,9 +151,7 @@ export const AnalysisManager = {
             if (!silent) UI.showNotification(`Erreur : ${Utils.translateErrorMessage(e.message)}`, 'error');
             throw e;
         }
-    },
-
-    /**
+    },    /**
      * Récupère les analyses pour un élève (forces/faiblesses et pistes).
      * @param {string} id - Identifiant de l'élève
      */

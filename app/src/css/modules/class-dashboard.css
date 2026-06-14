@@ -265,6 +265,64 @@
     width: fit-content;
 }
 
+/* COHORT STATS BAR */
+.cohort-stats-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.cohort-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    text-align: center;
+}
+
+.cohort-stat-item .stat-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cohort-stat-item .stat-value {
+    font-size: var(--font-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Color-code average values based on grade range */
+.cohort-stat-item .stat-value.grade-range-0-4 {
+    color: var(--grade-range-0-4);
+}
+.cohort-stat-item .stat-value.grade-range-4-8 {
+    color: var(--grade-range-4-8);
+}
+.cohort-stat-item .stat-value.grade-range-8-12 {
+    color: var(--grade-range-8-12);
+}
+.cohort-stat-item .stat-value.grade-range-12-16 {
+    color: var(--grade-range-12-16);
+}
+.cohort-stat-item .stat-value.grade-range-16-20 {
+    color: var(--grade-range-16-20);
+}
+
+.cohort-stat-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+}
+
 /* COHORT HIGHLIGHTS GROUPS */
 .cohort-highlights {
     display: flex;

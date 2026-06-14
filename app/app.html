@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -3066,7 +3066,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build e6e7894 · 14 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 66b1845 · 14 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3481,6 +3481,8 @@
                     <div class="dashboard-context-line" id="dashboardContextLine">
                         <span id="dashboardClassBadge" class="context-item" style="display: none;">--</span>
                         <span class="context-dot" id="dashboardClassDot" style="display: none;">&bull;</span>
+                        <span id="dashboardSubjectBadge" class="context-item" style="display: none;">--</span>
+                        <span class="context-dot" id="dashboardSubjectDot" style="display: none;">&bull;</span>
                         <span id="dashboardPeriodBadge" class="context-item">--</span>
                         <span class="context-dot">&bull;</span>
                         <span id="dashboardStudentCount" class="context-item">--</span>
@@ -3547,6 +3549,23 @@
                             <span class="cohort-header-metric" id="cohortHeaderMetric">--</span>
                         </div>
                         <div class="panel-content">
+                            <!-- Class Statistics horizontal KPI bar -->
+                            <div class="cohort-stats-bar">
+                                <div class="cohort-stat-item">
+                                    <span class="stat-label">Moyenne</span>
+                                    <span class="stat-value" id="cohortStatAverage">--</span>
+                                </div>
+                                <div class="cohort-stat-divider"></div>
+                                <div class="cohort-stat-item">
+                                    <span class="stat-label">Note Min</span>
+                                    <span class="stat-value" id="cohortStatMin">--</span>
+                                </div>
+                                <div class="cohort-stat-divider"></div>
+                                <div class="cohort-stat-item">
+                                    <span class="stat-label">Note Max</span>
+                                    <span class="stat-value" id="cohortStatMax">--</span>
+                                </div>
+                            </div>
                             <!-- Highlights Sections -->
                             <div class="cohort-highlights">
                                 <div class="highlight-group">

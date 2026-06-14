@@ -222,6 +222,43 @@ export const PromptService = {
 
         const appreciationPrompt = promptParts.join('\n\n');
 
+        // Build System Prompt for appreciation
+        const systemParts = [];
+        if (isNeutralVoice) {
+            systemParts.push(`Tu es un enseignant ou conseiller d'éducation${disciplineContext}. Ton rôle est de rédiger l'appréciation scolaire d'un élève pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        } else {
+            systemParts.push(`Tu es un enseignant ou conseiller d'éducation${disciplineContext}. Ton rôle est de rédiger l'appréciation scolaire de l'élève ${studentIdentifier} pour le '${Utils.getPeriodLabel(currentPeriod, true)}'.`);
+        }
+        systemParts.push(`Cadre d'évaluation : ${temporalite}`);
+        if (!hasNoData) {
+            systemParts.push(`L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne, tout en tenant compte du contexte fourni sur l'élève. Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.`);
+        }
+
+        const systemStyleParts = [...styleParts];
+        // Blacklist of school clichés
+        systemStyleParts.push(
+            `RÈGLES D'EXCLUSION STRICTES (ÉVITER LES CLICHÉS SCÉENAIRES) :\n` +
+            `- N'utilise JAMAIS de formulations scolaires vides ou passives telles que : 'élève sérieux', 'peut mieux faire', 'continuer ainsi', 'poursuivre ses efforts', 'doit persévérer', 'travail régulier', 'résultats satisfaisants' (sans autre précision).\n` +
+            `- À la place, privilégie des descriptions comportementales ou méthodologiques concrètes et actives (ex: 'fait preuve d'investissement', 'assimile bien les notions', 'exprime des pistes précises d'amélioration', 's'implique dans les activités collectives').`
+        );
+        systemParts.push('--- INSTRUCTIONS DE STYLE ---\n' + systemStyleParts.map(s => '- ' + s).join('\n'));
+        const appreciationSystem = systemParts.join('\n\n');
+        // Build User Prompt for appreciation
+        const userParts = [];
+        if (currentClass) {
+            let classLevel = currentClass.level || detectLevelFromName(currentClass.name);
+            if (classLevel === '3eme') classLevel = 'college';
+            const levelMeta = LEVELS[classLevel] || LEVELS.generique;
+            
+            let contextText = `--- CONTEXTE SCOLAIRE ---\nClasse : ${currentClass.name}`;
+            if (classLevel && classLevel !== 'generique') {
+                contextText += `\nNiveau : ${levelMeta.label}`;
+            }
+            userParts.push(contextText);
+        }
+        userParts.push(`--- DONNÉES DE L'ÉLÈVE ---\n${studentLine}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`);
+        const appreciationUser = userParts.join('\n\n');
+
         // [FIX] Use period-specific appreciation for analysis prompts
         // The appreciation to analyze should be from the current period, not a legacy global field
         const currentPeriodAppreciation = periods?.[currentPeriod]?.appreciation || '';
@@ -264,24 +301,51 @@ export const PromptService = {
             ? '\n' + analysisContextParts.join('\n')
             : '';
 
-        const swPrompt = `Analyse pour la période '${currentPeriod}'. Liste 2-3 points forts puis 2-3 points faibles.
-Format : "### Points Forts" puis "### Points Faibles". Pas d'intro ni conclusion.
+        const swSystem = `Tu es un enseignant analysant les performances d'un élève pour en extraire des forces et des faiblesses.
+Rédige une analyse pour la période '${currentPeriod}'. Liste exactement 2-3 points forts puis 2-3 points faibles.
+Format obligatoire à respecter STRICTEMENT :
+### Points Forts
+• [Point fort 1]
+• [Point fort 2]
 
-Données de l'élève :
+### Points Faibles
+• [Point faible 1]
+• [Point faible 2]
+
+Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directement avec les titres et les points.`;
+
+        const swUser = `Données de l'élève :
 ${periodsInfoForAnalysis}
 ${evolutionText}${analysisContext}
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
-        const nsPrompt = `Suggère 3 pistes d'amélioration concrètes. Liste numérotée, bref et direct. Pas d'intro ni conclusion.
+        const swPrompt = `${swSystem}\n\n${swUser}`;
 
-Données de l'élève :
+        const nsSystem = `Tu es un enseignant formulant des pistes d'amélioration concrètes pour un élève.
+Suggère exactement 3 pistes d'amélioration concrètes pour la période '${currentPeriod}'.
+Format obligatoire : liste numérotée (1., 2., 3.). Rédige de manière brève, concise et directe.
+Ne rédige aucun préambule, aucune introduction ni conclusion. Réponds directement avec la liste.`;
+
+        const nsUser = `Données de l'élève :
 ${periodsInfoForAnalysis}
 ${evolutionText}${analysisContext}
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"`;
 
-        return { appreciation: appreciationPrompt, sw: swPrompt, ns: nsPrompt };
+        const nsPrompt = `${nsSystem}\n\n${nsUser}`;
+
+        return {
+            appreciation: appreciationPrompt,
+            sw: swPrompt,
+            ns: nsPrompt,
+            appreciationSystem,
+            appreciationUser,
+            swSystem,
+            swUser,
+            nsSystem,
+            nsUser
+        };
     },
 
     /**

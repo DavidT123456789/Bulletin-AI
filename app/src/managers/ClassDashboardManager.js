@@ -35,6 +35,12 @@ export const ClassDashboardManager = {
     /** @type {string|null} Data Hash for which synthesis was generated */
     cachedSynthesisDataHash: null,
 
+    /** @type {string|null} AI Model for which synthesis was generated */
+    cachedSynthesisModel: null,
+
+    /** @type {string|null} Subject for which synthesis was generated */
+    cachedSynthesisSubject: null,
+
     /** @type {string|null} Original AI synthesis HTML before any refinement */
     originalSynthesisHTML: null,
 
@@ -358,6 +364,51 @@ export const ClassDashboardManager = {
             if (classDot) classDot.style.display = 'none';
         }
 
+        // Retrieve and display active subject (discipline)
+        const subjectBadge = this.modal.querySelector('#dashboardSubjectBadge');
+        const subjectDot = this.modal.querySelector('#dashboardSubjectDot');
+        
+        const customStyle = appState.subjects?.['MonStyle']?.iaConfig;
+        const genericStyle = appState.subjects?.['Générique']?.iaConfig;
+        const iaConfig = customStyle || genericStyle || {};
+        const discipline = iaConfig.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
+
+        if (subjectBadge && discipline) {
+            subjectBadge.textContent = discipline;
+            subjectBadge.style.display = 'inline';
+            if (subjectDot) subjectDot.style.display = 'inline';
+        } else if (subjectBadge) {
+            subjectBadge.style.display = 'none';
+            if (subjectDot) subjectDot.style.display = 'none';
+        }
+
+        // Display Class Stats (Moyenne, Min, Max) in Cohort Stats Bar
+        const statAverage = this.modal.querySelector('#cohortStatAverage');
+        const statMin = this.modal.querySelector('#cohortStatMin');
+        const statMax = this.modal.querySelector('#cohortStatMax');
+
+        if (stats) {
+            const moy = stats.average.toFixed(1).replace('.', ',');
+            const min = stats.min.toFixed(1).replace('.', ',');
+            const max = stats.max.toFixed(1).replace('.', ',');
+
+            if (statAverage) {
+                statAverage.textContent = `${moy}/20`;
+                // Remove previous grade range classes
+                statAverage.className = 'stat-value';
+                const gradeClass = Utils.getGradeClass(stats.average);
+                if (gradeClass) {
+                    statAverage.classList.add(gradeClass);
+                }
+            }
+            if (statMin) {
+                statMin.textContent = `${min}/20`;
+            }
+            if (statMax) {
+                statMax.textContent = `${max}/20`;
+            }
+        }
+
         // Update cohort header micro-metric (success rate)
         const cohortHeaderMetric = this.modal.querySelector('#cohortHeaderMetric');
         if (cohortHeaderMetric) {
@@ -524,6 +575,8 @@ export const ClassDashboardManager = {
                 this.cachedSynthesisClassId = currentClassId;
                 this.cachedSynthesisPeriod = currentPeriod;
                 this.cachedSynthesisDataHash = savedAnalysis.dataHash || null;
+                this.cachedSynthesisModel = savedAnalysis.model || null;
+                this.cachedSynthesisSubject = savedAnalysis.subject || null;
 
                 // Update revert button visibility
                 this._updateRevertButtonState();
@@ -548,11 +601,24 @@ export const ClassDashboardManager = {
         const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
         if (!generateBtn || !this.cachedStats || !this.cachedSynthesisDataHash) return;
 
-        if (this.cachedStats.dataHash !== this.cachedSynthesisDataHash) {
+        const dataChanged = this.cachedStats.dataHash !== this.cachedSynthesisDataHash;
+        const modelChanged = this.cachedSynthesisModel && appState.currentAIModel !== this.cachedSynthesisModel;
+        const subjectChanged = this.cachedSynthesisSubject && appState.currentSubject !== this.cachedSynthesisSubject;
+
+        if (dataChanged || modelChanged || subjectChanged) {
             // Data is stale
             generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Actualiser';
             generateBtn.className = 'btn btn-warning btn-small';
-            generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
+            
+            let reason = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
+            if (modelChanged && subjectChanged) {
+                reason = "Le modèle d'IA et la matière active ont changé.";
+            } else if (modelChanged) {
+                reason = "Le modèle d'IA sélectionné a changé.";
+            } else if (subjectChanged) {
+                reason = "La matière active a changé.";
+            }
+            generateBtn.title = reason;
         } else {
             // Data is fresh
             generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
@@ -635,9 +701,9 @@ export const ClassDashboardManager = {
 
         try {
             const stats = this.cachedStats;
-            const prompt = this.buildAIPrompt(stats);
+            const { systemPrompt, userPrompt } = this.buildAIPrompt(stats);
 
-            const response = await AIService.callAIWithFallback(prompt);
+            const response = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
 
             // Parse the response into structured sections
             const formattedText = this._formatSynthesisText(response.text);
@@ -651,6 +717,8 @@ export const ClassDashboardManager = {
             this.cachedSynthesisClassId = appState.currentClassId;
             this.cachedSynthesisDataHash = stats.dataHash; // Update hash
             this.cachedSynthesisPeriod = appState.currentPeriod;
+            this.cachedSynthesisModel = appState.currentAIModel;
+            this.cachedSynthesisSubject = appState.currentSubject;
 
             // PERSISTENCE: Save to Class Object in Storage
             this._saveSynthesisToStorage(synthesisHTML, stats.dataHash);
@@ -695,6 +763,7 @@ export const ClassDashboardManager = {
                 originalContent: this.originalSynthesisHTML || htmlContent, // Save original
                 timestamp: Date.now(),
                 model: appState.currentAIModel,
+                subject: appState.currentSubject,
                 dataHash: dataHash || null, // Save the signature of data used
                 statsSnapshot: this.cachedStats // Optional: save stats used for generation
             };
@@ -707,60 +776,91 @@ export const ClassDashboardManager = {
     /**
      * Build the AI prompt with statistics context
      * @param {Object} stats 
-     * @returns {string}
+     * @returns {{systemPrompt: string, userPrompt: string}}
      */
     buildAIPrompt(stats) {
         const period = appState.currentPeriod;
         const periodLabel = { T1: 'premier trimestre', T2: 'deuxième trimestre', T3: 'troisième trimestre', S1: 'premier semestre', S2: 'deuxième semestre' }[period] || period;
 
-        let prompt = `Rédige une SYNTHÈSE CONCISE pour le conseil de classe du ${periodLabel}.
+        // Fetch teacher's style custom profile if available to propagate it
+        const customStyle = appState.subjects?.['MonStyle']?.iaConfig;
+        const genericStyle = appState.subjects?.['Générique']?.iaConfig;
+        const iaConfig = customStyle || genericStyle || { tone: 3 };
 
-**DONNÉES :**
+        const toneMap = {
+            1: 'très encourageant et positif',
+            2: 'bienveillant et constructif',
+            3: null,
+            4: 'exigeant mais constructif',
+            5: 'strict et formel'
+        };
+        const toneInstruction = toneMap[iaConfig.tone];
+
+        let styleInstructionText = '';
+        if (toneInstruction) {
+            styleInstructionText += `\n- Adopte un ton ${toneInstruction} pour l'ensemble du bilan.`;
+        }
+        if (iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false) {
+            styleInstructionText += `\n- Consignes additionnelles : ${iaConfig.styleInstructions}`;
+        }
+
+        const discipline = iaConfig.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
+        const roleText = discipline
+            ? `Tu es un enseignant de ${discipline}. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel dans cette matière pour le conseil de classe du ${periodLabel}.`
+            : `Tu es un conseiller principal d'éducation ou un professeur principal. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel global pour le conseil de classe du ${periodLabel}.`;
+
+        const systemPrompt = `${roleText}
+Tu devez extraire de l'analyse globale et qualitative de la classe : une synthèse globale, les points forts, les points de vigilance, et des recommandations collectives concrètes.
+
+RÈGLES D'ÉCRITURE :
+- Synthèse Globale : Rédige 2-4 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe dans cette matière. Vise une longueur STRICTEMENT comprise entre 40 et 90 mots.
+- Points forts : Identifie 2 points forts collectifs (max 15 mots par point).
+- Points de vigilance : Identifie 1 à 2 points de vigilance collectifs (max 15 mots par point). Ne cite pas de prénoms d'élèves spécifiques pour les aspects négatifs de comportement.
+- Recommandations : Formule 2 actions ou pistes collectives concrètes (max 20 mots par action).
+- N'utilise JAMAIS de clichés scolaires vides ("élève sérieux", "peut mieux faire", "continuer ainsi", "poursuivre ses efforts", "doit persévérer"). A la place, décris des dynamiques concrètes et des leviers d'action réels.
+- Utilise un ton professionnel et constructif.${styleInstructionText}
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
+Tu devez répondre uniquement sous le format d'un objet JSON strict avec la structure suivante :
+{
+  "synthesis": "Texte de la synthèse générale...",
+  "strengths": [
+    "Premier point fort...",
+    "Deuxième point fort..."
+  ],
+  "vigilances": [
+    "Premier point de vigilance...",
+    "Deuxième point de vigilance..."
+  ],
+  "recommendations": [
+    "Première recommandation...",
+    "Deuxième recommandation..."
+  ]
+}
+
+Ne rajoute aucune introduction, aucun commentaire, ni de balises de code Markdown. Réponds directement par l'objet JSON brut.`;
+
+        let userPrompt = `Voici les données de la classe :
 • Effectif : ${stats.count} élèves
 • Moyenne : ${stats.average.toFixed(1)}/20 | Médiane : ${stats.median.toFixed(1)}/20
 • Min : ${stats.min.toFixed(1)} | Max : ${stats.max.toFixed(1)} | Écart-type : ${stats.stdDev.toFixed(1)}
 • Répartition : ${stats.distribution['16-20']} excellents, ${stats.distribution['12-16']} bons, ${stats.distribution['8-12']} moyens, ${stats.distribution['4-8']} fragiles, ${stats.distribution['0-4']} en difficulté`;
 
         if (stats.hasEvolutionData) {
-            prompt += `
+            userPrompt += `
 • Évolution : ${stats.avgEvolution >= 0 ? '+' : ''}${stats.avgEvolution.toFixed(1)} pts | ${stats.progressCount} progressions, ${stats.stableCount} stables, ${stats.regressionCount} régressions`;
             if (stats.topProgressions.length > 0) {
-                prompt += `\n• Top progressions : ${stats.topProgressions.slice(0, 3).map(s => `${s.prenom} (+${s.evolution.toFixed(1)})`).join(', ')}`;
+                userPrompt += `\n• Top progressions : ${stats.topProgressions.slice(0, 3).map(s => `${s.prenom} (+${s.evolution.toFixed(1)})`).join(', ')}`;
             }
         }
 
         if (stats.appreciationsList && stats.appreciationsList.length > 0) {
-            prompt += `\n\n**APPRÉCIATIONS INDIVIDUELLES (pour contexte qualitatif) :**
+            userPrompt += `\n\n**APPRÉCIATIONS INDIVIDUELLES (pour contexte qualitatif) :**
 Utilise ces commentaires pour affiner l'analyse (ambiance, comportement, efforts) mais NE CITE PAS d'élèves spécifiques pour les points négatifs de comportement.
 ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
         }
 
-        prompt += `
-
-**FORMAT OBLIGATOIRE - Réponds UNIQUEMENT avec ces 4 sections :**
-
-📝 **Synthèse Globale**
-[2-3 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe. Max 40 mots.]
-
-✅ **Points forts**
-• [Point 1 - max 10 mots]
-• [Point 2 - max 10 mots]
-
-⚠️ **Points de vigilance**
-• [Point 1 - max 10 mots]
-• [Point 2 si pertinent - max 10 mots]
-
-💡 **Recommandations**
-• [Action 1 concrète - max 15 mots]
-• [Action 2 concrète - max 15 mots]
-
-RÈGLES STRICTES :
-- Maximum 130 mots au total
-- Style professionnel et constructif
-- Pas d'introduction ni de formules de politesse
-- Utilise les prénoms, pas les noms complets`;
-
-        return prompt;
+        return { systemPrompt, userPrompt };
     },
 
     /**
@@ -788,8 +888,9 @@ RÈGLES STRICTES :
         };
 
         try {
-            const prompt = `${prompts[type]}\n\nAnalyse originale :\n${currentContentText}`;
-            const resp = await AIService.callAIWithFallback(prompt);
+            const systemPrompt = "Tu es un conseiller pédagogique. Réécris ou ajuste la synthèse de classe fournie selon les instructions de l'enseignant. Garde un ton professionnel et constructif. Réponds directement sans introduction ni formule de politesse.";
+            const userPrompt = `${prompts[type]}\n\nAnalyse originale :\n${currentContentText}`;
+            const resp = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
 
             // Format and display
             const formattedText = this._formatSynthesisText(resp.text);
@@ -839,10 +940,11 @@ RÈGLES STRICTES :
     async _showPromptPreview() {
         if (!this.cachedStats) return;
 
-        const prompt = this.buildAIPrompt(this.cachedStats);
+        const { systemPrompt, userPrompt } = this.buildAIPrompt(this.cachedStats);
+        const combined = `=== SYSTEM PROMPT ===\n${systemPrompt}\n\n=== USER PROMPT ===\n${userPrompt}`;
 
         const { FocusPanelRefinement } = await import('./FocusPanelRefinement.js');
-        await FocusPanelRefinement.displayPromptModal(prompt, 'Prévisualisation du Prompt');
+        await FocusPanelRefinement.displayPromptModal(combined, 'Prévisualisation du Prompt');
     },
 
 
@@ -863,7 +965,7 @@ RÈGLES STRICTES :
 
     /**
      * Format synthesis text into structured HTML sections
-     * @param {string} text - Raw AI response text
+     * @param {string} text - Raw AI response text or JSON
      * @returns {string} Formatted HTML
      * @private
      */
@@ -871,7 +973,61 @@ RÈGLES STRICTES :
         // Normalize multiple ellipsis (e.g., "......" -> "...")
         text = text.replace(/\.{3,}/g, '...');
 
-        // Define section configs with icons and colors
+        // 1. JSON Parser Mode (Robust)
+        let cleaned = text.trim();
+        if (cleaned.startsWith('```')) {
+            cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+        }
+
+        try {
+            const data = JSON.parse(cleaned);
+            const synthesis = data.synthesis || '';
+            const strengths = data.strengths || data.strength || [];
+            const vigilances = data.vigilances || data.vigilance || [];
+            const recommendations = data.recommendations || data.recommendation || [];
+
+            let html = '';
+            
+            if (synthesis) {
+                html += `
+                    <div class="synthesis-section synthesis-intro-card">
+                        <div class="synthesis-intro-header">
+                            <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
+                            <span>Synthèse Globale</span>
+                        </div>
+                        <p class="synthesis-intro-text">${Utils.escapeHtml(synthesis)}</p>
+                    </div>
+                `;
+            }
+
+            const sectionsConfig = [
+                { title: 'Points forts', icon: 'ph:check', color: 'success', items: strengths },
+                { title: 'Points de vigilance', icon: 'solar:danger-triangle-linear', color: 'warning', items: vigilances },
+                { title: 'Recommandations', icon: 'solar:lightbulb-linear', color: 'info', items: recommendations }
+            ];
+
+            sectionsConfig.forEach(sec => {
+                if (Array.isArray(sec.items) && sec.items.length > 0) {
+                    html += `
+                        <div class="synthesis-section synthesis-section--${sec.color}">
+                            <div class="synthesis-section-header">
+                                <iconify-icon icon="${sec.icon}"></iconify-icon>
+                                <span>${sec.title}</span>
+                            </div>
+                            <ul class="synthesis-list">
+                                ${sec.items.map(item => `<li>${Utils.escapeHtml(item)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            });
+
+            if (html) return html;
+        } catch (e) {
+            console.warn('[ClassDashboardManager] JSON parsing failed, falling back to Markdown parser:', e);
+        }
+
+        // 2. Legacy Regex Markdown Parser Fallback
         const sections = [
             { emoji: '📝', title: 'Synthèse', icon: 'solar:document-text-linear', color: 'primary-dark', isFullWidth: true },
             { emoji: '📊', title: 'Bilan', icon: 'solar:chart-square-linear', color: 'primary' },
