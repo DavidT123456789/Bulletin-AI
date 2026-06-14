@@ -35,6 +35,9 @@ export const ClassDashboardManager = {
     /** @type {string|null} Data Hash for which synthesis was generated */
     cachedSynthesisDataHash: null,
 
+    /** @type {string|null} Original AI synthesis HTML before any refinement */
+    originalSynthesisHTML: null,
+
     /**
      * Initialize the dashboard modal reference
      */
@@ -74,6 +77,24 @@ export const ClassDashboardManager = {
 
         setupScrollListener(progressList, progressScrollBtn);
         setupScrollListener(riskList, riskScrollBtn);
+
+        // Attach click listeners to refinement toolbar buttons
+        const refinementToolbar = this.modal?.querySelector('#aiRefinementToolbar');
+        if (refinementToolbar) {
+            refinementToolbar.querySelectorAll('.btn-refinement[data-refine-type]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.handleClassAnalysisActions(e.currentTarget);
+                });
+            });
+        }
+
+        // Attach click listener to revert button
+        const revertBtn = this.modal?.querySelector('#revertSynthesisBtn');
+        if (revertBtn) {
+            revertBtn.addEventListener('click', () => {
+                this.revertSynthesis();
+            });
+        }
     },
 
     /**
@@ -311,32 +332,37 @@ export const ClassDashboardManager = {
     renderDashboard(stats, students) {
         if (!stats) return;
 
-        // Update header info
+        // Update header info using new context line
         const periodBadge = this.modal.querySelector('#dashboardPeriodBadge');
         const studentCount = this.modal.querySelector('#dashboardStudentCount');
         const classBadge = this.modal.querySelector('#dashboardClassBadge');
+        const classDot = this.modal.querySelector('#dashboardClassDot');
 
         if (periodBadge) {
             const periodLabels = { T1: 'Trimestre 1', T2: 'Trimestre 2', T3: 'Trimestre 3', S1: 'Semestre 1', S2: 'Semestre 2' };
-            periodBadge.innerHTML = `<iconify-icon icon="solar:calendar-linear"></iconify-icon> ${periodLabels[appState.currentPeriod] || appState.currentPeriod}`;
+            periodBadge.textContent = periodLabels[appState.currentPeriod] || appState.currentPeriod;
         }
         if (studentCount) {
-            studentCount.innerHTML = `<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <strong>${stats.count}</strong> élèves analysés`;
+            studentCount.innerHTML = `<strong>${stats.count}</strong> ${stats.count > 1 ? 'élèves analysés' : 'élève analysé'}`;
         }
 
         // Retrieve and display class name
         const classes = appState.classes || [];
         const currentClass = classes.find(c => c.id === appState.currentClassId);
         if (classBadge && currentClass) {
-            const nameEl = classBadge.querySelector('.class-name-text');
-            if (nameEl) nameEl.textContent = currentClass.name;
-            classBadge.style.display = 'inline-flex';
+            classBadge.textContent = currentClass.name;
+            classBadge.style.display = 'inline';
+            if (classDot) classDot.style.display = 'inline';
         } else if (classBadge) {
             classBadge.style.display = 'none';
+            if (classDot) classDot.style.display = 'none';
         }
 
-        // Update KPI cards (spread and success rate)
-        this.updateKPICards(stats);
+        // Update cohort header micro-metric (success rate)
+        const cohortHeaderMetric = this.modal.querySelector('#cohortHeaderMetric');
+        if (cohortHeaderMetric) {
+            cohortHeaderMetric.innerHTML = `<iconify-icon icon="solar:shield-check-linear"></iconify-icon> <strong>${stats.successRate.toFixed(0)}%</strong> de réussite`;
+        }
 
         // Update Highlights
         this.updateHighlights(stats);
@@ -346,25 +372,11 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Update KPI metric cards
+     * Update KPI metric cards (obsolete, handled in header metric)
      * @param {Object} stats 
      */
     updateKPICards(stats) {
-        // Spread (écart-type)
-        const spreadValue = this.modal.querySelector('#kpiSpread');
-        const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
-        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1).replace('.', ',');
-        if (spreadLabel) {
-            if (stats.stdDev < 2) spreadLabel.textContent = 'Classe homogène';
-            else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
-            else spreadLabel.textContent = 'Classe hétérogène';
-        }
-
-        // Success Rate
-        const successRateValue = this.modal.querySelector('#kpiSuccessRate');
-        const successRateCount = this.modal.querySelector('#kpiSuccessCount');
-        if (successRateValue) successRateValue.textContent = stats.successRate.toFixed(0);
-        if (successRateCount) successRateCount.textContent = `${stats.aboveTenCount} sur ${stats.count} élèves ≥ 10`;
+        // No-op : KPIs retirés pour éviter la redondance
     },
 
     /**
@@ -432,6 +444,7 @@ export const ClassDashboardManager = {
     resetAISection() {
         const content = this.modal.querySelector('#aiSynthesisContent');
         const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+        const toolbar = this.modal.querySelector('#aiRefinementToolbar');
 
         if (content) {
             content.innerHTML = `
@@ -459,11 +472,20 @@ export const ClassDashboardManager = {
         // Reset button text to "Générer"
         if (generateBtn) {
             generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer';
+            generateBtn.className = 'btn btn-ai btn-small';
         }
 
         // Hide copy button
         const copyBtn = this.modal.querySelector('#copyDashboardSynthesisBtn');
         if (copyBtn) copyBtn.style.display = 'none';
+
+        // Hide refinement toolbar
+        if (toolbar) {
+            toolbar.style.display = 'none';
+        }
+
+        this.originalSynthesisHTML = null;
+        this.cachedSynthesisHTML = null;
     },
 
     /**
@@ -498,9 +520,13 @@ export const ClassDashboardManager = {
 
                 // Update in-memory cache
                 this.cachedSynthesisHTML = savedAnalysis.content;
+                this.originalSynthesisHTML = savedAnalysis.originalContent || savedAnalysis.content;
                 this.cachedSynthesisClassId = currentClassId;
                 this.cachedSynthesisPeriod = currentPeriod;
                 this.cachedSynthesisDataHash = savedAnalysis.dataHash || null;
+
+                // Update revert button visibility
+                this._updateRevertButtonState();
 
                 // Check for stale data (if data has changed since generation)
                 // We do this AFTER applying the content to ensure the button state updates correctly
@@ -536,12 +562,28 @@ export const ClassDashboardManager = {
     },
 
     /**
+     * Show or hide the revert button based on refinement state
+     * @private
+     */
+    _updateRevertButtonState() {
+        const revertBtn = this.modal.querySelector('#revertSynthesisBtn');
+        if (!revertBtn) return;
+
+        if (this.originalSynthesisHTML && this.cachedSynthesisHTML && this.originalSynthesisHTML !== this.cachedSynthesisHTML) {
+            revertBtn.style.display = 'inline-flex';
+        } else {
+            revertBtn.style.display = 'none';
+        }
+    },
+
+    /**
      * Apply synthesis HTML to the UI and update button state
      * @private
      */
     _applySynthesisToUI(htmlContent) {
         const content = this.modal.querySelector('#aiSynthesisContent');
         const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+        const toolbar = this.modal.querySelector('#aiRefinementToolbar');
 
         if (content) {
             content.innerHTML = htmlContent;
@@ -557,6 +599,14 @@ export const ClassDashboardManager = {
         if (copyBtn) {
             copyBtn.style.display = 'inline-flex';
         }
+
+        // Show refinement toolbar
+        if (toolbar) {
+            toolbar.style.display = 'flex';
+        }
+
+        // Update revert button visibility
+        this._updateRevertButtonState();
     },
 
     /**
@@ -597,6 +647,7 @@ export const ClassDashboardManager = {
 
             // Cache the synthesis for persistence across modal open/close
             this.cachedSynthesisHTML = synthesisHTML;
+            this.originalSynthesisHTML = synthesisHTML; // Save as original when first generated
             this.cachedSynthesisClassId = appState.currentClassId;
             this.cachedSynthesisDataHash = stats.dataHash; // Update hash
             this.cachedSynthesisPeriod = appState.currentPeriod;
@@ -641,6 +692,7 @@ export const ClassDashboardManager = {
             // Save analysis for this period
             classObj.analyses[currentPeriod] = {
                 content: htmlContent,
+                originalContent: this.originalSynthesisHTML || htmlContent, // Save original
                 timestamp: Date.now(),
                 model: appState.currentAIModel,
                 dataHash: dataHash || null, // Save the signature of data used
@@ -685,13 +737,10 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
 
         prompt += `
 
-**FORMAT OBLIGATOIRE - Réponds UNIQUEMENT avec ces 5 sections :**
+**FORMAT OBLIGATOIRE - Réponds UNIQUEMENT avec ces 4 sections :**
 
 📝 **Synthèse Globale**
 [2-3 phrases résumant l'ambiance générale, la dynamique de groupe et le potentiel de la classe. Max 40 mots.]
-
-📊 **Bilan Chiffré**
-[1 phrase sur le niveau statististique et l'hétérogénéité]
 
 ✅ **Points forts**
 • [Point 1 - max 10 mots]
@@ -706,12 +755,80 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
 • [Action 2 concrète - max 15 mots]
 
 RÈGLES STRICTES :
-- Maximum 150 mots au total
+- Maximum 130 mots au total
 - Style professionnel et constructif
 - Pas d'introduction ni de formules de politesse
 - Utilise les prénoms, pas les noms complets`;
 
         return prompt;
+    },
+
+    /**
+     * Handles refinement actions on the class analysis (summarize, positive, actionable)
+     * @param {HTMLButtonElement} button - The clicked button with data-refine-type
+     */
+    async handleClassAnalysisActions(button) {
+        if (!UI.checkAPIKeyPresence()) return;
+        const type = button.dataset.refineType;
+        const contentDiv = this.modal.querySelector('#aiSynthesisContent');
+
+        // Find the text of current synthesis (either original or previous refinement)
+        const currentTextElement = contentDiv?.querySelector('.ai-synthesis-text');
+        if (!currentTextElement || !this.cachedSynthesisHTML) return;
+
+        const currentContentText = currentTextElement.innerText;
+
+        UI.showInlineSpinner(button);
+        button.disabled = true;
+
+        const prompts = {
+            'summarize': "Résume cette analyse en 3 points clés très concis.",
+            'positive': "Reformule cette appréciation pour insister davantage sur les aspects positifs et encourageants.",
+            'actionable': "Transforme cette analyse en un plan d'action concret pour le prochain trimestre (3-4 objectifs collectifs)."
+        };
+
+        try {
+            const prompt = `${prompts[type]}\n\nAnalyse originale :\n${currentContentText}`;
+            const resp = await AIService.callAIWithFallback(prompt);
+
+            // Format and display
+            const formattedText = this._formatSynthesisText(resp.text);
+            const refinedHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
+
+            await UI.animateHtmlReveal(contentDiv, refinedHTML);
+
+            // Update cache and save
+            this.cachedSynthesisHTML = refinedHTML;
+            this._saveSynthesisToStorage(refinedHTML, this.cachedSynthesisDataHash);
+
+            // Update revert button visibility
+            this._updateRevertButtonState();
+        } catch (e) {
+            UI.showNotification("Erreur d'affinage : " + e.message, 'error');
+        } finally {
+            UI.hideInlineSpinner(button);
+            button.disabled = false;
+        }
+    },
+
+    /**
+     * Reverts the refined synthesis back to the original AI synthesis
+     */
+    async revertSynthesis() {
+        const contentDiv = this.modal.querySelector('#aiSynthesisContent');
+        if (!contentDiv || !this.originalSynthesisHTML) return;
+
+        // Apply back original HTML
+        this.cachedSynthesisHTML = this.originalSynthesisHTML;
+        await UI.animateHtmlReveal(contentDiv, this.originalSynthesisHTML);
+
+        // Save back to storage
+        this._saveSynthesisToStorage(this.originalSynthesisHTML, this.cachedSynthesisDataHash);
+
+        // Update revert button visibility
+        this._updateRevertButtonState();
+
+        UI.showNotification("Synthèse d'origine restaurée !", "success");
     },
 
     /**

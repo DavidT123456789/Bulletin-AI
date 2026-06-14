@@ -44,48 +44,47 @@
     color: var(--primary-color);
 }
 
-.dashboard-period-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    background: var(--primary-color);
-    color: white;
-    font-size: var(--font-sm);
-    font-weight: 600;
-    border-radius: var(--radius-pill);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
-}
-
-.dashboard-class-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    background: rgba(var(--accent-rgb), 0.1);
-    color: var(--accent-color);
-    font-size: var(--font-sm);
-    font-weight: 600;
-    border-radius: var(--radius-pill);
-    border: 1px solid rgba(var(--accent-rgb), 0.2);
-}
-
-[data-theme="dark"] .dashboard-class-badge {
-    background: rgba(var(--purple-rgb), 0.15);
-    color: var(--purple-color);
-    border: 1px solid rgba(var(--purple-rgb), 0.25);
-}
-
-.dashboard-student-count {
-    font-size: var(--font-sm);
-    color: var(--text-secondary);
+/* ==========================================================================
+   HEADER CONTEXT LINE & MICRO-INDICATORS
+   ========================================================================== */
+.dashboard-context-line {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-2);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 4px;
 }
 
-.dashboard-student-count strong {
-    color: var(--text-primary);
+.dashboard-context-line .context-item {
+    display: inline-block;
+}
+
+.dashboard-context-line .context-dot {
+    color: var(--text-quaternary);
+    font-size: var(--font-xs);
+    user-select: none;
+}
+
+#dashboardClassBadge {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.cohort-header-metric {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+}
+
+[data-theme="dark"] .cohort-header-metric {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.25);
 }
 
 /* ==========================================================================
@@ -107,7 +106,7 @@
     grid-template-columns: 1.2fr 0.8fr;
     gap: var(--space-5);
     margin-top: var(--space-4);
-    align-items: start;
+    align-items: stretch;
 }
 
 @media (max-width: 850px) {
@@ -313,7 +312,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    max-height: 220px;
+    max-height: 300px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
@@ -512,14 +511,21 @@
 /* CARD BASE STYLE */
 .synthesis-section {
     border-radius: var(--radius-lg);
-    background: var(--card-glass-bg);
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-color);
     padding: var(--space-5);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     position: relative;
     overflow: hidden;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+[data-theme="dark"] .synthesis-section {
+    background: var(--surface-color);
+    border-color: var(--border-color);
 }
 
 /* 0. SYNTHESIS INTRO (Narrative) */
@@ -631,81 +637,90 @@
 
 /* 1. BILAN (Primary/Blue) */
 .synthesis-section--primary {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.12) 0%, rgba(var(--primary-color-rgb), 0.04) 100%);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
+    border-left-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(var(--primary-color-rgb), 0.15);
 }
-
+[data-theme="dark"] .synthesis-section--primary {
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.2);
+    box-shadow: inset 3px 0 6px rgba(var(--primary-color-rgb), 0.05);
+}
 .synthesis-section--primary .synthesis-section-header {
     color: var(--primary-color);
 }
-
 .synthesis-section--primary .synthesis-section-header i {
     background: rgba(var(--primary-color-rgb), 0.15);
     color: var(--primary-color);
 }
-
 .synthesis-section--primary .synthesis-section-content li::before {
     background: var(--primary-color);
 }
 
-
 /* 2. POINTS FORTS (Success/Green) */
 .synthesis-section--success {
-    background: linear-gradient(135deg, rgba(var(--success-rgb), 0.12) 0%, rgba(var(--success-rgb), 0.04) 100%);
-    border-color: rgba(var(--success-rgb), 0.25);
+    border-left-color: var(--success-color);
+    background: rgba(var(--success-rgb), 0.05);
+    border-color: rgba(var(--success-rgb), 0.15);
 }
-
+[data-theme="dark"] .synthesis-section--success {
+    background: rgba(var(--success-rgb), 0.08);
+    border-color: rgba(var(--success-rgb), 0.2);
+    box-shadow: inset 3px 0 6px rgba(var(--success-rgb), 0.05);
+}
 .synthesis-section--success .synthesis-section-header {
     color: var(--success-color);
 }
-
 .synthesis-section--success .synthesis-section-header i {
     background: rgba(var(--success-rgb), 0.15);
     color: var(--success-color);
 }
-
 .synthesis-section--success .synthesis-section-content li::before {
     background: var(--success-color);
 }
 
-
 /* 3. VIGILANCE (Warning/Orange) */
 .synthesis-section--warning {
-    background: linear-gradient(135deg, rgba(var(--warning-rgb), 0.12) 0%, rgba(var(--warning-rgb), 0.04) 100%);
-    border-color: rgba(var(--warning-rgb), 0.25);
+    border-left-color: var(--warning-color);
+    background: rgba(var(--warning-rgb), 0.05);
+    border-color: rgba(var(--warning-rgb), 0.15);
 }
-
+[data-theme="dark"] .synthesis-section--warning {
+    background: rgba(var(--warning-rgb), 0.08);
+    border-color: rgba(var(--warning-rgb), 0.2);
+    box-shadow: inset 3px 0 6px rgba(var(--warning-rgb), 0.05);
+}
 .synthesis-section--warning .synthesis-section-header {
     color: var(--warning-dark, #B45309);
 }
-
 .synthesis-section--warning .synthesis-section-header i {
     background: rgba(var(--warning-rgb), 0.15);
     color: var(--warning-dark, #B45309);
 }
-
 .synthesis-section--warning .synthesis-section-content li::before {
     background: var(--warning-dark, #B45309);
 }
 
-
 /* 4. RECOMMANDATIONS (Info/Violet-Blue) */
 .synthesis-section--info {
-    background: linear-gradient(135deg, rgba(var(--info-rgb), 0.12) 0%, rgba(var(--info-rgb), 0.04) 100%);
-    border-color: rgba(var(--info-rgb), 0.25);
+    border-left-color: var(--color-violet);
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.15);
 }
-
+[data-theme="dark"] .synthesis-section--info {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.2);
+    box-shadow: inset 3px 0 6px rgba(139, 92, 246, 0.05);
+}
 .synthesis-section--info .synthesis-section-header {
-    color: var(--info-color);
+    color: var(--color-violet);
 }
-
 .synthesis-section--info .synthesis-section-header i {
-    background: rgba(var(--info-rgb), 0.15);
-    color: var(--info-color);
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--color-violet);
 }
-
 .synthesis-section--info .synthesis-section-content li::before {
-    background: var(--info-color);
+    background: var(--color-violet);
 }
 
 
@@ -845,8 +860,115 @@
 }
 
 /* ==========================================================================
-   REFINEMENT PILLS (Inline Buttons)
+   AI REFINEMENT TOOLBAR
    ========================================================================== */
+.ai-refinement-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
+    transition: all var(--transition-base);
+}
+
+.refinement-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: var(--space-1);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.refinement-label iconify-icon {
+    color: var(--primary-color);
+}
+
+.btn-refinement {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 6px 12px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+
+.btn-refinement:hover {
+    background: var(--bg-secondary);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-refinement:active {
+    transform: translateY(0);
+}
+
+.btn-refinement iconify-icon {
+    font-size: var(--font-sm);
+    color: var(--text-tertiary);
+    transition: color var(--transition-fast);
+}
+
+.btn-refinement:hover iconify-icon {
+    color: var(--primary-color);
+}
+
+/* Revert button modifier */
+.btn-refinement--revert {
+    margin-left: auto;
+    border-color: rgba(var(--error-rgb), 0.15);
+    background: rgba(var(--error-rgb), 0.02);
+    color: var(--error-color);
+}
+
+.btn-refinement--revert:hover {
+    background: var(--error-light);
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+.btn-refinement--revert iconify-icon {
+    color: var(--error-color);
+}
+
+/* Interactive indicator for student list items */
+.highlight-item {
+    position: relative;
+    padding-right: var(--space-8) !important;
+}
+
+.highlight-item::after {
+    content: '→';
+    position: absolute;
+    right: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+    opacity: 0;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: var(--font-md);
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.highlight-item:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
 
 
 

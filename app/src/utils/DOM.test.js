@@ -141,7 +141,7 @@ describe('DOM', () => {
                 <div id="helpModal"></div>
                 <button id="closeHelpModalBtn"></button>
                 <button id="closeHelpModalFooterBtn"></button>
-                <button id="closeClassAnalysisFooterBtn"></button>
+
                 <button id="helpGoToSettingsBtn"></button>
                 <select id="helpFormatSelector"></select>
                 <button id="relaunchWelcomeGuideBtn"></button>
@@ -169,16 +169,7 @@ describe('DOM', () => {
                 <div id="actions-irreversibles-container"></div>
                 <button id="backToTopBtn"></button>
                 <button id="analyzeClassBtn"></button>
-                <div id="classAnalysisModal"></div>
-                <span id="classAnalysisModalTitle"></span>
-                <button id="closeClassAnalysisModalBtn"></button>
-                <div id="classAnalysisEditableText" contenteditable></div>
-                <span id="classAnalysisWordCount"></span>
-                <div id="classAnalysisOptions"></div>
-                <div id="classAnalysisSourceStatsContainer"></div>
-                <ul id="classAnalysisStatsList"></ul>
-                <div id="classAnalysisActions"></div>
-                <button id="copyClassAnalysisBtn"></button>
+
                 <button id="copyAnalysisBtn"></button>
                 <button id="actionsBtnToggle"></button>
                 <div class="actions-dropdown">

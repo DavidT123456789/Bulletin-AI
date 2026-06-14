@@ -14,7 +14,6 @@ vi.mock('../utils/DOM.js', () => ({
         refinementModal: null,
         helpModal: null,
         welcomeModal: null,
-        classAnalysisModal: null,
         importPreviewModal: null
     }
 }));

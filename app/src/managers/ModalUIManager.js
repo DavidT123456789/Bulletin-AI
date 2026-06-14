@@ -682,7 +682,6 @@ export const ModalUI = {
             document.getElementById('hardConfirmModal'),
             document.getElementById('classDashboardModal'),
             document.getElementById('promptPreviewModal'),
-            DOM.classAnalysisModal,
             DOM.importPreviewModal
         ];
         modals.forEach(m => {

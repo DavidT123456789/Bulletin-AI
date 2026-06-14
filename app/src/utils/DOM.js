@@ -240,7 +240,7 @@ export function initDOM() {
     DOM.linkKofi = document.getElementById('linkKofi');
     DOM.linkFeedback = document.getElementById('linkFeedback');
     DOM.linkLicense = document.getElementById('linkLicense');
-    DOM.closeClassAnalysisFooterBtn = document.getElementById('closeClassAnalysisFooterBtn');
+
     DOM.helpGoToSettingsBtn = document.getElementById('helpGoToSettingsBtn');
     DOM.helpFormatSelector = document.getElementById('helpFormatSelector');
     DOM.relaunchWelcomeGuideBtn = document.getElementById('relaunchWelcomeGuideBtn');
@@ -287,16 +287,7 @@ export function initDOM() {
     DOM.actionsIrreversiblesContainer = document.getElementById('actions-irreversibles-container');
     DOM.backToTopBtn = document.getElementById('backToTopBtn');
     DOM.analyzeClassBtn = document.getElementById('analyzeClassBtn');
-    DOM.classAnalysisModal = document.getElementById('classAnalysisModal');
-    DOM.classAnalysisModalTitle = document.getElementById('classAnalysisModalTitle');
-    DOM.closeClassAnalysisModalBtn = document.getElementById('closeClassAnalysisModalBtn');
-    DOM.classAnalysisEditableText = document.getElementById('classAnalysisEditableText');
-    DOM.classAnalysisWordCount = document.getElementById('classAnalysisWordCount');
-    DOM.classAnalysisOptions = document.getElementById('classAnalysisOptions');
-    DOM.classAnalysisSourceStatsContainer = document.getElementById('classAnalysisSourceStatsContainer');
-    DOM.classAnalysisStatsList = document.getElementById('classAnalysisStatsList');
-    DOM.classAnalysisActions = document.getElementById('classAnalysisActions');
-    DOM.copyClassAnalysisBtn = document.getElementById('copyClassAnalysisBtn');
+
     DOM.copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
     DOM.actionsBtnToggle = document.getElementById('actionsBtnToggle');
     DOM.actionsDropdown = document.querySelector('.actions-dropdown');

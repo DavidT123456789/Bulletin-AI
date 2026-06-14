@@ -10,7 +10,7 @@ import { AIService } from '../services/AIService.js';
 import { FileImportManager } from './FileImportManager.js';
 import { WelcomeManager } from './WelcomeManager.js';
 import { ApiValidationManager } from './ApiValidationManager.js';
-import { ClassAnalysisManager } from './ClassAnalysisManager.js';
+
 import { VariationsManager } from './VariationsManager.js';
 import { EventListenersManager } from './EventListenersManager.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
@@ -392,10 +392,7 @@ export const App = {
 
     // --- Méthodes de délégation simples (pour compatibilité si appelées ailleurs) ---
 
-    // Class Analysis
-    analyzeClass() { return ClassAnalysisManager.analyzeClass(); },
-    copyClassAnalysis() { return ClassAnalysisManager.copyClassAnalysis(); },
-    handleClassAnalysisActions(btn) { return ClassAnalysisManager.handleClassAnalysisActions(btn); },
+
 
     // Preview
     getPreviewStudentData() { return PreviewManager.getPreviewStudentData(); },

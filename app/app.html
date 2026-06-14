@@ -3066,7 +3066,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 4f30b39 · 14 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build e6e7894 · 14 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3478,18 +3478,14 @@
                     <h2 class="modal-title" id="classDashboardModalTitle">
                         <iconify-icon class="iconify-inline" icon="solar:chart-square-bold"></iconify-icon> Analyse de la Classe
                     </h2>
-                    <span class="dashboard-class-badge" id="dashboardClassBadge" style="display: none;">
-                        <iconify-icon class="iconify-inline" icon="solar:users-group-rounded-bold"></iconify-icon>
-                        <span class="class-name-text">--</span>
-                    </span>
-                    <span class="dashboard-period-badge" id="dashboardPeriodBadge">
-                        <iconify-icon class="iconify-inline" icon="solar:calendar-bold"></iconify-icon> Trimestre 1
-                    </span>
+                    <div class="dashboard-context-line" id="dashboardContextLine">
+                        <span id="dashboardClassBadge" class="context-item" style="display: none;">--</span>
+                        <span class="context-dot" id="dashboardClassDot" style="display: none;">&bull;</span>
+                        <span id="dashboardPeriodBadge" class="context-item">--</span>
+                        <span class="context-dot">&bull;</span>
+                        <span id="dashboardStudentCount" class="context-item">--</span>
+                    </div>
                 </div>
-                <span class="dashboard-student-count" id="dashboardStudentCount">
-                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                    <strong>0</strong> élèves analysés
-                </span>
                 <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -3525,6 +3521,21 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;">
+                            <span class="refinement-label"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Affiner :</span>
+                            <button class="btn-refinement" data-refine-type="summarize">
+                                <iconify-icon icon="solar:document-text-linear"></iconify-icon> Résumer
+                            </button>
+                            <button class="btn-refinement" data-refine-type="actionable">
+                                <iconify-icon icon="solar:clipboard-list-linear"></iconify-icon> Plan d'action
+                            </button>
+                            <button class="btn-refinement" data-refine-type="positive">
+                                <iconify-icon icon="solar:emoji-funny-linear"></iconify-icon> Tonalité positive
+                            </button>
+                            <button class="btn-refinement btn-refinement--revert" id="revertSynthesisBtn" style="display: none;" title="Revenir à la synthèse d'origine">
+                                <iconify-icon icon="solar:undo-left-linear"></iconify-icon> Retour
+                            </button>
+                        </div>
                     </div>
 
                     <!-- RIGHT COLUMN: COHORT INSIGHTS -->
@@ -3533,41 +3544,9 @@
                             <h3 class="panel-title">
                                 <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la Cohorte
                             </h3>
+                            <span class="cohort-header-metric" id="cohortHeaderMetric">--</span>
                         </div>
                         <div class="panel-content">
-                            <!-- Advanced KPI Cards -->
-                            <div class="cohort-kpis">
-                                <!-- KPI 1: Success Rate -->
-                                <div class="cohort-kpi-card cohort-kpi-success">
-                                    <div class="kpi-icon-wrapper">
-                                        <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
-                                    </div>
-                                    <div class="kpi-info">
-                                        <span class="kpi-label">Taux de Réussite</span>
-                                        <div class="kpi-value-row">
-                                            <span class="kpi-value" id="kpiSuccessRate">--</span>
-                                            <span class="kpi-unit">%</span>
-                                        </div>
-                                        <span class="kpi-subtitle" id="kpiSuccessCount">-- élèves >= 10</span>
-                                    </div>
-                                </div>
-
-                                <!-- KPI 2: Standard Deviation -->
-                                <div class="cohort-kpi-card cohort-kpi-spread">
-                                    <div class="kpi-icon-wrapper">
-                                        <iconify-icon icon="solar:ruler-angular-linear"></iconify-icon>
-                                    </div>
-                                    <div class="kpi-info">
-                                        <span class="kpi-label">Écart-Type (Dispersion)</span>
-                                        <div class="kpi-value-row">
-                                            <span class="kpi-value" id="kpiSpread">--</span>
-                                            <span class="kpi-unit">pts</span>
-                                        </div>
-                                        <span class="cohort-badge" id="kpiSpreadLabel">--</span>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Highlights Sections -->
                             <div class="cohort-highlights">
                                 <div class="highlight-group">
@@ -3611,8 +3590,7 @@
         </div>
     </div>
 
-    <!-- Legacy classAnalysisModal ID kept for backward compatibility -->
-    <div id="classAnalysisModal" style="display: none;"></div>
+
 
     <!-- ==================================================================== -->
     <!-- PWA INSTALL BANNER - Smart install prompt                             -->
