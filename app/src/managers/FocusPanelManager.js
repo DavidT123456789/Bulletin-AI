@@ -792,9 +792,21 @@ export const FocusPanelManager = {
         textarea.rows = 1;
         // Reset height to auto to get correct scrollHeight
         textarea.style.height = 'auto';
-        // Set to scrollHeight but respect max-height from CSS
+        
         const maxHeight = 200;
-        textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+        const targetHeight = textarea.scrollHeight;
+        
+        if (targetHeight > maxHeight) {
+            textarea.style.height = maxHeight + 'px';
+            textarea.style.overflowY = 'auto';
+        } else {
+            // Add border offset if box-sizing is border-box to prevent rounding scroll issues
+            const computedStyle = window.getComputedStyle(textarea);
+            const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+            const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+            textarea.style.height = (targetHeight + borderTop + borderBottom) + 'px';
+            textarea.style.overflowY = 'hidden';
+        }
     },
     /** Creation mode flag */
     isCreationMode: false,

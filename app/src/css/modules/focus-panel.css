@@ -906,6 +906,27 @@
     background: var(--item-idle-bg) !important;
 }
 
+/* Custom Sleek Scrollbar for Context Textarea - Harmonized with App Style and rounded corners */
+.focus-context-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.focus-context-textarea::-webkit-scrollbar-track {
+    background: transparent;
+    /* Offset top/bottom to clear rounded corners */
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.focus-context-textarea::-webkit-scrollbar-thumb {
+    background: rgba(161, 161, 170, 0.4);
+    border-radius: var(--radius-pill);
+}
+
+.focus-context-textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
 
 /* ============================
    3. OPTIMIZED HISTORY & CONTEXT
