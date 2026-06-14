@@ -373,6 +373,7 @@ export const ListSelectionManager = {
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();
         }
+        appState.activeMassAction = 'generate';
         MassImportManager.massImportAbortController = new AbortController();
         const signal = MassImportManager.massImportAbortController.signal;
 
@@ -467,6 +468,7 @@ export const ListSelectionManager = {
         }
 
         // 4. Cleanup & Feedback
+        appState.activeMassAction = null;
         MassImportManager.massImportAbortController = null;
         UI.hideHeaderProgress(errorCount > 0);
         this.clearSelections();

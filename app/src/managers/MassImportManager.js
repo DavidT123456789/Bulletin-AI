@@ -27,6 +27,7 @@ export const MassImportManager = {
     async processMassImport(studentsToProcess, ignoredCount) {
         this.massImportAbortController = new AbortController();
         appState.importJustCompleted = false;
+        appState.activeMassAction = 'generate';
 
         if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
         DOM.resultsDiv.innerHTML = '';
@@ -210,6 +211,7 @@ export const MassImportManager = {
             UI.showNotification("Une erreur inattendue est survenue durant la génération.", 'error');
         } finally {
             const hasErrors = failedImports.length > 0;
+            appState.activeMassAction = null;
             UI.hideHeaderProgress(hasErrors);
             this.massImportAbortController = null;
             NotificationCoalescer.reset();

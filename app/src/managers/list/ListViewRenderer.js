@@ -325,9 +325,6 @@ export const ListViewRenderer = {
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
                                             <iconify-icon icon="solar:pie-chart-2-linear"></iconify-icon> Analyser la classe
                                         </button>
-                                        <button class="action-dropdown-item" id="seatingChartBtn-shortcut">
-                                            <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon> Plan de classe
-                                        </button>
 
                                         <!-- SECTION COPIER -->
                                         <h5 class="dropdown-header">COPIER</h5>
@@ -340,14 +337,14 @@ export const ListViewRenderer = {
 
                                         <!-- SECTION EXPORT -->
                                         <h5 class="dropdown-header">EXPORTER</h5>
-                                        <button class="action-dropdown-item" id="exportJsonBtn">
-                                            <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
+                                        <button class="action-dropdown-item" id="exportPdfBtn">
+                                            <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
                                         </button>
                                         <button class="action-dropdown-item" id="exportCsvBtn">
                                             <iconify-icon icon="solar:file-text-linear"></iconify-icon> Tableau (CSV)
                                         </button>
-                                        <button class="action-dropdown-item" id="exportPdfBtn">
-                                            <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
+                                        <button class="action-dropdown-item" id="exportJsonBtn">
+                                            <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
                                         </button>
                                     </div>
                                 </div>

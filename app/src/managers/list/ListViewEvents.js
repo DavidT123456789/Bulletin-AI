@@ -448,11 +448,6 @@ export const ListViewEvents = {
         // Analyze class (in dropdown menu)
         addAction('#analyzeClassBtn-shortcut', () => ClassDashboardManager.openDashboard());
 
-        // Seating Chart shortcut
-        addAction('#seatingChartBtn-shortcut', () => {
-            import('../SeatingChartManager.js').then(m => m.SeatingChartManager.open());
-        });
-
         // Copy All Appreciations
         addAction('#copyAllAppreciationsBtn', () => {
             const btn = listContainer.querySelector('#copyAllAppreciationsBtn');

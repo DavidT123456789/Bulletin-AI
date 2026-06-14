@@ -450,6 +450,8 @@ export const ResultsUIManager = {
         
         const needsUpdateCount = errorUpdateCount + dirtyUpdateCount;
 
+        const isGenerating = MassImportManager.massImportAbortController !== null;
+
         // === GENERATE BUTTON ===
         const generateBtn = document.getElementById('generateBtnInline');
         if (generateBtn) {
@@ -466,6 +468,17 @@ export const ResultsUIManager = {
                     generateBtn.classList.add('animate-in');
                     setTimeout(() => generateBtn.classList.remove('animate-in'), 350);
                 }
+            }
+
+            if (isGenerating && appState.activeMassAction === 'generate') {
+                generateBtn.classList.add('loading');
+                generateBtn.disabled = true;
+            } else if (isGenerating) {
+                generateBtn.classList.remove('loading');
+                generateBtn.disabled = true;
+            } else {
+                generateBtn.classList.remove('loading');
+                generateBtn.disabled = false;
             }
         }
 
@@ -494,6 +507,17 @@ export const ResultsUIManager = {
                     updateBtn.classList.add('animate-in');
                     setTimeout(() => updateBtn.classList.remove('animate-in'), 350);
                 }
+            }
+
+            if (isGenerating && appState.activeMassAction === 'update') {
+                updateBtn.classList.add('loading');
+                updateBtn.disabled = true;
+            } else if (isGenerating) {
+                updateBtn.classList.remove('loading');
+                updateBtn.disabled = true;
+            } else {
+                updateBtn.classList.remove('loading');
+                updateBtn.disabled = false;
             }
         }
 
@@ -561,6 +585,7 @@ export const ResultsUIManager = {
             : `Régénérer ${toRegen.length} appréciation${toRegen.length > 1 ? 's' : ''} ?`;
 
         UI.showCustomConfirm('Les appréciations existantes seront remplacées par de nouvelles générations.', async () => {
+            appState.activeMassAction = 'generate';
             // Create new abort controller for this regeneration
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
@@ -660,6 +685,7 @@ export const ResultsUIManager = {
                 UI.showNotification(`${successCount}/${toRegen.length} régénérée(s) avec succès.`, "success");
             }
 
+            appState.activeMassAction = null;
             StorageManager.saveAppState();
 
             // Pas besoin de re-render complet, les lignes sont mises à jour individuellement
@@ -709,6 +735,7 @@ export const ResultsUIManager = {
         }
 
         UI.showCustomConfirm('Les appréciations concernées seront régénérées avec les données actuelles.', async () => {
+            appState.activeMassAction = 'update';
             MassImportManager.massImportAbortController = new AbortController();
             const signal = MassImportManager.massImportAbortController.signal;
 
@@ -794,6 +821,7 @@ export const ResultsUIManager = {
                 UI.showNotification(`${successCount}/${total} actualisée(s) avec succès.`, "success");
             }
 
+            appState.activeMassAction = null;
             StorageManager.saveAppState();
             UI.updateStats();
             UI.updateControlButtons();

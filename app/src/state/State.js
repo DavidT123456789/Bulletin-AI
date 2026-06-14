@@ -101,6 +101,7 @@ export const runtimeState = {
         isMassImportCancelled: false,
         importJustCompleted: false,
         pendingRefinementGeneration: null,
+        activeMassAction: null,
     },
 
     /** Statuts de validation des API */
@@ -203,6 +204,7 @@ const propertyMap = {
     isMassImportCancelled: () => runtimeState.process,
     importJustCompleted: () => runtimeState.process,
     pendingRefinementGeneration: () => runtimeState.process,
+    activeMassAction: () => runtimeState.process,
 
     // runtimeState.apiStatus (renommé pour compatibilité)
     apiKeyStatus: () => runtimeState,

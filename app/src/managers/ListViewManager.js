@@ -245,13 +245,18 @@ export const ListViewManager = {
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (!appreciationCell) return;
 
+        const actionBtn = row.querySelector('.btn-action-menu');
+
         if (status === 'generating') {
             appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'Génération...', false);
+            if (actionBtn) actionBtn.disabled = true;
         } else if (status === 'pending-skeleton') {
             appreciationCell.innerHTML = this._getAppreciationSkeletonHTML(label || 'En file', true);
+            if (actionBtn) actionBtn.disabled = true;
         } else {
             // Revert to standard badge if needed (though usually updateRow is called next)
             appreciationCell.innerHTML = this._getStatusBadge(status);
+            if (actionBtn) actionBtn.disabled = false;
         }
     },
 
@@ -359,6 +364,9 @@ export const ListViewManager = {
             // Standard render
             appreciationCell.innerHTML = this._getAppreciationCell(result);
         }
+
+        const actionBtn = row.querySelector('.btn-action-menu');
+        if (actionBtn) actionBtn.disabled = false;
     },
 
     // _getAppreciationSkeletonHTML extracted

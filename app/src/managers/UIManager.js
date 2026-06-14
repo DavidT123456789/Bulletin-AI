@@ -850,6 +850,26 @@ export const UI = {
         const dashboard = DOM.headerGenDashboard;
         if (!dashboard) return;
 
+        // Griser et animer les boutons d'action en-tête
+        const updateBtn = document.getElementById('updateBtnInline');
+        const generateBtn = document.getElementById('generateBtnInline');
+        if (updateBtn) {
+            if (appState.activeMassAction === 'update') {
+                updateBtn.classList.add('loading');
+            } else {
+                updateBtn.classList.remove('loading');
+            }
+            updateBtn.disabled = true;
+        }
+        if (generateBtn) {
+            if (appState.activeMassAction === 'generate') {
+                generateBtn.classList.add('loading');
+            } else {
+                generateBtn.classList.remove('loading');
+            }
+            generateBtn.disabled = true;
+        }
+
         // Clear any pending progress hide timeouts
         if (this._hideProgressTimeout) {
             clearTimeout(this._hideProgressTimeout);
@@ -905,6 +925,18 @@ export const UI = {
             this.updateDashboardCounts();
             dashboard.classList.remove('all-complete');
             this._hideProgressTimeout = null;
+
+            // Retirer l'état loading et réactiver
+            const updateBtn = document.getElementById('updateBtnInline');
+            const generateBtn = document.getElementById('generateBtnInline');
+            if (updateBtn) {
+                updateBtn.classList.remove('loading');
+                updateBtn.disabled = false;
+            }
+            if (generateBtn) {
+                generateBtn.classList.remove('loading');
+                generateBtn.disabled = false;
+            }
         };
 
         if (!hasErrors) {
