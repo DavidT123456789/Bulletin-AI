@@ -276,20 +276,33 @@ export const Utils = {
                 mergeCount++;
                 const existing = studentMap.get(key);
 
-                // Fusionner les périodes en gardant la plus récente appreciation
+                // Fusionner les périodes en gardant les données les plus complètes/récentes
                 if (result.studentData?.periods) {
                     for (const [period, periodData] of Object.entries(result.studentData.periods)) {
+                        if (!existing.studentData.periods[period]) {
+                            existing.studentData.periods[period] = { grade: null, appreciation: '' };
+                        }
+                        
+                        const existingPeriod = existing.studentData.periods[period];
+                        
+                        // Fusionner l'appréciation
                         if (periodData.appreciation && periodData.appreciation.trim()) {
-                            existing.studentData.periods[period] = {
-                                ...existing.studentData.periods[period],
-                                ...periodData
-                            };
-                        } else if (periodData.grade !== null && periodData.grade !== undefined) {
-                            // Garder la note même sans appréciation
-                            if (!existing.studentData.periods[period]) {
-                                existing.studentData.periods[period] = { grade: null, appreciation: '' };
-                            }
-                            existing.studentData.periods[period].grade = periodData.grade;
+                            existingPeriod.appreciation = periodData.appreciation;
+                        }
+                        
+                        // Fusionner la moyenne
+                        if (periodData.grade !== null && periodData.grade !== undefined) {
+                            existingPeriod.grade = periodData.grade;
+                        }
+                        
+                        // Fusionner le contexte
+                        if (periodData.context && periodData.context.trim()) {
+                            existingPeriod.context = periodData.context;
+                        }
+                        
+                        // Fusionner le nombre d'évaluations
+                        if (periodData.evaluationCount !== null && periodData.evaluationCount !== undefined) {
+                            existingPeriod.evaluationCount = periodData.evaluationCount;
                         }
                     }
                 }
@@ -306,6 +319,50 @@ export const Utils = {
                     const existingStatuses = new Set(existing.studentData.statuses || []);
                     result.studentData.statuses.forEach(s => existingStatuses.add(s));
                     existing.studentData.statuses = [...existingStatuses];
+                }
+
+                // Fusionner le journal de bord (sans doublons par id)
+                if (result.journal && Array.isArray(result.journal)) {
+                    if (!existing.journal) {
+                        existing.journal = [];
+                    }
+                    const journalMap = new Map(existing.journal.map(e => [e.id, e]));
+                    result.journal.forEach(entry => {
+                        const existingEntry = journalMap.get(entry.id);
+                        if (!existingEntry) {
+                            existing.journal.push(entry);
+                        } else {
+                            // Conserver l'entrée la plus récente
+                            const timeEntry = entry._lastModified || 0;
+                            const timeExisting = existingEntry._lastModified || 0;
+                            if (timeEntry > timeExisting) {
+                                Object.assign(existingEntry, entry);
+                            }
+                        }
+                    });
+                }
+
+                // Fusionner les photos d'élèves
+                if (result.studentPhoto) {
+                    existing.studentPhoto = result.studentPhoto;
+                }
+
+                // Fusionner l'historique d'appréciations
+                if (result.history && Array.isArray(result.history) && result.history.length > 0) {
+                    existing.history = result.history;
+                }
+
+                // Fusionner le statut d'édition manuelle
+                if (result._manualEdits) {
+                    existing._manualEdits = result._manualEdits;
+                }
+
+                // Fusionner les forces / faiblesses et pistes de progrès
+                if (result.strengthsWeaknesses) {
+                    existing.strengthsWeaknesses = result.strengthsWeaknesses;
+                }
+                if (result.nextSteps) {
+                    existing.nextSteps = result.nextSteps;
                 }
 
                 // Conserver classId si présent

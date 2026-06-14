@@ -118,7 +118,14 @@ export const StudentDataManager = {
 
         // Mettre à jour studentData
         if (newResult.studentData) {
-            Object.assign(existingResult.studentData.periods, newResult.studentData.periods);
+            for (const periodKey in newResult.studentData.periods) {
+                if (Object.prototype.hasOwnProperty.call(newResult.studentData.periods, periodKey)) {
+                    if (!existingResult.studentData.periods[periodKey]) {
+                        existingResult.studentData.periods[periodKey] = {};
+                    }
+                    Object.assign(existingResult.studentData.periods[periodKey], newResult.studentData.periods[periodKey]);
+                }
+            }
             existingResult.studentData.currentPeriod = newResult.studentData.currentPeriod;
             existingResult.studentData.subject = newResult.studentData.subject;
             existingResult.studentData.currentAIModel = newResult.studentData.currentAIModel;

@@ -886,7 +886,7 @@ export const StorageManager = {
             categories: {
                 settings: { available: !!settings.subjects, count: subjectCount, label: 'Paramètres', description: 'Matières, thème, seuils, modèle IA' },
                 classes: { available: classes.length > 0, count: classes.length, label: 'Classes', description: 'Structure des classes et listes d\'élèves' },
-                students: { available: results.length > 0, count: results.length, label: 'Données élèves', description: `Notes, appréciations, statuts${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
+                students: { available: results.length > 0, count: results.length, label: 'Données élèves', description: `Notes, appréciations, statuts, contexte${photoCount > 0 ? `, ${photoCount} photo${photoCount > 1 ? 's' : ''}` : ''}` },
                 journal: { available: journalCount > 0, count: journalCount, label: 'Journal de bord', description: 'Observations et notes de suivi', parent: 'students' },
                 apiKeys: { available: hasApiKeys, count: apiKeyCount, label: 'Clés API', description: 'Clés d\'accès aux services IA' }
             }

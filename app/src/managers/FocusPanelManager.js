@@ -2004,23 +2004,35 @@ export const FocusPanelManager = {
         if (!result) return;
 
         const currentPeriod = appState.currentPeriod;
+        let hasChanged = false;
 
+        // Save context
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
+            const newContext = contextInput.value.trim();
+            const existingContext = result.studentData.periods[currentPeriod]?.context ?? '';
+            if (newContext !== existingContext) {
+                if (!result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod] = {};
+                }
+                result.studentData.periods[currentPeriod].context = newContext === '' ? undefined : newContext;
+                hasChanged = true;
             }
-            result.studentData.periods[currentPeriod].context = contextInput.value.trim();
         }
 
         // Save grade
         const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
             const gradeStr = gradeInput.value.trim().replace(',', '.');
-            if (!result.studentData.periods[currentPeriod]) {
-                result.studentData.periods[currentPeriod] = {};
+            const newGrade = gradeStr === '' ? null : parseFloat(gradeStr);
+            const existingGrade = result.studentData.periods[currentPeriod]?.grade ?? null;
+            if (newGrade !== existingGrade) {
+                if (!result.studentData.periods[currentPeriod]) {
+                    result.studentData.periods[currentPeriod] = {};
+                }
+                result.studentData.periods[currentPeriod].grade = newGrade;
+                hasChanged = true;
             }
-            result.studentData.periods[currentPeriod].grade = gradeStr === '' ? null : parseFloat(gradeStr);
         }
 
         // Save appreciation text (Critical fix for manual edits)
@@ -2044,31 +2056,41 @@ export const FocusPanelManager = {
                 const resultBelongsToCurrentPeriod = result.generationPeriod === currentPeriod;
 
                 if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
-                    result.appreciation = content;
-                    result.copied = false;
-                    if (!result.studentData.periods[currentPeriod]) {
-                        result.studentData.periods[currentPeriod] = {};
+                    const existingAppreciation = result.studentData.periods[currentPeriod]?.appreciation || '';
+                    if (content !== existingAppreciation) {
+                        result.appreciation = content;
+                        result.copied = false;
+                        if (!result.studentData.periods[currentPeriod]) {
+                            result.studentData.periods[currentPeriod] = {};
+                        }
+                        result.studentData.periods[currentPeriod].appreciation = content;
+                        result.isPending = false;
+                        hasChanged = true;
                     }
-                    result.studentData.periods[currentPeriod].appreciation = content;
-                    result.isPending = false;
                 }
             } else if (textContent === '') {
                 // User explicitly cleared the appreciation
-                result.appreciation = '';
-                if (result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod].appreciation = '';
+                const existingAppreciation = result.studentData.periods[currentPeriod]?.appreciation || '';
+                if (existingAppreciation !== '') {
+                    result.appreciation = '';
+                    if (result.studentData.periods[currentPeriod]) {
+                        result.studentData.periods[currentPeriod].appreciation = '';
+                    }
+                    hasChanged = true;
                 }
             }
         }
 
-        // Persist to storage
-        StorageManager.saveAppState();
+        if (hasChanged) {
+            // Persist to storage
+            StorageManager.saveAppState();
 
-        // Refresh header stats (avgWordsChip) after any context/text/grade change
-        UI?.updateStats?.();
+            // Refresh header stats (avgWordsChip) after any context/text/grade change
+            UI?.updateStats?.();
 
-        // Refresh appreciation status (dirty check)
-        FocusPanelStatus.refreshAppreciationStatus();
+            // Refresh appreciation status (dirty check)
+            FocusPanelStatus.refreshAppreciationStatus();
+        }
     },
 
     /**
