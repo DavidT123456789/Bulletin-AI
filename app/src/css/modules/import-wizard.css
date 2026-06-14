@@ -771,10 +771,16 @@
     justify-content: center;
     gap: 12px;
     z-index: 10;
-    background: rgba(var(--bg-color-rgb, 255, 255, 255), 0.6);
+    background: rgba(255, 255, 255, 0.6);
+    background: rgba(var(--bg-color-rgb), 0.6);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     border-radius: var(--radius-lg);
+}
+
+[data-theme="dark"] .drop-zone-status {
+    background: rgba(9, 9, 11, 0.6);
+    background: rgba(var(--bg-color-rgb), 0.6);
 }
 
 .import-drop-zone.loading .drop-zone-status {

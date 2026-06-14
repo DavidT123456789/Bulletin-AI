@@ -3066,7 +3066,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build afcdd86 · 14 juin 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 4f30b39 · 14 juin 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3476,17 +3476,19 @@
             <div class="modal-header">
                 <div class="dashboard-header-left">
                     <h2 class="modal-title" id="classDashboardModalTitle">
-                        <iconify-icon class="iconify-inline" icon="solar:pie-chart-3-bold"></iconify-icon> Tableau de
-                        Bord
+                        <iconify-icon class="iconify-inline" icon="solar:chart-square-bold"></iconify-icon> Analyse de la Classe
                     </h2>
+                    <span class="dashboard-class-badge" id="dashboardClassBadge" style="display: none;">
+                        <iconify-icon class="iconify-inline" icon="solar:users-group-rounded-bold"></iconify-icon>
+                        <span class="class-name-text">--</span>
+                    </span>
                     <span class="dashboard-period-badge" id="dashboardPeriodBadge">
                         <iconify-icon class="iconify-inline" icon="solar:calendar-bold"></iconify-icon> Trimestre 1
                     </span>
                 </div>
                 <span class="dashboard-student-count" id="dashboardStudentCount">
-                    <iconify-icon icon="solar:users-group-rounded-bold"></iconify-icon>
-                    <strong>0</strong> élèves
-                    analysés
+                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                    <strong>0</strong> élèves analysés
                 </span>
                 <button class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
                     <iconify-icon icon="ph:x"></iconify-icon>
@@ -3494,73 +3496,117 @@
             </div>
 
             <div class="modal-body">
-                <!-- Compact Spread Stat (unique to this modal) -->
-                <div class="dashboard-spread-inline">
-                    <div class="spread-inline-icon"><iconify-icon class="iconify-inline"
-                            icon="solar:ruler-bold"></iconify-icon></div>
-                    <div class="spread-inline-content">
-                        <span class="spread-inline-label">Écart-type</span>
-                        <span class="spread-inline-value" id="kpiSpread">--</span>
-                        <span class="spread-inline-unit">pts</span>
+                <div class="dashboard-unified-container">
+                    <!-- LEFT COLUMN: AI SYNTHESIS -->
+                    <div class="dashboard-panel panel-left">
+                        <div class="panel-header">
+                            <h3 class="panel-title">
+                                <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse Qualitative (IA)
+                            </h3>
+                            <div class="panel-header-actions">
+                                <button class="btn btn-secondary btn-small" id="copyDashboardSynthesisBtn" style="display: none;">
+                                    <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
+                                </button>
+                                <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
+                                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-content" id="aiSynthesisContent">
+                            <div class="ai-placeholder">
+                                <div class="ai-placeholder-glow"></div>
+                                <div class="ai-placeholder-icon">
+                                    <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                </div>
+                                <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
+                                <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
+                                <button class="btn btn-primary btn-ai" id="generateSynthesisPlaceholderBtn">
+                                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Démarrer l'analyse
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <span class="spread-inline-badge" id="kpiSpreadLabel">--</span>
-                </div>
 
-                <!-- Highlights: Progressions & At Risk -->
-                <div class="dashboard-highlights">
-                    <div class="highlight-card">
-                        <div class="highlight-card-header">
-                            <div class="highlight-icon success"><iconify-icon class="iconify-inline"
-                                    icon="solar:graph-up-bold"></iconify-icon></div>
-                            <span class="highlight-card-title">Top Progressions</span>
+                    <!-- RIGHT COLUMN: COHORT INSIGHTS -->
+                    <div class="dashboard-panel panel-right">
+                        <div class="panel-header">
+                            <h3 class="panel-title">
+                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la Cohorte
+                            </h3>
                         </div>
-                        <div class="highlight-list" id="highlightProgressList">
-                            <!-- Generated by JS -->
-                        </div>
-                    </div>
-                    <div class="highlight-card">
-                        <div class="highlight-card-header">
-                            <div class="highlight-icon warning"><iconify-icon
-                                    icon="solar:danger-circle-bold"></iconify-icon></div>
-                            <span class="highlight-card-title">À surveiller</span>
-                        </div>
-                        <div class="highlight-list" id="highlightRiskList">
-                            <!-- Generated by JS -->
-                        </div>
-                    </div>
-                </div>
+                        <div class="panel-content">
+                            <!-- Advanced KPI Cards -->
+                            <div class="cohort-kpis">
+                                <!-- KPI 1: Success Rate -->
+                                <div class="cohort-kpi-card cohort-kpi-success">
+                                    <div class="kpi-icon-wrapper">
+                                        <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <span class="kpi-label">Taux de Réussite</span>
+                                        <div class="kpi-value-row">
+                                            <span class="kpi-value" id="kpiSuccessRate">--</span>
+                                            <span class="kpi-unit">%</span>
+                                        </div>
+                                        <span class="kpi-subtitle" id="kpiSuccessCount">-- élèves >= 10</span>
+                                    </div>
+                                </div>
 
-                <!-- AI Synthesis Section -->
-                <div class="dashboard-ai-section">
-                    <div class="ai-section-header">
-                        <h3 class="ai-section-title"><iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
-                            Synthèse IA</h3>
-                        <div class="ai-section-actions">
-                            <button class="btn btn-ai btn-small" id="generateSynthesisBtn">
-                                <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon> Générer
-                                la synthèse
-                            </button>
-                        </div>
-                    </div>
-                    <div class="ai-section-content" id="aiSynthesisContent">
-                        <div class="ai-placeholder">
-                            <div class="ai-placeholder-icon"><iconify-icon
-                                    icon="solar:magic-stick-3-bold"></iconify-icon></div>
-                            <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse"
-                                pour obtenir une analyse IA
-                                contextuelle de votre classe.</p>
+                                <!-- KPI 2: Standard Deviation -->
+                                <div class="cohort-kpi-card cohort-kpi-spread">
+                                    <div class="kpi-icon-wrapper">
+                                        <iconify-icon icon="solar:ruler-angular-linear"></iconify-icon>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <span class="kpi-label">Écart-Type (Dispersion)</span>
+                                        <div class="kpi-value-row">
+                                            <span class="kpi-value" id="kpiSpread">--</span>
+                                            <span class="kpi-unit">pts</span>
+                                        </div>
+                                        <span class="cohort-badge" id="kpiSpreadLabel">--</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Highlights Sections -->
+                            <div class="cohort-highlights">
+                                <div class="highlight-group">
+                                    <div class="highlight-group-header">
+                                        <iconify-icon icon="solar:graph-up-linear" class="icon-success"></iconify-icon>
+                                        <span>Top Progressions</span>
+                                    </div>
+                                    <div class="highlight-list-wrapper" style="position: relative;">
+                                        <div class="highlight-list" id="highlightProgressList">
+                                            <!-- Generated by JS -->
+                                        </div>
+                                        <button class="scroll-top-btn" data-target="highlightProgressList" style="opacity: 0; pointer-events: none;" title="Remonter">
+                                            <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="highlight-group">
+                                    <div class="highlight-group-header">
+                                        <iconify-icon icon="solar:danger-circle-linear" class="icon-warning"></iconify-icon>
+                                        <span>Élèves à surveiller</span>
+                                    </div>
+                                    <div class="highlight-list-wrapper" style="position: relative;">
+                                        <div class="highlight-list" id="highlightRiskList">
+                                            <!-- Generated by JS -->
+                                        </div>
+                                        <button class="scroll-top-btn" data-target="highlightRiskList" style="opacity: 0; pointer-events: none;" title="Remonter">
+                                            <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <div class="dashboard-footer-right">
-                    <button class="btn btn-secondary" id="copyDashboardSynthesisBtn">
-                        <iconify-icon class="iconify-inline" icon="solar:copy-bold"></iconify-icon> Copier
-                    </button>
-                    <button class="btn btn-secondary" id="closeDashboardFooterBtn">Fermer</button>
-                </div>
+                <button class="btn btn-secondary" id="closeDashboardFooterBtn">Fermer</button>
             </div>
         </div>
     </div>

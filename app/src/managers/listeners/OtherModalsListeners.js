@@ -169,7 +169,7 @@ export const OtherModalsListeners = {
                 ClassDashboardManager.closeDashboard();
                 // Open focus panel for this student
                 setTimeout(() => {
-                    FocusPanelManager.openByStudentId(studentId);
+                    FocusPanelManager.open(studentId);
                 }, 300);
             }
         });

@@ -49,6 +49,31 @@ export const ClassDashboardManager = {
                 this._showPromptPreview();
             });
         }
+
+        // Setup scroll-to-top buttons for highlights lists
+        const progressList = this.modal?.querySelector('#highlightProgressList');
+        const riskList = this.modal?.querySelector('#highlightRiskList');
+        const progressScrollBtn = this.modal?.querySelector('.scroll-top-btn[data-target="highlightProgressList"]');
+        const riskScrollBtn = this.modal?.querySelector('.scroll-top-btn[data-target="highlightRiskList"]');
+
+        const setupScrollListener = (listEl, btnEl) => {
+            if (!listEl || !btnEl) return;
+            listEl.addEventListener('scroll', () => {
+                if (listEl.scrollTop > 30) {
+                    btnEl.style.opacity = '1';
+                    btnEl.style.pointerEvents = 'auto';
+                } else {
+                    btnEl.style.opacity = '0';
+                    btnEl.style.pointerEvents = 'none';
+                }
+            });
+            btnEl.addEventListener('click', () => {
+                listEl.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        };
+
+        setupScrollListener(progressList, progressScrollBtn);
+        setupScrollListener(riskList, riskScrollBtn);
     },
 
     /**
@@ -193,6 +218,10 @@ export const ClassDashboardManager = {
         const variance = grades.reduce((acc, g) => acc + Math.pow(g - average, 2), 0) / n;
         const stdDev = Math.sqrt(variance);
 
+        // Success Rate (grade >= 10/20)
+        const aboveTenCount = grades.filter(g => g >= 10).length;
+        const successRate = n > 0 ? (aboveTenCount / n) * 100 : 0;
+
         // Distribution by range
         const distribution = {
             '0-4': 0,
@@ -227,8 +256,8 @@ export const ClassDashboardManager = {
 
         // Top progressions and regressions
         const sortedByEvolution = withEvolution.slice().sort((a, b) => b.evolution - a.evolution);
-        const topProgressions = sortedByEvolution.filter(s => s.evolution > 0).slice(0, 5);
-        const topRegressions = sortedByEvolution.filter(s => s.evolution < 0).slice(-5).reverse();
+        const topProgressions = sortedByEvolution.filter(s => s.evolution > 0).slice(0, 15);
+        const topRegressions = sortedByEvolution.filter(s => s.evolution < 0).slice(-15).reverse();
 
         // Students at risk (low grades or significant regression)
         const atRisk = students.filter(s => s.grade < 8 || (s.evolution !== null && s.evolution < -2));
@@ -240,6 +269,8 @@ export const ClassDashboardManager = {
             min: min,
             max: max,
             stdDev: stdDev,
+            successRate: successRate,
+            aboveTenCount: aboveTenCount,
             distribution: distribution,
             avgEvolution: avgEvolution,
             progressCount: progressCount,
@@ -247,7 +278,6 @@ export const ClassDashboardManager = {
             regressionCount: regressionCount,
             topProgressions: topProgressions,
             topRegressions: topRegressions,
-            atRisk: atRisk,
             atRisk: atRisk,
             hasEvolutionData: withEvolution.length > 0,
 
@@ -284,6 +314,7 @@ export const ClassDashboardManager = {
         // Update header info
         const periodBadge = this.modal.querySelector('#dashboardPeriodBadge');
         const studentCount = this.modal.querySelector('#dashboardStudentCount');
+        const classBadge = this.modal.querySelector('#dashboardClassBadge');
 
         if (periodBadge) {
             const periodLabels = { T1: 'Trimestre 1', T2: 'Trimestre 2', T3: 'Trimestre 3', S1: 'Semestre 1', S2: 'Semestre 2' };
@@ -293,8 +324,19 @@ export const ClassDashboardManager = {
             studentCount.innerHTML = `<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <strong>${stats.count}</strong> élèves analysés`;
         }
 
-        // Update Spread stat (unique to this modal - not shown on main page)
-        this.updateSpreadStat(stats);
+        // Retrieve and display class name
+        const classes = appState.classes || [];
+        const currentClass = classes.find(c => c.id === appState.currentClassId);
+        if (classBadge && currentClass) {
+            const nameEl = classBadge.querySelector('.class-name-text');
+            if (nameEl) nameEl.textContent = currentClass.name;
+            classBadge.style.display = 'inline-flex';
+        } else if (classBadge) {
+            classBadge.style.display = 'none';
+        }
+
+        // Update KPI cards (spread and success rate)
+        this.updateKPICards(stats);
 
         // Update Highlights
         this.updateHighlights(stats);
@@ -304,43 +346,10 @@ export const ClassDashboardManager = {
     },
 
     /**
-     * Update the compact spread stat display
-     * @param {Object} stats
-     */
-    updateSpreadStat(stats) {
-        const spreadValue = this.modal.querySelector('#kpiSpread');
-        const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
-
-        if (spreadValue) spreadValue.textContent = stats.stdDev.toFixed(1).replace('.', ',');
-        if (spreadLabel) {
-            if (stats.stdDev < 2) spreadLabel.textContent = 'Classe homogène';
-            else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
-            else spreadLabel.textContent = 'Classe hétérogène';
-        }
-    },
-
-    /**
      * Update KPI metric cards
      * @param {Object} stats 
      */
     updateKPICards(stats) {
-        // Average
-        const avgValue = this.modal.querySelector('#kpiAverage');
-        const avgEvolution = this.modal.querySelector('#kpiAverageEvolution');
-        if (avgValue) avgValue.textContent = stats.average.toFixed(1).replace('.', ',');
-        if (avgEvolution && stats.avgEvolution !== null) {
-            const sign = stats.avgEvolution >= 0 ? '+' : '';
-            avgEvolution.textContent = `${sign}${stats.avgEvolution.toFixed(1).replace('.', ',')} pts`;
-            avgEvolution.className = `kpi-evolution ${stats.avgEvolution > 0 ? 'positive' : stats.avgEvolution < 0 ? 'negative' : 'neutral'}`;
-            avgEvolution.style.display = 'inline-flex';
-        } else if (avgEvolution) {
-            avgEvolution.style.display = 'none';
-        }
-
-        // Median
-        const medianValue = this.modal.querySelector('#kpiMedian');
-        if (medianValue) medianValue.textContent = stats.median.toFixed(1).replace('.', ',');
-
         // Spread (écart-type)
         const spreadValue = this.modal.querySelector('#kpiSpread');
         const spreadLabel = this.modal.querySelector('#kpiSpreadLabel');
@@ -350,39 +359,12 @@ export const ClassDashboardManager = {
             else if (stats.stdDev < 4) spreadLabel.textContent = 'Écart modéré';
             else spreadLabel.textContent = 'Classe hétérogène';
         }
-    },
 
-    /**
-     * Update distribution horizontal bar chart
-     * @param {Object} stats 
-     */
-    updateDistributionChart(stats) {
-        const container = this.modal.querySelector('#distributionBars');
-        if (!container) return;
-
-        const maxCount = Math.max(...Object.values(stats.distribution), 1);
-        const ranges = ['16-20', '12-16', '8-12', '4-8', '0-4']; // Top to bottom
-
-        container.innerHTML = ranges.map(range => {
-            const count = stats.distribution[range];
-            const percent = (count / maxCount) * 100;
-            return `
-                <div class="distribution-row">
-                    <span class="distribution-label">${range}</span>
-                    <div class="distribution-bar-track">
-                        <div class="distribution-bar-fill" data-range="${range}" style="width: ${percent}%"></div>
-                    </div>
-                    <span class="distribution-count">${count}</span>
-                </div>
-            `;
-        }).join('');
-
-        // Animate bars after a small delay
-        requestAnimationFrame(() => {
-            container.querySelectorAll('.distribution-bar-fill').forEach(bar => {
-                bar.style.width = bar.style.width; // Trigger animation
-            });
-        });
+        // Success Rate
+        const successRateValue = this.modal.querySelector('#kpiSuccessRate');
+        const successRateCount = this.modal.querySelector('#kpiSuccessCount');
+        if (successRateValue) successRateValue.textContent = stats.successRate.toFixed(0);
+        if (successRateCount) successRateCount.textContent = `${stats.aboveTenCount} sur ${stats.count} élèves ≥ 10`;
     },
 
     /**
@@ -390,16 +372,29 @@ export const ClassDashboardManager = {
      * @param {Object} stats 
      */
     updateHighlights(stats) {
+        // Helper to get initials
+        const getInitials = (s) => {
+            const p = s.prenom ? s.prenom.trim().charAt(0) : '';
+            const n = s.nom ? s.nom.trim().charAt(0) : '';
+            return `${p}${n}`.toUpperCase() || '?';
+        };
+
         // Top Progressions
         const progressList = this.modal.querySelector('#highlightProgressList');
         if (progressList) {
             if (stats.topProgressions.length > 0) {
-                progressList.innerHTML = stats.topProgressions.map(s => `
-                    <div class="highlight-item" data-student-id="${s.id}">
-                        <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
-                        <span class="highlight-evolution positive">+${s.evolution.toFixed(1).replace('.', ',')} pts</span>
-                    </div>
-                `).join('');
+                progressList.innerHTML = stats.topProgressions.map(s => {
+                    const initials = getInitials(s);
+                    return `
+                        <div class="highlight-item" data-student-id="${s.id}">
+                            <div class="highlight-item-left">
+                                <span class="highlight-student-avatar">${initials}</span>
+                                <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
+                            </div>
+                            <span class="highlight-evolution positive">+${s.evolution.toFixed(1).replace('.', ',')} pts</span>
+                        </div>
+                    `;
+                }).join('');
             } else {
                 progressList.innerHTML = '<div class="highlight-empty">Aucune progression significative</div>';
             }
@@ -409,14 +404,18 @@ export const ClassDashboardManager = {
         const riskList = this.modal.querySelector('#highlightRiskList');
         if (riskList) {
             // Combine regressions and low grades
-            const atRiskStudents = [...new Map([...stats.topRegressions, ...stats.atRisk].map(s => [s.id, s])).values()].slice(0, 5);
+            const atRiskStudents = [...new Map([...stats.topRegressions, ...stats.atRisk].map(s => [s.id, s])).values()].slice(0, 15);
 
             if (atRiskStudents.length > 0) {
                 riskList.innerHTML = atRiskStudents.map(s => {
+                    const initials = getInitials(s);
                     const evolutionText = s.evolution !== null ? `${s.evolution.toFixed(1).replace('.', ',')} pts` : `Moy: ${s.grade.toFixed(1).replace('.', ',')}`;
                     return `
                         <div class="highlight-item" data-student-id="${s.id}">
-                            <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
+                            <div class="highlight-item-left">
+                                <span class="highlight-student-avatar">${initials}</span>
+                                <span class="highlight-student-name">${Utils.escapeHtml(s.fullName)}</span>
+                            </div>
                             <span class="highlight-evolution negative">${evolutionText}</span>
                         </div>
                     `;
@@ -437,16 +436,34 @@ export const ClassDashboardManager = {
         if (content) {
             content.innerHTML = `
                 <div class="ai-placeholder">
-                    <div class="ai-placeholder-icon"><iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon></div>
-                    <p class="ai-placeholder-text">Cliquez sur "Générer la synthèse" pour obtenir une analyse IA contextuelle de votre classe.</p>
+                    <div class="ai-placeholder-glow"></div>
+                    <div class="ai-placeholder-icon">
+                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                    </div>
+                    <h4 class="ai-placeholder-title">Analyse Intelligente de la Classe</h4>
+                    <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
+                    <button class="btn btn-primary btn-ai" id="generateSynthesisPlaceholderBtn">
+                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Démarrer l'analyse
+                    </button>
                 </div>
             `;
+            // Attach event listener for the placeholder button since it's injected dynamically
+            const placeholderBtn = content.querySelector('#generateSynthesisPlaceholderBtn');
+            if (placeholderBtn) {
+                placeholderBtn.addEventListener('click', () => {
+                    this.generateAISynthesis();
+                });
+            }
         }
 
         // Reset button text to "Générer"
         if (generateBtn) {
             generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer';
         }
+
+        // Hide copy button
+        const copyBtn = this.modal.querySelector('#copyDashboardSynthesisBtn');
+        if (copyBtn) copyBtn.style.display = 'none';
     },
 
     /**
@@ -507,16 +524,13 @@ export const ClassDashboardManager = {
 
         if (this.cachedStats.dataHash !== this.cachedSynthesisDataHash) {
             // Data is stale
-            generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Actualiser la synthèse';
-            generateBtn.className = 'btn btn-warning'; // Use warning color (orange/yellow) to indicate update needed
+            generateBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon> Actualiser';
+            generateBtn.className = 'btn btn-warning btn-small';
             generateBtn.title = "Les données (notes ou appréciations) ont changé depuis la dernière génération.";
-
-            // Optional: Add a small badge or text in the synthesis area? 
-            // For now, the button change is a strong enough signal.
         } else {
             // Data is fresh
             generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
-            generateBtn.className = 'btn btn-primary';
+            generateBtn.className = 'btn btn-ai btn-small';
             generateBtn.title = "";
         }
     },
@@ -536,6 +550,12 @@ export const ClassDashboardManager = {
         // Update button to show "Régénérer" since synthesis exists
         if (generateBtn) {
             generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Régénérer';
+        }
+
+        // Toggle copy button display next to generate button
+        const copyBtn = this.modal.querySelector('#copyDashboardSynthesisBtn');
+        if (copyBtn) {
+            copyBtn.style.display = 'inline-flex';
         }
     },
 
