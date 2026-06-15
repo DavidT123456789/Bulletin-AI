@@ -13,6 +13,12 @@
     }
 }
 
+/* Icon rotation utility used globally for spinners */
+.rotate-icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
 @keyframes pulse-update {
     0% {
         box-shadow: var(--shadow-sm);

@@ -643,8 +643,8 @@
 /* 0. SYNTHESIS INTRO (Narrative) */
 .synthesis-intro-card {
     grid-column: 1 / -1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.08) 0%, rgba(var(--brand-purple-rgb), 0.04) 100%);
+    border-color: rgba(var(--brand-primary-rgb), 0.2);
     position: relative;
     padding: var(--space-5) var(--space-6);
     display: flex;
@@ -663,11 +663,11 @@
 
 .synthesis-intro-header iconify-icon,
 .synthesis-intro-header i {
-    font-size: 1.25rem;
+    font-size: var(--font-xl);
 }
 
 .synthesis-intro-text {
-    font-size: 1.05rem;
+    font-size: var(--font-md);
     line-height: 1.6;
     color: var(--text-primary);
     font-weight: 500;
@@ -727,21 +727,20 @@
 .synthesis-list li {
     font-size: var(--font-sm);
     color: var(--text-secondary);
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
+    position: relative;
+    padding-left: var(--space-4);
     line-height: 1.5;
 }
 
 .synthesis-list li::before {
     content: '';
-    display: inline-block;
+    position: absolute;
+    left: 0;
+    top: 0.55em;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: currentColor;
-    flex-shrink: 0;
-    transform: translateY(-2px);
 }
 
 .synthesis-section--success .synthesis-list li::before {
@@ -871,6 +870,31 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* AI Bento Loading Badge override for a premium magic look */
+.class-synthesis-skeleton .generating-badge.active {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(147, 51, 234, 0.16));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: var(--color-violet);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: badge-pulse-ai 1.2s ease-in-out infinite;
+}
+
+[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(147, 51, 234, 0.22));
+    border-color: rgba(139, 92, 246, 0.4);
+    color: var(--color-violet-bright);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.25);
+}
+
+@keyframes badge-pulse-ai {
+    0%, 100% {
+        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.25), 0 0 8px 2px rgba(139, 92, 246, 0.15);
     }
 }
 

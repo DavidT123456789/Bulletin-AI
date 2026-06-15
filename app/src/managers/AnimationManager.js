@@ -194,7 +194,6 @@ export const AnimationManager = {
 
             textNode.parentNode.replaceChild(fragment, textNode);
         });
-
         container.innerHTML = '';
         container.className += ' progressive-reveal-container';
 

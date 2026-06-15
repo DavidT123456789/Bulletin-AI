@@ -669,13 +669,23 @@ export const ClassDashboardManager = {
      * Apply synthesis HTML to the UI and update button state
      * @private
      */
-    _applySynthesisToUI(htmlContent) {
+    /**
+     * Apply synthesis HTML to the UI and update button state
+     * @param {string} htmlContent - HTML to render
+     * @param {boolean} [animate=false] - Whether to animate the reveal
+     * @private
+     */
+    async _applySynthesisToUI(htmlContent, animate = false) {
         const content = this.modal.querySelector('#aiSynthesisContent');
         const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
         const toolbar = this.modal.querySelector('#aiRefinementToolbar');
 
         if (content) {
-            content.innerHTML = htmlContent;
+            if (animate) {
+                await UI.animateHtmlReveal(content, htmlContent);
+            } else {
+                content.innerHTML = htmlContent;
+            }
         }
 
         // Update button to show "Régénérer" since synthesis exists
@@ -709,11 +719,34 @@ export const ClassDashboardManager = {
 
         if (!content || !this.cachedStats) return;
 
-        // Show loading
+        // Show loading skeleton matching the Bento layout
         content.innerHTML = `
-            <div class="ai-loading-state">
-                <div class="loading-spinner"></div>
-                <span>Analyse de la classe en cours...</span>
+            <div class="appreciation-skeleton class-synthesis-skeleton ai-synthesis-text">
+                <div class="synthesis-section synthesis-intro-card" style="opacity: 0.6; min-height: 120px;">
+                    <div class="skeleton-line" style="width: 30%; height: 16px; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton-line" style="width: 95%; margin-bottom: var(--space-2);"></div>
+                    <div class="skeleton-line" style="width: 88%; margin-bottom: var(--space-2);"></div>
+                    <div class="skeleton-line" style="width: 60%;"></div>
+                </div>
+                <div class="synthesis-section synthesis-section--success" style="opacity: 0.6; min-height: 100px;">
+                    <div class="skeleton-line" style="width: 40%; height: 14px; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton-line" style="width: 90%; margin-bottom: var(--space-2);"></div>
+                    <div class="skeleton-line" style="width: 85%;"></div>
+                </div>
+                <div class="synthesis-section synthesis-section--warning" style="opacity: 0.6; min-height: 100px;">
+                    <div class="skeleton-line" style="width: 40%; height: 14px; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton-line" style="width: 88%; margin-bottom: var(--space-2);"></div>
+                    <div class="skeleton-line" style="width: 80%;"></div>
+                </div>
+                <div class="synthesis-section synthesis-section--info" style="opacity: 0.6; min-height: 100px;">
+                    <div class="skeleton-line" style="width: 40%; height: 14px; margin-bottom: var(--space-3);"></div>
+                    <div class="skeleton-line" style="width: 92%; margin-bottom: var(--space-2);"></div>
+                    <div class="skeleton-line" style="width: 85%;"></div>
+                </div>
+                <span class="generating-badge active">
+                    <iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>
+                    Analyse de la classe en cours...
+                </span>
             </div>
         `;
 
@@ -732,8 +765,6 @@ export const ClassDashboardManager = {
             const formattedText = this._formatSynthesisText(response.text);
             const synthesisHTML = `<div class="ai-synthesis-text">${formattedText}</div>`;
 
-            content.innerHTML = synthesisHTML;
-
             // Cache the synthesis for persistence across modal open/close
             this.cachedSynthesisHTML = synthesisHTML;
             this.originalSynthesisHTML = synthesisHTML; // Save as original when first generated
@@ -745,6 +776,9 @@ export const ClassDashboardManager = {
 
             // PERSISTENCE: Save to Class Object in Storage
             this._saveSynthesisToStorage(synthesisHTML, stats.dataHash);
+
+            // Apply to UI with progressive reveal animation!
+            await this._applySynthesisToUI(synthesisHTML, true);
 
         } catch (error) {
             content.innerHTML = `
