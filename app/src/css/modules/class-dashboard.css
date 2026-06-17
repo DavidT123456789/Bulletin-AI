@@ -645,6 +645,7 @@
     grid-column: 1 / -1;
     background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.08) 0%, rgba(var(--brand-purple-rgb), 0.04) 100%);
     border-color: rgba(var(--brand-primary-rgb), 0.2);
+    border-left: 4px solid var(--brand-primary);
     position: relative;
     padding: var(--space-5) var(--space-6);
     display: flex;
@@ -652,18 +653,30 @@
     gap: var(--space-3);
 }
 
+/* Ensure the card keeps its premium blue/purple gradient branding in dark mode instead of falling back to flat neutral */
+[data-theme="dark"] .synthesis-section.synthesis-intro-card {
+    background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.12) 0%, rgba(var(--brand-purple-rgb), 0.06) 100%);
+    border-color: rgba(var(--brand-primary-rgb), 0.25);
+    border-left-color: var(--brand-primary);
+}
+
 .synthesis-intro-header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    color: var(--primary-color);
+    color: var(--brand-primary) !important;
     font-size: var(--font-lg);
     font-weight: 700;
 }
 
 .synthesis-intro-header iconify-icon,
 .synthesis-intro-header i {
+    color: var(--brand-primary) !important;
     font-size: var(--font-xl);
+}
+
+.synthesis-intro-header span {
+    color: var(--brand-primary) !important;
 }
 
 .synthesis-intro-text {
@@ -817,19 +830,19 @@
 /* 4. RECOMMANDATIONS (Info/Violet-Blue) */
 .synthesis-section--info {
     border-left-color: var(--color-violet);
-    background: rgba(139, 92, 246, 0.05);
-    border-color: rgba(139, 92, 246, 0.15);
+    background: rgba(var(--color-violet-rgb), 0.05);
+    border-color: rgba(var(--color-violet-rgb), 0.15);
 }
 [data-theme="dark"] .synthesis-section--info {
-    background: rgba(139, 92, 246, 0.08);
-    border-color: rgba(139, 92, 246, 0.2);
-    box-shadow: inset 3px 0 6px rgba(139, 92, 246, 0.05);
+    background: rgba(var(--color-violet-rgb), 0.08);
+    border-color: rgba(var(--color-violet-rgb), 0.2);
+    box-shadow: inset 3px 0 6px rgba(var(--color-violet-rgb), 0.05);
 }
 .synthesis-section--info .synthesis-section-header {
     color: var(--color-violet);
 }
 .synthesis-section--info .synthesis-section-header iconify-icon {
-    background: rgba(139, 92, 246, 0.15);
+    background: rgba(var(--color-violet-rgb), 0.15);
     color: var(--color-violet);
 }
 
@@ -873,29 +886,114 @@
     }
 }
 
-/* AI Bento Loading Badge override for a premium magic look */
+/* AI Bento Loading Badge override for a premium magic look with organic rotating border */
 .class-synthesis-skeleton .generating-badge.active {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(147, 51, 234, 0.16));
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    color: var(--color-violet);
-    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    animation: badge-pulse-ai 1.2s ease-in-out infinite;
+    height: 38px;
+    padding: 8px 18px;
+    /* Polished Milky Glass: Clean linear gradient matching card positions (Blue -> Green -> Orange -> Purple) on a bright white base */
+    background: 
+        linear-gradient(90deg, 
+            rgba(var(--brand-primary-rgb), 0.06) 0%, 
+            rgba(var(--success-rgb), 0.04) 33%, 
+            rgba(var(--warning-rgb), 0.04) 66%, 
+            rgba(var(--brand-purple-rgb), 0.06) 100%),
+        rgba(var(--surface-color-rgb), 0.90);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: none;
+    color: var(--text-primary); /* Harmonized text color */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04), 
+                inset 0 1px 1.5px rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    animation: none;
+    isolation: isolate;
 }
 
+.class-synthesis-skeleton .generating-badge.active > * {
+    position: relative;
+    z-index: 3;
+}
+
+.class-synthesis-skeleton .generating-badge.active iconify-icon {
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 2px rgba(var(--primary-color-rgb), 0.3));
+    font-size: 13px;
+}
+
+.class-synthesis-skeleton .generating-badge.active::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.2px; /* Sharp thin border */
+    /* Seamless continuous gradient representing the 4 bento cards currently loading (Blue -> Green -> Orange -> Purple) */
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            var(--brand-primary) 0%,
+            var(--success-color) 25%,
+            var(--warning-color) 50%,
+            var(--color-violet) 75%,
+            var(--brand-primary) 100%);
+    -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+    -webkit-mask-clip: content-box, border-box;
+    -webkit-mask-composite: xor;
+    mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+    mask-clip: content-box, border-box;
+    mask-composite: exclude;
+    animation: rotate-gradient 3s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.class-synthesis-skeleton .generating-badge.active::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+    /* Soft light glowing aura fading in the same seamless 4-color pattern */
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            var(--brand-primary) 0%,
+            var(--success-color) 25%,
+            var(--warning-color) 50%,
+            var(--color-violet) 75%,
+            var(--brand-primary) 100%);
+    filter: blur(8px);
+    pointer-events: none;
+    z-index: 1;
+    animation: rotate-gradient 3s linear infinite;
+    opacity: 0.12; /* Soft aura in light theme */
+}
+
+/* Dark Theme Overrides for premium AI look */
 [data-theme="dark"] .class-synthesis-skeleton .generating-badge.active {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(147, 51, 234, 0.22));
-    border-color: rgba(139, 92, 246, 0.4);
-    color: var(--color-violet-bright);
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.25);
+    /* Matches dark card background with clear linear gradient matching loading card positions */
+    background: 
+        linear-gradient(90deg, 
+            rgba(var(--brand-primary-rgb), 0.12) 0%, 
+            rgba(var(--success-rgb), 0.08) 33%, 
+            rgba(var(--warning-rgb), 0.08) 66%, 
+            rgba(var(--brand-purple-rgb), 0.10) 100%),
+        rgba(var(--surface-color-rgb), 0.85);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 
+                inset 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 
-@keyframes badge-pulse-ai {
-    0%, 100% {
-        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.15);
-    }
-    50% {
-        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.25), 0 0 8px 2px rgba(139, 92, 246, 0.15);
-    }
+[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active iconify-icon {
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 3px rgba(var(--primary-color-rgb), 0.6));
+}
+
+/* Base border inherits the clean 4-color conic gradient from parent, no need to override it here */
+[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active::before {
+    background: conic-gradient(from var(--gradient-angle, 0deg),
+            var(--brand-primary) 0%,
+            var(--success-color) 25%,
+            var(--warning-color) 50%,
+            var(--color-violet) 75%,
+            var(--brand-primary) 100%);
+}
+
+[data-theme="dark"] .class-synthesis-skeleton .generating-badge.active::after {
+    opacity: 0.35; /* Stronger neon aura in dark theme */
 }
 
 /* Premium Placeholder State */

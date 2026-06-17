@@ -147,6 +147,7 @@
 
     /* --- Accent Colors (Palette unifiée) --- */
     --color-violet: #8b5cf6;
+    --color-violet-rgb: 139, 92, 246;
     --color-violet-bright: #a78bfa;
     --color-violet-deep: #6d28d9;
     --color-indigo: #6366f1;
@@ -419,6 +420,8 @@
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
     /* Brand Gradient Colors Overrides */
+    --brand-primary: #4f7df2;
+    --brand-primary-rgb: 79, 125, 242;
     --brand-purple: #a78bfa;
     --brand-purple-rgb: 167, 139, 250;
 
@@ -431,6 +434,7 @@
 
     /* --- Accent Colors (Dark Mode — brighter variants for readability) --- */
     --color-violet: #a78bfa;
+    --color-violet-rgb: 167, 139, 250;
     --color-violet-bright: #c4b5fd;
     --color-violet-deep: #8b5cf6;
     --color-indigo: #818cf8;

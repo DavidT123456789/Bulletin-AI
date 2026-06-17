@@ -356,7 +356,7 @@ export const ClassDashboardManager = {
             periodBadge.textContent = periodLabels[appState.currentPeriod] || appState.currentPeriod;
         }
         if (studentCount) {
-            studentCount.innerHTML = `<strong>${stats.count}</strong> ${stats.count > 1 ? 'élèves analysés' : 'élève analysé'}`;
+            studentCount.textContent = `${stats.count} ${stats.count > 1 ? 'élèves analysés' : 'élève analysé'}`;
         }
 
         // Retrieve and display class name
@@ -744,8 +744,8 @@ export const ClassDashboardManager = {
                     <div class="skeleton-line" style="width: 85%;"></div>
                 </div>
                 <span class="generating-badge active">
-                    <iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon>
-                    Analyse de la classe en cours...
+                    <iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>
+                    <span>Analyse de la classe en cours...</span>
                 </span>
             </div>
         `;
@@ -1083,7 +1083,7 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
 
             if (html) return html;
         } catch (e) {
-            console.warn('[ClassDashboardManager] JSON parsing failed, falling back to Markdown parser:', e);
+            // Silent fallback to legacy Markdown parser below
         }
 
         // 2. Legacy Regex Markdown Parser Fallback
