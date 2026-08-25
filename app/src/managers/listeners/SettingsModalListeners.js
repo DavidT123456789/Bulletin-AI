@@ -1076,18 +1076,19 @@ export const SettingsModalListeners = {
             });
         }
 
-        // Cloud Save button
         const cloudSaveBtn = document.getElementById('cloudSaveBtn');
         if (cloudSaveBtn) {
             cloudSaveBtn.addEventListener('click', async () => {
                 try {
-                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Sauvegarde...';
+                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Sauvegarde...';
                     cloudSaveBtn.disabled = true;
+                    DOM.headerMenuBtn?.classList.add('cloud-syncing');
 
                     const { SyncService } = await import('../../services/SyncService.js');
                     await SyncService.saveToCloud();
 
-                    // Update last save time
+                    DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
+
                     const lastSaveEl = document.getElementById('cloudLastSave');
                     if (lastSaveEl) {
                         const now = new Date();
@@ -1096,9 +1097,9 @@ export const SettingsModalListeners = {
 
                     UI.showNotification('Données sauvegardées sur Google Drive !', 'success');
                 } catch (error) {
-                    console.error('Cloud save error:', error);
                     UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
                 } finally {
+                    DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                     cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:upload-minimalistic-bold"></iconify-icon> Sauvegarder';
                     cloudSaveBtn.disabled = false;
                 }
@@ -1113,8 +1114,13 @@ export const SettingsModalListeners = {
                     'Vos données locales seront remplacées par celles du Cloud.',
                     async () => {
                         try {
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Chargement...';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Chargement...';
                             cloudLoadBtn.disabled = true;
+                            document.body.classList.add('is-cloud-syncing');
+                            DOM.headerMenuBtn?.classList.add('cloud-syncing');
+
+                            const { StorageManager } = await import('../../managers/StorageManager.js');
+                            await StorageManager.savePreRestoreSnapshot();
 
                             const { SyncService } = await import('../../services/SyncService.js');
                             const result = await SyncService.loadFromCloud();
@@ -1128,6 +1134,8 @@ export const SettingsModalListeners = {
                         } catch (error) {
                             UI.showNotification('Erreur de chargement : ' + error.message, 'error');
                         } finally {
+                            document.body.classList.remove('is-cloud-syncing');
+                            DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                             cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Charger';
                             cloudLoadBtn.disabled = false;
                         }

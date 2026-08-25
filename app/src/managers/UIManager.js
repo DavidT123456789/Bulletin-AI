@@ -148,15 +148,18 @@ export const UI = {
                 NotificationCoalescer.updateBadge(el, evaluation.count);
             }
 
-            const newTimeout = setTimeout(() => {
+            const removeExisting = () => {
                 if (el.dataset.removing) return;
                 el.dataset.removing = 'true';
                 el.classList.remove('show');
                 setTimeout(() => el.remove(), 300);
-            }, duration);
+            };
 
-            if (groupData) groupData.timeoutId = newTimeout;
-            return;
+            if (duration > 0 && duration !== Infinity) {
+                const newTimeout = setTimeout(removeExisting, duration);
+                if (groupData) groupData.timeoutId = newTimeout;
+            }
+            return { dismiss: removeExisting, element: el };
         }
 
         // Standard flow: create new notification
@@ -195,7 +198,9 @@ export const UI = {
         };
 
         const startTimer = () => {
-            timeoutId = setTimeout(removeNotification, duration);
+            if (duration > 0 && duration !== Infinity) {
+                timeoutId = setTimeout(removeNotification, duration);
+            }
         };
 
         const pauseTimer = () => {
@@ -213,6 +218,8 @@ export const UI = {
             startTimer();
             NotificationCoalescer.register(message, type, notif, timeoutId, coalescingOptions);
         });
+
+        return { dismiss: removeNotification, element: notif };
     },
     /**
      * Affiche une notification cliquable avec action.

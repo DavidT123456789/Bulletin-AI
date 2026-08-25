@@ -70,6 +70,7 @@ export const GeneralListeners = {
 
             addClickListener(DOM.headerMenuBtn, (e) => {
                 e.stopPropagation();
+                if (document.body.classList.contains('is-cloud-syncing')) return;
                 const isOpening = !DOM.headerMenuDropdown.classList.contains('open');
 
                 if (isOpening) {
@@ -378,28 +379,43 @@ export const GeneralListeners = {
                 );
                 if (!confirmed) return;
 
-                cloudSaveBtn.classList.add('saving');
+                let saveProgressToast = null;
+                const mainWrapper = document.querySelector('.main-content-wrapper');
 
-                if (!SyncService.isConnected()) {
-                    if (labelEl) labelEl.textContent = 'Connexion...';
-                    const connected = await ensureConnected(SyncService);
-                    if (!connected) {
-                        UI.showNotification('Connexion annulée.', 'warning');
-                        return;
+                try {
+                    DOM.headerMenuBtn?.classList.add('cloud-syncing');
+                    document.body.classList.add('is-cloud-syncing');
+                    mainWrapper?.classList.add('is-cloud-syncing');
+                    cloudSaveBtn.classList.add('saving');
+
+                    if (!SyncService.isConnected()) {
+                        if (labelEl) labelEl.textContent = 'Connexion';
+                        const connected = await ensureConnected(SyncService);
+                        if (!connected) {
+                            UI.showNotification('Connexion annulée.', 'warning');
+                            return;
+                        }
                     }
+
+                    if (labelEl) labelEl.textContent = 'Envoi';
+                    saveProgressToast = UI.showNotification('Sauvegarde de vos données sur le Cloud…', 'info', 0);
+                    await SyncService.saveToCloud();
+
+                    DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
+                    saveProgressToast?.dismiss?.();
+                    UI.showNotification('Données envoyées sur le Cloud !', 'success');
+                } catch (error) {
+                    saveProgressToast?.dismiss?.();
+                    UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+                } finally {
+                    DOM.headerMenuBtn?.classList.remove('cloud-syncing');
+                    document.body.classList.remove('is-cloud-syncing');
+                    mainWrapper?.classList.remove('is-cloud-syncing');
+                    cloudSaveBtn.classList.remove('saving');
+                    if (labelEl) labelEl.textContent = originalLabel;
                 }
-
-                if (labelEl) labelEl.textContent = 'Envoi...';
-                await SyncService.saveToCloud();
-
-                DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
-
-                UI.showNotification('Données envoyées sur le Cloud !', 'success');
-            } catch (error) {
-                UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
-            } finally {
-                cloudSaveBtn.classList.remove('saving');
-                if (labelEl) labelEl.textContent = originalLabel;
+            } catch (outerError) {
+                console.error('Cloud save trigger error:', outerError);
             }
         });
 
@@ -431,23 +447,37 @@ export const GeneralListeners = {
                     UI.showCustomConfirm(
                         `Ceci remplacera <strong>toutes</strong> vos données locales actuelles.`,
                         async () => {
+                            let restoreProgressToast = null;
+                            const mainWrapper = document.querySelector('.main-content-wrapper');
+
                             try {
+                                DOM.headerMenuBtn?.classList.add('cloud-syncing');
+                                document.body.classList.add('is-cloud-syncing');
+                                mainWrapper?.classList.add('is-cloud-syncing');
                                 cloudLoadBtn.classList.add('saving');
-                                if (labelEl) labelEl.textContent = 'Restauration...';
+                                if (labelEl) labelEl.textContent = 'Restauration';
+
+                                restoreProgressToast = UI.showNotification('Restauration de vos données depuis le Cloud…', 'info', 0);
 
                                 const { StorageManager } = await import('../../managers/StorageManager.js');
                                 await StorageManager.savePreRestoreSnapshot();
 
                                 const result = await SyncService.loadFromCloud();
                                 if (result.success) {
+                                    restoreProgressToast?.dismiss?.();
                                     UI.showNotification('Données restaurées avec succès !', 'success');
                                     setTimeout(() => window.location.reload(), 1000);
                                 } else {
+                                    restoreProgressToast?.dismiss?.();
                                     UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
                                 }
                             } catch (error) {
+                                restoreProgressToast?.dismiss?.();
                                 UI.showNotification('Erreur de restauration : ' + error.message, 'error');
                             } finally {
+                                DOM.headerMenuBtn?.classList.remove('cloud-syncing');
+                                document.body.classList.remove('is-cloud-syncing');
+                                mainWrapper?.classList.remove('is-cloud-syncing');
                                 cloudLoadBtn.classList.remove('saving');
                                 if (labelEl) labelEl.textContent = originalLabel;
                             }

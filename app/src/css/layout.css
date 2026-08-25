@@ -740,7 +740,8 @@
 
 /* Indicator active: Organic animation of the 3 dots (Pure CSS) */
 .menu-btn.has-update,
-.menu-btn.has-cloud-reminder {
+.menu-btn.has-cloud-reminder,
+.menu-btn.cloud-syncing {
     /* Switch to row layout to align with horizontal icon style */
     flex-direction: row;
     gap: 3px;
@@ -756,12 +757,14 @@
 */
 
 /* Shared logic for all 3 dots (update & cloud backup reminder) */
-.menu-btn.has-update, .menu-btn.has-cloud-reminder {
+.menu-btn.has-update,
+.menu-btn.has-cloud-reminder,
+.menu-btn.cloud-syncing {
     --dot-target-bg: var(--primary-color);
 }
 
 /* Specific styling for cloud backup reminder (warning color) if no update is present */
-.menu-btn.has-cloud-reminder:not(.has-update) {
+.menu-btn.has-cloud-reminder:not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-color);
 }
 
@@ -772,7 +775,11 @@
 .menu-btn.has-cloud-reminder::before,
 .menu-btn.has-cloud-reminder::after,
 .menu-btn.has-cloud-reminder i,
-.menu-btn.has-cloud-reminder iconify-icon {
+.menu-btn.has-cloud-reminder iconify-icon,
+.menu-btn.cloud-syncing::before,
+.menu-btn.cloud-syncing::after,
+.menu-btn.cloud-syncing i,
+.menu-btn.cloud-syncing iconify-icon {
     content: '';
     display: block;
     width: 3.5px;
@@ -796,13 +803,16 @@
 .menu-btn.has-update i::before,
 .menu-btn.has-update iconify-icon::part(svg),
 .menu-btn.has-cloud-reminder i::before,
-.menu-btn.has-cloud-reminder iconify-icon::part(svg) {
+.menu-btn.has-cloud-reminder iconify-icon::part(svg),
+.menu-btn.cloud-syncing i::before,
+.menu-btn.cloud-syncing iconify-icon::part(svg) {
     display: none !important;
 }
 
 /* For iconify-icon, we might need to hide the content differently since it uses Shadow DOM or direct SVG */
 .menu-btn.has-update iconify-icon,
-.menu-btn.has-cloud-reminder iconify-icon {
+.menu-btn.has-cloud-reminder iconify-icon,
+.menu-btn.cloud-syncing iconify-icon {
     /* When active, we actually want to turn the ELEMENT ITSELF into a dot, ignoring its SVG content */
     background: transparent;
     /* Reset background */
@@ -826,6 +836,27 @@
     animation-delay: 0.3s;
 }
 
+/* Active cloud syncing: rapid energetic rhythm (0.9s cycle) */
+.menu-btn.cloud-syncing::before,
+.menu-btn.cloud-syncing::after,
+.menu-btn.cloud-syncing i,
+.menu-btn.cloud-syncing iconify-icon {
+    animation: syncing-pulse-dots 0.9s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-btn.cloud-syncing::before {
+    animation-delay: 0s;
+}
+
+.menu-btn.cloud-syncing i,
+.menu-btn.cloud-syncing iconify-icon {
+    animation-delay: 0.15s;
+}
+
+.menu-btn.cloud-syncing::after {
+    animation-delay: 0.3s;
+}
+
 @keyframes organic-pulse-dots {
     0%,
     100% {
@@ -839,6 +870,42 @@
         transform: translateY(-2px) scale(1.25);
         opacity: 1;
     }
+}
+
+@keyframes syncing-pulse-dots {
+    0%,
+    100% {
+        background-color: var(--text-tertiary);
+        transform: scale(0.9);
+        opacity: 0.5;
+    }
+
+    50% {
+        background-color: var(--primary-color);
+        transform: scale(1.35);
+        opacity: 1;
+    }
+}
+
+/* Cloud Syncing Global State - Soft Non-blocking Lock */
+body.is-cloud-syncing {
+    cursor: wait;
+}
+
+body.is-cloud-syncing button,
+body.is-cloud-syncing a,
+body.is-cloud-syncing [role="button"],
+body.is-cloud-syncing input,
+body.is-cloud-syncing select,
+body.is-cloud-syncing textarea,
+body.is-cloud-syncing label {
+    cursor: wait !important;
+}
+
+.main-content-wrapper.is-cloud-syncing {
+    pointer-events: none;
+    opacity: 0.88;
+    transition: opacity var(--transition-fast);
 }
 
 /* Update menu item style */
@@ -1019,7 +1086,8 @@
 
 .cloud-save-menu-item.saving {
     cursor: wait;
-    opacity: 0.7;
+    opacity: 0.75;
+    transition: opacity var(--transition-fast);
 }
 
 .cloud-save-menu-item.saving .cloud-save-label::after {
@@ -1057,18 +1125,20 @@
     color: var(--text-tertiary);
 }
 
-
-
 /* Cloud sync state — synchronized (green hint) */
 .cloud-save-time.cloud-in-sync {
     color: var(--success-color);
     font-weight: 500;
 }
 
-/* Cloud sync state — action recommended (primary accent) */
+/* Cloud sync state — action recommended (primary accent background with clean radius) */
 .cloud-save-menu-item.cloud-action-recommended {
-    border-left: 2px solid var(--primary-color);
-    padding-left: 10px;
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-radius: var(--radius-sm);
+}
+
+.cloud-save-menu-item.cloud-action-recommended:hover {
+    background: rgba(var(--primary-color-rgb), 0.14);
 }
 
 .cloud-save-time.cloud-action-recommended {
@@ -1076,10 +1146,14 @@
     font-weight: 500;
 }
 
-/* Cloud sync state — conflict detected (warning accent) */
+/* Cloud sync state — conflict detected (warning accent background with clean radius) */
 .cloud-save-menu-item.cloud-conflict {
-    border-left: 2px solid var(--warning-color);
-    padding-left: 10px;
+    background: rgba(var(--warning-color-rgb), 0.1);
+    border-radius: var(--radius-sm);
+}
+
+.cloud-save-menu-item.cloud-conflict:hover {
+    background: rgba(var(--warning-color-rgb), 0.16);
 }
 
 .cloud-save-time.cloud-conflict {
