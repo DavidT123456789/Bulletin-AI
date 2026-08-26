@@ -7,6 +7,7 @@
 
 export const COSTS_PER_MILLION_TOKENS = {
     // Google (clé API directe)
+    'gemini-3.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.7-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
@@ -24,6 +25,7 @@ export const COSTS_PER_MILLION_TOKENS = {
     'mistral-large': { input: 2.00, output: 6.00 },
     'claude-sonnet-5': { input: 3.00, output: 15.00 },   // Via OpenRouter
     'claude-3.7-sonnet': { input: 3.00, output: 15.00 }, // Via OpenRouter
+    'claude-3.5-sonnet': { input: 3.00, output: 15.00 }, // Via OpenRouter
     // Ollama (local - gratuit)
     'ollama-qwen2.5:7b': { input: 0, output: 0 },
     'ollama-mistral:7b': { input: 0, output: 0 },
@@ -46,7 +48,8 @@ export const MODEL_DESCRIPTIONS = {
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
     'openai-gpt-4o-mini': "Économique et performant.",
     // Google
-    'gemini-3.7-flash': "<strong>⭐ Recommandé.</strong> Dernière génération Google, raisonnement hybride ultra-rapide.",
+    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
+    'gemini-3.7-flash': "Raisonnement adaptatif, dernière itération Google.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
     'gemini-2.5-pro': "<strong>🔥 Puissant.</strong> Idéal pour les synthèses complexes et détaillées.",
     // OpenRouter - Gratuits
@@ -59,7 +62,8 @@ export const MODEL_DESCRIPTIONS = {
     'mistral-small': "<strong>Français.</strong> Mistral Small (via OpenRouter).",
     'mistral-large': "Mistral Large (via OpenRouter). Pour textes nuancés.",
     'claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5 (via OpenRouter). Finesse stylistique.",
-    'claude-3.7-sonnet': "Claude 3.7 Sonnet (via OpenRouter). Raisonnement hybride et style.",
+    'claude-3.7-sonnet': "Claude 3.7 Sonnet (via OpenRouter). Raisonnement hybride.",
+    'claude-3.5-sonnet': "Claude 3.5 Sonnet (via OpenRouter). Précis et fluide.",
     // Ollama
     'ollama-qwen2.5:7b': "<strong>🏠 Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français.",
     'ollama-mistral:7b': "🏠 Local - Équilibré. Le standard Mistral 7B.",
@@ -83,9 +87,9 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèles les plus récents d'abord, stables en fallback
-    google: ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+    google: ['gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
-    openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
+    openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'claude-3.5-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
     anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-3-5-sonnet-latest', 'anthropic-claude-3-5-haiku-latest', 'anthropic-claude-opus-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
@@ -101,7 +105,7 @@ export const FALLBACK_CONFIG = {
  * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
  */
 export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-3.7-flash
+    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash
     openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
     openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
     ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen2.5:7b
@@ -113,6 +117,7 @@ export const PROVIDER_DEFAULT_MODELS = {
  * Noms courts des modèles pour l'affichage dans l'interface
  */
 export const MODEL_SHORT_NAMES = {
+    'gemini-3.5-flash': 'Gemini 3.5 Flash',
     'gemini-3.7-flash': 'Gemini 3.7 Flash',
     'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
@@ -129,6 +134,7 @@ export const MODEL_SHORT_NAMES = {
     'mistral-large': 'Mistral Large',
     'claude-sonnet-5': 'Claude Sonnet 5',
     'claude-3.7-sonnet': 'Claude 3.7 Sonnet',
+    'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
     // Ollama (local)
     'ollama-qwen2.5:7b': '🏠 Qwen 2.5 7B',
     'ollama-mistral:7b': '🏠 Mistral 7B',
@@ -162,7 +168,8 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.7-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.7-flash', qualifier: 'Raisonnement' },
             { id: 'gemini-2.5-flash', qualifier: 'Stable' },
             { id: 'gemini-2.5-pro', qualifier: 'Puissant' },
         ]

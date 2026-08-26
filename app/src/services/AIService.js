@@ -81,6 +81,7 @@ export const AIService = {
                         'deepseek-r1': 'deepseek/deepseek-r1',
                         'claude-sonnet-5': 'anthropic/claude-sonnet-5',
                         'claude-3.7-sonnet': 'anthropic/claude-3.7-sonnet',
+                        'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
                         // === GRATUITS ===
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
                         // === PAYANTS ÉCONOMIQUES ===

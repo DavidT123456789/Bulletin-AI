@@ -353,10 +353,10 @@ export const StorageManager = {
         const deprecatedGeminiFlash = [
             'gemini-1.5-flash', 'gemini-1.5-flash-001', 
             'gemini-2.0-flash-lite', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
-            'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash'
+            'gemini-3.1-flash-lite-preview'
         ];
         if (deprecatedGeminiFlash.includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-3.7-flash';
+            userSettings.api.currentAIModel = 'gemini-3.5-flash';
         }
         // Migration Claude legacy
         if (['anthropic-claude-sonnet-4.5', 'anthropic-claude-sonnet-4.6', 'claude-sonnet-4.6'].includes(userSettings.api.currentAIModel)) {
