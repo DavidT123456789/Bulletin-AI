@@ -582,6 +582,9 @@ export const SettingsUIManager = {
      * Appelé par le bouton "Tester tout"
      */
     async testAllConnections() {
+        const btn = DOM.testAllConnectionsBtn;
+        const icon = btn?.querySelector('iconify-icon');
+
         const providers = [
             { id: 'mistral', inputEl: DOM.mistralApiKey, errorEl: DOM.mistralApiKeyError, btnEl: DOM.validateMistralApiKeyBtn },
             { id: 'google', inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
@@ -605,25 +608,33 @@ export const SettingsUIManager = {
             return;
         }
 
-        UI.showNotification(`Test de ${totalTests} connexion(s)...`, "info");
+        if (btn) btn.disabled = true;
+        if (icon) icon.classList.add('rotate-icon');
 
-        for (const provider of configuredProviders) {
-            // Valider chaque clé séquentiellement
-            await ApiValidationManager.validateApiKeyUI(
-                provider.id,
-                provider.inputEl,
-                provider.errorEl,
-                provider.btnEl
-            );
-            // Petit délai entre chaque test pour éviter le rate limiting
-            await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            UI.showNotification(`Test de ${totalTests} connexion(s)...`, "info");
+
+            for (const provider of configuredProviders) {
+                // Valider chaque clé séquentiellement
+                await ApiValidationManager.validateApiKeyUI(
+                    provider.id,
+                    provider.inputEl,
+                    provider.errorEl,
+                    provider.btnEl
+                );
+                // Petit délai entre chaque test pour éviter le rate limiting
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            if (hasOllama) {
+                await this.validateOllamaConnection();
+            }
+
+            UI.showNotification("Test des connexions terminé.", "success");
+        } finally {
+            if (btn) btn.disabled = false;
+            if (icon) icon.classList.remove('rotate-icon');
         }
-
-        if (hasOllama) {
-            await this.validateOllamaConnection();
-        }
-
-        UI.showNotification("Test des connexions terminé.", "success");
     },
 
     /**

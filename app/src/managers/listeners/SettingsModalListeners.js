@@ -1000,7 +1000,7 @@ export const SettingsModalListeners = {
             if (!btn) return;
             btn.disabled = true;
             const originalContent = btn.innerHTML;
-            btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Recherche...';
+            btn.innerHTML = '<iconify-icon icon="solar:restart-linear" class="rotate-icon"></iconify-icon> Recherche...';
 
             try {
                 const startTime = Date.now();
