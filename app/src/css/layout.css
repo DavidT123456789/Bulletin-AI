@@ -269,11 +269,6 @@
     transform: scale(1.05);
 }
 
-[data-theme="dark"] .header-context-chip:hover .icon,
-[data-theme="dark"] .header-context-chip.active .icon {
-    color: var(--text-primary);
-}
-
 /* Chip spécifique pour le modèle IA */
 .ai-model-chip {
     background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.15));
@@ -286,6 +281,7 @@
 
 .ai-model-chip .icon {
     color: var(--primary-color);
+    transition: all var(--transition-fast);
 }
 
 .ai-model-chip:hover {
@@ -295,12 +291,13 @@
     transform: translateY(-1px);
 }
 
-[data-theme="dark"] .ai-model-chip:hover {
-    box-shadow: var(--shadow-elevation);
+.ai-model-chip:hover .icon {
+    color: var(--primary-hover);
+    transform: scale(1.05);
 }
 
-[data-theme="dark"] .ai-model-chip:hover .icon {
-    color: var(--text-primary);
+[data-theme="dark"] .ai-model-chip:hover {
+    box-shadow: var(--shadow-elevation);
 }
 
 /* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
