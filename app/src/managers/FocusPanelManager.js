@@ -1572,27 +1572,32 @@ export const FocusPanelManager = {
         // Remove all state classes first
         generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
 
-        // NEW UX LOGIC:
-        // - Bold style (btn-ai) = ACTION NEEDED → "Générer" first time
-        // - Warning style = ACTION RECOMMENDED → "Mettre à jour" when data changed  
-        // - Neutral style = OPTIONAL → "Régénérer" when already up to date
-
+        // UX LOGIC:
+        // - Primary style (btn-ai) = ACTION NEEDED → "Générer S2" first time (no appreciation)
+        // - Warning style (btn-warning) = ACTION RECOMMENDED → "Mettre à jour" when data changed
+        // - Neutral style (btn-neutral) = OPTIONAL → "Régénérer" when appreciation already exists
+        let tooltipAction = "Générer";
         if (!hasAppreciation) {
             // STATE 1: No appreciation yet → Bold primary style (action needed)
             generateBtn.classList.add('btn-ai');
             generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+            tooltipAction = "Générer";
         } else if (isDirty) {
             // STATE 2: Data modified since generation → Warning style (action recommended)
             generateBtn.classList.add('btn-warning');
             generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour`;
-        } else if (isRegenerate) {
-            // STATE 3: Already generated and up to date → Neutral style (optional)
+            tooltipAction = "Mettre à jour";
+        } else {
+            // STATE 3: Appreciation exists (AI-generated, manual, or imported) → Neutral style
             generateBtn.classList.add('btn-neutral');
             generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
-        } else {
-            // Fallback: Has appreciation but not AI-generated (manual) → Neutral
-            generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+            tooltipAction = "Régénérer";
+        }
+
+        const tooltipText = `${tooltipAction} l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>`;
+        generateBtn.setAttribute('data-tooltip', tooltipText);
+        if (generateBtn._tippy) {
+            generateBtn._tippy.setContent(tooltipText);
         }
     },
 

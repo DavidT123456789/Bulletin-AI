@@ -464,50 +464,6 @@ export const SettingsUIManager = {
 
         // Mettre à jour la disponibilité des options dans le menu déroulant
         this.updateModelSelectorAvailability();
-
-        // Mettre à jour les icônes des boutons de génération (Mistral Cat etc.)
-        this.updateGenerationButtonIcons();
-    },
-
-    /**
-     * Met à jour les icônes des boutons de génération pour refléter le provider actif.
-     * Spécifiquement demandé pour Mistral (Chat).
-     */
-    updateGenerationButtonIcons() {
-        const model = appState.currentAIModel || '';
-        const providerId = this._getProviderIdForModel(model);
-
-        const buttons = [
-            document.getElementById('focusGenerateBtn'),
-            document.getElementById('refreshPreviewBtn'),
-            document.getElementById('focusGenerateAnalysisBtn')
-        ];
-
-        buttons.forEach(btn => {
-            if (!btn) return;
-            const iconEl = btn.querySelector('iconify-icon');
-            if (!iconEl) return;
-
-            if (providerId === 'mistral') {
-                // Mistral branding - Consistent with Settings & Dropdown
-                const config = PROVIDER_CONFIG.mistral;
-                iconEl.setAttribute('icon', config.icon);
-
-                // Apply specific style (color) and class (scale)
-                if (config.style) {
-                    iconEl.setAttribute('style', config.style);
-                }
-                if (config.class) {
-                    iconEl.classList.add(config.class);
-                }
-            } else {
-                // Reset to generic Magic Stick for others (logos don't fit well on buttons)
-                iconEl.setAttribute('icon', 'solar:magic-stick-3-linear');
-                // Remove Mistral specific styles/classes
-                iconEl.removeAttribute('style');
-                iconEl.classList.remove('provider-mistral');
-            }
-        });
     },
 
     /**

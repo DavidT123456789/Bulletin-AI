@@ -203,12 +203,12 @@ export const FocusPanelAnalysis = {
         if (hasAnalysis) {
             // Régénérer mode: outline style + sync icon
             generateBtn.classList.add('btn-ai-outline');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-linear"></iconify-icon> Régénérer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
         } else {
             // Générer mode: standard AI button + sparkles icon
             generateBtn.classList.remove('btn-ai-outline');
             generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer`;
         }
     },
 

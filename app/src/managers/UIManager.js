@@ -468,7 +468,7 @@ export const UI = {
                     const generateBtn = document.getElementById('focusGenerateBtn');
                     if (generateBtn) {
                         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> Générer ${periodLabel}`;
+                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
                     }
 
                     // Update Previous Grades chips (force refresh for creation mode)

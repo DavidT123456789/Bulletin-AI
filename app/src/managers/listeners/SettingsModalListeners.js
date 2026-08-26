@@ -878,7 +878,7 @@ export const SettingsModalListeners = {
             if (meta) meta.style.display = 'none';
 
             if (DOM.refreshPreviewBtn) {
-                DOM.refreshPreviewBtn.innerHTML = '<i class="fas fa-play"></i> Générer';
+                DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:play-bold"></iconify-icon> Générer';
                 DOM.refreshPreviewBtn.classList.remove('btn-regenerate');
             }
         };
