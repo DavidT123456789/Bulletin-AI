@@ -85,19 +85,19 @@
         gap: 24px;
     }
 
-    /* Personalization modal: single column on tablet, show inspector inline */
+    /* Personalization modal: single column on tablet */
     .settings-layout-grid.personalization-grid,
     .settings-layout-grid.personalization-grid.inspector-visible {
         grid-template-columns: 1fr;
     }
 
-    .settings-layout-grid.personalization-grid .settings-inspector-column {
-        display: block;
+    .settings-layout-grid.personalization-grid .settings-card,
+    .settings-layout-grid.personalization-grid .settings-card-full-height {
+        height: auto;
     }
 
-    /* Hide toggle button on mobile (inspector always visible inline) */
-    .inspector-toggle-btn {
-        display: none;
+    .settings-layout-grid.personalization-grid .settings-card-full-height .settings-card-content {
+        overflow-y: visible;
     }
 }
 
@@ -115,7 +115,7 @@
     }
 
     .modal-help .modal-content {
-        height: auto;
+        height: min(640px, 90vh);
         max-height: 90vh;
     }
 
@@ -427,7 +427,7 @@
     }
 
     .modal-help .modal-content {
-        height: auto;
+        height: 94vh;
         max-height: 94vh;
     }
 

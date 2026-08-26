@@ -158,6 +158,13 @@ export const SettingsModalListeners = {
             modalContent?.classList.toggle('inspector-visible', nowVisible);
             toggleBtn.classList.toggle('active', nowVisible);
             localStorage.setItem('inspectorVisible', nowVisible);
+
+            if (nowVisible && window.innerWidth <= 900) {
+                const inspectorCol = document.getElementById('inspectorColumn');
+                setTimeout(() => {
+                    inspectorCol?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 50);
+            }
         });
 
         // Copy prompt button
