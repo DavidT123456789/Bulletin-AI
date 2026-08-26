@@ -75,8 +75,8 @@ export const AIService = {
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
                         'deepseek-r1': 'deepseek/deepseek-r1',
+                        'claude-sonnet-5': 'anthropic/claude-sonnet-5',
                         'claude-3.7-sonnet': 'anthropic/claude-3.7-sonnet',
-                        'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
                         // === GRATUITS ===
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
                         // === PAYANTS ÉCONOMIQUES ===
@@ -124,7 +124,8 @@ export const AIService = {
                 headers: (key) => ({
                     'Content-Type': 'application/json',
                     'x-api-key': key,
-                    'anthropic-version': '2023-06-01'
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
                 }),
                 payload: (p, m, sys) => {
                     const body = {

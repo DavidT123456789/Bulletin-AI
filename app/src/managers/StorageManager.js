@@ -353,17 +353,17 @@ export const StorageManager = {
         const deprecatedGeminiFlash = [
             'gemini-1.5-flash', 'gemini-1.5-flash-001', 
             'gemini-2.0-flash-lite', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
-            'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash', 'gemini-3.7-flash'
+            'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash'
         ];
         if (deprecatedGeminiFlash.includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-2.5-flash';
+            userSettings.api.currentAIModel = 'gemini-3.7-flash';
         }
-        // Migration Claude legacy vers Claude 3.7 Sonnet / Claude 3 Opus
-        if (['anthropic-claude-sonnet-4.5', 'anthropic-claude-sonnet-4.6', 'claude-sonnet-4.6', 'claude-sonnet-5', 'anthropic-claude-sonnet-5', 'anthropic-claude-haiku-4.5'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'anthropic-claude-3-7-sonnet-latest';
+        // Migration Claude legacy
+        if (['anthropic-claude-sonnet-4.5', 'anthropic-claude-sonnet-4.6', 'claude-sonnet-4.6'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'anthropic-claude-sonnet-5';
         }
-        if (['anthropic-claude-opus-4.5', 'anthropic-claude-opus-4.6', 'anthropic-claude-opus-5', 'claude-opus-5'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'anthropic-claude-3-opus-latest';
+        if (['anthropic-claude-opus-4.5', 'anthropic-claude-opus-4.6'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'anthropic-claude-opus-5';
         }
         // Migration Devstral free (déprécié 27 jan 2026)
         if (userSettings.api.currentAIModel === 'devstral-free') {
