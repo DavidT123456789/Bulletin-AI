@@ -148,6 +148,27 @@ describe('FocusPanelStatus', () => {
             expect(status.tooltip).toContain('Ancienne version conservée');
         });
 
+        it('devrait donner la priorité à l\'erreur sur le flag de génération active', () => {
+            activeGenerations.add('student-1');
+            const student = {
+                id: 'student-1',
+                errorMessage: 'Quota API dépassé',
+                errorPeriod: 'T1',
+                appreciation: 'Texte conservé.',
+                studentData: {
+                    periods: {
+                        T1: { appreciation: 'Texte conservé.' }
+                    }
+                }
+            };
+
+            const status = FocusPanelStatus.getAppreciationStatus(student, 'T1');
+            expect(status.state).toBe('error');
+            expect(status.hasError).toBe(true);
+            expect(status.isGenerating).toBe(false);
+            expect(status.isRegenerationError).toBe(true);
+        });
+
         it('ne doit pas propager une erreur d\'une période à une autre', () => {
             const student = {
                 id: 'student-1',

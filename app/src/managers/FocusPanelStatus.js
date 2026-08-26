@@ -286,15 +286,15 @@ export const FocusPanelStatus = {
      * }
      */
     getAppreciationStatus(result, period = appState.currentPeriod) {
-        const isGenerating = this._isGenerating(result?.id);
         const hasError = !!(result?.errorMessage && result?.errorPeriod === period);
         const errorMessage = hasError ? result.errorMessage : null;
+        const isGenerating = !hasError && this._isGenerating(result?.id);
 
         // Check period-specific appreciation first, with fallback only when generation period matches
         const periodApp = result?.studentData?.periods?.[period]?.appreciation;
         const effectiveApp = periodApp || ((result?.generationPeriod === period) ? result?.appreciation : null);
         const hasContent = this.hasRealContent(effectiveApp);
-        const isDirty = hasContent && !isGenerating && this.checkDirtyState(result);
+        const isDirty = hasContent && !isGenerating && !hasError && this.checkDirtyState(result);
 
         let state = 'uptodate';
         let tooltip = '';

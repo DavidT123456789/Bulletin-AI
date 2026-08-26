@@ -1340,6 +1340,17 @@ export const FocusPanelManager = {
         this._activeGenerations.set(generatingForStudentId, abortController);
         const signal = abortController.signal;
 
+        // Clear previous error for this generation attempt
+        result.errorMessage = null;
+        result.errorPeriod = null;
+
+        // Set generating skeleton on table row immediately
+        if (this.listViewManager?.setRowStatus) {
+            this.listViewManager.setRowStatus(generatingForStudentId, 'generating');
+        } else if (ListViewManager?.setRowStatus) {
+            ListViewManager.setRowStatus(generatingForStudentId, 'generating');
+        }
+
         // Save current context before generating
         this._saveContext();
 
@@ -1483,6 +1494,14 @@ export const FocusPanelManager = {
                 return;
             }
 
+            // Immediately clear active generation on error
+            if (this._activeGenerations.has(generatingForStudentId)) {
+                const currentController = this._activeGenerations.get(generatingForStudentId);
+                if (currentController && currentController.signal === signal) {
+                    this._activeGenerations.delete(generatingForStudentId);
+                }
+            }
+
             // Persist error in the model so it appears in the table and dashboard
             result.errorMessage = error.message;
             result.errorPeriod = generatingForPeriod;
@@ -1495,7 +1514,7 @@ export const FocusPanelManager = {
                 this._renderAppreciationText(result);
             }
 
-            // Update list row to show error badge
+            // Update list row to show error badge / indicator
             this._updateListRow(result);
             StorageManager.saveAppState();
         } finally {
@@ -1525,6 +1544,9 @@ export const FocusPanelManager = {
                         this._updateGenerateButton(result);
                     }
                 }
+
+                // ALWAYS refresh list row to ensure table matches final state
+                this._updateListRow(result);
 
                 // ALWAYS refresh header dashboard counts (error badge, validated count, smart button)
                 // regardless of which student is currently viewed
