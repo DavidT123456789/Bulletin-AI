@@ -114,6 +114,11 @@
         margin: 0 auto;
     }
 
+    .modal-help .modal-content {
+        height: 90vh;
+        max-height: 95vh;
+    }
+
     .modal-header {
         padding: 10px 14px;
     }
@@ -229,6 +234,11 @@
         height: 100%;
         max-height: 100%;
         border-radius: 0;
+    }
+
+    .modal-help .modal-content {
+        height: 100%;
+        max-height: 100%;
     }
 
     .modal-header {
@@ -405,6 +415,54 @@
         padding: 20px 16px;
         max-width: 100%;
         margin-top: 24px;
+    }
+}
+
+/* ====================================================================
+   SHORT VIEWPORT (Landscape Tablets / Compact screens)
+   ==================================================================== */
+@media (max-height: 650px) {
+    .modal-content {
+        max-height: 94vh;
+    }
+
+    .modal-help .modal-content {
+        height: 94vh;
+        max-height: 94vh;
+    }
+
+    .modal-header {
+        padding: 8px 16px;
+        min-height: 48px;
+    }
+
+    .modal-footer {
+        padding: 8px 16px;
+        min-height: 48px;
+    }
+
+    .ui-tabs-sidebar {
+        padding: 12px 10px;
+        gap: 3px;
+    }
+
+    .ui-tabs-btn {
+        padding: 8px 12px;
+        font-size: 0.88em;
+    }
+
+    .ui-tabs-actions-wrapper {
+        padding-top: 6px;
+        gap: 6px;
+    }
+
+    .ui-tabs-action-btn {
+        padding: 7px 10px;
+        font-size: 0.8em;
+    }
+
+    .ui-tabs-content {
+        padding: 14px 20px 24px 20px;
     }
 }
 

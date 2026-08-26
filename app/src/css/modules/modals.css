@@ -427,6 +427,7 @@
     padding: var(--modal-padding);
     overflow-y: auto;
     flex-grow: 1;
+    min-height: 0;
     background: var(--bg-color);
     /* Scroll performance optimizations */
     contain: content;
@@ -625,11 +626,16 @@
     border-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Inspecteur de Prompt - Hauteur adaptative sans barre de dÃƒÂ©filement interne */
+/* Inspecteur de Prompt - Hauteur adaptative sans barre de dÃ©filement interne */
 .prompt-preview-auto-height {
     max-height: none;
     overflow-y: visible;
     margin-top: 0;
+}
+
+.modal-help .modal-content {
+    height: min(640px, 90vh);
+    max-height: var(--modal-max-height);
 }
 
 .modal-help .help-intro-text {
