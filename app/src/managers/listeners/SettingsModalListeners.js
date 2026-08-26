@@ -993,20 +993,41 @@ export const SettingsModalListeners = {
             if (!btn) return;
             btn.disabled = true;
             const originalContent = btn.innerHTML;
-            btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Vérification...';
+            btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Recherche...';
 
             try {
-                if (window.checkForUpdates) {
-                    await window.checkForUpdates();
-                    // Wait a bit to ensure potential PWA events fire
-                    await new Promise(r => setTimeout(r, 1000));
-                    UI.showNotification("Vérification des mises à jour terminée", "info");
+                const startTime = Date.now();
+                const minDuration = 1800;
+
+                const updateCheckPromise = window.checkForUpdates ? window.checkForUpdates() : Promise.resolve();
+                const networkProbePromise = fetch('./version.json?t=' + Date.now()).catch(() => null);
+
+                await Promise.all([
+                    updateCheckPromise,
+                    networkProbePromise,
+                    new Promise((resolve) => {
+                        const elapsed = Date.now() - startTime;
+                        const remaining = Math.max(0, minDuration - elapsed);
+                        setTimeout(resolve, remaining);
+                    })
+                ]);
+
+                const isUpdateAvailable = window.appState?.isUpdateAvailable;
+
+                if (isUpdateAvailable) {
+                    btn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold" style="color: var(--primary-color);"></iconify-icon> Mise à jour dispo !';
+                    UI.showNotification("Une nouvelle version est disponible !", "success");
+                    await new Promise((r) => setTimeout(r, 1600));
                 } else {
-                    UI.showNotification("Fonction de mise à jour non disponible", "warning");
+                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color);"></iconify-icon> À jour !';
+                    UI.showNotification("Votre application est à jour.", "info");
+                    await new Promise((r) => setTimeout(r, 1400));
                 }
             } catch (e) {
                 console.error("Update check failed", e);
-                UI.showNotification("Erreur lors de la vérification", "error");
+                btn.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="color: var(--warning-color);"></iconify-icon> Erreur';
+                UI.showNotification("Impossible de vérifier les mises à jour.", "warning");
+                await new Promise((r) => setTimeout(r, 1400));
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
