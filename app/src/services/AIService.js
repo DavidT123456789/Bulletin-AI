@@ -75,14 +75,15 @@ export const AIService = {
                     const modelMap = {
                         'openrouter': 'deepseek/deepseek-chat',
                         'deepseek-r1': 'deepseek/deepseek-r1',
-                        'claude-sonnet-5': 'anthropic/claude-sonnet-5',
+                        'claude-3.7-sonnet': 'anthropic/claude-3.7-sonnet',
+                        'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
                         // === GRATUITS ===
                         'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
                         // === PAYANTS ÉCONOMIQUES ===
                         'ministral-3b': 'mistralai/ministral-3b-2512',
                         'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
-                        'mistral-small': 'mistralai/mistral-small-2603',
-                        'mistral-large': 'mistralai/mistral-large-2512'
+                        'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
+                        'mistral-large': 'mistralai/mistral-large-2411'
                     };
                     const messages = sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }];
                     return {
