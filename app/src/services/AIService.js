@@ -6,7 +6,6 @@
 import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS, FALLBACK_CONFIG } from '../config/Config.js';
 import { OLLAMA_CONFIG } from '../config/models.js';
-import { DOM } from '../utils/DOM.js';
 
 // Mode debug : activé uniquement en développement (vite définit import.meta.env.DEV)
 
@@ -196,9 +195,11 @@ export const AIService = {
      * @returns {number} Timeout en ms
      */
     _getModelTimeout(model) {
-        if (model.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS; // 120s pour local
-        const isReasoningModel = model.includes('3.7') || model.includes('r1') || model.includes('o3') || model.includes('opus');
-        return isReasoningModel ? 40000 : 22000; // 40s pour réflexion, 22s pour flash/mini standards
+        const m = model || '';
+        if (m.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS;
+        if (m.includes('2.5-pro') || m.includes('opus')) return 30000;
+        const isReasoningModel = m.includes('3.7') || m.includes('r1') || m.includes('o3');
+        return isReasoningModel ? 40000 : 22000;
     },
 
     /**
@@ -285,21 +286,27 @@ export const AIService = {
 
                 if (isValidation) return { text: 'Validation réussie', usage: null };
 
-                // Extraction du texte selon le format de réponse (Google vs OpenAI vs Ollama)
+                // Extraction du texte selon le format de réponse
                 let text = "";
                 if (res.candidates?.[0]?.content?.parts) {
-                    // Pour Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
+                    // Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
                     const nonThoughtParts = res.candidates[0].content.parts
                         .filter(p => !p.thought && p.text)
                         .map(p => p.text);
                     text = (nonThoughtParts.length > 0 ? nonThoughtParts : res.candidates[0].content.parts.map(p => p.text || '')).join('').trim();
+                } else if (Array.isArray(res.content)) {
+                    // Anthropic Claude : extraire les blocs text du tableau content
+                    text = res.content
+                        .filter(p => p.type === 'text' && p.text)
+                        .map(p => p.text)
+                        .join('').trim();
                 } else if (res.response) {
                     text = res.response; // Ollama
                 } else if (res.choices?.[0]?.message?.content) {
-                    text = res.choices[0].message.content; // OpenAI / OpenRouter
+                    text = res.choices[0].message.content; // OpenAI / OpenRouter / Mistral
                 }
 
-                // Nettoyage des balises de raisonnement (spécifique aux modèles "Thinking" comme DeepSeek R1)
+                // Nettoyage des balises de raisonnement (DeepSeek R1, Ollama thinking)
                 text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
                 if (!text || text.trim().length === 0) {
@@ -307,13 +314,16 @@ export const AIService = {
                 }
 
                 let inTokens = 0, outTokens = 0;
-                if (res.usage) {
-                    inTokens = res.usage.prompt_tokens;
-                    outTokens = res.usage.completion_tokens;
-                } else if (res.usageMetadata) {
-                    inTokens = res.usageMetadata.promptTokenCount;
-                    outTokens = res.usageMetadata.candidatesTokenCount;
+                if (res.usageMetadata) {
+                    // Google Gemini
+                    inTokens = res.usageMetadata.promptTokenCount ?? 0;
+                    outTokens = res.usageMetadata.candidatesTokenCount ?? 0;
+                } else if (res.usage) {
+                    // OpenAI/OpenRouter (prompt_tokens) ou Anthropic (input_tokens)
+                    inTokens = res.usage.prompt_tokens ?? res.usage.input_tokens ?? 0;
+                    outTokens = res.usage.completion_tokens ?? res.usage.output_tokens ?? 0;
                 } else if (res.prompt_eval_count !== undefined) {
+                    // Ollama
                     inTokens = res.prompt_eval_count || 0;
                     outTokens = res.eval_count || 0;
                 }
@@ -564,10 +574,13 @@ export const AIService = {
                     console.warn(`[AI Fallback] Modèle ${model} a échoué:`, error.message);
                     lastError = error;
 
-                    // Erreurs non réessayables : annulation explicite de l'utilisateur ou absence de clé
-                    const isNonRetryable = error.message.includes('annulé') ||
+                    // Erreurs non réessayables : annulation utilisateur, clé invalide/manquante
+                    const isNonRetryable = error.name === 'AbortError' ||
+                        error.message.includes('annulé') ||
+                        error.message.includes('abort') ||
                         error.message.includes('401') ||
-                        error.message.toLowerCase().includes('clé api manquante');
+                        error.message.toLowerCase().includes('clé api manquante') ||
+                        options.signal?.aborted;
 
                     if (isNonRetryable) {
                         throw error;

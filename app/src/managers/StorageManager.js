@@ -774,7 +774,7 @@ export const StorageManager = {
 
             if (resetPreferences) {
                 appState.periodSystem = 'trimestres';
-                appState.currentAIModel = 'gemini-2.5-flash';
+                appState.currentAIModel = 'gemini-3.5-flash';
                 parts.push('préférences');
             }
 

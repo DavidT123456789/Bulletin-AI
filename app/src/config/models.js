@@ -48,8 +48,8 @@ export const MODEL_DESCRIPTIONS = {
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
     'openai-gpt-4o-mini': "Économique et performant.",
     // Google
-    'gemini-3.7-flash': "<strong>⭐ Recommandé.</strong> Dernière génération Google, raisonnement hybride ultra-rapide.",
-    'gemini-3.5-flash': "<strong>Rapide & Éprouvé.</strong> Réponse instantanée et grande fluidité.",
+    'gemini-3.7-flash': "<strong>🧠 Raisonnement avancé.</strong> Dernière génération Google, réflexion hybride adaptative.",
+    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
     'gemini-2.5-pro': "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
     // OpenRouter - Gratuits
@@ -86,7 +86,7 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèles les plus récents d'abord, stables en fallback
-    google: ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+    google: ['gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
     openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'claude-3.5-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
@@ -104,7 +104,7 @@ export const FALLBACK_CONFIG = {
  * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
  */
 export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-3.7-flash
+    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash
     openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
     openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
     ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen2.5:7b
@@ -167,8 +167,8 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.7-flash', qualifier: 'Recommandé' },
-            { id: 'gemini-3.5-flash', qualifier: 'Rapide & Éprouvé' },
+            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.7-flash', qualifier: 'Raisonnement avancé' },
             { id: 'gemini-2.5-pro', qualifier: 'Synthèses complexes' },
             { id: 'gemini-2.5-flash', qualifier: 'Stable' },
         ]
