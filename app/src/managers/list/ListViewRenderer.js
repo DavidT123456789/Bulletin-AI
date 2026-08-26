@@ -158,6 +158,12 @@ export const ListViewRenderer = {
             // Insert new cells after status cell
             statusCell.insertAdjacentHTML('afterend', newGradeCellsHtml);
         }
+
+        // Re-enable action button if it was disabled during generation
+        const actionBtn = row.querySelector('.btn-action-menu');
+        if (actionBtn) {
+            actionBtn.disabled = false;
+        }
     },
 
     /**
