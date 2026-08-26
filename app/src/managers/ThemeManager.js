@@ -83,11 +83,11 @@ export const ColorUtils = {
 };
 
 export const accentPresets = {
-    blue:       { color: '#3b82f6', rgb: '59, 130, 246',  hover: '#2563eb' },
-    anthracite: { color: '#52525b', rgb: '82, 82, 91',    hover: '#3f3f46' },
-    rose:       { color: '#f43f5e', rgb: '244, 63, 94',   hover: '#e11d48' },
-    violet:     { color: '#8b5cf6', rgb: '139, 92, 246',  hover: '#7c3aed' },
-    teal:       { color: '#14b8a6', rgb: '20, 184, 166',  hover: '#0d9488' }
+    blue:       { color: '#3b82f6', rgb: '59, 130, 246',  hover: '#2563eb', darkHover: '#60a5fa' },
+    anthracite: { color: '#52525b', rgb: '82, 82, 91',    hover: '#3f3f46', darkHover: '#e4e4e7' },
+    rose:       { color: '#f43f5e', rgb: '244, 63, 94',   hover: '#e11d48', darkHover: '#fb7185' },
+    violet:     { color: '#8b5cf6', rgb: '139, 92, 246',  hover: '#7c3aed', darkHover: '#a78bfa' },
+    teal:       { color: '#14b8a6', rgb: '20, 184, 166',  hover: '#0d9488', darkHover: '#2dd4bf' }
 };
 
 export const ThemeManager = {
@@ -372,6 +372,7 @@ export const ThemeManager = {
      */
     applyAccentColor(accentColorKey) {
         const key = accentColorKey || 'blue';
+        const isDark = (this.currentResolvedTheme === 'dark') || (document.documentElement?.dataset?.theme === 'dark');
         let colors;
 
         if (key.startsWith('#')) {
@@ -379,13 +380,18 @@ export const ThemeManager = {
             const hsl = ColorUtils.rgbToHsl(rgb.r, rgb.g, rgb.b);
             const rgbString = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
 
-            const hoverL = Math.max(0, hsl.l - 10);
+            const hoverL = isDark ? Math.min(100, hsl.l + 12) : Math.max(0, hsl.l - 10);
             const hoverRgb = ColorUtils.hslToRgb(hsl.h, hsl.s, hoverL);
             const primaryHover = ColorUtils.rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
 
             colors = { color: key, rgb: rgbString, hover: primaryHover };
         } else {
-            colors = accentPresets[key] || accentPresets.blue;
+            const preset = accentPresets[key] || accentPresets.blue;
+            colors = {
+                color: preset.color,
+                rgb: preset.rgb,
+                hover: (isDark && preset.darkHover) ? preset.darkHover : preset.hover
+            };
         }
 
         document.documentElement.style.setProperty('--primary-color', colors.color);

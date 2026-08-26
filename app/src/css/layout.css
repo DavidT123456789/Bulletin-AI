@@ -262,10 +262,16 @@
     font-size: 18px;
 }
 
-.header-context-chip:hover .icon {
+.header-context-chip:hover .icon,
+.header-context-chip.active .icon {
     color: var(--primary-hover);
     opacity: 1;
     transform: scale(1.05);
+}
+
+[data-theme="dark"] .header-context-chip:hover .icon,
+[data-theme="dark"] .header-context-chip.active .icon {
+    color: var(--text-primary);
 }
 
 /* Chip spécifique pour le modèle IA */
@@ -291,6 +297,10 @@
 
 [data-theme="dark"] .ai-model-chip:hover {
     box-shadow: var(--shadow-elevation);
+}
+
+[data-theme="dark"] .ai-model-chip:hover .icon {
+    color: var(--text-primary);
 }
 
 /* État: Génération en cours - Contour dynamique fluide (même style que textarea:focus) */
@@ -1189,6 +1199,10 @@ body.is-cloud-syncing label {
     color: var(--warning-dark);
 }
 
+[data-theme="dark"] .cloud-reconnect-item:hover {
+    color: var(--warning-bright);
+}
+
 .cloud-reconnect-item iconify-icon {
     font-size: 18px;
     display: inline-flex;
@@ -1200,6 +1214,10 @@ body.is-cloud-syncing label {
 .cloud-reconnect-item:hover iconify-icon {
     color: var(--warning-dark);
     opacity: 1;
+}
+
+[data-theme="dark"] .cloud-reconnect-item:hover iconify-icon {
+    color: var(--warning-bright);
 }
 
 /* Separator Line */
