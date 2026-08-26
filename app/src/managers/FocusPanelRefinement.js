@@ -11,6 +11,8 @@ import { ModalUI } from './ModalUIManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { VariationsManager } from './VariationsManager.js';
+import { StorageManager } from './StorageManager.js';
+import { ListViewManager } from './ListViewManager.js';
 
 /** @type {import('./FocusPanelManager.js').FocusPanelManager|null} */
 let panel = null;
@@ -163,6 +165,12 @@ export const FocusPanelRefinement = {
         panel._activeGenerations.set(refineStudentId, abortController);
         const signal = abortController.signal;
 
+        if (panel?.listViewManager?.setRowStatus) {
+            panel.listViewManager.setRowStatus(refineStudentId, 'generating');
+        } else if (ListViewManager?.setRowStatus) {
+            ListViewManager.setRowStatus(refineStudentId, 'generating');
+        }
+
         try {
             const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
             if (!result) return;
@@ -218,6 +226,9 @@ export const FocusPanelRefinement = {
                 FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
                 FocusPanelStatus.updateSourceIndicator(result);
 
+                // Update list row and persist
+                panel?._updateListRow?.(result);
+                StorageManager.saveAppState();
                 UI.updateStats();
             }
         } catch (error) {
@@ -231,6 +242,8 @@ export const FocusPanelRefinement = {
                 // We must delete the active generation since we return early
                 panel._activeGenerations.delete(refineStudentId);
                 btn.classList.remove('is-generating');
+                const result = appState.generatedResults.find(r => r.id === refineStudentId);
+                if (result) panel?._updateListRow?.(result);
                 return;
             }
 
@@ -239,6 +252,10 @@ export const FocusPanelRefinement = {
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'error', tooltip: error.message || 'Erreur lors du raffinement' });
             panel._activeGenerations.delete(refineStudentId);
             btn.classList.remove('is-generating');
+            if (result) {
+                panel?._updateListRow?.(result);
+                StorageManager.saveAppState();
+            }
         } finally {
             // Delete is now handled in success path (after animation) and error paths
             btn.classList.remove('is-generating');

@@ -34,7 +34,7 @@ export const ListViewManager = {
     updateStudentRow(id) { return ListViewRenderer.updateStudentRow(id); },
     _renderFresh(c, r, p, idx) { ListViewRenderer.renderFresh(c, r, p, idx); },
     _updateHeaderSortIcons(v) { ListViewRenderer.updateHeaderSortIcons(v); },
-    _getAppreciationSkeletonHTML() { return ListViewRenderer.getAppreciationSkeletonHTML(); },
+    _getAppreciationSkeletonHTML(label, pending) { return ListViewRenderer.getAppreciationSkeletonHTML(label, pending); },
     _getStudentStatusCellContent(result) { return ListViewRenderer.getStudentStatusCellContent(result); },
     _getAppreciationCell(result) { return ListViewRenderer.getAppreciationCell(result); },
     _getStatusBadge(status) { return ListViewRenderer.getStatusBadge(status); },
