@@ -14,9 +14,18 @@
 }
 
 /* Icon rotation utility used globally for spinners */
-.rotate-icon {
-    display: inline-block;
-    animation: spin 1s linear infinite;
+.rotate-icon,
+.icon-spin,
+iconify-icon.rotate-icon,
+iconify-icon.icon-spin,
+.rotate-icon[icon],
+.icon-spin[icon] {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    animation: spin 1s linear infinite !important;
+    transform-origin: center center !important;
+    will-change: transform;
 }
 
 @keyframes pulse-update {

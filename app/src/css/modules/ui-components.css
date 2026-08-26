@@ -261,6 +261,9 @@
 }
 
 .ui-tabs-btn iconify-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 24px;
     text-align: center;
     font-size: 1.2em;
@@ -268,7 +271,7 @@
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
-.ui-tabs-btn:hover iconify-icon {
+.ui-tabs-btn:hover iconify-icon:not(.rotate-icon):not(.icon-spin) {
     transform: scale(1.1);
     color: var(--text-primary);
 }
@@ -306,6 +309,9 @@
 }
 
 .ui-tabs-action-btn iconify-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
@@ -315,7 +321,7 @@
     border-color: var(--border-color);
 }
 
-.ui-tabs-action-btn:hover iconify-icon {
+.ui-tabs-action-btn:hover iconify-icon:not(.rotate-icon):not(.icon-spin) {
     transform: scale(1.1);
     color: var(--text-primary);
 }
@@ -386,7 +392,11 @@
     }
 
     .ui-tabs-action-btn iconify-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: 18px;
+        height: 18px;
     }
 
     .ui-tabs-action-btn:hover {
