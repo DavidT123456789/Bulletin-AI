@@ -58,8 +58,12 @@ export const AIService = {
                 }),
             },
             google: {
-                apiKey: appState.googleApiKey, apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent?key=${appState.googleApiKey}`,
-                headers: () => ({ 'Content-Type': 'application/json' }),
+                apiKey: appState.googleApiKey, 
+                apiUrl: (m) => `${CONFIG.GOOGLE_API_BASE}/models/${m}:generateContent?key=${appState.googleApiKey}`,
+                headers: (key) => ({ 
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': key || appState.googleApiKey
+                }),
                 payload: (p, m, sys) => {
                     const body = { contents: [{ role: "user", parts: [{ text: p }] }] };
                     if (sys) {
@@ -266,10 +270,18 @@ export const AIService = {
             if (isValidation) return { text: 'Validation réussie', usage: null };
 
             // Extraction du texte selon le format de réponse (Google vs OpenAI vs Ollama)
-            let text = res.response || // Ollama
-                res.candidates?.[0]?.content?.parts?.[0]?.text || // Google
-                res.choices?.[0]?.message?.content || // OpenAI
-                "";
+            let text = "";
+            if (res.candidates?.[0]?.content?.parts) {
+                // Pour Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
+                const nonThoughtParts = res.candidates[0].content.parts
+                    .filter(p => !p.thought && p.text)
+                    .map(p => p.text);
+                text = (nonThoughtParts.length > 0 ? nonThoughtParts : res.candidates[0].content.parts.map(p => p.text || '')).join('').trim();
+            } else if (res.response) {
+                text = res.response; // Ollama
+            } else if (res.choices?.[0]?.message?.content) {
+                text = res.choices[0].message.content; // OpenAI / OpenRouter
+            }
 
             // Nettoyage des balises de raisonnement (spécifique aux modèles "Thinking" comme DeepSeek R1)
             // On supprime tout ce qui est entre <think> et </think> (y compris les balises)
