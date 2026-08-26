@@ -115,8 +115,8 @@
     }
 
     .modal-help .modal-content {
-        height: 90vh;
-        max-height: 95vh;
+        height: auto;
+        max-height: 90vh;
     }
 
     .modal-header {
@@ -427,7 +427,7 @@
     }
 
     .modal-help .modal-content {
-        height: 94vh;
+        height: auto;
         max-height: 94vh;
     }
 

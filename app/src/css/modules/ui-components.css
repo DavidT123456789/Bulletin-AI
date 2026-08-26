@@ -326,7 +326,7 @@
 
 .ui-tabs-content {
     flex: 1;
-    padding: 20px 32px 28px 32px;
+    padding: 20px 24px;
     background: var(--bg-color);
     overflow-y: auto;
     min-height: 0;
@@ -400,8 +400,8 @@
     }
 
     .ui-tabs-content {
-        padding: 16px 16px 40px 16px; /* Espace de defilement confortable en bas de modale */
-        overflow-y: auto; /* Rend le contenu de l'onglet defilable individuellement */
+        padding: 16px;
+        overflow-y: auto;
         flex: 1;
         min-height: 0;
     }
