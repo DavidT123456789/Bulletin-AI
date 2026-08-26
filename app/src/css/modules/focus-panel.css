@@ -2668,6 +2668,10 @@
     transform: scale(1.15);
 }
 
+.dirty-indicator.error-indicator {
+    color: var(--error-color);
+}
+
 /* === Premium Enter/Leave Animations for Dirty Indicator === */
 /* Enter state: Start invisible and scaled down */
 .dirty-indicator.dirty-indicator-enter {

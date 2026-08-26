@@ -184,13 +184,12 @@ export const ListViewRenderer = {
             if (hasSkeleton) {
                 this.updateRowContent(row, result);
             } else {
-                // Optimization: Only skip full update when ADDING a dirty indicator
-                // (content unchanged, only metadata changed). All other transitions
-                // require a full update to reflect content changes.
-                const existingDirty = appreciationCell?.querySelector('.dirty-indicator');
-                const shouldBeDirty = this.isResultDirty(result);
+                // Optimization: Only skip full update when ADDING a simple dirty indicator (no error)
+                const existingIndicator = appreciationCell?.querySelector('.dirty-indicator');
+                const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
+                const shouldBeOnlyDirty = status.isDirty && !status.hasError;
 
-                if (appreciationCell && shouldBeDirty && !existingDirty) {
+                if (appreciationCell && shouldBeOnlyDirty && !existingIndicator) {
                     this.updateDirtyIndicatorOnly(appreciationCell, true);
                 } else {
                     this.updateRowContent(row, result);
@@ -607,62 +606,38 @@ export const ListViewRenderer = {
     /**
      * Génère le contenu de la cellule d'appréciation.
      * Affiche l'appréciation tronquée si disponible, sinon le badge de statut.
+     * Utilise FocusPanelStatus.getAppreciationStatus comme source unique de vérité.
      * @param {Object} result - Données de l'élève
      * @returns {string} HTML de la cellule
      * @private
      */
     getAppreciationCell(result) {
-        // Short-circuit: error state takes priority, but ONLY for the period it occurred in
-        const currentPeriod = appState.currentPeriod;
-        if (result.errorMessage && result.errorPeriod === currentPeriod) {
-            return this.getStatusBadge('error', result.errorMessage);
-        }
-        let appreciation = '';
+        const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
 
-        // 1. Priorité: appréciation stockée directement dans la période
-        const periodApp = result.studentData?.periods?.[currentPeriod]?.appreciation;
-        if (periodApp && typeof periodApp === 'string' && periodApp.trim()) {
-            appreciation = periodApp.trim();
-        }
-        // 2. Fallback: result.appreciation ONLY if generation period matches current
-        // CRITICAL: Use generationPeriod (immutable) instead of studentData.currentPeriod
-        // which gets overwritten to the active view period by renderResults()
-        else if (result.appreciation && typeof result.appreciation === 'string' && result.appreciation.trim()) {
-            const generationPeriod = result.generationPeriod || result.aiGenerationPeriod;
-            if (generationPeriod === currentPeriod) {
-                appreciation = result.appreciation.trim();
-            }
+        if (status.state === 'generating') {
+            return this.getAppreciationSkeletonHTML();
         }
 
-        // Si c'est une autre période, et qu'on n'a rien trouvé, on n'affiche rien (plutôt que l'appréciation d'un autre trimestre)
-        // Cela répond à la demande : "T1 affiche T1".
+        // Error state without prior appreciation (1st generation failure)
+        if (status.state === 'error' && !status.hasContent) {
+            return this.getStatusBadge('error', status.errorMessage);
+        }
 
-        // Supprimer les balises HTML pour la vérification
-        const textOnly = appreciation?.replace(/<[^>]*>/g, '').trim().toLowerCase() || '';
+        // Valid appreciation content exists
+        if (status.hasContent) {
+            let indicatorBadge = '';
 
-        // Vérifier que c'est une vraie appréciation, pas un placeholder
-        const isPlaceholder = !appreciation ||
-            textOnly === '' ||
-            textOnly.includes('aucune appréciation') ||
-            textOnly.includes('en attente') ||
-            textOnly.includes('cliquez sur') ||
-            textOnly.startsWith('remplissez');
-
-        // [FIX] On vérifie aussi que status n'est pas 'pending' SI c'est la période active en cours de génération
-        // Mais ici on veut juste afficher le contenu stocké.
-
-        const hasContent = appreciation && !isPlaceholder;
-
-        if (hasContent) {
-            // === DIRTY STATE INDICATOR ===
-            let dirtyBadge = '';
-            if (this.isResultDirty(result)) {
-                dirtyBadge = `<span class="dirty-indicator tooltip" data-tooltip="Données modifiées depuis la génération.\nActualisation recommandée."><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
+            if (status.state === 'error') {
+                // REGENERATION ERROR: Keep previous appreciation visible, show red error indicator
+                indicatorBadge = `<span class="dirty-indicator error-indicator tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
+            } else if (status.isDirty) {
+                // DIRTY DATA: Show warning indicator
+                indicatorBadge = `<span class="dirty-indicator tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
             }
 
             return `<div class="appreciation-preview-wrapper">
-                ${dirtyBadge}
-                <div class="appreciation-preview">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(appreciation))}</div>
+                ${indicatorBadge}
+                <div class="appreciation-preview">${Utils.decodeHtmlEntities(Utils.cleanMarkdown(status.appreciation))}</div>
             </div>`;
         }
 

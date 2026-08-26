@@ -56,9 +56,8 @@ export const FocusPanelStatus = {
      * Check if appreciation has REAL content (not placeholder or just whitespace)
      * @param {string|null|undefined} appreciation - The appreciation text
      * @returns {boolean}
-     * @private
      */
-    _hasRealContent(appreciation) {
+    hasRealContent(appreciation) {
         if (!appreciation) return false;
         const text = appreciation.trim();
         if (text.length === 0) return false;
@@ -68,6 +67,14 @@ export const FocusPanelStatus = {
         // Exclude HTML placeholder spans that might be stored
         if (text.startsWith('<span') && text.includes('empty')) return false;
         return true;
+    },
+
+    /**
+     * Alias for backward compatibility
+     * @private
+     */
+    _hasRealContent(appreciation) {
+        return this.hasRealContent(appreciation);
     },
 
     /**
@@ -261,6 +268,77 @@ export const FocusPanelStatus = {
     },
 
     /**
+     * Single Source of Truth for Student Appreciation Status
+     * Computes the exact state (generating, error, empty, dirty, uptodate)
+     * and metadata used across both Focus Panel and List View.
+     * @param {Object} result - Student result object
+     * @param {string} [period] - Target period (defaults to appState.currentPeriod)
+     * @returns {Object} {
+     *   state: 'generating' | 'error' | 'empty' | 'dirty' | 'uptodate',
+     *   isGenerating: boolean,
+     *   hasError: boolean,
+     *   errorMessage: string|null,
+     *   hasContent: boolean,
+     *   isRegenerationError: boolean,
+     *   appreciation: string,
+     *   isDirty: boolean,
+     *   tooltip: string
+     * }
+     */
+    getAppreciationStatus(result, period = appState.currentPeriod) {
+        const isGenerating = this._isGenerating(result?.id);
+        const hasError = !!(result?.errorMessage && result?.errorPeriod === period);
+        const errorMessage = hasError ? result.errorMessage : null;
+
+        // Check period-specific appreciation first, with fallback only when generation period matches
+        const periodApp = result?.studentData?.periods?.[period]?.appreciation;
+        const effectiveApp = periodApp || ((result?.generationPeriod === period) ? result?.appreciation : null);
+        const hasContent = this.hasRealContent(effectiveApp);
+        const isDirty = hasContent && !isGenerating && this.checkDirtyState(result);
+
+        let state = 'uptodate';
+        let tooltip = '';
+        let isRegenerationError = false;
+
+        if (isGenerating) {
+            state = 'generating';
+            tooltip = 'Génération en cours...';
+        } else if (hasError) {
+            state = 'error';
+            isRegenerationError = hasContent;
+            if (isRegenerationError) {
+                tooltip = `Échec de la régénération : ${errorMessage}\n(Ancienne version conservée)`;
+            } else {
+                tooltip = errorMessage || 'Échec de génération';
+            }
+        } else if (!hasContent) {
+            state = 'empty';
+            tooltip = 'En attente';
+        } else if (isDirty) {
+            state = 'dirty';
+            const isAI = result?.wasGenerated === true;
+            tooltip = isAI
+                ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
+                : 'Données modifiées depuis l\'écriture.\nPensez à vérifier l\'appréciation.';
+        } else {
+            state = 'uptodate';
+            tooltip = '';
+        }
+
+        return {
+            state,
+            isGenerating,
+            hasError,
+            errorMessage,
+            hasContent,
+            isRegenerationError,
+            appreciation: (effectiveApp || '').trim(),
+            isDirty,
+            tooltip
+        };
+    },
+
+    /**
      * Unified Appreciation Status Badge Manager
      * NOW: Only manages STATUS (pending/dirty/empty/uptodate)
      * Source (AI/Manual) is handled separately by updateSourceIndicator()
@@ -274,35 +352,11 @@ export const FocusPanelStatus = {
         let state = options.state;
         let tooltip = options.tooltip || '';
 
-        // If no explicit state, compute from result
+        // If no explicit state, compute from single source of truth
         if (!state) {
-            const isGenerating = this._isGenerating(result?.id);
-            const hasError = !!(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
-            // CRITICAL: Check period-specific appreciation first, with fallback only when period matches
-            const currentPeriod = appState.currentPeriod;
-            const periodApp = result?.studentData?.periods?.[currentPeriod]?.appreciation;
-            const effectiveApp = periodApp || ((result?.generationPeriod === currentPeriod) ? result?.appreciation : null);
-            const hasContent = this._hasRealContent(effectiveApp);
-
-            if (isGenerating) {
-                state = 'pending';
-                tooltip = 'Génération en cours...';
-            } else if (hasError) {
-                state = 'error';
-                tooltip = result?.errorMessage || 'Échec de génération';
-            } else if (!hasContent) {
-                state = 'empty';
-                tooltip = 'En attente';
-            } else if (this.checkDirtyState(result)) {
-                state = 'dirty';
-                const isAI = result?.wasGenerated === true;
-                tooltip = isAI
-                    ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
-                    : 'Données modifiées depuis l\'écriture.\nPensez à vérifier l\'appréciation.';
-            } else {
-                state = 'uptodate';
-                tooltip = '';
-            }
+            const status = this.getAppreciationStatus(result, appState.currentPeriod);
+            state = status.state === 'generating' ? 'pending' : status.state;
+            tooltip = status.tooltip;
         }
 
         // Reset badge state
