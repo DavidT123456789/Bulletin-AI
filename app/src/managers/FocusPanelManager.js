@@ -990,9 +990,6 @@ export const FocusPanelManager = {
         // Cancel speech synthesis if active
         SpeechSynthesisManager.cancel();
 
-        // Cancel any in-progress generation
-        if (this.currentStudentId) this._cancelGenerationForStudent(this.currentStudentId);
-
         // ALWAYS hide analysis page on close to reset view and inert states
         FocusPanelAnalysis.hide();
 
@@ -1512,6 +1509,8 @@ export const FocusPanelManager = {
 
                 // Render normal text (empty or manual) and show error status badge with tooltip
                 this._renderAppreciationText(result);
+            } else {
+                UI.showNotification(`Échec pour ${result.prenom} : ${error.message}`, 'error');
             }
 
             // Update list row to show error badge / indicator
