@@ -91,8 +91,6 @@ function setupPWAUpdateHandler() {
         const showUpdateBanner = () => {
             const banner = document.getElementById('pwaUpdateBanner');
             if (banner) {
-                banner.style.display = 'block';
-
                 // Populate Commit Info (Dynamic from version.json)
                 const populateUpdateInfo = async () => {
                     try {
@@ -126,6 +124,9 @@ function setupPWAUpdateHandler() {
 
                 populateUpdateInfo();
 
+                // Smoothly show update banner
+                banner.classList.add('visible');
+
                 // Handle Details Toggle - Click on the entire text area
                 const bannerText = banner.querySelector('.pwa-banner-text');
                 const infoBtn = document.getElementById('pwaInfoBtn');
@@ -150,7 +151,7 @@ function setupPWAUpdateHandler() {
                 const dismissBtn = document.getElementById('pwaUpdateDismissBtn');
                 if (dismissBtn) {
                     dismissBtn.onclick = () => {
-                        banner.style.display = 'none';
+                        banner.classList.remove('visible');
                     };
                 }
             }

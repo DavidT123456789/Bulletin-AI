@@ -5,7 +5,6 @@
     position: fixed;
     bottom: var(--space-6);
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
     z-index: var(--z-toast);
 
     display: flex;
@@ -25,11 +24,26 @@
         0 10px 40px -10px rgba(0, 0, 0, 0.1),
         0 0 0 1px rgba(255, 255, 255, 0.1);
 
-    animation: pwa-toast-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    width: fit-content;
-    max-width: min(540px, 92vw);
+    width: min(500px, calc(100vw - var(--space-6) * 2));
     overflow: hidden;
-    /* For accordion expansion */
+
+    /* Smooth state-driven transition without layout shift */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(32px) scale(0.97);
+    transition:
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.3s ease;
+    will-change: transform, opacity;
+}
+
+.pwa-update-banner.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0) scale(1);
 }
 
 [data-theme="dark"] .pwa-update-banner {
@@ -38,12 +52,6 @@
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow:
         0 10px 30px -5px rgba(0, 0, 0, 0.35);
-}
-
-@keyframes pwa-toast-enter {
-    to {
-        transform: translateX(-50%) translateY(0);
-    }
 }
 
 /* --- Main Banner Row --- */
@@ -60,15 +68,14 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    /* flex-grow: 1; Removed to fix hover area issue */
+    flex: 1 1 auto;
     min-width: 0;
-    /* Text truncation fix */
     cursor: pointer;
     user-select: none;
     border-radius: var(--radius-md);
     transition: background-color 0.2s ease;
     padding: var(--space-2) var(--space-3);
-    margin: calc(var(--space-2) * -1) calc(var(--space-3) * -1);
+    margin: calc(var(--space-2) * -1) 0 calc(var(--space-2) * -1) calc(var(--space-3) * -1);
 }
 
 .pwa-update-banner .pwa-banner-text:hover {
@@ -97,7 +104,12 @@
 }
 
 .pwa-update-banner .pwa-gift-icon {
+    width: 32px;
+    height: 32px;
     font-size: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--primary-color);
     /* Subtle glow behind icon */
     filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.25));
@@ -219,6 +231,9 @@
 }
 
 .pwa-update-banner .pwa-info-btn iconify-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
     font-size: var(--font-sm);
     transition: transform 0.3s ease;
 }
@@ -254,6 +269,12 @@
     opacity: 0.8;
 }
 
+.pwa-update-banner .pwa-close-btn iconify-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+}
+
 .pwa-update-banner .pwa-close-btn:hover {
     background: var(--close-btn-hover-bg);
     color: var(--close-btn-hover-color);
@@ -264,9 +285,13 @@
 /* Mobile adjustments for PWA Banner to prevent truncation */
 @media (max-width: 480px) {
     .pwa-update-banner {
-        width: calc(100vw - var(--space-6));
+        width: calc(100vw - var(--space-4) * 2);
         bottom: var(--space-4);
-        transform: translateX(-50%) translateY(120px);
+        transform: translateX(-50%) translateY(32px) scale(0.97);
+    }
+
+    .pwa-update-banner.visible {
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 
     .pwa-update-banner .pwa-banner-main {
@@ -284,6 +309,7 @@
         flex-direction: column;
         /* Stack icon and text */
         gap: var(--space-2);
+        margin: 0;
     }
 
     .pwa-update-banner .pwa-gift-icon {
