@@ -66,7 +66,7 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-3.5-flash';
+                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-3.7-flash';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
@@ -120,7 +120,7 @@ export const ApiValidationManager = {
                     }
                 } else if (provider === 'anthropic') {
                     // Anthropic uses claude-sonnet as default test model
-                    modelOverride = 'anthropic-claude-sonnet-4.6';
+                    modelOverride = 'anthropic-claude-sonnet-5';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                 } else if (provider === 'mistral') {
                     // Mistral uses small-latest as default test model
@@ -179,7 +179,7 @@ export const ApiValidationManager = {
                     const modelIds = models.map(m => m.name.replace('models/', ''));
 
                     // Check if we can fallback to a known working model
-                    const fallbackModel = 'gemini-3.5-flash';
+                    const fallbackModel = 'gemini-3.7-flash';
                     if (modelIds.includes(fallbackModel)) {
                         appState.currentAIModel = fallbackModel;
 
@@ -223,7 +223,7 @@ export const ApiValidationManager = {
                             // Le modèle n'est pas disponible - ce n'est pas un problème de quota
                             appState.apiKeyStatus[provider] = 'invalid';
                             SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-3.5-flash" ou "gemini-2.5-pro".`;
+                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-3.7-flash" ou "gemini-2.5-pro".`;
                             errorEl.style.display = 'block';
                             errorEl.style.color = 'var(--error-color)';
                             inputEl.classList.add('input-error');

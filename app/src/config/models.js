@@ -1,15 +1,14 @@
 /**
  * @fileoverview Configuration des modèles IA, coûts et fallback.
- * Dernière vérification : 20 mai 2026
+ * Dernière vérification : 26 août 2026
  * @module config/models
  */
 
 export const COSTS_PER_MILLION_TOKENS = {
     // Google (clé API directe)
-    'gemini-3.5-flash': { input: 0.15, output: 0.60 },
+    'gemini-3.7-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
-    'gemini-3.1-pro-preview': { input: 1.25, output: 5.00 },
     // OpenAI
     'openai-o3-mini': { input: 1.10, output: 4.40 },
     'openai-gpt-4o-mini': { input: 0.15, output: 0.60 },
@@ -19,16 +18,19 @@ export const COSTS_PER_MILLION_TOKENS = {
     'ministral-3b': { input: 0.10, output: 0.10 },   // Ultra économique ~0.00005$/requête
     'amazon-nova-v1-lite': { input: 0.06, output: 0.24 },
     'openrouter': { input: 0.14, output: 0.28 },     // DeepSeek V3
+    'deepseek-r1': { input: 0.55, output: 2.19 },    // DeepSeek R1 Raisonnement
     'mistral-small': { input: 0.15, output: 0.60 },
     'mistral-large': { input: 2.00, output: 6.00 },
-    'claude-sonnet-4.6': { input: 3.00, output: 15.00 }, // Via OpenRouter
+    'claude-sonnet-5': { input: 3.00, output: 15.00 }, // Via OpenRouter
     // Ollama (local - gratuit)
-    'ollama-qwen3:8b': { input: 0, output: 0 },
-    'ollama-mistral': { input: 0, output: 0 },
-    'ollama-gemma3:4b': { input: 0, output: 0 },
+    'ollama-qwen2.5:7b': { input: 0, output: 0 },
+    'ollama-mistral:7b': { input: 0, output: 0 },
+    'ollama-deepseek-r1:8b': { input: 0, output: 0 },
+    'ollama-gemma2:9b': { input: 0, output: 0 },
     // Anthropic (Claude) - API directe
-    'anthropic-claude-sonnet-4.6': { input: 3.00, output: 15.00 },
-    'anthropic-claude-opus-4.6': { input: 5.00, output: 25.00 },
+    'anthropic-claude-sonnet-5': { input: 3.00, output: 15.00 },
+    'anthropic-claude-haiku-4.5': { input: 1.00, output: 5.00 },
+    'anthropic-claude-opus-5': { input: 5.00, output: 25.00 },
     // Mistral - API directe (Plan Experiment gratuit : 1B tokens/mois !)
     // Les alias -latest pointent automatiquement vers la dernière version
     'mistral-direct-large-latest': { input: 0.50, output: 1.50 },
@@ -38,29 +40,30 @@ export const COSTS_PER_MILLION_TOKENS = {
 export const MODEL_DESCRIPTIONS = {
     // OpenAI
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
-    'openai-gpt-4o-mini': "Économique et performant (fin de vie prévue).",
+    'openai-gpt-4o-mini': "Économique et performant.",
     // Google
-    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Le nouveau standard, rapide et intelligent.",
+    'gemini-3.7-flash': "<strong>⭐ Recommandé.</strong> Le nouveau standard Google, ultra-rapide et raisonnement adaptatif.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
-    'gemini-2.5-pro': "<strong>Standard.</strong> Excellent pour les tâches complexes.",
-    'gemini-3.1-pro-preview': "<strong>🔥 Puissant.</strong> Dernier Gemini Pro, raisonnement avancé.",
+    'gemini-2.5-pro': "<strong>🔥 Puissant.</strong> Idéal pour les analyses complexes.",
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT</strong> Llama 3.3 70B. Quota partagé quotidien.",
     // OpenRouter - Payants
     'ministral-3b': "<strong>~0€</strong> Ministral 3 3B. Ultra économique, excellent français.",
     'amazon-nova-v1-lite': "<strong>Économique.</strong> Amazon Nova Lite 1.0.",
     'openrouter': "DeepSeek V3. Performant et économique.",
+    'deepseek-r1': "<strong>⭐ Raisonnement.</strong> DeepSeek R1 (via OpenRouter).",
     'mistral-small': "<strong>Français.</strong> Mistral Small 4 (via OpenRouter). Multimodal, raisonnement.",
     'mistral-large': "Mistral Large 3 (via OpenRouter). Pour textes nuancés.",
-    'claude-sonnet-4.6': "<strong>✨ Recommandé.</strong> Claude Sonnet 4.6 (via OpenRouter).",
+    'claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5 (via OpenRouter).",
     // Ollama
-    'ollama-qwen3:8b': "<strong>🏠 Local - Recommandé.</strong> Qwen 3 8B.",
-    'ollama-mistral': "🏠 Local - Équilibré. Le standard Mistral 7B.",
-    'ollama-gemma3:4b': "🏠 Local. Google Gemma 3.",
-    'ollama-deepseek-r1:8b': "<strong>🏠 Local.</strong> DeepSeek R1.",
+    'ollama-qwen2.5:7b': "<strong>🏠 Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français.",
+    'ollama-mistral:7b': "🏠 Local - Équilibré. Le standard Mistral 7B.",
+    'ollama-deepseek-r1:8b': "<strong>🏠 Local.</strong> DeepSeek R1 (Raisonnement).",
+    'ollama-gemma2:9b': "🏠 Local. Google Gemma 2 9B.",
     // Anthropic (Claude) - API directe
-    'anthropic-claude-sonnet-4.6': "Claude Sonnet 4.6. Excellent rapport qualité/prix.",
-    'anthropic-claude-opus-4.6': "<strong>🔥 Le plus puissant.</strong> Claude Opus 4.6. Qualité maximale.",
+    'anthropic-claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5. Finesse stylistique et équilibre.",
+    'anthropic-claude-haiku-4.5': "<strong>Économique & Rapide.</strong> Claude Haiku 4.5.",
+    'anthropic-claude-opus-5': "<strong>🔥 Le plus puissant.</strong> Claude Opus 5. Qualité maximale.",
     // Mistral - API directe (Plan Experiment GRATUIT : 1B tokens/mois !)
     // -latest = toujours la dernière version (actuellement Small 4, Large 3)
     'mistral-direct-large-latest': "<strong>🆓 GRATUIT</strong> Mistral Large. Le plus puissant. 1B tokens/mois offerts.",
@@ -73,11 +76,11 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèles les plus récents d'abord, stables en fallback
-    google: ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.1-pro-preview', 'gemini-2.5-pro'],
+    google: ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
-    openrouter: ['llama-3.3-70b-free', 'claude-sonnet-4.6', 'ministral-3b', 'amazon-nova-v1-lite', 'openrouter', 'mistral-small', 'mistral-large'],
-    ollama: ['ollama-qwen3:8b', 'ollama-mistral', 'ollama-deepseek-r1:8b', 'ollama-gemma3:4b'],
-    anthropic: ['anthropic-claude-sonnet-4.6', 'anthropic-claude-opus-4.6'],
+    openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
+    ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
+    anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-haiku-4.5', 'anthropic-claude-opus-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
 
     // Ordre inter-providers (priorité : local > gratuits > payants)
@@ -91,11 +94,11 @@ export const FALLBACK_CONFIG = {
  * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
  */
 export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash (stable, recommandé)
+    google: FALLBACK_CONFIG.google[0],       // gemini-3.7-flash (stable, recommandé)
     openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
     openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
-    ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen3:8b
-    anthropic: FALLBACK_CONFIG.anthropic[0], // anthropic-claude-sonnet-4.6
+    ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen2.5:7b
+    anthropic: FALLBACK_CONFIG.anthropic[0], // anthropic-claude-sonnet-5
     mistral: FALLBACK_CONFIG.mistral[0],     // mistral-direct-small-latest 🆓
 };
 
@@ -103,10 +106,9 @@ export const PROVIDER_DEFAULT_MODELS = {
  * Noms courts des modèles pour l'affichage dans l'interface
  */
 export const MODEL_SHORT_NAMES = {
-    'gemini-3.5-flash': 'Gemini 3.5 Flash',
+    'gemini-3.7-flash': 'Gemini 3.7 Flash',
     'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
-    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
     'openai-o3-mini': 'o3 Mini',
     'openai-gpt-4o-mini': 'GPT-4o Mini',
     // OpenRouter - Gratuits
@@ -115,17 +117,19 @@ export const MODEL_SHORT_NAMES = {
     'ministral-3b': 'Ministral 3 3B',
     'amazon-nova-v1-lite': 'Nova Lite',
     'openrouter': 'DeepSeek V3',
+    'deepseek-r1': 'DeepSeek R1',
     'mistral-small': 'Mistral Small 4',
     'mistral-large': 'Mistral Large 3',
-    'claude-sonnet-4.6': 'Claude Sonnet 4.6',
+    'claude-sonnet-5': 'Claude Sonnet 5',
     // Ollama (local)
-    'ollama-qwen3:8b': '🏠 Qwen 3 8B',
-    'ollama-mistral': '🏠 Mistral 7B',
-    'ollama-gemma3:4b': '🏠 Gemma 3',
+    'ollama-qwen2.5:7b': '🏠 Qwen 2.5 7B',
+    'ollama-mistral:7b': '🏠 Mistral 7B',
     'ollama-deepseek-r1:8b': '🏠 DeepSeek R1',
+    'ollama-gemma2:9b': '🏠 Gemma 2 9B',
     // Anthropic (Claude)
-    'anthropic-claude-sonnet-4.6': 'Claude Sonnet 4.6',
-    'anthropic-claude-opus-4.6': 'Claude Opus 4.6',
+    'anthropic-claude-sonnet-5': 'Claude Sonnet 5',
+    'anthropic-claude-haiku-4.5': 'Claude Haiku 4.5',
+    'anthropic-claude-opus-5': 'Claude Opus 5',
     // Mistral (API directe - GRATUIT)
     'mistral-direct-large-latest': 'Mistral Large 3',
     'mistral-direct-small-latest': 'Mistral Small 4',
@@ -148,10 +152,9 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.7-flash', qualifier: 'Recommandé' },
             { id: 'gemini-2.5-flash', qualifier: 'Stable' },
-            { id: 'gemini-3.1-pro-preview', qualifier: 'Puissant (Raisonnement)' },
-            { id: 'gemini-2.5-pro', qualifier: 'Stable - Puissant' },
+            { id: 'gemini-2.5-pro', qualifier: 'Puissant' },
         ]
     },
     {
@@ -163,10 +166,11 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💰 OpenRouter — PAYANT (économique)',
         models: [
-            { id: 'claude-sonnet-4.6', qualifier: 'Puissant' },
+            { id: 'claude-sonnet-5', qualifier: 'Puissant' },
+            { id: 'openrouter', qualifier: 'Économique' },
+            { id: 'deepseek-r1', qualifier: 'Raisonnement' },
             { id: 'ministral-3b', qualifier: '~0€, Mistral' },
             { id: 'amazon-nova-v1-lite', qualifier: 'Très économique' },
-            { id: 'openrouter', qualifier: 'Économique' },
             { id: 'mistral-small', qualifier: 'Français' },
             { id: 'mistral-large', qualifier: 'Puissant' },
         ]
@@ -181,16 +185,18 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💰 Anthropic Claude — PAYANT',
         models: [
-            { id: 'anthropic-claude-sonnet-4.6', qualifier: 'Puissant' },
-            { id: 'anthropic-claude-opus-4.6', qualifier: 'Le plus puissant' },
+            { id: 'anthropic-claude-sonnet-5', qualifier: 'Recommandé' },
+            { id: 'anthropic-claude-haiku-4.5', qualifier: 'Économique & Rapide' },
+            { id: 'anthropic-claude-opus-5', qualifier: 'Le plus puissant' },
         ]
     },
     {
         label: '🏠 Ollama — LOCAL',
         models: [
-            { id: 'ollama-qwen3:8b', qualifier: 'Recommandé' },
-            { id: 'ollama-mistral', qualifier: 'Standard' },
+            { id: 'ollama-qwen2.5:7b', qualifier: 'Recommandé' },
+            { id: 'ollama-mistral:7b', qualifier: 'Standard' },
             { id: 'ollama-deepseek-r1:8b', qualifier: 'Raisonnement' },
+            { id: 'ollama-gemma2:9b', qualifier: 'Google Local' },
         ]
     },
 ];

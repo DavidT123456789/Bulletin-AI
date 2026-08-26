@@ -350,28 +350,38 @@ export const StorageManager = {
         }
 
         // Migration de modèles obsolètes vers la version stable actuelle
-        const deprecatedModels = [
+        const deprecatedGeminiFlash = [
             'gemini-1.5-flash', 'gemini-1.5-flash-001', 'gemini-2.0-flash', 
             'gemini-2.0-flash-lite', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
-            'gemini-3.1-flash-lite-preview'
+            'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash'
         ];
-        if (deprecatedModels.includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-3.5-flash';
+        if (deprecatedGeminiFlash.includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'gemini-3.7-flash';
         }
-        // Migration Claude 4.5 → 4.6
-        if (userSettings.api.currentAIModel === 'anthropic-claude-sonnet-4.5') {
-            userSettings.api.currentAIModel = 'anthropic-claude-sonnet-4.6';
+        // Migration Claude legacy vers Sonnet 5 / Opus 5
+        if (['anthropic-claude-sonnet-4.5', 'anthropic-claude-sonnet-4.6', 'claude-sonnet-4.6'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'anthropic-claude-sonnet-5';
         }
-        if (userSettings.api.currentAIModel === 'anthropic-claude-opus-4.5') {
-            userSettings.api.currentAIModel = 'anthropic-claude-opus-4.6';
+        if (['anthropic-claude-opus-4.5', 'anthropic-claude-opus-4.6'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'anthropic-claude-opus-5';
         }
         // Migration Devstral free (déprécié 27 jan 2026)
         if (userSettings.api.currentAIModel === 'devstral-free') {
             userSettings.api.currentAIModel = 'llama-3.3-70b-free';
         }
         // Migration anciens Gemini Pro / Previews
-        if (userSettings.api.currentAIModel === 'gemini-3-pro') {
-            userSettings.api.currentAIModel = 'gemini-3.1-pro-preview';
+        if (['gemini-3-pro', 'gemini-3.1-pro-preview'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'gemini-2.5-pro';
+        }
+        // Migration anciens Ollama
+        if (['ollama-qwen3:8b', 'ollama-qwen3:4b'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'ollama-qwen2.5:7b';
+        }
+        if (['ollama-gemma3:4b'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'ollama-gemma2:9b';
+        }
+        if (userSettings.api.currentAIModel === 'ollama-mistral') {
+            userSettings.api.currentAIModel = 'ollama-mistral:7b';
         }
         // Migration OpenAI legacy (GPT-4o retiré fév 2026)
         if (['openai-gpt-4o', 'openai-gpt-3.5-turbo', 'openai-gpt-4-turbo'].includes(userSettings.api.currentAIModel)) {
@@ -764,7 +774,7 @@ export const StorageManager = {
 
             if (resetPreferences) {
                 appState.periodSystem = 'trimestres';
-                appState.currentAIModel = 'gemini-2.5-flash';
+                appState.currentAIModel = 'gemini-3.7-flash';
                 parts.push('préférences');
             }
 
