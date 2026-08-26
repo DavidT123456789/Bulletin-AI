@@ -191,17 +191,25 @@ export const AIService = {
     },
 
     /**
-     * Appelle l'API d'IA pour générer du texte
+     * Calcule le timeout approprié selon le type de modèle
+     * @param {string} model - Nom du modèle
+     * @returns {number} Timeout en ms
+     */
+    _getModelTimeout(model) {
+        if (model.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS; // 120s pour local
+        const isReasoningModel = model.includes('3.7') || model.includes('r1') || model.includes('o3') || model.includes('opus');
+        return isReasoningModel ? 40000 : 22000; // 40s pour réflexion, 22s pour flash/mini standards
+    },
+
+    /**
+     * Appelle l'API d'IA pour générer du texte avec gestion de retry transitoire (503/429/50x)
      * @param {string} prompt - Le prompt à envoyer
      * @param {AICallOptions} [options={}] - Options de l'appel
      * @returns {Promise<AIResponse>} La réponse de l'IA
-     * @throws {Error} En cas d'erreur API, timeout, ou annulation
      */
     async callAI(prompt, options = {}) {
-        // Mode démo : retourne des réponses simulées
-        if (appState.isDemoMode && !options.isValidation) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
+        if (appState.isDemoMode) {
+            await new Promise(r => setTimeout(r, 600));
             let fakeText = "Ceci est une appréciation générée en MODE DÉMO. Élève sérieux et appliqué. Les résultats sont en progression constante grâce à une participation active en classe. Continuez ainsi.";
 
             if (prompt.includes("Points Forts")) {
@@ -217,113 +225,125 @@ export const AIService = {
         }
 
         const { isValidation = false, signal: externalSignal, modelOverride } = options;
-        const { apiUrl, headers, payload } = this._getApiConfig(prompt, options);
-
-        const signalsToCombine = [];
-        if (externalSignal) {
-            signalsToCombine.push(externalSignal);
-        }
-
-        // Gestion du timeout et de l'annulation
-        // Timeout plus long pour Ollama (modèles locaux lents, surtout au premier chargement)
         const selectedModel = modelOverride || appState.currentAIModel;
-        const isOllamaModel = selectedModel.startsWith('ollama');
-        const timeoutMs = isOllamaModel ? CONFIG.API_CALL_TIMEOUT_OLLAMA_MS : CONFIG.API_CALL_TIMEOUT_MS;
+        const timeoutMs = this._getModelTimeout(selectedModel);
+        const maxRetries = isValidation ? 0 : 1; // 1 retry unique pour éviter les ralentissements
 
-        const controller = new AbortController();
-        const combinedSignal = controller.signal;
+        let attempt = 0;
+        while (attempt <= maxRetries) {
+            attempt++;
+            const { apiUrl, headers, payload } = this._getApiConfig(prompt, options);
 
-        const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
 
-        if (externalSignal) {
-            if (externalSignal.aborted) {
-                clearTimeout(timeoutId);
-                return Promise.reject(new DOMException("Operation was aborted by the user.", "AbortError"));
-            }
-            externalSignal.addEventListener('abort', () => {
-                clearTimeout(timeoutId);
-                controller.abort(externalSignal.reason);
-            });
-        }
-
-        const cleanup = () => clearTimeout(timeoutId);
-
-        const startTime = Date.now(); // Mesure du temps de génération
-
-        try {
-            const resp = await fetch(apiUrl, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(payload),
-                signal: combinedSignal
-            });
-
-            const res = await resp.json();
-            const generationTimeMs = Date.now() - startTime; // Temps écoulé
-
-            if (!resp.ok) {
-                console.error("Erreur API détaillée:", res);
-                let errorMsg = `Erreur API ${resp.status}: ${res.error?.message || res.error || res.message || res.detail || JSON.stringify(res)}`;
-                if (isValidation) errorMsg = `Clé invalide (${resp.status}): ${res.error?.message || JSON.stringify(res)}`;
-                throw new Error(errorMsg);
-            }
-
-            if (isValidation) return { text: 'Validation réussie', usage: null };
-
-            // Extraction du texte selon le format de réponse (Google vs OpenAI vs Ollama)
-            let text = "";
-            if (res.candidates?.[0]?.content?.parts) {
-                // Pour Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
-                const nonThoughtParts = res.candidates[0].content.parts
-                    .filter(p => !p.thought && p.text)
-                    .map(p => p.text);
-                text = (nonThoughtParts.length > 0 ? nonThoughtParts : res.candidates[0].content.parts.map(p => p.text || '')).join('').trim();
-            } else if (res.response) {
-                text = res.response; // Ollama
-            } else if (res.choices?.[0]?.message?.content) {
-                text = res.choices[0].message.content; // OpenAI / OpenRouter
-            }
-
-            // Nettoyage des balises de raisonnement (spécifique aux modèles "Thinking" comme DeepSeek R1)
-            // On supprime tout ce qui est entre <think> et </think> (y compris les balises)
-            text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-
-            // Vérifier que le texte n'est pas vide (sinon traiter comme une erreur)
-            if (!text || text.trim().length === 0) {
-                throw new Error("Réponse vide de l'API. Le modèle n'a pas généré de texte.");
-            }
-            let inTokens = 0, outTokens = 0;
-
-            if (res.usage) {
-                inTokens = res.usage.prompt_tokens;
-                outTokens = res.usage.completion_tokens;
-            } else if (res.usageMetadata) {
-                inTokens = res.usageMetadata.promptTokenCount;
-                outTokens = res.usageMetadata.candidatesTokenCount;
-            } else if (res.prompt_eval_count !== undefined) {
-                // Ollama format
-                inTokens = res.prompt_eval_count || 0;
-                outTokens = res.eval_count || 0;
-            }
-
-            // Calcul du coût de la session
-            const totalTokens = inTokens + outTokens;
-
-            return {
-                text,
-                usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: totalTokens },
-                generationTimeMs // Temps de génération en millisecondes
-            };
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                if (externalSignal?.aborted) {
-                    throw new Error("Import annulé par l'utilisateur.");
+            if (externalSignal) {
+                if (externalSignal.aborted) {
+                    clearTimeout(timeoutId);
+                    return Promise.reject(new DOMException("Operation was aborted by the user.", "AbortError"));
                 }
-                throw new Error("La requête a expiré (timeout).");
+                externalSignal.addEventListener('abort', () => {
+                    clearTimeout(timeoutId);
+                    controller.abort(externalSignal.reason);
+                });
             }
-            throw error;
-        } finally {
-            cleanup();
+
+            const cleanup = () => clearTimeout(timeoutId);
+            const startTime = Date.now();
+
+            try {
+                const resp = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+
+                const res = await resp.json().catch(() => ({}));
+                const generationTimeMs = Date.now() - startTime;
+
+                if (!resp.ok) {
+                    const status = resp.status;
+                    const errorDetails = res.error?.message || res.error || res.message || res.detail || JSON.stringify(res);
+                    const isTransient = [408, 429, 500, 502, 503, 504].includes(status);
+
+                    console.warn(`[AI Request] ❌ ${selectedModel} (HTTP ${status} en ${generationTimeMs}ms) [Tentative ${attempt}/${maxRetries + 1}]: ${errorDetails}`);
+
+                    // Si erreur transitoire (surcharge 503, rate limit 429) et qu'il reste 1 tentative
+                    if (isTransient && attempt <= maxRetries && !externalSignal?.aborted) {
+                        const backoffDelay = 1200 + Math.round(Math.random() * 800); // 1.2s - 2.0s avec jitter
+                        console.info(`[AI Retry] ⏳ Réessai pour ${selectedModel} (HTTP ${status}) dans ${backoffDelay}ms...`);
+                        await new Promise(r => setTimeout(r, backoffDelay));
+                        cleanup();
+                        continue;
+                    }
+
+                    let errorMsg = `Erreur API ${status}: ${errorDetails}`;
+                    if (isValidation) errorMsg = `Clé invalide (${status}): ${errorDetails}`;
+                    throw new Error(errorMsg);
+                }
+
+                if (isValidation) return { text: 'Validation réussie', usage: null };
+
+                // Extraction du texte selon le format de réponse (Google vs OpenAI vs Ollama)
+                let text = "";
+                if (res.candidates?.[0]?.content?.parts) {
+                    // Pour Google Gemini : filtrer les parties de réflexion (thought) et concaténer les blocs de texte
+                    const nonThoughtParts = res.candidates[0].content.parts
+                        .filter(p => !p.thought && p.text)
+                        .map(p => p.text);
+                    text = (nonThoughtParts.length > 0 ? nonThoughtParts : res.candidates[0].content.parts.map(p => p.text || '')).join('').trim();
+                } else if (res.response) {
+                    text = res.response; // Ollama
+                } else if (res.choices?.[0]?.message?.content) {
+                    text = res.choices[0].message.content; // OpenAI / OpenRouter
+                }
+
+                // Nettoyage des balises de raisonnement (spécifique aux modèles "Thinking" comme DeepSeek R1)
+                text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+                if (!text || text.trim().length === 0) {
+                    throw new Error("Réponse vide de l'API. Le modèle n'a pas généré de texte.");
+                }
+
+                let inTokens = 0, outTokens = 0;
+                if (res.usage) {
+                    inTokens = res.usage.prompt_tokens;
+                    outTokens = res.usage.completion_tokens;
+                } else if (res.usageMetadata) {
+                    inTokens = res.usageMetadata.promptTokenCount;
+                    outTokens = res.usageMetadata.candidatesTokenCount;
+                } else if (res.prompt_eval_count !== undefined) {
+                    inTokens = res.prompt_eval_count || 0;
+                    outTokens = res.eval_count || 0;
+                }
+
+                console.log(`[AI Response] ✅ ${selectedModel} en ${generationTimeMs}ms (${inTokens + outTokens} tokens)`);
+
+                return {
+                    text,
+                    usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
+                    generationTimeMs
+                };
+            } catch (error) {
+                const generationTimeMs = Date.now() - startTime;
+                if (error.name === 'AbortError') {
+                    if (externalSignal?.aborted) {
+                        throw new Error("Import annulé par l'utilisateur.");
+                    }
+                    console.warn(`[AI Request] ⏱️ Timeout (${timeoutMs}ms) sur ${selectedModel} [Tentative ${attempt}/${maxRetries + 1}]`);
+                    if (attempt <= maxRetries && !externalSignal?.aborted) {
+                        console.info(`[AI Retry] ⏳ Réessai après timeout pour ${selectedModel}...`);
+                        await new Promise(r => setTimeout(r, 1000));
+                        cleanup();
+                        continue;
+                    }
+                    throw new Error(`La requête a expiré (timeout ${timeoutMs / 1000}s).`);
+                }
+                throw error;
+            } finally {
+                cleanup();
+            }
         }
     },
 
