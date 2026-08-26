@@ -48,22 +48,22 @@ export const MODEL_DESCRIPTIONS = {
     'openai-o3-mini': "<strong>⭐ Raisonnement.</strong> Modèle de raisonnement avancé d'OpenAI.",
     'openai-gpt-4o-mini': "Économique et performant.",
     // Google
-    'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
-    'gemini-3.7-flash': "Raisonnement adaptatif, dernière itération Google.",
+    'gemini-3.7-flash': "<strong>⭐ Recommandé.</strong> Dernière génération Google, raisonnement hybride ultra-rapide.",
+    'gemini-3.5-flash': "<strong>Rapide & Éprouvé.</strong> Réponse instantanée et grande fluidité.",
+    'gemini-2.5-pro': "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
-    'gemini-2.5-pro': "<strong>🔥 Puissant.</strong> Idéal pour les synthèses complexes et détaillées.",
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': "<strong>🆓 GRATUIT</strong> Llama 3.3 70B. Quota partagé quotidien.",
     // OpenRouter - Payants
-    'ministral-3b': "<strong>~0€</strong> Ministral 3 3B. Ultra économique, excellent français.",
-    'amazon-nova-v1-lite': "<strong>Économique.</strong> Amazon Nova Lite 1.0.",
-    'openrouter': "DeepSeek V3. Performant et économique.",
-    'deepseek-r1': "<strong>⭐ Raisonnement.</strong> DeepSeek R1 (via OpenRouter).",
-    'mistral-small': "<strong>Français.</strong> Mistral Small (via OpenRouter).",
-    'mistral-large': "Mistral Large (via OpenRouter). Pour textes nuancés.",
     'claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5 (via OpenRouter). Finesse stylistique.",
     'claude-3.7-sonnet': "Claude 3.7 Sonnet (via OpenRouter). Raisonnement hybride.",
     'claude-3.5-sonnet': "Claude 3.5 Sonnet (via OpenRouter). Précis et fluide.",
+    'openrouter': "DeepSeek V3. Performant et très économique.",
+    'deepseek-r1': "<strong>⭐ Raisonnement.</strong> DeepSeek R1 (via OpenRouter).",
+    'ministral-3b': "<strong>~0€</strong> Ministral 3 3B. Ultra économique, excellent français.",
+    'amazon-nova-v1-lite': "<strong>Économique.</strong> Amazon Nova Lite 1.0.",
+    'mistral-small': "<strong>Français.</strong> Mistral Small (via OpenRouter).",
+    'mistral-large': "Mistral Large (via OpenRouter). Pour textes nuancés.",
     // Ollama
     'ollama-qwen2.5:7b': "<strong>🏠 Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français.",
     'ollama-mistral:7b': "🏠 Local - Équilibré. Le standard Mistral 7B.",
@@ -73,12 +73,11 @@ export const MODEL_DESCRIPTIONS = {
     'anthropic-claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5. Finesse stylistique et équilibre.",
     'anthropic-claude-3-7-sonnet-latest': "Claude 3.7 Sonnet. Raisonnement hybride et style rédactionnel.",
     'anthropic-claude-3-5-sonnet-latest': "Claude 3.5 Sonnet. Rédaction fluide et nuancée.",
-    'anthropic-claude-3-5-haiku-latest': "<strong>Économique & Rapide.</strong> Claude 3.5 Haiku.",
-    'anthropic-claude-opus-5': "<strong>🔥 Le plus puissant.</strong> Claude Opus 5. Qualité maximale.",
+    'anthropic-claude-3-5-haiku-latest': "<strong>⚡ Économique & Rapide.</strong> Claude 3.5 Haiku.",
+    'anthropic-claude-opus-5': "<strong>🔥 Puissance maximale.</strong> Claude Opus 5. Qualité maximale.",
     // Mistral - API directe (Plan Experiment GRATUIT : 1B tokens/mois !)
-    // -latest = toujours la dernière version (actuellement Small 4, Large 3)
-    'mistral-direct-large-latest': "<strong>🆓 GRATUIT</strong> Mistral Large. Le plus puissant. 1B tokens/mois offerts.",
     'mistral-direct-small-latest': "<strong>🆓 GRATUIT ⭐</strong> Mistral Small. Multimodal + raisonnement. 1B tokens/mois offerts.",
+    'mistral-direct-large-latest': "<strong>🆓 GRATUIT</strong> Mistral Large. Le plus puissant. 1B tokens/mois offerts.",
 };
 
 /**
@@ -87,7 +86,7 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèles les plus récents d'abord, stables en fallback
-    google: ['gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+    google: ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
     openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'claude-3.5-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
@@ -105,7 +104,7 @@ export const FALLBACK_CONFIG = {
  * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
  */
 export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash
+    google: FALLBACK_CONFIG.google[0],       // gemini-3.7-flash
     openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
     openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
     ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen2.5:7b
@@ -117,24 +116,24 @@ export const PROVIDER_DEFAULT_MODELS = {
  * Noms courts des modèles pour l'affichage dans l'interface
  */
 export const MODEL_SHORT_NAMES = {
-    'gemini-3.5-flash': 'Gemini 3.5 Flash',
     'gemini-3.7-flash': 'Gemini 3.7 Flash',
-    'gemini-2.5-flash': 'Gemini 2.5 Flash',
+    'gemini-3.5-flash': 'Gemini 3.5 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
+    'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'openai-o3-mini': 'o3 Mini',
     'openai-gpt-4o-mini': 'GPT-4o Mini',
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': 'Llama 3.3 70B',
     // OpenRouter - Payants
-    'ministral-3b': 'Ministral 3 3B',
-    'amazon-nova-v1-lite': 'Nova Lite',
-    'openrouter': 'DeepSeek V3',
-    'deepseek-r1': 'DeepSeek R1',
-    'mistral-small': 'Mistral Small',
-    'mistral-large': 'Mistral Large',
     'claude-sonnet-5': 'Claude Sonnet 5',
     'claude-3.7-sonnet': 'Claude 3.7 Sonnet',
     'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
+    'openrouter': 'DeepSeek V3',
+    'deepseek-r1': 'DeepSeek R1',
+    'ministral-3b': 'Ministral 3 3B',
+    'amazon-nova-v1-lite': 'Nova Lite',
+    'mistral-small': 'Mistral Small',
+    'mistral-large': 'Mistral Large',
     // Ollama (local)
     'ollama-qwen2.5:7b': '🏠 Qwen 2.5 7B',
     'ollama-mistral:7b': '🏠 Mistral 7B',
@@ -147,8 +146,8 @@ export const MODEL_SHORT_NAMES = {
     'anthropic-claude-3-5-haiku-latest': 'Claude 3.5 Haiku',
     'anthropic-claude-opus-5': 'Claude Opus 5',
     // Mistral (API directe - GRATUIT)
-    'mistral-direct-large-latest': 'Mistral Large',
     'mistral-direct-small-latest': 'Mistral Small',
+    'mistral-direct-large-latest': 'Mistral Large',
 };
 
 
@@ -168,10 +167,10 @@ export const MODEL_SELECTOR_CONFIG = [
     {
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
-            { id: 'gemini-3.7-flash', qualifier: 'Raisonnement' },
+            { id: 'gemini-3.7-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.5-flash', qualifier: 'Rapide & Éprouvé' },
+            { id: 'gemini-2.5-pro', qualifier: 'Synthèses complexes' },
             { id: 'gemini-2.5-flash', qualifier: 'Stable' },
-            { id: 'gemini-2.5-pro', qualifier: 'Puissant' },
         ]
     },
     {
@@ -185,6 +184,7 @@ export const MODEL_SELECTOR_CONFIG = [
         models: [
             { id: 'claude-sonnet-5', qualifier: 'Recommandé' },
             { id: 'claude-3.7-sonnet', qualifier: 'Raisonnement' },
+            { id: 'claude-3.5-sonnet', qualifier: 'Stable' },
             { id: 'openrouter', qualifier: 'Économique' },
             { id: 'deepseek-r1', qualifier: 'Raisonnement' },
             { id: 'ministral-3b', qualifier: '~0€, Mistral' },
@@ -205,8 +205,9 @@ export const MODEL_SELECTOR_CONFIG = [
         models: [
             { id: 'anthropic-claude-sonnet-5', qualifier: 'Recommandé' },
             { id: 'anthropic-claude-3-7-sonnet-latest', qualifier: 'Raisonnement' },
+            { id: 'anthropic-claude-3-5-sonnet-latest', qualifier: 'Stable' },
             { id: 'anthropic-claude-3-5-haiku-latest', qualifier: 'Économique & Rapide' },
-            { id: 'anthropic-claude-opus-5', qualifier: 'Le plus puissant' },
+            { id: 'anthropic-claude-opus-5', qualifier: 'Puissance maximale' },
         ]
     },
     {
