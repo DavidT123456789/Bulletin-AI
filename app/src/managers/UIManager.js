@@ -175,7 +175,11 @@ export const UI = {
             notif.setAttribute('aria-live', 'polite');
         }
 
-        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
+        const iconHtml = coalescingOptions?.icon
+            ? `<iconify-icon icon="${coalescingOptions.icon}" aria-hidden="true"></iconify-icon>`
+            : (NOTIF_ICONS[type] || NOTIF_ICONS.info);
+
+        notif.innerHTML = `${iconHtml} <span>${message}</span>`;
 
         // Interaction: Click to dismiss
         notif.style.cursor = 'pointer';

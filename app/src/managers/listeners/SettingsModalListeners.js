@@ -1023,11 +1023,11 @@ export const SettingsModalListeners = {
 
                 if (isUpdateAvailable) {
                     btn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold" style="color: var(--primary-color);"></iconify-icon> Mise à jour dispo !';
-                    UI.showNotification("Une nouvelle version est disponible !", "success");
+                    UI.showNotification("Une nouvelle version est disponible !", "info", 4000, { icon: 'solar:download-minimalistic-linear' });
                     await new Promise((r) => setTimeout(r, 1600));
                 } else {
                     btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color);"></iconify-icon> À jour !';
-                    UI.showNotification("Votre application est à jour.", "info");
+                    UI.showNotification("Votre application est à jour.", "success");
                     await new Promise((r) => setTimeout(r, 1400));
                 }
             } catch (e) {
