@@ -21,6 +21,7 @@ import { ListViewManager } from './ListViewManager.js';
 
 import { TooltipsUI } from './TooltipsManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 
 let App;
 let UI;
@@ -429,8 +430,9 @@ export const AppreciationsManager = {
 
         if (button) UI.showInlineSpinner(button);
 
-        // Afficher le skeleton dans la ligne
+        // Afficher le skeleton dans la ligne et synchroniser le volet s'il est ouvert
         ListViewManager.setRowStatus(id, 'generating');
+        FocusPanelManager?.handleExternalGenerationStart?.(id);
 
         const originalResult = appState.generatedResults[resultIndex];
         originalResult.copied = false;
@@ -461,8 +463,9 @@ export const AppreciationsManager = {
                 appState.filteredResults[filteredIndex] = updatedResult;
             }
 
-            // Mettre à jour la ligne avec animation typewriter
+            // Mettre à jour la ligne avec animation typewriter et le volet s'il est ouvert
             await ListViewManager.updateRow(id, updatedResult, true);
+            await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
 
         } catch (e) {
             const msg = Utils.translateErrorMessage(e.message);
@@ -491,8 +494,9 @@ export const AppreciationsManager = {
                 appState.filteredResults[filteredIndex] = updatedResult;
             }
 
-            // Afficher l'erreur via updateRow
+            // Afficher l'erreur via updateRow et synchroniser le volet
             ListViewManager.updateRow(id, updatedResult, false);
+            await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, false);
 
             UI.showNotification(`Échec pour ${originalResult.prenom} : ${msg}`, 'error');
         } finally {

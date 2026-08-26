@@ -1555,6 +1555,63 @@ export const FocusPanelManager = {
     },
 
     /**
+     * Notify Focus Panel that generation started for a student from an external trigger (table/batch)
+     * @param {string} studentId
+     */
+    handleExternalGenerationStart(studentId) {
+        if (this.currentStudentId !== studentId) return;
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        if (generateBtn) UI.showInlineSpinner(generateBtn);
+        FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
+        this._showAppreciationSkeleton();
+    },
+
+    /**
+     * Notify Focus Panel that generation completed for a student from an external trigger
+     * @param {string} studentId
+     * @param {Object} result
+     * @param {boolean} [animate=true]
+     */
+    async handleExternalGenerationComplete(studentId, result, animate = true) {
+        if (this.currentStudentId !== studentId || !result) return;
+        const generateBtn = document.getElementById('focusGenerateBtn');
+        if (generateBtn) UI.hideInlineSpinner(generateBtn);
+
+        const appreciationEl = document.getElementById('focusAppreciationText');
+        const period = appState.currentPeriod;
+        const periodApp = result.studentData?.periods?.[period]?.appreciation;
+        const effectiveApp = periodApp || ((result.generationPeriod === period) ? result.appreciation : '');
+
+        if (result.errorMessage && result.errorPeriod === period) {
+            this._renderAppreciationText(result);
+            FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+            this._updateGenerateButton(result);
+            return;
+        }
+
+        if (effectiveApp) {
+            if (appreciationEl && animate) {
+                appreciationEl.classList.remove('empty');
+                const targetWordCount = Utils.countWords(effectiveApp);
+                FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
+                const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(effectiveApp));
+                await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+            } else if (appreciationEl) {
+                this._renderAppreciationText(result);
+            }
+
+            if (!result.historyPerPeriod) result.historyPerPeriod = {};
+            result.historyPerPeriod[period] = null;
+            FocusPanelHistory.load(studentId);
+            FocusPanelHistory.push(effectiveApp, 'original');
+
+            FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
+            FocusPanelStatus.updateSourceIndicator(result);
+            this._updateGenerateButton(result);
+        }
+    },
+
+    /**
      * Show skeleton loading in appreciation area
      * @private
      */

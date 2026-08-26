@@ -401,8 +401,9 @@ export const ListSelectionManager = {
 
             UI.showHeaderProgress(i + 1, total, studentName);
 
-            // Set current row status to "Generating"
+            // Set current row status to "Generating" and sync focus panel if open
             this.callbacks.setRowStatus(id, 'generating');
+            FocusPanelManager?.handleExternalGenerationStart?.(id);
 
             try {
                 // Reset history for regeneration (fresh start)
@@ -430,8 +431,9 @@ export const ListSelectionManager = {
                     appState.filteredResults[filteredIndex] = updatedResult;
                 }
 
-                // Update UI Row
+                // Update UI Row and Focus Panel
                 this.callbacks.updateStudentRow(id);
+                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
                 successCount++;
 
             } catch (e) {
@@ -464,6 +466,7 @@ export const ListSelectionManager = {
                 }
 
                 this.callbacks.updateStudentRow(id);
+                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedErrorResult, false);
             }
         }
 
