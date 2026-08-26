@@ -808,8 +808,22 @@ export const UI = {
 
     showLoadingOverlay(msg = 'Génération...') { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'flex'; if (DOM.loadingText) DOM.loadingText.textContent = msg; },
     hideLoadingOverlay() { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'none'; },
-    showInlineSpinner(el) { if (!el.dataset.originalContent) { el.dataset.originalContent = el.innerHTML; } el.innerHTML = `<div class="loading-spinner" style="margin:auto;"></div>`; el.disabled = true; },
-    hideInlineSpinner(el) { if (el.dataset.originalContent) { el.innerHTML = el.dataset.originalContent; delete el.dataset.originalContent; } el.disabled = false; },
+    showInlineSpinner(el) {
+        if (!el) return;
+        if (!el.dataset.originalContent) {
+            el.dataset.originalContent = el.innerHTML;
+        }
+        el.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize" class="loading-spinner-svg" aria-hidden="true"></iconify-icon>';
+        el.disabled = true;
+    },
+    hideInlineSpinner(el) {
+        if (!el) return;
+        if (el.dataset.originalContent) {
+            el.innerHTML = el.dataset.originalContent;
+            delete el.dataset.originalContent;
+        }
+        el.disabled = false;
+    },
 
     // ====================================================================
     //  DÉLÉGATIONS AUX SOUS-MANAGERS

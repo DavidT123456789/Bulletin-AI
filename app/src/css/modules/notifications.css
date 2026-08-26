@@ -400,6 +400,17 @@
     border-top-color: currentColor;
 }
 
+/* Modern SVG spinner for buttons & components */
+.loading-spinner-svg {
+    font-size: 1.25em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin: auto;
+    color: inherit;
+}
+
 @keyframes spin {
     from {
         transform: rotate(0deg);
