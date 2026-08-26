@@ -564,10 +564,10 @@ export const AIService = {
                     console.warn(`[AI Fallback] Modèle ${model} a échoué:`, error.message);
                     lastError = error;
 
-                    // Erreurs non réessayables : annulation utilisateur, clé invalide
+                    // Erreurs non réessayables : annulation explicite de l'utilisateur ou absence de clé
                     const isNonRetryable = error.message.includes('annulé') ||
                         error.message.includes('401') ||
-                        error.message.includes('Invalid API');
+                        error.message.toLowerCase().includes('clé api manquante');
 
                     if (isNonRetryable) {
                         throw error;
