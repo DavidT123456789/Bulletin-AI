@@ -421,16 +421,18 @@
 }
 
 /* Contour plus prononcé (35% d'opacité) au survol de la ligne ou de la note */
-.student-list-table tbody tr:hover .grade-value,
-.nebula-card:hover .grade-value,
-.nebula-card:hover .grade-bubble,
-.card-content-wrapper:hover .grade-value,
-.card-content-wrapper:hover .grade-bubble,
-.student-name-container:hover .grade-value,
-.student-name-container:hover .grade-bubble,
-.grade-bubble:hover,
-.grade-value:hover {
-    border-color: color-mix(in srgb, currentColor 35%, transparent) !important;
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .grade-value,
+    .nebula-card:hover .grade-value,
+    .nebula-card:hover .grade-bubble,
+    .card-content-wrapper:hover .grade-value,
+    .card-content-wrapper:hover .grade-bubble,
+    .student-name-container:hover .grade-value,
+    .student-name-container:hover .grade-bubble,
+    .grade-bubble:hover,
+    .grade-value:hover {
+        border-color: color-mix(in srgb, currentColor 35%, transparent) !important;
+    }
 }
 
 /* Note actuelle avec couleur sémantique pleine (Cartes seulement) */

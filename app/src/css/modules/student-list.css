@@ -241,19 +241,20 @@
     cursor: pointer;
 }
 
-.student-list-table tbody tr:hover td {
-    background: var(--item-hover-bg);
-}
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover td {
+        background: var(--item-hover-bg);
+    }
 
-/* Rise contrast of grade empty indicator on hover (flat design, no scale) */
-.student-list-table tbody tr:hover td.grade-cell .grade-empty {
-    color: var(--text-primary);
-}
+    /* Rise contrast of grade empty indicator on hover (flat design, no scale) */
+    .student-list-table tbody tr:hover td.grade-cell .grade-empty {
+        color: var(--text-primary);
+    }
 
-
-.student-list-table tbody tr:hover .grade-cell .grade-evolution,
-.student-list-table tbody tr:hover .evolution-cell .grade-evolution {
-    opacity: 1;
+    .student-list-table tbody tr:hover .grade-cell .grade-evolution,
+    .student-list-table tbody tr:hover .evolution-cell .grade-evolution {
+        opacity: 1;
+    }
 }
 
 /* === POLISH: Show Actions on Hover (Desktop) === */
@@ -472,8 +473,10 @@
     transition: color var(--transition-fast);
 }
 
-.student-list-table tbody tr:hover .student-name-cell .student-prenom {
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .student-name-cell .student-prenom {
+        color: var(--text-primary);
+    }
 }
 
 /* Grade columns */
@@ -921,42 +924,44 @@
     vertical-align: middle;
 }
 
-/* Subtle zoom only when hovering the appreciation preview directly */
-.appreciation-preview-wrapper:hover {
-    transform: scale(1.04);
-    z-index: 5;
-}
+@media (hover: hover) and (pointer: fine) {
+    /* Subtle zoom only when hovering the appreciation preview directly */
+    .appreciation-preview-wrapper:hover {
+        transform: scale(1.04);
+        z-index: 5;
+    }
 
-/* Hover effects apply to the preview INSIDE the wrapper (Direct Hover) */
-.appreciation-preview-wrapper:hover .appreciation-preview,
-.appreciation-preview:hover {
-    background: var(--surface-color) !important;
-    border-color: transparent !important;
-    box-shadow: var(--shadow-md) !important;
-    color: var(--text-primary) !important;
-}
+    /* Hover effects apply to the preview INSIDE the wrapper (Direct Hover) */
+    .appreciation-preview-wrapper:hover .appreciation-preview,
+    .appreciation-preview:hover {
+        background: var(--surface-color) !important;
+        border-color: transparent !important;
+        box-shadow: var(--shadow-md) !important;
+        color: var(--text-primary) !important;
+    }
 
-[data-theme="dark"] .appreciation-preview-wrapper:hover .appreciation-preview,
-[data-theme="dark"] .appreciation-preview:hover {
-    background: var(--bg-secondary) !important; /* Keep it dark */
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
-    color: var(--text-primary) !important;
-}
+    [data-theme="dark"] .appreciation-preview-wrapper:hover .appreciation-preview,
+    [data-theme="dark"] .appreciation-preview:hover {
+        background: var(--bg-secondary) !important; /* Keep it dark */
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
+        color: var(--text-primary) !important;
+    }
 
-/* When the parent row is hovered, appreciation preview background becomes white (or dark secondary) but has NO shadow */
-.student-list-table tbody tr:hover .appreciation-preview {
-    background: var(--surface-color) !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    color: var(--text-primary) !important;
-}
+    /* When the parent row is hovered, appreciation preview background becomes white (or dark secondary) but has NO shadow */
+    .student-list-table tbody tr:hover .appreciation-preview {
+        background: var(--surface-color) !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        color: var(--text-primary) !important;
+    }
 
-[data-theme="dark"] .student-list-table tbody tr:hover .appreciation-preview {
-    background: var(--bg-secondary) !important;
-    border-color: var(--border-color) !important;
-    box-shadow: none !important;
-    color: var(--text-primary) !important;
+    [data-theme="dark"] .student-list-table tbody tr:hover .appreciation-preview {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-color) !important;
+        box-shadow: none !important;
+        color: var(--text-primary) !important;
+    }
 }
 
 /* Appreciation Preview - Truncated inline display */
@@ -1001,28 +1006,30 @@
     border-color: transparent;
 }
 
-/* Harmonization: Apply hover effect to expanded view with enhanced zoom on wrapper */
-.student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover {
-    transform: scale(1.05); /* Wrapper zooms, carrying the badge with it! */
-    z-index: 5;
-}
+@media (hover: hover) and (pointer: fine) {
+    /* Harmonization: Apply hover effect to expanded view with enhanced zoom on wrapper */
+    .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover {
+        transform: scale(1.05); /* Wrapper zooms, carrying the badge with it! */
+        z-index: 5;
+    }
 
-/* Direct hover styling for full/expanded view card */
-.student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
-.student-list-table.appreciation-full-view .appreciation-preview:hover {
-    background: var(--surface-color) !important;
-    border-color: transparent !important;
-    box-shadow: var(--shadow-md) !important;
-    color: var(--text-primary) !important;
-    transform: none;
-}
+    /* Direct hover styling for full/expanded view card */
+    .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
+    .student-list-table.appreciation-full-view .appreciation-preview:hover {
+        background: var(--surface-color) !important;
+        border-color: transparent !important;
+        box-shadow: var(--shadow-md) !important;
+        color: var(--text-primary) !important;
+        transform: none;
+    }
 
-[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
-[data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview:hover {
-    background: var(--bg-secondary) !important; /* Keep it dark */
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
-    color: var(--text-primary) !important;
+    [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview-wrapper:hover .appreciation-preview,
+    [data-theme="dark"] .student-list-table.appreciation-full-view .appreciation-preview:hover {
+        background: var(--bg-secondary) !important; /* Keep it dark */
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
+        color: var(--text-primary) !important;
+    }
 }
 
 /* Subtle indicator removed - JS handles truncation with "..." */

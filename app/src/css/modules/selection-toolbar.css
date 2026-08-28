@@ -186,8 +186,16 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.student-avatar:hover {
-    transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+    .student-avatar:hover {
+        transform: scale(1.05);
+    }
+
+    .student-avatar:not(.is-selected):hover .avatar-selection-overlay {
+        opacity: 0.6;
+        transform: scale(1);
+        cursor: pointer;
+    }
 }
 
 .avatar-selection-overlay {
@@ -205,12 +213,6 @@
     transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     pointer-events: none;
     z-index: 2;
-}
-
-.student-avatar:not(.is-selected):hover .avatar-selection-overlay {
-    opacity: 0.6;
-    transform: scale(1);
-    cursor: pointer;
 }
 
 .student-avatar.is-selected .avatar-selection-overlay {

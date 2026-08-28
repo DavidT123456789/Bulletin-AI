@@ -67,8 +67,10 @@
     border-radius: 50%;
 }
 
-.student-avatar--editable:hover::after {
-    opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+    .student-avatar--editable:hover::after {
+        opacity: 1;
+    }
 }
 
 .student-avatar--editable::before {
@@ -93,8 +95,10 @@
     height: 22px;
 }
 
-.student-avatar--editable:hover::before {
-    opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+    .student-avatar--editable:hover::before {
+        opacity: 1;
+    }
 }
 
 /* Pending Editable State (creation mode - no ID yet) */
@@ -113,8 +117,10 @@
     transition: opacity 0.2s ease;
 }
 
-.student-avatar--editable-pending:hover::after {
-    opacity: 0.6;
+@media (hover: hover) and (pointer: fine) {
+    .student-avatar--editable-pending:hover::after {
+        opacity: 0.6;
+    }
 }
 
 /* Loading State */
@@ -163,9 +169,7 @@
         box-shadow 0.25s ease;
 }
 
-/* Hover zoom triggered by entire row hover - photo zooms but has no shadow */
-/* Also maintain zoom when student is focused (panel open) OR selected via checkbox */
-.student-list-table tbody tr:hover .student-avatar,
+/* Maintain zoom when student is focused (panel open) OR selected via checkbox */
 .student-list-table tbody tr.focus-active .student-avatar,
 .student-list-table tbody tr .student-avatar.is-selected {
     transform: scale(1.18);
@@ -181,6 +185,14 @@
 [data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar,
 [data-theme="dark"] .student-list-table tbody tr .student-avatar.is-selected {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover zoom triggered by entire row hover ONLY on hover-capable devices (Desktop with mouse) */
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .student-avatar {
+        transform: scale(1.18);
+        z-index: 10;
+    }
 }
 
 /* === EXPANDED VIEW: Avatar Left + Stacked Text (Disposition 2) === */
@@ -247,25 +259,28 @@
     }
 }
 
-/* Zoom in expanded view - triggered by row hover, focus state or selection */
-.appreciation-full-view tbody tr:hover .student-avatar,
+/* Focused or selected states get a shadow and zoom to indicate active state in expanded view */
 .appreciation-full-view tbody tr.focus-active .student-avatar,
 .appreciation-full-view tbody tr .student-avatar.is-selected {
     transform: scale(1.14) !important;
     /* Slightly less zoom as avatar is bigger */
     z-index: 10;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-/* Focused or selected states get a shadow to indicate active state in expanded view */
-.appreciation-full-view tbody tr.focus-active .student-avatar,
-.appreciation-full-view tbody tr .student-avatar.is-selected {
     box-shadow: var(--shadow-sm);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 [data-theme="dark"] .appreciation-full-view tbody tr.focus-active .student-avatar,
 [data-theme="dark"] .appreciation-full-view tbody tr .student-avatar.is-selected {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Zoom in expanded view - triggered by row hover ONLY on hover-capable devices (Desktop with mouse) */
+@media (hover: hover) and (pointer: fine) {
+    .appreciation-full-view tbody tr:hover .student-avatar {
+        transform: scale(1.14) !important;
+        z-index: 10;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
 }
 
 /* Keyframe: subtle blur-to-sharp masks layout change */
@@ -328,38 +343,19 @@
     transition: box-shadow 0.25s ease;
 }
 
-.focus-panel-avatar-container:hover {
-    transform: scale(1.15);
-}
+@media (hover: hover) and (pointer: fine) {
+    .focus-panel-avatar-container:hover {
+        transform: scale(1.15);
+    }
 
-.focus-panel-avatar-container:hover .student-avatar {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-}
+    .focus-panel-avatar-container:hover .student-avatar {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    }
 
-/* Remove photo button */
-.avatar-remove-btn {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--error-color);
-    color: white;
-    border: 2px solid var(--bg-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    cursor: pointer;
-    opacity: 0;
-    transform: scale(0.8);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.focus-panel-avatar-container:hover .avatar-remove-btn {
-    opacity: 1;
-    transform: scale(1);
+    .focus-panel-avatar-container:hover .avatar-remove-btn {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Dark Mode Adjustments */
