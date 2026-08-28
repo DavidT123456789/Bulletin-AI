@@ -83,6 +83,7 @@ export const ListViewEvents = {
                 const dropdown = menu.closest('.action-dropdown');
                 if (dropdown) {
                     dropdown.classList.remove('open');
+                    dropdown.querySelector('.btn-action-menu')?.blur?.();
                 }
 
                 // Clear any existing timeout to avoid conflict
@@ -113,6 +114,7 @@ export const ListViewEvents = {
                 const dropdown = menu.closest('.global-actions-dropdown');
                 if (dropdown) {
                     dropdown.classList.remove('open');
+                    dropdown.querySelector('.btn-action-menu-header')?.blur?.();
                 }
             });
         };
@@ -139,6 +141,8 @@ export const ListViewEvents = {
             const globalMenuBtn = target.closest('.btn-action-menu-header');
             if (globalMenuBtn) {
                 e.stopPropagation();
+                globalMenuBtn.blur();
+                setTimeout(() => globalMenuBtn.blur(), 50);
                 const dropdown = globalMenuBtn.closest('.global-actions-dropdown');
                 const menu = dropdown?.querySelector('.global-actions-dropdown-menu');
 
