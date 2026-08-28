@@ -811,7 +811,7 @@
 }
 
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
-    color: var(--color-sky); /* Keeps the active color state, but inherits opacity:0 */
+    color: var(--primary-color); /* Keeps the active color state, but inherits opacity:0 */
 }
 
 /* Desktop only: width optimizations are irrelevant on mobile card layout */

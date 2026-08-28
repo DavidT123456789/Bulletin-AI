@@ -31,7 +31,7 @@
 
 .inline-search-trigger-btn:hover {
     background: var(--item-hover-bg); /* Subtle semi-transparent hover */
-    color: var(--color-sky) !important;
+    color: var(--primary-color) !important;
     opacity: 1 !important;
     transform: translateY(-50%) scale(1.1);
 }
@@ -50,7 +50,12 @@
 /* Parent hover reveals button */
 .name-header-with-search:hover .inline-search-trigger-btn {
     opacity: 0.7;
-    color: var(--color-sky);
+    color: var(--text-secondary);
+}
+
+.name-header-with-search:hover .inline-search-trigger-btn:hover {
+    opacity: 1;
+    color: var(--primary-color);
 }
 
 /* Hover override - inherits from .header-action-trigger but keep specific transform */
@@ -71,8 +76,8 @@
     padding: 0 var(--space-3);
     background: var(--surface-color);
     border-radius: var(--radius-pill);
-    border: 1.5px solid var(--color-sky);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
     z-index: 50;
     /* CRITICAL: High z-index to cover all header elements including generation buttons */
     height: 38px;
@@ -82,7 +87,12 @@
     visibility: hidden;
     pointer-events: none;
     transform: translateY(-50%) scale(0.95);
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0.3s;
 }
 
 .inline-search-container.active {
@@ -92,9 +102,14 @@
     transform: translateY(-50%) scale(1);
 }
 
+.inline-search-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12), var(--shadow-sm);
+}
+
 /* Search icon in active search */
 .inline-search-container .search-icon {
-    color: var(--color-sky);
+    color: var(--text-tertiary);
     font-size: 1.05rem;
     flex-shrink: 0;
     /* FIX: Reset global absolute positioning styles */
@@ -104,6 +119,12 @@
     transform: none;
     margin-right: 8px;
     z-index: 1;
+    transition: color var(--transition-fast);
+}
+
+.inline-search-container:focus-within .search-icon,
+.inline-search-container.has-value .search-icon {
+    color: var(--primary-color);
 }
 
 /* Search input field */
@@ -241,7 +262,12 @@
    ==================================================================== */
 [data-theme="dark"] .inline-search-container {
     background: var(--surface-color);
-    border-color: rgba(var(--primary-color-rgb), 0.4);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .inline-search-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.25), var(--shadow-sm);
 }
 
 /* ====================================================================
