@@ -352,32 +352,21 @@
 .stats-container {
     grid-area: stats;
     display: grid;
-    grid-template-columns: repeat(3, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-5);
     margin: -24px -24px calc(var(--space-5) - 24px) -24px;
     padding: 24px 24px 28px 24px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-/* Hide scrollbar when not needed (desktop) */
+/* Hide scrollbar when not needed */
 .stats-container::-webkit-scrollbar {
-    height: 6px;
-}
-
-.stats-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.stats-container::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-}
-
-.stats-container::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
+    display: none;
+    height: 0;
+    width: 0;
 }
 
 /* Default: hide pagination dots */
@@ -385,8 +374,8 @@
     display: none;
 }
 
-/* Mobile: Carousel behavior for stats (iOS Scroll Snap) */
-@media (max-width: 700px) {
+/* Mobile & Tablet: Carousel behavior for stats (iOS Scroll Snap) */
+@media (max-width: 768px) {
     .stats-container {
         display: flex;
         overflow-x: auto;
@@ -813,12 +802,13 @@
 /* === Légende Interactive Premium Floating Bento === */
 .evolution-card .evolution-legend {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     margin-top: 12px;
     flex-wrap: nowrap;
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 0;
+    width: 100%;
 }
 
 .evolution-card .legend-item {
@@ -827,14 +817,14 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 12px 8px;
+    padding: 12px 6px;
     border-radius: var(--radius-md);
     cursor: pointer;
     background: var(--item-idle-bg); /* Fond plat et neutre par défaut pour éviter le card-on-card */
     border: 1px solid transparent; /* Pas de contour par défaut */
     box-shadow: none; /* Pas d'ombre par défaut pour la clarté */
-    flex: 1;
-    min-width: unset;
+    flex: 1 1 0;
+    min-width: 0;
     text-align: center;
     transition: transform 0.4s var(--ease-spring), 
                 box-shadow 0.4s var(--ease-spring), 
@@ -1217,12 +1207,12 @@
    
    LAYOUT STRATEGY:
    - Default (>900px): 3-column grid with generous spacing
-   - Tablet (701–900px): 3-column grid with compact spacing
-   - Mobile (≤700px): Full-bleed scroll-snap carousel (defined above)
+   - Tablet (769–900px): 3-column grid with compact spacing
+   - Mobile & Tablet (≤768px): Full-bleed scroll-snap carousel (defined above)
    ==================================================================== */
 
 /* Tablette: Compact grid — only applies above carousel breakpoint */
-@media (max-width: 900px) and (min-width: 701px) {
+@media (max-width: 900px) and (min-width: 769px) {
     .stats-container {
         gap: var(--space-3);
     }

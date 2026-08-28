@@ -1563,6 +1563,7 @@
     .student-list-table td {
         border-bottom: none !important;
         padding: 0 !important;
+        background: transparent !important;
     }
 
     /* 1. Identity (Top) */
