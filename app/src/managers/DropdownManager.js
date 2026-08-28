@@ -303,7 +303,13 @@ export const DropdownManager = {
     closeAll() {
         document.querySelectorAll('.custom-dropdown.open').forEach(dd => {
             dd.classList.remove('open');
-            dd.querySelector('.custom-dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+            const trigger = dd.querySelector('.custom-dropdown-trigger');
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'false');
+                if (document.activeElement === trigger && !trigger.matches(':focus-visible')) {
+                    trigger.blur();
+                }
+            }
             dd.querySelectorAll('.custom-dropdown-option.focused').forEach(opt => {
                 opt.classList.remove('focused');
             });

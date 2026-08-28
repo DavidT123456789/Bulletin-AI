@@ -91,9 +91,68 @@ input[type="radio"]:focus-visible+label::before {
     border-radius: 50%;
 }
 
-/* Remove default outline on mouse users (only show for keyboard) */
+/* Remove default outline and shadow on pointer/touch users (only show for keyboard) */
 :focus:not(:focus-visible) {
     outline: none;
+    box-shadow: none;
+}
+
+button:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible),
+.btn-primary:focus:not(:focus-visible),
+.btn-secondary:focus:not(:focus-visible),
+.btn-icon:focus:not(:focus-visible),
+.custom-dropdown-trigger:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* ====================================================================
+   Touch Interaction & Anti-Sticky-Hover (iOS / Touch Ergonomics)
+   Empêche le surlignement / relief fantôme de rester figé au tap tactile
+   ==================================================================== */
+@media (hover: none), (pointer: coarse) {
+    /* Reset sticky hover effects on touch devices */
+    button:hover:not(:active):not(:focus-visible),
+    .btn:hover:not(:active):not(:focus-visible),
+    .btn-secondary:hover:not(:active):not(:focus-visible),
+    .btn-danger:hover:not(:active):not(:focus-visible),
+    .btn-danger-outline:hover:not(:active):not(:focus-visible),
+    .btn-success:hover:not(:active):not(:focus-visible),
+    .btn-warning:hover:not(:active):not(:focus-visible),
+    .btn-purple:hover:not(:active):not(:focus-visible),
+    .btn-primary:hover:not(:active):not(:focus-visible),
+    .btn-ai:hover:not(:active):not(:focus-visible),
+    .btn-organic:hover:not(:active):not(:focus-visible),
+    .btn-icon:hover:not(:active):not(:focus-visible),
+    .custom-dropdown-trigger:hover:not(.open):not(:focus-visible),
+    .custom-dropdown-option:hover:not(.selected):not(:focus-visible),
+    .btn-dropdown-item:hover:not(:focus-visible),
+    .tab-btn:hover:not(.active):not(:focus-visible),
+    .settings-tab-btn:hover:not(.active):not(:focus-visible),
+    .card:hover:not(:active),
+    .stat-card:hover:not(:active),
+    .student-card:hover:not(:active),
+    .student-row:hover:not(:active) {
+        transform: none !important;
+        background-image: none !important;
+    }
+
+    /* AI buttons sweep animation should not get stuck on mobile */
+    .btn-ai:hover:not(:active)::before {
+        animation: none !important;
+    }
+
+    /* Native-grade tactile micro-feedback during physical touch */
+    button:active:not(:disabled),
+    .btn:active:not(:disabled),
+    .custom-dropdown-trigger:active:not(.disabled),
+    .tab-btn:active,
+    .btn-icon:active,
+    .btn-dropdown-item:active {
+        transform: scale(0.97) !important;
+        transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1);
+    }
 }
 
 /* High contrast mode support */

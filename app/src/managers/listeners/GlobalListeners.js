@@ -413,32 +413,62 @@ export const GlobalListeners = {
     },
 
     /**
-     * Empêche les surbrillances/focus persistants sur les lignes d'élèves et
-     * leurs sous-composants sur mobile (via pointer: coarse) en les dé-focusant (blur)
-     * immédiatement après le focus (résout le bug du bouton retour).
+     * Empêche les surbrillances et focus/relief persistants sur les boutons,
+     * triggers de menu et composants lors des interactions tactiles (sticky hover / sticky focus).
      * @private
      */
     _setupTouchFocusListener() {
-        if (window.matchMedia('(pointer: coarse)').matches) {
-            document.addEventListener('focus', (e) => {
-                const active = e.target;
-                if (active && active !== document.body) {
-                    const isRowOrChild = active.classList.contains('student-row') || 
-                                         active.closest('.student-row');
-                    const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || 
-                                    active.isContentEditable || 
-                                    active.closest('[contenteditable="true"]');
-                    
-                    if (isRowOrChild && !isInput) {
-                        // Délai minimal pour éviter les conflits d'événements click/focus
-                        setTimeout(() => {
-                            if (document.activeElement === active) {
-                                active.blur();
-                            }
-                        }, 50);
+        const releaseTouchFocus = (target) => {
+            if (!target || target === document.body) return;
+
+            const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+                            target.isContentEditable ||
+                            target.closest?.('[contenteditable="true"]');
+            if (isInput) return;
+
+            const interactive = target.closest?.('button, .btn, [role="button"], .custom-dropdown-trigger, .tab-btn, .settings-tab-btn, .btn-icon, .close-modal-btn, .student-row, .card, .btn-dropdown-item');
+            if (interactive) {
+                setTimeout(() => {
+                    if (document.activeElement === interactive || interactive.contains(document.activeElement)) {
+                        if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) && !document.activeElement?.matches?.(':focus-visible')) {
+                            document.activeElement?.blur?.();
+                        }
                     }
+                }, 60);
+            }
+        };
+
+        // Détection dynamique des fins d'interactions tactiles
+        document.addEventListener('pointerup', (e) => {
+            if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                releaseTouchFocus(e.target);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            releaseTouchFocus(e.target);
+        }, { passive: true });
+
+        // Fallback global pour focus non-clavier sur écran tactile
+        document.addEventListener('focusin', (e) => {
+            const active = e.target;
+            if (!active || active === document.body) return;
+
+            const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) ||
+                            active.isContentEditable ||
+                            active.closest?.('[contenteditable="true"]');
+            if (isInput) return;
+
+            if (window.matchMedia('(pointer: coarse)').matches) {
+                const isInteractive = active.matches?.('button, .btn, [role="button"], .custom-dropdown-trigger, .student-row, .tab-btn, .btn-icon');
+                if (isInteractive) {
+                    setTimeout(() => {
+                        if (document.activeElement === active && !active.matches?.(':focus-visible')) {
+                            active.blur?.();
+                        }
+                    }, 80);
                 }
-            }, true);
-        }
+            }
+        }, true);
     }
 };

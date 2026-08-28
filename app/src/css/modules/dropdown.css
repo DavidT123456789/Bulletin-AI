@@ -27,14 +27,20 @@
     text-align: left;
 }
 
-.custom-dropdown-trigger:hover:not(.disabled) {
-    border-color: transparent;
-    /* Subtle primary tint + gradient border (consistent with inputs) */
-    background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
-        linear-gradient(var(--bg-color), var(--bg-color)),
-        linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
-    background-origin: padding-box, padding-box, border-box;
-    background-clip: padding-box, padding-box, border-box;
+@media (hover: hover) and (pointer: fine) {
+    .custom-dropdown-trigger:hover:not(.disabled) {
+        border-color: transparent;
+        /* Subtle primary tint + gradient border (consistent with inputs) */
+        background-image: linear-gradient(rgba(var(--primary-color-rgb), 0.03), rgba(var(--primary-color-rgb), 0.03)),
+            linear-gradient(var(--bg-color), var(--bg-color)),
+            linear-gradient(90deg, rgba(var(--primary-color-rgb), 0.5) 0%, rgba(var(--primary-color-rgb), 0.5) 100%);
+        background-origin: padding-box, padding-box, border-box;
+        background-clip: padding-box, padding-box, border-box;
+    }
+}
+
+.custom-dropdown-trigger:active:not(.disabled) {
+    transform: scale(0.985);
 }
 
 .custom-dropdown.open .custom-dropdown-trigger {
@@ -256,9 +262,15 @@
 }
 
 /* Hover harmonisé et épuré (Fond neutre, texte foncé) */
-.custom-dropdown-option:hover {
-    background-color: var(--item-hover-bg);
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    .custom-dropdown-option:hover {
+        background-color: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
+.custom-dropdown-option:active:not(.disabled) {
+    background-color: rgba(var(--primary-color-rgb), 0.12);
 }
 
 /* Sélection subtile et cohérente */
@@ -373,26 +385,15 @@
 }
 
 /* Hover harmonisé avec le global (Fond neutre, texte foncé) */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option:hover {
-    background-color: var(--item-hover-bg);
-    color: var(--text-primary);
-}
+@media (hover: hover) and (pointer: fine) {
+    .custom-dropdown[data-for="sortSelect"] .custom-dropdown-option:hover {
+        background-color: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
 
-/* Cacher la coche dans le dropdown de tri */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option-check {
-    display: none;
-}
-
-/* Sélection subtile, cohérente avec le design global */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-/* Hover sur option sélectionnée */
-.custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected:hover {
-    background: rgba(var(--primary-color-rgb), 0.18);
+    .custom-dropdown[data-for="sortSelect"] .custom-dropdown-option.selected:hover {
+        background: rgba(var(--primary-color-rgb), 0.18);
+    }
 }
 
 /* Supprimer l'outline bleu voyant sur l'option focused */
