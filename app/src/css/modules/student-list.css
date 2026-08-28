@@ -295,7 +295,7 @@
 }
 
 .student-list-table tbody tr.focus-active {
-    background: var(--item-active-bg);
+    background: color-mix(in srgb, var(--surface-color), var(--text-primary) 7%);
 }
 
 /* Flash animation when exiting the Focus Panel to keep the spatial reference */
@@ -306,10 +306,10 @@
 
 @keyframes focus-row-flash {
     0% {
-        background-color: var(--item-active-bg);
+        background-color: color-mix(in srgb, var(--surface-color), var(--text-primary) 7%);
     }
     100% {
-        background-color: transparent;
+        background-color: var(--surface-color);
     }
 }
 
@@ -349,15 +349,15 @@
 /* Animation de highlight subtile lors du filtrage */
 @keyframes row-filter-highlight {
     0% {
-        background-color: transparent;
+        background-color: var(--surface-color);
     }
 
     30% {
-        background-color: var(--item-active-bg);
+        background-color: color-mix(in srgb, var(--surface-color), var(--text-primary) 7%);
     }
 
     100% {
-        background-color: transparent;
+        background-color: var(--surface-color);
     }
 }
 
@@ -1627,7 +1627,9 @@
         flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
-        transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+        transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+                    box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+                    background-color var(--transition-fast);
     }
 
     [data-theme="dark"] .student-list-table tbody tr {
