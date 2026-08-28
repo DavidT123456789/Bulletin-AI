@@ -434,7 +434,7 @@ export const GlobalListeners = {
                             document.activeElement?.blur?.();
                         }
                     }
-                }, 60);
+                }, 120);
             }
         };
 
@@ -466,7 +466,7 @@ export const GlobalListeners = {
                         if (document.activeElement === active && !active.matches?.(':focus-visible')) {
                             active.blur?.();
                         }
-                    }, 80);
+                    }, 120);
                 }
             }
         }, true);

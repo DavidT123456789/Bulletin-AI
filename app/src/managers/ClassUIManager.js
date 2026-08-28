@@ -179,6 +179,7 @@ export const ClassUIManager = {
 
         this._isDropdownOpen = false;
         DOM.headerClassChip?.classList.remove('active');
+        DOM.headerClassChip?.blur?.();
         DOM.classDropdown.classList.remove('visible');
 
         // Hide after animation

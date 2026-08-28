@@ -21,28 +21,31 @@
     height: 38px;
 }
 
-.header-gen-dashboard:hover {
-    background: linear-gradient(135deg,
-            rgba(var(--surface-color-rgb, 255, 255, 255), 0.85),
-            rgba(var(--surface-color-rgb, 255, 255, 255), 0.95));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-color: transparent;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
-}
+@media (hover: hover) and (pointer: fine) {
+    .header-gen-dashboard:hover {
+        background: linear-gradient(135deg,
+                rgba(var(--surface-color-rgb, 255, 255, 255), 0.85),
+                rgba(var(--surface-color-rgb, 255, 255, 255), 0.95));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-color: transparent;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+    }
 
-[data-theme="dark"] .header-gen-dashboard:hover {
-    background: linear-gradient(135deg,
-            rgba(20, 20, 30, 0.9),
-            rgba(30, 30, 45, 0.95));
-    border-color: transparent;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    transform: translateY(-1px);
+    [data-theme="dark"] .header-gen-dashboard:hover {
+        background: linear-gradient(135deg,
+                rgba(20, 20, 30, 0.9),
+                rgba(30, 30, 45, 0.95));
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        transform: translateY(-1px);
+    }
 }
 
 .header-gen-dashboard:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
     box-shadow: none;
 }
 

@@ -55,6 +55,7 @@ export const GeneralListeners = {
 
                 DOM.headerMenuDropdown.classList.remove('open');
                 DOM.headerMenuBtn.classList.remove('active');
+                DOM.headerMenuBtn.blur();
 
                 // RESTORE to header if it was teleported
                 if (DOM.headerMenuDropdown.parentElement === document.body && originalParent) {

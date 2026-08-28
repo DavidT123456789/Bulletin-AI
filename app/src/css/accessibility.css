@@ -112,30 +112,25 @@ button:focus:not(:focus-visible),
    Empêche le surlignement / relief fantôme de rester figé au tap tactile
    ==================================================================== */
 @media (hover: none), (pointer: coarse) {
-    /* Reset sticky hover effects on touch devices */
+    /* Prevent sticky translateY lifts and elevation shadows on touch devices */
     button:hover:not(:active):not(:focus-visible),
     .btn:hover:not(:active):not(:focus-visible),
     .btn-secondary:hover:not(:active):not(:focus-visible),
-    .btn-danger:hover:not(:active):not(:focus-visible),
-    .btn-danger-outline:hover:not(:active):not(:focus-visible),
-    .btn-success:hover:not(:active):not(:focus-visible),
-    .btn-warning:hover:not(:active):not(:focus-visible),
-    .btn-purple:hover:not(:active):not(:focus-visible),
-    .btn-primary:hover:not(:active):not(:focus-visible),
-    .btn-ai:hover:not(:active):not(:focus-visible),
-    .btn-organic:hover:not(:active):not(:focus-visible),
     .btn-icon:hover:not(:active):not(:focus-visible),
     .custom-dropdown-trigger:hover:not(.open):not(:focus-visible),
     .custom-dropdown-option:hover:not(.selected):not(:focus-visible),
     .btn-dropdown-item:hover:not(:focus-visible),
     .tab-btn:hover:not(.active):not(:focus-visible),
     .settings-tab-btn:hover:not(.active):not(:focus-visible),
+    .header-context-chip:hover:not(.active):not(:focus-visible),
+    .header-gen-dashboard:hover:not(:focus-visible),
+    .pill-segment:hover:not(.active):not(:focus-visible),
     .card:hover:not(:active),
     .stat-card:hover:not(:active),
     .student-card:hover:not(:active),
     .student-row:hover:not(:active) {
         transform: none !important;
-        background-image: none !important;
+        box-shadow: none;
     }
 
     /* AI buttons sweep animation should not get stuck on mobile */
@@ -143,15 +138,20 @@ button:focus:not(:focus-visible),
         animation: none !important;
     }
 
-    /* Native-grade tactile micro-feedback during physical touch */
-    button:active:not(:disabled),
-    .btn:active:not(:disabled),
-    .custom-dropdown-trigger:active:not(.disabled),
-    .tab-btn:active,
-    .btn-icon:active,
-    .btn-dropdown-item:active {
-        transform: scale(0.97) !important;
-        transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1);
+    /* Smooth and fast return after touch tap */
+    .btn,
+    button,
+    .custom-dropdown-trigger,
+    .header-context-chip,
+    .header-gen-dashboard,
+    .pill-segment,
+    .tab-btn,
+    .btn-icon,
+    .btn-dropdown-item {
+        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+                    background-color 0.15s ease,
+                    filter 0.15s ease,
+                    box-shadow 0.15s ease !important;
     }
 }
 
