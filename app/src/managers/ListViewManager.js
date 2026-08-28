@@ -425,7 +425,8 @@ export const ListViewManager = {
             table.classList.add('appreciation-full-view');
 
             measurements.forEach(m => {
-                m.endHeight = m.element.offsetHeight;
+                // Measure with buffer to prevent any end-of-stroke clipping or unblocking
+                m.endHeight = Math.max(m.element.offsetHeight, m.element.scrollHeight) + 12;
             });
 
             // 3. Lock to start height
@@ -448,7 +449,7 @@ export const ListViewManager = {
             // 5. Play fluid expansion with iOS standard cubic-bezier
             requestAnimationFrame(() => {
                 measurements.forEach(m => {
-                    m.element.style.transition = 'max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1), padding 0.35s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
+                    m.element.style.transition = 'max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), padding 0.4s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
                     m.element.style.maxHeight = `${m.endHeight}px`;
                 });
             });
@@ -460,7 +461,7 @@ export const ListViewManager = {
                     m.element.style.maxHeight = '';
                 });
                 this._toggleTransitionTimeout = null;
-            }, 360);
+            }, 480);
 
         } else {
             // === COLLAPSE (Extended -> Compact) ===
@@ -470,43 +471,44 @@ export const ListViewManager = {
                 startHeight: preview.offsetHeight
             }));
 
-            // 2. Micro-dissolve text so lines are not clipped during height transition
+            // 2. Lock starting heights immediately without latency
             previews.forEach(el => {
-                el.style.transition = 'opacity 0.12s ease-out';
-                el.style.opacity = '0.25';
+                el.style.transition = 'none';
                 el.style.maxHeight = `${el.offsetHeight}px`;
             });
 
             const targetCompactHeight = window.innerWidth <= 768 ? '52px' : '34px';
 
-            // 3. After text dissolution, remove full-view class and morph height down cleanly
-            this._toggleTransitionTimeout = setTimeout(() => {
-                table.classList.remove('appreciation-full-view');
-                header?.classList.remove('expanded-view');
-                updateTooltip('Voir tout le texte');
-                if (icon) icon.setAttribute('icon', 'solar:maximize-square-linear');
-                if (mobileIcon) mobileIcon.setAttribute('icon', 'solar:maximize-square-linear');
+            // 3. Remove class & update UI immediately at t=0
+            table.classList.remove('appreciation-full-view');
+            header?.classList.remove('expanded-view');
+            updateTooltip('Voir tout le texte');
+            if (icon) icon.setAttribute('icon', 'solar:maximize-square-linear');
+            if (mobileIcon) mobileIcon.setAttribute('icon', 'solar:maximize-square-linear');
 
-                appState.isAppreciationFullView = false;
-                StorageManager.saveAppState();
+            appState.isAppreciationFullView = false;
+            StorageManager.saveAppState();
 
-                // Animate height to compact line & fade back in
+            // Force reflow
+            void table.offsetHeight;
+
+            // 4. Animate smoothly to compact line
+            requestAnimationFrame(() => {
                 measurements.forEach(m => {
-                    m.element.style.transition = 'max-height 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease-out, padding 0.25s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
+                    m.element.style.transition = 'max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1), padding 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.2s ease';
                     m.element.style.maxHeight = targetCompactHeight;
-                    m.element.style.opacity = '1';
                 });
+            });
 
-                // Cleanup
-                this._toggleTransitionTimeout = setTimeout(() => {
-                    measurements.forEach(m => {
-                        m.element.style.transition = '';
-                        m.element.style.maxHeight = '';
-                        m.element.style.opacity = '';
-                    });
-                    this._toggleTransitionTimeout = null;
-                }, 260);
-            }, 110);
+            // 5. Cleanup
+            this._toggleTransitionTimeout = setTimeout(() => {
+                measurements.forEach(m => {
+                    m.element.style.transition = '';
+                    m.element.style.maxHeight = '';
+                    m.element.style.opacity = '';
+                });
+                this._toggleTransitionTimeout = null;
+            }, 440);
         }
     }
 };

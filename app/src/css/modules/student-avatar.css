@@ -148,18 +148,18 @@
     /* Allow avatar zoom to overflow */
     overflow: visible;
     /* Smooth transition for expand/collapse layout change */
-    transition: flex-direction 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        align-items 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        gap 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        padding-left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: flex-direction 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        align-items 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        gap 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        padding-left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Avatar size transition for expand/collapse */
 .student-identity-wrapper .student-avatar {
-    transition: width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        height 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        font-size 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        font-size 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
         box-shadow 0.25s ease;
 }
 
@@ -193,7 +193,7 @@
     /* Slight indent for visual hierarchy */
 
     /* Blur-to-sharp animation masks the layout change */
-    animation: identity-expand-reveal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: identity-expand-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Larger premium avatar in expanded view */
@@ -203,7 +203,7 @@
     font-size: 22px;
 
     /* Opacity-only animation, transform managed by transition */
-    animation: avatar-expand-fade 0.35s ease-out forwards;
+    animation: avatar-expand-fade 0.4s ease-out forwards;
     will-change: transform, width, height;
 }
 
@@ -231,7 +231,7 @@
     font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
-    animation: text-expand-slide 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: text-expand-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Style the firstname (span) within the stack */
@@ -260,7 +260,7 @@
     transform: scale(1.14) !important;
     /* Slightly less zoom as avatar is bigger */
     z-index: 10;
-    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1) !important;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 /* Focused or selected states get a shadow to indicate active state in expanded view */
