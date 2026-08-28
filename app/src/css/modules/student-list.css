@@ -97,25 +97,28 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Effet de survol via pseudo-élément pour préserver le fond du thead */
+/* Effet de survol / tap via pseudo-élément pour préserver le fond du thead */
 .sortable-header::after {
     content: '';
     position: absolute;
     inset: 0;
     background-color: var(--item-hover-bg);
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.35s ease-out;
     pointer-events: none;
     z-index: 0;
     border-radius: inherit;
 }
 
-/* Active / Tap feedback (Touch & Mouse - auto-clears upon release) */
-.sortable-header:active::after {
-    opacity: 1;
+/* Active / Tap feedback (Touch & Mouse - instant on press, smooth 350ms fade on release) */
+.sortable-header:active::after,
+.sortable-header.active-sort:active::after {
+    opacity: 1 !important;
+    transition: opacity 0s;
 }
 
-.sortable-header:active {
+.sortable-header:active,
+.sortable-header.active-sort:active {
     color: var(--text-primary);
 }
 
@@ -152,7 +155,6 @@
 .sortable-header.active-sort,
 .sortable-header.active-sort:focus {
     color: var(--text-primary);
-    background-color: transparent !important;
     outline: none;
 }
 
@@ -163,12 +165,6 @@
 /* Disable active-sort hover effect when hovering search button */
 .name-header-with-search.active-sort:has(.inline-search-trigger-btn:hover) {
     background-color: transparent !important;
-}
-
-/* Disable pseudo-element on active-sort (we use direct background instead) */
-.sortable-header.active-sort::after,
-.sortable-header.active-sort:hover::after {
-    opacity: 0 !important;
 }
 
 /* Header Content Alignment Wrapper - Ensures perfect centering */
@@ -835,17 +831,27 @@
     }
 }
 
-/* Tablet (769px - 1100px) - Fluid responsive sizing to prevent table overflow */
+/* Tablet (769px - 1100px) - Stable column widths across compact & expanded modes (no horizontal jitter) */
 @media (min-width: 769px) and (max-width: 1100px) {
+    .student-list-table .appreciation-cell,
     .student-list-table.appreciation-full-view .appreciation-cell {
         width: 100%;
         min-width: 180px;
         max-width: none;
+        transition: padding 0.45s cubic-bezier(0.32, 0.72, 0, 1);
     }
 
+    .student-list-table .student-name-cell,
     .student-list-table.appreciation-full-view .student-name-cell {
         min-width: 170px;
         width: auto;
+        transition: none;
+    }
+
+    .student-list-table th[data-sort-field="name"],
+    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
+        padding-left: 62px !important;
+        transition: none;
     }
 
     .student-list-table th.status-header,
@@ -861,7 +867,7 @@
 .student-list-table.appreciation-full-view .appreciation-preview {
     white-space: pre-wrap;
     max-height: 500px;
-    overflow: visible;
+    overflow: hidden;
     text-overflow: clip;
 
     /* Card-like styling for full view */
