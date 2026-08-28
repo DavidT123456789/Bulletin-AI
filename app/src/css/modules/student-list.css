@@ -94,6 +94,7 @@
     user-select: none;
     position: relative;
     transition: color 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Effet de survol via pseudo-élément pour préserver le fond du thead */
@@ -109,12 +110,37 @@
     border-radius: inherit;
 }
 
-.sortable-header:hover::after {
+/* Active / Tap feedback (Touch & Mouse - auto-clears upon release) */
+.sortable-header:active::after {
     opacity: 1;
 }
 
-.sortable-header:hover {
+.sortable-header:active {
     color: var(--text-primary);
+}
+
+/* Hover feedback: enabled on pointer/mouse devices only (prevents sticky hover on touch) */
+@media (hover: hover) {
+    .sortable-header:hover::after {
+        opacity: 1;
+    }
+
+    .sortable-header:hover {
+        color: var(--text-primary);
+    }
+
+    .sortable-header.active-sort:hover {
+        color: var(--text-primary);
+        background-color: var(--item-hover-bg) !important;
+    }
+
+    .appreciation-toggle-header:hover .appreciation-toggle-icon {
+        opacity: 0.7;
+    }
+
+    .appreciation-toggle-header.expanded-view:hover .appreciation-toggle-icon {
+        opacity: 0.8;
+    }
 }
 
 /* Contenu au-dessus du pseudo-élément */
@@ -128,12 +154,6 @@
     color: var(--text-primary);
     background-color: transparent !important;
     outline: none;
-}
-
-/* Léger effet de survol sur la colonne triée active (indique que c'est toujours cliquable) */
-.sortable-header.active-sort:hover {
-    color: var(--text-primary);
-    background-color: var(--item-hover-bg) !important;
 }
 
 [data-theme="dark"] .sortable-header .sort-icon-placeholder iconify-icon {
@@ -794,16 +814,8 @@
     z-index: 2;
 }
 
-.appreciation-toggle-header:hover .appreciation-toggle-icon {
-    opacity: 0.7;
-}
-
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
     color: var(--color-sky); /* Keeps the active color state, but inherits opacity:0 */
-}
-
-.appreciation-toggle-header.expanded-view:hover .appreciation-toggle-icon {
-    opacity: 0.8;
 }
 
 /* Desktop only: width optimizations are irrelevant on mobile card layout */

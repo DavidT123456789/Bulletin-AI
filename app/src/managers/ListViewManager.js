@@ -420,24 +420,15 @@ export const ListViewManager = {
                 startHeight: preview.offsetHeight
             }));
 
-            // 2. Temporarily switch class without transitions to measure natural expanded height
-            previews.forEach(el => { el.style.transition = 'none'; });
-            table.classList.add('appreciation-full-view');
-
+            // 2. Lock starting heights & set overflow hidden
             measurements.forEach(m => {
-                // Measure with buffer to prevent any end-of-stroke clipping or unblocking
-                m.endHeight = Math.max(m.element.offsetHeight, m.element.scrollHeight) + 12;
-            });
-
-            // 3. Lock to start height
-            measurements.forEach(m => {
+                m.element.style.transition = 'none';
                 m.element.style.maxHeight = `${m.startHeight}px`;
+                m.element.style.overflow = 'hidden';
             });
 
-            // Force reflow
-            void table.offsetHeight;
-
-            // 4. Update UI Header & Tooltips
+            // 3. Switch class to trigger Avatar spring and text layout
+            table.classList.add('appreciation-full-view');
             header?.classList.add('expanded-view');
             updateTooltip('Réduire');
             if (icon) icon.setAttribute('icon', 'solar:minimize-square-linear');
@@ -446,10 +437,18 @@ export const ListViewManager = {
             appState.isAppreciationFullView = true;
             StorageManager.saveAppState();
 
-            // 5. Play fluid expansion with iOS standard cubic-bezier
+            // 4. Measure exact target heights in expanded layout
+            measurements.forEach(m => {
+                m.endHeight = m.element.scrollHeight;
+            });
+
+            // Force reflow
+            void table.offsetHeight;
+
+            // 5. Animate smoothly to exact target height
             requestAnimationFrame(() => {
                 measurements.forEach(m => {
-                    m.element.style.transition = 'max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), padding 0.4s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
+                    m.element.style.transition = 'max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), padding 0.45s cubic-bezier(0.32, 0.72, 0, 1), background 0.25s ease';
                     m.element.style.maxHeight = `${m.endHeight}px`;
                 });
             });
@@ -459,27 +458,30 @@ export const ListViewManager = {
                 measurements.forEach(m => {
                     m.element.style.transition = '';
                     m.element.style.maxHeight = '';
+                    m.element.style.overflow = '';
                 });
                 this._toggleTransitionTimeout = null;
-            }, 480);
+            }, 460);
 
         } else {
             // === COLLAPSE (Extended -> Compact) ===
-            // 1. Capture full start heights
+            // 1. Capture starting heights
             const measurements = previews.map(preview => ({
                 element: preview,
                 startHeight: preview.offsetHeight
             }));
 
-            // 2. Lock starting heights immediately without latency
-            previews.forEach(el => {
-                el.style.transition = 'none';
-                el.style.maxHeight = `${el.offsetHeight}px`;
+            // 2. Lock starting heights & maintain multiline wrapping during contraction
+            measurements.forEach(m => {
+                m.element.style.transition = 'none';
+                m.element.style.whiteSpace = 'pre-wrap';
+                m.element.style.maxHeight = `${m.startHeight}px`;
+                m.element.style.overflow = 'hidden';
             });
 
-            const targetCompactHeight = window.innerWidth <= 768 ? '52px' : '34px';
+            const targetCompactHeight = window.innerWidth <= 768 ? 52 : 34;
 
-            // 3. Remove class & update UI immediately at t=0
+            // 3. Remove class to trigger Avatar spring shrink & update UI
             table.classList.remove('appreciation-full-view');
             header?.classList.remove('expanded-view');
             updateTooltip('Voir tout le texte');
@@ -492,23 +494,24 @@ export const ListViewManager = {
             // Force reflow
             void table.offsetHeight;
 
-            // 4. Animate smoothly to compact line
+            // 4. Animate smoothly down to compact line
             requestAnimationFrame(() => {
                 measurements.forEach(m => {
-                    m.element.style.transition = 'max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1), padding 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.2s ease';
-                    m.element.style.maxHeight = targetCompactHeight;
+                    m.element.style.transition = 'max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), padding 0.45s cubic-bezier(0.32, 0.72, 0, 1), background 0.25s ease';
+                    m.element.style.maxHeight = `${targetCompactHeight}px`;
                 });
             });
 
-            // 5. Cleanup
+            // 5. Cleanup when contraction finishes
             this._toggleTransitionTimeout = setTimeout(() => {
                 measurements.forEach(m => {
                     m.element.style.transition = '';
                     m.element.style.maxHeight = '';
-                    m.element.style.opacity = '';
+                    m.element.style.whiteSpace = '';
+                    m.element.style.overflow = '';
                 });
                 this._toggleTransitionTimeout = null;
-            }, 440);
+            }, 460);
         }
     }
 };
