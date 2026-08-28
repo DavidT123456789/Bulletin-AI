@@ -230,11 +230,25 @@
 }
 
 .student-row.selected {
-    background: rgba(var(--primary-color-rgb), 0.05) !important;
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 10%) !important;
+    border-color: rgba(var(--primary-color-rgb), 0.3) !important;
+}
+
+.student-row.selected:hover {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 14%) !important;
+}
+
+[data-theme="dark"] .student-row.selected {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 14%) !important;
+    border-color: rgba(var(--primary-color-rgb), 0.4) !important;
+}
+
+[data-theme="dark"] .student-row.selected:hover {
+    background: color-mix(in srgb, var(--surface-color), var(--primary-color) 18%) !important;
 }
 
 .student-row.selected td {
-    border-bottom-color: rgba(var(--primary-color-rgb), 0.1);
+    border-bottom-color: rgba(var(--primary-color-rgb), 0.15);
 }
 
 .student-identity-wrapper.selected .student-nom-prenom {
