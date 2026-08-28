@@ -11,6 +11,7 @@ import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
+import { Utils } from '../utils/Utils.js';
 
 /**
  * Gestionnaire de la recherche cross-classes
@@ -24,25 +25,27 @@ export const CrossClassSearchManager = {
     /**
      * Recherche des élèves dans toutes les classes sauf la courante
      * @param {string} term - Terme de recherche
-     * @returns {Array<{classId: string, className: string, students: Array}>} Résultats groupés par classe
+     * @returns {{groups: Array<{classId: string, className: string, students: Array}>, totalMatches: number, remainingMatches: number}} Résultats groupés par classe
      */
     searchAcrossClasses(term) {
-        if (!term || term.length < 2) return [];
+        if (!term || term.trim().length < 2) {
+            return { groups: [], totalMatches: 0, remainingMatches: 0 };
+        }
 
         const currentClassId = appState.currentClassId;
         const allResults = appState.generatedResults || [];
-        const searchTerm = term.toLowerCase().trim();
+        const searchTerm = term.trim();
 
         // Groupe les résultats par classe
         const resultsByClass = new Map();
+        let totalCount = 0;
 
         allResults.forEach(result => {
             // Ignorer la classe courante
             if (result.classId === currentClassId || !result.classId) return;
 
-            // Recherche sur nom, prénom
-            const fullName = `${result.nom || ''} ${result.prenom || ''}`.toLowerCase();
-            if (!fullName.includes(searchTerm)) return;
+            // Recherche flexible sur nom, prénom (accent-insensitive & word-order agnostic)
+            if (!Utils.matchesSearch([result.nom, result.prenom], searchTerm)) return;
 
             // Récupérer les infos de la classe
             const classInfo = ClassManager.getClassById(result.classId);
@@ -67,16 +70,15 @@ export const CrossClassSearchManager = {
                 grade: grade,
                 studentPhoto: result.studentPhoto
             });
+            totalCount++;
         });
 
-        // Convertir en array et limiter le nombre total de résultats
-        const grouped = Array.from(resultsByClass.values());
-
-        // Limiter à 5 résultats total pour éviter la surcharge
+        // Limiter à 8 résultats max affichés pour garder une vue ergonomique
         let count = 0;
-        const maxResults = 5;
+        const maxResults = 8;
 
-        return grouped.map(group => ({
+        const grouped = Array.from(resultsByClass.values());
+        const limitedGroups = grouped.map(group => ({
             ...group,
             students: group.students.filter(() => {
                 if (count >= maxResults) return false;
@@ -84,6 +86,12 @@ export const CrossClassSearchManager = {
                 return true;
             })
         })).filter(group => group.students.length > 0);
+
+        return {
+            groups: limitedGroups,
+            totalMatches: totalCount,
+            remainingMatches: Math.max(0, totalCount - count)
+        };
     },
 
     /**
@@ -107,7 +115,7 @@ export const CrossClassSearchManager = {
         const results = this.searchAcrossClasses(trimmedTerm);
 
         // Afficher ou masquer selon les résultats
-        if (results.length === 0) {
+        if (!results.groups || results.groups.length === 0) {
             this._hideResults();
         } else {
             this._renderResults(results);
@@ -116,10 +124,12 @@ export const CrossClassSearchManager = {
 
     /**
      * Génère et affiche les résultats
-     * @param {Array} results - Résultats groupés par classe
+     * @param {{groups: Array, totalMatches: number, remainingMatches: number}} resultsData - Données des résultats
      * @private
      */
-    _renderResults(results) {
+    _renderResults(resultsData) {
+        const { groups, remainingMatches } = resultsData;
+
         // Créer ou récupérer le container
         let container = document.getElementById('crossClassResults');
 
@@ -150,7 +160,7 @@ export const CrossClassSearchManager = {
             <div class="cross-class-list">
         `;
 
-        results.forEach(group => {
+        groups.forEach(group => {
             html += `
                 <div class="cross-class-group">
                     <span class="cross-class-group-badge">
@@ -162,6 +172,8 @@ export const CrossClassSearchManager = {
             group.students.forEach(student => {
                 // Utiliser le système d'avatar existant
                 const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm');
+                const nomHighlighted = Utils.highlightMatch(student.nom, this._lastTerm);
+                const prenomHighlighted = Utils.highlightMatch(student.prenom, this._lastTerm);
 
                 html += `
                     <div class="cross-class-result" 
@@ -171,8 +183,8 @@ export const CrossClassSearchManager = {
                          tabindex="0">
                         ${avatarHtml}
                         <span class="cross-class-name">
-                            ${this._escapeHtml(student.nom)} 
-                            <span class="cross-class-prenom">${this._escapeHtml(student.prenom)}</span>
+                            ${nomHighlighted} 
+                            <span class="cross-class-prenom">${prenomHighlighted}</span>
                         </span>
                         <div class="cross-class-overlay">
                             <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
@@ -184,6 +196,15 @@ export const CrossClassSearchManager = {
 
             html += `</div>`;
         });
+
+        if (remainingMatches > 0) {
+            html += `
+                <div class="cross-class-more">
+                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                    <span>+ ${remainingMatches} autre${remainingMatches > 1 ? 's' : ''} élève${remainingMatches > 1 ? 's' : ''} trouvé${remainingMatches > 1 ? 's' : ''}</span>
+                </div>
+            `;
+        }
 
         html += `</div>`;
 

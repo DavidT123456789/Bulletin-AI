@@ -136,6 +136,44 @@ describe('Utils', () => {
         });
     });
 
+    describe('stripAccents', () => {
+        it('devrait retirer les accents et passer en minuscules', () => {
+            expect(Utils.stripAccents('HÉLOÏSE')).toBe('heloise');
+            expect(Utils.stripAccents('Noëlyne')).toBe('noelyne');
+            expect(Utils.stripAccents('Célestin')).toBe('celestin');
+            expect(Utils.stripAccents('')).toBe('');
+        });
+    });
+
+    describe('matchesSearch', () => {
+        it('devrait matcher sans tenir compte des accents ni de la casse', () => {
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'morgane')).toBe(true);
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'foiselle')).toBe(true);
+            expect(Utils.matchesSearch(['MORGAND', 'Noëlyne'], 'noelyne')).toBe(true);
+            expect(Utils.matchesSearch(['MORGAND', 'Noelyne'], 'noëlyne')).toBe(true);
+        });
+
+        it('devrait matcher quel que soit l\'ordre des mots recherchés', () => {
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Morgane Foiselle')).toBe(true);
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Foiselle Morgane')).toBe(true);
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Mor Foi')).toBe(true);
+            expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Lucas')).toBe(false);
+        });
+    });
+
+    describe('highlightMatch', () => {
+        it('devrait surligner les correspondances en gérant les accents et la casse', () => {
+            expect(Utils.highlightMatch('Morgane', 'mor')).toContain('<mark class="search-highlight">Mor</mark>gane');
+            expect(Utils.highlightMatch('FOISELLE', 'foi')).toContain('<mark class="search-highlight">FOI</mark>SELLE');
+            expect(Utils.highlightMatch('Noëlyne', 'noe')).toContain('<mark class="search-highlight">Noë</mark>lyne');
+        });
+
+        it('devrait retourner le texte inchangé si query vide ou < 2 caractères', () => {
+            expect(Utils.highlightMatch('Morgane', '')).toBe('Morgane');
+            expect(Utils.highlightMatch('Morgane', 'm')).toBe('Morgane');
+        });
+    });
+
     describe('cleanMarkdown', () => {
         it('devrait convertir le gras en HTML', () => {
             expect(Utils.cleanMarkdown('**texte gras**')).toContain('<strong>');

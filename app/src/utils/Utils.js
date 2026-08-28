@@ -216,18 +216,99 @@ export const Utils = {
     },
 
     /**
+     * Supprime les accents d'une chaîne de caractères pour la recherche
+     * @param {string} str - Chaîne source
+     * @returns {string} Chaîne sans accents en minuscules
+     */
+    stripAccents(str) {
+        if (!str) return '';
+        return String(str)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    },
+
+    /**
+     * Vérifie si un ou plusieurs textes correspondent à une requête de recherche
+     * (insensible à la casse, aux accents et à l'ordre des mots).
+     * @param {string|Array<string>} textOrFields - Texte ou tableau de champs
+     * @param {string} query - Terme recherché
+     * @returns {boolean} True si tous les mots de la requête sont trouvés
+     */
+    matchesSearch(textOrFields, query) {
+        if (!query || typeof query !== 'string') return true;
+        const cleanQuery = this.stripAccents(query);
+        if (!cleanQuery) return true;
+
+        const combinedText = Array.isArray(textOrFields)
+            ? textOrFields.filter(Boolean).map(f => this.stripAccents(f)).join(' ')
+            : this.stripAccents(textOrFields);
+
+        const queryWords = cleanQuery.split(/\s+/).filter(Boolean);
+        return queryWords.every(word => combinedText.includes(word));
+    },
+
+    /**
+     * Surligne de façon sécurisée les occurrences du terme recherché dans un texte
+     * en préservant la casse d'origine et en gérant les accents.
+     * @param {string} text - Texte d'origine
+     * @param {string} query - Terme recherché
+     * @returns {string} HTML avec balises <mark class="search-highlight">
+     */
+    highlightMatch(text, query) {
+        if (!text) return '';
+        const escapedText = this.escapeHtml(text);
+        if (!query || typeof query !== 'string') return escapedText;
+
+        const cleanQuery = query.trim();
+        if (cleanQuery.length < 2) return escapedText;
+
+        const accentMap = {
+            'a': '[aàáâãäåAÀÁÂÃÄÅ]',
+            'e': '[eéèêëEÉÈÊË]',
+            'i': '[iíìîïIÍÌÎÏ]',
+            'o': '[oóòôõöOÓÒÔÕÖ]',
+            'u': '[uúùûüUÚÙÛÜ]',
+            'c': '[cçCÇ]',
+            'y': '[yýÿYÝŸ]',
+            'n': '[nñNÑ]'
+        };
+
+        const words = cleanQuery.split(/\s+/).filter(w => w.length >= 2);
+        if (words.length === 0) return escapedText;
+
+        const patterns = words.map(word => {
+            return word.split('').map(char => {
+                const base = char.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return accentMap[base] || char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }).join('');
+        });
+
+        try {
+            const regex = new RegExp(`(${patterns.join('|')})`, 'gi');
+            return escapedText.replace(regex, '<mark class="search-highlight">$1</mark>');
+        } catch {
+            return escapedText;
+        }
+    },
+
+    /**
      * Formate le nom complet d'un élève de manière uniforme
      * Format favorisé : NOM Prénom (Nom en MAJUSCULES, Prénom normalisé)
      * @param {string} nom - Nom de famille
      * @param {string} prenom - Prénom
      * @param {boolean} [html=false] - Si true, retourne du HTML avec le prénom entouré d'un span
+     * @param {string} [highlightQuery=''] - Optionnel: requête de recherche pour surligner les correspondances
      * @returns {string} Le nom formaté
      */
-    formatStudentName(nom, prenom, html = false) {
+    formatStudentName(nom, prenom, html = false, highlightQuery = '') {
         const nomUpper = (nom || '').trim().toUpperCase();
         const prenomClean = (prenom || '').trim();
         if (html) {
-            return `${nomUpper} <span class="student-prenom">${prenomClean}</span>`;
+            const nomDisplay = highlightQuery ? this.highlightMatch(nomUpper, highlightQuery) : this.escapeHtml(nomUpper);
+            const prenomDisplay = highlightQuery ? this.highlightMatch(prenomClean, highlightQuery) : this.escapeHtml(prenomClean);
+            return `${nomDisplay} <span class="student-prenom">${prenomDisplay}</span>`;
         }
         return `${nomUpper} ${prenomClean}`.trim();
     },

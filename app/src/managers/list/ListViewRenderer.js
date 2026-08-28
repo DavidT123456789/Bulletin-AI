@@ -42,12 +42,13 @@ export const ListViewRenderer = {
         const appreciationCell = this.getAppreciationCell(result);
         const isSelected = ListSelectionManager.selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
+        const searchQuery = document.getElementById('searchInput')?.value || '';
 
         tr.innerHTML = `
             <td class="student-name-cell">
                 <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                     ${avatarHTML}
-                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
+                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
                 </div>
             </td>
             <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
@@ -131,9 +132,10 @@ export const ListViewRenderer = {
                 identityWrapper.classList.remove('selected');
             }
 
+            const searchQuery = document.getElementById('searchInput')?.value || '';
             identityWrapper.innerHTML = `
                 ${avatarHTML}
-                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
+                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
             `;
         }
 
@@ -374,13 +376,14 @@ export const ListViewRenderer = {
 
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
+                const searchQuery = document.getElementById('searchInput')?.value || '';
 
                 html += `
                     <tr data-student-id="${result.id}" class="student-row"${tabIndexAttr}>
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}
-                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true)}</span>
+                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
                             </div>
                         </td>
                         <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>

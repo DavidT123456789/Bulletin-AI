@@ -365,3 +365,30 @@
         transform: translateX(2px); /* Micro-interaction au tap/active mobile (remplace hover) */
     }
 }
+
+/* ========================================
+   Indicateur de résultats supplémentaires
+   ======================================== */
+.cross-class-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-tertiary);
+    padding: var(--space-2) var(--space-3);
+    margin-top: var(--space-2);
+    text-align: center;
+    background: var(--item-hover-bg);
+    border-radius: var(--radius-pill);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cross-class-more iconify-icon {
+    font-size: 0.95rem;
+    color: var(--primary-color);
+    opacity: 0.85;
+}

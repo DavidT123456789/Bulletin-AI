@@ -107,7 +107,7 @@ export const ResultsUIManager = {
 
         const filteredAndSorted = viewableResults
             .filter(r => {
-                if (!`${r.nom || ''} ${r.prenom || ''} ${Utils.decodeHtmlEntities(r.appreciation || '')}`.toLowerCase().includes(term)) return false;
+                if (!Utils.matchesSearch([r.nom, r.prenom, Utils.decodeHtmlEntities(r.appreciation || '')], term)) return false;
                 if (!filter) return true;
                 if (filter === 'totalCount') return true;
 

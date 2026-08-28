@@ -529,3 +529,19 @@
         padding: 0 12px;
     }
 }
+
+/* ====================================================================
+   Search Match Highlight
+   ==================================================================== */
+.search-highlight {
+    background: rgba(var(--primary-color-rgb), 0.14);
+    color: var(--primary-color);
+    font-weight: 700;
+    border-radius: var(--radius-xs, 3px);
+    padding: 0 2px;
+}
+
+[data-theme="dark"] .search-highlight {
+    background: rgba(var(--primary-color-rgb), 0.28);
+    color: var(--primary-hover);
+}
