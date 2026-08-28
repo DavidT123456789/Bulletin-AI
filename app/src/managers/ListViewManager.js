@@ -400,114 +400,114 @@ export const ListViewManager = {
             if (mobileBtn) mobileBtn.removeAttribute('title');
         };
 
-        // --- PREMIUM FLIP ANIMATION FOR CARDS VARYING HEIGHTS ---
         const previews = Array.from(table.querySelectorAll('.appreciation-preview'));
-        const cells = Array.from(table.querySelectorAll('.appreciation-cell'));
 
-        // Step 1: Capture the First state (starting heights)
-        const measurements = previews.map(preview => ({
-            element: preview,
-            startHeight: preview.offsetHeight
-        }));
-
-        // Temporarily disable transitions during measurement to force instant target layout calculation (with target padding, width, line-height)
-        previews.forEach(el => { el.style.transition = 'none'; });
-        cells.forEach(el => { el.style.transition = 'none'; });
-
-        // Step 2: Set the state to Last by toggling the class
-        table.classList.toggle('appreciation-full-view');
-
-        // Step 3: Measure the Last state (natural target heights under CSS rules)
-        measurements.forEach(m => {
-            // Temporarily set target layout styles to get natural height
-            const origWhiteSpace = m.element.style.whiteSpace;
-
-            // Target state styling: if expanding, wrap text to measure full height. If collapsing, truncate to measure compact height.
-            m.element.style.whiteSpace = isFullView ? 'nowrap' : 'pre-wrap';
-
-            m.endHeight = m.element.offsetHeight;
-
-            // Restore temporarily changed style properties
-            m.element.style.whiteSpace = origWhiteSpace;
-        });
-
-        // Toggle back to setup the animation correctly
-        table.classList.toggle('appreciation-full-view');
-
-        // Restore transitions on cells immediately after measurement
-        cells.forEach(el => { el.style.transition = ''; });
-
-        // Step 4: Lock to starting heights to prevent visual jumping
-        measurements.forEach(m => {
-            m.element.style.transition = 'none';
-            m.element.style.whiteSpace = 'pre-wrap'; // Maintain text wrapping during collapse
-            m.element.style.maxHeight = m.startHeight + 'px';
-        });
-
-        // Force browser reflow to apply locked start heights
-        table.offsetHeight;
-
-        // Restore CSS transitions before toggling class so that all properties (padding, line-height, etc.) transition smoothly
-        measurements.forEach(m => {
-            m.element.style.transition = '';
-        });
-
-        // Step 5: Toggle classes for real (this updates DOM class but inline styles lock visuals)
-        if (isFullView) {
-            // COLLAPSE: Return to truncated view
-            table.classList.remove('appreciation-full-view');
-            header?.classList.remove('expanded-view');
-            updateTooltip('Voir tout le texte');
-
-            // Switch to Expand icon
-            if (icon) {
-                icon.setAttribute('icon', 'solar:maximize-square-linear');
-            }
-            if (mobileIcon) {
-                mobileIcon.setAttribute('icon', 'solar:maximize-square-linear');
-            }
-
-            // Update State & Persistence
-            appState.isAppreciationFullView = false;
-        } else {
-            // EXPAND: Show full text
-            table.classList.add('appreciation-full-view');
-            header?.classList.add('expanded-view');
-            updateTooltip('Réduire');
-
-            // Switch to Compress icon
-            if (icon) {
-                icon.setAttribute('icon', 'solar:minimize-square-linear');
-            }
-            if (mobileIcon) {
-                mobileIcon.setAttribute('icon', 'solar:minimize-square-linear');
-            }
-
-            // Update State & Persistence
-            appState.isAppreciationFullView = true;
-        }
-
-        // Save preference
-        StorageManager.saveAppState();
-
-        // Step 6: Play the transition by setting inline properties to target heights
-        measurements.forEach(m => {
-            m.element.style.maxHeight = m.endHeight + 'px';
-        });
-
-        // Step 7: Clear inline styles after animation is complete
         if (this._toggleTransitionTimeout) {
             clearTimeout(this._toggleTransitionTimeout);
+            this._toggleTransitionTimeout = null;
         }
 
-        this._toggleTransitionTimeout = setTimeout(() => {
+        // Clean any residual inline properties from rapid clicks
+        previews.forEach(el => {
+            el.style.opacity = '';
+        });
+
+        if (!isFullView) {
+            // === EXPAND (Compact -> Extended) ===
+            // 1. Capture starting heights
+            const measurements = previews.map(preview => ({
+                element: preview,
+                startHeight: preview.offsetHeight
+            }));
+
+            // 2. Temporarily switch class without transitions to measure natural expanded height
+            previews.forEach(el => { el.style.transition = 'none'; });
+            table.classList.add('appreciation-full-view');
+
             measurements.forEach(m => {
-                m.element.style.transition = '';
-                m.element.style.maxHeight = '';
-                m.element.style.whiteSpace = '';
+                m.endHeight = m.element.offsetHeight;
             });
-            this._toggleTransitionTimeout = null;
-        }, 600); // 600ms (500ms transition + 100ms safety buffer to prevent visual jump/saccade)
+
+            // 3. Lock to start height
+            measurements.forEach(m => {
+                m.element.style.maxHeight = `${m.startHeight}px`;
+            });
+
+            // Force reflow
+            void table.offsetHeight;
+
+            // 4. Update UI Header & Tooltips
+            header?.classList.add('expanded-view');
+            updateTooltip('Réduire');
+            if (icon) icon.setAttribute('icon', 'solar:minimize-square-linear');
+            if (mobileIcon) mobileIcon.setAttribute('icon', 'solar:minimize-square-linear');
+
+            appState.isAppreciationFullView = true;
+            StorageManager.saveAppState();
+
+            // 5. Play fluid expansion with iOS standard cubic-bezier
+            requestAnimationFrame(() => {
+                measurements.forEach(m => {
+                    m.element.style.transition = 'max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1), padding 0.35s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
+                    m.element.style.maxHeight = `${m.endHeight}px`;
+                });
+            });
+
+            // 6. Cleanup after transition completes
+            this._toggleTransitionTimeout = setTimeout(() => {
+                measurements.forEach(m => {
+                    m.element.style.transition = '';
+                    m.element.style.maxHeight = '';
+                });
+                this._toggleTransitionTimeout = null;
+            }, 360);
+
+        } else {
+            // === COLLAPSE (Extended -> Compact) ===
+            // 1. Capture full start heights
+            const measurements = previews.map(preview => ({
+                element: preview,
+                startHeight: preview.offsetHeight
+            }));
+
+            // 2. Micro-dissolve text so lines are not clipped during height transition
+            previews.forEach(el => {
+                el.style.transition = 'opacity 0.12s ease-out';
+                el.style.opacity = '0.25';
+                el.style.maxHeight = `${el.offsetHeight}px`;
+            });
+
+            const targetCompactHeight = window.innerWidth <= 768 ? '52px' : '34px';
+
+            // 3. After text dissolution, remove full-view class and morph height down cleanly
+            this._toggleTransitionTimeout = setTimeout(() => {
+                table.classList.remove('appreciation-full-view');
+                header?.classList.remove('expanded-view');
+                updateTooltip('Voir tout le texte');
+                if (icon) icon.setAttribute('icon', 'solar:maximize-square-linear');
+                if (mobileIcon) mobileIcon.setAttribute('icon', 'solar:maximize-square-linear');
+
+                appState.isAppreciationFullView = false;
+                StorageManager.saveAppState();
+
+                // Animate height to compact line & fade back in
+                measurements.forEach(m => {
+                    m.element.style.transition = 'max-height 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease-out, padding 0.25s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease';
+                    m.element.style.maxHeight = targetCompactHeight;
+                    m.element.style.opacity = '1';
+                });
+
+                // Cleanup
+                this._toggleTransitionTimeout = setTimeout(() => {
+                    measurements.forEach(m => {
+                        m.element.style.transition = '';
+                        m.element.style.maxHeight = '';
+                        m.element.style.opacity = '';
+                    });
+                    this._toggleTransitionTimeout = null;
+                }, 260);
+            }, 110);
+        }
     }
 };
 

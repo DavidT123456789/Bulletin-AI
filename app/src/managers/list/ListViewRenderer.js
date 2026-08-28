@@ -286,7 +286,7 @@ export const ListViewRenderer = {
                                     </button>
                                 </div>
                             </th>
-                            <th class="sortable-header" data-sort-field="status" data-tooltip="Trier par statut" style="width: 140px;">
+                            <th class="sortable-header status-header" data-sort-field="status" data-tooltip="Trier par statut">
                                 <div class="header-content-wrapper">
                                     Statut<span class="sort-icon-placeholder"></span>
                                 </div>
@@ -315,7 +315,7 @@ export const ListViewRenderer = {
                                     </div>
                                 </div>
                             </th>
-                            <th class="action-header" style="width: 50px;">
+                            <th class="action-header">
                                 <div class="header-content-wrapper global-actions-dropdown">
                                     <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" data-tooltip="Actions">
                                         <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>

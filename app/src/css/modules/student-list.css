@@ -6,6 +6,7 @@
 /* === Vue Liste (Table) === */
 .student-list-view {
     width: 100%;
+    max-width: 100%;
     background: var(--surface-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
@@ -13,13 +14,16 @@
     overflow: visible;
     /* Permet au menu d'actions de déborder */
     margin-bottom: 0;
+    box-sizing: border-box;
 }
 
 .student-list-table {
     width: 100%;
+    max-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 14px;
+    box-sizing: border-box;
 }
 
 .student-list-table thead {
@@ -184,14 +188,20 @@
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
     padding-left: 62px !important; /* Normal view: 16px cell + 36px avatar + 10px gap */
-    transition: padding-left 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: padding-left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Expanded view dynamically adjusts to perfectly align with the new text position */
 /* Desktop only: prevent high-specificity !important from overriding mobile flex layout */
-@media (min-width: 769px) {
+@media (min-width: 1101px) {
     .student-list-table.appreciation-full-view th[data-sort-field="name"] {
         padding-left: 100px !important; /* Expanded view: 16px cell + 8px wrapper + 60px avatar + 16px gap */
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
+        padding-left: 86px !important; /* Expanded tablet: 16px cell + 6px wrapper + 52px avatar + 12px gap */
     }
 }
 
@@ -540,10 +550,10 @@
     max-width: 340px;
     min-width: 280px;
     text-align: left;
-    transition: padding 0.3s ease,
-                width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-                min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-                max-width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: padding 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+                min-width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+                max-width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     position: relative;
     /* Anchor for absolute positioning */
 }
@@ -797,9 +807,8 @@
 }
 
 /* Desktop only: width optimizations are irrelevant on mobile card layout */
-@media (min-width: 769px) {
-    /* 1. Animate cell height transition */
-    /* Expanded View - Width Optimization */
+@media (min-width: 1101px) {
+    /* Expanded View - Desktop */
     .student-list-table.appreciation-full-view .appreciation-cell {
         /* Control width explicitly: Wider than normal (340px) but capped */
         width: clamp(360px, 40vw, 515px);
@@ -811,6 +820,27 @@
     .student-list-table.appreciation-full-view .student-name-cell {
         min-width: 230px;
         width: 230px;
+    }
+}
+
+/* Tablet (769px - 1100px) - Fluid responsive sizing to prevent table overflow */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .student-list-table.appreciation-full-view .appreciation-cell {
+        width: 100%;
+        min-width: 180px;
+        max-width: none;
+    }
+
+    .student-list-table.appreciation-full-view .student-name-cell {
+        min-width: 170px;
+        width: auto;
+    }
+
+    .student-list-table th.status-header,
+    .student-list-table .status-cell {
+        width: auto;
+        min-width: 80px;
+        max-width: 105px;
     }
 }
 
@@ -835,7 +865,7 @@
     text-align: left !important;
 
     /* Micro-fade animation to mask white-space switch */
-    animation: appreciation-expand-reveal 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: appreciation-expand-reveal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 /* Wrapper manages structural margin in full view to prevent badge floating */
@@ -845,16 +875,14 @@
 
 
 
-/* Keyframe: subtle blur-to-sharp fade masks the instant white-space change */
+/* Keyframe: subtle fade masks the layout change */
 @keyframes appreciation-expand-reveal {
     0% {
-        opacity: 0.4;
-        filter: blur(2px);
+        opacity: 0.3;
     }
 
     100% {
         opacity: 1;
-        filter: blur(0);
     }
 }
 
@@ -930,16 +958,15 @@
 
     /* iOS Spring transitions synced with row animation */
     transition:
-        max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
-        padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.35s cubic-bezier(0.32, 0.72, 0, 1),
         background 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-        line-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        line-height 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+        border-radius 0.35s cubic-bezier(0.32, 0.72, 0, 1),
         border-color 0.2s cubic-bezier(0.32, 0.72, 0, 1),
         box-shadow 0.2s cubic-bezier(0.32, 0.72, 0, 1),
-        /* transform and shadow removed from individual transition (handled by wrapper if needed) */
-        opacity 0.15s ease;
+        opacity 0.2s ease;
 
     opacity: 1;
 }
@@ -1017,10 +1044,12 @@
 
 
 /* Status Column */
+.status-header,
 .status-cell {
     text-align: center;
     vertical-align: middle;
     width: 140px;
+    min-width: 85px;
     padding: 8px 4px !important;
 }
 
@@ -1043,14 +1072,13 @@
 }
 
 /* Action column */
+.action-header,
 .action-cell {
+    width: 48px;
+    min-width: 44px;
     text-align: center;
     position: relative;
-}
-
-.action-cell .btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 14px 4px !important;
 }
 
 /* === 3-Dot Action Dropdown === */
