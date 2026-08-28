@@ -426,7 +426,7 @@ export const GlobalListeners = {
                             target.closest?.('[contenteditable="true"]');
             if (isInput) return;
 
-            const interactive = target.closest?.('button, .btn, [role="button"], .custom-dropdown-trigger, .tab-btn, .settings-tab-btn, .btn-icon, .close-modal-btn, .student-row, .card, .btn-dropdown-item');
+            const interactive = target.closest?.('button, .btn, [role="button"], .custom-dropdown-trigger, .tab-btn, .settings-tab-btn, .btn-icon, .close-modal-btn, .student-row, .card, .btn-dropdown-item, .ui-segment');
             if (interactive) {
                 setTimeout(() => {
                     if (document.activeElement === interactive || interactive.contains(document.activeElement)) {
@@ -460,7 +460,7 @@ export const GlobalListeners = {
             if (isInput) return;
 
             if (window.matchMedia('(pointer: coarse)').matches) {
-                const isInteractive = active.matches?.('button, .btn, [role="button"], .custom-dropdown-trigger, .student-row, .tab-btn, .btn-icon');
+                const isInteractive = active.matches?.('button, .btn, [role="button"], .custom-dropdown-trigger, .student-row, .tab-btn, .btn-icon, .ui-segment');
                 if (isInteractive) {
                     setTimeout(() => {
                         if (document.activeElement === active && !active.matches?.(':focus-visible')) {

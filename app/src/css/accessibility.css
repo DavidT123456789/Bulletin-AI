@@ -111,28 +111,7 @@ button:focus:not(:focus-visible),
    Touch Interaction & Anti-Sticky-Hover (iOS / Touch Ergonomics)
    Empêche le surlignement / relief fantôme de rester figé au tap tactile
    ==================================================================== */
-@media (hover: none), (pointer: coarse) {
-    /* Prevent sticky translateY lifts and elevation shadows on touch devices */
-    button:hover:not(:active):not(:focus-visible),
-    .btn:hover:not(:active):not(:focus-visible),
-    .btn-secondary:hover:not(:active):not(:focus-visible),
-    .btn-icon:hover:not(:active):not(:focus-visible),
-    .custom-dropdown-trigger:hover:not(.open):not(:focus-visible),
-    .custom-dropdown-option:hover:not(.selected):not(:focus-visible),
-    .btn-dropdown-item:hover:not(:focus-visible),
-    .tab-btn:hover:not(.active):not(:focus-visible),
-    .settings-tab-btn:hover:not(.active):not(:focus-visible),
-    .header-context-chip:hover:not(.active):not(:focus-visible),
-    .header-gen-dashboard:hover:not(:focus-visible),
-    .pill-segment:hover:not(.active):not(:focus-visible),
-    .card:hover:not(:active),
-    .stat-card:hover:not(:active),
-    .student-card:hover:not(:active),
-    .student-row:hover:not(:active) {
-        transform: none !important;
-        box-shadow: none;
-    }
-
+@media (hover: none) {
     /* AI buttons sweep animation should not get stuck on mobile */
     .btn-ai:hover:not(:active)::before {
         animation: none !important;
@@ -145,13 +124,15 @@ button:focus:not(:focus-visible),
     .header-context-chip,
     .header-gen-dashboard,
     .pill-segment,
+    .menu-btn,
     .tab-btn,
     .btn-icon,
     .btn-dropdown-item {
+        -webkit-touch-callout: none;
         transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
                     background-color 0.15s ease,
                     filter 0.15s ease,
-                    box-shadow 0.15s ease !important;
+                    box-shadow 0.15s ease;
     }
 }
 

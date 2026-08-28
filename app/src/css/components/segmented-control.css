@@ -67,35 +67,46 @@
     transition: filter var(--transition-base), opacity var(--transition-base), color var(--transition-base);
 }
 
-/* Active & Hover icons — restore full color */
-.ui-segment.active i,
-.ui-segment.active iconify-icon,
-.ui-segment:hover i,
-.ui-segment:hover iconify-icon,
-.ui-segmented-control input[type="radio"]:checked + .ui-segment i,
-.ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon,
-.ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover i,
-.ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover iconify-icon {
-    filter: grayscale(0);
-    opacity: 1;
-}
-
 /* Handle Radio inputs */
 .ui-segmented-control input[type="radio"] {
     display: none;
 }
 
-/* Hover state — maximiser le contraste et ajouter le fond de survol pilule inactif */
-.ui-segment:not(.active):hover,
-.ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
+/* Active & Checked states */
+.ui-segment.active,
+.ui-segmented-control input[type="radio"]:checked + .ui-segment {
     color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.03);
 }
 
-/* Active state */
-.ui-segment.active,
-.ui-segmented-control input[type="radio"]:checked+.ui-segment {
-    color: var(--text-primary);
+.ui-segment.active i,
+.ui-segment.active iconify-icon,
+.ui-segmented-control input[type="radio"]:checked + .ui-segment i,
+.ui-segmented-control input[type="radio"]:checked + .ui-segment iconify-icon {
+    filter: grayscale(0);
+    opacity: 1;
+}
+
+/* Hover state — desktop only to prevent sticky highlights on touch */
+@media (hover: hover) and (pointer: fine) {
+    .ui-segment:not(.active):hover,
+    .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover {
+        color: var(--text-primary);
+        background: rgba(0, 0, 0, 0.03);
+    }
+
+    .ui-segment:hover i,
+    .ui-segment:hover iconify-icon,
+    .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover i,
+    .ui-segmented-control input[type="radio"]:not(:checked) + .ui-segment:hover iconify-icon {
+        filter: grayscale(0);
+        opacity: 1;
+    }
+}
+
+/* Tactile active feedback */
+.ui-segment:active {
+    transform: scale(0.96);
+    transition: transform 0.12s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* High Contrast Focus */
@@ -171,10 +182,17 @@
     color: var(--text-tertiary);
 }
 
-[data-theme="dark"] .ui-segment:not(.active):hover,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.04);
+@media (hover: hover) and (pointer: fine) {
+    [data-theme="dark"] .ui-segment:not(.active):hover,
+    [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    [data-theme="dark"] .ui-segment:hover iconify-icon,
+    [data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover iconify-icon {
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+    }
 }
 
 [data-theme="dark"] .ui-segment.active,
@@ -185,10 +203,7 @@
     /* Subtle glow for text */
 }
 
-/* Specific tweaks for icons in active state if needed */
 [data-theme="dark"] .ui-segment.active iconify-icon,
-[data-theme="dark"] .ui-segment:hover iconify-icon,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon,
-[data-theme="dark"] .ui-segmented-control input[type="radio"]:not(:checked)+.ui-segment:hover iconify-icon {
+[data-theme="dark"] .ui-segmented-control input[type="radio"]:checked+.ui-segment iconify-icon {
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
 }

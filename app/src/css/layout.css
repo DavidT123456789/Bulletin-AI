@@ -513,7 +513,9 @@
 }
 
 /* Sizing, alignment, and hover effects for header action segments on desktop */
-.header-actions-pill .pill-segment {
+.header-actions-pill .pill-segment,
+.menu-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -524,21 +526,30 @@
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.header-actions-pill .pill-segment iconify-icon,
+.header-actions-pill .pill-segment i,
+.menu-btn iconify-icon,
+.menu-btn i {
+    font-size: 20px;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .header-actions-pill .pill-segment:hover {
+    .header-actions-pill .pill-segment:hover,
+    .menu-btn:hover {
         background-color: var(--surface-color);
         color: var(--text-primary);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow-elevation);
         transform: translateY(-1px);
     }
 
-    [data-theme="dark"] .header-actions-pill .pill-segment:hover {
+    [data-theme="dark"] .header-actions-pill .pill-segment:hover,
+    [data-theme="dark"] .menu-btn:hover {
         background-color: var(--surface-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-elevation);
     }
 
     .cloud-sync-indicator.minimal-cloud:hover {
@@ -549,22 +560,23 @@
     }
 }
 
-.header-actions-pill .pill-segment.active {
+.header-actions-pill .pill-segment.active,
+.menu-btn.active {
     background-color: var(--surface-color);
     color: var(--text-primary);
     box-shadow: var(--shadow-elevation);
 }
 
-.header-actions-pill .pill-segment:active {
+[data-theme="dark"] .header-actions-pill .pill-segment.active,
+[data-theme="dark"] .menu-btn.active {
+    box-shadow: var(--shadow-elevation);
+}
+
+.header-actions-pill .pill-segment:active,
+.menu-btn:active {
     transform: scale(0.92);
     background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
     box-shadow: none;
-}
-
-.header-actions-pill .pill-segment iconify-icon,
-.header-actions-pill .pill-segment i {
-    font-size: 20px;
-    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 /* ====================================================================
@@ -728,46 +740,6 @@
 }
 
 
-/* 2. Menu Button (Hamburger/Ellipsis) */
-.menu-btn {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.menu-btn i,
-.menu-btn iconify-icon {
-    font-size: 20px;
-}
-
-.menu-btn:hover,
-.menu-btn.active {
-    background-color: var(--surface-color);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-elevation);
-    transform: translateY(-1px);
-}
-
-.menu-btn:active {
-    transform: scale(0.92);
-    background-color: var(--surface-color);
-    box-shadow: none;
-}
-
-[data-theme="dark"] .menu-btn:hover,
-[data-theme="dark"] .menu-btn.active {
-    background-color: var(--surface-color);
-    box-shadow: var(--shadow-elevation);
-}
 
 /* Indicator active: Organic animation of the 3 dots (Pure CSS) */
 .menu-btn.has-update,
