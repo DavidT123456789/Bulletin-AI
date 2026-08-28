@@ -607,8 +607,8 @@ export const FocusPanelManager = {
         panel.addEventListener('touchstart', (e) => {
             if (e.touches.length > 1) return;
 
-            // Ignorer si on interagit avec des inputs spécifiques
-            if (e.target.closest('input[type="range"]') || e.target.closest('textarea')) return;
+            // Ignorer si on interagit avec des boutons, liens ou champs de saisie
+            if (e.target.closest('button, [role="button"], input, textarea, select, .focus-nav-btn, .close-modal-btn')) return;
 
             // En mode édition, bloquer la gestuelle pour éviter la perte de brouillon
             const header = document.querySelector('.focus-header');
@@ -725,8 +725,8 @@ export const FocusPanelManager = {
                             this._resetTransformations(target, backdrop);
                         }, 300);
                     }
-                } else {
-                    // => Rebond (Annulation)
+                } else if (currentX > 10) {
+                    // => Rebond (Annulation après un glissement effectif)
                     target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = 'translateX(0)';
 
@@ -742,6 +742,10 @@ export const FocusPanelManager = {
                     } else {
                         setTimeout(() => this._resetTransformations(target, null), 450);
                     }
+                } else {
+                    // Simple tap ou mouvement négligeable : réinitialisation immédiate sans délai
+                    const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
+                    this._resetTransformations(target, backdrop);
                 }
             }
             else if (isPullingDown) {
@@ -764,11 +768,14 @@ export const FocusPanelManager = {
                             this._resetTransformations(target, null);
                         }, 300);
                     }
-                } else {
-                    // => Rebond (Annulation)
+                } else if (currentY > 10) {
+                    // => Rebond (Annulation après un glissement effectif)
                     target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
                     target.style.transform = 'translateX(0) translateY(0)';
                     setTimeout(() => this._resetTransformations(target, null), 450);
+                } else {
+                    // Simple tap ou mouvement négligeable : réinitialisation immédiate sans délai
+                    this._resetTransformations(target, null);
                 }
             }
 
@@ -980,6 +987,11 @@ export const FocusPanelManager = {
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
         const wasOpen = this.isOpen();
+
+        // Immediately reset any inline drag/gesture transforms so CSS transition is unblocked
+        this._resetTransformations(panel, backdrop);
+        const analysisPage = document.querySelector('.focus-analysis-page');
+        if (analysisPage) this._resetTransformations(analysisPage, null);
 
         // Mark as closing to defer layout/paint-heavy list and stats updates
         this._isClosing = true;
