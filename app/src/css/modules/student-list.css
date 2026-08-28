@@ -1576,10 +1576,31 @@
         /* REDUCED to match others */
         height: 40px;
         /* REDUCED */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.15s ease, color 0.15s ease;
     }
 
     [data-theme="dark"] .global-actions-dropdown .btn-action-menu-header {
         background: rgba(255, 255, 255, 0.05);
+    }
+
+    .global-actions-dropdown.open .btn-action-menu-header {
+        background: var(--item-active-bg) !important;
+        color: var(--icon-btn-hover) !important;
+        opacity: 1 !important;
+    }
+
+    [data-theme="dark"] .global-actions-dropdown.open .btn-action-menu-header {
+        background: var(--item-active-bg) !important;
+        color: var(--icon-btn-hover) !important;
+    }
+
+    .global-actions-dropdown .btn-action-menu-header:active {
+        background: var(--item-active-bg) !important;
+        color: var(--icon-btn-hover) !important;
+        transform: scale(0.92) !important;
     }
 
     /* Décalage du dropdown pour qu'il reste à l'écran */
@@ -1781,35 +1802,31 @@
         border-radius: 50% !important;
         -webkit-tap-highlight-color: transparent !important;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+                    background-color 0.15s ease,
+                    color 0.15s ease,
+                    opacity 0.15s ease !important;
     }
 
-    [data-theme="dark"] .btn-action-menu {
-        background: transparent !important;
-    }
-
-    /* Reset sticky hover / focus backgrounds on mobile, but keep active press state */
-    .btn-action-menu:hover,
-    .btn-action-menu:focus,
+    /* Active open menu state: Clear visual feedback with round pill background */
     .action-dropdown.open .btn-action-menu,
     .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
-        background: transparent !important;
-        box-shadow: none !important;
+        background: var(--item-active-bg) !important;
+        color: var(--icon-btn-hover) !important;
         opacity: 1 !important;
-        border-radius: 50% !important;
     }
 
-    [data-theme="dark"] .btn-action-menu:hover,
-    [data-theme="dark"] .btn-action-menu:focus,
     [data-theme="dark"] .action-dropdown.open .btn-action-menu,
     [data-theme="dark"] .action-dropdown:has(.action-dropdown-menu.open) .btn-action-menu {
-        background: transparent !important;
+        background: var(--item-active-bg) !important;
+        color: var(--icon-btn-hover) !important;
     }
 
     .btn-action-menu:active {
         box-shadow: none !important;
         background: var(--item-active-bg) !important;
         color: var(--icon-btn-hover) !important;
-        transform: scale(0.95) !important;
+        transform: scale(0.92) !important;
         opacity: 1 !important;
         border-radius: 50% !important;
     }

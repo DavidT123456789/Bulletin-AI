@@ -417,13 +417,23 @@
     stroke-width: calc(var(--icon-stroke-width) + 0.4px) !important;
 }
 
-.focus-nav-btn:hover:not(:disabled) {
-    background: var(--item-active-bg);
-    color: var(--text-primary);
-}
+@media (hover: hover) and (pointer: fine) {
+    .focus-nav-btn:hover:not(:disabled) {
+        background: var(--item-active-bg);
+        color: var(--text-primary);
+    }
 
-[data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
-    background: var(--item-active-bg);
+    [data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
+        background: var(--item-active-bg);
+    }
+
+    .focus-nav-btn.focus-close-btn:hover,
+    .focus-nav-btn.focus-analyze-btn:hover,
+    .focus-header.editing .focus-save-btn:hover {
+        background: var(--surface-color);
+        box-shadow: var(--shadow-elevation) !important;
+        transform: translateY(-1px);
+    }
 }
 
 .focus-nav-btn:active:not(:disabled) {
@@ -2108,14 +2118,26 @@
     transform-origin: center;
 }
 
-.focus-action-icon-btn:hover:not(.disabled) {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-}
+@media (hover: hover) and (pointer: fine) {
+    .focus-action-icon-btn:hover:not(.disabled) {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
 
-.focus-action-icon-btn:hover:not(.disabled) iconify-icon {
-    opacity: 1;
-    transform: scale(1.1);
+    .focus-action-icon-btn:hover:not(.disabled) iconify-icon {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    .focus-action-icon-btn.copied:hover:not(.disabled) {
+        background: rgba(var(--success-rgb), 0.15);
+        color: var(--success-color, #10b981) !important;
+    }
+
+    .focus-action-icon-btn.copied-prompt:hover:not(.disabled) {
+        background: rgba(var(--purple-rgb), 0.25);
+        color: var(--purple-color, #9333ea) !important;
+    }
 }
 
 .focus-action-icon-btn:active:not(.disabled) {
@@ -2141,11 +2163,6 @@
     background: rgba(var(--success-rgb), 0.08);
 }
 
-.focus-action-icon-btn.copied:hover:not(.disabled) {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-color, #10b981) !important;
-}
-
 .focus-action-icon-btn.copied:active:not(.disabled) {
     background: rgba(var(--success-rgb), 0.22);
     color: var(--success-color, #10b981) !important;
@@ -2160,11 +2177,6 @@
 .focus-action-icon-btn.copied-prompt {
     color: var(--purple-color, #9333ea) !important;
     background: var(--purple-light, rgba(147, 51, 234, 0.15));
-}
-
-.focus-action-icon-btn.copied-prompt:hover:not(.disabled) {
-    background: rgba(var(--purple-rgb), 0.25);
-    color: var(--purple-color, #9333ea) !important;
 }
 
 .focus-action-icon-btn.copied-prompt:active:not(.disabled) {

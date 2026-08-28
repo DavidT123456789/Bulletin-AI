@@ -214,10 +214,26 @@ export const FocusPanelManager = {
         }
 
         // Navigation delegated to FocusPanelNavigation
-        if (prevBtn) prevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
-        if (nextBtn) nextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
-        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => FocusPanelNavigation.navigatePrev());
-        if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => FocusPanelNavigation.navigateNext());
+        if (prevBtn) prevBtn.addEventListener('click', () => {
+            FocusPanelNavigation.navigatePrev();
+            prevBtn.blur();
+            setTimeout(() => prevBtn.blur(), 50);
+        });
+        if (nextBtn) nextBtn.addEventListener('click', () => {
+            FocusPanelNavigation.navigateNext();
+            nextBtn.blur();
+            setTimeout(() => nextBtn.blur(), 50);
+        });
+        if (analysisPrevBtn) analysisPrevBtn.addEventListener('click', () => {
+            FocusPanelNavigation.navigatePrev();
+            analysisPrevBtn.blur();
+            setTimeout(() => analysisPrevBtn.blur(), 50);
+        });
+        if (analysisNextBtn) analysisNextBtn.addEventListener('click', () => {
+            FocusPanelNavigation.navigateNext();
+            analysisNextBtn.blur();
+            setTimeout(() => analysisNextBtn.blur(), 50);
+        });
 
         // [UX Mobile] Back Button Trap
         // Intercept browser back button to close panel instead of navigating away/closing app
