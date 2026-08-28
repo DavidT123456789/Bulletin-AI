@@ -4130,6 +4130,19 @@
         border-top: none;
     }
 
+    /* iOS Sheet drag indicator on mobile */
+    .focus-panel::before {
+        content: '';
+        display: block;
+        width: 36px;
+        height: 4px;
+        border-radius: var(--radius-full, 9999px);
+        background: var(--border-color);
+        margin: 6px auto -2px auto;
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+
     /* Backdrop: below header */
     .focus-panel-backdrop {
         top: 56px;
@@ -4720,6 +4733,24 @@
     .focus-header.editing .focus-save-btn {
         width: 38px;
         height: 38px;
+    }
+
+    /* Invisible touch target expansion to ensure 44px hitbox on touch screens */
+    .focus-nav-btn {
+        position: relative;
+    }
+
+    .focus-nav-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 44px;
+        min-height: 44px;
+        width: 100%;
+        height: 100%;
+        pointer-events: auto;
     }
 
     .focus-action-icon-btn {

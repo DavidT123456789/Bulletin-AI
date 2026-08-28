@@ -1729,6 +1729,7 @@ export const FocusPanelManager = {
             const cleanText = Utils.stripMarkdown(Utils.decodeHtmlEntities(periodAppreciation));
 
             await navigator.clipboard.writeText(cleanText);
+            try { navigator?.vibrate?.(10); } catch (_) { }
 
             // Visual feedback on button
             if (copyBtn) {
