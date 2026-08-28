@@ -831,27 +831,21 @@
     }
 }
 
-/* Tablet (769px - 1100px) - Stable column widths across compact & expanded modes (no horizontal jitter) */
+/* Tablet (769px - 1100px) - Fluid responsive sizing to prevent table overflow in expanded view */
 @media (min-width: 769px) and (max-width: 1100px) {
-    .student-list-table .appreciation-cell,
     .student-list-table.appreciation-full-view .appreciation-cell {
         width: 100%;
         min-width: 180px;
         max-width: none;
-        transition: padding 0.45s cubic-bezier(0.32, 0.72, 0, 1);
     }
 
-    .student-list-table .student-name-cell,
     .student-list-table.appreciation-full-view .student-name-cell {
         min-width: 170px;
         width: auto;
-        transition: none;
     }
 
-    .student-list-table th[data-sort-field="name"],
     .student-list-table.appreciation-full-view th[data-sort-field="name"] {
-        padding-left: 62px !important;
-        transition: none;
+        padding-left: 86px !important;
     }
 
     .student-list-table th.status-header,
