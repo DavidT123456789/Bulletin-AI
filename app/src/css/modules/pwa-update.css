@@ -168,7 +168,7 @@
 }
 
 .pwa-update-banner .pwa-banner-details.expanded {
-    max-height: 200px;
+    max-height: 320px;
     border-top-color: var(--border-color);
 }
 
@@ -296,7 +296,7 @@
 @media (max-width: 480px) {
     .pwa-update-banner {
         width: calc(100vw - var(--space-4) * 2);
-        bottom: var(--space-4);
+        bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
         transform: translateX(-50%) translateY(32px) scale(0.97);
     }
 

@@ -104,7 +104,7 @@ function setupPWAUpdateHandler() {
 
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<iconify-icon icon="solar:restart-linear" class="rotate-icon"></iconify-icon> Installation...';
+                btn.innerHTML = '<iconify-icon icon="solar:restart-bold" class="rotate-icon"></iconify-icon> Installation...';
             }
 
             try {
@@ -180,15 +180,24 @@ function setupPWAUpdateHandler() {
             // Smoothly show update banner
             banner.classList.add('visible');
 
-            // Handle Details Toggle - Click on the entire text area
+            // Handle Details Toggle - Click or Keyboard on the text area
             const bannerText = banner.querySelector('.pwa-banner-text');
             const infoBtn = document.getElementById('pwaInfoBtn');
             const details = document.getElementById('pwaUpdateDetails');
 
             if (bannerText && details && infoBtn) {
-                bannerText.onclick = () => {
-                    details.classList.toggle('expanded');
-                    infoBtn.classList.toggle('active');
+                const toggleDetails = () => {
+                    const isExpanded = details.classList.toggle('expanded');
+                    infoBtn.classList.toggle('active', isExpanded);
+                    bannerText.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                };
+
+                bannerText.onclick = toggleDetails;
+                bannerText.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleDetails();
+                    }
                 };
             }
 
