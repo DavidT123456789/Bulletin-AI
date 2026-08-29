@@ -3,10 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <!-- PWA Configuration -->
     <link rel="manifest" href="./manifest.webmanifest">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f7f8">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b">
     <link rel="apple-touch-icon" href="./assets/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -61,11 +62,11 @@
 
                 if (theme === 'dark') {
                     document.documentElement.dataset.theme = 'dark';
-                    const meta = document.querySelector('meta[name="theme-color"]');
-                    if (meta) meta.setAttribute('content', '#18181b');
+                    const metas = document.querySelectorAll('meta[name="theme-color"]');
+                    metas.forEach(meta => meta.setAttribute('content', '#09090b'));
                 } else {
-                    const meta = document.querySelector('meta[name="theme-color"]');
-                    if (meta) meta.setAttribute('content', '#ffffff');
+                    const metas = document.querySelectorAll('meta[name="theme-color"]');
+                    metas.forEach(meta => meta.setAttribute('content', '#f7f7f8'));
                 }
 
                 // Immediate Accent Color Application
@@ -3066,7 +3067,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build b0e0c9b · 29 août 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build a793bf0 · 29 août 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

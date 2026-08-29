@@ -417,10 +417,9 @@ export const ThemeManager = {
             delete document.documentElement.dataset.theme;
         }
 
-        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        if (metaThemeColor) {
-            metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#18181b' : '#ffffff');
-        }
+        const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
+        const themeColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
+        metaThemeColors.forEach(meta => meta.setAttribute('content', themeColor));
 
         this.currentResolvedTheme = effectiveTheme;
 
