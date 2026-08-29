@@ -173,6 +173,11 @@
     justify-content: center;
     align-items: flex-start;
     line-height: 1.2;
+    width: 100%;
+}
+
+.student-identity-wrapper .student-nom {
+    display: block;
     font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
@@ -217,12 +222,12 @@
     }
 }
 
-.appreciation-full-view .student-identity-wrapper .student-nom-prenom {
+.appreciation-full-view .student-identity-wrapper .student-nom {
     font-size: 15px;
     line-height: 1.25;
 }
 
-.appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
+.appreciation-full-view .student-identity-wrapper .student-prenom {
     font-size: 13.5px;
     margin-top: 2px;
 }

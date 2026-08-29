@@ -308,7 +308,7 @@ export const Utils = {
         if (html) {
             const nomDisplay = highlightQuery ? this.highlightMatch(nomUpper, highlightQuery) : this.escapeHtml(nomUpper);
             const prenomDisplay = highlightQuery ? this.highlightMatch(prenomClean, highlightQuery) : this.escapeHtml(prenomClean);
-            return `${nomDisplay} <span class="student-prenom">${prenomDisplay}</span>`;
+            return `<span class="student-nom">${nomDisplay}</span><span class="student-prenom">${prenomDisplay}</span>`;
         }
         return `${nomUpper} ${prenomClean}`.trim();
     },

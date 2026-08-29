@@ -54,6 +54,17 @@ export const ListViewEvents = {
             });
         });
 
+        // Horizontal mouse wheel scroll for status badges in compact view
+        listContainer.addEventListener('wheel', (e) => {
+            const badgesContainer = e.target.closest('.status-badges-container');
+            if (badgesContainer && badgesContainer.scrollWidth > badgesContainer.clientWidth) {
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    e.preventDefault();
+                    badgesContainer.scrollLeft += e.deltaY;
+                }
+            }
+        }, { passive: false });
+
         // Generate Button (pending appreciations)
         const generateBtn = listContainer.querySelector('#generateBtnInline');
         if (generateBtn) {
