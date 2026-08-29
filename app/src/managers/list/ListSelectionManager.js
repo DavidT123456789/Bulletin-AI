@@ -244,33 +244,35 @@ export const ListSelectionManager = {
         const div = document.createElement('div');
         div.id = 'selectionToolbar';
         div.className = 'selection-toolbar';
+        div.setAttribute('role', 'toolbar');
+        div.setAttribute('aria-label', 'Actions sur les élèves sélectionnés');
 
         div.innerHTML = `
             <div class="selection-toolbar-content">
                 <div class="selection-info">
-                    <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection">
-                        <iconify-icon icon="ph:x"></iconify-icon>
+                    <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection" aria-label="Annuler la sélection">
+                        <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
-                    <span id="selectionCount">0 élève sélectionné</span>
-                    <button class="btn-select-all-link" id="btnSelectAllLink">Tout sélectionner</button>
+                    <span id="selectionCount" class="selection-count-badge">0 élève sélectionné</span>
+                    <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste">Tout sélectionner</button>
                 </div>
+                <div class="selection-divider"></div>
                 <div class="selection-actions">
-                    <button class="btn-selection-action tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
+                    <button class="btn-selection-action primary tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
                         <iconify-icon icon="solar:refresh-linear"></iconify-icon> <span>Régénérer</span>
                     </button>
                     <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations (Presse-papier)">
                         <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
                     </button>
-                    
                     <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
                         <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
                     </button>
                     <button class="btn-selection-action tooltip" data-bulk-action="reset" data-tooltip="Choisir les données à réinitialiser">
                         <iconify-icon icon="solar:restart-linear"></iconify-icon> <span>Réinitialiser</span>
                     </button>
-                    <div class="selection-action-separator"></div>
-                    <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves">
-                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> <span>Supprimer</span>
+                    <div class="selection-divider"></div>
+                    <button class="btn-selection-action danger icon-only tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves" aria-label="Supprimer les élèves sélectionnés">
+                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
                     </button>
                 </div>
             </div>
