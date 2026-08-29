@@ -6,7 +6,6 @@
 import { appState } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
-import { FocusPanelManager } from '../FocusPanelManager.js';
 import { UI } from '../UIManager.js';
 import { ModalUI as ModalUIManager } from '../ModalUIManager.js';
 import { MassImportManager } from '../MassImportManager.js';
@@ -19,6 +18,7 @@ import { TooltipsUI } from '../TooltipsManager.js';
 export const ListSelectionManager = {
     selectedIds: new Set(),
     lastSelectedId: null,
+    _removeTimeout: null,
 
     // Callbacks to avoid circular dependencies
     callbacks: {
@@ -33,10 +33,10 @@ export const ListSelectionManager = {
     },
 
     /**
-         * Gère l'interaction de sélection avec support Shift/Ctrl
-         * @param {string} studentId 
-         * @param {Event} e 
-         */
+     * Gère l'interaction de sélection avec support Shift/Ctrl
+     * @param {string} studentId 
+     * @param {Event} e 
+     */
     handleSelectionInteraction(studentId, e) {
         if (!studentId) return;
 
@@ -116,6 +116,9 @@ export const ListSelectionManager = {
                 this.updateSelectionUI(id, false); // Update without calling toolbar update every time
             }
         });
+        if (!selectAll) {
+            this.lastSelectedId = null;
+        }
         this.updateToolbarState();
     },
 
@@ -124,6 +127,7 @@ export const ListSelectionManager = {
      */
     clearSelections() {
         this.selectedIds.clear();
+        this.lastSelectedId = null;
         this.updateSelectionUI(null);
     },
 
@@ -145,9 +149,11 @@ export const ListSelectionManager = {
 
                 const avatar = row.querySelector('.student-avatar');
                 if (avatar) {
-                    const student = appState.generatedResults.find(r => r.id === studentId);
-                    if (student) {
-                        avatar.outerHTML = StudentPhotoManager.getAvatarHTML(student, 'sm', isSelected);
+                    if (!avatar.querySelector('.avatar-selection-overlay')) {
+                        const student = appState.generatedResults?.find(r => r.id === studentId);
+                        if (student) avatar.outerHTML = StudentPhotoManager.getAvatarHTML(student, 'sm', isSelected);
+                    } else {
+                        avatar.classList.toggle('is-selected', isSelected);
                     }
                 }
             }
@@ -156,23 +162,15 @@ export const ListSelectionManager = {
             const selectedRows = document.querySelectorAll('.student-row.selected');
             selectedRows.forEach(row => {
                 row.classList.remove('selected');
-                // also wrapper
                 const wrapper = row.querySelector('.student-identity-wrapper.selected');
                 if (wrapper) wrapper.classList.remove('selected');
 
-                // AND RESET AVATAR
-                const studentId = row.dataset.studentId;
-                const avatar = row.querySelector('.student-avatar');
-                if (avatar && studentId) {
-                    const student = appState.generatedResults.find(r => r.id === studentId);
-                    if (student) {
-                        // Pass false for isSelected since we are clearing
-                        avatar.outerHTML = StudentPhotoManager.getAvatarHTML(student, 'sm', false);
-                    }
-                }
+                const avatar = row.querySelector('.student-avatar.is-selected');
+                if (avatar) avatar.classList.remove('is-selected');
             });
-            // Just in case some wrappers are selected but rows are not (cleanup)
+            // Cleanup any stray selected elements
             document.querySelectorAll('.student-identity-wrapper.selected').forEach(w => w.classList.remove('selected'));
+            document.querySelectorAll('.student-avatar.is-selected').forEach(a => a.classList.remove('is-selected'));
         }
 
         if (updateToolbar) {
@@ -189,6 +187,12 @@ export const ListSelectionManager = {
         let toolbar = document.getElementById('selectionToolbar');
 
         if (count > 0) {
+            // Cancel any pending removal timeout immediately
+            if (this._removeTimeout) {
+                clearTimeout(this._removeTimeout);
+                this._removeTimeout = null;
+            }
+
             if (!toolbar) {
                 toolbar = this.createSelectionToolbar();
                 document.body.appendChild(toolbar);
@@ -197,11 +201,19 @@ export const ListSelectionManager = {
                 TooltipsUI.initTooltips();
 
                 // Trigger animation
-                requestAnimationFrame(() => toolbar.classList.add('active'));
+                requestAnimationFrame(() => {
+                    if (this.selectedIds.size > 0) {
+                        toolbar.classList.add('active');
+                    }
+                });
+            } else {
+                toolbar.classList.add('active');
             }
 
             const countLabel = toolbar.querySelector('#selectionCount');
-            if (countLabel) countLabel.textContent = `${count} ${count > 1 ? 'élèves sélectionnés' : 'élève sélectionné'}`;
+            if (countLabel) {
+                countLabel.textContent = `${count} ${count > 1 ? 'élèves sélectionnés' : 'élève sélectionné'}`;
+            }
 
             const selectAllLink = toolbar.querySelector('#btnSelectAllLink');
             if (selectAllLink) {
@@ -209,10 +221,17 @@ export const ListSelectionManager = {
                 selectAllLink.style.display = count >= totalVisible ? 'none' : '';
             }
         } else if (toolbar) {
+            if (this._removeTimeout) {
+                clearTimeout(this._removeTimeout);
+            }
             toolbar.classList.remove('active');
-            setTimeout(() => {
-                if (toolbar) toolbar.remove();
-            }, 500);
+            this._removeTimeout = setTimeout(() => {
+                const currentToolbar = document.getElementById('selectionToolbar');
+                if (currentToolbar && this.selectedIds.size === 0) {
+                    currentToolbar.remove();
+                }
+                this._removeTimeout = null;
+            }, 400);
         }
     },
 
@@ -370,6 +389,8 @@ export const ListSelectionManager = {
     },
 
     async bulkRegenerate(ids) {
+        const { FocusPanelManager } = await import('../FocusPanelManager.js').catch(() => ({ FocusPanelManager: null }));
+
         // 1. Initialize AbortController for global cancellation (Cancel button in header)
         if (MassImportManager.massImportAbortController) {
             MassImportManager.massImportAbortController.abort();
