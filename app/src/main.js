@@ -83,87 +83,136 @@ function setupPWAUpdateHandler() {
     // Check if service worker is available
     if (!('serviceWorker' in navigator)) return;
 
+    let isRefreshing = false;
+    let isUpdating = false;
+
+    // Direct listener on controller change (ensures instant reload as soon as new SW takes over)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        window.location.reload();
+    });
+
     // Import the virtual module from vite-plugin-pwa
     import('virtual:pwa-register').then(({ registerSW }) => {
         let updateSW;
         let registration;
 
+        const applyUpdate = async (btn) => {
+            if (isUpdating) return;
+            isUpdating = true;
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<iconify-icon icon="solar:restart-linear" class="rotate-icon"></iconify-icon> Installation...';
+            }
+
+            try {
+                // 1. Tell vite-plugin-pwa / workbox to skip waiting
+                if (typeof updateSW === 'function') {
+                    await updateSW(true);
+                }
+
+                // 2. Direct message to waiting / installing workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                registrations.forEach((reg) => {
+                    reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
+                    reg.installing?.postMessage({ type: 'SKIP_WAITING' });
+                });
+            } catch (e) {
+                console.warn('[PWA] Error during update trigger:', e);
+            }
+
+            // 3. Fallback: if controllerchange doesn't reload within 600ms, force reload
+            setTimeout(() => {
+                if (!isRefreshing) {
+                    isRefreshing = true;
+                    window.location.reload();
+                }
+            }, 600);
+        };
+
+        const notifyUpdateAvailable = () => {
+            showUpdateBanner();
+            if (window.appState) {
+                window.appState.isUpdateAvailable = true;
+                document.dispatchEvent(new CustomEvent('app-update-available'));
+            }
+        };
+
         const showUpdateBanner = () => {
             const banner = document.getElementById('pwaUpdateBanner');
-            if (banner) {
-                // Populate Commit Info (Dynamic from version.json)
-                const populateUpdateInfo = async () => {
-                    try {
-                        // Fetch latest version info (bust cache)
-                        const res = await fetch('./version.json?t=' + Date.now());
-                        if (res.ok) {
-                            const data = await res.json();
+            if (!banner) return;
 
-                            const hashEl = document.getElementById('pwaCommitHash');
-                            if (hashEl && data.hash) hashEl.textContent = `${data.hash}`;
+            // Populate Commit Info (Dynamic from version.json)
+            const populateUpdateInfo = async () => {
+                try {
+                    // Fetch latest version info (bust cache)
+                    const res = await fetch('./version.json?t=' + Date.now());
+                    if (res.ok) {
+                        const data = await res.json();
 
-                            const msgEl = document.getElementById('pwaCommitMsg');
-                            if (msgEl && data.message) msgEl.textContent = data.message;
-                        } else {
-                            // Fallback to static build constants if fetch fails
-                            throw new Error('version.json fetch failed');
-                        }
-                    } catch (e) {
-                        console.warn('[PWA] Failed to fetch dynamic version info, using static fallback:', e);
-                        // Fallback to static constants injected by Vite
-                        if (typeof __COMMIT_HASH__ !== 'undefined') {
-                            const hashEl = document.getElementById('pwaCommitHash');
-                            if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
-                        }
-                        if (typeof __COMMIT_MESSAGE__ !== 'undefined') {
-                            const msgEl = document.getElementById('pwaCommitMsg');
-                            if (msgEl) msgEl.textContent = __COMMIT_MESSAGE__;
-                        }
+                        const hashEl = document.getElementById('pwaCommitHash');
+                        if (hashEl && data.hash) hashEl.textContent = `${data.hash}`;
+
+                        const msgEl = document.getElementById('pwaCommitMsg');
+                        if (msgEl && data.message) msgEl.textContent = data.message;
+                    } else {
+                        // Fallback to static build constants if fetch fails
+                        throw new Error('version.json fetch failed');
                     }
+                } catch (e) {
+                    console.warn('[PWA] Failed to fetch dynamic version info, using static fallback:', e);
+                    // Fallback to static constants injected by Vite
+                    if (typeof __COMMIT_HASH__ !== 'undefined') {
+                        const hashEl = document.getElementById('pwaCommitHash');
+                        if (hashEl) hashEl.textContent = `${__COMMIT_HASH__}`;
+                    }
+                    if (typeof __COMMIT_MESSAGE__ !== 'undefined') {
+                        const msgEl = document.getElementById('pwaCommitMsg');
+                        if (msgEl) msgEl.textContent = __COMMIT_MESSAGE__;
+                    }
+                }
+            };
+
+            populateUpdateInfo();
+
+            // Smoothly show update banner
+            banner.classList.add('visible');
+
+            // Handle Details Toggle - Click on the entire text area
+            const bannerText = banner.querySelector('.pwa-banner-text');
+            const infoBtn = document.getElementById('pwaInfoBtn');
+            const details = document.getElementById('pwaUpdateDetails');
+
+            if (bannerText && details && infoBtn) {
+                bannerText.onclick = () => {
+                    details.classList.toggle('expanded');
+                    infoBtn.classList.toggle('active');
                 };
+            }
 
-                populateUpdateInfo();
+            // Update button - reload the app
+            const updateBtn = document.getElementById('pwaUpdateBtn');
+            if (updateBtn) {
+                updateBtn.onclick = () => {
+                    applyUpdate(updateBtn);
+                };
+            }
 
-                // Smoothly show update banner
-                banner.classList.add('visible');
-
-                // Handle Details Toggle - Click on the entire text area
-                const bannerText = banner.querySelector('.pwa-banner-text');
-                const infoBtn = document.getElementById('pwaInfoBtn');
-                const details = document.getElementById('pwaUpdateDetails');
-
-                if (bannerText && details && infoBtn) {
-                    bannerText.onclick = () => {
-                        details.classList.toggle('expanded');
-                        infoBtn.classList.toggle('active');
-                    };
-                }
-
-                // Update button - reload the app
-                const updateBtn = document.getElementById('pwaUpdateBtn');
-                if (updateBtn) {
-                    updateBtn.onclick = () => {
-                        updateSW && updateSW(true);
-                    };
-                }
-
-                // Dismiss button - hide for this session
-                const dismissBtn = document.getElementById('pwaUpdateDismissBtn');
-                if (dismissBtn) {
-                    dismissBtn.onclick = () => {
-                        banner.classList.remove('visible');
-                    };
-                }
+            // Dismiss button - hide for this session
+            const dismissBtn = document.getElementById('pwaUpdateDismissBtn');
+            if (dismissBtn) {
+                dismissBtn.onclick = () => {
+                    banner.classList.remove('visible');
+                };
             }
         };
 
         // Expose update trigger for menu button
-        window.triggerAppUpdate = () => {
-            if (updateSW) {
-                updateSW(true);
-            } else {
-                window.location.reload();
-            }
+        window.triggerAppUpdate = (btn) => {
+            const targetBtn = btn || document.getElementById('pwaUpdateBtn') || document.getElementById('updateMenuItem');
+            applyUpdate(targetBtn);
         };
 
         // Expose manual check function
@@ -181,21 +230,40 @@ function setupPWAUpdateHandler() {
 
         updateSW = registerSW({
             onNeedRefresh() {
-                showUpdateBanner();
-                // Update global state
-                if (window.appState) {
-                    window.appState.isUpdateAvailable = true;
-                    document.dispatchEvent(new CustomEvent('app-update-available'));
-                }
+                notifyUpdateAvailable();
             },
             onOfflineReady() { },
             onRegistered(swRegistration) {
                 registration = swRegistration;
 
-                // Check for updates every hour
+                // If a service worker is already waiting upon registration, notify immediately
+                if (swRegistration.waiting) {
+                    notifyUpdateAvailable();
+                }
+
+                // Detect new service worker installing
+                swRegistration.addEventListener('updatefound', () => {
+                    const installingWorker = swRegistration.installing;
+                    if (installingWorker) {
+                        installingWorker.addEventListener('statechange', () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                notifyUpdateAvailable();
+                            }
+                        });
+                    }
+                });
+
+                // Check for updates every 30 minutes
                 setInterval(() => {
-                    swRegistration.update();
-                }, 60 * 60 * 1000);
+                    swRegistration.update().catch(() => {});
+                }, 30 * 60 * 1000);
+
+                // Check for updates when user returns to tab
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        swRegistration.update().catch(() => {});
+                    }
+                });
             },
             onRegisterError(error) {
                 console.error('[PWA] Service worker registration error:', error);

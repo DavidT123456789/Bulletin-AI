@@ -24,6 +24,9 @@ export default defineConfig({
       registerType: 'prompt', // Changed to 'prompt' to show custom update notification
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
+        clientsClaim: true,
+        skipWaiting: false,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,png,svg,ico,woff,woff2}', 'app.html'],
         navigateFallback: null, // Don't cache navigation requests
         runtimeCaching: [

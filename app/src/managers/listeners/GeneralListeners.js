@@ -133,7 +133,7 @@ export const GeneralListeners = {
             if (updateMenuItem) {
                 addClickListener(updateMenuItem, () => {
                     if (window.triggerAppUpdate) {
-                        window.triggerAppUpdate();
+                        window.triggerAppUpdate(updateMenuItem);
                     } else {
                         window.location.reload();
                     }
