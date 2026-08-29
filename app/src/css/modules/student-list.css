@@ -205,13 +205,24 @@
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
     width: 220px;
-    padding-left: 62px !important; /* Normal/Expanded view: 16px cell + 36px avatar + 10px gap */
+    padding-left: 62px !important; /* Normal view: 16px cell + 36px avatar + 10px gap */
+    transition: padding-left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 1101px) {
+    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
+        padding-left: 84px !important; /* Expanded view: 16px cell + 56px avatar + 12px gap */
+    }
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
     .student-list-table th[data-sort-field="name"] {
         width: 175px;
-        padding-left: 56px !important; /* Tablet view: 10px cell + 36px avatar + 10px gap */
+        padding-left: 56px !important; /* Tablet normal view: 10px cell + 36px avatar + 10px gap */
+    }
+
+    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
+        padding-left: 72px !important; /* Tablet expanded view: 10px cell + 50px avatar + 12px gap */
     }
 }
 

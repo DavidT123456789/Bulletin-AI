@@ -151,50 +151,20 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    /* Allow avatar zoom to overflow */
     overflow: visible;
-    /* Smooth transition for expand/collapse layout change */
-    transition: flex-direction 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        align-items 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        gap 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-        padding-left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: gap 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Avatar size transition for expand/collapse */
+/* Avatar size transition for expand/collapse (Effet ressort / élastique) */
 .student-identity-wrapper .student-avatar {
-    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-        height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-        font-size 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transition: width 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+        height 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+        font-size 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
         transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
         box-shadow 0.25s ease;
 }
 
-/* Maintain zoom when student is focused (panel open) OR selected via checkbox */
-.student-list-table tbody tr.focus-active .student-avatar,
-.student-list-table tbody tr .student-avatar.is-selected {
-    transform: scale(1.18);
-    z-index: 10;
-}
-
-/* Focused or selected states get a shadow to indicate active state */
-.student-list-table tbody tr.focus-active .student-avatar,
-.student-list-table tbody tr .student-avatar.is-selected {
-    box-shadow: var(--shadow-sm);
-}
-
-[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar,
-[data-theme="dark"] .student-list-table tbody tr .student-avatar.is-selected {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Hover zoom triggered by entire row hover ONLY on hover-capable devices (Desktop with mouse) */
-@media (hover: hover) and (pointer: fine) {
-    .student-list-table tbody tr:hover .student-avatar {
-        transform: scale(1.18);
-        z-index: 10;
-    }
-}
-
+/* Base nom-prenom */
 .student-identity-wrapper .student-nom-prenom {
     flex: 1;
     min-width: 0;
@@ -206,6 +176,61 @@
 .student-identity-wrapper .student-prenom {
     font-weight: 400;
     color: var(--text-secondary);
+}
+
+/* === EXPANDED VIEW: Photo plus grande & Nom/Prénom superposés === */
+.appreciation-full-view .student-identity-wrapper {
+    gap: 12px;
+}
+
+.appreciation-full-view .student-identity-wrapper .student-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .appreciation-full-view .student-identity-wrapper .student-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+
+.appreciation-full-view .student-identity-wrapper .student-nom-prenom {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    line-height: 1.25;
+    white-space: normal;
+}
+
+.appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
+    display: block;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+/* Maintain zoom when student is focused (panel open) OR selected via checkbox */
+.student-list-table tbody tr.focus-active .student-avatar,
+.student-list-table tbody tr .student-avatar.is-selected {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .student-list-table tbody tr.focus-active .student-avatar,
+[data-theme="dark"] .student-list-table tbody tr .student-avatar.is-selected {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover zoom triggered by entire row hover ONLY on hover-capable devices (Desktop with mouse) */
+@media (hover: hover) and (pointer: fine) {
+    .student-list-table tbody tr:hover .student-avatar {
+        transform: scale(1.12);
+        z-index: 10;
+    }
 }
 
 /* Focus Panel Header Avatar */
