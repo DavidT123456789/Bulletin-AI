@@ -265,7 +265,7 @@
     justify-content: center;
     color: var(--error-color, #ef4444);
     background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.22);
     transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -275,16 +275,17 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.danger.icon-only:hover {
-        background: var(--error-color, #ef4444);
-        color: #ffffff;
-        border-color: var(--error-color, #ef4444);
+        background: rgba(239, 68, 68, 0.16);
+        border-color: rgba(239, 68, 68, 0.38);
+        color: var(--error-color, #ef4444);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        box-shadow: none;
     }
 }
 
 .btn-selection-action.danger.icon-only:active {
-    transform: scale(0.92);
+    transform: scale(0.96) translateY(0);
+    background: rgba(239, 68, 68, 0.22);
 }
 
 /* === Avatar Selection Overlay === */
