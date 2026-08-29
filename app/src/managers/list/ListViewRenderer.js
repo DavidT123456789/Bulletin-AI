@@ -88,8 +88,8 @@ export const ListViewRenderer = {
                 <button class="action-dropdown-item" data-action="move-student">
                     <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
                 </button>
-                <button class="action-dropdown-item" data-action="reset-student">
-                    <iconify-icon icon="solar:eraser-linear" style="color: var(--color-amber, #f59e0b);"></iconify-icon> Effacer...
+                <button class="action-dropdown-item warning" data-action="reset-student">
+                    <iconify-icon icon="solar:eraser-linear"></iconify-icon> Effacer...
                 </button>
                 <button class="action-dropdown-item danger" data-action="delete-student">
                     <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> Supprimer
