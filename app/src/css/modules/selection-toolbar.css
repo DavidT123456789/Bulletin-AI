@@ -119,6 +119,7 @@
 .btn-select-all-link {
     display: inline-flex;
     align-items: center;
+    gap: 5px;
     padding: 4px 10px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -130,6 +131,10 @@
     transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
     white-space: nowrap;
     text-decoration: none;
+}
+
+.btn-select-all-link iconify-icon {
+    font-size: 14px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -204,28 +209,49 @@
     transform: scale(0.96) translateY(0);
 }
 
-/* Primary / Hero Action (Régénérer) */
+/* Primary / Hero Action (Régénérer - Clean Flat Design) */
 .btn-selection-action.primary {
     background: var(--primary-color);
     color: #ffffff !important;
     font-weight: 600;
     padding: 7px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.primary:hover {
         background: var(--primary-hover);
-        box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.45);
         color: #ffffff !important;
         transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
     }
 }
 
 .btn-selection-action.primary:active {
     transform: scale(0.96);
-    box-shadow: 0 1px 4px rgba(var(--primary-color-rgb), 0.3);
+    box-shadow: none;
+}
+
+/* Warning / Content Clear Action (Effacer) */
+.btn-selection-action.warning {
+    color: var(--color-amber, #f59e0b);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-selection-action.warning:hover {
+        background: rgba(245, 158, 11, 0.16);
+        border-color: rgba(245, 158, 11, 0.38);
+        color: var(--color-amber, #f59e0b);
+        transform: translateY(-1px);
+    }
+}
+
+.btn-selection-action.warning:active {
+    transform: scale(0.96) translateY(0);
+    background: rgba(245, 158, 11, 0.22);
 }
 
 /* Danger / Destructive Action (Supprimer - Icon Only) */
@@ -371,7 +397,20 @@
     }
 
     .btn-select-all-link {
+        display: inline-flex;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .btn-select-all-link span {
         display: none;
+    }
+
+    .btn-select-all-link iconify-icon {
+        font-size: 16px;
     }
 
     .selection-count-badge {

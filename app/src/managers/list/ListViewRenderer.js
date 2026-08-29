@@ -89,7 +89,7 @@ export const ListViewRenderer = {
                     <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> Déplacer
                 </button>
                 <button class="action-dropdown-item" data-action="reset-student">
-                    <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
+                    <iconify-icon icon="solar:eraser-linear" style="color: var(--color-amber, #f59e0b);"></iconify-icon> Effacer...
                 </button>
                 <button class="action-dropdown-item danger" data-action="delete-student">
                     <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> Supprimer
@@ -325,7 +325,7 @@ export const ListViewRenderer = {
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                                         <!-- SECTION SELECTION -->
                                         <button class="action-dropdown-item" id="selectAllBtn-global">
-                                            <iconify-icon icon="ph:check-square"></iconify-icon> Tout sélectionner
+                                            <iconify-icon icon="ph:check-square-offset"></iconify-icon> Tout sélectionner
                                         </button>
                                         
                                         <!-- SECTION VUE -->

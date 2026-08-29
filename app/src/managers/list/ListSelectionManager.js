@@ -254,7 +254,10 @@ export const ListSelectionManager = {
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
                     <span id="selectionCount" class="selection-count-badge">0 élève sélectionné</span>
-                    <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste">Tout sélectionner</button>
+                    <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste" aria-label="Tout sélectionner">
+                        <iconify-icon icon="ph:check-square-offset"></iconify-icon>
+                        <span>Tout sélectionner</span>
+                    </button>
                 </div>
                 <div class="selection-divider"></div>
                 <div class="selection-actions">
@@ -267,8 +270,8 @@ export const ListSelectionManager = {
                     <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
                         <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
                     </button>
-                    <button class="btn-selection-action tooltip" data-bulk-action="reset" data-tooltip="Choisir les données à réinitialiser">
-                        <iconify-icon icon="solar:restart-linear"></iconify-icon> <span>Réinitialiser</span>
+                    <button class="btn-selection-action warning tooltip" data-bulk-action="reset" data-tooltip="Effacer du contenu (appréciations, journal...)" aria-label="Effacer du contenu">
+                        <iconify-icon icon="solar:eraser-linear"></iconify-icon> <span>Effacer</span>
                     </button>
                     <div class="selection-divider"></div>
                     <button class="btn-selection-action danger icon-only tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves" aria-label="Supprimer les élèves sélectionnés">
@@ -601,14 +604,14 @@ export const ListSelectionManager = {
             : `<strong>${ids.length} élèves</strong>`;
 
         const { confirmed, values } = await ModalUIManager.showChoicesModal(
-            'Réinitialiser',
+            'Effacer du contenu',
             `Choisissez les données à effacer pour ${studentLabel} :`,
             choices,
             {
-                confirmText: 'Réinitialiser',
+                confirmText: 'Effacer',
                 cancelText: 'Annuler',
                 isDanger: true,
-                iconClass: 'solar:restart-circle-bold'
+                iconClass: 'solar:eraser-square-bold'
             }
         );
 
@@ -740,7 +743,7 @@ export const ListSelectionManager = {
 
             // Show undo toast instead of simple notification
             UI?.showUndoNotification(
-                `Réinitialisé : ${parts.join(', ')}.`,
+                `Effacé : ${parts.join(', ')}.`,
                 async () => {
                     // Restore snapshot
                     for (const [id, snap] of snapshots) {
@@ -811,7 +814,7 @@ export const ListSelectionManager = {
 
                     await StorageManager.saveAppState();
                     UI?.updateStats?.();
-                    UI?.showNotification('Réinitialisation annulée.', 'success');
+                    UI?.showNotification('Effacement annulé.', 'success');
                 },
                 { type: 'warning' }
             );
