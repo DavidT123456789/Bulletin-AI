@@ -261,22 +261,36 @@ export const ListSelectionManager = {
                 </div>
                 <div class="selection-divider"></div>
                 <div class="selection-actions">
-                    <button class="btn-selection-action primary tooltip" data-bulk-action="regenerate" data-tooltip="Relancer la génération pour la sélection">
-                        <iconify-icon icon="solar:refresh-linear"></iconify-icon> <span>Régénérer</span>
-                    </button>
-                    <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations (Presse-papier)">
-                        <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
-                    </button>
-                    <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer vers une autre classe">
-                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
-                    </button>
-                    <button class="btn-selection-action warning tooltip" data-bulk-action="reset" data-tooltip="Effacer du contenu (appréciations, journal...)" aria-label="Effacer du contenu">
-                        <iconify-icon icon="solar:eraser-linear"></iconify-icon> <span>Effacer</span>
-                    </button>
+                    <!-- Groupe Appréciation (Contenu IA) -->
+                    <div class="selection-action-group" data-group="appreciation" aria-label="Actions sur les appréciations">
+                        <button class="btn-selection-action primary tooltip" data-bulk-action="regenerate" data-tooltip="Régénérer les appréciations sélectionnées">
+                            <iconify-icon icon="solar:refresh-linear"></iconify-icon> <span>Régénérer</span>
+                        </button>
+                        <button class="btn-selection-action tooltip" data-bulk-action="copy" data-tooltip="Copier les appréciations sélectionnées (Presse-papier)">
+                            <iconify-icon icon="solar:copy-linear"></iconify-icon> <span>Copier</span>
+                        </button>
+                    </div>
+
                     <div class="selection-divider"></div>
-                    <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves" aria-label="Supprimer les élèves sélectionnés">
-                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> <span>Supprimer</span>
-                    </button>
+
+                    <!-- Groupe Données Élève (Fiche / Registre) -->
+                    <div class="selection-action-group" data-group="student" aria-label="Actions sur les élèves">
+                        <button class="btn-selection-action tooltip" data-bulk-action="move" data-tooltip="Transférer les élèves vers une autre classe">
+                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon> <span>Déplacer</span>
+                        </button>
+                        <button class="btn-selection-action warning tooltip" data-bulk-action="reset" data-tooltip="Effacer du contenu (appréciations, journal...)" aria-label="Effacer du contenu">
+                            <iconify-icon icon="solar:eraser-linear"></iconify-icon> <span>Effacer</span>
+                        </button>
+                    </div>
+
+                    <div class="selection-divider"></div>
+
+                    <!-- Groupe Destructif -->
+                    <div class="selection-action-group" data-group="danger" aria-label="Action destructrice">
+                        <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves sélectionnés" aria-label="Supprimer les élèves sélectionnés">
+                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> <span>Supprimer</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;

@@ -154,8 +154,14 @@
     flex-shrink: 0;
 }
 
-/* === Action Buttons === */
+/* === Action Buttons & Groups === */
 .selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.selection-action-group {
     display: flex;
     align-items: center;
     gap: 2px;
