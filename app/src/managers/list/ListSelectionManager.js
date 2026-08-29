@@ -274,8 +274,8 @@ export const ListSelectionManager = {
                         <iconify-icon icon="solar:eraser-linear"></iconify-icon> <span>Effacer</span>
                     </button>
                     <div class="selection-divider"></div>
-                    <button class="btn-selection-action danger icon-only tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves" aria-label="Supprimer les élèves sélectionnés">
-                        <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
+                    <button class="btn-selection-action danger tooltip" data-bulk-action="delete" data-tooltip="Supprimer définitivement les élèves" aria-label="Supprimer les élèves sélectionnés">
+                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon> <span>Supprimer</span>
                     </button>
                 </div>
             </div>

@@ -98,31 +98,23 @@
 .selection-count-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-    border-radius: var(--radius-pill);
+    padding: 0 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: -0.01em;
     white-space: nowrap;
-    transition: all 0.2s ease;
-}
-
-[data-theme="dark"] .selection-count-badge {
-    background: rgba(var(--primary-color-rgb), 0.16);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    color: #60a5fa;
 }
 
 .btn-select-all-link {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
     border-radius: var(--radius-pill);
     font-size: 12px;
     font-weight: 500;
@@ -130,7 +122,9 @@
     cursor: pointer;
     transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
     white-space: nowrap;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(125, 125, 125, 0.3);
 }
 
 .btn-select-all-link iconify-icon {
@@ -140,8 +134,8 @@
 @media (hover: hover) and (pointer: fine) {
     .btn-select-all-link:hover {
         color: var(--text-primary);
-        background: var(--bg-hover);
-        border-color: rgba(var(--primary-color-rgb), 0.35);
+        text-decoration-color: var(--text-primary);
+        background: var(--item-hover-bg, rgba(125, 125, 125, 0.1));
         transform: translateY(-0.5px);
     }
 }
@@ -153,10 +147,10 @@
 /* === Dividers === */
 .selection-divider {
     width: 1px;
-    height: 22px;
+    height: 20px;
     background: var(--border-color);
-    opacity: 0.7;
-    margin: 0 2px;
+    opacity: 0.6;
+    margin: 0 4px;
     flex-shrink: 0;
 }
 
@@ -164,7 +158,7 @@
 .selection-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
 }
 
 .btn-selection-action {
@@ -172,11 +166,11 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 6px 11px;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -195,9 +189,8 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action:hover {
-        background: var(--bg-hover);
+        background: var(--item-hover-bg, rgba(125, 125, 125, 0.1));
         color: var(--text-primary);
-        border-color: rgba(var(--primary-color-rgb), 0.25);
         transform: translateY(-1px);
     }
 
@@ -210,95 +203,45 @@
     transform: scale(0.96) translateY(0);
 }
 
-/* Primary / Hero Action (Régénérer - Glass Capsule) */
+/* Primary / Hero Action (Régénérer - Minimalist Ghost) */
 .btn-selection-action.primary {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border-color: rgba(var(--primary-color-rgb), 0.28);
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 600;
-    padding: 6px 14px;
-    box-shadow: none;
-}
-
-[data-theme="dark"] .btn-selection-action.primary {
-    background: rgba(var(--primary-color-rgb), 0.18);
-    border-color: rgba(var(--primary-color-rgb), 0.35);
-    color: #60a5fa;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.primary:hover {
-        background: rgba(var(--primary-color-rgb), 0.22);
-        border-color: rgba(var(--primary-color-rgb), 0.48);
+        background: rgba(var(--primary-color-rgb), 0.12);
         color: var(--primary-color);
-        transform: translateY(-1px);
-        box-shadow: none;
     }
 
     [data-theme="dark"] .btn-selection-action.primary:hover {
-        background: rgba(var(--primary-color-rgb), 0.28);
-        color: #93c5fd;
+        color: #60a5fa;
     }
 }
 
-.btn-selection-action.primary:active {
-    transform: scale(0.96);
-    background: rgba(var(--primary-color-rgb), 0.3);
-}
-
-/* Warning / Content Clear Action (Effacer - Glass Capsule) */
+/* Warning / Content Clear Action (Effacer - Minimalist Ghost) */
 .btn-selection-action.warning {
     color: var(--color-amber, #f59e0b);
-    background: rgba(245, 158, 11, 0.08);
-    border-color: rgba(245, 158, 11, 0.24);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.warning:hover {
-        background: rgba(245, 158, 11, 0.18);
-        border-color: rgba(245, 158, 11, 0.42);
+        background: rgba(245, 158, 11, 0.12);
         color: var(--color-amber, #f59e0b);
-        transform: translateY(-1px);
     }
 }
 
-.btn-selection-action.warning:active {
-    transform: scale(0.96) translateY(0);
-    background: rgba(245, 158, 11, 0.26);
-}
-
-/* Danger / Destructive Action (Supprimer - Glass Capsule) */
-.btn-selection-action.danger.icon-only {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border-radius: var(--radius-pill);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+/* Danger / Destructive Action (Supprimer - Minimalist Ghost) */
+.btn-selection-action.danger {
     color: var(--error-color, #ef4444);
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.24);
-    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.btn-selection-action.danger.icon-only iconify-icon {
-    font-size: 18px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .btn-selection-action.danger.icon-only:hover {
-        background: rgba(239, 68, 68, 0.18);
-        border-color: rgba(239, 68, 68, 0.42);
+    .btn-selection-action.danger:hover {
+        background: rgba(239, 68, 68, 0.12);
         color: var(--error-color, #ef4444);
-        transform: translateY(-1px);
-        box-shadow: none;
     }
-}
-
-.btn-selection-action.danger.icon-only:active {
-    transform: scale(0.96) translateY(0);
-    background: rgba(239, 68, 68, 0.26);
 }
 
 /* === Avatar Selection Overlay === */
