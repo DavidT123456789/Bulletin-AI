@@ -1088,9 +1088,34 @@
 
 .status-badges-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: safe center;
     gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 2px 2px;
+    max-width: 100%;
+}
+
+.status-badges-container::-webkit-scrollbar {
+    display: none;
+}
+
+.status-badges-container .tag-badge,
+.status-badges-container .status-badge {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Expanded view: Stack badges vertically to show all without scrolling */
+.appreciation-full-view .status-badges-container {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    overflow-y: visible;
+    gap: 5px;
 }
 
 .status-empty-dash {
