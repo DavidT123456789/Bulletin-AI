@@ -209,13 +209,13 @@
     transform: scale(0.96) translateY(0);
 }
 
-/* Primary / Hero Action (Régénérer - Clean Flat Design) */
+/* Primary / Hero Action (Régénérer - Pure Flat Design) */
 .btn-selection-action.primary {
     background: var(--primary-color);
     color: #ffffff !important;
     font-weight: 600;
     padding: 7px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid transparent;
     box-shadow: none;
 }
 
@@ -224,7 +224,7 @@
         background: var(--primary-hover);
         color: #ffffff !important;
         transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+        box-shadow: none;
     }
 }
 
