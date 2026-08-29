@@ -4,6 +4,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
+
+    <!-- Immediate Anti-White-Flash & Theme/Accent Injection (0ms, before external CSS) -->
+    <script>
+        (function() {
+            try {
+                var savedState = localStorage.getItem('bulletin_app_state');
+                var theme = 'light';
+                var accentColor = 'blue';
+                if (savedState) {
+                    var state = JSON.parse(savedState);
+                    if (state.settings && state.settings.theme) {
+                        theme = state.settings.theme;
+                    } else if (state.theme) {
+                        theme = state.theme;
+                    }
+                    if (state.settings && state.settings.accentColor) {
+                        accentColor = state.settings.accentColor;
+                    }
+                }
+
+                if (theme === 'system') {
+                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+
+                if (theme === 'dark') {
+                    document.documentElement.dataset.theme = 'dark';
+                    document.documentElement.style.backgroundColor = '#09090b';
+                } else {
+                    document.documentElement.dataset.theme = 'light';
+                    document.documentElement.style.backgroundColor = '#f7f7f8';
+                }
+
+                // Accent Color Pre-calculation
+                var colors = {};
+                if (accentColor.startsWith('#')) {
+                    var hexToRgb = function(hex) {
+                        var shorth = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                        var full = hex.replace(shorth, function(m, r, g, b) { return r + r + g + g + b + b; });
+                        var res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(full);
+                        return res ? { r: parseInt(res[1], 16), g: parseInt(res[2], 16), b: parseInt(res[3], 16) } : { r: 59, g: 130, b: 246 };
+                    };
+                    var rgbToHsl = function(r, g, b) {
+                        r /= 255; g /= 255; b /= 255;
+                        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+                        var h, s, l = (max + min) / 2;
+                        if (max === min) h = s = 0;
+                        else {
+                            var d = max - min;
+                            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                            switch (max) {
+                                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                                case g: h = (b - r) / d + 2; break;
+                                case b: h = (r - g) / d + 4; break;
+                            }
+                            h /= 6;
+                        }
+                        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+                    };
+                    var hslToRgb = function(h, s, l) {
+                        h /= 360; s /= 100; l /= 100;
+                        var r, g, b;
+                        if (s === 0) r = g = b = l;
+                        else {
+                            var hue2rgb = function(p, q, t) {
+                                if (t < 0) t += 1;
+                                if (t > 1) t -= 1;
+                                if (t < 1/6) return p + (q - p) * 6 * t;
+                                if (t < 1/2) return q;
+                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                                return p;
+                            };
+                            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                            var p = 2 * l - q;
+                            r = hue2rgb(p, q, h + 1/3);
+                            g = hue2rgb(p, q, h);
+                            b = hue2rgb(p, q, h - 1/3);
+                        }
+                        return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+                    };
+                    var rgbToHex = function(r, g, b) {
+                        var toHex = function(x) {
+                            var h = x.toString(16);
+                            return h.length === 1 ? '0' + h : h;
+                        };
+                        return '#' + toHex(r) + toHex(g) + toHex(b);
+                    };
+
+                    var baseRgb = hexToRgb(accentColor);
+                    var baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+                    var adjustedL = baseHsl.l;
+                    if (theme === 'dark') {
+                        if (baseHsl.l < 65) adjustedL = 65;
+                    } else {
+                        if (baseHsl.l > 50) adjustedL = 50;
+                    }
+                    var adjustedRgb = hslToRgb(baseHsl.h, baseHsl.s, adjustedL);
+                    var primaryColor = rgbToHex(adjustedRgb.r, adjustedRgb.g, adjustedRgb.b);
+                    var rgbString = adjustedRgb.r + ', ' + adjustedRgb.g + ', ' + adjustedRgb.b;
+                    var hoverL = Math.max(0, adjustedL - 10);
+                    var hoverRgb = hslToRgb(baseHsl.h, baseHsl.s, hoverL);
+                    var primaryHover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
+                    colors = { color: primaryColor, rgb: rgbString, hover: primaryHover };
+                } else {
+                    var presets = {
+                        blue: {
+                            light: { color: '#3b82f6', rgb: '59, 130, 246', hover: '#2563eb' },
+                            dark: { color: '#4f7df2', rgb: '79, 125, 242', hover: '#3b66f1' }
+                        },
+                        anthracite: {
+                            light: { color: '#3f3f46', rgb: '63, 63, 70', hover: '#27272a' },
+                            dark: { color: '#d4d4d8', rgb: '212, 212, 216', hover: '#a1a1aa' }
+                        },
+                        rose: {
+                            light: { color: '#f5627d', rgb: '245, 98, 125', hover: '#e11d48' },
+                            dark: { color: '#fda4af', rgb: '253, 164, 175', hover: '#fb7185' }
+                        }
+                    };
+                    var preset = presets[accentColor] || presets.blue;
+                    colors = preset[theme] || preset.light;
+                }
+
+                document.documentElement.style.setProperty('--primary-color', colors.color);
+                document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
+                document.documentElement.style.setProperty('--primary-hover', colors.hover);
+            } catch (e) {
+                document.documentElement.dataset.theme = 'dark';
+                document.documentElement.style.backgroundColor = '#09090b';
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            color-scheme: dark light;
+        }
+        html {
+            background-color: #09090b;
+        }
+        html[data-theme="dark"] {
+            background-color: #09090b !important;
+            color: #fafafa;
+        }
+        html[data-theme="light"] {
+            background-color: #f7f7f8 !important;
+            color: #18181b;
+        }
+        body {
+            background-color: inherit;
+        }
+    </style>
+
     <!-- PWA Configuration -->
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f7f8">
@@ -42,140 +193,6 @@
     <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
     <link rel="stylesheet" href="src/css/main.css">
-    <script>
-        // Immediate Theme Application (Prevents White Flash)
-        try {
-            const savedState = localStorage.getItem('bulletin_app_state');
-            if (savedState) {
-                const state = JSON.parse(savedState);
-                // Check flattened settings (legacy/flat structure)
-                let theme = 'light';
-                if (state.settings && state.settings.theme) {
-                    theme = state.settings.theme;
-                } else if (state.theme) {
-                    theme = state.theme;
-                }
-
-                if (theme === 'system') {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                }
-
-                if (theme === 'dark') {
-                    document.documentElement.dataset.theme = 'dark';
-                    const metas = document.querySelectorAll('meta[name="theme-color"]');
-                    metas.forEach(meta => meta.setAttribute('content', '#09090b'));
-                } else {
-                    const metas = document.querySelectorAll('meta[name="theme-color"]');
-                    metas.forEach(meta => meta.setAttribute('content', '#f7f7f8'));
-                }
-
-                // Immediate Accent Color Application
-                let accentColor = 'blue';
-                if (state.settings && state.settings.accentColor) {
-                    accentColor = state.settings.accentColor;
-                }
-
-                let colors = {};
-                if (accentColor.startsWith('#')) {
-                    // Quick inline conversion & adjustment
-                    const hexToRgb = function(hex) {
-                        const shorth = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-                        const full = hex.replace(shorth, (m, r, g, b) => r + r + g + g + b + b);
-                        const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(full);
-                        return res ? { r: parseInt(res[1], 16), g: parseInt(res[2], 16), b: parseInt(res[3], 16) } : { r: 59, g: 130, b: 246 };
-                    };
-                    const rgbToHsl = function(r, g, b) {
-                        r /= 255; g /= 255; b /= 255;
-                        const max = Math.max(r, g, b), min = Math.min(r, g, b);
-                        let h, s, l = (max + min) / 2;
-                        if (max === min) h = s = 0;
-                        else {
-                            const d = max - min;
-                            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                            switch (max) {
-                                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                                case g: h = (b - r) / d + 2; break;
-                                case b: h = (r - g) / d + 4; break;
-                            }
-                            h /= 6;
-                        }
-                        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-                    };
-                    const hslToRgb = function(h, s, l) {
-                        h /= 360; s /= 100; l /= 100;
-                        let r, g, b;
-                        if (s === 0) r = g = b = l;
-                        else {
-                            const hue2rgb = function(p, q, t) {
-                                if (t < 0) t += 1;
-                                if (t > 1) t -= 1;
-                                if (t < 1/6) return p + (q - p) * 6 * t;
-                                if (t < 1/2) return q;
-                                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                                return p;
-                            };
-                            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                            const p = 2 * l - q;
-                            r = hue2rgb(p, q, h + 1/3);
-                            g = hue2rgb(p, q, h);
-                            b = hue2rgb(p, q, h - 1/3);
-                        }
-                        return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-                    };
-                    const rgbToHex = function(r, g, b) {
-                        const toHex = function(x) {
-                            const h = x.toString(16);
-                            return h.length === 1 ? '0' + h : h;
-                        };
-                        return '#' + toHex(r) + toHex(g) + toHex(b);
-                    };
-
-                    const baseRgb = hexToRgb(accentColor);
-                    const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
-                    
-                    let adjustedL = baseHsl.l;
-                    if (theme === 'dark') {
-                        if (baseHsl.l < 65) adjustedL = 65;
-                    } else {
-                        if (baseHsl.l > 50) adjustedL = 50;
-                    }
-                    
-                    const adjustedRgb = hslToRgb(baseHsl.h, baseHsl.s, adjustedL);
-                    const primaryColor = rgbToHex(adjustedRgb.r, adjustedRgb.g, adjustedRgb.b);
-                    const rgbString = adjustedRgb.r + ', ' + adjustedRgb.g + ', ' + adjustedRgb.b;
-                    
-                    const hoverL = Math.max(0, adjustedL - 10);
-                    const hoverRgb = hslToRgb(baseHsl.h, baseHsl.s, hoverL);
-                    const primaryHover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
-
-                    colors = { color: primaryColor, rgb: rgbString, hover: primaryHover };
-                } else {
-                    const presets = {
-                        blue: {
-                            light: { color: '#3b82f6', rgb: '59, 130, 246', hover: '#2563eb' },
-                            dark: { color: '#4f7df2', rgb: '79, 125, 242', hover: '#3b66f1' }
-                        },
-                        anthracite: {
-                            light: { color: '#3f3f46', rgb: '63, 63, 70', hover: '#27272a' },
-                            dark: { color: '#d4d4d8', rgb: '212, 212, 216', hover: '#a1a1aa' }
-                        },
-                        rose: {
-                            light: { color: '#f5627d', rgb: '245, 98, 125', hover: '#e11d48' },
-                            dark: { color: '#fda4af', rgb: '253, 164, 175', hover: '#fb7185' }
-                        }
-                    };
-                    const preset = presets[accentColor] || presets.blue;
-                    colors = preset[theme] || preset.light;
-                }
-
-                document.documentElement.style.setProperty('--primary-color', colors.color);
-                document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
-                document.documentElement.style.setProperty('--primary-hover', colors.hover);
-            }
-        } catch (e) {
-            console.error('Theme/Accent init error:', e);
-        }
-    </script>
 </head>
 
 <body>
@@ -3067,7 +3084,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 639cf23 · 29 août 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build cd3b8be · 29 août 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

@@ -43,6 +43,7 @@ a, button, input, select, textarea, [role="button"], .student-row, .student-row 
 html {
     scroll-behavior: smooth;
     font-family: var(--font-sans);
+    background-color: var(--bg-color);
 }
 
 body {
