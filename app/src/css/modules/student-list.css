@@ -1074,15 +1074,15 @@
 .status-cell {
     text-align: center;
     vertical-align: middle;
-    width: 75px;
-    padding: 8px 2px !important;
+    width: 100px;
+    padding: 8px 6px !important;
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
     .status-header,
     .status-cell {
-        width: 65px;
-        padding: 8px 2px !important;
+        width: 82px;
+        padding: 8px 4px !important;
     }
 }
 
