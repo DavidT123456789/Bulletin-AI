@@ -195,138 +195,17 @@
     }
 }
 
-/* === EXPANDED VIEW: Avatar Left + Stacked Text (Disposition 2) === */
-.appreciation-full-view .student-identity-wrapper {
-    flex-direction: row;
-    align-items: center;
-    text-align: left;
-    gap: 16px;
-    padding-left: 8px;
-    /* Slight indent for visual hierarchy */
-}
-
-/* Larger premium avatar in expanded view */
-.appreciation-full-view .student-identity-wrapper .student-avatar {
-    width: 60px;
-    height: 60px;
-    font-size: 22px;
-    will-change: transform, width, height;
-}
-
-/* Tablet adjustments (769px - 1100px) */
-@media (min-width: 769px) and (max-width: 1100px) {
-    .appreciation-full-view .student-identity-wrapper {
-        gap: 12px;
-        padding-left: 6px;
-    }
-
-    .appreciation-full-view .student-identity-wrapper .student-avatar {
-        width: 52px;
-        height: 52px;
-        font-size: 19px;
-    }
-}
-
-/* Stack Name/Surname in expanded view */
-.appreciation-full-view .student-identity-wrapper .student-nom-prenom {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    line-height: 1.2;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-primary);
-    animation: text-expand-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* Style the firstname (span) within the stack */
-.appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-top: 2px;
-}
-
-/* Mobile adjustments to keep font size slightly larger than desktop but smaller than default */
-@media (max-width: 768px) {
-    .appreciation-full-view .student-identity-wrapper .student-nom-prenom {
-        font-size: 1rem; /* Slightly smaller than the default 1.1rem */
-    }
-
-    .appreciation-full-view .student-identity-wrapper .student-nom-prenom .student-prenom {
-        font-size: 0.875rem; /* Proportionate size for mobile first name */
-    }
-}
-
-/* Focused or selected states get a shadow and zoom to indicate active state in expanded view */
-.appreciation-full-view tbody tr.focus-active .student-avatar,
-.appreciation-full-view tbody tr .student-avatar.is-selected {
-    transform: scale(1.14) !important;
-    /* Slightly less zoom as avatar is bigger */
-    z-index: 10;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-[data-theme="dark"] .appreciation-full-view tbody tr.focus-active .student-avatar,
-[data-theme="dark"] .appreciation-full-view tbody tr .student-avatar.is-selected {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Zoom in expanded view - triggered by row hover ONLY on hover-capable devices (Desktop with mouse) */
-@media (hover: hover) and (pointer: fine) {
-    .appreciation-full-view tbody tr:hover .student-avatar {
-        transform: scale(1.14) !important;
-        z-index: 10;
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    }
-}
-
-/* Keyframe: subtle blur-to-sharp masks layout change */
-@keyframes identity-expand-reveal {
-    0% {
-        opacity: 0.6;
-        filter: blur(2px);
-    }
-
-    100% {
-        opacity: 1;
-        filter: blur(0);
-    }
-}
-
-/* Keyframe: text slide only (keeps avatar in place) */
-@keyframes text-expand-slide {
-    0% {
-        transform: translateX(-10px);
-    }
-
-    100% {
-        transform: translateX(0);
-    }
-}
-
-/* Keyframe: opacity-only fade */
-@keyframes avatar-expand-fade {
-    0% {
-        opacity: 0.5;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
 .student-identity-wrapper .student-nom-prenom {
     flex: 1;
     min-width: 0;
-    /* Transitions for smooth state switching */
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .student-identity-wrapper .student-prenom {
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-weight: 400;
+    color: var(--text-secondary);
 }
 
 /* Focus Panel Header Avatar */

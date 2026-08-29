@@ -4479,52 +4479,6 @@
         font-size: 14px;
     }
 
-    /* List Table Mobile Adaptations */
-    /* Note: At ≤600px, student-list.css ≤768px already sets overflow: visible
-       for card layout mode. Do NOT re-override with overflow-x: auto here,
-       as it clips box-shadows on all cards. Horizontal scroll is only needed
-       in table mode (handled by ≤900px rule above). */
-
-    .student-list-table {
-        /* Ensure table doesn't shrink - removed min-width: 500px to avoid horizontal scroll in card view */
-        min-width: auto;
-    }
-
-    .student-list-table th,
-    .student-list-table td {
-        padding: 10px 8px;
-        font-size: 13px;
-    }
-
-
-
-    /* Name cell: More space */
-    .student-name-cell {
-        min-width: 120px;
-    }
-
-    /* Grade cells: Compact */
-    .grade-cell {
-        min-width: 45px;
-    }
-
-    /* Appreciation preview: Shorter but wide enough for header content */
-    .appreciation-cell {
-        max-width: 300px;
-        min-width: 200px;
-    }
-
-    .appreciation-preview {
-        font-size: 12px;
-        padding: 4px 8px;
-    }
-
-    /* Action dropdown */
-    .btn-action-menu {
-        width: 28px;
-        height: 28px;
-    }
-
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
@@ -4596,17 +4550,6 @@
         font-size: 15px;
     }
 
-    /* List: Ultra compact */
-    .student-list-table th,
-    .student-list-table td {
-        padding: 8px 6px;
-        font-size: 12px;
-    }
-
-    .student-name-cell {
-        min-width: 100px;
-    }
-
     /* EDIT MODE: Ultra-compact adjustments */
     .focus-header.editing .focus-input-header {
         font-size: 14px;
@@ -4621,76 +4564,6 @@
         width: 26px;
         height: 26px;
         font-size: 11px;
-    }
-
-    /* Hide appreciation column on very small screens */
-    /* Allow appreciation column to be visible and scrollable */
-    .student-list-table .appreciation-header,
-    .student-list-table .appreciation-cell {
-        display: table-cell;
-    }
-}
-
-
-/* ====================================================================
-   RESPONSIVE TABLE OPTIMIZATIONS (Tablet / Narrow Desktop)
-   ==================================================================== */
-
-@media (max-width: 1200px) {
-
-    /* Reduce generous padding */
-    .student-list-table th,
-    .student-list-table td {
-        padding: 12px 10px;
-    }
-
-    /* Compress fixed columns */
-    .student-name-cell {
-        min-width: 140px;
-    }
-
-    .grade-cell {
-        min-width: 45px;
-        padding-left: 4px !important;
-        padding-right: 4px !important;
-    }
-
-    .status-cell {
-        width: 120px;
-    }
-}
-
-@media (max-width: 900px) {
-
-
-
-    /* Further compress Status */
-    .status-cell {
-        width: auto;
-        /* Let it shrink to content */
-    }
-
-    /* Compress name further */
-    .student-name-cell {
-        min-width: 120px;
-    }
-
-    /* Ensure the Grades are not too wide */
-    .grade-cell {
-        font-size: 13px;
-        font-weight: 500;
-        min-width: 35px;
-    }
-
-    /* Horizontal table scroll: only needed in TABLE mode (>768px).
-       Below 768px, student-list.css switches to card layout (display: block) and sets
-       overflow: visible — re-overriding it clips card shadows. */
-}
-
-/* Table horizontal scroll: ONLY in table mode (769-900px range) */
-@media (min-width: 769px) and (max-width: 900px) {
-    .student-list-view {
-        overflow-x: auto;
     }
 }
 

@@ -36,11 +36,6 @@
     transform: translateY(-50%) scale(1.1);
 }
 
-/* Move the loupe to stay perfectly centered above the larger 60px avatar in expanded view */
-.appreciation-full-view .inline-search-trigger-btn {
-    left: 42px;
-}
-
 
 .inline-search-trigger-btn i,
 .inline-search-trigger-btn iconify-icon {

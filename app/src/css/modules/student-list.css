@@ -20,6 +20,7 @@
 .student-list-table {
     width: 100%;
     max-width: 100%;
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 14px;
@@ -203,21 +204,14 @@
 /* Ensure Name header is left-aligned with perfect typography alignment */
 .student-list-table th[data-sort-field="name"] {
     text-align: left;
-    padding-left: 62px !important; /* Normal view: 16px cell + 36px avatar + 10px gap */
-    transition: padding-left 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Expanded view dynamically adjusts to perfectly align with the new text position */
-/* Desktop only: prevent high-specificity !important from overriding mobile flex layout */
-@media (min-width: 1101px) {
-    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
-        padding-left: 100px !important; /* Expanded view: 16px cell + 8px wrapper + 60px avatar + 16px gap */
-    }
+    width: 220px;
+    padding-left: 62px !important; /* Normal/Expanded view: 16px cell + 36px avatar + 10px gap */
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
-    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
-        padding-left: 86px !important; /* Expanded tablet: 16px cell + 6px wrapper + 52px avatar + 12px gap */
+    .student-list-table th[data-sort-field="name"] {
+        width: 175px;
+        padding-left: 56px !important; /* Tablet view: 10px cell + 36px avatar + 10px gap */
     }
 }
 
@@ -457,14 +451,16 @@
 .student-name-cell {
     font-weight: 600;
     color: var(--text-primary);
-    /* Prevent column jump when avatar moves above name */
-    min-width: 140px;
+    width: 220px;
     padding-right: 8px !important;
-    transition: min-width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-                width 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-    /* Allow avatar zoom to overflow */
     overflow: visible;
     position: relative;
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .student-name-cell {
+        width: 175px;
+    }
 }
 
 .student-name-cell .student-prenom {
@@ -483,7 +479,8 @@
 .grade-cell {
     text-align: center;
     font-variant-numeric: tabular-nums;
-    min-width: 60px;
+    width: 54px;
+    padding: 14px 4px !important;
 }
 
 .grade-cell .grade-value {
@@ -498,13 +495,16 @@
 
 /* Grade header - compact width for T1/T2/T3 labels */
 .grade-header {
-    width: 70px;
-    min-width: 70px;
-    max-width: 80px;
-    padding: 14px 8px !important;
+    width: 54px;
+    padding: 14px 4px !important;
 }
 
 /* Evolution header - direct hover effect (pseudo-element doesn't work with border-collapse) */
+.evolution-header {
+    width: 36px;
+    padding: 14px 2px !important;
+}
+
 .evolution-header:hover {
     background-color: var(--item-hover-bg) !important;
 }
@@ -522,6 +522,8 @@
 
 /* Evolution cell styling */
 .evolution-cell {
+    width: 36px;
+    padding: 14px 2px !important;
     text-align: center;
     vertical-align: middle;
 }
@@ -570,15 +572,11 @@
     opacity: 0.6;
 }
 
-/* Appreciation/Status column */
+/* Appreciation/Status column - 100% fluid elastic column */
 .appreciation-cell {
-    max-width: 340px;
-    min-width: 280px;
+    width: auto;
     text-align: left;
-    transition: padding 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                min-width 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                max-width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: padding 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     position: relative;
     /* Anchor for absolute positioning */
 }
@@ -823,45 +821,33 @@
     color: var(--primary-color); /* Keeps the active color state, but inherits opacity:0 */
 }
 
-/* Desktop only: width optimizations are irrelevant on mobile card layout */
+/* Desktop adjustments for expanded view */
 @media (min-width: 1101px) {
-    /* Expanded View - Desktop */
-    .student-list-table.appreciation-full-view .appreciation-cell {
-        /* Control width explicitly: Wider than normal (340px) but capped */
-        width: clamp(360px, 40vw, 515px);
-        min-width: 360px;
-        max-width: 515px;
-    }
-
-    /* Shrink name column in expanded view to profit from vertical stacking */
     .student-list-table.appreciation-full-view .student-name-cell {
-        min-width: 230px;
-        width: 230px;
+        min-width: 180px;
     }
 }
 
-/* Tablet (769px - 1100px) - Fluid responsive sizing to prevent table overflow in expanded view */
+/* Tablet (769px - 1100px) - Compact paddings & fluid responsiveness */
 @media (min-width: 769px) and (max-width: 1100px) {
-    .student-list-table.appreciation-full-view .appreciation-cell {
-        width: 100%;
-        min-width: 180px;
-        max-width: none;
+    .student-list-table th,
+    .student-list-table td {
+        padding: 12px 10px;
     }
 
-    .student-list-table.appreciation-full-view .student-name-cell {
-        min-width: 170px;
-        width: auto;
+    .student-list-table th.grade-header,
+    .student-list-table td.grade-cell {
+        padding: 12px 4px !important;
     }
 
-    .student-list-table.appreciation-full-view th[data-sort-field="name"] {
-        padding-left: 86px !important;
+    .student-list-table th.evolution-header,
+    .student-list-table td.evolution-cell {
+        padding: 12px 2px !important;
     }
 
-    .student-list-table th.status-header,
-    .student-list-table .status-cell {
-        width: auto;
-        min-width: 80px;
-        max-width: 105px;
+    .student-list-table th.action-header,
+    .student-list-table td.action-cell {
+        padding: 12px 2px !important;
     }
 }
 
@@ -869,8 +855,9 @@
 /* 2. Transform the preview bubble into full content */
 .student-list-table.appreciation-full-view .appreciation-preview {
     white-space: pre-wrap;
-    max-height: 500px;
-    overflow: hidden;
+    word-break: break-word;
+    max-height: none;
+    overflow: visible;
     text-overflow: clip;
 
     /* Card-like styling for full view */
@@ -917,7 +904,8 @@
 /* Wrapper for preview and status indicator */
 .appreciation-preview-wrapper {
     position: relative;
-    display: inline-block;
+    display: block;
+    width: 100%;
     max-width: 100%;
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     cursor: pointer;
@@ -927,7 +915,7 @@
 @media (hover: hover) and (pointer: fine) {
     /* Subtle zoom only when hovering the appreciation preview directly */
     .appreciation-preview-wrapper:hover {
-        transform: scale(1.04);
+        transform: scale(1.02);
         z-index: 5;
     }
 
@@ -972,12 +960,14 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--text-secondary);
-    /* cursor is on wrapper */
     padding: 6px 12px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.02);
     border: 1px solid transparent; /* Layout stability */
+    width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
+    display: block;
 
     /* iOS Spring transitions synced with row animation */
     transition:
@@ -1073,8 +1063,9 @@
 .status-cell {
     text-align: center;
     vertical-align: middle;
-    width: 140px;
-    min-width: 85px;
+    width: auto;
+    min-width: 65px;
+    max-width: 95px;
     padding: 8px 4px !important;
 }
 
@@ -1099,11 +1090,11 @@
 /* Action column */
 .action-header,
 .action-cell {
-    width: 48px;
+    width: 44px;
     min-width: 44px;
     text-align: center;
     position: relative;
-    padding: 14px 4px !important;
+    padding: 14px 2px !important;
 }
 
 /* === 3-Dot Action Dropdown === */
