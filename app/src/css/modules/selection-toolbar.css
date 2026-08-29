@@ -172,11 +172,11 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 7px 13px;
+    padding: 6px 12px;
     border-radius: var(--radius-pill);
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -195,8 +195,9 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action:hover {
-        background: var(--item-hover-bg, rgba(125, 125, 125, 0.1));
+        background: var(--bg-hover);
         color: var(--text-primary);
+        border-color: rgba(var(--primary-color-rgb), 0.25);
         transform: translateY(-1px);
     }
 
@@ -209,41 +210,53 @@
     transform: scale(0.96) translateY(0);
 }
 
-/* Primary / Hero Action (Régénérer - Pure Flat Design) */
+/* Primary / Hero Action (Régénérer - Glass Capsule) */
 .btn-selection-action.primary {
-    background: var(--primary-color);
-    color: #ffffff !important;
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: rgba(var(--primary-color-rgb), 0.28);
+    color: var(--primary-color);
     font-weight: 600;
-    padding: 7px 15px;
-    border: 1px solid transparent;
+    padding: 6px 14px;
     box-shadow: none;
+}
+
+[data-theme="dark"] .btn-selection-action.primary {
+    background: rgba(var(--primary-color-rgb), 0.18);
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    color: #60a5fa;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.primary:hover {
-        background: var(--primary-hover);
-        color: #ffffff !important;
+        background: rgba(var(--primary-color-rgb), 0.22);
+        border-color: rgba(var(--primary-color-rgb), 0.48);
+        color: var(--primary-color);
         transform: translateY(-1px);
         box-shadow: none;
+    }
+
+    [data-theme="dark"] .btn-selection-action.primary:hover {
+        background: rgba(var(--primary-color-rgb), 0.28);
+        color: #93c5fd;
     }
 }
 
 .btn-selection-action.primary:active {
     transform: scale(0.96);
-    box-shadow: none;
+    background: rgba(var(--primary-color-rgb), 0.3);
 }
 
-/* Warning / Content Clear Action (Effacer) */
+/* Warning / Content Clear Action (Effacer - Glass Capsule) */
 .btn-selection-action.warning {
     color: var(--color-amber, #f59e0b);
     background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.24);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.warning:hover {
-        background: rgba(245, 158, 11, 0.16);
-        border-color: rgba(245, 158, 11, 0.38);
+        background: rgba(245, 158, 11, 0.18);
+        border-color: rgba(245, 158, 11, 0.42);
         color: var(--color-amber, #f59e0b);
         transform: translateY(-1px);
     }
@@ -251,10 +264,10 @@
 
 .btn-selection-action.warning:active {
     transform: scale(0.96) translateY(0);
-    background: rgba(245, 158, 11, 0.22);
+    background: rgba(245, 158, 11, 0.26);
 }
 
-/* Danger / Destructive Action (Supprimer - Icon Only) */
+/* Danger / Destructive Action (Supprimer - Glass Capsule) */
 .btn-selection-action.danger.icon-only {
     width: 34px;
     height: 34px;
@@ -265,7 +278,7 @@
     justify-content: center;
     color: var(--error-color, #ef4444);
     background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.22);
+    border-color: rgba(239, 68, 68, 0.24);
     transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -275,8 +288,8 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.danger.icon-only:hover {
-        background: rgba(239, 68, 68, 0.16);
-        border-color: rgba(239, 68, 68, 0.38);
+        background: rgba(239, 68, 68, 0.18);
+        border-color: rgba(239, 68, 68, 0.42);
         color: var(--error-color, #ef4444);
         transform: translateY(-1px);
         box-shadow: none;
@@ -285,7 +298,7 @@
 
 .btn-selection-action.danger.icon-only:active {
     transform: scale(0.96) translateY(0);
-    background: rgba(239, 68, 68, 0.22);
+    background: rgba(239, 68, 68, 0.26);
 }
 
 /* === Avatar Selection Overlay === */
