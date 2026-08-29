@@ -216,6 +216,7 @@ export const ListViewManager = {
 
         // Use standard data manager
         await StudentDataManager.deleteStudent(studentId);
+        try { navigator?.vibrate?.([25, 40, 25]); } catch (_) { }
 
         // Save state
         await StorageManager.saveAppState();

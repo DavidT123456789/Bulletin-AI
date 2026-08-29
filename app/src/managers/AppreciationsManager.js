@@ -466,6 +466,7 @@ export const AppreciationsManager = {
             // Mettre à jour la ligne avec animation typewriter et le volet s'il est ouvert
             await ListViewManager.updateRow(id, updatedResult, true);
             await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+            try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
 
         } catch (e) {
             const msg = Utils.translateErrorMessage(e.message);

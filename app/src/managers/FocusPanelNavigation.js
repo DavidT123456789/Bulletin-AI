@@ -224,11 +224,6 @@ export const FocusPanelNavigation = {
             document.activeElement.blur();
         }
 
-        // Tactile micro-haptic feedback on swipe
-        if (swipeStartX !== null) {
-            try { navigator?.vibrate?.(8); } catch (_) { }
-        }
-
         // Cancel edit mode before navigating (don't save, just discard)
         const header = document.querySelector('.focus-header');
         if (header && header.classList.contains('editing')) {

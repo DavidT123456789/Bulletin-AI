@@ -1636,6 +1636,7 @@ export const FocusPanelManager = {
             FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
             FocusPanelStatus.updateSourceIndicator(result);
             this._updateGenerateButton(result);
+            try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
         }
     },
 

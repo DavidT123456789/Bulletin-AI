@@ -351,6 +351,7 @@ export const ListSelectionManager = {
             for (const id of ids) {
                 await StudentDataManager.deleteStudent(id);
             }
+            try { navigator?.vibrate?.([25, 40, 25]); } catch (_) { }
 
             await StorageManager.saveAppState();
 
