@@ -10,31 +10,51 @@
     <script>
         (function() {
             try {
-                var savedState = localStorage.getItem('bulletin_app_state');
-                var theme = 'light';
-                var accentColor = 'blue';
-                if (savedState) {
-                    var state = JSON.parse(savedState);
-                    if (state.settings && state.settings.theme) {
-                        theme = state.settings.theme;
-                    } else if (state.theme) {
-                        theme = state.theme;
-                    }
-                    if (state.settings && state.settings.accentColor) {
-                        accentColor = state.settings.accentColor;
+                var standaloneTheme = localStorage.getItem('bulletin_theme');
+                var standaloneAccent = localStorage.getItem('bulletin_accent_color');
+                var theme = standaloneTheme || '';
+                var accentColor = standaloneAccent || '';
+
+                if (!theme || !accentColor) {
+                    var rawState = localStorage.getItem('appreciationGeneratorState_v6.2') ||
+                                   localStorage.getItem('bulletin_app_state') ||
+                                   localStorage.getItem('appreciationGeneratorState');
+                    if (rawState) {
+                        var state = JSON.parse(rawState);
+                        if (!theme) {
+                            if (state.settings && state.settings.theme) {
+                                theme = state.settings.theme;
+                            } else if (state.theme) {
+                                theme = state.theme;
+                            } else if (state.ui && state.ui.theme) {
+                                theme = state.ui.theme;
+                            }
+                        }
+                        if (!accentColor) {
+                            if (state.settings && state.settings.accentColor) {
+                                accentColor = state.settings.accentColor;
+                            } else if (state.accentColor) {
+                                accentColor = state.accentColor;
+                            }
+                        }
                     }
                 }
 
+                if (!theme) theme = 'light';
+                if (!accentColor) accentColor = 'blue';
+
                 if (theme === 'system') {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
                 }
 
                 if (theme === 'dark') {
                     document.documentElement.dataset.theme = 'dark';
                     document.documentElement.style.backgroundColor = '#09090b';
+                    document.documentElement.style.colorScheme = 'dark';
                 } else {
                     document.documentElement.dataset.theme = 'light';
                     document.documentElement.style.backgroundColor = '#f7f7f8';
+                    document.documentElement.style.colorScheme = 'light';
                 }
 
                 // Accent Color Pre-calculation
@@ -3084,7 +3104,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build cd3b8be · 29 août 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 92b9106 · 29 août 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

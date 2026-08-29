@@ -345,6 +345,9 @@ export const ThemeManager = {
         if (!['light', 'dark', 'system'].includes(themeName)) return;
 
         appState.theme = themeName;
+        try {
+            localStorage.setItem('bulletin_theme', themeName);
+        } catch (e) {}
         this.applyTheme();
         StorageManager.saveAppState();
     },
@@ -357,6 +360,9 @@ export const ThemeManager = {
         if (!accentPresets[accentColorKey] && (!accentColorKey || !accentColorKey.startsWith('#'))) return;
 
         appState.accentColor = accentColorKey;
+        try {
+            localStorage.setItem('bulletin_accent_color', accentColorKey);
+        } catch (e) {}
         this.applyAccentColor(accentColorKey);
         StorageManager.saveAppState();
 
@@ -413,9 +419,16 @@ export const ThemeManager = {
 
         if (effectiveTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
+            document.documentElement.style.backgroundColor = '#09090b';
         } else {
             delete document.documentElement.dataset.theme;
+            document.documentElement.style.backgroundColor = '#f7f7f8';
         }
+
+        try {
+            if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
+            if (appState.accentColor) localStorage.setItem('bulletin_accent_color', appState.accentColor);
+        } catch (e) {}
 
         const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
         const themeColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
