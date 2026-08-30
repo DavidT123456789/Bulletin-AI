@@ -1776,6 +1776,7 @@
 
     /* 1. Identity (Top) */
     .student-name-cell {
+        order: 1;
         margin-bottom: 8px;
         padding-right: 48px !important;
         /* Espace pour l'action cell à droite */
@@ -1802,25 +1803,10 @@
         font-size: 1rem;
     }
 
-    /* 2. Status Badge (Inline below name) */
-    .status-cell {
-        position: static;
-        flex: 0 0 auto !important;
-        width: auto !important;
-        margin-right: 8px;
-        margin-bottom: 8px;
-        display: flex !important;
-        align-items: center;
-    }
-
-    /* Hide the empty dash placeholder on mobile — it becomes a floating '—' before the grade */
-    .status-cell:not(:has(.status-badges-container)) {
-        display: none !important;
-    }
-
-    /* 3. Grades (Middle Row) */
+    /* 2. Grades (Middle Row - Left aligned for visual consistency) */
     .student-list-table td.grade-cell,
     .student-list-table td.evolution-cell {
+        order: 2;
         flex: 0 0 auto !important;
         width: auto !important;
         margin-bottom: 8px;
@@ -1844,9 +1830,27 @@
         margin: 0 6px;
     }
 
+    /* 3. Status Badge (Inline below name, placed AFTER grades) */
+    .status-cell {
+        order: 3;
+        position: static;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin-left: 8px;
+        margin-right: 0;
+        margin-bottom: 8px;
+        display: flex !important;
+        align-items: center;
+    }
+
+    /* Hide the empty dash placeholder on mobile — it becomes a floating '—' before the grade */
+    .status-cell:not(:has(.status-badges-container)) {
+        display: none !important;
+    }
 
     /* 4. Appreciation (Bottom) */
     .appreciation-cell {
+        order: 4;
         margin-top: 2px;
         width: 100% !important;
         max-width: 100% !important;
