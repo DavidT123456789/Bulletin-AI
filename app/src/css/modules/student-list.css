@@ -1115,6 +1115,8 @@
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
     cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
     transition: all var(--transition-fast);
 }
 
@@ -1125,7 +1127,7 @@
     transform: scale(1.05);
 }
 
-.status-badges-container .tag-badge:nth-child(n+3) {
+.status-badges-container .tag-badge:nth-of-type(n+2) {
     display: none;
 }
 

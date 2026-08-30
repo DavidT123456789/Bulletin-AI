@@ -707,7 +707,7 @@ export const ListViewRenderer = {
 
         let html = `
             <span class="${firstBadge.className}">${Utils.escapeHtml(firstBadge.label)}</span>
-            <span class="tag-badge tag-more-count tooltip" data-tooltip="${allLabelsEscaped}">+${remainingCount}</span>
+            <span class="tag-more-count tooltip" data-tooltip="${allLabelsEscaped}">+${remainingCount}</span>
         `;
 
         for (let i = 1; i < uniqueStatuses.length; i++) {
