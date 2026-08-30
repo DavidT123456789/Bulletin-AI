@@ -1843,6 +1843,11 @@
         align-items: center;
     }
 
+    .status-badges-container {
+        justify-content: flex-start;
+        padding: 0;
+    }
+
     /* Hide the empty dash placeholder on mobile — it becomes a floating '—' before the grade */
     .status-cell:not(:has(.status-badges-container)) {
         display: none !important;
@@ -1869,6 +1874,14 @@
         border: 1px solid rgba(0, 0, 0, 0.02);
         font-size: 14px;
         line-height: 1.6;
+        transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+                    background-color var(--transition-fast),
+                    border-color var(--transition-fast);
+    }
+
+    .student-list-view .appreciation-preview:active {
+        background: var(--item-active-bg) !important;
+        transform: scale(0.99);
     }
 
     .student-list-view .student-list-table.appreciation-full-view .appreciation-preview {
