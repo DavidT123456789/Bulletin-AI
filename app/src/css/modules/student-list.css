@@ -1075,14 +1075,14 @@
     text-align: center;
     vertical-align: middle;
     width: 115px;
-    padding: 8px 6px !important;
+    padding: 8px 4px !important;
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
     .status-header,
     .status-cell {
         width: 85px;
-        padding: 8px 4px !important;
+        padding: 8px 2px !important;
     }
 }
 
@@ -1090,18 +1090,10 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    justify-content: safe center;
+    justify-content: center;
     gap: 4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     padding: 2px 2px;
     max-width: 100%;
-}
-
-.status-badges-container::-webkit-scrollbar {
-    display: none;
 }
 
 .status-badges-container .tag-badge,
@@ -1110,12 +1102,45 @@
     white-space: nowrap;
 }
 
-/* Expanded view: Stack badges vertically to show all without scrolling */
+/* In compact view (default), show first badge and +N counter, hide other badges */
+.status-badges-container .tag-more-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    background: var(--chip-bg, rgba(255, 255, 255, 0.08));
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.status-badges-container .tag-more-count:hover {
+    background: var(--primary-bg-light, rgba(59, 130, 246, 0.15));
+    color: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+    transform: scale(1.05);
+}
+
+.status-badges-container .tag-badge:nth-child(n+3) {
+    display: none;
+}
+
+/* Expanded view: Hide +N counter and show ALL badges stacked/wrapped */
 .appreciation-full-view .status-badges-container {
     flex-wrap: wrap;
-    overflow-x: visible;
-    overflow-y: visible;
     gap: 5px;
+}
+
+.appreciation-full-view .status-badges-container .tag-more-count {
+    display: none !important;
+}
+
+.appreciation-full-view .status-badges-container .tag-badge {
+    display: inline-flex !important;
 }
 
 .status-empty-dash {

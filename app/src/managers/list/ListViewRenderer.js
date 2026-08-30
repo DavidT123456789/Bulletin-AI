@@ -686,30 +686,33 @@ export const ListViewRenderer = {
 
         return `<span class="status-badge ${status}">${icon}${label}</span>`;
     },
-    /**
-     * Génère le contenu de la colonne Statut (Badges élève + Erreurs)
-     * @param {Object} result - Résultat élève
-     * @returns {string} HTML des badges
-     * @private
-     */
     getStudentStatusCellContent(result) {
-        let html = '';
-
-        // Note: Le statut d'erreur de génération est affiché dans la colonne Appréciation,
-        // pas dans cette colonne Statut qui est réservée aux statuts personnels de l'élève.
-
         // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.)
         const studentStatuses = result.studentData?.statuses || [];
-        // Dedup statuses to be safe
-        const uniqueStatuses = [...new Set(studentStatuses)];
+        const uniqueStatuses = [...new Set(studentStatuses.filter(Boolean))];
 
-        uniqueStatuses.forEach(tag => {
-            const badgeInfo = Utils.getStatusBadgeInfo(tag);
-            html += `<span class="${badgeInfo.className}">${badgeInfo.label}</span>`;
-        });
-
-        if (!html) {
+        if (uniqueStatuses.length === 0) {
             return '<span class="status-empty-dash">&mdash;</span>';
+        }
+
+        if (uniqueStatuses.length === 1) {
+            const badgeInfo = Utils.getStatusBadgeInfo(uniqueStatuses[0]);
+            return `<div class="status-badges-container"><span class="${badgeInfo.className}">${Utils.escapeHtml(badgeInfo.label)}</span></div>`;
+        }
+
+        // Multiple statuses: 1st badge + (+N) pill in compact view, all in expanded view
+        const firstBadge = Utils.getStatusBadgeInfo(uniqueStatuses[0]);
+        const remainingCount = uniqueStatuses.length - 1;
+        const allLabelsEscaped = uniqueStatuses.map(s => Utils.escapeHtml(s)).join(' • ');
+
+        let html = `
+            <span class="${firstBadge.className}">${Utils.escapeHtml(firstBadge.label)}</span>
+            <span class="tag-badge tag-more-count tooltip" data-tooltip="${allLabelsEscaped}">+${remainingCount}</span>
+        `;
+
+        for (let i = 1; i < uniqueStatuses.length; i++) {
+            const badgeInfo = Utils.getStatusBadgeInfo(uniqueStatuses[i]);
+            html += `<span class="${badgeInfo.className}">${Utils.escapeHtml(badgeInfo.label)}</span>`;
         }
 
         return `<div class="status-badges-container">${html}</div>`;
