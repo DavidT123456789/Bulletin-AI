@@ -1782,15 +1782,14 @@
         background: transparent !important;
     }
 
-    /* 1. Identity (Top) - Avatar + Name */
+    /* 1. Identity (Top) */
     .student-name-cell {
         order: 1;
         margin-bottom: 8px;
-        padding-right: 0 !important;
-        padding-bottom: 0 !important;
-        width: auto !important;
-        max-width: calc(100% - 48px);
-        flex: 0 0 auto !important;
+        padding-right: 48px !important;
+        /* Espace pour l'action cell à droite */
+        padding-bottom: 8px !important;
+        width: 100% !important;
     }
 
     [data-theme="dark"] .student-name-cell {
@@ -1803,7 +1802,7 @@
     }
 
     .student-nom-prenom {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
 
     .student-avatar {
@@ -1812,51 +1811,7 @@
         font-size: 1rem;
     }
 
-    /* 1b. Status Badges (Inline next to name in header, compact size) */
-    .status-cell {
-        order: 1;
-        position: static;
-        flex: 1 1 auto !important;
-        width: auto !important;
-        margin-left: 6px;
-        margin-right: 48px; /* Espace réservé pour le menu d'action à droite */
-        margin-bottom: 8px;
-        display: flex !important;
-        align-items: center;
-    }
-
-    .status-badges-container {
-        justify-content: flex-start;
-        padding: 0;
-        gap: 4px;
-        flex-wrap: wrap;
-    }
-
-    .status-cell .tag-badge {
-        font-size: 10px;
-        padding: 2px 7px;
-        letter-spacing: 0.3px;
-    }
-
-    .status-cell .tag-more-count {
-        min-width: 18px;
-        height: 18px;
-        font-size: 9.5px;
-        padding: 0 4px;
-    }
-
-    /* When no badges exist, make name-cell take the full line up to the action menu */
-    .student-list-table tbody tr:has(.status-cell:not(:has(.status-badges-container))) .student-name-cell {
-        width: calc(100% - 48px) !important;
-        flex: 1 0 calc(100% - 48px) !important;
-    }
-
-    /* Hide the empty dash placeholder on mobile */
-    .status-cell:not(:has(.status-badges-container)) {
-        display: none !important;
-    }
-
-    /* 2. Grades (Middle Row - Pure numerical row, always left-aligned) */
+    /* 2. Grades (Middle Row - Left aligned for visual consistency) */
     .student-list-table td.grade-cell,
     .student-list-table td.evolution-cell {
         order: 2;
@@ -1883,9 +1838,33 @@
         margin: 0 6px;
     }
 
-    /* 3. Appreciation (Bottom) */
-    .appreciation-cell {
+    /* 3. Status Badge (Inline below name, placed AFTER grades) */
+    .status-cell {
         order: 3;
+        position: static;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin-left: 8px;
+        margin-right: 0;
+        margin-bottom: 8px;
+        display: flex !important;
+        align-items: center;
+    }
+
+    .status-badges-container {
+        justify-content: flex-start;
+        padding: 0;
+        gap: 4px;
+    }
+
+    /* Hide the empty dash placeholder on mobile — it becomes a floating '—' before the grade */
+    .status-cell:not(:has(.status-badges-container)) {
+        display: none !important;
+    }
+
+    /* 4. Appreciation (Bottom) */
+    .appreciation-cell {
+        order: 4;
         margin-top: 2px;
         width: 100% !important;
         max-width: 100% !important;
