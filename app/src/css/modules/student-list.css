@@ -1114,19 +1114,38 @@
     height: 19px;
     padding: 0 4px;
     border-radius: var(--radius-pill);
-    background: var(--bg-tertiary, rgba(255, 255, 255, 0.08));
+    background: var(--bg-tertiary);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
     cursor: pointer;
     flex-shrink: 0;
     white-space: nowrap;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), 
+                color var(--transition-fast), 
+                border-color var(--transition-fast), 
+                transform var(--transition-fast), 
+                box-shadow var(--transition-fast);
 }
 
 .status-badges-container .tag-more-count:hover {
-    background: var(--primary-bg-light, rgba(59, 130, 246, 0.15));
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border-color: rgba(161, 161, 170, 0.3);
+    box-shadow: var(--shadow-sm);
+    transform: scale(1.08);
+}
+
+[data-theme="dark"] .status-badges-container .tag-more-count {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .status-badges-container .tag-more-count:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     transform: scale(1.08);
 }
 
