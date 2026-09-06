@@ -198,7 +198,7 @@ export const AIService = {
         const m = model || '';
         if (m.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS;
         if (m.includes('2.5-pro') || m.includes('opus')) return 30000;
-        const isReasoningModel = m.includes('3.7') || m.includes('r1') || m.includes('o3');
+        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('r1') || m.includes('o3');
         return isReasoningModel ? 40000 : 22000;
     },
 
