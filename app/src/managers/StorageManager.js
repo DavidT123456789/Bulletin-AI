@@ -352,7 +352,7 @@ export const StorageManager = {
         // Migration de modèles obsolètes vers la version stable actuelle
         const deprecatedGeminiFlash = [
             'gemini-1.5-flash', 'gemini-1.5-flash-001', 
-            'gemini-2.0-flash-lite', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
+            'gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-3.1-flash', 'gemini-3-flash-preview', 
             'gemini-3.1-flash-lite-preview'
         ];
         if (deprecatedGeminiFlash.includes(userSettings.api.currentAIModel)) {
@@ -369,9 +369,9 @@ export const StorageManager = {
         if (userSettings.api.currentAIModel === 'devstral-free') {
             userSettings.api.currentAIModel = 'llama-3.3-70b-free';
         }
-        // Migration anciens Gemini Pro / Previews
-        if (['gemini-3-pro', 'gemini-3.1-pro-preview'].includes(userSettings.api.currentAIModel)) {
-            userSettings.api.currentAIModel = 'gemini-2.5-pro';
+        // Migration anciens Gemini Pro vers 3.1 Pro
+        if (['gemini-3-pro', 'gemini-2.5-pro'].includes(userSettings.api.currentAIModel)) {
+            userSettings.api.currentAIModel = 'gemini-3.1-pro-preview';
         }
         // Migration anciens Ollama
         if (['ollama-qwen3:8b', 'ollama-qwen3:4b'].includes(userSettings.api.currentAIModel)) {

@@ -66,7 +66,7 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-2.5-flash';
+                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-3.5-flash';
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
@@ -223,7 +223,7 @@ export const ApiValidationManager = {
                             // Le modèle n'est pas disponible - ce n'est pas un problème de quota
                             appState.apiKeyStatus[provider] = 'invalid';
                             SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-2.5-flash" ou "gemini-2.5-pro".`;
+                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-3.5-flash" ou "gemini-3.8-flash".`;
                             errorEl.style.display = 'block';
                             errorEl.style.color = 'var(--error-color)';
                             inputEl.classList.add('input-error');

@@ -163,7 +163,7 @@ export const AIService = {
             if (!providerConfig) throw new Error("Fournisseur de validation inconnu.");
             const apiKey = providerConfig.apiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
-            const validationModel = modelOverride || 'gemini-2.5-flash';
+            const validationModel = modelOverride || 'gemini-3.5-flash';
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
             if (validationProvider === 'openai') payload.max_tokens = 1;
@@ -197,9 +197,10 @@ export const AIService = {
     _getModelTimeout(model) {
         const m = model || '';
         if (m.startsWith('ollama')) return CONFIG.API_CALL_TIMEOUT_OLLAMA_MS;
-        if (m.includes('2.5-pro') || m.includes('opus')) return 30000;
-        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('r1') || m.includes('o3');
-        return isReasoningModel ? 40000 : 22000;
+        const isReasoningModel = m.includes('3.7') || m.includes('3.8') || m.includes('3.1-pro') || m.includes('r1') || m.includes('o3');
+        if (isReasoningModel) return 40000;
+        if (m.includes('pro') || m.includes('opus')) return 30000;
+        return 22000;
     },
 
     /**

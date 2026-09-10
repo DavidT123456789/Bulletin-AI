@@ -1,7 +1,7 @@
 /**
  * @fileoverview Configuration des modèles IA, coûts et fallback.
- * Support complet des modèles de dernière génération (Gemini 3.8, 3.7, Claude Sonnet 5)
- * et de la génération éprouvée (Gemini 2.5, Claude 3.7 / 3.5).
+ * Support complet des modèles de dernière génération (Gemini 3.8/3.5 Flash, 3.1 Pro, Claude Sonnet 5)
+ * et des modèles legacy en fallback (Gemini 2.5, Claude 3.7 / 3.5).
  * @module config/models
  */
 
@@ -9,6 +9,7 @@ export const COSTS_PER_MILLION_TOKENS = {
     // Google (clé API directe)
     'gemini-3.8-flash': { input: 0.75, output: 3.75 },
     'gemini-3.5-flash': { input: 0.15, output: 0.60 },
+    'gemini-3.1-pro-preview': { input: 2.00, output: 12.00 },
     'gemini-3.7-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
@@ -51,6 +52,7 @@ export const MODEL_DESCRIPTIONS = {
     // Google
     'gemini-3.5-flash': "<strong>⭐ Recommandé.</strong> Ultra-rapide, performant et réactif.",
     'gemini-3.8-flash': "<strong>🚀 Nouveau.</strong> Raisonnement multi-étapes et agents autonomes.",
+    'gemini-3.1-pro-preview': "<strong>🔥 Synthèses complexes.</strong> Raisonnement approfondi pour dossiers denses.",
     'gemini-3.7-flash': "<strong>🧠 Raisonnement avancé.</strong> Réflexion hybride adaptative.",
     'gemini-2.5-pro': "<strong>🔥 Synthèses complexes.</strong> Idéal pour les dossiers denses et nuancés.",
     'gemini-2.5-flash': "<strong>Stable.</strong> Flash éprouvé, excellent rapport qualité/prix.",
@@ -88,7 +90,7 @@ export const MODEL_DESCRIPTIONS = {
  */
 export const FALLBACK_CONFIG = {
     // Modèle stable par défaut, puis récents en fallback
-    google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+    google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
     openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'claude-3.5-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
     ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
@@ -119,8 +121,9 @@ export const PROVIDER_DEFAULT_MODELS = {
  */
 export const MODEL_SHORT_NAMES = {
     'gemini-3.8-flash': 'Gemini 3.8 Flash',
-    'gemini-3.7-flash': 'Gemini 3.7 Flash',
     'gemini-3.5-flash': 'Gemini 3.5 Flash',
+    'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+    'gemini-3.7-flash': 'Gemini 3.7 Flash',
     'gemini-2.5-pro': 'Gemini 2.5 Pro',
     'gemini-2.5-flash': 'Gemini 2.5 Flash',
     'openai-o3-mini': 'o3 Mini',
@@ -171,10 +174,8 @@ export const MODEL_SELECTOR_CONFIG = [
         label: '💚 Google Gemini — QUOTA GRATUIT',
         models: [
             { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
-            { id: 'gemini-3.8-flash', qualifier: 'Nouveau · Raisonnement' },
-            { id: 'gemini-3.7-flash', qualifier: 'Raisonnement avancé' },
-            { id: 'gemini-2.5-pro', qualifier: 'Synthèses complexes' },
-            { id: 'gemini-2.5-flash', qualifier: 'Stable' },
+            { id: 'gemini-3.8-flash', qualifier: 'Raisonnement' },
+            { id: 'gemini-3.1-pro-preview', qualifier: '💰 Synthèses complexes' },
         ]
     },
     {
