@@ -420,9 +420,11 @@ export const ThemeManager = {
         if (effectiveTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
             document.documentElement.style.backgroundColor = '#09090b';
+            document.documentElement.style.colorScheme = 'dark';
         } else {
             delete document.documentElement.dataset.theme;
             document.documentElement.style.backgroundColor = '#f7f7f8';
+            document.documentElement.style.colorScheme = 'light';
         }
 
         try {
@@ -430,15 +432,12 @@ export const ThemeManager = {
             if (appState.accentColor) localStorage.setItem('bulletin_accent_color', appState.accentColor);
         } catch (e) {}
 
-        const themeColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
-        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        if (!metaThemeColor) {
-            metaThemeColor = document.createElement('meta');
-            metaThemeColor.name = 'theme-color';
-            document.head.appendChild(metaThemeColor);
+        const metas = document.querySelectorAll('meta[name="theme-color"]');
+        if (effectiveTheme === 'dark') {
+            metas.forEach(m => m.setAttribute('content', '#09090b'));
+        } else {
+            metas.forEach(m => m.setAttribute('content', '#f7f7f8'));
         }
-        metaThemeColor.removeAttribute('media');
-        metaThemeColor.setAttribute('content', themeColor);
 
         this.currentResolvedTheme = effectiveTheme;
 

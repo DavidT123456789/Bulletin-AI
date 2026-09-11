@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr" style="background-color: #09090b; color-scheme: dark light;">
+<html lang="fr" style="color-scheme: light dark;">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="color-scheme" content="dark light">
-    <meta name="theme-color" content="#09090b">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f7f7f8">
+    <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#09090b">
     <!-- Immediate Anti-White-Flash & Theme/Accent Injection (0ms, before external CSS) -->
     <script>
         (function() {
@@ -47,18 +48,27 @@
                     theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
                 }
 
+                var metas = document.querySelectorAll('meta[name="theme-color"]');
                 if (theme === 'dark') {
                     document.documentElement.dataset.theme = 'dark';
                     document.documentElement.style.backgroundColor = '#09090b';
                     document.documentElement.style.colorScheme = 'dark';
-                } else {
+                    metas.forEach(function(m) { m.setAttribute('content', '#09090b'); });
+                } else if (theme === 'light') {
                     document.documentElement.dataset.theme = 'light';
                     document.documentElement.style.backgroundColor = '#f7f7f8';
                     document.documentElement.style.colorScheme = 'light';
+                    metas.forEach(function(m) { m.setAttribute('content', '#f7f7f8'); });
+                } else {
+                    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+                    document.documentElement.style.backgroundColor = isDark ? '#09090b' : '#f7f7f8';
+                    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                    var metaLight = document.getElementById('theme-color-light');
+                    var metaDark = document.getElementById('theme-color-dark');
+                    if (metaLight) metaLight.setAttribute('content', '#f7f7f8');
+                    if (metaDark) metaDark.setAttribute('content', '#09090b');
                 }
-
-                var metaTC = document.querySelector('meta[name="theme-color"]');
-                if (metaTC) metaTC.setAttribute('content', theme === 'dark' ? '#09090b' : '#f7f7f8');
 
                 // Accent Color Pre-calculation
                 var colors = {};
@@ -3105,7 +3115,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 5511b4a · 11 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 19687eb · 11 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
