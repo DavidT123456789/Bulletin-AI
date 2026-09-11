@@ -430,9 +430,15 @@ export const ThemeManager = {
             if (appState.accentColor) localStorage.setItem('bulletin_accent_color', appState.accentColor);
         } catch (e) {}
 
-        const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
         const themeColor = effectiveTheme === 'dark' ? '#09090b' : '#f7f7f8';
-        metaThemeColors.forEach(meta => meta.setAttribute('content', themeColor));
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (!metaThemeColor) {
+            metaThemeColor = document.createElement('meta');
+            metaThemeColor.name = 'theme-color';
+            document.head.appendChild(metaThemeColor);
+        }
+        metaThemeColor.removeAttribute('media');
+        metaThemeColor.setAttribute('content', themeColor);
 
         this.currentResolvedTheme = effectiveTheme;
 

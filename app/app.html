@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr" style="background-color: #f7f7f8; color-scheme: light dark;">
+<html lang="fr" style="background-color: #09090b; color-scheme: dark light;">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="dark light">
-
+    <meta name="theme-color" content="#09090b">
     <!-- Immediate Anti-White-Flash & Theme/Accent Injection (0ms, before external CSS) -->
     <script>
         (function() {
@@ -56,6 +56,9 @@
                     document.documentElement.style.backgroundColor = '#f7f7f8';
                     document.documentElement.style.colorScheme = 'light';
                 }
+
+                var metaTC = document.querySelector('meta[name="theme-color"]');
+                if (metaTC) metaTC.setAttribute('content', theme === 'dark' ? '#09090b' : '#f7f7f8');
 
                 // Accent Color Pre-calculation
                 var colors = {};
@@ -177,8 +180,6 @@
 
     <!-- PWA Configuration -->
     <link rel="manifest" href="./manifest.webmanifest">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f7f8">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b">
     <link rel="apple-touch-icon" href="./assets/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -3104,7 +3105,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 38cf713 · 10 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build f17fe3f · 11 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
