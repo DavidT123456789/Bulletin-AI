@@ -417,6 +417,8 @@ export const ThemeManager = {
             effectiveTheme = appState.theme;
         }
 
+        const isSystemDark = this.systemMediaQuery && this.systemMediaQuery.matches;
+
         if (effectiveTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
             document.documentElement.style.backgroundColor = '#09090b';
@@ -424,7 +426,7 @@ export const ThemeManager = {
         } else {
             delete document.documentElement.dataset.theme;
             document.documentElement.style.backgroundColor = '#f7f7f8';
-            document.documentElement.style.colorScheme = 'light';
+            document.documentElement.style.colorScheme = isSystemDark ? 'dark' : 'light';
         }
 
         try {
