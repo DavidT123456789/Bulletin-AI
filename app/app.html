@@ -46,8 +46,6 @@
 
                 var isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 var effectiveTheme = theme === 'system' ? (isSystemDark ? 'dark' : 'light') : theme;
-                var targetThemeColor = (effectiveTheme === 'dark' || isSystemDark) ? '#09090b' : '#f7f7f8';
-                var targetColorScheme = (effectiveTheme === 'dark' || isSystemDark) ? 'dark' : 'light';
 
                 if (effectiveTheme === 'dark') {
                     document.documentElement.dataset.theme = 'dark';
@@ -56,10 +54,6 @@
                     document.documentElement.dataset.theme = 'light';
                     document.documentElement.style.backgroundColor = '#f7f7f8';
                 }
-                document.documentElement.style.colorScheme = targetColorScheme;
-
-                var metas = document.querySelectorAll('meta[name="theme-color"]');
-                metas.forEach(function(m) { m.setAttribute('content', targetThemeColor); });
 
                 // Accent Color Pre-calculation
                 var colors = {};
@@ -3106,7 +3100,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 3892b22 · 11 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build c3635b8 · 11 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

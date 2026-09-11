@@ -417,26 +417,18 @@ export const ThemeManager = {
             effectiveTheme = appState.theme;
         }
 
-        const isSystemDark = this.systemMediaQuery && this.systemMediaQuery.matches;
-
         if (effectiveTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
             document.documentElement.style.backgroundColor = '#09090b';
-            document.documentElement.style.colorScheme = 'dark';
         } else {
             delete document.documentElement.dataset.theme;
             document.documentElement.style.backgroundColor = '#f7f7f8';
-            document.documentElement.style.colorScheme = isSystemDark ? 'dark' : 'light';
         }
 
         try {
             if (appState.theme) localStorage.setItem('bulletin_theme', appState.theme);
             if (appState.accentColor) localStorage.setItem('bulletin_accent_color', appState.accentColor);
         } catch (e) {}
-
-        const targetThemeColor = (effectiveTheme === 'dark' || isSystemDark) ? '#09090b' : '#f7f7f8';
-        const metas = document.querySelectorAll('meta[name="theme-color"]');
-        metas.forEach(m => m.setAttribute('content', targetThemeColor));
 
         this.currentResolvedTheme = effectiveTheme;
 
