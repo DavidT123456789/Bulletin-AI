@@ -434,12 +434,9 @@ export const ThemeManager = {
             if (appState.accentColor) localStorage.setItem('bulletin_accent_color', appState.accentColor);
         } catch (e) {}
 
+        const targetThemeColor = (effectiveTheme === 'dark' || isSystemDark) ? '#09090b' : '#f7f7f8';
         const metas = document.querySelectorAll('meta[name="theme-color"]');
-        if (effectiveTheme === 'dark') {
-            metas.forEach(m => m.setAttribute('content', '#09090b'));
-        } else {
-            metas.forEach(m => m.setAttribute('content', '#f7f7f8'));
-        }
+        metas.forEach(m => m.setAttribute('content', targetThemeColor));
 
         this.currentResolvedTheme = effectiveTheme;
 
