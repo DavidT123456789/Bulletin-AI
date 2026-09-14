@@ -120,42 +120,46 @@
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04), var(--shadow-sm);
 }
 
-/* Search icon in active search (acts as toggle/close trigger) */
-.inline-search-container .search-icon {
-    color: var(--text-tertiary);
-    font-size: 1.05rem;
-    flex-shrink: 0;
-    /* FIX: Reset global absolute positioning styles */
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
-    margin-right: 8px;
-    z-index: 1;
-    cursor: pointer;
+/* Search close button (occupies the full left circular zone of active search container) */
+.inline-search-close-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
+    margin: 0 4px 0 -10px;
+    padding: 0;
+    border: none;
+    background: transparent;
     border-radius: var(--radius-pill);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    flex-shrink: 0;
     outline: none;
+    z-index: 2;
     transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
 }
 
-.inline-search-container:focus-within .search-icon,
-.inline-search-container.has-value .search-icon {
+.inline-search-close-btn:hover {
+    color: var(--icon-btn-hover);
+    background-color: var(--item-hover-bg);
+}
+
+.inline-search-close-btn:active {
+    transform: scale(0.92);
+}
+
+.inline-search-container:focus-within .inline-search-close-btn,
+.inline-search-container.has-value .inline-search-close-btn {
     color: var(--text-primary);
 }
 
-.inline-search-container .search-icon:hover {
-    color: var(--icon-btn-hover);
-    background-color: var(--item-hover-bg);
-    transform: scale(1.1);
-}
-
-.inline-search-container .search-icon:active {
-    transform: scale(0.92);
+.inline-search-close-btn .search-icon {
+    font-size: 1.05rem;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Search input field */

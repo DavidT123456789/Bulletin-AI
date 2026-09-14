@@ -620,22 +620,19 @@ export const ListViewEvents = {
             searchTrigger.addEventListener('click', handleActivation);
         }
 
-        // Close search when clicking the search icon inside the active bar
-        const searchIcon = searchContainer.querySelector('.search-icon');
-        if (searchIcon) {
+        // Close search when clicking the search close button inside the active bar
+        const closeBtn = searchContainer.querySelector('#inlineSearchClose');
+        if (closeBtn) {
             const handleCloseClick = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                searchIcon._tippy?.hide();
+                closeBtn._tippy?.hide();
                 deactivateSearch();
             };
 
-            searchIcon.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-            });
-            searchIcon.addEventListener('click', handleCloseClick);
-            searchIcon.addEventListener('keydown', (e) => {
+            closeBtn.addEventListener('mousedown', handleCloseClick);
+            closeBtn.addEventListener('click', handleCloseClick);
+            closeBtn.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleCloseClick(e);
@@ -650,7 +647,7 @@ export const ListViewEvents = {
 
         // Also auto-focus the input when search container is clicked (except close/clear buttons)
         searchContainer.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.search-icon') || e.target.closest('.inline-search-clear')) {
+            if (e.target.closest('#inlineSearchClose') || e.target.closest('.inline-search-clear')) {
                 return;
             }
             if (e.target !== searchInput) {

@@ -281,7 +281,9 @@ export const ListViewRenderer = {
                                     <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                                 </button>
                                 <div class="inline-search-container" id="inlineSearchContainer">
-                                    <iconify-icon icon="solar:magnifer-linear" class="search-icon" role="button" tabindex="0" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche"></iconify-icon>
+                                    <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
+                                        <iconify-icon icon="solar:magnifer-linear" class="search-icon"></iconify-icon>
+                                    </button>
                                     <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
                                     <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
                                         <iconify-icon icon="ph:x"></iconify-icon>
