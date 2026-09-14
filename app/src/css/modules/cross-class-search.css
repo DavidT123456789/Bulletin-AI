@@ -71,8 +71,9 @@
     border-radius: var(--radius-pill);
 }
 
+.cross-class-divider-text iconify-icon,
 .cross-class-divider-text i {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
     color: var(--primary-color);
     opacity: 0.9;
 }
@@ -115,9 +116,12 @@
     width: fit-content;
 }
 
+.cross-class-group-badge iconify-icon,
 .cross-class-group-badge i {
-    font-size: 0.6rem;
-    opacity: 0.9;
+    font-size: 0.85rem;
+    opacity: 0.95;
+    display: inline-flex;
+    align-items: center;
 }
 
 /* ========================================
@@ -305,12 +309,33 @@
 }
 
 [data-theme="dark"] .cross-class-group-badge {
-    background: rgba(var(--primary-color-rgb), 0.18);
+    color: var(--primary-bright);
+    background: rgba(var(--primary-color-rgb), 0.16);
     border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .cross-class-group-badge iconify-icon,
+[data-theme="dark"] .cross-class-group-badge i {
+    color: var(--primary-bright);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.35));
 }
 
 [data-theme="dark"] .cross-class-divider-text {
     background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .cross-class-divider-text iconify-icon,
+[data-theme="dark"] .cross-class-divider-text i {
+    color: var(--primary-bright);
+}
+
+[data-theme="dark"] .cross-class-overlay {
+    color: var(--primary-bright);
+}
+
+[data-theme="dark"] .cross-class-more iconify-icon {
+    color: var(--primary-bright);
 }
 
 /* ========================================
