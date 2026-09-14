@@ -49,8 +49,13 @@ export const ListViewEvents = {
         // Sort headers click (exclude appreciation toggle which has its own handler)
         listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
             header.addEventListener('click', (e) => {
-                // Le tri n'est declenche que par un clic direct sur le libelle/wrapper de colonne
-                if (!e.target.closest('.header-content-wrapper')) return;
+                // Ignorer les clics sur les boutons d'action et dans le conteneur de recherche
+                if (e.target.closest('.inline-search-container, .header-action-trigger')) return;
+
+                // Pour l'entête composite Nom (avec recherche intégrée), le tri est ciblé sur le libellé
+                if (header.classList.contains('name-header-with-search') && !e.target.closest('.header-content-wrapper')) {
+                    return;
+                }
 
                 e.stopPropagation();
                 EventHandlersManager.handleHeaderSortClick(header);
