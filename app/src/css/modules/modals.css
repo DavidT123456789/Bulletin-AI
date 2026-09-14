@@ -322,18 +322,16 @@
 
 /* Harmonized Modal Title Icon (All Modals) */
 .modal-title-icon,
-.modal-title iconify-icon,
-.modal-title i {
+.modal-title > iconify-icon,
+.modal-title > i {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Style: Icone seule colorÃƒÂ©e (Bleu primaire) sans fond */
     width: auto;
     height: auto;
     background: transparent;
     color: var(--primary-color);
     font-size: 26px;
-    /* Taille harmonisÃƒÂ©e pour toutes les modales */
     flex-shrink: 0;
     padding: 0;
     margin: 0;
@@ -362,14 +360,14 @@
 }
 
 [data-theme="dark"] .modal-title-icon,
-[data-theme="dark"] .modal-title iconify-icon,
-[data-theme="dark"] .modal-title i {
-    color: var(--color-blue-bright);
+[data-theme="dark"] .modal-title > iconify-icon,
+[data-theme="dark"] .modal-title > i {
+    color: var(--primary-bright);
 }
 
 [data-theme="dark"] .modal-title-icon.color-primary,
 [data-theme="dark"] .modal-title .color-primary {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 [data-theme="dark"] .modal-title-icon.color-accent,
@@ -378,6 +376,8 @@
 }
 
 [data-theme="dark"] .modal-title-icon.color-secondary,
+[data-theme="dark"] .modal-title-icon.color-secondary iconify-icon,
+[data-theme="dark"] .modal-title-icon.color-secondary i,
 [data-theme="dark"] .modal-title .color-secondary {
     color: var(--text-secondary);
 }

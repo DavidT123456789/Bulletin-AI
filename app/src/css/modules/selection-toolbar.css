@@ -222,7 +222,7 @@
     }
 
     [data-theme="dark"] .btn-selection-action.primary:hover {
-        color: var(--color-blue-bright);
+        color: var(--primary-bright);
     }
 }
 

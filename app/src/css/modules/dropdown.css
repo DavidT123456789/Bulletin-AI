@@ -281,7 +281,7 @@
 }
 
 [data-theme="dark"] .custom-dropdown-option.selected {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 /* Focus clavier subtil - sans outline voyant */
@@ -299,7 +299,7 @@
 }
 
 [data-theme="dark"] .custom-dropdown-option-check {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 .custom-dropdown-option.selected .custom-dropdown-option-check {
@@ -445,7 +445,7 @@
 }
 
 [data-theme="dark"] .custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 /* ====================================================================

@@ -83,11 +83,11 @@ export const ColorUtils = {
 };
 
 export const accentPresets = {
-    blue:       { color: '#3b82f6', rgb: '59, 130, 246',  hover: '#2563eb', darkHover: '#60a5fa' },
-    anthracite: { color: '#52525b', rgb: '82, 82, 91',    hover: '#3f3f46', darkHover: '#e4e4e7' },
-    rose:       { color: '#f43f5e', rgb: '244, 63, 94',   hover: '#e11d48', darkHover: '#fb7185' },
-    violet:     { color: '#8b5cf6', rgb: '139, 92, 246',  hover: '#7c3aed', darkHover: '#a78bfa' },
-    teal:       { color: '#14b8a6', rgb: '20, 184, 166',  hover: '#0d9488', darkHover: '#2dd4bf' }
+    blue:       { color: '#3b82f6', rgb: '59, 130, 246',  hover: '#2563eb', darkHover: '#60a5fa', bright: '#93c5fd' },
+    anthracite: { color: '#52525b', rgb: '82, 82, 91',    hover: '#3f3f46', darkHover: '#e4e4e7', bright: '#e4e4e7' },
+    rose:       { color: '#f43f5e', rgb: '244, 63, 94',   hover: '#e11d48', darkHover: '#fb7185', bright: '#fda4af' },
+    violet:     { color: '#8b5cf6', rgb: '139, 92, 246',  hover: '#7c3aed', darkHover: '#a78bfa', bright: '#c4b5fd' },
+    teal:       { color: '#14b8a6', rgb: '20, 184, 166',  hover: '#0d9488', darkHover: '#2dd4bf', bright: '#5eead4' }
 };
 
 export const ThemeManager = {
@@ -390,19 +390,25 @@ export const ThemeManager = {
             const hoverRgb = ColorUtils.hslToRgb(hsl.h, hsl.s, hoverL);
             const primaryHover = ColorUtils.rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
 
-            colors = { color: key, rgb: rgbString, hover: primaryHover };
+            const brightL = isDark ? Math.max(72, Math.min(85, hsl.l + 25)) : Math.max(0, hsl.l - 10);
+            const brightRgb = ColorUtils.hslToRgb(hsl.h, Math.min(hsl.s, 85), brightL);
+            const primaryBright = isDark ? ColorUtils.rgbToHex(brightRgb.r, brightRgb.g, brightRgb.b) : key;
+
+            colors = { color: key, rgb: rgbString, hover: primaryHover, bright: primaryBright };
         } else {
             const preset = accentPresets[key] || accentPresets.blue;
             colors = {
                 color: preset.color,
                 rgb: preset.rgb,
-                hover: (isDark && preset.darkHover) ? preset.darkHover : preset.hover
+                hover: (isDark && preset.darkHover) ? preset.darkHover : preset.hover,
+                bright: isDark ? (preset.bright || preset.darkHover) : preset.color
             };
         }
 
         document.documentElement.style.setProperty('--primary-color', colors.color);
         document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
         document.documentElement.style.setProperty('--primary-hover', colors.hover);
+        document.documentElement.style.setProperty('--primary-bright', colors.bright);
     },
 
     /**

@@ -85,10 +85,10 @@
 [data-theme="dark"] .privacy-footer-note {
     color: var(--text-secondary);
     background: rgba(var(--primary-color-rgb), 0.08);
-    border-left-color: var(--color-blue-bright);
+    border-left-color: var(--primary-bright);
 }
 
 [data-theme="dark"] .privacy-footer-note iconify-icon,
 [data-theme="dark"] .privacy-footer-note i {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }

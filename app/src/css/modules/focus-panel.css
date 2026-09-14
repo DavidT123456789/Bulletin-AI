@@ -677,8 +677,8 @@
 }
 
 [data-theme="dark"] .focus-context-info-trigger>iconify-icon:first-child {
-    background: rgba(96, 165, 250, 0.12);
-    color: var(--color-blue-bright);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-bright);
 }
 
 .focus-context-info-trigger {

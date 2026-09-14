@@ -7,6 +7,7 @@
     --primary-color: #3b82f6;
     --primary-color-rgb: 59, 130, 246;
     --primary-hover: #2563eb;
+    --primary-bright: var(--primary-color);
     /* Dynamically computed hover shade (for text links & gradients only) */
 
     /* Accent: Purple (Tailwind Purple 600) */
@@ -457,6 +458,7 @@
     --color-emerald-deep: #10b981;
     --color-teal: #2dd4bf;
     --color-blue-bright: #93c5fd;
+    --primary-bright: var(--color-blue-bright);
 
     /* --- Universal Card Style --- */
     --card-glass-bg: #18181b;

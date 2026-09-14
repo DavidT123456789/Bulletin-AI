@@ -230,7 +230,7 @@
 }
 
 [data-theme="dark"] .settings-card-title i {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 .settings-card-content {
@@ -383,7 +383,7 @@
 }
 
 [data-theme="dark"] #studentDetailsModal h3 i {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 #studentDetailsModal #strengthsWeaknessesSection,
@@ -1292,7 +1292,7 @@
 
 [data-theme="dark"] .sync-status-indicator i,
 [data-theme="dark"] .sync-status-bar.syncing .sync-status-indicator i {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 .sync-status-bar.error .sync-status-indicator i {
@@ -1731,7 +1731,7 @@
 
 [data-theme="dark"] .backup-meta-line iconify-icon,
 [data-theme="dark"] .backup-category-icon iconify-icon {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 [data-theme="dark"] .backup-category-icon {

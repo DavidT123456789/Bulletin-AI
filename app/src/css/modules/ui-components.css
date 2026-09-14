@@ -366,7 +366,7 @@
 }
 
 [data-theme="dark"] .ui-tabs-action-btn:hover .btn-build-pill {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
     border-color: rgba(var(--primary-color-rgb), 0.4);
     background: rgba(var(--primary-color-rgb), 0.18);
 }

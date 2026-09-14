@@ -62,7 +62,7 @@
 }
 
 [data-theme="dark"] .prompt-cell strong {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
     background: rgba(var(--primary-color-rgb), 0.2);
 }
 
@@ -115,7 +115,7 @@
 }
 
 [data-theme="dark"] .help-section-icon {
-    color: var(--color-blue-bright);
+    color: var(--primary-bright);
 }
 
 /* --- Tip / Info Box --- */
