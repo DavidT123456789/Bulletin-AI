@@ -122,6 +122,7 @@
 
 /* Search close button (exact clone of the trigger button on the 34px avatar axis) */
 .inline-search-close-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -137,17 +138,16 @@
     flex-shrink: 0;
     outline: none;
     z-index: 2;
-    transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .inline-search-close-btn:hover {
     color: var(--icon-btn-hover);
     background-color: var(--item-hover-bg);
-    transform: scale(1.1);
 }
 
 .inline-search-close-btn:active {
-    transform: scale(0.92);
+    opacity: 0.7;
 }
 
 .inline-search-container:focus-within .inline-search-close-btn,
@@ -155,7 +155,12 @@
     color: var(--text-primary);
 }
 
-.inline-search-close-btn .search-icon {
+.inline-search-close-btn .inline-search-close-icon {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    margin: 0 !important;
     font-size: 0.9rem;
     pointer-events: none;
     display: flex;
