@@ -157,12 +157,12 @@
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    padding: 24px;
+    padding: 32px 24px;
     background: var(--surface-color);
     border: 1px solid var(--card-glass-border);
-    border-radius: var(--radius-xl, 20px);
+    border-radius: 24px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     flex: 1;
     min-width: 220px;
     box-shadow: var(--shadow-sm);
@@ -170,13 +170,13 @@
 
 /* Dark mode */
 [data-theme="dark"] .empty-state-hub-card {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: rgba(255, 255, 255, 0.05);
-    box-shadow: none;
+    background: var(--bg-tertiary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .empty-state-hub-card:active {
-    transform: translateY(-1px) scale(0.98);
+    transform: translateY(-2px) scale(0.98);
 }
 
 .empty-state-hub-icon {
@@ -186,13 +186,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    font-size: 1.85rem;
+    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
     flex-shrink: 0;
-}
-
-.empty-state-hub-card:hover .empty-state-hub-icon {
-    transform: scale(1.1) rotate(4deg);
 }
 
 /* === INDIVIDUAL CARD (Fixed Brand Blue #3b82f6) === */
@@ -211,20 +207,27 @@
     border-color: var(--brand-primary);
     background: var(--surface-color);
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.1),
-        0 4px 12px rgba(var(--brand-primary-rgb), 0.12);
+        0 20px 40px -6px rgba(0, 0, 0, 0.08),
+        0 8px 12px -4px rgba(var(--brand-primary-rgb), 0.12);
 }
 
 .empty-state-hub-card[data-action="individual"]:hover .empty-state-hub-icon {
-    background: rgba(var(--brand-primary-rgb), 0.2);
+    background: var(--brand-primary);
+    color: #ffffff;
+    transform: scale(1.08);
 }
 
 [data-theme="dark"] .empty-state-hub-card[data-action="individual"]:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--bg-hover);
     border-color: rgba(var(--brand-primary-rgb), 0.5);
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.3),
-        0 4px 12px rgba(var(--brand-primary-rgb), 0.15);
+        0 16px 32px -8px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="individual"]:hover .empty-state-hub-icon {
+    background: var(--brand-primary);
+    color: #ffffff;
 }
 
 .empty-state-hub-card[data-action="individual"]:focus-visible {
@@ -249,20 +252,27 @@
     border-color: var(--success-color);
     background: var(--surface-color);
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.1),
-        0 4px 12px rgba(var(--success-rgb), 0.12);
+        0 20px 40px -6px rgba(0, 0, 0, 0.08),
+        0 8px 12px -4px rgba(var(--success-rgb), 0.12);
 }
 
 .empty-state-hub-card[data-action="mass"]:hover .empty-state-hub-icon {
-    background: rgba(var(--success-rgb), 0.2);
+    background: var(--success-color);
+    color: #ffffff;
+    transform: scale(1.08);
 }
 
 [data-theme="dark"] .empty-state-hub-card[data-action="mass"]:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--bg-hover);
     border-color: rgba(var(--success-rgb), 0.5);
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.3),
-        0 4px 12px rgba(var(--success-rgb), 0.15);
+        0 16px 32px -8px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(var(--success-rgb), 0.2);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="mass"]:hover .empty-state-hub-icon {
+    background: var(--success-color);
+    color: #ffffff;
 }
 
 .empty-state-hub-card[data-action="mass"]:focus-visible {
