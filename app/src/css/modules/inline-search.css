@@ -156,11 +156,6 @@
 }
 
 .inline-search-close-btn .inline-search-close-icon {
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
-    transform: none !important;
-    margin: 0 !important;
     font-size: 0.9rem;
     pointer-events: none;
     display: flex;
