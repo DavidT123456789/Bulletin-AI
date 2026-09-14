@@ -107,20 +107,21 @@
 
 .inspector-toggle-btn:hover {
     background: var(--item-hover-bg);
-    color: var(--icon-btn-hover);
-    border-color: var(--primary-color);
+    color: var(--text-primary);
+    border-color: var(--border-color);
 }
 
-/* Active state when inspector is visible */
+/* Active state when inspector is visible - Clean neutral pill */
 .inspector-toggle-btn.active,
 #toggleInspectorBtn.active {
     background: var(--item-active-bg) !important;
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
+    color: var(--text-primary) !important;
 }
 
-#toggleInspectorBtn:hover {
-    color: var(--primary-color) !important;
+.inspector-toggle-btn.active:hover,
+#toggleInspectorBtn.active:hover {
+    background: var(--item-hover-bg) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Header actions spacing - increased gap */
