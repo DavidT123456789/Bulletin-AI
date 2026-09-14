@@ -799,6 +799,16 @@
     transform: translateX(var(--toggle-translate-small));
 }
 
+[data-theme="dark"] .sync-toggle-switch {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .sync-toggle-checkbox:checked+.sync-toggle-switch {
+    background: var(--primary-color);
+    box-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.35);
+}
+
 .sync-toggle-label i {
     color: var(--text-tertiary);
     font-size: 10px;

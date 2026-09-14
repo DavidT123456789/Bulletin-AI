@@ -421,6 +421,11 @@
     font-weight: 600;
 }
 
+.support-card-premium h4 iconify-icon {
+    color: var(--color-rose, #fb7185);
+    font-size: 1.2em;
+}
+
 .support-card-premium p {
     margin-bottom: 24px;
     color: var(--text-secondary);
