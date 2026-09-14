@@ -499,16 +499,28 @@ export const ListViewEvents = {
 
         if (!nameHeader || !searchContainer || !searchInput) return;
 
+        // Helper to reliably focus input and place caret
+        const _focusAndPositionCaret = () => {
+            searchInput.focus({ preventScroll: true });
+            try {
+                const len = searchInput.value.length;
+                searchInput.setSelectionRange(len, len);
+            } catch (_) {}
+        };
+
         // Perform UI update for activation (without history push)
         const _performActivateUI = () => {
             searchContainer.classList.add('active');
-            // Immediate focus so cursor blinks on the very first click
-            requestAnimationFrame(() => {
-                searchInput.focus({ preventScroll: true });
-            });
-            setTimeout(() => {
-                searchInput.focus({ preventScroll: true });
-            }, 60);
+
+            // 1. Immediate synchronous focus in current event turn
+            _focusAndPositionCaret();
+
+            // 2. Next animation frame
+            requestAnimationFrame(_focusAndPositionCaret);
+
+            // 3. Post-layout micro-timeouts to guarantee caret visibility
+            setTimeout(_focusAndPositionCaret, 25);
+            setTimeout(_focusAndPositionCaret, 80);
 
             // Sync with existing search value if any
             const existingInput = document.getElementById('searchInput');
@@ -524,6 +536,7 @@ export const ListViewEvents = {
             if (!searchInput.value) {
                 searchContainer.classList.remove('has-value');
             }
+            searchTrigger?._tippy?.enable();
         };
 
         // Helper to activate search mode (With History Push)
@@ -563,19 +576,21 @@ export const ListViewEvents = {
         };
         window.addEventListener('popstate', this.state.activePopstateListener);
 
-        // Click on search trigger button to activate search
+        // Click / mousedown on search trigger button to activate search
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
         if (searchTrigger) {
-            searchTrigger.addEventListener('mousedown', (e) => {
-                // Prevent button from stealing focus so input receives it immediately
-                e.preventDefault();
-            });
-            searchTrigger.addEventListener('click', (e) => {
+            const handleActivation = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                searchTrigger._tippy?.hide();
+                if (searchTrigger._tippy) {
+                    searchTrigger._tippy.hide();
+                    searchTrigger._tippy.disable();
+                }
                 activateSearch();
-            });
+            };
+
+            searchTrigger.addEventListener('mousedown', handleActivation);
+            searchTrigger.addEventListener('click', handleActivation);
         }
 
         // Prevent clicks inside search container from triggering sort
@@ -588,7 +603,7 @@ export const ListViewEvents = {
             // If clicking anywhere in container, focus the input
             if (e.target !== searchInput) {
                 e.preventDefault();
-                searchInput.focus();
+                _focusAndPositionCaret();
             }
         });
 
