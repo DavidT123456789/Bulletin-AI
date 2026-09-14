@@ -65,8 +65,6 @@
     color: var(--icon-btn-hover);
 }
 
-/* Hover override - inherits from .header-action-trigger but keep specific transform */
-
 /* ====================================================================
    SEARCH INPUT CONTAINER (Overlay style)
    ==================================================================== */
