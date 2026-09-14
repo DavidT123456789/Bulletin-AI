@@ -120,14 +120,14 @@
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04), var(--shadow-sm);
 }
 
-/* Search close button (occupies the full left circular zone of active search container) */
+/* Search close button (centered concentric disc on avatar axis) */
 .inline-search-close-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    margin: 0 4px 0 -10px;
+    width: 26px;
+    height: 26px;
+    margin: 0 6px 0 -5px;
     padding: 0;
     border: none;
     background: transparent;
@@ -143,6 +143,7 @@
 .inline-search-close-btn:hover {
     color: var(--icon-btn-hover);
     background-color: var(--item-hover-bg);
+    transform: scale(1.08);
 }
 
 .inline-search-close-btn:active {
@@ -155,7 +156,7 @@
 }
 
 .inline-search-close-btn .search-icon {
-    font-size: 1.05rem;
+    font-size: 1rem;
     pointer-events: none;
     display: flex;
     align-items: center;
