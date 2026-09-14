@@ -5,6 +5,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { appState } from '../../state/State.js';
+import { ModalUI } from '../ModalUIManager.js';
+import { AppreciationsManager } from '../AppreciationsManager.js';
+import { ClassUIManager } from '../ClassUIManager.js';
+import { StudentDataManager } from '../StudentDataManager.js';
+import { UI } from '../UIManager.js';
 
 // Mock dependencies
 vi.mock('../../state/State.js', () => ({
@@ -47,7 +52,21 @@ vi.mock('../MassImportManager.js', () => ({
 }));
 
 vi.mock('../AppreciationsManager.js', () => ({
-    AppreciationsManager: {}
+    AppreciationsManager: {
+        renderResults: vi.fn()
+    }
+}));
+
+vi.mock('../ClassUIManager.js', () => ({
+    ClassUIManager: {
+        updateStudentCount: vi.fn()
+    }
+}));
+
+vi.mock('../ResultsUIManager.js', () => ({
+    ResultsUIManager: {
+        updateGenerateButtonState: vi.fn()
+    }
 }));
 
 vi.mock('../ExportManager.js', () => ({
@@ -55,11 +74,15 @@ vi.mock('../ExportManager.js', () => ({
 }));
 
 vi.mock('../StudentDataManager.js', () => ({
-    StudentDataManager: {}
+    StudentDataManager: {
+        deleteStudent: vi.fn()
+    }
 }));
 
 vi.mock('../StorageManager.js', () => ({
-    StorageManager: {}
+    StorageManager: {
+        saveAppState: vi.fn()
+    }
 }));
 
 vi.mock('../ModalUIManager.js', () => ({
@@ -225,5 +248,44 @@ describe('ListSelectionManager', () => {
 
         const selectedRows = document.querySelectorAll('.student-row.selected');
         expect(selectedRows.length).toBe(0);
+    });
+
+    describe('bulkDelete', () => {
+        it('should call renderList and update global UI when some students remain', async () => {
+            ModalUI.showCustomConfirm.mockResolvedValue(true);
+            appState.generatedResults = [
+                { id: 'student-1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'student-2', nom: 'MARTIN', prenom: 'Claire' }
+            ];
+            StudentDataManager.deleteStudent.mockImplementation((id) => {
+                appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+            });
+
+            await ListSelectionManager.bulkDelete(['student-1']);
+
+            expect(ListSelectionManager.selectedIds.size).toBe(0);
+            expect(mockCallbacks.renderList).toHaveBeenCalled();
+            expect(ClassUIManager.updateStudentCount).toHaveBeenCalled();
+            expect(UI.updateStats).toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalled();
+        });
+
+        it('should call AppreciationsManager.renderResults when all students of class are deleted', async () => {
+            ModalUI.showCustomConfirm.mockResolvedValue(true);
+            appState.generatedResults = [
+                { id: 'student-1', nom: 'DUPONT', prenom: 'Jean' }
+            ];
+            StudentDataManager.deleteStudent.mockImplementation((id) => {
+                appState.generatedResults = appState.generatedResults.filter(r => r.id !== id);
+            });
+
+            await ListSelectionManager.bulkDelete(['student-1']);
+
+            expect(ListSelectionManager.selectedIds.size).toBe(0);
+            expect(AppreciationsManager.renderResults).toHaveBeenCalled();
+            expect(ClassUIManager.updateStudentCount).toHaveBeenCalled();
+            expect(UI.updateStats).toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalled();
+        });
     });
 });

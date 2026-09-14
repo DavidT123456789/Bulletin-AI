@@ -403,7 +403,7 @@ export const ListViewRenderer = {
                 console.error("Erreur rendu élève:", result?.nom, e);
                 html += `
                     <tr class="error-row">
-                        <td colspan="100%">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
+                        <td colspan="${(currentPeriodIndex + 1) * 2 + 3}">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
                     </tr>
                 `;
             }

@@ -394,7 +394,28 @@ export const ListSelectionManager = {
             await StorageManager.saveAppState();
 
             this.clearSelections();
-            this.callbacks.renderList();
+
+            const currentClassId = appState.currentClassId;
+            const remainingInClass = (appState.generatedResults || []).filter(
+                r => !currentClassId || r.classId === currentClassId
+            ).length;
+
+            if (remainingInClass === 0) {
+                AppreciationsManager.renderResults();
+            } else {
+                this.callbacks.renderList();
+            }
+
+            const { ClassUIManager } = await import('../ClassUIManager.js').catch(() => ({ ClassUIManager: null }));
+            ClassUIManager?.updateStudentCount?.();
+
+            const { ResultsUIManager } = await import('../ResultsUIManager.js').catch(() => ({ ResultsUIManager: null }));
+            ResultsUIManager?.updateGenerateButtonState?.();
+
+            UI?.populateLoadStudentSelect?.();
+            UI?.updateStats?.();
+            UI?.updateControlButtons?.();
+            UI?.updateAIButtonsState?.();
 
             UI?.showNotification(`${ids.length} élève${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}.`, 'success');
         }

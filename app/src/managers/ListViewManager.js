@@ -83,13 +83,27 @@ export const ListViewManager = {
 
         // Handle empty results
         if (results.length === 0) {
+            const currentClassId = appState.currentClassId;
+            const remainingInClass = (appState.generatedResults || []).filter(
+                r => !currentClassId || r.classId === currentClassId
+            ).length;
+
+            if (remainingInClass === 0) {
+                import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
+                    AppreciationsManager?.renderResults?.();
+                });
+                return;
+            }
+
             if (existingTable && tbody) {
+                const headerThs = existingTable.querySelectorAll('thead th');
+                const colCount = headerThs.length || 7;
                 const emptyRowHtml = `
                     <tr class="empty-state-row">
-                        <td colspan="100%" style="text-align:center; padding: 48px 20px;">
-                            <div class="empty-state" style="display:flex; flex-direction:column; align-items:center; gap:12px; color: var(--text-tertiary); padding: 0;">
-                                <iconify-icon icon="solar:magnifer-linear" style="font-size:32px;"></iconify-icon>
-                                <span style="font-weight: 500; font-size: 14px;">Aucun élève trouvé</span>
+                        <td colspan="${colCount}">
+                            <div class="empty-state">
+                                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                                <span>Aucun élève trouvé</span>
                             </div>
                         </td>
                     </tr>
@@ -104,13 +118,11 @@ export const ListViewManager = {
                 } else if (!tbody.querySelector('.empty-state-row')) {
                     tbody.innerHTML = emptyRowHtml;
                 }
+
+                import('./ResultsUIManager.js').then(({ ResultsUIManager }) => {
+                    ResultsUIManager?.updateGenerateButtonState?.();
+                });
                 return;
-            } else {
-                // No table yet, render empty state (will create table structure in _renderFresh if needed, or we can handle it here)
-                // For consistency, we might need a table structure even for empty state to show search bar
-                // But if it's the very first render and empty, maybe we don't need search bar? 
-                // Actually, if we want search bar to be available, we should probably render the full structure even if empty.
-                // For now, let's fall through to _renderFresh which creates the table.
             }
         }
 
@@ -221,13 +233,28 @@ export const ListViewManager = {
         // Save state
         await StorageManager.saveAppState();
 
-        // Render with standard FLIP animation
-        this.render(appState.filteredResults, document.getElementById('outputList'));
+        // Render with standard FLIP animation or transition to empty state
+        const currentClassId = appState.currentClassId;
+        const remainingInClass = (appState.generatedResults || []).filter(
+            r => !currentClassId || r.classId === currentClassId
+        ).length;
+
+        if (remainingInClass === 0) {
+            const { AppreciationsManager } = await import('./AppreciationsManager.js');
+            AppreciationsManager?.renderResults?.();
+        } else {
+            this.render(appState.filteredResults, document.getElementById('outputList'));
+        }
 
         // Update global UI
         ClassUIManager.updateStudentCount();
-        UI?.populateLoadStudentSelect();
-        UI?.updateStats();
+        UI?.populateLoadStudentSelect?.();
+        UI?.updateStats?.();
+        UI?.updateControlButtons?.();
+        UI?.updateAIButtonsState?.();
+
+        const { ResultsUIManager } = await import('./ResultsUIManager.js').catch(() => ({ ResultsUIManager: null }));
+        ResultsUIManager?.updateGenerateButtonState?.();
 
         // Notify user
         UI?.showNotification(`${studentName} supprimé`, 'success');
