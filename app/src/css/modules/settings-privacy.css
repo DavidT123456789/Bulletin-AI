@@ -61,9 +61,8 @@
     margin-top: 12px;
     font-size: 0.85em;
     opacity: 0.95;
-    color: var(--primary-color);
+    color: var(--text-secondary);
     background: rgba(var(--primary-color-rgb), 0.05);
-    /* très léger tint primaire */
     padding: 10px 14px;
     border-radius: var(--radius-sm);
     display: flex;
@@ -72,9 +71,24 @@
     border-left: 3px solid var(--primary-color);
 }
 
+.privacy-footer-note strong {
+    color: var(--text-primary);
+}
+
 .privacy-footer-note iconify-icon,
 .privacy-footer-note i {
     color: var(--primary-color);
     font-size: 1.2em;
     flex-shrink: 0;
+}
+
+[data-theme="dark"] .privacy-footer-note {
+    color: var(--text-secondary);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    border-left-color: var(--color-blue-bright);
+}
+
+[data-theme="dark"] .privacy-footer-note iconify-icon,
+[data-theme="dark"] .privacy-footer-note i {
+    color: var(--color-blue-bright);
 }

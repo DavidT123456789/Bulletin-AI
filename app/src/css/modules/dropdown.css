@@ -280,6 +280,10 @@
     font-weight: 600;
 }
 
+[data-theme="dark"] .custom-dropdown-option.selected {
+    color: var(--color-blue-bright);
+}
+
 /* Focus clavier subtil - sans outline voyant */
 .custom-dropdown-option.focused {
     background-color: rgba(var(--primary-color-rgb), 0.08);
@@ -292,6 +296,10 @@
     color: var(--primary-color);
     opacity: 0;
     transition: opacity var(--transition-fast);
+}
+
+[data-theme="dark"] .custom-dropdown-option-check {
+    color: var(--color-blue-bright);
 }
 
 .custom-dropdown-option.selected .custom-dropdown-option-check {
@@ -434,6 +442,10 @@
 /* Labels de groupe plus visibles */
 .custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
     color: var(--primary-color);
+}
+
+[data-theme="dark"] .custom-dropdown[data-for="previewStudentSelect"] .custom-dropdown-group-label {
+    color: var(--color-blue-bright);
 }
 
 /* ====================================================================

@@ -361,6 +361,32 @@
     color: var(--primary-color);
 }
 
+[data-theme="dark"] .modal-title-icon,
+[data-theme="dark"] .modal-title iconify-icon,
+[data-theme="dark"] .modal-title i {
+    color: var(--color-blue-bright);
+}
+
+[data-theme="dark"] .modal-title-icon.color-primary,
+[data-theme="dark"] .modal-title .color-primary {
+    color: var(--color-blue-bright);
+}
+
+[data-theme="dark"] .modal-title-icon.color-accent,
+[data-theme="dark"] .modal-title .color-accent {
+    color: var(--color-violet-bright, var(--purple-color));
+}
+
+[data-theme="dark"] .modal-title-icon.color-secondary,
+[data-theme="dark"] .modal-title .color-secondary {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .modal-title-icon.color-success,
+[data-theme="dark"] .modal-title .color-success {
+    color: var(--success-bright, var(--success-dark));
+}
+
 .modal-title-text-col {
     display: flex;
     flex-direction: column;
