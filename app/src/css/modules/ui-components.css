@@ -330,6 +330,35 @@
     transform: scale(0.97);
 }
 
+.ui-tabs-action-btn-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-build-pill {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+    line-height: 1.25;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.ui-tabs-action-btn:hover .btn-build-pill {
+    color: var(--text-secondary);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+    background: rgba(var(--primary-color-rgb), 0.08);
+}
+
 .ui-tabs-content {
     flex: 1;
     padding: 20px 24px;
@@ -407,6 +436,11 @@
 
     .ui-tabs-action-btn:active {
         transform: scale(0.96);
+    }
+
+    .btn-build-pill {
+        font-size: 0.64rem;
+        padding: 1px 5px;
     }
 
     .ui-tabs-content {

@@ -1009,7 +1009,8 @@ export const SettingsModalListeners = {
                 const updateCheckPromise = window.checkForUpdates ? window.checkForUpdates() : Promise.resolve();
                 const networkProbePromise = fetch('./version.json?t=' + Date.now()).catch(() => null);
 
-                await Promise.all([
+                let currentHash = window.currentBuildHash || '';
+                const [_, probeRes] = await Promise.all([
                     updateCheckPromise,
                     networkProbePromise,
                     new Promise((resolve) => {
@@ -1019,6 +1020,18 @@ export const SettingsModalListeners = {
                     })
                 ]);
 
+                if (probeRes && probeRes.ok) {
+                    try {
+                        const probeData = await probeRes.clone().json();
+                        if (probeData?.hash) {
+                            currentHash = probeData.hash;
+                            window.currentBuildHash = currentHash;
+                        }
+                    } catch {
+                        // ignore json parse error
+                    }
+                }
+
                 const isUpdateAvailable = window.appState?.isUpdateAvailable;
 
                 if (isUpdateAvailable) {
@@ -1027,7 +1040,8 @@ export const SettingsModalListeners = {
                     await new Promise((r) => setTimeout(r, 1600));
                 } else {
                     btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color);"></iconify-icon> À jour !';
-                    UI.showNotification("Votre application est à jour.", "success");
+                    const buildInfo = currentHash ? ` (Build ${currentHash})` : '';
+                    UI.showNotification(`Votre application est à jour${buildInfo}.`, "success");
                     await new Promise((r) => setTimeout(r, 1400));
                 }
             } catch (e) {
@@ -1038,6 +1052,10 @@ export const SettingsModalListeners = {
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
+                const badge = btn.querySelector('#settingsBuildBadge');
+                if (badge && window.currentBuildHash) {
+                    badge.textContent = window.currentBuildHash;
+                }
             }
         };
 

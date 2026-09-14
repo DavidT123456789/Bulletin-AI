@@ -292,18 +292,40 @@ async function populateAboutBuildDate() {
         const res = await fetch('./version.json?t=' + Date.now());
         if (res.ok) {
             const data = await res.json();
+            const currentHash = data.hash;
+            const currentVersion = data.version;
+
+            if (currentHash) window.currentBuildHash = currentHash;
+            if (currentVersion) window.appVersion = currentVersion;
+
             const aboutBuildDateEl = document.getElementById('aboutBuildDate');
-            if (aboutBuildDateEl && data.hash) {
+            if (aboutBuildDateEl && currentHash) {
                 const options = { day: 'numeric', month: 'long', year: 'numeric' };
                 const formattedDate = new Date(data.date).toLocaleDateString('fr-FR', options);
-                aboutBuildDateEl.textContent = `Build ${data.hash} · ${formattedDate}`;
+                aboutBuildDateEl.textContent = `Build ${currentHash} · ${formattedDate}`;
             }
             const aboutVersionEl = document.querySelector('.about-version');
-            if (aboutVersionEl && data.version) {
-                aboutVersionEl.textContent = `v${data.version} Beta`;
+            if (aboutVersionEl && currentVersion) {
+                aboutVersionEl.textContent = `v${currentVersion} Beta`;
+            }
+
+            const settingsBuildBadge = document.getElementById('settingsBuildBadge');
+            if (settingsBuildBadge && currentHash) {
+                settingsBuildBadge.textContent = currentHash;
+            }
+
+            const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
+            if (checkUpdatesBtn && currentHash) {
+                const versionPrefix = currentVersion ? `v${currentVersion} · ` : '';
+                checkUpdatesBtn.title = `Bulletin AI ${versionPrefix}Build ${currentHash}`.trim();
             }
         }
     } catch (e) {
         console.warn('[Version] Failed to populate dynamic build date:', e);
+        if (typeof __COMMIT_HASH__ !== 'undefined') {
+            window.currentBuildHash = __COMMIT_HASH__;
+            const settingsBuildBadge = document.getElementById('settingsBuildBadge');
+            if (settingsBuildBadge) settingsBuildBadge.textContent = __COMMIT_HASH__;
+        }
     }
 }
