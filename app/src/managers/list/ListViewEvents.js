@@ -502,10 +502,13 @@ export const ListViewEvents = {
         // Perform UI update for activation (without history push)
         const _performActivateUI = () => {
             searchContainer.classList.add('active');
-            // Small delay to ensure transition starts and element is focusable
+            // Immediate focus so cursor blinks on the very first click
+            requestAnimationFrame(() => {
+                searchInput.focus({ preventScroll: true });
+            });
             setTimeout(() => {
-                searchInput.focus();
-            }, 50);
+                searchInput.focus({ preventScroll: true });
+            }, 60);
 
             // Sync with existing search value if any
             const existingInput = document.getElementById('searchInput');
@@ -563,6 +566,10 @@ export const ListViewEvents = {
         // Click on search trigger button to activate search
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
         if (searchTrigger) {
+            searchTrigger.addEventListener('mousedown', (e) => {
+                // Prevent button from stealing focus so input receives it immediately
+                e.preventDefault();
+            });
             searchTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
