@@ -246,6 +246,13 @@
         opacity: 1;
         transform: scale(1.05);
     }
+
+    [data-theme="dark"] .header-context-chip:hover .icon {
+        color: var(--primary-bright);
+        opacity: 1;
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.4));
+    }
 }
 
 .header-context-chip.active {
@@ -258,6 +265,12 @@
 .header-context-chip.active .icon {
     color: var(--primary-hover);
     opacity: 1;
+}
+
+[data-theme="dark"] .header-context-chip.active .icon {
+    color: var(--primary-bright);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(var(--primary-color-rgb), 0.4));
 }
 
 [data-theme="dark"] .header-context-chip {
@@ -276,12 +289,17 @@
 
 .header-context-chip .icon {
     color: var(--primary-color);
-    opacity: 0.85;
+    opacity: 0.95;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
+}
+
+[data-theme="dark"] .header-context-chip .icon {
+    color: var(--primary-bright);
+    opacity: 1;
 }
 
 /* Chip spécifique pour le modèle IA */
