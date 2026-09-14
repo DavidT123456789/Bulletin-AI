@@ -70,7 +70,7 @@ export const FocusPanelRefinement = {
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <span class="modal-title-icon color-accent"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
+                        <span class="modal-title-icon"><iconify-icon icon="solar:document-text-linear"></iconify-icon></span>
                         <span class="modal-title-text">${title}</span>
                     </h2>
                     <button class="close-button" aria-label="Fermer">
