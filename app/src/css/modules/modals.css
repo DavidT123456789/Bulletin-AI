@@ -603,26 +603,7 @@
     cursor: not-allowed;
 }
 
-/* Close button matching pill navigation style */
-.modal-nav-pill+.close-button,
-.modal-header-actions .close-button {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    border-radius: 50%;
-    background: transparent;
-    box-shadow: none;
-    font-size: 12px;
-}
 
-.modal-nav-pill+.close-button:hover,
-.modal-header-actions .close-button:hover {
-    transform: none;
-    box-shadow: none;
-    background: var(--close-btn-hover-bg);
-    color: var(--close-btn-hover-color);
-}
 
 /* Redundant definition of close-button was at 711 but identical functionality, keeping standard one above */
 /* Help & Accordion */
