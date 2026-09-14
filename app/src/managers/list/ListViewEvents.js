@@ -538,12 +538,23 @@ export const ListViewEvents = {
             }
         };
 
+        // Helper to clear search input value and notify listeners
+        const _clearSearchInput = () => {
+            if (searchInput.value) {
+                searchInput.value = '';
+                searchContainer.classList.remove('has-value');
+                const existingInput = document.getElementById('searchInput');
+                if (existingInput) {
+                    existingInput.value = '';
+                    existingInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        };
+
         // Perform UI update for deactivation (without history manipulation)
         const _performDeactivateUI = () => {
             searchContainer.classList.remove('active');
-            if (!searchInput.value) {
-                searchContainer.classList.remove('has-value');
-            }
+            _clearSearchInput();
             searchTrigger?._tippy?.enable();
         };
 
@@ -594,11 +605,42 @@ export const ListViewEvents = {
                     searchTrigger._tippy.hide();
                     searchTrigger._tippy.disable();
                 }
-                activateSearch();
+                if (searchContainer.classList.contains('active')) {
+                    deactivateSearch();
+                } else {
+                    activateSearch();
+                }
             };
 
-            searchTrigger.addEventListener('mousedown', handleActivation);
+            searchTrigger.addEventListener('mousedown', (e) => {
+                if (!searchContainer.classList.contains('active')) {
+                    handleActivation(e);
+                }
+            });
             searchTrigger.addEventListener('click', handleActivation);
+        }
+
+        // Close search when clicking the search icon inside the active bar
+        const searchIcon = searchContainer.querySelector('.search-icon');
+        if (searchIcon) {
+            const handleCloseClick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                searchIcon._tippy?.hide();
+                deactivateSearch();
+            };
+
+            searchIcon.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            searchIcon.addEventListener('click', handleCloseClick);
+            searchIcon.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCloseClick(e);
+                }
+            });
         }
 
         // Prevent clicks inside search container from bubbling
@@ -606,9 +648,11 @@ export const ListViewEvents = {
             e.stopPropagation();
         });
 
-        // Also auto-focus the input when search container is clicked
+        // Also auto-focus the input when search container is clicked (except close/clear buttons)
         searchContainer.addEventListener('mousedown', (e) => {
-            // If clicking anywhere in container, focus the input
+            if (e.target.closest('.search-icon') || e.target.closest('.inline-search-clear')) {
+                return;
+            }
             if (e.target !== searchInput) {
                 e.preventDefault();
                 _focusAndPositionCaret();
@@ -632,15 +676,8 @@ export const ListViewEvents = {
         if (searchClear) {
             searchClear.addEventListener('click', (e) => {
                 e.stopPropagation();
-                searchInput.value = '';
-                searchContainer.classList.remove('has-value');
-
-                // Sync clear with existing search
-                const existingInput = document.getElementById('searchInput');
-                if (existingInput) {
-                    existingInput.value = '';
-                    existingInput.dispatchEvent(new Event('input', { bubbles: true }));
-                }
+                _clearSearchInput();
+                _focusAndPositionCaret();
             });
         }
 
