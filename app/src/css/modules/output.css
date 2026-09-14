@@ -157,11 +157,15 @@
     color: var(--text-primary);
 }
 
-/* Search input hover - iOS 2025 style with subtle elevation */
+/* Search input hover - Clean neutral elevation (calm utility feel) */
 .search-input:hover:not(:focus) {
     background-color: var(--bg-secondary);
-    border-color: rgba(var(--primary-color-rgb), 0.25);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(161, 161, 170, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .search-input:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Focus States - Aligned with custom dropdown trigger open state */
@@ -204,8 +208,11 @@
     opacity: 1;
 }
 
-.search-input:focus~.search-icon,
 .search-input:hover~.search-icon {
+    color: var(--text-primary);
+}
+
+.search-input:focus~.search-icon {
     color: var(--primary-color);
 }
 

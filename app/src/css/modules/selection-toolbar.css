@@ -222,7 +222,7 @@
     }
 
     [data-theme="dark"] .btn-selection-action.primary:hover {
-        color: #60a5fa;
+        color: var(--color-blue-bright);
     }
 }
 
@@ -233,7 +233,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.warning:hover {
-        background: rgba(245, 158, 11, 0.12);
+        background: rgba(var(--warning-rgb), 0.12);
         color: var(--color-amber, #f59e0b);
     }
 }
@@ -245,7 +245,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     .btn-selection-action.danger:hover {
-        background: rgba(239, 68, 68, 0.12);
+        background: rgba(var(--error-rgb), 0.12);
         color: var(--error-color, #ef4444);
     }
 }

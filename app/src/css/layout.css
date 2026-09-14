@@ -924,7 +924,10 @@ body.is-cloud-syncing label {
 }
 
 .menu-item.update-item i,
-.menu-item.update-item iconify-icon,
+.menu-item.update-item iconify-icon {
+    color: var(--color-amber, #f59e0b);
+}
+
 .menu-item.update-item span {
     color: var(--primary-color);
 }
@@ -940,7 +943,10 @@ body.is-cloud-syncing label {
 }
 
 [data-theme="dark"] .menu-item.update-item i,
-[data-theme="dark"] .menu-item.update-item iconify-icon,
+[data-theme="dark"] .menu-item.update-item iconify-icon {
+    color: var(--color-amber-bright, #fbbf24);
+}
+
 [data-theme="dark"] .menu-item.update-item span {
     color: var(--text-primary);
 }

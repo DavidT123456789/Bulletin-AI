@@ -325,12 +325,12 @@ export const ListViewRenderer = {
                                     <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
                                         <!-- SECTION SELECTION -->
                                         <button class="action-dropdown-item" id="selectAllBtn-global">
-                                            <iconify-icon icon="ph:check-square-offset"></iconify-icon> Tout sélectionner
+                                            <iconify-icon icon="solar:checklist-linear"></iconify-icon> Tout sélectionner
                                         </button>
                                         
                                         <!-- SECTION VUE -->
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
-                                            <iconify-icon icon="solar:pie-chart-2-linear"></iconify-icon> Analyser la classe
+                                            <iconify-icon icon="solar:chart-square-bold"></iconify-icon> Analyser la classe
                                         </button>
 
                                         <!-- SECTION COPIER -->
@@ -673,7 +673,7 @@ export const ListViewRenderer = {
         const icons = {
             'pending': '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>',
             'error': '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>',
-            'done': '<iconify-icon icon="ph:check"></iconify-icon>',
+            'done': '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>',
             'generating': '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>'
         };
 
