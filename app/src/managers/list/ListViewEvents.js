@@ -566,6 +566,7 @@ export const ListViewEvents = {
             searchTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                searchTrigger._tippy?.hide();
                 activateSearch();
             });
         }
