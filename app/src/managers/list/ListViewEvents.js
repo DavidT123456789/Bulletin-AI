@@ -20,8 +20,7 @@ export const ListViewEvents = {
     state: {
         activeDocClickListener: null,
         activeKeydownListener: null,
-        activePopstateListener: null,
-        lastSearchActivation: 0
+        activePopstateListener: null
     },
 
     callbacks: {
@@ -50,20 +49,9 @@ export const ListViewEvents = {
         // Sort headers click (exclude appreciation toggle which has its own handler)
         listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
             header.addEventListener('click', (e) => {
-                // Ignore sort if click originated from or happened right after inline search activation
-                if (Date.now() - (this.state.lastSearchActivation || 0) < 500) {
-                    e.stopPropagation();
-                    return;
-                }
-                if (e.target.closest('.inline-search-container, .inline-search-trigger-btn, .header-action-trigger')) {
-                    e.stopPropagation();
-                    return;
-                }
-                const inlineSearch = header.querySelector('.inline-search-container');
-                if (inlineSearch?.classList.contains('active')) {
-                    e.stopPropagation();
-                    return;
-                }
+                // Le tri n'est declenche que par un clic direct sur le libelle/wrapper de colonne
+                if (!e.target.closest('.header-content-wrapper')) return;
+
                 e.stopPropagation();
                 EventHandlersManager.handleHeaderSortClick(header);
             });
@@ -556,7 +544,6 @@ export const ListViewEvents = {
 
         // Helper to activate search mode (With History Push)
         const activateSearch = () => {
-            this.state.lastSearchActivation = Date.now();
             if (searchContainer.classList.contains('active')) return;
 
             _performActivateUI();
@@ -596,7 +583,6 @@ export const ListViewEvents = {
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
         if (searchTrigger) {
             const handleActivation = (e) => {
-                this.state.lastSearchActivation = Date.now();
                 e.stopPropagation();
                 e.preventDefault();
                 if (searchTrigger._tippy) {
@@ -607,19 +593,11 @@ export const ListViewEvents = {
             };
 
             searchTrigger.addEventListener('mousedown', handleActivation);
-            searchTrigger.addEventListener('mouseup', (e) => {
-                this.state.lastSearchActivation = Date.now();
-                e.stopPropagation();
-                e.preventDefault();
-            });
             searchTrigger.addEventListener('click', handleActivation);
         }
 
-        // Prevent clicks and mouseups inside search container from triggering sort
+        // Prevent clicks inside search container from bubbling
         searchContainer.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-        searchContainer.addEventListener('mouseup', (e) => {
             e.stopPropagation();
         });
 
