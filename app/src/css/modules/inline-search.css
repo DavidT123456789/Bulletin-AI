@@ -11,7 +11,18 @@
     align-items: center;
     gap: var(--space-2);
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1), transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.name-header-with-search:has(.inline-search-container.active) .header-content-wrapper {
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+}
+
+.name-header-with-search:has(.inline-search-container.active) .inline-search-trigger-btn {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 /* Search trigger button - extends .header-action-trigger */
@@ -61,14 +72,10 @@
 .inline-search-container {
     position: absolute;
     top: 50%;
-    /* Add slight margin to prevent overflow and reduce width */
-    left: 4px;
-    right: 4px;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
-    /* gap removed - using margin on icon instead to prevent layout issues */
-    padding: 0 var(--space-3);
+    padding: 0 10px 0 12px;
     background: var(--surface-color);
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-color);
@@ -76,25 +83,35 @@
     z-index: 50;
     /* CRITICAL: High z-index to cover all header elements including generation buttons */
     height: 38px;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
 
-    /* Initial hidden state */
+    /* Collapsed Circle State: starts as a 38px circle right over the trigger button */
+    left: 15px;
+    width: 38px;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateY(-50%) scale(0.95);
+    will-change: width, left, opacity;
     transition:
+        width 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        left 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.2s ease,
+        visibility 0.38s,
         border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
-        opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-        visibility 0.3s;
+        box-shadow var(--transition-fast);
 }
 
 .inline-search-container.active {
+    left: 4px;
+    width: calc(100% - 8px);
+    padding: 0 var(--space-3);
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateY(-50%) scale(1);
+    box-shadow: var(--shadow-md);
 }
 
 .inline-search-container:hover:not(:focus-within) {
@@ -138,8 +155,17 @@
     font-weight: 500;
     padding: 10px 0;
     min-width: 120px;
-    transition: none !important;
-    /* FIX: Prevent white flash on focus */
+    opacity: 0;
+    transform: translateX(12px);
+    transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+.inline-search-container.active .inline-search-input {
+    opacity: 1;
+    transform: translateX(0);
+    transition:
+        opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1) 0.08s,
+        transform 0.32s cubic-bezier(0.32, 0.72, 0, 1) 0.06s !important;
 }
 
 .inline-search-input:focus {
@@ -278,11 +304,16 @@
    ==================================================================== */
 @media (max-width: 768px) {
     .inline-search-container {
-        left: 8px;
-        right: 8px;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        padding: 0 10px;
+    }
+
+    .inline-search-container.active {
+        left: 4px;
+        width: calc(100% - 8px);
         padding: 0 var(--space-3);
-        height: 44px;
-        /* Match mobile touch target heights */
     }
 
     .inline-search-input {
