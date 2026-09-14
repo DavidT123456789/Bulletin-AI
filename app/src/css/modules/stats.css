@@ -175,63 +175,100 @@
     box-shadow: none;
 }
 
-.empty-state-hub-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--primary-color);
-    background: var(--surface-color);
-    box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.1),
-        0 4px 12px rgba(var(--primary-color-rgb), 0.08);
-}
-
-[data-theme="dark"] .empty-state-hub-card:hover {
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, 0.3),
-        0 4px 12px rgba(var(--primary-color-rgb), 0.15);
-}
-
 .empty-state-hub-card:active {
     transform: translateY(-1px) scale(0.98);
-}
-
-.empty-state-hub-card:focus-visible {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .empty-state-hub-icon {
     width: 64px;
     height: 64px;
     border-radius: 20px;
-    background: rgba(var(--primary-color-rgb), 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
-    color: var(--primary-color);
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     flex-shrink: 0;
 }
 
-/* Specific styling for the mass import card icon */
+.empty-state-hub-card:hover .empty-state-hub-icon {
+    transform: scale(1.1) rotate(4deg);
+}
+
+/* === INDIVIDUAL CARD (Fixed Brand Blue #3b82f6) === */
+.empty-state-hub-card[data-action="individual"] .empty-state-hub-icon {
+    color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.08);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="individual"] .empty-state-hub-icon {
+    color: var(--color-blue-bright);
+    background: rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.empty-state-hub-card[data-action="individual"]:hover {
+    transform: translateY(-4px);
+    border-color: var(--brand-primary);
+    background: var(--surface-color);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.1),
+        0 4px 12px rgba(var(--brand-primary-rgb), 0.12);
+}
+
+.empty-state-hub-card[data-action="individual"]:hover .empty-state-hub-icon {
+    background: rgba(var(--brand-primary-rgb), 0.2);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="individual"]:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(var(--brand-primary-rgb), 0.5);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.3),
+        0 4px 12px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.empty-state-hub-card[data-action="individual"]:focus-visible {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+/* === MASS IMPORT CARD (Fixed Emerald Green #10b981) === */
 .empty-state-hub-card[data-action="mass"] .empty-state-hub-icon {
     color: var(--success-color, #10b981);
     background: rgba(var(--success-rgb), 0.08);
 }
 
 [data-theme="dark"] .empty-state-hub-card[data-action="mass"] .empty-state-hub-icon {
+    color: var(--color-emerald-bright);
     background: rgba(var(--success-rgb), 0.15);
 }
 
-.empty-state-hub-card:hover .empty-state-hub-icon {
-    transform: scale(1.1) rotate(4deg);
-    background: rgba(var(--primary-color-rgb), 0.15);
+.empty-state-hub-card[data-action="mass"]:hover {
+    transform: translateY(-4px);
+    border-color: var(--success-color);
+    background: var(--surface-color);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.1),
+        0 4px 12px rgba(var(--success-rgb), 0.12);
 }
 
 .empty-state-hub-card[data-action="mass"]:hover .empty-state-hub-icon {
     background: rgba(var(--success-rgb), 0.2);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="mass"]:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(var(--success-rgb), 0.5);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.3),
+        0 4px 12px rgba(var(--success-rgb), 0.15);
+}
+
+.empty-state-hub-card[data-action="mass"]:focus-visible {
+    outline: none;
+    border-color: var(--success-color);
+    box-shadow: 0 0 0 4px rgba(var(--success-rgb), 0.2);
 }
 
 .empty-state-hub-text {

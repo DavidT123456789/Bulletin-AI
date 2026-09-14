@@ -333,10 +333,17 @@ export const ResultsUIManager = {
                 DOM.emptyStateCard.innerHTML = '';
                 DOM.emptyStateCard.appendChild(emptyTemplate.content.cloneNode(true));
 
+                const currentClass = ClassManager.getCurrentClass();
                 const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
                 const subtitle = DOM.emptyStateCard.querySelector('p');
                 if (subtitle) {
-                    subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
+                    const className = currentClass?.name?.trim();
+                    if (className) {
+                        const preposition = /^[aeiouyéèêëàâîïôûù]/i.test(className) ? "d'" : 'de ';
+                        subtitle.textContent = `Commencez par ajouter vos élèves ${preposition}${className} et leurs données du ${periodLabel}.`;
+                    } else {
+                        subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
+                    }
                 }
 
                 this._bindEmptyStateHubEvents(DOM.emptyStateCard);

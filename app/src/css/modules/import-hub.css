@@ -281,84 +281,84 @@
 }
 
 
-/* === MASS IMPORT CARD === */
-/* Color: Violet-500 (#8b5cf6) */
-.import-hub-card[data-action="mass"] {
-    border-color: rgba(var(--purple-rgb), 0.08);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"] {
-    border-color: rgba(var(--purple-rgb), 0.2);
-}
-
-.import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(var(--purple-rgb), 0.05);
-    color: var(--color-violet);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
-    background: rgba(var(--purple-rgb), 0.15);
-    color: var(--color-violet-bright);
-}
-
-.import-hub-card[data-action="mass"]:hover {
-    background: rgba(var(--purple-rgb), 0.04);
-    border-color: var(--color-violet);
-}
-
-.import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: var(--color-violet);
-    color: #ffffff;
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
-    background: rgba(var(--purple-rgb), 0.08);
-    border-color: rgba(var(--purple-rgb), 0.5);
-}
-
-[data-theme="dark"] .import-hub-card[data-action="mass"]:hover .import-hub-icon {
-    background: var(--purple-color);
-    color: #ffffff;
-}
-
-
-/* === PHOTOS CARD === */
+/* === MASS IMPORT CARD (Excel / CSV / Fichiers) === */
 /* Color: Emerald-500 (#10b981) */
-.import-hub-card[data-action="photos"] {
+.import-hub-card[data-action="mass"] {
     border-color: rgba(var(--success-rgb), 0.15);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="photos"] {
+[data-theme="dark"] .import-hub-card[data-action="mass"] {
     border-color: rgba(var(--success-rgb), 0.2);
 }
 
-.import-hub-card[data-action="photos"] .import-hub-icon {
+.import-hub-card[data-action="mass"] .import-hub-icon {
     background: rgba(var(--success-rgb), 0.08);
     color: var(--success-color);
 }
 
-[data-theme="dark"] .import-hub-card[data-action="photos"] .import-hub-icon {
+[data-theme="dark"] .import-hub-card[data-action="mass"] .import-hub-icon {
     background: rgba(var(--success-rgb), 0.15);
     color: var(--color-emerald-bright);
 }
 
-.import-hub-card[data-action="photos"]:hover {
+.import-hub-card[data-action="mass"]:hover {
     background: rgba(var(--success-rgb), 0.04);
     border-color: var(--success-color);
 }
 
-.import-hub-card[data-action="photos"]:hover .import-hub-icon {
+.import-hub-card[data-action="mass"]:hover .import-hub-icon {
     background: var(--success-color);
     color: #ffffff;
 }
 
-[data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
+[data-theme="dark"] .import-hub-card[data-action="mass"]:hover {
     background: rgba(var(--success-rgb), 0.08);
     border-color: rgba(var(--success-rgb), 0.5);
 }
 
+[data-theme="dark"] .import-hub-card[data-action="mass"]:hover .import-hub-icon {
+    background: var(--success-color);
+    color: #ffffff;
+}
+
+
+/* === PHOTOS CARD (Trombinoscope) === */
+/* Color: Violet-500 (#8b5cf6) */
+.import-hub-card[data-action="photos"] {
+    border-color: rgba(var(--purple-rgb), 0.08);
+}
+
+[data-theme="dark"] .import-hub-card[data-action="photos"] {
+    border-color: rgba(var(--purple-rgb), 0.2);
+}
+
+.import-hub-card[data-action="photos"] .import-hub-icon {
+    background: rgba(var(--purple-rgb), 0.05);
+    color: var(--color-violet);
+}
+
+[data-theme="dark"] .import-hub-card[data-action="photos"] .import-hub-icon {
+    background: rgba(var(--purple-rgb), 0.15);
+    color: var(--color-violet-bright);
+}
+
+.import-hub-card[data-action="photos"]:hover {
+    background: rgba(var(--purple-rgb), 0.04);
+    border-color: var(--color-violet);
+}
+
+.import-hub-card[data-action="photos"]:hover .import-hub-icon {
+    background: var(--color-violet);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .import-hub-card[data-action="photos"]:hover {
+    background: rgba(var(--purple-rgb), 0.08);
+    border-color: rgba(var(--purple-rgb), 0.5);
+}
+
 [data-theme="dark"] .import-hub-card[data-action="photos"]:hover .import-hub-icon {
-    background: var(--color-emerald);
+    background: var(--purple-color);
     color: #ffffff;
 }
 
