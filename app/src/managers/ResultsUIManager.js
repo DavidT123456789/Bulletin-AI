@@ -330,8 +330,12 @@ export const ResultsUIManager = {
 
             const emptyTemplate = document.getElementById('empty-state-template');
             if (emptyTemplate && DOM.emptyStateCard) {
-                DOM.emptyStateCard.innerHTML = '';
-                DOM.emptyStateCard.appendChild(emptyTemplate.content.cloneNode(true));
+                const existingHub = DOM.emptyStateCard.querySelector('.empty-state-hub');
+                if (!existingHub) {
+                    DOM.emptyStateCard.innerHTML = '';
+                    DOM.emptyStateCard.appendChild(emptyTemplate.content.cloneNode(true));
+                    this._bindEmptyStateHubEvents(DOM.emptyStateCard);
+                }
 
                 const currentClass = ClassManager.getCurrentClass();
                 const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
@@ -345,8 +349,6 @@ export const ResultsUIManager = {
                         subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
                     }
                 }
-
-                this._bindEmptyStateHubEvents(DOM.emptyStateCard);
             }
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';

@@ -425,7 +425,12 @@ export const UI = {
         }
 
         // Trigger period-specific animation (horizontal slide - temporal navigation feel)
-        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header');
+        const containersToAnimate = Array.from(
+            document.querySelectorAll('.stats-container, #outputList, .output-header, #empty-state-card')
+        ).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
         containersToAnimate.forEach(el => {
             el.classList.remove('period-refresh-animation');
             void el.offsetWidth; // Force reflow

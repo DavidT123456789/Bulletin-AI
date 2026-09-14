@@ -431,7 +431,12 @@ export const ClassUIManager = {
     async handleClassSwitch(classId, highlightId = null) {
         // Trigger generic page refresh animation
         // Target dynamic containers ONLY to keep the title "Bilan de la classe" visible (avoiding black screen)
-        const containersToAnimate = document.querySelectorAll('.stats-container, #outputList, .output-header, #seatingChartView');
+        const containersToAnimate = Array.from(
+            document.querySelectorAll('.stats-container, #outputList, .output-header, #seatingChartView, #empty-state-card')
+        ).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
 
         containersToAnimate.forEach(el => {
             el.classList.remove('card-refresh-animation');

@@ -1722,6 +1722,12 @@ body.is-cloud-syncing label {
     backface-visibility: hidden;
 }
 
+/* Specificity override: #empty-state-card has its own animation (empty-state-fade-in)
+   via an ID selector in stats.css. This compound selector wins the cascade fight. */
+#empty-state-card.card-refresh-animation {
+    animation: premium-context-switch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
 /* ====================================================================
    ANIMATION: Period Switch (Temporal Navigation)
    Horizontal slide + light blur - feels like flipping through time
@@ -1756,6 +1762,10 @@ body.is-cloud-syncing label {
     animation: period-slide-switch 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     will-change: transform, filter, opacity;
     backface-visibility: hidden;
+}
+
+#empty-state-card.period-refresh-animation {
+    animation: period-slide-switch 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 /* ====================================================================
