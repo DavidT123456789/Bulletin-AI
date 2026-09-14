@@ -85,39 +85,25 @@ export const MODEL_DESCRIPTIONS = {
 };
 
 /**
- * Configuration de fallback automatique entre modèles
- * Quand un modèle échoue (quota, 404, rate limit), le système essaiera les suivants
+ * Identifie le fournisseur associé à un identifiant de modèle.
+ * Source unique de vérité pour le routage des providers.
+ * @param {string} model - Identifiant du modèle
+ * @returns {string} ID du fournisseur ('mistral'|'google'|'openrouter'|'openai'|'anthropic'|'ollama')
  */
-export const FALLBACK_CONFIG = {
-    // Modèle stable par défaut, puis récents en fallback
-    google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
-    openai: ['openai-o3-mini', 'openai-gpt-4o-mini'],
-    openrouter: ['llama-3.3-70b-free', 'claude-sonnet-5', 'claude-3.7-sonnet', 'claude-3.5-sonnet', 'ministral-3b', 'openrouter', 'deepseek-r1', 'amazon-nova-v1-lite', 'mistral-small', 'mistral-large'],
-    ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b', 'ollama-gemma2:9b'],
-    anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-3-5-sonnet-latest', 'anthropic-claude-3-5-haiku-latest', 'anthropic-claude-opus-5'],
-    mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
-
-    // Ordre inter-providers (priorité : local > gratuits > payants)
-    // Mistral avant Anthropic car plan gratuit généreux (1B tokens/mois)
-    providerOrder: ['google', 'openrouter', 'openai', 'anthropic', 'mistral', 'ollama'],
-};
+export function getProviderForModel(model) {
+    if (!model) return 'openrouter';
+    if (model.endsWith('-free')) return 'openrouter';
+    if (model.startsWith('mistral-direct')) return 'mistral';
+    if (model.startsWith('gemini')) return 'google';
+    if (model.startsWith('openai')) return 'openai';
+    if (model.startsWith('anthropic')) return 'anthropic';
+    if (model.startsWith('ollama')) return 'ollama';
+    return 'openrouter';
+}
 
 /**
- * Modèle recommandé par provider pour les nouveaux utilisateurs
- * Utilise le premier modèle de chaque chaîne de fallback (le plus recommandé)
- * Single Source of Truth - importé par WelcomeManager et ApiValidationManager
- */
-export const PROVIDER_DEFAULT_MODELS = {
-    google: FALLBACK_CONFIG.google[0],       // gemini-3.5-flash
-    openai: FALLBACK_CONFIG.openai[0],       // openai-o3-mini
-    openrouter: FALLBACK_CONFIG.openrouter[0], // llama-3.3-70b-free 🆓
-    ollama: FALLBACK_CONFIG.ollama[0],       // ollama-qwen2.5:7b
-    anthropic: FALLBACK_CONFIG.anthropic[0], // anthropic-claude-sonnet-5
-    mistral: FALLBACK_CONFIG.mistral[0],     // mistral-direct-small-latest 🆓
-};
-
-/**
- * Noms courts des modèles pour l'affichage dans l'interface
+ * Noms courts des modèles pour l'affichage dans l'interface.
+ * Les variantes OpenRouter portant un nom identique aux APIs directes sont suffixées par (OR).
  */
 export const MODEL_SHORT_NAMES = {
     'gemini-3.8-flash': 'Gemini 3.8 Flash',
@@ -131,15 +117,15 @@ export const MODEL_SHORT_NAMES = {
     // OpenRouter - Gratuits
     'llama-3.3-70b-free': 'Llama 3.3 70B',
     // OpenRouter - Payants
-    'claude-sonnet-5': 'Claude Sonnet 5',
-    'claude-3.7-sonnet': 'Claude 3.7 Sonnet',
-    'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
+    'claude-sonnet-5': 'Claude Sonnet 5 (OR)',
+    'claude-3.7-sonnet': 'Claude 3.7 Sonnet (OR)',
+    'claude-3.5-sonnet': 'Claude 3.5 Sonnet (OR)',
     'openrouter': 'DeepSeek V3',
     'deepseek-r1': 'DeepSeek R1',
     'ministral-3b': 'Ministral 3 3B',
     'amazon-nova-v1-lite': 'Nova Lite',
-    'mistral-small': 'Mistral Small',
-    'mistral-large': 'Mistral Large',
+    'mistral-small': 'Mistral Small (OR)',
+    'mistral-large': 'Mistral Large (OR)',
     // Ollama (local)
     'ollama-qwen2.5:7b': '🏠 Qwen 2.5 7B',
     'ollama-mistral:7b': '🏠 Mistral 7B',
@@ -156,11 +142,9 @@ export const MODEL_SHORT_NAMES = {
     'mistral-direct-large-latest': 'Mistral Large',
 };
 
-
 /**
  * Configuration du sélecteur de modèle dans l'interface.
- * Single Source of Truth : les noms viennent de MODEL_SHORT_NAMES,
- * seuls les qualificatifs et le groupement sont définis ici.
+ * Single Source of Truth : les modèles présents et supportés dans l'application.
  */
 export const MODEL_SELECTOR_CONFIG = [
     {
@@ -225,6 +209,79 @@ export const MODEL_SELECTOR_CONFIG = [
         ]
     },
 ];
+
+/**
+ * Configuration de fallback automatique entre modèles.
+ * Dérivée dynamiquement de MODEL_SELECTOR_CONFIG pour garantir une source unique de vérité.
+ */
+export const FALLBACK_CONFIG = (() => {
+    const config = {
+        mistral: [],
+        google: [],
+        openrouter: [],
+        ollama: [],
+        openai: [],
+        anthropic: [],
+        providerOrder: ['mistral', 'google', 'openrouter', 'ollama', 'openai', 'anthropic']
+    };
+
+    MODEL_SELECTOR_CONFIG.forEach(group => {
+        group.models.forEach(({ id }) => {
+            const provider = getProviderForModel(id);
+            if (config[provider] && !config[provider].includes(id)) {
+                config[provider].push(id);
+            }
+        });
+    });
+
+    return config;
+})();
+
+/**
+ * Modèle recommandé par provider pour les nouveaux utilisateurs.
+ * Utilise le premier modèle de chaque chaîne de fallback.
+ */
+export const PROVIDER_DEFAULT_MODELS = {
+    google: FALLBACK_CONFIG.google[0],
+    openai: FALLBACK_CONFIG.openai[0],
+    openrouter: FALLBACK_CONFIG.openrouter[0],
+    ollama: FALLBACK_CONFIG.ollama[0],
+    anthropic: FALLBACK_CONFIG.anthropic[0],
+    mistral: FALLBACK_CONFIG.mistral[0],
+};
+
+/**
+ * Construit la file ordonnée de fallback pour un modèle donné.
+ * Modèle sélectionné -> Autres modèles du même fournisseur -> Modèles des autres fournisseurs selon providerOrder.
+ * @param {string} currentModel - Identifiant du modèle actif
+ * @returns {string[]} File ordonnée d'identifiants de modèles
+ */
+export function buildFallbackQueue(currentModel) {
+    const currentProvider = getProviderForModel(currentModel);
+    const queue = currentModel ? [currentModel] : [];
+
+    // Modèles du même fournisseur
+    const sameProviderModels = FALLBACK_CONFIG[currentProvider] ?? [];
+    sameProviderModels.forEach(m => {
+        if (m !== currentModel && !queue.includes(m)) {
+            queue.push(m);
+        }
+    });
+
+    // Modèles des autres fournisseurs selon l'ordre de priorité
+    FALLBACK_CONFIG.providerOrder.forEach(provider => {
+        if (provider !== currentProvider) {
+            const providerModels = FALLBACK_CONFIG[provider] ?? [];
+            providerModels.forEach(m => {
+                if (!queue.includes(m)) {
+                    queue.push(m);
+                }
+            });
+        }
+    });
+
+    return queue;
+}
 
 /**
  * Configuration Ollama

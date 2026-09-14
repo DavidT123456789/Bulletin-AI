@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -540,14 +540,7 @@ export const SettingsUIManager = {
      * @private
      */
     _getProviderIdForModel(model) {
-        if (!model) return 'openrouter';
-        if (model.endsWith('-free')) return 'openrouter';
-        if (model.startsWith('gemini')) return 'google';
-        if (model.startsWith('openai')) return 'openai';
-        if (model.startsWith('anthropic')) return 'anthropic';
-        if (model.startsWith('ollama')) return 'ollama';
-        if (model.startsWith('mistral-direct')) return 'mistral';
-        return 'openrouter';
+        return getProviderForModel(model);
     },
 
     /**
@@ -693,34 +686,18 @@ export const SettingsUIManager = {
         const fallbackOrderText = document.getElementById('fallbackOrderText');
         if (!fallbackOrderText) return;
 
+        const moreBadge = document.getElementById('fallbackOrderMore');
         const model = appState.currentAIModel;
 
-        // Déterminer le provider du modèle actuel
-        const currentProvider = this._getProviderIdForModel(model);
+        // Construire la file ordonnée et ne garder que les modèles disponibles
+        const queue = buildFallbackQueue(model).filter(m => this._isModelAvailable(m));
 
-        // Construire la liste complète de fallback en commençant par le modèle actuel
-        const rawQueue = [model];
+        if (queue.length === 0) {
+            fallbackOrderText.innerHTML = '<span style="opacity:0.6; font-style:italic;">Aucun modèle disponible</span>';
+            if (moreBadge) moreBadge.style.display = 'none';
+            return;
+        }
 
-        // Ajouter les autres modèles du même provider
-        const sameProviderModels = FALLBACK_CONFIG[currentProvider] || [];
-        sameProviderModels.forEach(m => {
-            if (m !== model && !rawQueue.includes(m)) rawQueue.push(m);
-        });
-
-        // Ajouter les modèles des providers suivants
-        FALLBACK_CONFIG.providerOrder.forEach(provider => {
-            if (provider !== currentProvider) {
-                const providerModels = FALLBACK_CONFIG[provider] || [];
-                providerModels.forEach(m => {
-                    if (!rawQueue.includes(m)) rawQueue.push(m);
-                });
-            }
-        });
-
-        // === NOUVEAU : Filtrer pour ne garder que les modèles DISPONIBLES ===
-        const queue = rawQueue.filter(m => this._isModelAvailable(m));
-
-        // Affichage court : 2 premiers, badge séparé pour les autres
         // Affichage court : 2 premiers, badge séparé pour les autres
         const displayQueue = queue.slice(0, 2).map((m, index) => {
             const name = MODEL_SHORT_NAMES[m] || m;
@@ -732,7 +709,6 @@ export const SettingsUIManager = {
         fallbackOrderText.innerHTML = displayQueue.join(' <iconify-icon icon="solar:alt-arrow-right-linear" style="opacity:0.4; font-size:0.8em; margin:0 4px;"></iconify-icon> ');
 
         // Badge "+X" avec tooltip pour voir le reste
-        const moreBadge = document.getElementById('fallbackOrderMore');
         const remaining = queue.length - 2;
 
         if (moreBadge) {
@@ -742,7 +718,7 @@ export const SettingsUIManager = {
                 moreBadge.setAttribute('data-tooltip', `Ordre complet : ${fullOrder}`);
                 moreBadge.style.display = 'inline-flex';
                 // Réinitialiser Tippy.js pour reconnaître le nouveau tooltip
-                UI.initTooltips();
+                UI.initTooltips?.();
             } else {
                 moreBadge.style.display = 'none';
             }

@@ -4,8 +4,8 @@
  */
 
 import { appState } from '../state/State.js';
-import { CONFIG, COSTS_PER_MILLION_TOKENS, FALLBACK_CONFIG } from '../config/Config.js';
-import { OLLAMA_CONFIG } from '../config/models.js';
+import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
+import { OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 
 // Mode debug : activé uniquement en développement (vite définit import.meta.env.DEV)
 
@@ -388,15 +388,7 @@ export const AIService = {
      * @returns {'google'|'openai'|'openrouter'|'ollama'|'anthropic'|'mistral'} Le provider
      */
     _getProviderForModel(model) {
-        // Les modèles gratuits OpenRouter (suffixe -free) sont toujours routés vers OpenRouter
-        // même s'ils contiennent "gemini" dans leur nom (ex: gemini-2.0-flash-exp-free)
-        if (model.endsWith('-free')) return 'openrouter';
-        if (model.startsWith('openai')) return 'openai';
-        if (model.startsWith('gemini')) return 'google';
-        if (model.startsWith('ollama')) return 'ollama';
-        if (model.startsWith('anthropic')) return 'anthropic';
-        if (model.startsWith('mistral-direct')) return 'mistral';
-        return 'openrouter';
+        return getProviderForModel(model);
     },
 
     /**
@@ -487,30 +479,7 @@ export const AIService = {
      * @returns {string[]} Liste ordonnée des modèles à essayer
      */
     _getFallbackQueue(currentModel) {
-        const currentProvider = this._getProviderForModel(currentModel);
-        const queue = [currentModel]; // Toujours essayer le modèle actuel en premier
-
-        // Ajouter les autres modèles du même provider
-        const sameProviderModels = FALLBACK_CONFIG[currentProvider] || [];
-        sameProviderModels.forEach(model => {
-            if (model !== currentModel && !queue.includes(model)) {
-                queue.push(model);
-            }
-        });
-
-        // Ajouter les modèles des autres providers
-        FALLBACK_CONFIG.providerOrder.forEach(provider => {
-            if (provider !== currentProvider) {
-                const providerModels = FALLBACK_CONFIG[provider] || [];
-                providerModels.forEach(model => {
-                    if (!queue.includes(model)) {
-                        queue.push(model);
-                    }
-                });
-            }
-        });
-
-        return queue;
+        return buildFallbackQueue(currentModel);
     },
 
     /**

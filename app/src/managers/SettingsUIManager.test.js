@@ -81,7 +81,8 @@ vi.mock('./UIManager.js', () => ({
         showCustomConfirm: vi.fn((msg, cb) => cb()),
         updateSettingsFields: vi.fn(),
         updateSettingsPromptFields: vi.fn(),
-        renderSettingsLists: vi.fn()
+        renderSettingsLists: vi.fn(),
+        initTooltips: vi.fn()
     }
 }));
 
@@ -128,6 +129,12 @@ describe('SettingsUIManager', () => {
         appState.useSubjectPersonalization = false;
         appState.currentSubject = 'Français';
         appState.instructionHistory = [];
+        appState.openaiApiKey = '';
+        appState.googleApiKey = '';
+        appState.openrouterApiKey = '';
+        appState.anthropicApiKey = '';
+        appState.mistralApiKey = '';
+        appState.ollamaEnabled = false;
         UIState.settingsBeforeEdit = {};
     });
 
@@ -261,6 +268,72 @@ describe('SettingsUIManager', () => {
             SettingsUIManager.updatePersonalizationState();
 
             expect(DOM.genericSubjectInfo.classList.add).toHaveBeenCalledWith('collapsed');
+        });
+    });
+
+    describe('updateFallbackOrderHint()', () => {
+        let fallbackOrderText;
+        let fallbackOrderMore;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div id="fallbackOrderText"></div>
+                <div id="fallbackOrderMore" style="display: none;"></div>
+            `;
+            fallbackOrderText = document.getElementById('fallbackOrderText');
+            fallbackOrderMore = document.getElementById('fallbackOrderMore');
+        });
+
+        it('should update hint text and tooltip badge with only available models', () => {
+            // Configurer uniquement une clé Mistral
+            appState.mistralApiKey = 'test-mistral-key-12345';
+            appState.googleApiKey = '';
+            appState.openrouterApiKey = '';
+            appState.currentAIModel = 'mistral-direct-small-latest';
+
+            SettingsUIManager.updateFallbackOrderHint();
+
+            expect(fallbackOrderText.innerHTML).toContain('Mistral Small');
+            expect(fallbackOrderText.innerHTML).toContain('Mistral Large');
+            // Seuls 2 modèles sont disponibles (Mistral Small et Mistral Large), donc pas de badge +X
+            expect(fallbackOrderMore.style.display).toBe('none');
+        });
+
+        it('should display +N badge and full order tooltip when more than 2 models are available', () => {
+            // Configurer Mistral et Google
+            appState.mistralApiKey = 'test-mistral-key-12345';
+            appState.googleApiKey = 'test-google-key-12345';
+            appState.openrouterApiKey = '';
+            appState.currentAIModel = 'mistral-direct-small-latest';
+
+            SettingsUIManager.updateFallbackOrderHint();
+
+            expect(fallbackOrderMore.style.display).toBe('inline-flex');
+            expect(fallbackOrderMore.textContent).toBe('+3'); // 5 modèles dispos au total (2 mistral + 3 google) -> 5 - 2 = 3
+            const tooltip = fallbackOrderMore.getAttribute('data-tooltip');
+            expect(tooltip).toContain('Ordre complet :');
+            expect(tooltip).toContain('Mistral Small');
+            expect(tooltip).toContain('Mistral Large');
+            expect(tooltip).toContain('Gemini 3.5 Flash');
+            expect(tooltip).toContain('Gemini 3.8 Flash');
+            expect(tooltip).toContain('Gemini 3.1 Pro');
+            // Ne doit PAS contenir les modèles fantômes
+            expect(tooltip).not.toContain('Gemini 3.7 Flash');
+            expect(tooltip).not.toContain('Gemini 2.5');
+        });
+
+        it('should display friendly message when no models are available', () => {
+            appState.mistralApiKey = '';
+            appState.googleApiKey = '';
+            appState.openrouterApiKey = '';
+            appState.openaiApiKey = '';
+            appState.anthropicApiKey = '';
+            appState.ollamaEnabled = false;
+
+            SettingsUIManager.updateFallbackOrderHint();
+
+            expect(fallbackOrderText.innerHTML).toContain('Aucun modèle disponible');
+            expect(fallbackOrderMore.style.display).toBe('none');
         });
     });
 });
