@@ -841,8 +841,8 @@
     align-items: center;
     justify-content: center;
     padding: 2px 8px;
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
     border-radius: var(--radius-md);
     font-size: 0.85em;
     font-weight: 600;
@@ -851,7 +851,8 @@
 }
 
 .fallback-more-badge:hover {
-    background: rgba(var(--primary-color-rgb), 0.25);
+    background: var(--border-color);
+    color: var(--text-primary);
 }
 
 .api-status-grid {
@@ -1514,13 +1515,7 @@
     font-size: 1.15rem;
 }
 
-/* High specificity to override generic .btn styles */
-.btn-icon-only:hover:not(:disabled),
-.api-status-header .btn.btn-icon-only:hover:not(:disabled) {
-    background-color: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    box-shadow: none;
-}
+
 
 
 .api-fallback-row {
