@@ -136,6 +136,29 @@ describe('Utils', () => {
         });
     });
 
+    describe('normalizeClassName', () => {
+        it('devrait normaliser et faire correspondre "5°1", "5 1", "5ème 1", "5-1"', () => {
+            const expected = '51';
+            expect(Utils.normalizeClassName('5°1')).toBe(expected);
+            expect(Utils.normalizeClassName('5 1')).toBe(expected);
+            expect(Utils.normalizeClassName('5ème 1')).toBe(expected);
+            expect(Utils.normalizeClassName('5eme 1')).toBe(expected);
+            expect(Utils.normalizeClassName('5-1')).toBe(expected);
+        });
+
+        it('devrait normaliser d\'autres formats (ex: 6°A, 6 A, 3ème Picasso)', () => {
+            expect(Utils.normalizeClassName('6°A')).toBe('6a');
+            expect(Utils.normalizeClassName('6 A')).toBe('6a');
+            expect(Utils.normalizeClassName('3ème Picasso')).toBe('3picasso');
+            expect(Utils.normalizeClassName('CM2-A')).toBe('cm2a');
+        });
+
+        it('devrait gérer les valeurs vides ou nulles', () => {
+            expect(Utils.normalizeClassName('')).toBe('');
+            expect(Utils.normalizeClassName(null)).toBe('');
+        });
+    });
+
     describe('stripAccents', () => {
         it('devrait retirer les accents et passer en minuscules', () => {
             expect(Utils.stripAccents('HÉLOÏSE')).toBe('heloise');

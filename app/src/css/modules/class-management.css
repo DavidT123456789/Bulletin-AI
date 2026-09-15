@@ -22,6 +22,29 @@
     min-width: max-content;
 }
 
+/* ====================================================================
+   ANIMATION: Class Chip Creation Feedback (Micro-Spring)
+   ==================================================================== */
+.class-chip.class-created-pop {
+    animation: classChipPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform;
+}
+
+@keyframes classChipPop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.07);
+    }
+    75% {
+        transform: scale(0.98);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 .class-chip .student-count-badge {
     display: inline-flex;
     align-items: center;
@@ -46,6 +69,35 @@
 .class-chip.active .student-count-badge {
     background: var(--primary-color);
     color: #ffffff;
+}
+
+.class-chip .class-demo-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: var(--radius-pill);
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-left: 2px;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .class-chip .class-demo-tag {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.class-chip:hover .class-demo-tag,
+.class-chip.active .class-demo-tag {
+    border-color: rgba(245, 158, 11, 0.45);
 }
 
 .class-chip .class-chevron {
@@ -103,42 +155,33 @@
     padding: 8px 12px;
     border-bottom: 1px solid var(--border-color);
     background: rgba(var(--surface-color-rgb), 0.45);
+}
+
+.class-dropdown-title {
     font-weight: 600;
     font-size: 0.85em;
     color: var(--text-secondary);
+    letter-spacing: -0.01em;
+    user-select: none;
+    cursor: default;
 }
 
-/* Clickable title button - Opens management modal */
-.class-dropdown-title-btn {
+.class-dropdown-header-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: none;
-    padding: 6px 10px;
-    margin: -6px -4px;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: inherit;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
+    gap: 4px;
 }
 
-.class-dropdown-title-btn i {
-    font-size: 0.85em;
-    opacity: 0.6;
-    transition: all var(--transition-fast);
+.class-dropdown-header-actions .btn-icon-small iconify-icon {
+    transition: transform var(--transition-fast);
 }
 
-.class-dropdown-title-btn:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+.class-dropdown-header-actions #addNewClassBtn:hover iconify-icon {
+    transform: scale(1.15);
 }
 
-.class-dropdown-title-btn:hover i {
-    opacity: 1;
-    transform: rotate(90deg);
+.class-dropdown-header-actions #manageClassesBtn:hover iconify-icon {
+    transform: rotate(60deg);
 }
 
 /* Global style for all small icon buttons */
@@ -169,11 +212,6 @@
     border-color: transparent;
 }
 
-/* Rotation spécifique au bouton "+" du dropdown header */
-.class-dropdown-header .btn-icon-small:hover {
-    transform: rotate(90deg);
-}
-
 .class-dropdown-list {
     max-height: 240px;
     overflow-y: auto;
@@ -198,6 +236,111 @@
 
 .class-dropdown-list::-webkit-scrollbar-thumb:hover {
     background: var(--text-tertiary);
+}
+
+.class-dropdown-create-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: var(--dropdown-item-radius);
+    border: 1px dashed rgba(var(--primary-color-rgb), 0.4);
+    background: rgba(var(--primary-color-rgb), 0.06);
+    color: var(--primary-color);
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.class-dropdown-create-btn:hover {
+    background: rgba(var(--primary-color-rgb), 0.12);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.class-dropdown-create-btn iconify-icon {
+    font-size: 1.15rem;
+    color: var(--primary-color);
+}
+
+.class-item-demo-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-pill);
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .class-item-demo-badge {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.class-dropdown-item.active .class-item-demo-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Demo Toolbar Pill */
+.demo-toolbar-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.demo-toolbar-pill iconify-icon {
+    color: #d97706;
+    font-size: 1rem;
+}
+
+[data-theme="dark"] .demo-toolbar-pill {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .demo-toolbar-pill iconify-icon {
+    color: #fbbf24;
+}
+
+.demo-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.demo-toolbar-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
 }
 
 .class-dropdown-item {

@@ -57,6 +57,12 @@ export const ClassUIManager = {
             this.showNewClassPrompt();
         });
 
+        // Demo toolbar quick create button
+        DOM.demoToolbarCreateBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showNewClassPrompt();
+        });
+
         // Manage classes button
         DOM.manageClassesBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -210,7 +216,9 @@ export const ClassUIManager = {
      * Affiche un input inline dans le dropdown pour créer une nouvelle classe
      */
     showNewClassPrompt() {
-        // Ne pas refermer le dropdown!
+        if (!this._isDropdownOpen) {
+            this.openDropdown();
+        }
         if (!DOM.classDropdownList) return;
 
         // Vérifier si l'input existe déjà
@@ -284,20 +292,29 @@ export const ClassUIManager = {
 
 
     /**
-     * Crée une classe et bascule vers elle
+     * Crée une classe et bascule vers elle avec transition fluide
      * @private
      */
     async _createAndSwitchClass(className, level = null) {
         try {
             const newClass = ClassManager.createClass(className, null, null, level);
-            await ClassManager.switchClass(newClass.id);
-            this.updateHeaderDisplay();
+            this.closeDropdown();
+            await this.handleClassSwitch(newClass.id);
             this.renderClassList();
-            // CORRECTIF: Rafraîchir la liste des élèves et les stats pour la nouvelle classe
-            AppreciationsManager.renderResults();
-            UI?.updateStats?.();
+
+            // Rétroaction tactile micro-ressort sur la puce de classe du header
+            if (DOM.headerClassChip) {
+                DOM.headerClassChip.classList.remove('class-created-pop');
+                if (DOM.headerClassChip.offsetWidth !== undefined) {
+                    void DOM.headerClassChip.offsetWidth;
+                }
+                DOM.headerClassChip.classList.add('class-created-pop');
+                setTimeout(() => {
+                    DOM.headerClassChip?.classList.remove('class-created-pop');
+                }, 550);
+            }
         } catch (error) {
-            UI?.showNotification(`Erreur : ${error.message}`, 'error');
+            UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
         }
     },
 
@@ -327,14 +344,28 @@ export const ClassUIManager = {
             return;
         }
 
-        DOM.classDropdownList.innerHTML = classes.map(cls => `
+        const hasOnlyDemoOrNoRealClass = !classes.some(c => !ClassManager.isDemoClass(c.id));
+        const ctaBtnHtml = hasOnlyDemoOrNoRealClass ? `
+            <button type="button" class="class-dropdown-create-btn" id="dropdownCreateClassCta">
+                <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
+                <span>Créer ma classe</span>
+            </button>
+        ` : '';
+
+        const classItemsHtml = classes.map(cls => {
+            const isDemo = ClassManager.isDemoClass(cls.id);
+            const demoBadgeHtml = isDemo ? '<span class="class-item-demo-badge">Démo</span>' : '';
+            return `
             <div class="class-dropdown-item ${cls.id === currentClassId ? 'active' : ''}" 
                  data-class-id="${cls.id}"
                  tabindex="0"
                  role="option"
                  aria-selected="${cls.id === currentClassId ? 'true' : 'false'}">
                 <div class="class-info">
-                    <span class="class-name">${this._escapeHtml(cls.name)}</span>
+                    <span class="class-name">
+                        ${this._escapeHtml(cls.name)}
+                        ${demoBadgeHtml}
+                    </span>
                     <span class="class-meta">
                         <iconify-icon icon="solar:calendar-linear"></iconify-icon> ${cls.year || 'Non définie'}
                     </span>
@@ -343,7 +374,15 @@ export const ClassUIManager = {
                     <span class="progress-loader"></span>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
+
+        DOM.classDropdownList.innerHTML = ctaBtnHtml + classItemsHtml;
+
+        // Bind dropdown create class CTA
+        document.getElementById('dropdownCreateClassCta')?.addEventListener('click', () => {
+            this.showNewClassPrompt();
+        });
 
         // Bind click and keyboard events on class items
         DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
@@ -466,6 +505,19 @@ export const ClassUIManager = {
         const hasResults = (appState.generatedResults || []).some(r => r.classId === classId);
         SeatingChartManager.onClassChange(hasResults);
 
+        // Si l'état vide est affiché pour cette classe, déclencher l'apparition fluide en cascade
+        if (DOM.emptyStateCard && DOM.emptyStateCard.style.display !== 'none') {
+            DOM.emptyStateCard.classList.remove('card-refresh-animation');
+            DOM.emptyStateCard.classList.remove('empty-state-entrance');
+            if (DOM.emptyStateCard.offsetWidth !== undefined) {
+                void DOM.emptyStateCard.offsetWidth;
+            }
+            DOM.emptyStateCard.classList.add('empty-state-entrance');
+            setTimeout(() => {
+                DOM.emptyStateCard?.classList.remove('empty-state-entrance');
+            }, 600);
+        }
+
         // Cleanup after animation finishes (400ms + buffer)
         setTimeout(() => {
             containersToAnimate.forEach(el => {
@@ -487,12 +539,24 @@ export const ClassUIManager = {
             userSettings.academic.currentClassId = currentClass.id;
         }
 
+        const isDemo = currentClass ? ClassManager.isDemoClass(currentClass.id) : false;
+
         if (DOM.headerClassName) {
             if (currentClass) {
                 DOM.headerClassName.textContent = currentClass.name;
             } else {
                 DOM.headerClassName.textContent = 'Nouvelle classe';
             }
+        }
+
+        // Afficher ou masquer le badge Démo dans le chip du header
+        if (DOM.headerClassTag) {
+            DOM.headerClassTag.style.display = isDemo ? 'inline-flex' : 'none';
+        }
+
+        // Afficher ou masquer la micro-pastille contextuelle dans la toolbar
+        if (DOM.demoToolbarPill) {
+            DOM.demoToolbarPill.style.display = isDemo ? 'inline-flex' : 'none';
         }
 
         // Update student count
@@ -527,20 +591,15 @@ export const ClassUIManager = {
             }
         }
 
-        // UPDATE "Mes Classes" button with class count & total students tooltip
+        // UPDATE "Mes classes" title with class count & total students tooltip
         const totalStudents = appState.generatedResults?.length || 0;
         const classesCount = ClassManager.getAllClasses().length;
 
-        const manageBtn = document.getElementById('manageClassesBtn');
-        const manageBtnSpan = manageBtn ? manageBtn.querySelector('span') : null;
-
-        if (manageBtn && manageBtnSpan) {
-            // Button: "Mes Classes (3)" -> Shows number of classes
-            manageBtnSpan.textContent = `Mes Classes (${classesCount})`;
-
-            // Tooltip: "Total : 158 élèves"
-            manageBtn.classList.add('tooltip');
-            manageBtn.setAttribute('data-tooltip', `Total : ${totalStudents} élèves`);
+        const titleEl = DOM.classDropdownTitle || document.getElementById('classDropdownTitle');
+        if (titleEl) {
+            titleEl.textContent = `Mes classes (${classesCount})`;
+            titleEl.classList.add('tooltip');
+            titleEl.setAttribute('data-tooltip', `Total : ${totalStudents} élève${totalStudents > 1 ? 's' : ''}`);
         }
     },
 

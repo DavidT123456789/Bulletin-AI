@@ -64,6 +64,14 @@ export const ImportWizardManager = {
         // Close hub
         document.getElementById('importHubCloseBtn')?.addEventListener('click', () => this.closeHub());
 
+        // Redirect to create class from demo alert
+        document.getElementById('importHubCreateClassBtn')?.addEventListener('click', () => {
+            this.closeHub();
+            setTimeout(() => {
+                ClassUIManager.showNewClassPrompt();
+            }, 250);
+        });
+
         // Close on backdrop click
         backdrop.addEventListener('click', (e) => {
             if (e.target === backdrop) this.closeHub();
@@ -127,12 +135,23 @@ export const ImportWizardManager = {
             // [UX Mobile] Push History State
             HistoryManager.pushState('importHub', (options) => this.closeHub(options));
 
+            // Smart FAB Guard: check if current class is demo
+            const isDemo = ClassManager.isDemoClass();
+            const demoAlert = document.getElementById('importHubDemoAlert');
+            if (demoAlert) {
+                demoAlert.style.display = isDemo ? 'flex' : 'none';
+            }
+
             backdrop.classList.add('active');
             document.body.style.overflow = 'hidden';
 
-            // Focus first card for accessibility
+            // Focus create class button if demo alert is present, else first card
             setTimeout(() => {
-                backdrop.querySelector('.import-hub-card')?.focus();
+                if (isDemo) {
+                    document.getElementById('importHubCreateClassBtn')?.focus();
+                } else {
+                    backdrop.querySelector('.import-hub-card')?.focus();
+                }
             }, 100);
         }
     },

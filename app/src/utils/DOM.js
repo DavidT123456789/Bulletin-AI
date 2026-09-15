@@ -63,8 +63,10 @@ export function initDOM() {
     // Class selector elements
     DOM.headerClassChip = document.getElementById('headerClassChip');
     DOM.headerClassName = document.getElementById('headerClassName');
+    DOM.headerClassTag = document.getElementById('headerClassTag');
     DOM.headerStudentCount = document.getElementById('headerStudentCount');
     DOM.classDropdown = document.getElementById('classDropdown');
+    DOM.classDropdownTitle = document.getElementById('classDropdownTitle');
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');
@@ -287,6 +289,10 @@ export function initDOM() {
     DOM.actionsIrreversiblesContainer = document.getElementById('actions-irreversibles-container');
     DOM.backToTopBtn = document.getElementById('backToTopBtn');
     DOM.analyzeClassBtn = document.getElementById('analyzeClassBtn');
+    DOM.demoToolbarPill = document.getElementById('demoToolbarPill');
+    DOM.demoToolbarCreateBtn = document.getElementById('demoToolbarCreateBtn');
+    DOM.importHubDemoAlert = document.getElementById('importHubDemoAlert');
+    DOM.importHubCreateClassBtn = document.getElementById('importHubCreateClassBtn');
 
     DOM.copyAnalysisBtn = document.getElementById('copyAnalysisBtn');
     DOM.actionsBtnToggle = document.getElementById('actionsBtnToggle');

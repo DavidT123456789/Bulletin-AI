@@ -2967,11 +2967,25 @@ export const TrombinoscopeManager = {
             if (this._parsedPdfData) {
                 const targetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
                 const existingClasses = ClassManager.getAllClasses() || [];
+                const currentClass = ClassManager.getCurrentClass?.();
+                const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
+                const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
+
+                // 1. Recherche correspondance exacte (insensible à la casse)
                 targetClass = existingClasses.find(c => c.name.toLowerCase() === targetName.toLowerCase());
+
+                // 2. Recherche tolérante / normalisée (ex: "5°1" vs "5 1", "6ème A" vs "6 A")
+                if (!targetClass && Utils.normalizeClassName) {
+                    const targetNorm = Utils.normalizeClassName(targetName);
+                    if (targetNorm) {
+                        targetClass = existingClasses.find(c => Utils.normalizeClassName(c.name) === targetNorm);
+                    }
+                }
+
+                // 3. Si toujours non trouvée mais la classe active est vide et n'est pas la démo :
+                // On réutilise la classe active (on met à jour son nom avec celui du PDF pour éviter les doublons)
                 if (!targetClass) {
-                    const currentClass = ClassManager.getCurrentClass?.();
-                    const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
-                    if (currentClass && currentClass.name?.toLowerCase() === 'nouvelle classe' && !hasStudents) {
+                    if (currentClass && !hasStudents && !isDemo) {
                         ClassManager.updateClass?.(currentClass.id, {
                             name: targetName,
                             year: this._parsedPdfData.schoolYear || currentClass.year

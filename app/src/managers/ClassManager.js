@@ -286,6 +286,16 @@ export const ClassManager = {
     },
 
     /**
+     * Vérifie si une classe est la classe d'exemple/démo
+     * @param {string} [classId] - ID de la classe (ou courante si non spécifié)
+     * @returns {boolean} True si classe d'exemple
+     */
+    isDemoClass(classId = null) {
+        const cls = classId ? this.getClassById(classId) : this.getCurrentClass();
+        return cls?.name === 'Classe Exemple' || cls?.isDemo === true;
+    },
+
+    /**
      * Récupère les élèves/résultats d'une classe
      * @param {string} [classId] - ID de la classe (ou courante si non spécifié)
      * @returns {Array} Résultats filtrés par classe

@@ -324,6 +324,23 @@ export const Utils = {
     },
 
     /**
+     * Normalise un nom de classe pour comparaison tolérante (ex: "5°1", "5 1", "5ème 1", "5-1" -> "51")
+     * @param {string} name - Nom de la classe
+     * @returns {string} Nom normalisé
+     */
+    normalizeClassName(name) {
+        if (!name || typeof name !== 'string') return '';
+        return name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Enlever accents
+            .replace(/[°]/g, '') // Enlever symbole degré
+            .replace(/(?:eme|ieme|\^e|nde|nd|ere|re)(?![a-z])/gi, '') // Enlever suffixes ordinaux
+            .replace(/[^a-z0-9]/gi, '') // Ne garder que lettres et chiffres
+            .trim();
+    },
+
+    /**
      * Déduplique une liste de résultats élèves.
      * Fusionne les entrées d'un même élève en gardant les appréciations les plus récentes
      * pour chaque période.

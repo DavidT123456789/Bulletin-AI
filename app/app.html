@@ -234,18 +234,21 @@
                         data-tooltip="Changer de classe">
                         <span class="icon"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
                         <span id="headerClassName">Ma Classe</span>
+                        <span id="headerClassTag" class="class-demo-tag" style="display: none;">Démo</span>
                         <span id="headerStudentCount" class="student-count-badge">0</span>
                         <iconify-icon icon="solar:alt-arrow-down-linear" class="class-chevron"></iconify-icon>
                     </div>
                     <div id="classDropdown" class="class-dropdown" style="display: none;">
                         <div class="class-dropdown-header">
-                            <button id="manageClassesBtn" class="class-dropdown-title-btn" title="Gérer les classes">
-                                <iconify-icon icon="solar:settings-linear"></iconify-icon>
-                                <span>Mes Classes</span>
-                            </button>
-                            <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
-                                <iconify-icon icon="ph:plus"></iconify-icon>
-                            </button>
+                            <span class="class-dropdown-title tooltip" id="classDropdownTitle">Mes classes</span>
+                            <div class="class-dropdown-header-actions">
+                                <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
+                                    <iconify-icon icon="ph:plus"></iconify-icon>
+                                </button>
+                                <button id="manageClassesBtn" class="btn-icon-small tooltip" data-tooltip="Gérer les classes" aria-label="Gérer les classes">
+                                    <iconify-icon icon="solar:settings-linear"></iconify-icon>
+                                </button>
+                            </div>
                         </div>
                         <div id="classDropdownList" class="class-dropdown-list">
                             <!-- Classes will be rendered here dynamically -->
@@ -527,6 +530,14 @@
                             </div>
                             <!-- Active filter badge - inline in toolbar -->
                             <div id="activeFilterInfo" class="toolbar-filter-badge"></div>
+                            <!-- Demo context pill - inline in toolbar -->
+                            <div id="demoToolbarPill" class="demo-toolbar-pill" style="display: none;">
+                                <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                <span>Classe d'exemple</span>
+                                <button type="button" class="demo-toolbar-btn" id="demoToolbarCreateBtn" title="Créer ma propre classe">
+                                    <iconify-icon icon="ph:plus-bold"></iconify-icon> Créer ma classe
+                                </button>
+                            </div>
                             <!-- Actions à droite - ordre stable -->
                             <div class="toolbar-actions">
                                 <button type="button" class="btn btn-ai tooltip" id="analyzeClassBtn" disabled
@@ -1295,6 +1306,18 @@
 
             <div class="import-hub-header">
                 <h2 class="import-hub-title" id="importHubTitle">Compléter votre classe</h2>
+                <div id="importHubDemoAlert" class="import-hub-demo-alert" style="display: none;">
+                    <div class="demo-alert-content">
+                        <iconify-icon icon="solar:info-circle-bold" class="demo-alert-icon"></iconify-icon>
+                        <div class="demo-alert-text">
+                            <strong>Vous êtes sur la classe d'exemple</strong>
+                            <span>Créez votre propre classe pour importer vos élèves :</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" id="importHubCreateClassBtn">
+                        <iconify-icon icon="ph:plus-bold"></iconify-icon> Créer ma classe
+                    </button>
+                </div>
             </div>
 
             <div class="import-hub-choices">
@@ -3105,7 +3128,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 5329f05 · 15 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 8df164b · 16 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
