@@ -208,7 +208,7 @@
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
-    <link rel="stylesheet" href="src/css/main.css?v=20260914-align">
+    <link rel="stylesheet" href="src/css/main.css?v=20260915-lift">
 </head>
 
 <body style="background-color: inherit;">
@@ -3105,7 +3105,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 214a7d2 · 15 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 9098794 · 15 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3172,94 +3172,83 @@
             </div>
             <div class="modal-body">
                 <div id="welcome-step-1" class="welcome-step active">
-                    <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI</h3>
-                    <p class="welcome-subtitle-premium">Appréciations, plans de classe et bien plus.</p>
-
-                    <div class="welcome-chips">
-                        <div class="welcome-chip">
-                            <span class="welcome-chip__icon">
-                                <iconify-icon icon="solar:stars-minimalistic-bold"></iconify-icon>
-                            </span>
-                            <span class="welcome-chip__label">Unique &amp; Varié</span>
-                        </div>
-                        <div class="welcome-chip">
-                            <span class="welcome-chip__icon">
-                                <iconify-icon icon="solar:bolt-circle-bold"></iconify-icon>
-                            </span>
-                            <span class="welcome-chip__label">Ultra Rapide</span>
-                        </div>
-                        <div class="welcome-chip">
-                            <span class="welcome-chip__icon">
-                                <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                            </span>
-                            <span class="welcome-chip__label">Privé &amp; Sécurisé</span>
-                        </div>
+                    <div class="welcome-step-header">
+                        <img src="assets/logo.png" alt="Bulletin AI" class="welcome-app-logo" width="76" height="76">
+                        <h3 class="welcome-title-premium">
+                            <span class="welcome-title-gradient">Bienvenue sur Bulletin AI</span>
+                        </h3>
+                        <p class="welcome-subtitle-premium">Prenez quelques instants pour paramétrer votre assistant.</p>
                     </div>
                 </div>
                 <div id="welcome-step-2" class="welcome-step">
-                    <h3 class="welcome-title-premium">
-                        <span class="welcome-title-icon wave-animation">🔑</span>
-                        Activez votre Assistant
-                    </h3>
+                    <div class="welcome-step-header">
+                        <h3 class="welcome-title-premium">
+                            <span class="welcome-title-icon wave-animation">🔑</span>
+                            <span class="welcome-title-gradient">Activez votre Assistant</span>
+                        </h3>
+                        <p class="welcome-subtitle-premium">
+                            L'application a besoin d'une connexion&nbsp;IA. Chaque option propose un accès gratuit.
+                        </p>
+                    </div>
 
-                    <div class="welcome-split-layout">
-                        <div class="welcome-split-info">
-                            <p class="welcome-split-desc">
-                                L'application a besoin d'une connexion&nbsp;IA.<br>
-                                Chaque option propose un accès gratuit.
-                            </p>
-                            <div class="welcome-info-pill welcome-info-pill--success">
-                                <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
-                                <span>Noms anonymisés • Stockage local</span>
+                    <div class="welcome-api-setup">
+                        <div class="provider-selector-row">
+                            <div class="ui-segmented-control" id="welcomeProviderSelector">
+                                <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
+                                    checked>
+                                <label for="providerMistral" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
+                                        style="color: #fd6f00;"></iconify-icon>
+                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                </label>
+                                <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
+                                <label for="providerGoogle" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
+                                    <span>Google</span>
+                                </label>
+                                <input type="radio" id="providerOpenRouter" name="welcomeProvider"
+                                    value="openrouter">
+                                <label for="providerOpenRouter" class="ui-segment">
+                                    <iconify-icon class="iconify-inline"
+                                        icon="solar:bolt-bold-duotone"></iconify-icon>
+                                    <span>OpenRouter</span>
+                                </label>
                             </div>
                         </div>
 
-                        <div class="welcome-split-action">
-                            <div class="provider-selector-row">
-                                <div class="ui-segmented-control" id="welcomeProviderSelector">
-                                    <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
-                                        checked>
-                                    <label for="providerMistral" class="ui-segment">
-                                        <iconify-icon class="iconify-inline" icon="solar:cat-bold"
-                                            style="color: #fd6f00;"></iconify-icon>
-                                        <span>Mistral <small class="provider-tag">🇫🇷</small></span>
-                                    </label>
-                                    <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
-                                    <label for="providerGoogle" class="ui-segment">
-                                        <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                        <span>Google</span>
-                                    </label>
-                                    <input type="radio" id="providerOpenRouter" name="welcomeProvider"
-                                        value="openrouter">
-                                    <label for="providerOpenRouter" class="ui-segment">
-                                        <iconify-icon class="iconify-inline"
-                                            icon="solar:bolt-bold-duotone"></iconify-icon>
-                                        <span>OpenRouter</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="welcome-api-key-group">
-                                <input type="text" id="welcomeApiKeyInput"
-                                    placeholder="Clé API Mistral...">
-                                <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
-                            </div>
-                            <div class="error-message" id="welcomeApiKeyError"
-                                style="display: none; justify-content: flex-start; margin-bottom: 10px; font-size: 0.9em;">
-                            </div>
-
-                            <div class="welcome-action-links">
-                                <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer"
-                                    class="get-key-link-mini" id="welcomeGetKeyLink"><iconify-icon
-                                        icon="solar:cat-linear"
-                                        style="color: #fd6f00;"></iconify-icon> Obtenir
-                                    ma clé</a>
-                                <span class="action-separator">•</span>
-                                <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
-                                    Configurer plus tard
-                                </button>
-                            </div>
+                        <div class="welcome-api-key-group">
+                            <input type="text" id="welcomeApiKeyInput"
+                                placeholder="Clé API Mistral..."
+                                autocomplete="off"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
+                                data-1p-ignore="true"
+                                data-lpignore="true"
+                                data-bwignore="true"
+                                data-form-type="other">
+                            <button class="btn btn-validate-key" id="welcomeValidateApiKeyBtn">Valider</button>
                         </div>
+                        <div class="error-message" id="welcomeApiKeyError"
+                            style="display: none; justify-content: center; margin-bottom: 10px; font-size: 0.9em;">
+                        </div>
+
+                        <div class="welcome-action-links">
+                            <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer"
+                                class="get-key-link-mini" id="welcomeGetKeyLink"><iconify-icon
+                                    icon="solar:cat-linear"
+                                    style="color: #fd6f00;"></iconify-icon> Obtenir
+                                ma clé</a>
+                            <span class="action-separator">•</span>
+                            <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
+                                Configurer plus tard
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="welcome-info-pill welcome-info-pill--success">
+                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                        <span>Noms anonymisés • Stockage local</span>
                     </div>
                 </div>
 
@@ -3268,7 +3257,7 @@
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">
                             <span class="welcome-title-icon">🗓️</span>
-                            Votre rythme scolaire
+                            <span class="welcome-title-gradient">Votre rythme scolaire</span>
                         </h3>
                         <p class="welcome-subtitle-premium">Ce paramètre calibre l'IA pour qu'elle s'adapte à votre organisation.</p>
                     </div>
@@ -3302,56 +3291,292 @@
                         <input type="radio" id="welcomePeriodSystemSemestres" name="welcomePeriodSystemRadio" value="semestres">
                     </div>
 
-                    <div class="welcome-info-pill" style="justify-content: center; width: max-content; margin: 24px auto 0 auto;">
+                    <div class="welcome-info-pill">
                         <iconify-icon icon="solar:settings-bold"></iconify-icon>
                         <span>Modifiable à tout moment dans les réglages</span>
                     </div>
                 </div>
                 <div id="welcome-step-4" class="welcome-step">
-                    <div class="welcome-step-header">
-                        <h3 class="welcome-title-premium">
-                            <span class="welcome-title-icon">🚀</span>
-                            Mode de démarrage
-                        </h3>
-                        <p class="welcome-subtitle-premium">Choisissez votre mode de démarrage pour configurer votre espace de travail.</p>
-                    </div>
-
-                    <div class="welcome-start-options">
-                        <div class="welcome-start-card" data-value="empty" tabindex="0" role="button" aria-pressed="false">
-                            <div class="welcome-start-card__icon">
-                                <iconify-icon icon="solar:document-bold-duotone"></iconify-icon>
-                            </div>
-                            <div class="welcome-start-card__content">
-                                <strong class="welcome-start-card__title">Base Vierge</strong>
-                                <span class="welcome-start-card__desc">Démarrez directement de zéro avec vos propres élèves.</span>
-                            </div>
-                            <div class="welcome-start-card__radio"></div>
-                        </div>
-
-                        <div class="welcome-start-card active" data-value="demo" tabindex="0" role="button" aria-pressed="true">
-                            <div class="welcome-start-card__icon">
-                                <iconify-icon icon="solar:document-text-bold-duotone"></iconify-icon>
-                            </div>
-                            <div class="welcome-start-card__content">
-                                <strong class="welcome-start-card__title">Mode Découverte</strong>
-                                <span class="welcome-start-card__desc">Testez l'application avec 8 élèves fictifs pré-remplis.</span>
-                            </div>
-                            <div class="welcome-start-card__radio"></div>
-                        </div>
-                    </div>
-                    <input type="checkbox" id="welcomeLoadDemoCheckbox" checked style="display: none;">
-                </div>
-
-                <div id="welcome-step-5" class="welcome-step">
                     <!-- Transformation Illustration -->
                     <div class="welcome-transformation-svg">
-                        <object type="image/svg+xml" data="./welcome-transformation.svg">
-                            Illustration de transformation IA
-                        </object>
+                        <svg viewBox="-320 0 1560 280" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients avec dominante orange mais pas exclusif -->
+    <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316"/>
+      <stop offset="50%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#ec4899"/>
+    </linearGradient>
+
+    <linearGradient id="docColorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#fefefe"/>
+    </linearGradient>
+
+    <!-- Dégradé chromatique adouci pour le rayonnement lumineux subtil de l'ombre (tons plus clairs et aérés) -->
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fba04b"/>
+      <stop offset="35%" stop-color="#fdba74"/>
+      <stop offset="65%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#f472b6"/>
+    </linearGradient>
+
+    <!-- Filter for glow -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Ombre neutre raffinée multi-niveaux (iOS style) pour le document -->
+    <filter id="docShadowNeutral" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.07"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.03"/>
+    </filter>
+
+    <!-- Rayonnement coloré d'ambiance (halo doux, large et aéré) -->
+    <filter id="radiantGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="19" result="coloredBlur"/>
+    </filter>
+
+    <!-- Ombre portée colorée directionnelle (diffuse et soyeuse) -->
+    <filter id="intenseGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="sharpBlur"/>
+    </filter>
+  </defs>
+
+  <!-- === SINGLE DOCUMENT THAT TRANSFORMS === -->
+  <g transform="translate(380, 0)">
+
+    <!-- Rayonnement coloré progressif subtil (s'éveille avec délicatesse à mesure de la transformation) -->
+    <g>
+      <animate attributeName="opacity" values="0;0;0.20;0.50;0.75;0.85;0.78;0.85;0" keyTimes="0;0.15;0.35;0.60;0.78;0.84;0.88;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <!-- Halo diffus coloré qui rayonne tout autour de la carte -->
+      <rect x="-8" y="32" width="176" height="216" rx="24" fill="url(#glowGradient)" opacity="0.48" filter="url(#radiantGlow)"/>
+      <!-- Ombre colorée directionnelle vers le bas -->
+      <rect x="2" y="46" width="156" height="198" rx="18" fill="url(#glowGradient)" opacity="0.52" filter="url(#intenseGlow)"/>
+    </g>
+
+    <!-- Base gray document (fades out) - SIMPLE RECTANGLE -->
+    <g filter="url(#docShadowNeutral)">
+      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.1;0.2;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" fill="#e5e5e5" stroke="#ccc" stroke-width="1"/>
+    </g>
+
+    <!-- Colorful document background (fades in) - fond blanc - SIMPLE RECTANGLE -->
+    <g filter="url(#docShadowNeutral)">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.2;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="0" y="40" width="160" height="200" rx="16" fill="url(#docColorGradient)" stroke="url(#magicGradient)" stroke-width="2"/>
+    </g>
+
+    <!-- Gray lines (fade out as colored ones appear) -->
+    <g fill="#999">
+      <rect x="20" y="80" width="100" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.15;0.22;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="100" width="120" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.22;0.29;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="120" width="80" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.29;0.36;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="140" width="110" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.36;0.43;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="160" width="60" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.50;0.57;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="200" width="100" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.64;0.71;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="20" y="220" width="90" height="8" rx="2">
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.71;0.78;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <!-- Colored lines appearing - mix orange et autres -->
+    <rect x="20" y="80" width="100" height="8" rx="2" fill="#f97316">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="width" values="0;0;100;100;0" keyTimes="0;0.15;0.22;0.92;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <rect x="20" y="100" width="120" height="8" rx="2" fill="#8b5cf6">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="width" values="0;0;120;120;0" keyTimes="0;0.22;0.29;0.92;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <rect x="20" y="120" width="80" height="8" rx="2" fill="#fb923c">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="width" values="0;0;80;80;0" keyTimes="0;0.29;0.36;0.92;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Chart 1 - Bar chart avec vert et orange -->
+    <g transform="translate(20, 145)">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.36;0.43;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect width="50" height="35" fill="#fafafa" rx="3" stroke="#e5e5e5" stroke-width="1"/>
+      <rect x="8" width="8" fill="#10b981" rx="1">
+        <animate attributeName="height" values="0;0;10;10;0" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="y" values="30;30;20;20;30" keyTimes="0;0.40;0.47;0.92;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="21" width="8" fill="#f97316" rx="1">
+        <animate attributeName="height" values="0;0;18;18;0" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="y" values="30;30;12;12;30" keyTimes="0;0.44;0.51;0.92;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="34" width="8" fill="#22c55e" rx="1">
+        <animate attributeName="height" values="0;0;22;22;0" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
+        <animate attributeName="y" values="30;30;8;8;30" keyTimes="0;0.48;0.55;0.92;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <!-- Chart 2 - Image area -->
+    <g transform="translate(80, 145)">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.50;0.57;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <rect width="55" height="35" fill="url(#magicGradient)" rx="3" opacity="0.3"/>
+      <circle cx="20" cy="15" fill="#fbbf24" opacity="0.8">
+        <animate attributeName="r" values="0;0;8;8;0" keyTimes="0;0.54;0.61;0.92;1" dur="10s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M10 30 L25 20 L35 27 L50 18" stroke="#fff" stroke-width="2" fill="none" opacity="0.8" stroke-dasharray="60">
+        <animate attributeName="stroke-dashoffset" values="60;60;0;0;60" keyTimes="0;0.56;0.66;0.92;1" dur="10s" repeatCount="indefinite"/>
+      </path>
+    </g>
+
+    <!-- Bottom lines - mix -->
+    <rect x="20" y="195" width="110" height="8" rx="2" fill="#ec4899">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="width" values="0;0;110;110;0" keyTimes="0;0.64;0.71;0.92;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <rect x="20" y="215" width="90" height="8" rx="2" fill="#fdba74">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="width" values="0;0;90;90;0" keyTimes="0;0.71;0.78;0.92;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Sparkle effects - mix orange et autres -->
+    <g>
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.78;0.85;0.92;1" dur="10s" repeatCount="indefinite"/>
+      <g transform="translate(150, 50)">
+        <path d="M0 -6 L0 6 M-6 0 L6 0" stroke="#fbbf24" stroke-width="2" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="7.8s" fill="freeze" repeatCount="indefinite"/>
+        </path>
+      </g>
+      <g transform="translate(10, 185)">
+        <path d="M0 -4 L0 4 M-4 0 L4 0" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="8s" fill="freeze" repeatCount="indefinite"/>
+        </path>
+      </g>
+      <g transform="translate(155, 230)">
+        <path d="M0 -5 L0 5 M-5 0 L5 0" stroke="#f97316" stroke-width="1.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="0;45" dur="0.5s" begin="8.2s" fill="freeze" repeatCount="indefinite"/>
+        </path>
+      </g>
+    </g>
+  </g>
+
+  <!-- === PARTICLES === -->
+  <g filter="url(#glow)">
+    <circle r="4" fill="#f97316">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="5.6s" begin="0s" repeatCount="indefinite">
+        <mpath href="#particlePath1"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath1" d="M-300 100 Q40 5 380 120" fill="none"/>
+
+    <circle r="3" fill="#8b5cf6">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.0s" begin="-0.5s" repeatCount="indefinite">
+        <mpath href="#particlePath2"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath2" d="M-315 180 Q30 270 380 160" fill="none"/>
+
+    <circle r="3.5" fill="#fbbf24">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="5.2s" begin="-1.0s" repeatCount="indefinite">
+        <mpath href="#particlePath3"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath3" d="M-285 140 Q60 140 380 140" fill="none"/>
+
+    <circle r="2.5" fill="#fb923c">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.4s" begin="-1.5s" repeatCount="indefinite">
+        <mpath href="#particlePath4"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath4" d="M-310 45 Q20 200 380 100" fill="none"/>
+
+    <circle r="3" fill="#10b981">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="5.8s" begin="-2.0s" repeatCount="indefinite">
+        <mpath href="#particlePath5"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath5" d="M-290 230 Q50 160 380 190" fill="none"/>
+
+    <circle r="3.5" fill="#fdba74">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.2s" begin="-2.5s" repeatCount="indefinite">
+        <mpath href="#particlePath6"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath6" d="M-320 65 Q40 130 380 85" fill="none"/>
+
+    <circle r="2.8" fill="#f59e0b">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.6s" begin="-3.0s" repeatCount="indefinite">
+        <mpath href="#particlePath7"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath7" d="M-295 255 Q60 195 380 220" fill="none"/>
+
+    <circle r="3.2" fill="#ec4899">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="5.4s" begin="-3.5s" repeatCount="indefinite">
+        <mpath href="#particlePath8"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath8" d="M-315 165 Q10 70 380 130" fill="none"/>
+
+    <circle r="2.5" fill="#ea580c">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.8s" begin="-4.0s" repeatCount="indefinite">
+        <mpath href="#particlePath9"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath9" d="M-290 30 Q70 155 380 70" fill="none"/>
+
+    <circle r="3" fill="#d97706">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="5.5s" begin="-4.5s" repeatCount="indefinite">
+        <mpath href="#particlePath10"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath10" d="M-310 210 Q35 110 380 175" fill="none"/>
+
+    <circle r="2.8" fill="#fcd34d">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.1s" begin="-5.0s" repeatCount="indefinite">
+        <mpath href="#particlePath11"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath11" d="M-285 85 Q65 40 380 95" fill="none"/>
+
+    <circle r="3.3" fill="#c2410c">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.75;0.8;0.95;1" dur="10s" repeatCount="indefinite"/>
+      <animateMotion dur="6.5s" begin="-5.5s" repeatCount="indefinite">
+        <mpath href="#particlePath12"/>
+      </animateMotion>
+    </circle>
+    <path id="particlePath12" d="M-320 265 Q25 175 380 210" fill="none"/>
+  </g>
+</svg>
                     </div>
 
                     <div class="welcome-step-header">
-                        <h3 class="welcome-title-premium">Prêt à commencer !</h3>
+                        <h3 class="welcome-title-premium"><span class="welcome-title-gradient">Prêt à commencer !</span></h3>
                         <p class="welcome-subtitle-premium">Tout est configuré. Lancez l'assistant pour commencer.</p>
                     </div>
                 </div>
@@ -3359,7 +3584,7 @@
             <div class="welcome-nav-container">
                 <button class="btn btn-secondary" id="welcomePrevBtn" style="visibility: hidden;">Précédent</button>
                 <div id="welcome-dots"><span class="dot active"></span><span class="dot"></span><span
-                        class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+                        class="dot"></span><span class="dot"></span></div>
                 <button class="btn btn-primary" id="welcomeNextBtn">Suivant</button>
                 <div id="welcome-finish-options">
                     <button class="btn btn-primary" id="welcomeFinishAndHideBtn">

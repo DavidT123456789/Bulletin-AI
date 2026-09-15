@@ -6,6 +6,7 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { CONFIG } from '../config/Config.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
@@ -404,6 +405,12 @@ export const ClassUIManager = {
             // Proceed to delete
             await ClassManager.deleteClass(classId, true);
 
+            // Si toutes les classes ont été supprimées, recréer immédiatement une "Nouvelle classe"
+            const remainingClasses = ClassManager.getAllClasses();
+            if (remainingClasses.length === 0) {
+                const freshClass = ClassManager.createClass('Nouvelle classe');
+                await ClassManager.switchClass(freshClass.id);
+            }
         } catch {
             UI?.showNotification("Erreur lors de la suppression de la classe.", "error");
         } finally {
@@ -471,16 +478,20 @@ export const ClassUIManager = {
      * Met à jour l'affichage du header (nom de classe et compteur)
      */
     updateHeaderDisplay() {
-        const currentClass = ClassManager.getCurrentClass();
-        const hasClasses = ClassManager.getAllClasses().length > 0;
+        let currentClass = ClassManager.getCurrentClass();
+        const allClasses = ClassManager.getAllClasses();
+
+        if (!currentClass && allClasses.length > 0) {
+            currentClass = allClasses[0];
+            appState.currentClassId = currentClass.id;
+            userSettings.academic.currentClassId = currentClass.id;
+        }
 
         if (DOM.headerClassName) {
             if (currentClass) {
                 DOM.headerClassName.textContent = currentClass.name;
-            } else if (hasClasses) {
-                DOM.headerClassName.textContent = 'Sélectionner une classe';
             } else {
-                DOM.headerClassName.textContent = 'Créer une classe';
+                DOM.headerClassName.textContent = 'Nouvelle classe';
             }
         }
 
@@ -675,18 +686,27 @@ export const ClassUIManager = {
     async checkAndOfferMigration() {
         const classes = ClassManager.getAllClasses();
 
-        // Si pas de classes mais des résultats existants, proposer la migration
+        // Si pas de classes :
         if (classes.length === 0) {
+            // Si première visite en cours, laisser le WelcomeModal injecter la classe démo
+            if (!localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)) {
+                return;
+            }
+
             const hasResults = appState.generatedResults?.length > 0;
 
             if (hasResults) {
                 // Migration automatique silencieuse vers "Ma Classe"
                 await ClassManager.migrateToMultiClass();
-                this.updateHeaderDisplay();
-                // CORRECTIF: Rafraîchir les résultats et les stats pour afficher les élèves après migration
-                AppreciationsManager.renderResults();
-                UI?.updateStats?.();
+            } else {
+                // Créer automatiquement "Nouvelle classe" pour garantir une classe active
+                const defaultClass = ClassManager.createClass('Nouvelle classe');
+                await ClassManager.switchClass(defaultClass.id);
             }
+            this.updateHeaderDisplay();
+            this.renderClassList();
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.();
         } else {
             // Si des classes existent, mettre à jour l'affichage
             // SAUVEGARDE: Si aucune classe courante n'est sélectionnée ou si elle n'existe plus, sélectionner la première classe

@@ -915,14 +915,18 @@ export const FocusPanelManager = {
      * Ouvre le Focus Panel en mode création (nouvel élève)
      */
     openNew() {
-        // GUARD: Require at least one class before creating students
-        const classes = ClassManager.getAllClasses();
-        if (classes.length === 0) {
-            UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
-            // Open class dropdown and show creation prompt
-            ClassUIManager.openDropdown();
-            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
-            return;
+        // Garantir qu'une classe active existe avant d'ajouter un élève
+        let currentClass = ClassManager.getCurrentClass();
+        if (!currentClass) {
+            const classes = ClassManager.getAllClasses();
+            if (classes.length === 0) {
+                currentClass = ClassManager.createClass('Nouvelle classe');
+            } else {
+                currentClass = classes[0];
+            }
+            ClassManager.switchClass(currentClass.id);
+            ClassUIManager.updateHeaderDisplay();
+            ClassUIManager.renderClassList();
         }
 
         this.isCreationMode = true;

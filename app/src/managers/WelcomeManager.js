@@ -65,21 +65,6 @@ export const WelcomeManager = {
             `.trim();
         }
 
-        // Reset checkbox and cards selection based on existing classes (in case modal is reopened)
-        const hasExistingClasses = ClassManager.getAllClasses?.().length > 0;
-        const defaultStartMode = hasExistingClasses ? 'empty' : 'demo';
-        
-        const loadDemoCheckbox = document.getElementById('welcomeLoadDemoCheckbox');
-        if (loadDemoCheckbox) {
-            loadDemoCheckbox.checked = !hasExistingClasses;
-        }
-        const startCards = document.querySelectorAll('#welcome-step-4 .welcome-start-card');
-        startCards.forEach(c => {
-            const isActive = c.getAttribute('data-value') === defaultStartMode;
-            c.classList.toggle('active', isActive);
-            c.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
-
         // Reset period system cards to current settings (in case modal is reopened)
         const currentPeriodSystem = appState.periodSystem || 'trimestres';
         const periodCards = document.querySelectorAll('#welcomePeriodCards .welcome-start-card');
@@ -92,7 +77,7 @@ export const WelcomeManager = {
         const activeRadio = document.getElementById(activeRadioId);
         if (activeRadio) activeRadio.checked = true;
 
-        const totalWelcomeSteps = 5;
+        const totalWelcomeSteps = 4;
         let isAnimating = false;
         let currentProvider = 'mistral';
 
@@ -451,19 +436,17 @@ export const WelcomeManager = {
 
 
         addClickListener(DOM.welcomeFinishAndHideBtn, async () => {
-            const loadDemoCheckbox = document.getElementById('welcomeLoadDemoCheckbox');
-            if (loadDemoCheckbox && loadDemoCheckbox.checked) {
-                const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked').value;
-                if (appState.periodSystem !== selectedSystem) {
-                    appState.periodSystem = selectedSystem;
-                    UI.updatePeriodSystemUI();
-                }
+            const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
+            if (appState.periodSystem !== selectedSystem) {
+                appState.periodSystem = selectedSystem;
+                UI.updatePeriodSystemUI();
+            }
 
+            const classes = ClassManager.getAllClasses?.() || [];
+            if (classes.length === 0) {
                 try {
-                    // Temporarily change button to show loading loop
                     DOM.welcomeFinishAndHideBtn.disabled = true;
                     DOM.welcomeFinishAndHideBtn.innerHTML = '<iconify-icon icon="line-md:loading-twotone-loop" style="margin-right: 6px;"></iconify-icon> Initialisation...';
-                    
                     await this._injectDemoClass(selectedSystem);
                 } catch (error) {
                     UI.showNotification('Erreur lors de l\'injection des données de démo.', 'error');
@@ -471,37 +454,24 @@ export const WelcomeManager = {
             }
             finishWelcome();
         });
-        addClickListener(DOM.closeWelcomeModalBtn, () => UI.closeModal(DOM.welcomeModal));
+
+        addClickListener(DOM.closeWelcomeModalBtn, async () => {
+            const classes = ClassManager.getAllClasses?.() || [];
+            if (classes.length === 0) {
+                const selectedSystem = document.querySelector('input[name="welcomePeriodSystemRadio"]:checked')?.value || appState.periodSystem || 'trimestres';
+                try {
+                    await this._injectDemoClass(selectedSystem);
+                } catch (_) { /* silent */ }
+            }
+            finishWelcome();
+        });
+
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 
         addClickListener(DOM.welcomeSkipApiKeyBtn, () => {
             UI.showNotification("Configuration de la clé API ignorée. Vous pourrez l'ajouter plus tard dans les paramètres.", 'info');
             DOM.welcomeNextBtn.disabled = false;
             DOM.welcomeNextBtn.click();
-        });
-
-        // Interactivité des cartes d'onboarding (Mode Découverte / Base Vierge)
-        startCards.forEach(card => {
-            const selectCard = () => {
-                startCards.forEach(c => {
-                    c.classList.remove('active');
-                    c.setAttribute('aria-pressed', 'false');
-                });
-                card.classList.add('active');
-                card.setAttribute('aria-pressed', 'true');
-                const val = card.getAttribute('data-value');
-                if (loadDemoCheckbox) {
-                    loadDemoCheckbox.checked = (val === 'demo');
-                }
-            };
-
-            card.addEventListener('click', selectCard, { signal });
-            card.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectCard();
-                }
-            }, { signal });
         });
 
         // Interactivité des cartes de rythme scolaire (Trimestres / Semestres)

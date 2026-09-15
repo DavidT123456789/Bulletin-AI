@@ -74,14 +74,13 @@ export const ImportWizardManager = {
             card.addEventListener('click', () => {
                 const action = card.dataset.action;
 
-                // For individual or mass import, a class is required
+                // S'assurer qu'une classe active existe avant d'ajouter des élèves
                 if (action === 'individual' || action === 'mass') {
                     if (ClassManager.getAllClasses().length === 0) {
-                        UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
-                        this.closeHub();
-                        ClassUIManager.openDropdown();
-                        setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
-                        return;
+                        const newClass = ClassManager.createClass('Nouvelle classe');
+                        ClassManager.switchClass(newClass.id);
+                        ClassUIManager.updateHeaderDisplay();
+                        ClassUIManager.renderClassList();
                     }
                 }
 
@@ -290,12 +289,18 @@ export const ImportWizardManager = {
      * Requires at least one class to exist
      */
     open() {
-        // Check if any classes exist first
-        if (ClassManager.getAllClasses().length === 0) {
-            UI.showNotification('Créez d\'abord une classe avant d\'importer des élèves', 'warning');
-            ClassUIManager.openDropdown();
-            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
-            return;
+        // S'assurer qu'une classe active existe avant d'importer
+        let currentClass = ClassManager.getCurrentClass();
+        if (!currentClass) {
+            const classes = ClassManager.getAllClasses();
+            if (classes.length === 0) {
+                currentClass = ClassManager.createClass('Nouvelle classe');
+            } else {
+                currentClass = classes[0];
+            }
+            ClassManager.switchClass(currentClass.id);
+            ClassUIManager.updateHeaderDisplay();
+            ClassUIManager.renderClassList();
         }
 
         const modal = document.getElementById('importWizardModal');

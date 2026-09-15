@@ -221,17 +221,30 @@
     margin-left: auto;
 }
 
+/* Neutralise les badges et icônes injectés par les extensions tierces (KeePassXC, Bitwarden, 1Password, etc.) */
+#welcomeModal [data-lastpass-icon-root],
+#welcomeModal [class*="keepassxc"],
+#welcomeModal [class*="1password"],
+#welcomeModal [id*="bitwarden"],
+#welcomeModal [class*="bw-"] {
+    display: none !important;
+}
+
 .welcome-step {
     display: none;
     text-align: center;
-    padding: 20px;
-    /* iOS 2025 Premium Transition System */
+    padding: 0 10px;
+    /* iOS 2026 Premium Transition System */
     opacity: 0;
     transform: translateX(0) scale(1);
+    box-sizing: border-box;
 }
 
 .welcome-step.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     opacity: 1;
     transform: translateX(0) scale(1);
 }
@@ -250,7 +263,10 @@
 /* Note: pas de top:0 pour éviter le saut vers le haut - l'élément reste à sa position originale */
 .welcome-step.slide-out-left,
 .welcome-step.slide-out-right {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     left: 0;
     right: 0;
@@ -616,8 +632,11 @@
 .welcome-step {
     max-width: 800px;
     margin: 0 auto;
-    padding: 0 10px;
+    padding: 0 10px 48px 10px;
     width: 100%;
+    min-height: 380px;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .welcome-subtitle {
@@ -628,16 +647,42 @@
     line-height: 1.5;
 }
 
-/* Harmonized h3 size across all welcome steps with Gradient */
+/* Harmonized h3 size across all welcome steps */
 .welcome-step h3 {
     font-size: 1.8em;
     font-weight: 800;
     margin-bottom: 24px;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
     letter-spacing: -0.02em;
+}
+
+/* App logo for welcome screen (Hero Step 1) - Pure elevated white squircle card */
+.welcome-app-logo {
+    width: 76px;
+    height: 76px;
+    object-fit: contain;
+    padding: 4px;
+    box-sizing: border-box;
+    border-radius: 22px;
+    border: none !important;
+    background: var(--surface-color) !important;
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(0, 0, 0, 0.08),
+        0 16px 40px rgba(0, 0, 0, 0.04) !important;
+    filter: none !important;
+    margin: 0 auto 28px auto;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+
+.welcome-app-logo:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.06),
+        0 12px 32px rgba(0, 0, 0, 0.12),
+        0 20px 48px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Specific styling for the premium welcome title (Landing Page Style) */
@@ -647,12 +692,20 @@
     line-height: 1.15;
     margin-bottom: 16px !important;
     letter-spacing: -0.03em !important;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.08));
+}
+
+.welcome-title-gradient {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 2px 8px rgba(var(--primary-color-rgb), 0.08));
+    display: inline-block;
 }
 
 .welcome-subtitle-premium {
@@ -673,121 +726,14 @@
 
 .welcome-title-icon {
     -webkit-text-fill-color: initial;
-    display: inline-block;
-    margin-right: 4px;
-    font-size: 0.85em;
-    vertical-align: baseline;
-}
-
-.welcome-chips {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-}
-
-.welcome-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: var(--radius-pill);
-    font-size: 0.92em;
-    font-weight: 600;
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: default;
-    border: 1px solid transparent;
+    justify-content: center;
+    font-size: 0.85em;
+    line-height: 1;
 }
 
-/* Coloration thématique des chips (Style iOS 2026 Luminous) */
-.welcome-chip:nth-child(1) {
-    background: var(--surface-color);
-    border-color: rgba(139, 92, 246, 0.2);
-    color: var(--color-violet);
-    box-shadow: var(--shadow-sm);
-}
-.welcome-chip:nth-child(1) .welcome-chip__icon {
-    color: var(--color-violet);
-}
-.welcome-chip:nth-child(1):hover {
-    background: var(--surface-color);
-    border-color: rgba(139, 92, 246, 0.4);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.12);
-}
 
-.welcome-chip:nth-child(2) {
-    background: var(--surface-color);
-    border-color: rgba(245, 158, 11, 0.2);
-    color: var(--color-amber);
-    box-shadow: var(--shadow-sm);
-}
-.welcome-chip:nth-child(2) .welcome-chip__icon {
-    color: var(--color-amber);
-}
-.welcome-chip:nth-child(2):hover {
-    background: var(--surface-color);
-    border-color: rgba(245, 158, 11, 0.4);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);
-}
-
-.welcome-chip:nth-child(3) {
-    background: var(--surface-color);
-    border-color: rgba(16, 185, 129, 0.2);
-    color: var(--color-emerald);
-    box-shadow: var(--shadow-sm);
-}
-.welcome-chip:nth-child(3) .welcome-chip__icon {
-    color: var(--color-emerald);
-}
-.welcome-chip:nth-child(3):hover {
-    background: var(--surface-color);
-    border-color: rgba(16, 185, 129, 0.4);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
-}
-
-.welcome-chip__icon {
-    display: flex;
-    align-items: center;
-    font-size: 1.1em;
-}
-
-.welcome-chip__label {
-    white-space: nowrap;
-}
-
-/* Staggered entrance for chips */
-.welcome-step.active .welcome-chip {
-    animation: welcome-feature-enter 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-.welcome-step.active .welcome-chip:nth-child(1) {
-    animation-delay: 0.05s;
-}
-
-.welcome-step.active .welcome-chip:nth-child(2) {
-    animation-delay: 0.15s;
-}
-
-.welcome-step.active .welcome-chip:nth-child(3) {
-    animation-delay: 0.25s;
-}
-
-@keyframes welcome-feature-enter {
-    from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.97);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
 
 .security-note {
     font-size: 0.85em;
@@ -862,54 +808,35 @@
     opacity: 0.6;
 }
 
-/* === WELCOME HYBRID LAYOUT (Title centered on top, content side-by-side below) === */
-
-.welcome-split-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-    align-items: center;
-    padding: 0 40px;
-    text-align: left;
-}
-
-.welcome-split-info, .welcome-split-action {
-    min-width: 0; /* Prevents flex/grid blowouts */
-}
-
-/* Breathing room between centered title and split content */
-.welcome-title-premium+.welcome-split-layout {
-    margin-top: 44px;
-}
-
-.welcome-split-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.welcome-split-desc {
-    font-size: 0.95em;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin-bottom: 20px;
-}
-
-.welcome-split-action {
+/* === WELCOME API SETUP (STEP 2 CENTERING) === */
+.welcome-api-setup {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.welcome-api-setup .provider-selector-row {
+    width: 100%;
+    display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-top: 8px; /* Slightly lower the right block for better optical alignment with the left text */
+    margin-bottom: 6px;
 }
 
-/* For Step 3, since the right block is short, vertically center it for better balance */
-#welcome-step-3 .welcome-split-layout {
-    align-items: center;
+.welcome-api-setup .welcome-api-key-group {
+    width: 100%;
+    margin: 12px 0 8px 0;
 }
-#welcome-step-3 .welcome-split-action {
-    margin-top: 0;
+
+.welcome-api-setup .error-message {
+    width: 100%;
+    text-align: center;
+}
+
+.welcome-api-setup .welcome-action-links {
+    margin-top: 10px;
 }
 
 /* Animation "Coucou" pour la clé */
@@ -965,6 +892,18 @@
     padding: 6px 14px;
     border-radius: var(--radius-pill);
     margin-top: 12px;
+}
+
+.welcome-step .welcome-info-pill {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    display: inline-flex;
+    width: max-content;
+    justify-content: center;
+    white-space: nowrap;
 }
 
 .welcome-info-pill--success {
@@ -1069,33 +1008,22 @@
     transform: scale(0.95);
 }
 
-/* Ensure API Group fills width in split view */
-.welcome-split-action .welcome-api-key-group {
-    margin: 0;
-    max-width: 100%;
-    box-shadow: var(--shadow-sm);
-}
-
-/* Responsive: Stack on small screens */
+/* Responsive: Typography and layout on small screens */
 @media (max-width: 700px) {
-    .welcome-split-layout {
-        grid-template-columns: 1fr;
-        text-align: center;
-        gap: 20px;
-        padding: 0 10px;
-    }
-
-    .welcome-split-info {
-        align-items: center;
-    }
-
-    .welcome-title-premium+.welcome-split-layout {
-        margin-top: 24px;
-    }
-
     .welcome-step h3,
     .welcome-title-premium {
         font-size: 1.6em !important;
+    }
+
+    #welcomeModal .welcome-step {
+        min-height: auto;
+        padding-bottom: 16px;
+    }
+
+    .welcome-step .welcome-info-pill {
+        position: static;
+        transform: none;
+        margin: 20px auto 0 auto;
     }
 }
 
@@ -1108,10 +1036,6 @@
     margin-bottom: 30px;
 }
 
-.welcome-split-action .welcome-period-selector {
-    margin: 0;
-}
-
 /* Hint text at the bottom */
 .welcome-hint {
     margin-top: 24px;
@@ -1121,50 +1045,43 @@
 }
 
 /* Step 4 has taller content (SVG + title + subtitle + CTA) — center standardly */
-#welcome-step-4,
-#welcome-step-5 {
+#welcome-step-4 {
     margin-top: 0;
 }
 
-/* === WELCOME ILLUSTRATION (STEP 5) === */
+/* === WELCOME ILLUSTRATION (STEP 4) === */
 
 .welcome-transformation-svg {
     width: 100%;
-    max-width: 600px;
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 140px;
-    padding: 5px;
-    margin-bottom: 20px;
+    height: 226px;
+    padding: 0;
+    margin-bottom: 12px;
+    background: transparent;
 }
 
 .welcome-transformation-svg svg {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+    filter: none;
     overflow: visible;
+    transform: scale(1.3);
+    transform-origin: center center;
 }
 
 @media (max-width: 600px) {
     .welcome-transformation-svg {
-        height: 150px;
-        margin-bottom: 16px;
+        height: 162px;
+        margin-bottom: 8px;
     }
-}
 
-/* Step 5 Title - Refined for impact */
-#welcome-step-5 h3.welcome-title-premium {
-    font-size: 2.5rem !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.03em !important;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-top: 4px;
-    margin-bottom: 12px !important;
+    .welcome-transformation-svg svg {
+        transform: scale(1.05);
+    }
 }
 
 /* New visual cards choice layout for onboarding step 4 */

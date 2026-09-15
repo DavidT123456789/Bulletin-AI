@@ -246,6 +246,8 @@ export const TrombinoscopeManager = {
             this._viewportResizeObserver = null;
         }
 
+        if (typeof document === 'undefined') return;
+
         // Reset file input so the same file can be re-imported
         const fileInput = document.getElementById('trombiFileInput');
         if (fileInput) fileInput.value = '';
@@ -2967,7 +2969,17 @@ export const TrombinoscopeManager = {
                 const existingClasses = ClassManager.getAllClasses() || [];
                 targetClass = existingClasses.find(c => c.name.toLowerCase() === targetName.toLowerCase());
                 if (!targetClass) {
-                    targetClass = ClassManager.createClass(targetName, this._parsedPdfData.schoolYear);
+                    const currentClass = ClassManager.getCurrentClass?.();
+                    const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
+                    if (currentClass && currentClass.name?.toLowerCase() === 'nouvelle classe' && !hasStudents) {
+                        ClassManager.updateClass?.(currentClass.id, {
+                            name: targetName,
+                            year: this._parsedPdfData.schoolYear || currentClass.year
+                        });
+                        targetClass = currentClass;
+                    } else {
+                        targetClass = ClassManager.createClass(targetName, this._parsedPdfData.schoolYear);
+                    }
                 }
                 await ClassManager.switchClass(targetClass.id);
 
