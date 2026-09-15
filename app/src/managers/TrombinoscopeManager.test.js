@@ -895,6 +895,19 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         expect(TrombinoscopeManager._parsedPdfData.pages[1].zones[0].cx).toBeCloseTo(100 + deltaX, 2);
         expect(TrombinoscopeManager._parsedPdfData.pages[1].zones[0].cy).toBeCloseTo(100 + deltaY, 2);
     });
+
+    it('should support _confirmImport as an alias to _handleImport and trigger on trombiConfirmBtn click', async () => {
+        const handleImportSpy = vi.spyOn(TrombinoscopeManager, '_handleImport').mockResolvedValue(undefined);
+        await TrombinoscopeManager._confirmImport();
+        expect(handleImportSpy).toHaveBeenCalledTimes(1);
+
+        document.body.innerHTML = '<button id="trombiConfirmBtn"></button>';
+        TrombinoscopeManager.init();
+        document.getElementById('trombiConfirmBtn').click();
+        expect(handleImportSpy).toHaveBeenCalledTimes(2);
+
+        handleImportSpy.mockRestore();
+    });
 });
 
 

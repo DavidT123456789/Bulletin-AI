@@ -147,7 +147,7 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiStep2PrevBtn')?.addEventListener('click', () => this._goToStep(1));
         document.getElementById('trombiStep2NextBtn')?.addEventListener('click', () => this._goToStep(3));
         document.getElementById('trombiStep3PrevBtn')?.addEventListener('click', () => this._goToStep(2));
-        document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._confirmImport());
+        document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._handleImport());
 
         // Exclude students with photos toggle
         document.getElementById('trombiExcludeWithPhotos')?.addEventListener('change', () => {
@@ -2925,6 +2925,10 @@ export const TrombinoscopeManager = {
     // ========================================================================
     // IMPORT EXECUTION
     // ========================================================================
+
+    async _confirmImport() {
+        return this._handleImport();
+    },
 
     async _handleImport() {
         if (this._zones.length === 0 && (!this._parsedPdfData || this._parsedPdfData.pages.every(p => !p.zones || p.zones.length === 0))) {
