@@ -173,6 +173,7 @@
 }
 
 .class-dropdown-header-actions .btn-icon-small iconify-icon {
+    font-size: 1.12rem;
     transition: transform var(--transition-fast);
 }
 
