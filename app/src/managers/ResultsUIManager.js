@@ -10,6 +10,7 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
+import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 
 let Am; // AppreciationsManager reference
 let UI; // UI Manager reference
@@ -567,6 +568,9 @@ export const ResultsUIManager = {
                 } else if (action === 'mass') {
                     // Open Import Wizard
                     ImportWizardManager.open();
+                } else if (action === 'photos') {
+                    // Open Trombinoscope Wizard
+                    TrombinoscopeManager.open();
                 }
             });
 

@@ -17,6 +17,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { StorageManager } from './StorageManager.js';
+import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 
 /**
  * Import Wizard Manager
@@ -72,6 +73,18 @@ export const ImportWizardManager = {
         backdrop.querySelectorAll('.import-hub-card').forEach(card => {
             card.addEventListener('click', () => {
                 const action = card.dataset.action;
+
+                // For individual or mass import, a class is required
+                if (action === 'individual' || action === 'mass') {
+                    if (ClassManager.getAllClasses().length === 0) {
+                        UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
+                        this.closeHub();
+                        ClassUIManager.openDropdown();
+                        setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
+                        return;
+                    }
+                }
+
                 this.closeHub();
 
                 // Delay to allow Hub closing animation to complete (400ms + buffer)
@@ -83,6 +96,8 @@ export const ImportWizardManager = {
                         FocusPanelManager.openNew();
                     } else if (action === 'mass') {
                         this.open();
+                    } else if (action === 'photos') {
+                        TrombinoscopeManager.open();
                     }
                 }, delay);
             });
@@ -106,17 +121,8 @@ export const ImportWizardManager = {
 
     /**
      * Open the Hub Modal
-     * Requires at least one class to exist
      */
     openHub() {
-        // Check if any classes exist first
-        if (ClassManager.getAllClasses().length === 0) {
-            UI.showNotification('Créez d\'abord une classe avant d\'ajouter des élèves', 'warning');
-            ClassUIManager.openDropdown();
-            setTimeout(() => ClassUIManager.showNewClassPrompt(), 100);
-            return;
-        }
-
         const backdrop = document.getElementById('importHubBackdrop');
         if (backdrop) {
             // [UX Mobile] Push History State

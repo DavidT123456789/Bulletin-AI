@@ -134,7 +134,7 @@
     gap: 20px;
     justify-content: center;
     margin-top: 48px;
-    max-width: 600px;
+    max-width: 820px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -268,6 +268,51 @@
     box-shadow: 0 0 0 4px rgba(var(--success-rgb), 0.2);
 }
 
+/* === PHOTOS / TROMBINOSCOPE CARD === */
+.empty-state-hub-card[data-action="photos"] .empty-state-hub-icon {
+    color: var(--color-violet, #8b5cf6);
+    background: rgba(var(--purple-rgb, 139, 92, 246), 0.08);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="photos"] .empty-state-hub-icon {
+    color: var(--color-violet-bright, #a78bfa);
+    background: rgba(var(--purple-rgb, 139, 92, 246), 0.15);
+}
+
+.empty-state-hub-card[data-action="photos"]:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-violet, #8b5cf6);
+    background: rgba(var(--purple-rgb, 139, 92, 246), 0.04);
+    box-shadow:
+        0 20px 40px -6px rgba(0, 0, 0, 0.08),
+        0 8px 12px -4px rgba(var(--purple-rgb, 139, 92, 246), 0.12);
+}
+
+.empty-state-hub-card[data-action="photos"]:hover .empty-state-hub-icon {
+    background: var(--color-violet, #8b5cf6);
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="photos"]:hover {
+    background: rgba(var(--purple-rgb, 139, 92, 246), 0.08);
+    border-color: rgba(var(--purple-rgb, 139, 92, 246), 0.5);
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(var(--purple-rgb, 139, 92, 246), 0.2);
+}
+
+[data-theme="dark"] .empty-state-hub-card[data-action="photos"]:hover .empty-state-hub-icon {
+    background: var(--purple-color, #8b5cf6);
+    color: #ffffff;
+}
+
+.empty-state-hub-card[data-action="photos"]:focus-visible {
+    outline: none;
+    border-color: var(--color-violet, #8b5cf6);
+    box-shadow: 0 0 0 4px rgba(var(--purple-rgb, 139, 92, 246), 0.2);
+}
+
 .empty-state-hub-text {
     text-align: center;
 }
@@ -288,10 +333,10 @@
 }
 
 /* Responsive: Stack on smaller screens */
-@media (max-width: 580px) {
+@media (max-width: 768px) {
     .empty-state-hub {
         flex-direction: column;
-        max-width: 320px;
+        max-width: 340px;
     }
 
     .empty-state-hub-card {

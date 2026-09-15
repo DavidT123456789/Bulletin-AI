@@ -10,7 +10,7 @@ let pdfjsLib = null;
  * Charge la bibliothèque PDF.js de manière lazy
  * @returns {Promise<Object>} La bibliothèque pdfjs-dist
  */
-async function loadPdfJs() {
+export async function loadPdfJs() {
     if (pdfjsLib) return pdfjsLib;
 
     // Import dynamique pour lazy loading

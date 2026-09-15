@@ -4,11 +4,14 @@
  * @module managers/TrombinoscopeManager
  */
 
-import { appState } from '../state/State.js';
+import { appState, userSettings } from '../state/State.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { UI } from './UIManager.js';
 import { ClassManager } from './ClassManager.js';
 import { Utils } from '../utils/Utils.js';
+import { parsePronoteTrombiPdf } from '../utils/PronoteTrombiParser.js';
+import { StudentDataManager } from './StudentDataManager.js';
+import { StorageManager } from './StorageManager.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -27,6 +30,12 @@ export const TrombinoscopeManager = {
 
     /** Loaded image source (URL or base64) */
     _imageSrc: null,
+
+    /** Parsed PDF data when loaded from a PDF */
+    _parsedPdfData: null,
+
+    /** Current page index for multi-page PDF */
+    _currentPageIndex: 0,
 
     /** Natural image dimensions */
     _imageNaturalWidth: 0,
@@ -50,6 +59,9 @@ export const TrombinoscopeManager = {
 
     /** Global radius for all zones (in natural pixels) */
     _globalRadius: 0,
+
+    /** Current zoom level for the viewport (1.0 = 100%) */
+    _zoomLevel: 1.0,
 
     /** Drag state */
     _dragging: null, // { zone, offsetX, offsetY }
@@ -90,12 +102,6 @@ export const TrombinoscopeManager = {
     },
 
     _setupEventListeners() {
-        // Hub card click to open wizard
-        document.querySelector('[data-action="photos"]')?.addEventListener('click', () => {
-            document.getElementById('importHubBackdrop')?.classList.remove('visible');
-            this.open();
-        });
-
         // Close buttons
         document.getElementById('closeTrombiWizardBtn')?.addEventListener('click', () => this.close());
         document.getElementById('trombiWizardBackdrop')?.addEventListener('click', () => this.close());
@@ -112,7 +118,11 @@ export const TrombinoscopeManager = {
             e.preventDefault();
             dropZone.classList.remove('dragover');
             const file = e.dataTransfer?.files[0];
-            if (file?.type.startsWith('image/')) this._loadFile(file);
+            if (file) {
+                if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    this._loadFile(file);
+                }
+            }
         });
 
         fileInput?.addEventListener('change', e => {
@@ -180,7 +190,7 @@ export const TrombinoscopeManager = {
         const classBadge = document.getElementById('trombiClassBadge');
         if (classBadge) {
             const currentClass = ClassManager.getCurrentClass();
-            classBadge.textContent = currentClass?.name || 'Classe';
+            classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
     },
 
@@ -201,6 +211,9 @@ export const TrombinoscopeManager = {
     _reset() {
         this._currentStep = 1;
         this._imageSrc = null;
+        this._parsedPdfData = null;
+        this._currentPageIndex = 0;
+        this._zoomLevel = 1.0;
         this._imageNaturalWidth = 0;
         this._imageNaturalHeight = 0;
         this._zones = [];
@@ -223,21 +236,21 @@ export const TrombinoscopeManager = {
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
 
-        // Cleanup observer
+        // Cleanup observers
         if (this._imgResizeObserver) {
             this._imgResizeObserver.disconnect();
             this._imgResizeObserver = null;
+        }
+        if (this._viewportResizeObserver) {
+            this._viewportResizeObserver.disconnect();
+            this._viewportResizeObserver = null;
         }
 
         // Reset file input so the same file can be re-imported
         const fileInput = document.getElementById('trombiFileInput');
         if (fileInput) fileInput.value = '';
 
-        // Reset exclude photos filter checkbox to true
-        const excludeCheckbox = document.getElementById('trombiExcludeWithPhotos');
-        if (excludeCheckbox) excludeCheckbox.checked = true;
-
-        // Reset dropzone state
+        // Reset Step 1 UI elements
         const placeholder = document.getElementById('trombiDropPlaceholder');
         const preview = document.getElementById('trombiDropPreview');
         const previewImg = document.getElementById('trombiPreviewImg');
@@ -252,8 +265,23 @@ export const TrombinoscopeManager = {
 
         document.getElementById('trombiImageInfo')?.replaceChildren();
 
+        const pageBar = document.getElementById('trombiPageSelectorBar');
+        if (pageBar) {
+            pageBar.style.display = 'none';
+            pageBar.innerHTML = '';
+        }
+
+        const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
+        if (step1PageBar) {
+            step1PageBar.style.display = 'none';
+            step1PageBar.innerHTML = '';
+        }
+
         const nextBtn = document.getElementById('trombiStep1NextBtn');
-        if (nextBtn) nextBtn.disabled = true;
+        if (nextBtn) {
+            nextBtn.disabled = true;
+            nextBtn.innerHTML = 'Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>';
+        }
 
         // Reset step content & footer visibility to initial state
         [1, 2, 3].forEach(n => {
@@ -537,11 +565,108 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     _loadFile(file) {
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            this._loadPdf(file);
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = e => {
             this._loadImageFromUrl(e.target.result);
         };
         reader.readAsDataURL(file);
+    },
+
+    async _loadPdf(file) {
+        const footerInfo = document.getElementById('trombiImageInfo');
+        if (footerInfo) {
+            footerInfo.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><iconify-icon icon="line-md:loading-loop"></iconify-icon> Analyse du trombinoscope PDF...</span>';
+        }
+
+        try {
+            const parsed = await parsePronoteTrombiPdf(file);
+            parsed.pages.forEach(page => {
+                page.originalZones = page.zones.map(z => ({ ...z }));
+            });
+            this._parsedPdfData = parsed;
+
+            const firstPage = parsed.pages[0];
+            if (!firstPage) {
+                throw new Error('Aucune page lisible dans le PDF');
+            }
+
+            this._imageSrc = firstPage.canvas.toDataURL('image/jpeg', 0.9);
+            this._imageNaturalWidth = firstPage.width;
+            this._imageNaturalHeight = firstPage.height;
+            this._isNewUpload = true;
+            this._currentPageIndex = 0;
+
+            this._displayImagePreview();
+
+            if (parsed.className) {
+                const classBadge = document.getElementById('trombiClassBadge');
+                if (classBadge) {
+                    classBadge.textContent = `Classe ${parsed.className}`;
+                }
+            }
+
+            if (footerInfo) {
+                const pagesCountText = parsed.numPages > 1 ? ` (${parsed.numPages} pages)` : '';
+                footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
+            }
+
+            const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
+            if (step1PageBar) {
+                if (parsed.numPages > 1) {
+                    step1PageBar.style.display = 'flex';
+                    step1PageBar.innerHTML = parsed.pages.map((p, idx) => `
+                        <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}">
+                            <iconify-icon icon="solar:document-text-linear"></iconify-icon>
+                            Page ${idx + 1} (${p.studentsCount} élèves)
+                        </button>
+                    `).join('');
+
+                    step1PageBar.querySelectorAll('.page-tab-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const targetIdx = parseInt(btn.dataset.step1Page, 10);
+                            this._previewPdfPageInStep1(targetIdx);
+                        });
+                    });
+                } else {
+                    step1PageBar.style.display = 'none';
+                    step1PageBar.innerHTML = '';
+                }
+            }
+
+            const nextBtn = document.getElementById('trombiStep1NextBtn');
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = 'Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>';
+            }
+        } catch (err) {
+            console.error('[TrombinoscopeManager] Échec parsing PDF:', err);
+            UI.showNotification('Impossible de lire le trombinoscope PDF', 'error');
+            this._removeImage();
+        }
+    },
+
+    _previewPdfPageInStep1(pageIndex) {
+        if (!this._parsedPdfData || !this._parsedPdfData.pages[pageIndex]) return;
+        this._currentPageIndex = pageIndex;
+        const page = this._parsedPdfData.pages[pageIndex];
+        this._imageSrc = page.canvas.toDataURL('image/jpeg', 0.9);
+        this._imageNaturalWidth = page.width;
+        this._imageNaturalHeight = page.height;
+
+        const previewImg = document.getElementById('trombiPreviewImg');
+        if (previewImg) {
+            previewImg.src = this._imageSrc;
+        }
+
+        document.querySelectorAll('#trombiStep1PageSelectorBar .page-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.step1Page, 10) === pageIndex);
+        });
     },
 
     _loadImageFromUrl(url) {
@@ -591,6 +716,8 @@ export const TrombinoscopeManager = {
 
     _removeImage() {
         this._imageSrc = null;
+        this._parsedPdfData = null;
+        this._currentPageIndex = 0;
         this._imageNaturalWidth = 0;
         this._imageNaturalHeight = 0;
         this._cachedImage = null;
@@ -602,6 +729,7 @@ export const TrombinoscopeManager = {
         const sampleBtn = document.getElementById('trombiSampleBtn');
         const fileInput = document.getElementById('trombiFileInput');
         const footerInfo = document.getElementById('trombiImageInfo');
+        const quickBtn = document.getElementById('trombiQuickImportBtn');
         const nextBtn = document.getElementById('trombiStep1NextBtn');
 
         if (placeholder) placeholder.style.display = '';
@@ -611,7 +739,107 @@ export const TrombinoscopeManager = {
         if (sampleBtn) sampleBtn.style.display = '';
         if (fileInput) fileInput.value = '';
         if (footerInfo) footerInfo.textContent = '';
-        if (nextBtn) nextBtn.disabled = true;
+        if (quickBtn) quickBtn.style.display = 'none';
+        const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
+        if (step1PageBar) {
+            step1PageBar.style.display = 'none';
+            step1PageBar.innerHTML = '';
+        }
+        if (nextBtn) {
+            nextBtn.disabled = true;
+            nextBtn.innerHTML = 'Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>';
+        }
+    },
+
+    // ========================================================================
+    // ZOOM & MULTI-PAGE HELPERS
+    // ========================================================================
+
+    _getPageOffset(pageIndex = this._currentPageIndex) {
+        if (!this._parsedPdfData?.pages || pageIndex <= 0) return 0;
+        let offset = 0;
+        for (let i = 0; i < pageIndex; i++) {
+            const page = this._parsedPdfData.pages[i];
+            offset += (page.zones?.length ?? page.studentsCount ?? 0);
+        }
+        return offset;
+    },
+
+    _applyZoom() {
+        const viewport = document.querySelector('.trombi-viewport');
+        const wrapper = document.querySelector('.trombi-content-wrapper');
+        const zoomLabel = document.getElementById('trombiZoomLevel');
+        if (zoomLabel) {
+            zoomLabel.textContent = `${Math.round(this._zoomLevel * 100)}%`;
+        }
+        const zoomOutBtn = document.getElementById('trombiZoomOutBtn');
+        if (zoomOutBtn) {
+            zoomOutBtn.disabled = this._zoomLevel <= 1.0;
+            zoomOutBtn.classList.toggle('disabled', this._zoomLevel <= 1.0);
+        }
+        if (!viewport || !wrapper || !this._imageNaturalWidth || !this._imageNaturalHeight) return;
+
+        // Stable viewport dimensions immune to scrollbar jitter
+        const pad = 32;
+        const vpW = viewport.offsetWidth || viewport.clientWidth || 600;
+        const vpH = viewport.offsetHeight || viewport.clientHeight || 600;
+        const availW = Math.max(100, vpW - pad);
+        const availH = Math.max(100, vpH - pad);
+
+        // Exact scalar to fit natural page inside available area (guarantees zero distortion)
+        const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
+        const baseW = this._imageNaturalWidth * scaleToFit;
+        const baseH = this._imageNaturalHeight * scaleToFit;
+
+        const targetW = Math.round(baseW * this._zoomLevel);
+        const targetH = Math.round(baseH * this._zoomLevel);
+
+        wrapper.style.aspectRatio = `${this._imageNaturalWidth} / ${this._imageNaturalHeight}`;
+        wrapper.style.width = `${targetW}px`;
+        wrapper.style.height = `${targetH}px`;
+
+        this._renderZones(targetW, targetH);
+    },
+
+    _zoomIn() {
+        this._zoomLevel = Math.min(2.5, Math.round((this._zoomLevel + 0.25) * 100) / 100);
+        this._applyZoom();
+    },
+
+    _zoomOut() {
+        this._zoomLevel = Math.max(1.0, Math.round((this._zoomLevel - 0.25) * 100) / 100);
+        this._applyZoom();
+    },
+
+    _zoomReset() {
+        this._zoomLevel = 1.0;
+        this._applyZoom();
+    },
+
+    _zoomToggleFit() {
+        if (this._zoomLevel !== 1.0) {
+            this._zoomLevel = 1.0;
+        } else {
+            const viewport = document.querySelector('.trombi-viewport');
+            if (viewport && this._imageNaturalWidth && this._imageNaturalHeight) {
+                const pad = 32;
+                const vpW = viewport.offsetWidth || viewport.clientWidth || 600;
+                const vpH = viewport.offsetHeight || viewport.clientHeight || 600;
+                const availW = Math.max(100, vpW - pad);
+                const availH = Math.max(100, vpH - pad);
+                const scaleToFit = Math.min(availW / this._imageNaturalWidth, availH / this._imageNaturalHeight);
+                const fitW = this._imageNaturalWidth * scaleToFit;
+                // Si la page est en portrait, "Pleine largeur" permet d'occuper la largeur disponible
+                if (availW > fitW * 1.1) {
+                    this._zoomLevel = Math.min(2.5, Math.round((availW / fitW) * 100) / 100);
+                } else {
+                    this._zoomLevel = 1.5;
+                }
+            } else {
+                this._zoomLevel = 1.5;
+            }
+        }
+        this._applyZoom();
     },
 
     // ========================================================================
@@ -622,42 +850,146 @@ export const TrombinoscopeManager = {
         const imagePanel = document.getElementById('trombiImageWithZones');
         if (!imagePanel) return;
 
+        // Invalidate cached preview image
+        this._cachedImage = null;
+
+        // Manage exclude-photos toggle visibility: hide during PDF trombinoscope import
+        const excludeWrapper = document.getElementById('trombiExcludeToggleWrapper');
+        if (excludeWrapper) {
+            excludeWrapper.style.display = this._parsedPdfData ? 'none' : 'flex';
+        }
+
+        // Setup page selector bar if PDF has multiple pages
+        const pageBar = document.getElementById('trombiPageSelectorBar');
+        if (pageBar) {
+            if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+                pageBar.style.display = 'flex';
+                pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => `
+                    <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}">
+                        <iconify-icon icon="solar:document-text-linear"></iconify-icon>
+                        Page ${idx + 1} (${p.studentsCount} élèves)
+                    </button>
+                `).join('');
+
+                pageBar.querySelectorAll('.page-tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const targetIdx = parseInt(btn.dataset.pageIndex, 10);
+                        if (targetIdx !== this._currentPageIndex) {
+                            this._switchPdfPage(targetIdx);
+                        }
+                    });
+                });
+            } else {
+                pageBar.style.display = 'none';
+                pageBar.innerHTML = '';
+            }
+        }
+
+        // Initialize zones synchronously if PDF data is present
+        if (this._parsedPdfData) {
+            const currentPage = this._parsedPdfData.pages[this._currentPageIndex];
+            if (currentPage && currentPage.zones) {
+                this._zones = currentPage.zones.map(z => ({ ...z }));
+                if (this._zones.length > 0 && this._zones[0].r) {
+                    this._globalRadius = this._zones[0].r;
+                }
+            }
+            this._isNewUpload = false;
+        }
+
         // Setup image with overlay - wrapped in a container for correct aspect ratio positioning
         imagePanel.innerHTML = `
+            <div class="trombi-zoom-controls">
+                <button type="button" class="zoom-btn" id="trombiZoomOutBtn" title="Dézoomer (-25%)">
+                    <iconify-icon icon="solar:magnifer-zoom-out-linear"></iconify-icon>
+                </button>
+                <button type="button" class="zoom-btn zoom-value-btn" id="trombiZoomResetBtn" title="Réinitialiser le zoom (100%)">
+                    <span id="trombiZoomLevel">${Math.round(this._zoomLevel * 100)}%</span>
+                </button>
+                <button type="button" class="zoom-btn" id="trombiZoomInBtn" title="Zoomer (+25%)">
+                    <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
+                </button>
+                <button type="button" class="zoom-btn" id="trombiZoomFitBtn" title="Pleine largeur / Vue complète">
+                    <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                </button>
+            </div>
             <div class="trombi-viewport">
-                <div class="trombi-content-wrapper" style="aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight}">
+                <div class="trombi-content-wrapper" style="aspect-ratio: ${this._imageNaturalWidth} / ${this._imageNaturalHeight};">
                     <img src="${this._imageSrc}" alt="Trombinoscope" class="trombi-image" id="trombiStep2Image" draggable="false">
                     <div class="trombi-zones-overlay" id="trombiZonesOverlay"></div>
                 </div>
             </div>
         `;
 
+        // Bind zoom controls
+        document.getElementById('trombiZoomInBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._zoomIn();
+        });
+        document.getElementById('trombiZoomOutBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._zoomOut();
+        });
+        document.getElementById('trombiZoomResetBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._zoomReset();
+        });
+        document.getElementById('trombiZoomFitBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._zoomToggleFit();
+        });
+
         const img = document.getElementById('trombiStep2Image');
-        img.onload = () => {
-            // Create default grid if no zones exist or on new upload
-            if (this._isNewUpload || this._zones.length === 0) {
+        const handleImageReady = () => {
+            if (this._parsedPdfData) {
+                const currentPage = this._parsedPdfData.pages[this._currentPageIndex];
+                if (currentPage && currentPage.zones && this._zones.length === 0) {
+                    this._zones = currentPage.zones.map(z => ({ ...z }));
+                    if (this._zones.length > 0 && this._zones[0].r) {
+                        this._globalRadius = this._zones[0].r;
+                    }
+                }
+                this._isNewUpload = false;
+            } else if (this._isNewUpload || this._zones.length === 0) {
                 this._zones = []; // Clear previous zones
                 this._createDefaultGrid();
                 this._isNewUpload = false; // Reset upload flag
-            } else {
-                this._renderZones();
             }
+            this._applyZoom();
         };
 
-        // Fix: Observer for layout changes (aspect-ratio reflow)
-        // This ensures zones are re-calculated when the image size changes
-        if (this._imgResizeObserver) this._imgResizeObserver.disconnect();
+        if (img.complete && img.naturalWidth > 0) {
+            handleImageReady();
+        } else {
+            img.onload = handleImageReady;
+        }
 
-        this._imgResizeObserver = new ResizeObserver(() => {
-            // Debounce slightly or just call render (it's cheap enough)
-            window.requestAnimationFrame(() => this._renderZones());
+        // Observer for layout changes on the viewport
+        const viewport = imagePanel?.querySelector('.trombi-viewport');
+        if (this._viewportResizeObserver) this._viewportResizeObserver.disconnect();
+
+        this._viewportResizeObserver = new ResizeObserver(() => {
+            window.requestAnimationFrame(() => this._applyZoom());
         });
-        this._imgResizeObserver.observe(img);
+        if (viewport) {
+            this._viewportResizeObserver.observe(viewport);
+        }
 
         // Click and drag selection / add zone on overlay/viewport
         const overlay = document.getElementById('trombiZonesOverlay');
-        const viewport = imagePanel?.querySelector('.trombi-viewport');
         
+        viewport?.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    this._zoomIn();
+                } else {
+                    this._zoomOut();
+                }
+            }
+        }, { passive: false });
+
         viewport?.addEventListener('mousedown', e => {
             // Start selection box only if clicking background viewport or overlay (not a zone)
             if (!e.target.closest('.trombi-zone') && !e.target.closest('.zone-delete')) {
@@ -695,19 +1027,69 @@ export const TrombinoscopeManager = {
         this._updateUndoButton();
     },
 
+    _switchPdfPage(pageIndex) {
+        if (!this._parsedPdfData || !this._parsedPdfData.pages[pageIndex]) return;
+
+        // Sauvegarder les zones de la page actuelle avant de changer
+        if (this._parsedPdfData.pages[this._currentPageIndex]) {
+            this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
+        }
+
+        this._currentPageIndex = pageIndex;
+        const page = this._parsedPdfData.pages[pageIndex];
+
+        this._cachedImage = null; // Invalidate cached preview image for new page
+        this._imageSrc = page.canvas.toDataURL('image/jpeg', 0.9);
+        this._imageNaturalWidth = page.width;
+        this._imageNaturalHeight = page.height;
+
+        const img = document.getElementById('trombiStep2Image');
+        if (img) {
+            img.src = this._imageSrc;
+        }
+
+        document.querySelectorAll('#trombiPageSelectorBar .page-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.pageIndex, 10) === pageIndex);
+        });
+
+        this._zones = page.zones.map(z => ({ ...z }));
+        if (this._zones.length > 0 && this._zones[0].r) {
+            this._globalRadius = this._zones[0].r;
+        }
+
+        this._gridCols = 4;
+        this._gridRows = Math.ceil((page.studentsCount || this._zones.length || 8) / 4);
+        this._syncSlidersToState();
+
+        this._applyZoom();
+        this._renderAssignmentGrid();
+    },
+
     _setupControlPanel() {
         const container = document.querySelector('.trombi-image-panel');
         if (!container || container.querySelector('.grid-control-panel')) return;
 
-        // Default values
-        this._gridCols = 4;
-        this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
+        const isPdf = !!this._parsedPdfData;
+        const hasDetectedStudents = Boolean(this._parsedPdfData?.students?.length > 0);
+
+        if (isPdf) {
+            const currentPage = this._parsedPdfData.pages[this._currentPageIndex];
+            const count = currentPage?.studentsCount || this._zones.length || 8;
+            this._gridCols = 4;
+            this._gridRows = Math.ceil(count / 4);
+        } else {
+            // Default values
+            this._gridCols = 4;
+            this._gridRows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
+        }
         this._gapH = 0;  // Horizontal spacing between zones (%)
         this._gapV = 0;  // Vertical spacing between zones (%)
         this._groupedDrag = true; // Grouped drag mode (default = true)
 
-        const panelHtml = `
-            <div class="grid-control-panel">
+        const isAdvancedOpen = !hasDetectedStudents;
+
+        const gridControlsHtml = `
+            <div class="grid-advanced-controls ${isAdvancedOpen ? 'is-open' : ''}" id="gridAdvancedControls">
                 <div class="control-row-group">
                     <div class="control-row">
                         <label><iconify-icon icon="solar:gallery-vertical-linear"></iconify-icon> Colonnes</label>
@@ -752,6 +1134,12 @@ export const TrombinoscopeManager = {
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
+
+        const panelHtml = `
+            <div class="grid-control-panel">
+                ${gridControlsHtml}
                 <div class="control-row-group">
                     <div class="control-row">
                         <label><iconify-icon icon="solar:maximize-square-3-linear"></iconify-icon> Taille</label>
@@ -771,10 +1159,13 @@ export const TrombinoscopeManager = {
                                 <span class="sync-toggle-switch"></span>
                             </span>
                         </label>
+                        <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" title="Afficher ou masquer les réglages avancés de grille et d'espacement">
+                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon> <span id="toggleGridToolsText">${isAdvancedOpen ? 'Masquer grille' : 'Grille'}</span>
+                        </button>
                         <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled style="margin-left: auto;">
                             <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
                         </button>
-                        <button type="button" class="grid-reset-btn" id="gridResetBtn" style="margin-left: 4px;">
+                        <button type="button" class="grid-reset-btn" id="gridResetBtn" style="margin-left: 4px;" title="${hasDetectedStudents ? 'Rétablir les détections d\'origine' : 'Réinitialiser la grille'}">
                             <iconify-icon icon="solar:restart-linear"></iconify-icon> Réinitialiser
                         </button>
                     </div>
@@ -854,6 +1245,19 @@ export const TrombinoscopeManager = {
             this._restoreGroupedDrag = false;
         });
 
+        const toggleBtn = document.getElementById('toggleGridToolsBtn');
+        const advancedDrawer = document.getElementById('gridAdvancedControls');
+        const toggleText = document.getElementById('toggleGridToolsText');
+
+        toggleBtn?.addEventListener('click', () => {
+            if (!advancedDrawer) return;
+            const isOpen = advancedDrawer.classList.toggle('is-open');
+            toggleBtn.classList.toggle('active', isOpen);
+            if (toggleText) {
+                toggleText.textContent = isOpen ? 'Masquer grille' : 'Grille';
+            }
+        });
+
         // Bind Undo slider drag listeners
         const bindSliderUndo = (slider) => {
             if (!slider) return;
@@ -894,6 +1298,30 @@ export const TrombinoscopeManager = {
         document.getElementById('gridResetBtn')?.addEventListener('click', () => {
             this._saveState();
             
+            if (this._parsedPdfData && hasDetectedStudents) {
+                this._parsedPdfData.pages.forEach(p => {
+                    if (p.originalZones) {
+                        p.zones = p.originalZones.map(z => ({ ...z }));
+                    }
+                });
+                const currentPage = this._parsedPdfData.pages[this._currentPageIndex];
+                if (currentPage && currentPage.zones) {
+                    this._zones = currentPage.zones.map(z => ({ ...z }));
+                }
+                if (this._zones.length > 0 && this._zones[0].r) {
+                    this._globalRadius = this._zones[0].r;
+                }
+                this._gapH = 0;
+                this._gapV = 0;
+                if (gapHSlider) { gapHSlider.value = 0; gapHValue.textContent = '0'; }
+                if (gapVSlider) { gapVSlider.value = 0; gapVValue.textContent = '0'; }
+                this._renderZones();
+                this._renderAssignmentGrid();
+                this._updateSizeSliderValue();
+                UI.showNotification('Positions initiales restaurées (toutes les pages)', 'info');
+                return;
+            }
+
             let cols = 4;
             let rows = Math.ceil((this._getStudentsForImport().length || 8) / 4);
 
@@ -921,12 +1349,44 @@ export const TrombinoscopeManager = {
             this._createGridSilent(this._gridCols, this._gridRows);
         });
 
-        // Only create initial grid if we don't have any zones yet
-        if (this._zones.length === 0) {
+        // Only create initial grid if we don't have any zones yet and no PDF data
+        if (this._zones.length === 0 && !this._parsedPdfData) {
             this._createDefaultGrid();
         } else {
             this._syncSlidersToState();
         }
+    },
+
+    /**
+     * Synchronize control panel slider controls and labels to the current state
+     */
+    _syncSlidersToState() {
+        const colsSlider = document.getElementById('colsSlider');
+        const rowsSlider = document.getElementById('rowsSlider');
+        const gapHSlider = document.getElementById('gapHSlider');
+        const gapVSlider = document.getElementById('gapVSlider');
+        const colsValue = document.getElementById('colsValue');
+        const rowsValue = document.getElementById('rowsValue');
+        const gapHValue = document.getElementById('gapHValue');
+        const gapVValue = document.getElementById('gapVValue');
+
+        if (colsSlider && this._gridCols) {
+            colsSlider.value = this._gridCols;
+            if (colsValue) colsValue.textContent = this._gridCols;
+        }
+        if (rowsSlider && this._gridRows) {
+            rowsSlider.value = this._gridRows;
+            if (rowsValue) rowsValue.textContent = this._gridRows;
+        }
+        if (gapHSlider) {
+            gapHSlider.value = this._gapH ?? 0;
+            if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : (this._gapH ?? 0).toFixed(1);
+        }
+        if (gapVSlider) {
+            gapVSlider.value = this._gapV ?? 0;
+            if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : (this._gapV ?? 0).toFixed(1);
+        }
+        this._updateSizeSliderValue();
     },
 
     /**
@@ -936,34 +1396,77 @@ export const TrombinoscopeManager = {
     _applyGaps() {
         if (this._zones.length === 0) return;
 
-        const cols = this._gridCols;
+        const cols = this._gridCols || 4;
         const w = this._imageNaturalWidth;
         const h = this._imageNaturalHeight;
 
-        // Base cell size
-        const baseCellW = w / cols;
-        const baseCellH = h / Math.ceil(this._zones.length / cols);
+        const currentPage = this._parsedPdfData?.pages?.[this._currentPageIndex];
+        const hasOriginalZones = Boolean(currentPage?.originalZones && currentPage.originalZones.length === this._zones.length);
 
-        // The first zone (index 0) is the reference - it stays fixed
-        const refZone = this._zones[0];
-        const refCx = refZone.cx;
-        const refCy = refZone.cy;
+        if (hasOriginalZones) {
+            const baseCellW = w / cols;
+            const baseCellH = h / Math.ceil(this._zones.length / cols);
+            const gapPxH = (this._gapH / 100) * baseCellW;
+            const gapPxV = (this._gapV / 100) * baseCellH;
+            const centerCol = (cols - 1) / 2;
 
-        // Gap adjustment (% of cell size) - affects spacing between zones
-        const gapPxH = (this._gapH / 100) * baseCellW;
-        const gapPxV = (this._gapV / 100) * baseCellH;
+            this._zones.forEach((zone, idx) => {
+                const orig = currentPage.originalZones[idx];
+                if (!orig) return;
+                const col = idx % cols;
+                const row = Math.floor(idx / cols);
 
-        this._zones.forEach((zone, idx) => {
-            if (idx === 0) return; // Skip first zone - it's the reference
+                zone.cx = orig.cx + (col - centerCol) * gapPxH;
+                zone.cy = orig.cy + row * gapPxV;
+            });
 
-            const col = idx % cols;
-            const row = Math.floor(idx / cols);
+            if (this._parsedPdfData?.pages && this._groupedDrag) {
+                this._parsedPdfData.pages.forEach((p, pIdx) => {
+                    if (pIdx === this._currentPageIndex) return;
+                    const pOrig = p.originalZones;
+                    if (pOrig && p.zones && p.zones.length === pOrig.length) {
+                        const pCellW = (p.width || w) / cols;
+                        const pCellH = (p.height || h) / Math.ceil(p.zones.length / cols);
+                        const pGapH = (this._gapH / 100) * pCellW;
+                        const pGapV = (this._gapV / 100) * pCellH;
 
-            // Position relative to first zone with gap applied
-            // Each column/row adds base cell size + gap adjustment
-            zone.cx = refCx + (col * (baseCellW + gapPxH));
-            zone.cy = refCy + (row * (baseCellH + gapPxV));
-        });
+                        p.zones.forEach((z, idx) => {
+                            const orig = pOrig[idx];
+                            if (!orig) return;
+                            const col = idx % cols;
+                            const row = Math.floor(idx / cols);
+                            z.cx = orig.cx + (col - centerCol) * pGapH;
+                            z.cy = orig.cy + row * pGapV;
+                        });
+                    }
+                });
+            }
+        } else {
+            // Base cell size
+            const baseCellW = w / cols;
+            const baseCellH = h / Math.ceil(this._zones.length / cols);
+
+            // The first zone (index 0) is the reference - it stays fixed
+            const refZone = this._zones[0];
+            const refCx = refZone.cx;
+            const refCy = refZone.cy;
+
+            // Gap adjustment (% of cell size) - affects spacing between zones
+            const gapPxH = (this._gapH / 100) * baseCellW;
+            const gapPxV = (this._gapV / 100) * baseCellH;
+
+            this._zones.forEach((zone, idx) => {
+                if (idx === 0) return; // Skip first zone - it's the reference
+
+                const col = idx % cols;
+                const row = Math.floor(idx / cols);
+
+                // Position relative to first zone with gap applied
+                // Each column/row adds base cell size + gap adjustment
+                zone.cx = refCx + (col * (baseCellW + gapPxH));
+                zone.cy = refCy + (row * (baseCellH + gapPxV));
+            });
+        }
 
         this._renderZones();
         this._updateLivePreviews();
@@ -1001,6 +1504,16 @@ export const TrombinoscopeManager = {
         const minR = minSize * 0.03;
         const maxR = minSize * 0.25;
         this._globalRadius = minR + (maxR - minR) * (percent / 100);
+        this._zones.forEach(z => {
+            z.r = this._globalRadius;
+        });
+        if (this._parsedPdfData?.pages) {
+            this._parsedPdfData.pages.forEach(page => {
+                page.zones?.forEach(z => {
+                    z.r = this._globalRadius;
+                });
+            });
+        }
         this._renderZones();
         this._updateLivePreviews();
     },
@@ -1010,6 +1523,9 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     _getStudentsForImport() {
+        if (this._parsedPdfData && this._parsedPdfData.students) {
+            return this._parsedPdfData.students;
+        }
         const allStudents = appState.filteredResults || [];
         const excludeWithPhotos = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
         if (excludeWithPhotos) {
@@ -1110,7 +1626,6 @@ export const TrombinoscopeManager = {
                 const rows = Math.round(cols * (img.naturalHeight / img.naturalWidth) * cellRatio);
 
                 if (rows >= 2 && rows <= 12) {
-                    console.log(`[Trombinoscope] Auto-detected grid: ${cols} cols, ${rows} rows (geometric estimate)`);
                     return { cols, rows };
                 }
             }
@@ -1389,7 +1904,11 @@ export const TrombinoscopeManager = {
 
     _autoAssignInOrder() {
         this._saveState();
-        const students = this._getStudentsForImport();
+        let students = this._getStudentsForImport();
+        if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+            const pageOffset = this._getPageOffset();
+            students = students.slice(pageOffset, pageOffset + this._zones.length);
+        }
         this._zones.forEach((zone, idx) => {
             zone.studentId = students[idx]?.id || null;
         });
@@ -1402,32 +1921,35 @@ export const TrombinoscopeManager = {
     // ZONE RENDERING
     // ========================================================================
 
-    _renderZones() {
+    _renderZones(explicitW, explicitH) {
         const overlay = document.getElementById('trombiZonesOverlay');
         const img = document.getElementById('trombiStep2Image');
+        const wrapper = document.querySelector('.trombi-content-wrapper');
         if (!overlay || !img) return;
 
-        const displayedW = img.clientWidth;
-        const displayedH = img.clientHeight;
+        const displayedW = explicitW ?? (wrapper?.style.width ? parseFloat(wrapper.style.width) : null) ?? img.clientWidth;
+        const displayedH = explicitH ?? (wrapper?.style.height ? parseFloat(wrapper.style.height) : null) ?? img.clientHeight;
 
-        if (!displayedW || !displayedH) return;
+        if (!displayedW || !displayedH || !this._imageNaturalWidth || !this._imageNaturalHeight) return;
 
         // Scale factor: displayed / natural
         const scaleX = displayedW / this._imageNaturalWidth;
-
+        const scaleY = displayedH / this._imageNaturalHeight;
         const students = appState.filteredResults || [];
-        const r = this._globalRadius;
-        const dispR = r * scaleX;
-        const diameter = dispR * 2;
+        const pageOffset = this._getPageOffset();
 
         overlay.innerHTML = this._zones.map((zone, idx) => {
             // Convert natural pixels to displayed pixels
             const dispCx = zone.cx * scaleX;
-            const dispCy = zone.cy * (displayedH / this._imageNaturalHeight);
+            const dispCy = zone.cy * scaleY;
+            const r = zone.r || this._globalRadius;
+            const dispR = r * scaleX;
+            const diameter = dispR * 2;
 
             // Find student name if assigned
-            const student = students.find(s => s.id === zone.studentId);
-            const label = student ? student.prenom : (idx + 1);
+            const student = (this._parsedPdfData?.students?.find(s => s.id === zone.studentId)) ||
+                            students.find(s => s.id === zone.studentId);
+            const label = student?.prenom ? student.prenom : `#${pageOffset + idx + 1}`;
 
             // Calculate label scale based on diameter (shrink when zone is small)
             // Label full size at 50px+, starts shrinking below that
@@ -1555,13 +2077,26 @@ export const TrombinoscopeManager = {
             originalPositions.set(z.id, { cx: z.cx, cy: z.cy });
         });
 
+        // If grouped drag in multi-page PDF, also capture original positions of other pages
+        const otherPagesOriginalPositions = new Map();
+        if (this._groupedDrag && this._parsedPdfData?.pages) {
+            this._parsedPdfData.pages.forEach((p, pIdx) => {
+                if (pIdx !== this._currentPageIndex && p.zones) {
+                    p.zones.forEach(z => {
+                        otherPagesOriginalPositions.set(z.id, { cx: z.cx, cy: z.cy });
+                    });
+                }
+            });
+        }
+
         this._dragging = {
             zone,
             offsetX: clickNatX - zone.cx,
             offsetY: clickNatY - zone.cy,
             startCx: zone.cx,
             startCy: zone.cy,
-            originalPositions
+            originalPositions,
+            otherPagesOriginalPositions
         };
 
         // Capture snapshot before dragging
@@ -1613,6 +2148,21 @@ export const TrombinoscopeManager = {
                     z.cy = originalPos.cy + deltaY;
                 }
             });
+
+            // Also propagate delta to other PDF pages so the template stays synchronized across pages
+            if (this._dragging.otherPagesOriginalPositions && this._parsedPdfData?.pages) {
+                this._parsedPdfData.pages.forEach((p, pIdx) => {
+                    if (pIdx !== this._currentPageIndex && p.zones) {
+                        p.zones.forEach(z => {
+                            const originalPos = this._dragging.otherPagesOriginalPositions.get(z.id);
+                            if (originalPos) {
+                                z.cx = originalPos.cx + deltaX;
+                                z.cy = originalPos.cy + deltaY;
+                            }
+                        });
+                    }
+                });
+            }
         } else if (this._selectedZoneIds.size > 1 && this._selectedZoneIds.has(zone.id)) {
             // Multi-selection mode: move all selected zones by the same delta
             const deltaX = newCx - startCx;
@@ -1891,6 +2441,17 @@ export const TrombinoscopeManager = {
                     z.cx += deltaX;
                     z.cy += deltaY;
                 });
+
+                if (this._parsedPdfData?.pages) {
+                    this._parsedPdfData.pages.forEach((p, pIdx) => {
+                        if (pIdx !== this._currentPageIndex && p.zones) {
+                            p.zones.forEach(z => {
+                                z.cx += deltaX;
+                                z.cy += deltaY;
+                            });
+                        }
+                    });
+                }
             } else if (this._selectedZoneIds.size > 1 && this._selectedZoneIds.has(this._lastFocusedZoneId)) {
                 // Multi-selection mode: move all selected zones
                 let deltaX = 0, deltaY = 0;
@@ -1966,7 +2527,27 @@ export const TrombinoscopeManager = {
         const container = document.getElementById('trombiAssignmentGrid');
         if (!container) return;
 
-        const allStudents = appState.filteredResults || [];
+        let allStudents = [];
+        const existingClassStudents = appState.filteredResults || [];
+
+        if (this._parsedPdfData && this._parsedPdfData.students) {
+            // Dans le mode PDF trombinoscope, la liste de référence est celle extraite du document
+            allStudents = this._parsedPdfData.students.map(pdfS => {
+                const matched = existingClassStudents.find(es =>
+                    es.id === pdfS.id ||
+                    Utils.normalizeName(es.nom, es.prenom) === Utils.normalizeName(pdfS.nom, pdfS.prenom)
+                );
+                return {
+                    id: pdfS.id,
+                    nom: pdfS.nom,
+                    prenom: pdfS.prenom,
+                    studentPhoto: matched?.studentPhoto || null,
+                    matchedExistingId: matched?.id || null
+                };
+            });
+        } else {
+            allStudents = [...existingClassStudents];
+        }
 
         if (this._zones.length === 0) {
             container.innerHTML = `
@@ -1978,19 +2559,22 @@ export const TrombinoscopeManager = {
             return;
         }
 
+        const isPdfMode = !!this._parsedPdfData;
+        const excludeWithPhotos = !isPdfMode && (document.getElementById('trombiExcludeWithPhotos')?.checked ?? true);
+        const pageOffset = this._getPageOffset();
+
         // Sort zones by ID to keep order stable
         const sortedZones = [...this._zones].sort((a, b) => a.id - b.id);
 
         container.innerHTML = `
             ${sortedZones.map((zone, index) => {
-                const excludeWithPhotos = document.getElementById('trombiExcludeWithPhotos')?.checked ?? true;
                 const dropdownStudents = allStudents.filter(s => {
                     if (s.id === zone.studentId) return true; // Always keep currently selected student
                     if (excludeWithPhotos && s.studentPhoto?.data) return false;
                     return true;
                 });
 
-                const assignedStudent = dropdownStudents.find(s => s.id === zone.studentId);
+                const assignedStudent = allStudents.find(s => s.id === zone.studentId);
                 const assignedName = assignedStudent ? Utils.formatStudentName(assignedStudent.nom, assignedStudent.prenom) : '';
                 const tooltipAttr = assignedName ? `data-tooltip="${assignedName}"` : 'data-tooltip="Choisir un élève..."';
 
@@ -2002,15 +2586,20 @@ export const TrombinoscopeManager = {
                                     width="80" height="80"></canvas>
                         </div>
                         <div class="assignment-id">
-                            #${index + 1}
+                            #${pageOffset + index + 1}
                         </div>
                         <div class="assignment-student-select">
                             <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
                                 <option value="">Choisir un élève...</option>
                                 ${dropdownStudents.map(s => {
-                                    // Check if this student is assigned to ANOTHER zone
-                                    const assignedToOther = this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
-                                    const hasPhoto = !!s.studentPhoto?.data;
+                                    // Check if this student is assigned to ANOTHER zone (including other PDF pages)
+                                    const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
+                                        ? this._parsedPdfData.pages.some((p, pIdx) => {
+                                            const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
+                                            return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
+                                        })
+                                        : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
+                                    const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
 
                                     const statusParts = [];
                                     if (assignedToOther) {
@@ -2050,10 +2639,16 @@ export const TrombinoscopeManager = {
         `;
 
         // Update zones count in footer
-        const assignedCount = this._zones.filter(z => z.studentId).length;
         const zonesInfo = document.getElementById('trombiZonesInfo');
         if (zonesInfo) {
-            zonesInfo.textContent = `${assignedCount} / ${this._zones.length} zones assignées`;
+            if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+                const totalZones = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.length || 0), 0);
+                const totalAssigned = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.filter(z => z.studentId).length || 0), 0);
+                zonesInfo.textContent = `${totalAssigned} / ${totalZones} zones assignées (Page ${this._currentPageIndex + 1}/${this._parsedPdfData.numPages})`;
+            } else {
+                const assignedCount = this._zones.filter(z => z.studentId).length;
+                zonesInfo.textContent = `${assignedCount} / ${this._zones.length} zones assignées`;
+            }
         }
 
         // Bind select events
@@ -2128,7 +2723,7 @@ export const TrombinoscopeManager = {
         this._updateLivePreviews();
 
         // Re-initialize tooltips for the new/updated select dropdowns
-        UI.initTooltips();
+        UI.initTooltips?.();
     },
 
     /**
@@ -2139,21 +2734,24 @@ export const TrombinoscopeManager = {
         const canvases = document.querySelectorAll('.live-preview-canvas');
         if (canvases.length === 0) return;
 
-        // Load image if not cached
-        if (!this._cachedImage) {
-            try {
-                this._cachedImage = await this._loadImage(this._imageSrc);
-            } catch {
-                return;
+        // Use in-memory PDF canvas if available, or cached image
+        let img = this._parsedPdfData?.pages[this._currentPageIndex]?.canvas;
+        if (!img) {
+            if (!this._cachedImage) {
+                try {
+                    this._cachedImage = await this._loadImage(this._imageSrc);
+                } catch {
+                    return;
+                }
             }
+            img = this._cachedImage;
         }
-
-        const img = this._cachedImage;
 
         canvases.forEach(canvas => {
             const zoneId = parseInt(canvas.dataset.zoneId);
             const zone = this._zones.find(z => z.id === zoneId);
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
 
             // Canvas buffer is 80x80, displayed at 40x40 CSS for HiDPI sharpness
             const size = 80;
@@ -2162,9 +2760,9 @@ export const TrombinoscopeManager = {
 
             if (!zone) return;
 
-            // Draw cropped zone using global radius
+            // Draw cropped zone using zone radius or global radius
             const { cx, cy } = zone;
-            const r = this._globalRadius;
+            const r = zone.r || this._globalRadius;
             const diameter = r * 2;
             const sx = Math.max(0, cx - r);
             const sy = Math.max(0, cy - r);
@@ -2232,10 +2830,33 @@ export const TrombinoscopeManager = {
         const container = document.getElementById('trombiPreviewGrid');
         if (!container) return;
 
-        const students = appState.filteredResults || [];
-        const assignedZones = this._zones.filter(z => z.studentId);
+        if (this._parsedPdfData && this._parsedPdfData.pages[this._currentPageIndex]) {
+            this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
+        }
 
-        if (assignedZones.length === 0) {
+        let students = [...(appState.filteredResults || [])];
+        if (this._parsedPdfData && this._parsedPdfData.students) {
+            for (const pdfStudent of this._parsedPdfData.students) {
+                if (!students.some(s => s.id === pdfStudent.id || Utils.normalizeName(s.nom, s.prenom) === Utils.normalizeName(pdfStudent.nom, pdfStudent.prenom))) {
+                    students.push({
+                        id: pdfStudent.id,
+                        nom: pdfStudent.nom,
+                        prenom: pdfStudent.prenom
+                    });
+                }
+            }
+        }
+
+        let assignedItems;
+        if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+            assignedItems = this._parsedPdfData.pages.flatMap((p, idx) =>
+                (p.zones || []).filter(z => z.studentId).map(z => ({ zone: z, pageIndex: idx }))
+            );
+        } else {
+            assignedItems = this._zones.filter(z => z.studentId).map(z => ({ zone: z, pageIndex: 0 }));
+        }
+
+        if (assignedItems.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <iconify-icon icon="solar:danger-circle-linear"></iconify-icon>
@@ -2249,8 +2870,8 @@ export const TrombinoscopeManager = {
         container.innerHTML = '<div class="preview-list"></div>';
         const list = container.querySelector('.preview-list');
 
-        for (const zone of assignedZones) {
-            const student = students.find(s => s.id === zone.studentId);
+        for (const item of assignedItems) {
+            const student = students.find(s => s.id === item.zone.studentId) || (this._parsedPdfData?.students?.find(s => s.id === item.zone.studentId));
             if (!student) continue;
 
             const previewItem = document.createElement('div');
@@ -2263,43 +2884,70 @@ export const TrombinoscopeManager = {
             list.appendChild(previewItem);
 
             // Draw preview
-            this._drawPreview(previewItem.querySelector('canvas'), zone);
+            this._drawPreview(previewItem.querySelector('canvas'), item.zone, item.pageIndex);
         }
     },
 
-    async _drawPreview(canvas, zone) {
+    async _drawPreview(canvas, zone, pageIndex = 0) {
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
+        const targetSize = canvas.width;
+        const r = zone.r || this._globalRadius;
+        const diameter = r * 2;
+        const { cx, cy } = zone;
 
-        img.onload = () => {
-            const { cx, cy } = zone;
-            const r = this._globalRadius;
-            const diameter = r * 2;
+        if (this._parsedPdfData && this._parsedPdfData.pages[pageIndex]?.canvas) {
+            const page = this._parsedPdfData.pages[pageIndex];
+            const sx = Math.max(0, cx - r);
+            const sy = Math.max(0, cy - r);
+            const sw = Math.min(diameter, page.width - sx);
+            const sh = Math.min(diameter, page.height - sy);
 
-            // Crop square from natural image
+            ctx.clearRect(0, 0, targetSize, targetSize);
+            ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+            return;
+        }
+
+        try {
+            const img = await this._loadImage(this._imageSrc);
             const sx = Math.max(0, cx - r);
             const sy = Math.max(0, cy - r);
             const sw = Math.min(diameter, this._imageNaturalWidth - sx);
             const sh = Math.min(diameter, this._imageNaturalHeight - sy);
 
-            // Draw at 160x160 for HiDPI sharpness
-            const size = 160;
-            ctx.clearRect(0, 0, size, size);
-            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
-        };
-
-        img.src = this._imageSrc;
+            ctx.clearRect(0, 0, targetSize, targetSize);
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+        } catch {
+            // Silently fail preview
+        }
     },
 
     // ========================================================================
     // IMPORT EXECUTION
     // ========================================================================
 
-    async _confirmImport() {
-        const assignedZones = this._zones.filter(z => z.studentId);
+    async _handleImport() {
+        if (this._zones.length === 0 && (!this._parsedPdfData || this._parsedPdfData.pages.every(p => !p.zones || p.zones.length === 0))) {
+            UI.showNotification('Aucune zone définie', 'warning');
+            return;
+        }
 
-        if (assignedZones.length === 0) {
+        // Sauvegarder les zones de la page courante avant l'import
+        if (this._parsedPdfData && this._parsedPdfData.pages[this._currentPageIndex]) {
+            this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
+        }
+
+        // Support multi-page PDF import: collect assigned zones across ALL pages
+        let assignedItems;
+        if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
+            assignedItems = this._parsedPdfData.pages.flatMap((p, idx) =>
+                (p.zones || []).filter(z => z.studentId).map(z => ({ zone: z, pageIndex: idx }))
+            );
+        } else {
+            assignedItems = this._zones.filter(z => z.studentId).map(z => ({ zone: z, pageIndex: 0 }));
+        }
+
+        if (assignedItems.length === 0) {
             UI.showNotification('Aucune photo à importer', 'warning');
             return;
         }
@@ -2307,36 +2955,108 @@ export const TrombinoscopeManager = {
         UI.showLoadingOverlay('Extraction des photos...');
 
         try {
-            // Load image
-            const img = await this._loadImage(this._imageSrc);
+            let targetClass = null;
+
+            // If from parsed PDF, ensure class and students exist
+            if (this._parsedPdfData) {
+                const targetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
+                const existingClasses = ClassManager.getAllClasses() || [];
+                targetClass = existingClasses.find(c => c.name.toLowerCase() === targetName.toLowerCase());
+                if (!targetClass) {
+                    targetClass = ClassManager.createClass(targetName, this._parsedPdfData.schoolYear);
+                }
+                await ClassManager.switchClass(targetClass.id);
+
+                // Create any pending student that was in the PDF and assigned to a zone
+                for (const item of assignedItems) {
+                    let existing = appState.generatedResults.find(r => r.id === item.zone.studentId);
+                    if (!existing && this._parsedPdfData.students) {
+                        const pdfStudent = this._parsedPdfData.students.find(s => s.id === item.zone.studentId);
+                        if (pdfStudent) {
+                            existing = appState.generatedResults.find(r =>
+                                r.classId === targetClass.id &&
+                                Utils.normalizeName(r.nom, r.prenom) === Utils.normalizeName(pdfStudent.nom, pdfStudent.prenom)
+                            );
+                            if (existing) {
+                                item.zone.studentId = existing.id;
+                            } else {
+                                const newStudentResult = StudentDataManager.createPendingResult({
+                                    nom: pdfStudent.nom,
+                                    prenom: pdfStudent.prenom,
+                                    periods: {}
+                                });
+                                newStudentResult.classId = targetClass.id;
+                                appState.generatedResults.push(newStudentResult);
+                                item.zone.studentId = newStudentResult.id;
+                            }
+                        }
+                    }
+                }
+            }
 
             const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext ? canvas.getContext('2d') : null;
             const targetSize = 200;
             canvas.width = targetSize;
             canvas.height = targetSize;
 
             const assignments = [];
 
-            for (const zone of assignedZones) {
-                const { studentId, cx, cy } = zone;
-                const r = this._globalRadius;
-                const diameter = r * 2;
+            if (this._parsedPdfData) {
+                for (const item of assignedItems) {
+                    const page = this._parsedPdfData.pages[item.pageIndex];
+                    if (!page || !page.canvas) continue;
+                    const { studentId, cx, cy } = item.zone;
+                    const r = item.zone.r || this._globalRadius;
+                    const diameter = r * 2;
+                    const sx = Math.max(0, cx - r);
+                    const sy = Math.max(0, cy - r);
+                    const sw = Math.min(diameter, page.width - sx);
+                    const sh = Math.min(diameter, page.height - sy);
 
-                // Crop from natural image (already in natural pixels!)
-                const sx = Math.max(0, cx - r);
-                const sy = Math.max(0, cy - r);
-                const sw = Math.min(diameter, this._imageNaturalWidth - sx);
-                const sh = Math.min(diameter, this._imageNaturalHeight - sy);
+                    let photoData;
+                    if (ctx && typeof canvas.toDataURL === 'function') {
+                        ctx.clearRect(0, 0, targetSize, targetSize);
+                        ctx.drawImage(page.canvas, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+                        photoData = canvas.toDataURL('image/jpeg', 0.85);
+                    } else {
+                        const matchedPdfStudent = this._parsedPdfData.students?.find(s => s.id === studentId || s.id === item.zone.studentId);
+                        photoData = matchedPdfStudent?.photoData || 'data:image/jpeg;base64,mock';
+                    }
+                    assignments.push({ studentId, photoData });
+                }
+            } else {
+                const img = await this._loadImage(this._imageSrc);
+                for (const item of assignedItems) {
+                    const { studentId, cx, cy } = item.zone;
+                    const r = item.zone.r || this._globalRadius;
+                    const diameter = r * 2;
+                    const sx = Math.max(0, cx - r);
+                    const sy = Math.max(0, cy - r);
+                    const sw = Math.min(diameter, this._imageNaturalWidth - sx);
+                    const sh = Math.min(diameter, this._imageNaturalHeight - sy);
 
-                ctx.clearRect(0, 0, targetSize, targetSize);
-                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
-
-                const photoData = canvas.toDataURL('image/jpeg', 0.85);
-                assignments.push({ studentId, photoData });
+                    let photoData;
+                    if (ctx && typeof canvas.toDataURL === 'function') {
+                        ctx.clearRect(0, 0, targetSize, targetSize);
+                        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+                        photoData = canvas.toDataURL('image/jpeg', 0.85);
+                    } else {
+                        photoData = 'data:image/jpeg;base64,mock';
+                    }
+                    assignments.push({ studentId, photoData });
+                }
             }
 
             const count = await StudentPhotoManager.bulkAssignPhotos(assignments);
+
+            if (this._parsedPdfData) {
+                await StorageManager.saveAppState();
+                if (targetClass) {
+                    await ClassManager._filterResultsByClass(targetClass.id);
+                    window.dispatchEvent(new CustomEvent('classChanged', { detail: { classId: targetClass.id } }));
+                }
+            }
 
             if (count > 0) {
                 UI.showNotification(`${count} photos importées avec succès`, 'success');
@@ -2365,6 +3085,9 @@ export const TrombinoscopeManager = {
     _getCurrentStateSnapshot() {
         return {
             zones: this._zones.map(z => ({ ...z })),
+            pages: this._parsedPdfData?.pages?.map(p => ({
+                zones: (p.zones || []).map(z => ({ ...z }))
+            })),
             gridCols: this._gridCols,
             gridRows: this._gridRows,
             gapH: this._gapH,
@@ -2388,6 +3111,13 @@ export const TrombinoscopeManager = {
         
         this._selectedZoneIds.clear();
         this._zones = prevState.zones.map(z => ({ ...z }));
+        if (prevState.pages && this._parsedPdfData?.pages) {
+            this._parsedPdfData.pages.forEach((p, idx) => {
+                if (prevState.pages[idx]?.zones) {
+                    p.zones = prevState.pages[idx].zones.map(z => ({ ...z }));
+                }
+            });
+        }
         this._gridCols = prevState.gridCols;
         this._gridRows = prevState.gridRows;
         this._gapH = prevState.gapH;
@@ -2421,30 +3151,5 @@ export const TrombinoscopeManager = {
         this._nudgeTimer = setTimeout(() => {
             this._nudgeTimer = null;
         }, 1000);
-    },
-
-    _syncSlidersToState() {
-        const colsSlider = document.getElementById('colsSlider');
-        const rowsSlider = document.getElementById('rowsSlider');
-        const gapHSlider = document.getElementById('gapHSlider');
-        const gapVSlider = document.getElementById('gapVSlider');
-        const colsValue = document.getElementById('colsValue');
-        const rowsValue = document.getElementById('rowsValue');
-        const gapHValue = document.getElementById('gapHValue');
-        const gapVValue = document.getElementById('gapVValue');
-
-        if (colsSlider) colsSlider.value = this._gridCols;
-        if (colsValue) colsValue.textContent = this._gridCols;
-        
-        if (rowsSlider) rowsSlider.value = this._gridRows;
-        if (rowsValue) rowsValue.textContent = this._gridRows;
-        
-        if (gapHSlider) gapHSlider.value = this._gapH;
-        if (gapHValue) gapHValue.textContent = Number.isInteger(this._gapH) ? this._gapH : this._gapH.toFixed(1);
-        
-        if (gapVSlider) gapVSlider.value = this._gapV;
-        if (gapVValue) gapVValue.textContent = Number.isInteger(this._gapV) ? this._gapV : this._gapV.toFixed(1);
-
-        this._updateSizeSliderValue();
     }
 };

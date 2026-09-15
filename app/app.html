@@ -1316,13 +1316,13 @@
                     <p class="import-hub-card-desc">Excel, CSV ou copier-coller</p>
                 </div>
 
-                <!-- Photo Import Card -->
+                <!-- Trombinoscope Import Card -->
                 <div class="import-hub-card" data-action="photos" tabindex="0" role="button">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:camera-bold-duotone"></iconify-icon>
                     </div>
-                    <h3 class="import-hub-card-title">Photos</h3>
-                    <p class="import-hub-card-desc">Depuis un trombinoscope</p>
+                    <h3 class="import-hub-card-title">Trombinoscope</h3>
+                    <p class="import-hub-card-desc">PDF Pronote ou photo</p>
                 </div>
             </div>
         </div>
@@ -1373,8 +1373,8 @@
                                         <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
                                         Trombinoscope
                                     </div>
-                                    <p class="guide-text">Importez une photo de classe pour générer un trombinoscope interactif.</p>
-                                    <p class="guide-hint">Formats acceptés : JPG, PNG, WebP.</p>
+                                    <p class="guide-text">Importez un trombinoscope pour générer automatiquement la classe et les photos.</p>
+                                    <p class="guide-hint">Formats acceptés : PDF Pronote, JPG, PNG, WebP.</p>
                                 </div>
                                 <div class="guide-divider"></div>
                                 <div class="guide-section">
@@ -1394,6 +1394,7 @@
 
                         <!-- Main Content -->
                         <div class="wizard-main-content" style="padding: 16px;">
+                            <div id="trombiStep1PageSelectorBar" class="trombi-page-selector-bar" style="display: none; margin-bottom: 12px;"></div>
                             <div class="trombi-drop-zone" id="trombiDropZone">
                                 <!-- Placeholder content (shown when no image) -->
                                 <div class="drop-zone-content" id="trombiDropPlaceholder">
@@ -1403,7 +1404,7 @@
                                     <div class="drop-zone-text">
                                         <span class="drop-zone-title">Glissez ou Collez (Ctrl+V) le trombinoscope
                                             ici</span>
-                                        <span class="drop-zone-hint">ou <u>cliquez pour parcourir</u></span>
+                                        <span class="drop-zone-hint">PDF Pronote ou image • <u>cliquez pour parcourir</u></span>
                                     </div>
                                 </div>
                                 <!-- Preview content (shown when image loaded) -->
@@ -1416,13 +1417,14 @@
                                 </div>
                                 <!-- Sample button moved to sidebar -->
                             </div>
-                            <input type="file" id="trombiFileInput" accept="image/*" style="display: none;">
+                            <input type="file" id="trombiFileInput" accept="image/*,application/pdf,.pdf" style="display: none;">
                         </div>
                     </div>
                 </div>
 
                 <!-- Step 2: Assign students to zones -->
                 <div class="trombi-step-content trombi-step-padded" id="trombiStep2" style="display: none;">
+                    <div id="trombiPageSelectorBar" class="trombi-page-selector-bar" style="display: none;"></div>
                     <div class="trombi-split-view">
                         <div class="trombi-image-panel">
                             <div id="trombiImageWithZones" class="trombi-image-wrapper">
@@ -1432,7 +1434,7 @@
                         <div class="trombi-assignment-panel">
                             <div class="trombi-assignment-panel-header">
                                 <h4>Associer les élèves aux zones</h4>
-                                <div class="trombi-exclude-toggle-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                                <div class="trombi-exclude-toggle-wrapper" id="trombiExcludeToggleWrapper" style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 11px; font-weight: 500; color: var(--text-secondary);">Sans photo</span>
                                     <label class="toggle-switch small">
                                         <input type="checkbox" id="trombiExcludeWithPhotos" checked>
@@ -3103,7 +3105,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 302df62 · 14 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 74da9ee · 15 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3451,6 +3453,15 @@
                 <div class="empty-state-hub-text">
                     <h4>Classe entière</h4>
                     <p>Excel, CSV ou copier-coller</p>
+                </div>
+            </div>
+            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button">
+                <div class="empty-state-hub-icon">
+                    <iconify-icon icon="solar:camera-bold-duotone"></iconify-icon>
+                </div>
+                <div class="empty-state-hub-text">
+                    <h4>Trombinoscope</h4>
+                    <p>PDF Pronote ou photo</p>
                 </div>
             </div>
         </div>
