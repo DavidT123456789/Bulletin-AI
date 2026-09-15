@@ -152,7 +152,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 10px 14px 10px 20px;
     border-bottom: 1px solid var(--border-color);
     background: rgba(var(--surface-color-rgb), 0.45);
 }
