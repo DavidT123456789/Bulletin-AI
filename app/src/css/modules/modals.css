@@ -408,13 +408,10 @@
 }
 
 .close-button {
-    background: transparent;
-    /* Harmonization: Transparent by default like sidebar */
+    background: var(--close-btn-bg, transparent);
     border: none;
     font-size: var(--close-btn-icon-size);
-    /* Icon size from design tokens */
-    color: var(--text-secondary);
-    /* Secondary text color (softer) */
+    color: var(--close-btn-color, var(--text-tertiary));
     cursor: pointer;
     transition: all var(--transition-fast);
     padding: 0;

@@ -796,6 +796,11 @@ export const ClassUIManager = {
      * Affiche la modale de gestion des classes (Vue d'ensemble)
      */
     showManageClassesModal() {
+        const existingModal = document.getElementById('classManagementModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         const classes = ClassManager.getAllClasses();
 
         const modalEl = document.createElement('div');
@@ -812,9 +817,16 @@ export const ClassUIManager = {
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button class="btn btn-secondary btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
+                        <button class="btn btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
                             <iconify-icon icon="solar:add-linear"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
+                        <div class="modal-header-actions-divider" aria-hidden="true"></div>
+                        <div class="action-dropdown" id="classManageMoreWrapper" style="position: relative;">
+                            <button type="button" class="btn-icon-small tooltip" id="classManageMoreBtn" data-tooltip="Options" aria-label="Options des classes">
+                                <iconify-icon icon="solar:menu-dots-bold"></iconify-icon>
+                            </button>
+                            <div class="action-dropdown-menu" id="classManageMoreMenu" style="right: 0; min-width: 250px; width: max-content; white-space: nowrap;"></div>
+                        </div>
                         <button class="close-button close-manage-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>
                 </div>
@@ -835,10 +847,27 @@ export const ClassUIManager = {
         const cleanupGhost = () => ghostImg.remove();
         modalEl.addEventListener('close', cleanupGhost, { once: true });
 
-        modalEl.querySelector('.close-manage-modal')?.addEventListener('click', () => {
+        const closeModal = () => {
             UI?.closeModal(modalEl);
             cleanupGhost();
             setTimeout(() => modalEl.remove(), 300);
+        };
+
+        modalEl.querySelector('.close-manage-modal')?.addEventListener('click', closeModal);
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) {
+                closeModal();
+            } else if (!e.target.closest('#classManageMoreWrapper')) {
+                modalEl.querySelector('#classManageMoreMenu')?.classList.remove('open');
+            }
+        });
+
+        // More options dropdown toggle
+        const moreBtn = modalEl.querySelector('#classManageMoreBtn');
+        const moreMenu = modalEl.querySelector('#classManageMoreMenu');
+        moreBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moreMenu?.classList.toggle('open');
         });
 
         // Add new class button in modal - inline form
@@ -919,33 +948,20 @@ export const ClassUIManager = {
             const list = modalEl.querySelector('.class-management-list');
             if (!list) return;
 
-            // Bind Row Click (Switch Class)
+            // Bind Row Click (Switch Class without closing modal)
             list.addEventListener('click', async (e) => {
                 const item = e.target.closest('.class-management-item');
-                if (!item) return;
+                if (!item || item.classList.contains('editing')) return;
 
-                // Ignore if row is currently in editing mode (renaming or deleting)
-                if (item.classList.contains('editing')) {
-                    return;
-                }
-
-                // Ignore if clicking on actions or drag handle
                 if (e.target.closest('.class-management-actions') || e.target.closest('.class-drag-handle')) {
                     return;
                 }
 
                 const classId = item.dataset.classId;
-                if (classId) {
+                if (classId && classId !== appState.currentClassId) {
                     modalEl.querySelectorAll('.class-management-item').forEach(i => i.classList.remove('active-switch'));
                     item.classList.add('active-switch');
-
                     await this.handleClassSwitch(classId);
-
-                    setTimeout(() => {
-                        UI?.closeModal(modalEl);
-                        cleanupGhost();
-                        setTimeout(() => modalEl.remove(), 300);
-                    }, 150);
                 }
             });
 
@@ -1204,6 +1220,111 @@ export const ClassUIManager = {
             const subtitle = modalEl.querySelector('.modal-subtitle');
             if (subtitle) {
                 subtitle.textContent = `${currentClasses.length} classes • ${appState.generatedResults?.length || 0} élèves`;
+            }
+
+            // Options supplémentaires dans le header
+            const moreMenu = modalEl.querySelector('#classManageMoreMenu');
+            const moreWrapper = modalEl.querySelector('#classManageMoreWrapper');
+            if (moreMenu) {
+                const allResults = appState.generatedResults || [];
+                const emptyClasses = currentClasses.filter(c => !allResults.some(r => r.classId === c.id));
+
+                if (moreWrapper) {
+                    moreWrapper.style.display = currentClasses.length > 0 ? '' : 'none';
+                }
+
+                let menuHtml = '';
+                if (emptyClasses.length > 0) {
+                    menuHtml += `
+                        <button type="button" class="action-dropdown-item" id="cleanEmptyClassesBtn">
+                            <iconify-icon icon="solar:broom-linear"></iconify-icon>
+                            <span>Nettoyer les classes vides (${emptyClasses.length})</span>
+                        </button>
+                    `;
+                }
+
+                if (currentClasses.length > 0) {
+                    menuHtml += `
+                        <button type="button" class="action-dropdown-item danger" id="resetAllClassesBtn">
+                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                            <span>Supprimer toutes les classes...</span>
+                        </button>
+                    `;
+                }
+
+                moreMenu.innerHTML = menuHtml;
+
+                moreMenu.querySelector('#cleanEmptyClassesBtn')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    moreMenu.classList.remove('open');
+
+                    const confirmed = await UI?.showCustomConfirm?.(
+                        `Supprimer définitivement les ${emptyClasses.length} classe${emptyClasses.length > 1 ? 's' : ''} vides ?`,
+                        null,
+                        null,
+                        {
+                            title: 'Nettoyer les classes vides ?',
+                            confirmText: 'Nettoyer',
+                            cancelText: 'Annuler',
+                            isDanger: true,
+                            detailsHtml: `
+                                <p style="margin-bottom:8px;">Classes sans élèves concernées :</p>
+                                <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                                    ${emptyClasses.map(c => `<li><strong>${this._escapeHtml(c.name)}</strong> (0 élève)</li>`).join('')}
+                                </ul>
+                                <p style="color:var(--text-tertiary); font-size:0.9em;">Aucun élève ni appréciation ne sera perdu.</p>
+                            `
+                        }
+                    );
+
+                    if (confirmed) {
+                        const count = await ClassManager.deleteEmptyClasses();
+                        this.renderClassList();
+                        this.updateHeaderDisplay();
+                        refreshList();
+                        UI?.showNotification?.(`${count} classe${count > 1 ? 's' : ''} vide${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`, 'success');
+                    }
+                });
+
+                moreMenu.querySelector('#resetAllClassesBtn')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    moreMenu.classList.remove('open');
+
+                    const totalStudents = appState.generatedResults?.length || 0;
+                    const confirmed = await UI?.showCustomConfirm?.(
+                        `Cette action est irréversible et supprimera l'ensemble de vos classes ainsi que leurs élèves.`,
+                        null,
+                        null,
+                        {
+                            title: 'Supprimer toutes les classes ?',
+                            confirmText: 'Tout supprimer',
+                            cancelText: 'Annuler',
+                            isDanger: true,
+                            detailsHtml: `
+                                <p style="margin-bottom:8px;">Cette action supprimera :</p>
+                                <ul style="margin-left:20px; margin-bottom:12px; line-height:1.6;">
+                                    <li>Les <strong>${currentClasses.length} classes</strong> existantes</li>
+                                    <li>Les <strong>${totalStudents} élèves</strong> et leurs données de scolarité</li>
+                                    <li>Toutes les appréciations générées associées</li>
+                                </ul>
+                                <p style="color:var(--success-color); display:flex; align-items:center; gap:6px; font-weight:500;">
+                                    <iconify-icon icon="solar:shield-check-linear" style="font-size:16px;"></iconify-icon>
+                                    <span>Vos clés API, prompts et réglages resteront intacts.</span>
+                                </p>
+                            `
+                        }
+                    );
+
+                    if (confirmed) {
+                        await ClassManager.resetAllClasses();
+                        this.renderClassList();
+                        this.updateHeaderDisplay();
+                        AppreciationsManager.renderResults();
+                        UI?.updateStats?.();
+                        refreshList();
+                        UI?.showNotification?.('Toutes les classes ont été réinitialisées', 'info');
+                    }
+                });
             }
 
             const modalBody = modalEl.querySelector('.modal-body');

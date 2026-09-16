@@ -947,28 +947,87 @@
 }
 
 /* ====================================================================
-   BOUTON "NOUVELLE CLASSE" - En-tête de la modale Mes classes
+   ACTIONS D'EN-TÊTE - Modale Mes classes
+   Standard Apple / Google 2026 : Soft Primary Tint CTA & Séparation sémantique
    ==================================================================== */
 
+#classManagementModal .modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#classManagementModal .modal-header-actions-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border-color);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+#classManagementModal #classManageMoreBtn {
+    width: var(--close-btn-size);
+    height: var(--close-btn-size);
+    border-radius: 50%;
+    font-size: var(--close-btn-icon-size);
+}
+
 #classManagementModal .add-class-modal-btn {
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    color: var(--primary-color);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    box-shadow: none;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 #classManagementModal .add-class-modal-btn iconify-icon {
-    color: var(--text-secondary);
+    color: var(--primary-color);
+    font-size: 1.15em;
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
-#classManagementModal .add-class-modal-btn:hover {
-    background: var(--item-hover-bg);
-    border-color: var(--border-color);
-    color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    #classManagementModal .add-class-modal-btn:hover {
+        background: rgba(var(--primary-color-rgb), 0.16);
+        border-color: rgba(var(--primary-color-rgb), 0.35);
+        color: var(--primary-hover);
+        box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.15);
+    }
+
+    #classManagementModal .add-class-modal-btn:hover iconify-icon {
+        transform: rotate(90deg);
+        color: var(--primary-hover);
+    }
 }
 
-#classManagementModal .add-class-modal-btn:hover iconify-icon {
-    transform: rotate(90deg);
-    color: var(--text-primary);
+#classManagementModal .add-class-modal-btn:active {
+    transform: scale(0.97);
+    background: rgba(var(--primary-color-rgb), 0.22);
+}
+
+[data-theme="dark"] #classManagementModal .add-class-modal-btn {
+    background: rgba(var(--primary-color-rgb), 0.15);
+    color: var(--primary-bright);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] #classManagementModal .add-class-modal-btn iconify-icon {
+    color: var(--primary-bright);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    [data-theme="dark"] #classManagementModal .add-class-modal-btn:hover {
+        background: rgba(var(--primary-color-rgb), 0.24);
+        border-color: rgba(var(--primary-color-rgb), 0.45);
+        color: var(--color-blue-bright);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] #classManagementModal .add-class-modal-btn:hover iconify-icon {
+        color: var(--color-blue-bright);
+    }
 }
 
 /* ====================================================================

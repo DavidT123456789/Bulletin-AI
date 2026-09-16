@@ -1365,32 +1365,24 @@
     transition: color var(--transition-fast);
 }
 
-.action-dropdown-item.warning {
+.action-dropdown-item.warning,
+.action-dropdown-item.warning i,
+.action-dropdown-item.warning iconify-icon {
     color: var(--color-amber, #f59e0b);
 }
 
 .action-dropdown-item.warning:hover {
     background: rgba(245, 158, 11, 0.1);
-    color: var(--color-amber, #f59e0b);
 }
 
-.action-dropdown-item.warning:hover i,
-.action-dropdown-item.warning:hover iconify-icon {
-    color: var(--color-amber, #f59e0b);
-}
-
-.action-dropdown-item.danger {
+.action-dropdown-item.danger,
+.action-dropdown-item.danger i,
+.action-dropdown-item.danger iconify-icon {
     color: var(--error-color);
 }
 
 .action-dropdown-item.danger:hover {
     background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-color);
-}
-
-.action-dropdown-item.danger:hover i,
-.action-dropdown-item.danger:hover iconify-icon {
-    color: var(--error-color);
 }
 
 

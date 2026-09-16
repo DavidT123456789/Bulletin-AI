@@ -7,7 +7,7 @@
 .close-btn {
     background: var(--close-btn-bg, transparent);
     border: none;
-    color: var(--close-btn-color, var(--text-secondary));
+    color: var(--close-btn-color, var(--text-tertiary));
     cursor: pointer;
     display: flex;
     align-items: center;

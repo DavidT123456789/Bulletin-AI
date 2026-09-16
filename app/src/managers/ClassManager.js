@@ -206,6 +206,49 @@ export const ClassManager = {
     },
 
     /**
+     * Supprime toutes les classes vides (sans élèves)
+     * @returns {Promise<number>} Nombre de classes supprimées
+     */
+    async deleteEmptyClasses() {
+        const classes = [...this.getAllClasses()];
+        const allResults = appState.generatedResults || [];
+        const emptyClasses = classes.filter(cls => !allResults.some(r => r.classId === cls.id));
+
+        if (emptyClasses.length === 0) return 0;
+
+        for (const cls of emptyClasses) {
+            await this.deleteClass(cls.id, false);
+        }
+
+        if (this.getAllClasses().length === 0) {
+            const freshClass = this.createClass('Nouvelle classe');
+            await this.switchClass(freshClass.id);
+        }
+
+        return emptyClasses.length;
+    },
+
+    /**
+     * Supprime toutes les classes et leurs élèves, puis recrée une classe par défaut propre.
+     * Conserve intacts tous les paramètres utilisateur, clés API, prompts et réglages !
+     */
+    async resetAllClasses() {
+        await DBService.clear('generatedResults');
+        appState.generatedResults = [];
+        appState.filteredResults = [];
+
+        userSettings.academic.classes = [];
+        appState.currentClassId = null;
+        userSettings.academic.currentClassId = null;
+
+        const freshClass = this.createClass('Nouvelle classe');
+        await this.switchClass(freshClass.id);
+
+        StorageManager?.saveAppState();
+        return freshClass;
+    },
+
+    /**
      * Trigger cloud sync if connected (non-blocking)
      * @deprecated Now using explicit Save/Load paradigm - this method is kept for backward compatibility but does nothing
      * @private
