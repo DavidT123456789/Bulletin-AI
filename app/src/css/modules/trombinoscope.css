@@ -519,12 +519,20 @@
     height: 100%;
     /* Force fill grid area */
     position: relative;
-    overflow: auto;
+    overflow: hidden;
     /* Centering: flex with margin: auto child guarantees centering when small, full scrolling when overflowed */
     display: flex;
     padding: 16px;
     box-sizing: border-box;
     background: var(--bg-secondary);
+}
+
+.trombi-viewport.is-zoomed {
+    overflow: auto;
+}
+
+.trombi-viewport.is-animating {
+    overflow: hidden !important;
 }
 
 /* Wrapper: The container that holds Image + Overlay
@@ -660,6 +668,8 @@
 }
 
 .grid-tools-toggle-btn {
+    min-width: 112px;
+    justify-content: center;
     padding: 4px 8px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm, 6px);

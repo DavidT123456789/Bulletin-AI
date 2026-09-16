@@ -94,6 +94,7 @@ export const TrombinoscopeManager = {
     _restoreGroupedDrag: false,
     _isTransitioning: false,
     _drawerAnimRaf: null,
+    _drawerAnimActive: false,
     _viewportResizeRaf: null,
 
     // ========================================================================
@@ -239,6 +240,7 @@ export const TrombinoscopeManager = {
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
         this._isTransitioning = false;
+        this._drawerAnimActive = false;
         if (this._drawerAnimRaf) {
             cancelAnimationFrame(this._drawerAnimRaf);
             this._drawerAnimRaf = null;
@@ -894,10 +896,13 @@ export const TrombinoscopeManager = {
         }
         if (!viewport || !wrapper || !this._imageNaturalWidth || !this._imageNaturalHeight) return;
 
+        // Toggle is-zoomed class: scrollbars are ONLY permitted when zoomed in > 100%
+        viewport.classList.toggle('is-zoomed', this._zoomLevel > 1.0);
+
         // Stable viewport dimensions immune to scrollbar jitter
         const pad = 32;
-        const vpW = viewport.offsetWidth || viewport.clientWidth || 600;
-        const vpH = viewport.offsetHeight || viewport.clientHeight || 600;
+        const vpW = viewport.clientWidth || viewport.offsetWidth || 600;
+        const vpH = viewport.clientHeight || viewport.offsetHeight || 600;
         const availW = Math.max(100, vpW - pad);
         const availH = Math.max(100, vpH - pad);
 
@@ -906,8 +911,9 @@ export const TrombinoscopeManager = {
         const baseW = this._imageNaturalWidth * scaleToFit;
         const baseH = this._imageNaturalHeight * scaleToFit;
 
-        const targetW = Math.round(baseW * this._zoomLevel);
-        const targetH = Math.round(baseH * this._zoomLevel);
+        // Use Math.floor when fitting to strictly ensure wrapper never exceeds available space
+        const targetW = this._zoomLevel <= 1.0 ? Math.floor(baseW) : Math.round(baseW * this._zoomLevel);
+        const targetH = this._zoomLevel <= 1.0 ? Math.floor(baseH) : Math.round(baseH * this._zoomLevel);
 
         wrapper.style.aspectRatio = `${this._imageNaturalWidth} / ${this._imageNaturalHeight}`;
         wrapper.style.width = `${targetW}px`;
@@ -1085,6 +1091,7 @@ export const TrombinoscopeManager = {
         if (this._viewportResizeObserver) this._viewportResizeObserver.disconnect();
 
         this._viewportResizeObserver = new ResizeObserver(() => {
+            if (this._drawerAnimActive) return;
             if (this._viewportResizeRaf) cancelAnimationFrame(this._viewportResizeRaf);
             this._viewportResizeRaf = window.requestAnimationFrame(() => {
                 this._viewportResizeRaf = null;
@@ -1395,10 +1402,16 @@ export const TrombinoscopeManager = {
                 this._drawerAnimRaf = null;
             }
 
+            const viewport = document.querySelector('.trombi-viewport');
+            viewport?.classList.add('is-animating');
+
             if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
                 this._applyZoom();
+                viewport?.classList.remove('is-animating');
                 return;
             }
+
+            this._drawerAnimActive = true;
 
             // Smooth 60fps real-time recalculation of the sheet during the drawer transition
             const startTime = performance.now();
@@ -1409,6 +1422,8 @@ export const TrombinoscopeManager = {
                     this._drawerAnimRaf = requestAnimationFrame(step);
                 } else {
                     this._drawerAnimRaf = null;
+                    this._drawerAnimActive = false;
+                    viewport?.classList.remove('is-animating');
                     this._applyZoom();
                 }
             };
