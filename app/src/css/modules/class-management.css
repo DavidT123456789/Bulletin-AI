@@ -188,7 +188,7 @@
 }
 
 .class-dropdown-header-actions #addNewClassBtn:hover iconify-icon {
-    transform: scale(1.15);
+    transform: rotate(90deg);
 }
 
 .class-dropdown-header-actions #manageClassesBtn:hover iconify-icon {
@@ -685,6 +685,7 @@
 
 #classManagementModal .modal-body {
     background: var(--bg-secondary);
+    padding: 16px;
 }
 
 [data-theme="dark"] #classManagementModal .modal-body {
@@ -971,7 +972,7 @@
 }
 
 /* ====================================================================
-   CLASS MANAGEMENT LIST - PREMIUM GLASS CARDS
+   CLASS MANAGEMENT LIST - INSET GROUPED CARD
    ==================================================================== */
 
 .class-management-list {
@@ -1014,119 +1015,20 @@
     border-bottom: none;
 }
 
-.class-management-item:hover {
+.class-management-item:not(.active-switch):hover {
     background-color: var(--bg-color);
     border-bottom-color: var(--border-color);
     box-shadow: none;
 }
 
-[data-theme="dark"] .class-management-item:hover {
+[data-theme="dark"] .class-management-item:not(.active-switch):hover {
     background-color: var(--bg-hover);
-}
-
-.class-management-item.active-switch {
-    background-color: var(--primary-color);
-    border-bottom-color: transparent;
-    box-shadow: none;
-    z-index: 1;
-}
-
-.class-management-item.active-switch:hover {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
-    box-shadow: none;
 }
 
 .class-management-item:focus-visible {
     background-color: var(--item-hover-bg);
     outline: none;
     box-shadow: inset 0 0 0 2px var(--primary-color);
-}
-
-.class-management-item.active-switch:focus-visible {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
-    outline: none;
-}
-
-/* Active state adjustments for internal elements */
-.class-management-item.active-switch .class-management-name {
-    color: #ffffff;
-}
-
-.class-management-item.active-switch .class-drag-handle {
-    color: #ffffff;
-    opacity: 0.7;
-}
-.class-management-item.active-switch:hover .class-drag-handle {
-    opacity: 1;
-}
-.class-management-item.active-switch .class-drag-handle:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.class-management-item.active-switch .meta-item-inline {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.class-management-item.active-switch .meta-separator {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.class-management-item.active-switch .meta-item-inline.status-complete {
-    color: #4ade80; /* bright green */
-}
-.class-management-item.active-switch .meta-item-inline.status-error {
-    color: #fb7185; /* bright red */
-}
-
-.class-management-item.active-switch .class-stat-badge {
-    background: #ffffff;
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.class-management-item.active-switch .class-stat-badge.no-data {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--text-tertiary);
-    border-color: transparent;
-}
-.class-management-item.active-switch .class-stat-badge .stat-suffix {
-    color: var(--text-tertiary);
-}
-.class-management-item.active-switch .trend-indicator.positive {
-    color: var(--success-color) !important;
-}
-.class-management-item.active-switch .trend-indicator.negative {
-    color: var(--error-color) !important;
-}
-.class-management-item.active-switch .trend-indicator.neutral {
-    color: var(--text-tertiary) !important;
-}
-
-.class-management-item.active-switch .class-management-actions {
-    opacity: 0.85;
-}
-.class-management-item.active-switch:hover .class-management-actions {
-    opacity: 1;
-}
-
-.class-management-item.active-switch .manage-rename-btn,
-.class-management-item.active-switch .manage-duplicate-btn,
-.class-management-item.active-switch .manage-delete-btn {
-    color: rgba(255, 255, 255, 0.85);
-}
-.class-management-item.active-switch .manage-rename-btn:hover,
-.class-management-item.active-switch .manage-duplicate-btn:hover {
-    background: #ffffff;
-    color: #18181b;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
-}
-.class-management-item.active-switch .manage-delete-btn:hover {
-    background: #ffffff;
-    color: var(--error-color);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
 }
 
 /* Drag Handle */
@@ -1144,13 +1046,15 @@
     font-size: 1.1rem;
 }
 
-.class-management-item:hover .class-drag-handle {
-    opacity: 0.8;
+.class-management-item:not(.active-switch):hover .class-drag-handle {
+    opacity: 0.75;
+    color: var(--text-secondary);
 }
 
-.class-drag-handle:hover {
-    color: var(--text-secondary);
-    background: var(--bg-hover);
+.class-management-item:not(.active-switch) .class-drag-handle:hover {
+    opacity: 1;
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
 }
 
 /* Content Area */
@@ -1199,7 +1103,7 @@
 }
 
 [data-theme="dark"] .class-management-item:not(.active-switch):hover .class-stat-badge {
-    background: var(--bg-color);
+    background: var(--bg-secondary);
 }
 
 /* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
@@ -1319,13 +1223,13 @@
 .class-management-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     margin-left: 12px;
-    opacity: 0.5;
+    opacity: 0.7;
     transition: opacity var(--transition-fast) ease;
 }
 
-.class-management-item:hover .class-management-actions {
+.class-management-item:not(.active-switch):hover .class-management-actions {
     opacity: 1;
 }
 
@@ -1334,7 +1238,7 @@
 .manage-delete-btn {
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1348,17 +1252,170 @@
 
 .manage-rename-btn:hover,
 .manage-duplicate-btn:hover {
-    background: var(--bg-tertiary);
+    background: var(--item-hover-bg);
     border-color: transparent;
     color: var(--text-primary);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
 }
 
 .manage-delete-btn:hover {
     background: var(--error-light);
     border-color: transparent;
     color: var(--error-color);
-    box-shadow: 0 3px 8px rgba(var(--error-rgb), 0.08);
+    box-shadow: 0 2px 6px rgba(var(--error-rgb), 0.08);
+}
+
+/* ====================================================================
+   ACTIVE CLASS ITEM - SOLID ACCENT (Harmonisé avec le menu rapide)
+   ==================================================================== */
+
+.class-management-item.active-switch {
+    background-color: var(--primary-color);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+    box-shadow: none;
+    z-index: 1;
+}
+
+.class-management-item.active-switch:hover {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
+    box-shadow: none;
+}
+
+.class-management-item.active-switch:focus-visible {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+    outline: none;
+}
+
+/* Titre de classe actif */
+.class-management-item.active-switch .class-management-name {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Poignée de déplacement sur la ligne active */
+.class-management-item.active-switch .class-drag-handle {
+    color: #ffffff;
+    opacity: 0.65;
+    background: transparent;
+}
+
+.class-management-item.active-switch:hover .class-drag-handle {
+    color: #ffffff;
+    opacity: 0.85;
+}
+
+.class-management-item.active-switch .class-drag-handle:hover {
+    color: #ffffff;
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* Pastille de note sur la ligne active */
+.class-management-item.active-switch .class-stat-badge {
+    background: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    opacity: 1;
+}
+
+.class-management-item.active-switch:hover .class-stat-badge {
+    background: #ffffff;
+}
+
+.class-management-item.active-switch .class-stat-badge .stat-suffix {
+    color: var(--text-tertiary);
+}
+
+.class-management-item.active-switch .class-stat-badge.no-data {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    opacity: 1;
+}
+
+.class-management-item.active-switch:hover .class-stat-badge.no-data {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.class-management-item.active-switch .class-stat-badge.no-data .stat-value {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.class-management-item.active-switch .trend-indicator.positive {
+    color: var(--success-color) !important;
+}
+
+.class-management-item.active-switch .trend-indicator.negative {
+    color: var(--error-color) !important;
+}
+
+.class-management-item.active-switch .trend-indicator.neutral {
+    color: var(--text-tertiary) !important;
+}
+
+/* Métadonnées sur la ligne active */
+.class-management-item.active-switch .meta-item-inline {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.class-management-item.active-switch .meta-item-inline iconify-icon {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.class-management-item.active-switch .meta-separator {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.class-management-item.active-switch .meta-item-inline.status-complete,
+.class-management-item.active-switch .class-management-meta .status-complete {
+    color: #34d399; /* Émeraude vif et lisible sur fond sombre */
+}
+
+.class-management-item.active-switch .meta-item-inline.status-complete iconify-icon,
+.class-management-item.active-switch .class-management-meta .status-complete iconify-icon {
+    color: #34d399;
+}
+
+.class-management-item.active-switch .meta-item-inline.status-error,
+.class-management-item.active-switch .class-management-meta .status-error {
+    color: #fca5a5; /* Rouge clair et lisible sur fond sombre */
+}
+
+.class-management-item.active-switch .meta-item-inline.status-error iconify-icon,
+.class-management-item.active-switch .class-management-meta .status-error iconify-icon {
+    color: #fca5a5;
+}
+
+/* Boutons d'actions sur la ligne active */
+.class-management-item.active-switch .class-management-actions {
+    opacity: 0.85;
+}
+
+.class-management-item.active-switch:hover .class-management-actions {
+    opacity: 1;
+}
+
+.class-management-item.active-switch .manage-rename-btn,
+.class-management-item.active-switch .manage-duplicate-btn,
+.class-management-item.active-switch .manage-delete-btn {
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+}
+
+.class-management-item.active-switch .manage-rename-btn:hover,
+.class-management-item.active-switch .manage-duplicate-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.class-management-item.active-switch .manage-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
 /* ====================================================================

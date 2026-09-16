@@ -813,12 +813,12 @@ export const ClassUIManager = {
                     </div>
                     <div class="modal-header-actions">
                         <button class="btn btn-secondary btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
-                            <iconify-icon icon="ph:plus"></iconify-icon> <span>Nouvelle classe</span>
+                            <iconify-icon icon="solar:add-linear"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
-                        <button class="close-button close-manage-modal"><iconify-icon icon="ph:x"></iconify-icon></button>
+                        <button class="close-button close-manage-modal" aria-label="Fermer"><iconify-icon icon="ph:x"></iconify-icon></button>
                     </div>
                 </div>
-                <div class="modal-body" style="padding: 16px;">
+                <div class="modal-body">
                     <!-- Rempli par refreshList -->
                 </div>
             </div>
@@ -863,10 +863,10 @@ export const ClassUIManager = {
                                maxlength="50"
                                autocomplete="off">
                         <button class="create-class-confirm" title="Confirmer" disabled>
-                            <iconify-icon icon="ph:check-bold"></iconify-icon>
+                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                         </button>
                         <button class="create-class-cancel" title="Annuler">
-                            <iconify-icon icon="ph:x-bold"></iconify-icon>
+                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                         </button>
                     </div>
                 </div>
@@ -1045,10 +1045,10 @@ export const ClassUIManager = {
                                    maxlength="50"
                                    autocomplete="off">
                             <button class="save-rename-btn" title="Confirmer">
-                                <iconify-icon icon="ph:check-bold"></iconify-icon>
+                                <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
                             </button>
                             <button class="cancel-rename-btn" title="Annuler">
-                                <iconify-icon icon="ph:x-bold"></iconify-icon>
+                                <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
                             </button>
                         </div>
                     `;
@@ -1290,16 +1290,16 @@ export const ClassUIManager = {
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button class="manage-duplicate-btn" data-class-id="${cls.id}" 
-                                            data-tooltip="Dupliquer la classe">
+                                    <button class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}" 
+                                            data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-rename-btn" data-class-id="${cls.id}" 
-                                            data-tooltip="Renommer">
+                                    <button class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}" 
+                                            data-tooltip="Renommer" aria-label="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
-                                    <button class="manage-delete-btn" data-class-id="${cls.id}" 
-                                            data-tooltip="Supprimer la classe">
+                                    <button class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}" 
+                                            data-tooltip="Supprimer la classe" aria-label="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>
                                 </div>
