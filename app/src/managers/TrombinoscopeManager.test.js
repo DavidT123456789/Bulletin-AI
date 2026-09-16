@@ -66,7 +66,18 @@ vi.mock('../utils/Utils.js', () => ({
     Utils: {
         debounce: (fn) => fn,
         normalizeName: (nom, prenom) => `${nom || ''} ${prenom || ''}`.trim().toLowerCase(),
-        formatStudentName: (nom, prenom) => `${nom} ${prenom}`
+        formatStudentName: (nom, prenom) => `${nom} ${prenom}`,
+        normalizeClassName: (name) => {
+            if (!name || typeof name !== 'string') return '';
+            return name
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[°]/g, '')
+                .replace(/(?:eme|ieme|\^e|nde|nd|ere|re)(?![a-z])/gi, '')
+                .replace(/[^a-z0-9]/gi, '')
+                .trim();
+        }
     }
 }));
 
@@ -250,7 +261,10 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         vi.clearAllMocks();
         document.body.innerHTML = `
             <div id="trombiWizardModal" class="visible"></div>
-            <div id="trombiClassBadge"></div>
+            <div class="trombi-title-pill" id="trombiTitlePill">
+                <iconify-icon id="trombiTitlePillIcon" icon="solar:camera-linear"></iconify-icon>
+                <span id="trombiClassBadge"></span>
+            </div>
             <div id="trombiImageInfo"></div>
             <button id="trombiQuickImportBtn" style="display:none;"><span id="trombiQuickImportLabel"></span></button>
             <div id="trombiPageSelectorBar" style="display:none;"></div>
@@ -264,8 +278,13 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
             <div id="trombiStep2"></div>
             <div id="trombiStep3"></div>
             <div id="trombiStep1Footer"></div>
-            <div id="trombiStep2Footer"></div>
-            <div id="trombiStep3Footer"></div>
+            <div id="trombiStep2Footer">
+                <span id="trombiZonesInfo"></span>
+            </div>
+            <div id="trombiStep3Footer">
+                <span id="trombiConfirmInfo"></span>
+                <button id="trombiConfirmBtn"></button>
+            </div>
             <div id="trombiImageWithZones"></div>
             <div id="trombiAssignmentGrid"></div>
             <div id="trombiPreviewGrid"></div>
@@ -908,6 +927,140 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
 
         handleImportSpy.mockRestore();
     });
+
+    it('should display correct student count and update confirm button in Step 3', () => {
+        TrombinoscopeManager._parsedPdfData = {
+            numPages: 1,
+            pages: [{ zones: [] }],
+            students: [
+                { id: 's1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 's2', nom: 'MARTIN', prenom: 'Sophie' }
+            ]
+        };
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 's1', cx: 100, cy: 100, r: 50 },
+            { id: 2, studentId: 's2', cx: 200, cy: 200, r: 50 }
+        ];
+
+        TrombinoscopeManager._initStep3();
+
+        const confirmInfo = document.getElementById('trombiConfirmInfo');
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+
+        expect(confirmInfo.textContent).toContain('2 élèves prêts pour l\'import');
+        expect(confirmBtn.textContent).toContain('Importer 2 photos');
+        expect(confirmBtn.disabled).toBe(false);
+    });
+
+    it('should display partial count when fewer photos are assigned than total students in Step 3', () => {
+        TrombinoscopeManager._parsedPdfData = {
+            numPages: 1,
+            pages: [{ zones: [] }],
+            students: [
+                { id: 's1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 's2', nom: 'MARTIN', prenom: 'Sophie' },
+                { id: 's3', nom: 'BERNARD', prenom: 'Lucas' }
+            ]
+        };
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 's1', cx: 100, cy: 100, r: 50 }
+        ];
+
+        TrombinoscopeManager._initStep3();
+
+        const confirmInfo = document.getElementById('trombiConfirmInfo');
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+
+        expect(confirmInfo.textContent).toContain('1 / 3 élèves prêts pour l\'import');
+        expect(confirmBtn.textContent).toContain('Importer la photo');
+    });
+
+    it('should reset confirm info and disable button when no zones are assigned in Step 3', () => {
+        TrombinoscopeManager._zones = [];
+        TrombinoscopeManager._parsedPdfData = null;
+
+        TrombinoscopeManager._initStep3();
+
+        const confirmInfo = document.getElementById('trombiConfirmInfo');
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+
+        expect(confirmInfo.textContent).toBe('');
+        expect(confirmBtn.disabled).toBe(true);
+        expect(confirmBtn.textContent).toContain('Importer les photos');
+    });
+
+    it('should display subtle confirmed badge when active class matches PDF (even with punctuation variance)', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { parsePronoteTrombiPdf } = await import('../utils/PronoteTrombiParser.js');
+        
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c1', name: '5°1' });
+
+        parsePronoteTrombiPdf.mockResolvedValueOnce({
+            className: '5 1',
+            schoolYear: '2024-2025',
+            studentsCount: 1,
+            students: [{ id: 's1', nom: 'DUPONT', prenom: 'Jean' }],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 1,
+                canvas: { toDataURL: () => 'data:image/jpeg;base64,data' },
+                zones: [{ id: 1, cx: 200, cy: 300, r: 60, studentId: 's1' }]
+            }]
+        });
+
+        const mockFile = new File(['fake content'], 'trombi.pdf', { type: 'application/pdf' });
+        await TrombinoscopeManager._loadPdf(mockFile);
+
+        const pill = document.getElementById('trombiTitlePill');
+        const badge = document.getElementById('trombiClassBadge');
+        const icon = document.getElementById('trombiTitlePillIcon');
+
+        expect(pill.classList.contains('mismatch')).toBe(false);
+        expect(icon.getAttribute('icon')).toBe('solar:camera-linear');
+        expect(badge.textContent).toBe('Classe 5 1');
+        expect(pill.getAttribute('title')).toContain('Confirmée par le document');
+    });
+
+    it('should display warning mismatch badge and footer alert when PDF differs from active class with students', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { appState } = await import('../state/State.js');
+        const { parsePronoteTrombiPdf } = await import('../utils/PronoteTrombiParser.js');
+
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c1', name: '6°2' });
+        ClassManager.isDemoClass = vi.fn().mockReturnValue(false);
+        appState.generatedResults = [{ id: 'r1', classId: 'c1', nom: 'TEST', prenom: 'User' }];
+
+        parsePronoteTrombiPdf.mockResolvedValueOnce({
+            className: '5 4',
+            schoolYear: '2024-2025',
+            studentsCount: 1,
+            students: [{ id: 's1', nom: 'DUPONT', prenom: 'Jean' }],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 1,
+                canvas: { toDataURL: () => 'data:image/jpeg;base64,data' },
+                zones: [{ id: 1, cx: 200, cy: 300, r: 60, studentId: 's1' }]
+            }]
+        });
+
+        const mockFile = new File(['fake content'], 'trombi.pdf', { type: 'application/pdf' });
+        await TrombinoscopeManager._loadPdf(mockFile);
+
+        const pill = document.getElementById('trombiTitlePill');
+        const badge = document.getElementById('trombiClassBadge');
+        const icon = document.getElementById('trombiTitlePillIcon');
+        const footerInfo = document.getElementById('trombiImageInfo');
+
+        expect(pill.classList.contains('mismatch')).toBe(true);
+        expect(icon.getAttribute('icon')).toBe('solar:danger-triangle-linear');
+        expect(badge.textContent).toBe('PDF : 5 4 ≠ Active : 6°2');
+        expect(footerInfo.innerHTML).toContain('diffère de 6°2');
+    });
 });
+
 
 

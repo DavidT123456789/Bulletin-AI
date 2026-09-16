@@ -192,10 +192,17 @@ export const TrombinoscopeManager = {
 
         // Update class badge in header
         const classBadge = document.getElementById('trombiClassBadge');
+        const titlePill = document.getElementById('trombiTitlePill');
+        const pillIcon = document.getElementById('trombiTitlePillIcon');
+        const currentClass = ClassManager.getCurrentClass();
+        const currentClassName = currentClass?.name || 'Nouvelle classe';
+
         if (classBadge) {
-            const currentClass = ClassManager.getCurrentClass();
-            classBadge.textContent = currentClass?.name || 'Nouvelle classe';
+            classBadge.textContent = currentClassName;
         }
+        titlePill?.classList.remove('mismatch');
+        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
+        pillIcon?.setAttribute('icon', 'solar:camera-linear');
     },
 
     close() {
@@ -280,6 +287,27 @@ export const TrombinoscopeManager = {
         if (sampleBtn) sampleBtn.style.display = '';
 
         document.getElementById('trombiImageInfo')?.replaceChildren();
+        document.getElementById('trombiZonesInfo')?.replaceChildren();
+        document.getElementById('trombiConfirmInfo')?.replaceChildren();
+
+        const titlePill = document.getElementById('trombiTitlePill');
+        const pillIcon = document.getElementById('trombiTitlePillIcon');
+        const classBadge = document.getElementById('trombiClassBadge');
+        const currentClass = ClassManager.getCurrentClass?.();
+        const currentClassName = currentClass?.name || 'Nouvelle classe';
+
+        titlePill?.classList.remove('mismatch');
+        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
+        pillIcon?.setAttribute('icon', 'solar:camera-linear');
+        if (classBadge) {
+            classBadge.textContent = currentClassName;
+        }
+
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos';
+        }
 
         const pageBar = document.getElementById('trombiPageSelectorBar');
         if (pageBar) {
@@ -710,16 +738,48 @@ export const TrombinoscopeManager = {
 
             this._displayImagePreview();
 
-            if (parsed.className) {
-                const classBadge = document.getElementById('trombiClassBadge');
-                if (classBadge) {
-                    classBadge.textContent = `Classe ${parsed.className}`;
+            const currentClass = ClassManager.getCurrentClass?.();
+            const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
+            const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
+
+            let isMismatch = false;
+            if (currentClass?.name && parsed.className && hasStudents && !isDemo) {
+                const normalize = Utils.normalizeClassName || (n => (n || '').toLowerCase().replace(/[^a-z0-9]/gi, '').trim());
+                const currentNorm = normalize(currentClass.name);
+                const pdfNorm = normalize(parsed.className);
+                if (currentNorm && pdfNorm && currentNorm !== pdfNorm) {
+                    isMismatch = true;
                 }
+            }
+
+            const classBadge = document.getElementById('trombiClassBadge');
+            const titlePill = document.getElementById('trombiTitlePill');
+            const pillIcon = document.getElementById('trombiTitlePillIcon');
+
+            if (isMismatch) {
+                titlePill?.classList.add('mismatch');
+                pillIcon?.setAttribute('icon', 'solar:danger-triangle-linear');
+                if (classBadge) {
+                    classBadge.textContent = `PDF : ${parsed.className} ≠ Active : ${currentClass.name}`;
+                }
+                titlePill?.setAttribute('title', `Attention : le PDF indique la classe ${parsed.className} alors que votre classe active est ${currentClass.name}. L'import ciblera la classe ${parsed.className}.`);
+            } else {
+                titlePill?.classList.remove('mismatch');
+                pillIcon?.setAttribute('icon', 'solar:camera-linear');
+                if (classBadge) {
+                    classBadge.textContent = parsed.className ? `Classe ${parsed.className}` : (currentClass?.name || 'Nouvelle classe');
+                }
+                const confirmHint = (currentClass?.name && parsed.className) ? ` • Confirmée par le document (${parsed.className})` : '';
+                titlePill?.setAttribute('title', `Classe active : ${currentClass?.name || 'Nouvelle classe'}${confirmHint}`);
             }
 
             if (footerInfo) {
                 const pagesCountText = parsed.numPages > 1 ? ` (${parsed.numPages} pages)` : '';
-                footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
+                if (isMismatch) {
+                    footerInfo.innerHTML = `<span style="color: var(--color-amber, #f59e0b); display: inline-flex; align-items: center; gap: 4px;"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> PDF : Classe ${parsed.className} (diffère de ${currentClass.name})</span> • ${parsed.students.length} élèves détectés${pagesCountText}`;
+                } else {
+                    footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
+                }
             }
 
             const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
@@ -865,6 +925,19 @@ export const TrombinoscopeManager = {
         if (nextBtn) {
             nextBtn.disabled = true;
             nextBtn.innerHTML = 'Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>';
+        }
+
+        const currentClass = ClassManager.getCurrentClass?.();
+        const currentClassName = currentClass?.name || 'Nouvelle classe';
+        const classBadge = document.getElementById('trombiClassBadge');
+        const titlePill = document.getElementById('trombiTitlePill');
+        const pillIcon = document.getElementById('trombiTitlePillIcon');
+
+        titlePill?.classList.remove('mismatch');
+        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
+        pillIcon?.setAttribute('icon', 'solar:camera-linear');
+        if (classBadge) {
+            classBadge.textContent = currentClassName;
         }
     },
 
@@ -3057,7 +3130,7 @@ export const TrombinoscopeManager = {
         const container = document.getElementById('trombiPreviewGrid');
         if (!container) return;
 
-        if (this._parsedPdfData && this._parsedPdfData.pages[this._currentPageIndex]) {
+        if (this._parsedPdfData?.pages?.[this._currentPageIndex]) {
             this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
         }
 
@@ -3083,7 +3156,15 @@ export const TrombinoscopeManager = {
             assignedItems = this._zones.filter(z => z.studentId).map(z => ({ zone: z, pageIndex: 0 }));
         }
 
+        const confirmInfo = document.getElementById('trombiConfirmInfo');
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+
         if (assignedItems.length === 0) {
+            confirmInfo?.replaceChildren();
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos';
+            }
             container.innerHTML = `
                 <div class="empty-state">
                     <iconify-icon icon="solar:danger-circle-linear"></iconify-icon>
@@ -3091,6 +3172,23 @@ export const TrombinoscopeManager = {
                 </div>
             `;
             return;
+        }
+
+        const assignedCount = assignedItems.length;
+        const totalStudents = students.length;
+
+        if (confirmInfo) {
+            if (totalStudents > assignedCount) {
+                confirmInfo.innerHTML = `<strong>${assignedCount}</strong> / ${totalStudents} élèves prêts pour l'import`;
+            } else {
+                confirmInfo.innerHTML = `<strong>${assignedCount}</strong> élève${assignedCount > 1 ? 's' : ''} prêt${assignedCount > 1 ? 's' : ''} pour l'import`;
+            }
+        }
+
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            const photoLabel = assignedCount > 1 ? `${assignedCount} photos` : 'la photo';
+            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer ${photoLabel}`;
         }
 
         // Create preview canvas for each assigned zone
