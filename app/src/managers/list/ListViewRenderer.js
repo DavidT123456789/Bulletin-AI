@@ -332,7 +332,7 @@ export const ListViewRenderer = {
                                         
                                         <!-- SECTION VUE -->
                                         <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
-                                            <iconify-icon icon="solar:chart-square-bold"></iconify-icon> Analyser la classe
+                                            <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser la classe
                                         </button>
 
                                         <!-- SECTION COPIER -->

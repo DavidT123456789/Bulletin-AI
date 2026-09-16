@@ -251,11 +251,11 @@ export const ListSelectionManager = {
             <div class="selection-toolbar-content">
                 <div class="selection-info">
                     <button class="btn-deselect tooltip" id="btnDeselectAll" data-tooltip="Annuler la sélection" aria-label="Annuler la sélection">
-                        <iconify-icon icon="ph:x-bold"></iconify-icon>
+                        <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                     <span id="selectionCount" class="selection-count-badge">0 élève sélectionné</span>
                     <button class="btn-select-all-link tooltip" id="btnSelectAllLink" data-tooltip="Sélectionner tous les élèves de la liste" aria-label="Tout sélectionner">
-                        <iconify-icon icon="ph:check-square-offset"></iconify-icon>
+                        <iconify-icon icon="solar:checklist-linear"></iconify-icon>
                         <span>Tout sélectionner</span>
                     </button>
                 </div>
