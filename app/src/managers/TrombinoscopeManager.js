@@ -93,6 +93,8 @@ export const TrombinoscopeManager = {
     _selectionBoxDragActive: false,
     _restoreGroupedDrag: false,
     _isTransitioning: false,
+    _drawerAnimRaf: null,
+    _viewportResizeRaf: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -237,6 +239,14 @@ export const TrombinoscopeManager = {
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
         this._isTransitioning = false;
+        if (this._drawerAnimRaf) {
+            cancelAnimationFrame(this._drawerAnimRaf);
+            this._drawerAnimRaf = null;
+        }
+        if (this._viewportResizeRaf) {
+            cancelAnimationFrame(this._viewportResizeRaf);
+            this._viewportResizeRaf = null;
+        }
 
         // Cleanup observers
         if (this._imgResizeObserver) {
@@ -1075,7 +1085,11 @@ export const TrombinoscopeManager = {
         if (this._viewportResizeObserver) this._viewportResizeObserver.disconnect();
 
         this._viewportResizeObserver = new ResizeObserver(() => {
-            window.requestAnimationFrame(() => this._applyZoom());
+            if (this._viewportResizeRaf) cancelAnimationFrame(this._viewportResizeRaf);
+            this._viewportResizeRaf = window.requestAnimationFrame(() => {
+                this._viewportResizeRaf = null;
+                this._applyZoom();
+            });
         });
         if (viewport) {
             this._viewportResizeObserver.observe(viewport);
@@ -1207,47 +1221,49 @@ export const TrombinoscopeManager = {
 
         const gridControlsHtml = `
             <div class="grid-advanced-controls ${isAdvancedOpen ? 'is-open' : ''}" id="gridAdvancedControls">
-                <div class="control-row-group">
-                    <div class="control-row">
-                        <label><iconify-icon icon="solar:gallery-vertical-linear"></iconify-icon> Colonnes</label>
-                        <div class="slider-group">
-                            <div class="slider-track">
-                                <input type="range" class="control-slider" id="colsSlider" 
-                                       min="1" max="12" value="${this._gridCols}">
+                <div class="grid-advanced-controls-inner">
+                    <div class="control-row-group">
+                        <div class="control-row">
+                            <label><iconify-icon icon="solar:gallery-vertical-linear"></iconify-icon> Colonnes</label>
+                            <div class="slider-group">
+                                <div class="slider-track">
+                                    <input type="range" class="control-slider" id="colsSlider" 
+                                           min="1" max="12" value="${this._gridCols}">
+                                </div>
+                                <span class="slider-value" id="colsValue">${this._gridCols}</span>
                             </div>
-                            <span class="slider-value" id="colsValue">${this._gridCols}</span>
+                        </div>
+                        <div class="control-row">
+                            <label><iconify-icon icon="solar:gallery-horizontal-linear"></iconify-icon> Lignes</label>
+                            <div class="slider-group">
+                                <div class="slider-track">
+                                    <input type="range" class="control-slider" id="rowsSlider" 
+                                           min="1" max="12" value="${this._gridRows}">
+                                </div>
+                                <span class="slider-value" id="rowsValue">${this._gridRows}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="control-row">
-                        <label><iconify-icon icon="solar:gallery-horizontal-linear"></iconify-icon> Lignes</label>
-                        <div class="slider-group">
-                            <div class="slider-track">
-                                <input type="range" class="control-slider" id="rowsSlider" 
-                                       min="1" max="12" value="${this._gridRows}">
+                    <div class="control-row-group">
+                        <div class="control-row">
+                            <label><iconify-icon icon="solar:sort-horizontal-linear"></iconify-icon> Écart H</label>
+                            <div class="slider-group">
+                                <div class="slider-track">
+                                    <input type="range" class="control-slider" id="gapHSlider" 
+                                           min="-50" max="50" step="0.5" value="0">
+                                </div>
+                                <span class="slider-value" id="gapHValue">0</span>
                             </div>
-                            <span class="slider-value" id="rowsValue">${this._gridRows}</span>
                         </div>
-                    </div>
-                </div>
-                <div class="control-row-group">
-                    <div class="control-row">
-                        <label><iconify-icon icon="solar:sort-horizontal-linear"></iconify-icon> Écart H</label>
-                        <div class="slider-group">
-                            <div class="slider-track">
-                                <input type="range" class="control-slider" id="gapHSlider" 
-                                       min="-50" max="50" step="0.5" value="0">
+                        <div class="control-row">
+                            <label><iconify-icon icon="solar:sort-vertical-linear"></iconify-icon> Écart V</label>
+                            <div class="slider-group">
+                                <div class="slider-track">
+                                    <input type="range" class="control-slider" id="gapVSlider" 
+                                           min="-50" max="50" step="0.5" value="0">
+                                </div>
+                                <span class="slider-value" id="gapVValue">0</span>
                             </div>
-                            <span class="slider-value" id="gapHValue">0</span>
-                        </div>
-                    </div>
-                    <div class="control-row">
-                        <label><iconify-icon icon="solar:sort-vertical-linear"></iconify-icon> Écart V</label>
-                        <div class="slider-group">
-                            <div class="slider-track">
-                                <input type="range" class="control-slider" id="gapVSlider" 
-                                       min="-50" max="50" step="0.5" value="0">
-                            </div>
-                            <span class="slider-value" id="gapVValue">0</span>
                         </div>
                     </div>
                 </div>
@@ -1277,7 +1293,7 @@ export const TrombinoscopeManager = {
                             </span>
                         </label>
                         <button type="button" class="grid-tools-toggle-btn ${isAdvancedOpen ? 'active' : ''}" id="toggleGridToolsBtn" title="Afficher ou masquer les réglages avancés de grille et d'espacement">
-                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon> <span id="toggleGridToolsText">${isAdvancedOpen ? 'Masquer grille' : 'Grille'}</span>
+                            <iconify-icon icon="solar:tuning-square-2-linear"></iconify-icon> <span id="toggleGridToolsText">${isAdvancedOpen ? 'Masquer grille' : 'Grille'}</span> <iconify-icon icon="solar:alt-arrow-down-linear" class="toggle-chevron"></iconify-icon>
                         </button>
                         <button type="button" class="grid-reset-btn" id="trombiUndoBtn" disabled style="margin-left: auto;">
                             <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon> Annuler
@@ -1373,6 +1389,30 @@ export const TrombinoscopeManager = {
             if (toggleText) {
                 toggleText.textContent = isOpen ? 'Masquer grille' : 'Grille';
             }
+
+            if (this._drawerAnimRaf) {
+                cancelAnimationFrame(this._drawerAnimRaf);
+                this._drawerAnimRaf = null;
+            }
+
+            if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+                this._applyZoom();
+                return;
+            }
+
+            // Smooth 60fps real-time recalculation of the sheet during the drawer transition
+            const startTime = performance.now();
+            const duration = 380;
+            const step = (now) => {
+                this._applyZoom();
+                if (now - startTime < duration) {
+                    this._drawerAnimRaf = requestAnimationFrame(step);
+                } else {
+                    this._drawerAnimRaf = null;
+                    this._applyZoom();
+                }
+            };
+            this._drawerAnimRaf = requestAnimationFrame(step);
         });
 
         // Bind Undo slider drag listeners
@@ -2054,6 +2094,61 @@ export const TrombinoscopeManager = {
         const scaleY = displayedH / this._imageNaturalHeight;
         const students = appState.filteredResults || [];
         const pageOffset = this._getPageOffset();
+
+        const existingZoneEls = overlay.querySelectorAll('.trombi-zone');
+        const canUpdateInPlace = existingZoneEls.length === this._zones.length &&
+            this._zones.every((zone, idx) => existingZoneEls[idx]?.dataset?.zoneId === String(zone.id));
+
+        if (canUpdateInPlace) {
+            this._zones.forEach((zone, idx) => {
+                const zoneEl = existingZoneEls[idx];
+                const dispCx = zone.cx * scaleX;
+                const dispCy = zone.cy * scaleY;
+                const r = zone.r || this._globalRadius;
+                const dispR = r * scaleX;
+                const diameter = dispR * 2;
+
+                const student = (this._parsedPdfData?.students?.find(s => s.id === zone.studentId)) ||
+                                students.find(s => s.id === zone.studentId);
+                const label = student?.prenom ? student.prenom : `#${pageOffset + idx + 1}`;
+
+                const labelScale = Math.max(0.5, Math.min(1, diameter / 50));
+                const labelFontSize = Math.max(8, Math.round(12 * labelScale));
+                const labelHeight = Math.max(16, Math.round(28 * labelScale));
+                const labelPadding = Math.max(2, Math.round(8 * labelScale));
+
+                const deleteSize = Math.max(14, Math.round(22 * labelScale));
+                const deleteFontSize = Math.max(7, Math.round(10 * labelScale));
+                const borderWidth = diameter < 40 ? 2 : 3;
+
+                zoneEl.style.left = `${dispCx}px`;
+                zoneEl.style.top = `${dispCy}px`;
+                zoneEl.style.width = `${diameter}px`;
+                zoneEl.style.height = `${diameter}px`;
+                zoneEl.style.borderWidth = `${borderWidth}px`;
+
+                const isSel = this._selectedZoneIds?.has(zone.id) || false;
+                zoneEl.classList.toggle('is-selected', isSel);
+
+                const labelEl = zoneEl.querySelector('.zone-label');
+                if (labelEl) {
+                    if (labelEl.textContent !== label) labelEl.textContent = label;
+                    labelEl.style.fontSize = `${labelFontSize}px`;
+                    labelEl.style.height = `${labelHeight}px`;
+                    labelEl.style.minWidth = `${labelHeight}px`;
+                    labelEl.style.padding = `0 ${labelPadding}px`;
+                    labelEl.style.borderRadius = `${labelHeight / 2}px`;
+                }
+
+                const deleteBtn = zoneEl.querySelector('.zone-delete');
+                if (deleteBtn) {
+                    deleteBtn.style.width = `${deleteSize}px`;
+                    deleteBtn.style.height = `${deleteSize}px`;
+                    deleteBtn.style.fontSize = `${deleteFontSize}px`;
+                }
+            });
+            return;
+        }
 
         overlay.innerHTML = this._zones.map((zone, idx) => {
             // Convert natural pixels to displayed pixels

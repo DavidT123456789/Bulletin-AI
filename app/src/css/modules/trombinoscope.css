@@ -562,7 +562,7 @@
     border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
     grid-row: 2;
     z-index: 20;
     position: relative;
@@ -612,30 +612,51 @@
     pointer-events: none;
 }
 
-/* Collapsible advanced grid controls */
+/* Collapsible advanced grid controls - Fluid CSS Grid Accordion */
 .grid-advanced-controls {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 4px;
-    animation: trombiSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 1px solid transparent;
+    transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.22s ease,
+                margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                padding-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.22s ease,
+                visibility 0s linear 0.35s;
+    overflow: hidden;
 }
 
 .grid-advanced-controls.is-open {
-    display: flex;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom-color: var(--border-color);
+    transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.25s ease 0.05s,
+                margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                padding-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease,
+                visibility 0s linear 0s;
 }
 
-@keyframes trombiSlideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.grid-advanced-controls-inner {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transform: translateY(-6px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grid-advanced-controls.is-open .grid-advanced-controls-inner {
+    transform: translateY(0);
 }
 
 .grid-tools-toggle-btn {
@@ -649,9 +670,9 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     white-space: nowrap;
-    transition: all var(--transition-fast, 0.15s ease);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .grid-tools-toggle-btn:hover {
@@ -663,6 +684,24 @@
     background: rgba(var(--primary-color-rgb), 0.12);
     border-color: var(--primary-color);
     color: var(--primary-color);
+}
+
+.grid-tools-toggle-btn .toggle-chevron {
+    font-size: 11px;
+    display: inline-flex;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grid-tools-toggle-btn.active .toggle-chevron {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .grid-advanced-controls,
+    .grid-advanced-controls-inner,
+    .grid-tools-toggle-btn .toggle-chevron {
+        transition: none !important;
+    }
 }
 
 /* Full width row (for size slider) */
