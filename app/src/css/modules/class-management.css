@@ -1061,6 +1061,11 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast), color var(--transition-fast);
     cursor: pointer;
     position: relative;
+    outline: none;
+}
+
+.class-management-item:focus {
+    outline: none;
 }
 
 .class-management-item:first-child {
@@ -1332,6 +1337,11 @@
     border-bottom-color: rgba(255, 255, 255, 0.12);
     box-shadow: none;
     z-index: 1;
+    outline: none;
+}
+
+.class-management-item.active-switch:focus {
+    outline: none;
 }
 
 .class-management-item.active-switch:hover {
@@ -1673,34 +1683,58 @@
     color: var(--text-tertiary);
 }
 
-/* Disable card hover effect when editing — stay flush in flat list */
+/* Disable card hover effect when editing — preserve card border radius and flat list harmony */
 .class-management-item.editing {
     cursor: default;
     background: var(--surface-color) !important;
     border-bottom: 1px solid var(--border-color) !important;
-    box-shadow: inset 0 0 0 2px var(--error-color) !important;
-    border-radius: 0;
     padding: 16px 20px;
     display: flex;
     flex-direction: row;
     align-items: center;
+    outline: none;
+}
+
+.class-management-item.editing:first-child {
+    border-top-left-radius: calc(var(--radius-md) - 1px);
+    border-top-right-radius: calc(var(--radius-md) - 1px);
+}
+
+.class-management-item.editing:last-child {
+    border-bottom-left-radius: calc(var(--radius-md) - 1px);
+    border-bottom-right-radius: calc(var(--radius-md) - 1px);
+    border-bottom: none;
+}
+
+.class-management-item.editing:only-child {
+    border-radius: calc(var(--radius-md) - 1px);
 }
 
 .class-management-item.editing:hover {
     transform: none !important;
     background: var(--surface-color) !important;
-    box-shadow: inset 0 0 0 2px var(--error-color) !important;
 }
 
-/* Special case for rename editing (blue instead of red) */
+/* Delete confirmation (danger state with soft tint, preserving corners) */
+.class-management-item.editing:not(.renaming) {
+    background: rgba(var(--error-rgb), 0.04) !important;
+    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.35) !important;
+}
+
+.class-management-item.editing:not(.renaming):hover {
+    background: rgba(var(--error-rgb), 0.06) !important;
+    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.45) !important;
+}
+
+/* Rename editing: clean, flush surface without harsh outer box-shadow */
 .class-management-item.editing.renaming {
     background: var(--surface-color) !important;
-    box-shadow: inset 0 0 0 2px var(--primary-color) !important;
+    box-shadow: none !important;
 }
 
 .class-management-item.editing.renaming:hover {
     background: var(--surface-color) !important;
-    box-shadow: inset 0 0 0 2px var(--primary-color) !important;
+    box-shadow: none !important;
 }
 
 /* Inline Forms Layout */
@@ -1724,6 +1758,13 @@
     transition: all var(--transition-fast);
 }
 
+.inline-rename-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    background: var(--surface-color);
+}
+
 
 
 .rename-inline-form .save-rename-btn,
@@ -1742,9 +1783,14 @@
     transition: all var(--transition-fast);
 }
 
-.rename-inline-form .save-rename-btn:hover {
+.rename-inline-form .save-rename-btn:not(:disabled):hover {
     background: rgba(var(--success-color-rgb), 0.1);
     color: var(--success-dark);
+}
+
+.rename-inline-form .save-rename-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .rename-inline-form .cancel-rename-btn:hover {
@@ -1874,6 +1920,13 @@
     border-radius: var(--radius-md);
     outline: none;
     transition: all var(--transition-fast);
+}
+
+.inline-create-class-form .new-class-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    background: var(--surface-color);
 }
 
 .inline-create-class-form .create-class-confirm,

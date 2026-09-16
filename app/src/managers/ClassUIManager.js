@@ -813,7 +813,7 @@ export const ClassUIManager = {
                         <span class="modal-title-icon"><iconify-icon icon="solar:layers-linear"></iconify-icon></span>
                         <div class="modal-title-text-col">
                             <h2 class="modal-title-main">Mes classes</h2>
-                            <span class="modal-subtitle">${classes.length} classes • ${appState.generatedResults?.length || 0} élèves</span>
+                            <span class="modal-subtitle">${classes.length} classe${classes.length > 1 ? 's' : ''} • ${appState.generatedResults?.length || 0} élève${(appState.generatedResults?.length || 0) > 1 ? 's' : ''}</span>
                         </div>
                     </div>
                     <div class="modal-header-actions">
@@ -880,9 +880,10 @@ export const ClassUIManager = {
                 return;
             }
 
-            // Create inline form at the top of the list
-            const listContainer = modalEl.querySelector('.class-management-list') ||
-                modalEl.querySelector('.class-management-content');
+            // Create inline form cleanly above the list card
+            const contentEl = modalEl.querySelector('.class-management-content');
+            const listEl = modalEl.querySelector('.class-management-list');
+            const emptyEl = modalEl.querySelector('.class-management-empty');
 
             const formHtml = `
                 <div class="inline-create-class-form">
@@ -892,7 +893,7 @@ export const ClassUIManager = {
                                maxlength="50"
                                autocomplete="off">
                         <button class="create-class-confirm" title="Confirmer" disabled>
-                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                            <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
                         </button>
                         <button class="create-class-cancel" title="Annuler">
                             <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
@@ -901,9 +902,18 @@ export const ClassUIManager = {
                 </div>
             `;
 
-            listContainer.insertAdjacentHTML('afterbegin', formHtml);
+            if (emptyEl) {
+                emptyEl.style.display = 'none';
+            }
 
-            const form = listContainer.querySelector('.inline-create-class-form');
+            if (listEl) {
+                listEl.insertAdjacentHTML('beforebegin', formHtml);
+            } else if (contentEl) {
+                contentEl.insertAdjacentHTML('afterbegin', formHtml);
+            }
+
+            const form = modalEl.querySelector('.inline-create-class-form');
+            if (!form) return;
             const input = form.querySelector('.new-class-input');
             const confirmBtn = form.querySelector('.create-class-confirm');
             const cancelBtn = form.querySelector('.create-class-cancel');
@@ -912,7 +922,12 @@ export const ClassUIManager = {
 
             const removeForm = () => {
                 form.style.animation = 'slideUpCollapse 0.2s ease-out forwards';
-                setTimeout(() => form.remove(), 180);
+                setTimeout(() => {
+                    form.remove();
+                    if (emptyEl && !modalEl.querySelector('.class-management-list')) {
+                        emptyEl.style.display = '';
+                    }
+                }, 180);
             };
 
             input.oninput = () => {
@@ -1060,8 +1075,8 @@ export const ClassUIManager = {
                                    value="${this._escapeHtml(cls.name)}"
                                    maxlength="50"
                                    autocomplete="off">
-                            <button class="save-rename-btn" title="Confirmer">
-                                <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                            <button class="save-rename-btn" title="Confirmer" disabled>
+                                <iconify-icon icon="solar:check-circle-linear"></iconify-icon>
                             </button>
                             <button class="cancel-rename-btn" title="Annuler">
                                 <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
@@ -1077,6 +1092,11 @@ export const ClassUIManager = {
 
                     input.focus();
                     input.select();
+
+                    input.oninput = () => {
+                        const val = input.value.trim();
+                        saveBtn.disabled = val.length === 0 || val === cls.name;
+                    };
 
                     const restore = () => {
                         row.innerHTML = originalContent;
@@ -1102,7 +1122,7 @@ export const ClassUIManager = {
                     input.onkeydown = (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
-                            save();
+                            if (!saveBtn.disabled) save();
                         } else if (e.key === 'Escape') {
                             restore();
                         }
@@ -1219,7 +1239,8 @@ export const ClassUIManager = {
 
             const subtitle = modalEl.querySelector('.modal-subtitle');
             if (subtitle) {
-                subtitle.textContent = `${currentClasses.length} classes • ${appState.generatedResults?.length || 0} élèves`;
+                const studentCount = appState.generatedResults?.length || 0;
+                subtitle.textContent = `${currentClasses.length} classe${currentClasses.length > 1 ? 's' : ''} • ${studentCount} élève${studentCount > 1 ? 's' : ''}`;
             }
 
             // Options supplémentaires dans le header
@@ -1400,7 +1421,7 @@ export const ClassUIManager = {
                                         <span class="meta-separator">•</span>
                                         <span class="meta-item-inline" data-tooltip="Nombre d'élèves">
                                             <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                                            <span>${stats.total} élèves</span>
+                                            <span>${stats.total} élève${stats.total > 1 ? 's' : ''}</span>
                                         </span>
                                         <span class="meta-separator">•</span>
                                         <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (Trimestre actif)">
@@ -1437,14 +1458,6 @@ export const ClassUIManager = {
             `;
 
             bindListEvents();
-
-            // Mettre le focus sur la classe active/nouvelle pour l'accessibilité et le repérage visuel
-            const activeItem = modalEl.querySelector('.class-management-item.active-switch');
-            if (activeItem) {
-                requestAnimationFrame(() => {
-                    activeItem.focus();
-                });
-            }
 
             // Initialiser les tooltips pour les nouveaux éléments
             UI?.initTooltips?.();
