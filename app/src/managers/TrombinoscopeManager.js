@@ -632,7 +632,9 @@ export const TrombinoscopeManager = {
                         btn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             const targetIdx = parseInt(btn.dataset.step1Page, 10);
-                            this._previewPdfPageInStep1(targetIdx);
+                            if (targetIdx !== this._currentPageIndex) {
+                                this._previewPdfPageInStep1(targetIdx);
+                            }
                         });
                     });
                 } else {
@@ -663,6 +665,12 @@ export const TrombinoscopeManager = {
 
         const previewImg = document.getElementById('trombiPreviewImg');
         if (previewImg) {
+            previewImg.classList.remove('trombi-page-switching');
+            void previewImg.offsetWidth;
+            previewImg.classList.add('trombi-page-switching');
+            previewImg.addEventListener('animationend', () => {
+                previewImg.classList.remove('trombi-page-switching');
+            }, { once: true });
             previewImg.src = this._imageSrc;
         }
 
@@ -1048,6 +1056,16 @@ export const TrombinoscopeManager = {
         const img = document.getElementById('trombiStep2Image');
         if (img) {
             img.src = this._imageSrc;
+        }
+
+        const contentWrapper = document.querySelector('.trombi-content-wrapper');
+        if (contentWrapper) {
+            contentWrapper.classList.remove('trombi-page-switching');
+            void contentWrapper.offsetWidth;
+            contentWrapper.classList.add('trombi-page-switching');
+            contentWrapper.addEventListener('animationend', () => {
+                contentWrapper.classList.remove('trombi-page-switching');
+            }, { once: true });
         }
 
         document.querySelectorAll('#trombiPageSelectorBar .page-tab-btn').forEach(btn => {
