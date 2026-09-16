@@ -192,17 +192,10 @@ export const TrombinoscopeManager = {
 
         // Update class badge in header
         const classBadge = document.getElementById('trombiClassBadge');
-        const titlePill = document.getElementById('trombiTitlePill');
-        const pillIcon = document.getElementById('trombiTitlePillIcon');
-        const currentClass = ClassManager.getCurrentClass();
-        const currentClassName = currentClass?.name || 'Nouvelle classe';
-
         if (classBadge) {
-            classBadge.textContent = currentClassName;
+            const currentClass = ClassManager.getCurrentClass();
+            classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
-        titlePill?.classList.remove('mismatch');
-        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
-        pillIcon?.setAttribute('icon', 'solar:camera-linear');
     },
 
     close() {
@@ -290,17 +283,10 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiZonesInfo')?.replaceChildren();
         document.getElementById('trombiConfirmInfo')?.replaceChildren();
 
-        const titlePill = document.getElementById('trombiTitlePill');
-        const pillIcon = document.getElementById('trombiTitlePillIcon');
         const classBadge = document.getElementById('trombiClassBadge');
-        const currentClass = ClassManager.getCurrentClass?.();
-        const currentClassName = currentClass?.name || 'Nouvelle classe';
-
-        titlePill?.classList.remove('mismatch');
-        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
-        pillIcon?.setAttribute('icon', 'solar:camera-linear');
         if (classBadge) {
-            classBadge.textContent = currentClassName;
+            const currentClass = ClassManager.getCurrentClass?.();
+            classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
 
         const confirmBtn = document.getElementById('trombiConfirmBtn');
@@ -738,48 +724,16 @@ export const TrombinoscopeManager = {
 
             this._displayImagePreview();
 
-            const currentClass = ClassManager.getCurrentClass?.();
-            const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
-            const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
-
-            let isMismatch = false;
-            if (currentClass?.name && parsed.className && hasStudents && !isDemo) {
-                const normalize = Utils.normalizeClassName || (n => (n || '').toLowerCase().replace(/[^a-z0-9]/gi, '').trim());
-                const currentNorm = normalize(currentClass.name);
-                const pdfNorm = normalize(parsed.className);
-                if (currentNorm && pdfNorm && currentNorm !== pdfNorm) {
-                    isMismatch = true;
-                }
-            }
-
-            const classBadge = document.getElementById('trombiClassBadge');
-            const titlePill = document.getElementById('trombiTitlePill');
-            const pillIcon = document.getElementById('trombiTitlePillIcon');
-
-            if (isMismatch) {
-                titlePill?.classList.add('mismatch');
-                pillIcon?.setAttribute('icon', 'solar:danger-triangle-linear');
+            if (parsed.className) {
+                const classBadge = document.getElementById('trombiClassBadge');
                 if (classBadge) {
-                    classBadge.textContent = `PDF : ${parsed.className} ≠ Active : ${currentClass.name}`;
+                    classBadge.textContent = `Classe ${parsed.className}`;
                 }
-                titlePill?.setAttribute('title', `Attention : le PDF indique la classe ${parsed.className} alors que votre classe active est ${currentClass.name}. L'import ciblera la classe ${parsed.className}.`);
-            } else {
-                titlePill?.classList.remove('mismatch');
-                pillIcon?.setAttribute('icon', 'solar:camera-linear');
-                if (classBadge) {
-                    classBadge.textContent = parsed.className ? `Classe ${parsed.className}` : (currentClass?.name || 'Nouvelle classe');
-                }
-                const confirmHint = (currentClass?.name && parsed.className) ? ` • Confirmée par le document (${parsed.className})` : '';
-                titlePill?.setAttribute('title', `Classe active : ${currentClass?.name || 'Nouvelle classe'}${confirmHint}`);
             }
 
             if (footerInfo) {
                 const pagesCountText = parsed.numPages > 1 ? ` (${parsed.numPages} pages)` : '';
-                if (isMismatch) {
-                    footerInfo.innerHTML = `<span style="color: var(--color-amber, #f59e0b); display: inline-flex; align-items: center; gap: 4px;"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> PDF : Classe ${parsed.className} (diffère de ${currentClass.name})</span> • ${parsed.students.length} élèves détectés${pagesCountText}`;
-                } else {
-                    footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
-                }
+                footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
             }
 
             const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
@@ -928,16 +882,9 @@ export const TrombinoscopeManager = {
         }
 
         const currentClass = ClassManager.getCurrentClass?.();
-        const currentClassName = currentClass?.name || 'Nouvelle classe';
         const classBadge = document.getElementById('trombiClassBadge');
-        const titlePill = document.getElementById('trombiTitlePill');
-        const pillIcon = document.getElementById('trombiTitlePillIcon');
-
-        titlePill?.classList.remove('mismatch');
-        titlePill?.setAttribute('title', `Classe active : ${currentClassName}`);
-        pillIcon?.setAttribute('icon', 'solar:camera-linear');
         if (classBadge) {
-            classBadge.textContent = currentClassName;
+            classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
     },
 
