@@ -313,6 +313,13 @@ export const TrombinoscopeManager = {
         const previousStep = this._currentStep;
         this._currentStep = step;
 
+        // Initialize step content synchronously so target layouts are ready
+        if (step === 2) {
+            this._initStep2();
+        } else if (step === 3) {
+            this._initStep3();
+        }
+
         // Animate transition based on direction
         if (step > previousStep) {
             this._animateStepTransition(previousStep, step, 'forward');
@@ -321,13 +328,6 @@ export const TrombinoscopeManager = {
         }
 
         this._updateStepperUI();
-
-        // Initialize step content (after animation starts)
-        if (step === 2) {
-            setTimeout(() => this._initStep2(), 50);
-        } else if (step === 3) {
-            setTimeout(() => this._initStep3(), 50);
-        }
     },
 
     _animateStepTransition(fromStep, toStep, direction) {
@@ -357,29 +357,56 @@ export const TrombinoscopeManager = {
     },
 
     _animateFLIPTransition(fromContent, toContent, direction) {
-        // Determine source and target image elements based on direction
-        let sourceImageEl, targetImageEl;
+        let sourceImageEl, targetWrapper;
 
         if (direction === 'forward') {
-            // Step 1 → Step 2: from dropzone to image panel
-            sourceImageEl = fromContent.querySelector('.drop-zone-image');
-            targetImageEl = null; // Will get trombi-image-wrapper after toContent is visible
+            sourceImageEl = fromContent.querySelector('#trombiPreviewImg, .drop-zone-image');
+            targetWrapper = toContent.querySelector('.trombi-content-wrapper');
         } else {
-            // Step 2 → Step 1: from image panel to dropzone
-            sourceImageEl = fromContent.querySelector('.trombi-image-wrapper img, .trombi-image');
-            targetImageEl = toContent.querySelector('.drop-zone-image');
+            sourceImageEl = fromContent.querySelector('.trombi-content-wrapper');
+            targetWrapper = toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
         }
 
-        if (!sourceImageEl || !sourceImageEl.src) {
-            // Fallback to generic if no image
+        if (!sourceImageEl || (!this._imageSrc && !sourceImageEl.src)) {
             this._animateGenericTransition(fromContent, toContent, direction);
             return;
         }
 
-        // FIRST: Capture source position
         const sourceRect = sourceImageEl.getBoundingClientRect();
+        if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
+            this._animateGenericTransition(fromContent, toContent, direction);
+            return;
+        }
 
-        // Create ghost element for FLIP animation
+        // Respect reduced motion preference
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            fromContent.style.display = 'none';
+            toContent.style.display = 'flex';
+            toContent.style.opacity = '1';
+            return;
+        }
+
+        // Show toContent to measure destination
+        toContent.style.display = 'flex';
+        toContent.style.opacity = '0';
+        toContent.style.visibility = 'hidden';
+
+        if (direction === 'forward') {
+            this._applyZoom();
+            targetWrapper = toContent.querySelector('.trombi-content-wrapper');
+        }
+
+        const targetRect = targetWrapper?.getBoundingClientRect();
+
+        // Fallback if target dimensions are not measurable
+        if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
+            toContent.style.visibility = '';
+            toContent.style.opacity = '1';
+            this._animateGenericTransition(fromContent, toContent, direction);
+            return;
+        }
+
+        // Create ghost element with identical sheet styling (6px radius, realistic drop-shadow)
         const ghost = document.createElement('div');
         ghost.className = 'trombi-flip-ghost';
         ghost.style.cssText = `
@@ -387,22 +414,22 @@ export const TrombinoscopeManager = {
             left: ${sourceRect.left}px;
             width: ${sourceRect.width}px;
             height: ${sourceRect.height}px;
+            border-radius: var(--radius-sm, 6px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: none;
         `;
-        ghost.innerHTML = `<img src="${this._imageSrc || sourceImageEl.src}" alt="">`;
+        ghost.innerHTML = `<img src="${this._imageSrc || sourceImageEl.src || ''}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
         document.body.appendChild(ghost);
 
-        // Hide source immediately
+        // Hide source and target during animation
         sourceImageEl.style.opacity = '0';
+        if (targetWrapper) targetWrapper.style.opacity = '0';
 
-        // Prepare destination
-        toContent.style.display = 'flex';
-        toContent.style.opacity = '0';
+        // Reveal destination container
+        toContent.style.visibility = '';
+        toContent.style.opacity = '1';
 
-        // Fade out fromContent
-        fromContent.style.transition = 'opacity 0.25s ease';
-        fromContent.style.opacity = '0';
-
-        // Setup target panels for reveal animation (forward only)
+        // Prepare side panels for smooth entrance
         const imagePanel = toContent.querySelector('.trombi-image-panel');
         const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
         const dropZone = toContent.querySelector('.trombi-drop-zone');
@@ -410,88 +437,55 @@ export const TrombinoscopeManager = {
         if (direction === 'forward') {
             if (imagePanel) imagePanel.classList.add('morph-target');
             if (assignmentPanel) assignmentPanel.classList.add('slide-in');
-        } else {
-            // Backward: prepare dropzone for reveal
-            if (dropZone) {
-                dropZone.style.opacity = '0';
-                dropZone.style.transform = 'scale(0.95)';
-            }
+        } else if (dropZone) {
+            dropZone.style.opacity = '0';
+            dropZone.style.transform = 'scale(0.97)';
+            dropZone.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         }
 
-        setTimeout(() => {
-            fromContent.style.display = 'none';
-            fromContent.style.opacity = '';
-            fromContent.style.transition = '';
-            sourceImageEl.style.opacity = '';
+        // Fade out previous step content
+        fromContent.style.transition = 'opacity 0.2s ease';
+        fromContent.style.opacity = '0';
 
-            // Show destination content
-            toContent.style.opacity = '1';
-
-            // LAST: Get target position after content is visible
+        // Trigger animation
+        requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                let targetRect;
+                ghost.style.transition = 'all 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+                ghost.style.top = `${targetRect.top}px`;
+                ghost.style.left = `${targetRect.left}px`;
+                ghost.style.width = `${targetRect.width}px`;
+                ghost.style.height = `${targetRect.height}px`;
 
                 if (direction === 'forward') {
-                    const targetWrapper = toContent.querySelector('.trombi-image-wrapper');
+                    if (imagePanel) imagePanel.classList.add('revealed');
+                    if (assignmentPanel) assignmentPanel.classList.add('revealed');
+                } else if (dropZone) {
+                    dropZone.style.opacity = '1';
+                    dropZone.style.transform = 'scale(1)';
+                }
+
+                setTimeout(() => {
+                    fromContent.style.display = 'none';
+                    fromContent.style.opacity = '';
+                    fromContent.style.transition = '';
+                    sourceImageEl.style.opacity = '';
+
                     if (targetWrapper) {
-                        targetRect = targetWrapper.getBoundingClientRect();
+                        targetWrapper.style.opacity = '1';
                     }
-                } else {
-                    // Backward: target is the dropzone preview
-                    const targetPreview = toContent.querySelector('.drop-zone-image');
-                    if (targetPreview) {
-                        targetRect = targetPreview.parentElement.getBoundingClientRect();
-                    }
-                }
 
-                if (targetRect) {
-                    // INVERT & PLAY: Animate ghost to target position
-                    ghost.style.transition = 'all 0.6s cubic-bezier(0.32, 0.72, 0, 1)';
-                    ghost.style.top = `${targetRect.top}px`;
-                    ghost.style.left = `${targetRect.left}px`;
-                    ghost.style.width = `${targetRect.width}px`;
-                    ghost.style.height = `${targetRect.height}px`;
-                    ghost.style.borderRadius = direction === 'forward' ? 'var(--radius-md)' : 'var(--radius-lg)';
-                    ghost.style.boxShadow = direction === 'forward'
-                        ? '0 4px 20px rgba(0, 0, 0, 0.15)'
-                        : '0 8px 32px rgba(0, 0, 0, 0.2)';
-                }
+                    ghost.remove();
 
-                // Reveal panels with delay
-                setTimeout(() => {
                     if (direction === 'forward') {
-                        if (imagePanel) imagePanel.classList.add('revealed');
-                        if (assignmentPanel) assignmentPanel.classList.add('revealed');
-                    } else {
-                        // Backward: reveal dropzone
-                        if (dropZone) {
-                            dropZone.style.transition = 'opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
-                            dropZone.style.opacity = '1';
-                            dropZone.style.transform = 'scale(1)';
-                        }
+                        if (imagePanel) imagePanel.classList.remove('morph-target', 'revealed');
+                        if (assignmentPanel) assignmentPanel.classList.remove('slide-in', 'revealed');
+                    } else if (dropZone) {
+                        dropZone.style.transition = '';
+                        dropZone.style.transform = '';
                     }
-                }, 150);
-
-                // Cleanup ghost after animation
-                setTimeout(() => {
-                    ghost.style.opacity = '0';
-                    ghost.style.transition = 'opacity 0.2s ease';
-                    setTimeout(() => {
-                        ghost.remove();
-                        // Remove animation classes/styles
-                        if (direction === 'forward') {
-                            if (imagePanel) imagePanel.classList.remove('morph-target', 'revealed');
-                            if (assignmentPanel) assignmentPanel.classList.remove('slide-in', 'revealed');
-                        } else {
-                            if (dropZone) {
-                                dropZone.style.transition = '';
-                                dropZone.style.transform = '';
-                            }
-                        }
-                    }, 200);
-                }, 550);
+                }, 330);
             });
-        }, 200);
+        });
     },
 
     _animateGenericTransition(fromContent, toContent, direction) {
