@@ -587,7 +587,7 @@ export const SeatingChartManager = {
         for (const id of ids) {
             let found = false;
             while (currentRow < rows && !found) {
-                if (!this._gridState[currentRow][currentCol] && !appState.seatingGrid?.specialLayout?.[`${currentRow},${currentCol}`]) {
+                if (!this._gridState[currentRow][currentCol] && !this._isSpecialSpot(currentRow, currentCol)) {
                     this._gridState[currentRow][currentCol] = id;
                     placedCells.push({ row: currentRow, col: currentCol, index: placedCells.length });
                     found = true;
@@ -814,14 +814,29 @@ export const SeatingChartManager = {
         // Repositionne également la cartographie des places spéciales (allées, AESH...)
         // La condition de limites a été sciemment retirée : on conserve les attributs en mémoire
         // même s'ils "tombent" momentanément hors de la grille. S'ils reviennent, ils s'afficheront !
-        if (appState.seatingGrid?.specialLayout && rowOffset !== 0) {
-            const newSpecialLayout = {};
-            for (const [key, type] of Object.entries(appState.seatingGrid.specialLayout)) {
-                const [r, c] = key.split(',').map(Number);
-                const newR = r + rowOffset;
-                newSpecialLayout[`${newR},${c}`] = type;
+        if (rowOffset !== 0) {
+            if (appState.seatingGrid?.specialLayout) {
+                const newSpecialLayout = {};
+                for (const [key, type] of Object.entries(appState.seatingGrid.specialLayout)) {
+                    const [r, c] = key.split(',').map(Number);
+                    const newR = r + rowOffset;
+                    newSpecialLayout[`${newR},${c}`] = type;
+                }
+                appState.seatingGrid.specialLayout = newSpecialLayout;
             }
-            appState.seatingGrid.specialLayout = newSpecialLayout;
+
+            const classes = appState.classes || [];
+            classes.forEach(cls => {
+                if (cls?.seatingSpecialLayout) {
+                    const newClassSpecial = {};
+                    for (const [key, type] of Object.entries(cls.seatingSpecialLayout)) {
+                        const [r, c] = key.split(',').map(Number);
+                        const newR = r + rowOffset;
+                        newClassSpecial[`${newR},${c}`] = type;
+                    }
+                    cls.seatingSpecialLayout = newClassSpecial;
+                }
+            });
         }
 
         this._savePositionsToState(); // Persiste immédiatement les nouvelles coordonnées
@@ -830,17 +845,112 @@ export const SeatingChartManager = {
         this._staggerCellEntrance();
     },
 
-    _setCellSpecialType(row, col, type) {
-        if (!appState.seatingGrid) appState.seatingGrid = {};
-        if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
-        
+    _getCurrentClass() {
+        const classId = appState.currentClassId;
+        if (!classId) return null;
+        return (appState.classes || []).find(c => c.id === classId) || null;
+    },
+
+    _getCellSpecial(row, col) {
         const key = `${row},${col}`;
-        if (type) {
-            appState.seatingGrid.specialLayout[key] = type;
-        } else {
-            delete appState.seatingGrid.specialLayout[key];
+        // 1. Structure globale (salle entière : allée, place condamnée salle, legacy)
+        const globalType = appState.seatingGrid?.specialLayout?.[key];
+        if (globalType) return { type: globalType, scope: 'global' };
+
+        // 2. Dispositif spécifique à la classe en cours (place AESH, place condamnée classe)
+        const currentClass = this._getCurrentClass();
+        const classType = currentClass?.seatingSpecialLayout?.[key];
+        if (classType) return { type: classType, scope: 'class' };
+
+        return null;
+    },
+
+    _isSpecialSpot(row, col) {
+        return !!this._getCellSpecial(row, col);
+    },
+
+    _setCellSpecialType(row, col, type) {
+        this._snapshotGrid();
+        const key = `${row},${col}`;
+        const currentClass = this._getCurrentClass();
+
+        if (!type) {
+            // Rétablir : libérer des deux niveaux (global et classe)
+            if (appState.seatingGrid?.specialLayout) {
+                delete appState.seatingGrid.specialLayout[key];
+            }
+            if (currentClass?.seatingSpecialLayout) {
+                delete currentClass.seatingSpecialLayout[key];
+            }
+        } else if (type === 'aisle') {
+            // Allée : structure physique de la salle (salle entière / global)
+            if (!appState.seatingGrid) appState.seatingGrid = {};
+            if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
+            appState.seatingGrid.specialLayout[key] = 'aisle';
+            if (currentClass?.seatingSpecialLayout) {
+                delete currentClass.seatingSpecialLayout[key];
+            }
+        } else if (type === 'aesh') {
+            // AESH : spécifique à la classe en cours
+            if (currentClass) {
+                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
+                currentClass.seatingSpecialLayout[key] = 'aesh';
+                if (appState.seatingGrid?.specialLayout?.[key]) {
+                    delete appState.seatingGrid.specialLayout[key];
+                }
+            } else {
+                if (!appState.seatingGrid) appState.seatingGrid = {};
+                if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
+                appState.seatingGrid.specialLayout[key] = 'aesh';
+            }
+        } else if (type === 'blocked') {
+            // Condamné : spécifique à la classe en cours par défaut
+            if (currentClass) {
+                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
+                currentClass.seatingSpecialLayout[key] = 'blocked';
+                if (appState.seatingGrid?.specialLayout?.[key]) {
+                    delete appState.seatingGrid.specialLayout[key];
+                }
+            } else {
+                if (!appState.seatingGrid) appState.seatingGrid = {};
+                if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
+                appState.seatingGrid.specialLayout[key] = 'blocked';
+            }
         }
-        
+
+        this._saveGridConfig();
+        this._render();
+    },
+
+    _toggleBlockedScope(row, col) {
+        this._snapshotGrid();
+        const key = `${row},${col}`;
+        const currentClass = this._getCurrentClass();
+        const className = currentClass?.name || 'la classe';
+
+        const isGlobal = !!appState.seatingGrid?.specialLayout?.[key];
+        const isClass = !!currentClass?.seatingSpecialLayout?.[key];
+
+        if (isClass) {
+            // Passer en portée globale (toutes les classes / salle)
+            delete currentClass.seatingSpecialLayout[key];
+            if (!appState.seatingGrid) appState.seatingGrid = {};
+            if (!appState.seatingGrid.specialLayout) appState.seatingGrid.specialLayout = {};
+            appState.seatingGrid.specialLayout[key] = 'blocked';
+            UI.showNotification('Place condamnée pour toutes les classes (salle)', 'info');
+        } else if (isGlobal) {
+            // Restreindre à la classe en cours
+            delete appState.seatingGrid.specialLayout[key];
+            if (currentClass) {
+                if (!currentClass.seatingSpecialLayout) currentClass.seatingSpecialLayout = {};
+                currentClass.seatingSpecialLayout[key] = 'blocked';
+                UI.showNotification(`Place condamnée pour ${className} uniquement`, 'info');
+            } else {
+                UI.showNotification('Aucune classe active sélectionnée', 'warning');
+                return;
+            }
+        }
+
         this._saveGridConfig();
         this._render();
     },
@@ -877,9 +987,13 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _captureSnapshot() {
+        const currentClass = this._getCurrentClass();
         return {
             gridState: this._gridState.map(row => [...row]),
             specialLayout: JSON.parse(JSON.stringify(appState.seatingGrid?.specialLayout || {})),
+            classSpecialLayout: currentClass?.seatingSpecialLayout
+                ? JSON.parse(JSON.stringify(currentClass.seatingSpecialLayout))
+                : {},
             rows: this._getRows(),
             cols: this._getCols()
         };
@@ -914,6 +1028,13 @@ export const SeatingChartManager = {
             appState.seatingGrid.specialLayout = snapshot.specialLayout;
             if (snapshot.rows) appState.seatingGrid.rows = snapshot.rows;
             if (snapshot.cols) appState.seatingGrid.cols = snapshot.cols;
+        }
+
+        const currentClass = this._getCurrentClass();
+        if (currentClass) {
+            currentClass.seatingSpecialLayout = snapshot.classSpecialLayout
+                ? JSON.parse(JSON.stringify(snapshot.classSpecialLayout))
+                : {};
         }
         
         const rowSlider = document.getElementById('scRowsSlider');
@@ -962,7 +1083,8 @@ export const SeatingChartManager = {
         this._students.forEach(s => {
             const pos = s.seatingPosition;
             if (pos?.row != null && pos?.col != null &&
-                pos.row < rows && pos.col < cols && !this._gridState[pos.row][pos.col]) {
+                pos.row < rows && pos.col < cols && !this._gridState[pos.row][pos.col] &&
+                !this._isSpecialSpot(pos.row, pos.col)) {
                 this._gridState[pos.row][pos.col] = s.id;
             }
         });
@@ -1105,18 +1227,27 @@ export const SeatingChartManager = {
         } else {
             cell.classList.add('empty');
             
-            const isSpecial = appState.seatingGrid?.specialLayout?.[`${row},${col}`];
-            if (isSpecial) {
-                cell.classList.add(`sc-cell-special-${isSpecial}`);
-                if (isSpecial === 'aesh') {
+            const special = this._getCellSpecial(row, col);
+            if (special) {
+                cell.classList.add(`sc-cell-special-${special.type}`);
+                cell.classList.add(`sc-cell-scope-${special.scope}`);
+                if (special.type === 'aesh') {
                     cell.innerHTML = `
                         <iconify-icon icon="solar:user-speak-rounded-linear" class="sc-special-icon"></iconify-icon>
                         <span class="sc-cell-name">AESH</span>
                     `;
-                } else if (isSpecial === 'blocked') {
+                } else if (special.type === 'blocked') {
+                    const isClassScope = special.scope === 'class';
+                    const currentClass = this._getCurrentClass();
+                    const className = currentClass?.name || 'Cette classe';
+                    const scopeLabel = isClassScope ? 'Cette classe' : 'Toutes';
+                    const scopeTooltip = isClassScope
+                        ? `Condamnée pour ${className} uniquement`
+                        : 'Condamnée pour toutes les classes';
                     cell.innerHTML = `
                         <iconify-icon icon="solar:forbidden-circle-linear" class="sc-special-icon"></iconify-icon>
                         <span class="sc-cell-name">Condamné</span>
+                        <span class="sc-cell-scope-badge ${isClassScope ? 'scope-class' : 'scope-global'}" data-tooltip="${scopeTooltip}">${scopeLabel}</span>
                     `;
                 }
             }
@@ -1126,11 +1257,17 @@ export const SeatingChartManager = {
 
             const tools = document.createElement('div');
             tools.className = 'sc-cell-special-tools';
-            if (!isSpecial) {
+            if (!special) {
                 tools.innerHTML = `
-                    <button class="sc-special-btn" data-type="aisle" data-tooltip="Allée (Vide)" aria-label="Allée (Vide)"><iconify-icon icon="solar:ghost-linear"></iconify-icon></button>
+                    <button class="sc-special-btn" data-type="aisle" data-tooltip="Allée" aria-label="Allée"><iconify-icon icon="solar:ghost-linear"></iconify-icon></button>
                     <button class="sc-special-btn" data-type="aesh" data-tooltip="Place AESH" aria-label="Place AESH"><iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon></button>
-                    <button class="sc-special-btn" data-type="blocked" data-tooltip="Condamné" aria-label="Condamné"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></button>
+                    <button class="sc-special-btn" data-type="blocked" data-tooltip="Condamner" aria-label="Condamner"><iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon></button>
+                `;
+            } else if (special.type === 'blocked') {
+                const isClassScope = special.scope === 'class';
+                tools.innerHTML = `
+                    <button class="sc-special-btn" data-type="normal" data-tooltip="Rétablir la place" aria-label="Rétablir la place"><iconify-icon icon="solar:refresh-linear"></iconify-icon></button>
+                    <button class="sc-special-btn sc-scope-toggle-btn" data-type="toggle-scope" data-tooltip="${isClassScope ? 'Appliquer à toutes les classes' : 'Restreindre à cette classe'}" aria-label="Basculer la portée"><iconify-icon icon="${isClassScope ? 'solar:buildings-linear' : 'solar:users-group-two-rounded-linear'}"></iconify-icon></button>
                 `;
             } else {
                 tools.innerHTML = `
@@ -1144,11 +1281,15 @@ export const SeatingChartManager = {
                 const btn = e.target.closest('.sc-special-btn');
                 if (!btn) return;
                 const type = btn.dataset.type;
-                this._setCellSpecialType(row, col, type === 'normal' ? null : type);
+                if (type === 'toggle-scope') {
+                    this._toggleBlockedScope(row, col);
+                } else {
+                    this._setCellSpecialType(row, col, type === 'normal' ? null : type);
+                }
             });
 
             cell.addEventListener('click', () => {
-                if (this._isLocked || this._selectedChipIds.length === 0 || isSpecial) return;
+                if (this._isLocked || this._selectedChipIds.length === 0 || special) return;
                 this._placeSelectedAt(row, col);
             });
         }
@@ -1264,11 +1405,10 @@ export const SeatingChartManager = {
 
         const rows = this._getRows();
         const cols = this._getCols();
-        const specialLayout = appState.seatingGrid?.specialLayout || {};
         let specialSpotsCount = 0;
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (specialLayout[`${r},${c}`]) specialSpotsCount++;
+                if (this._isSpecialSpot(r, c)) specialSpotsCount++;
             }
         }
         const availableSeats = Math.max(0, (rows * cols) - specialSpotsCount - placed);
@@ -1560,7 +1700,7 @@ export const SeatingChartManager = {
         const availableSpots = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (!this._gridState[r][c] && !appState.seatingGrid?.specialLayout?.[`${r},${c}`]) {
+                if (!this._gridState[r][c] && !this._isSpecialSpot(r, c)) {
                     availableSpots.push({ r, c });
                 }
             }
@@ -1624,7 +1764,7 @@ export const SeatingChartManager = {
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const id = this._gridState[r][c];
-                const isSpecial = appState.seatingGrid?.specialLayout?.[`${r},${c}`];
+                const isSpecial = this._isSpecialSpot(r, c);
                 
                 if (id) {
                     if (!resultsMap.get(id)?.seatingPosition?.pinned) {
@@ -1764,7 +1904,7 @@ export const SeatingChartManager = {
         if (isNaN(r) || isNaN(c)) return false;
 
         // 1. Check if the cell is a special layout spot (aisle, blocked, aesh, etc.)
-        const isSpecial = appState.seatingGrid?.specialLayout?.[`${r},${c}`];
+        const isSpecial = this._isSpecialSpot(r, c);
         if (isSpecial) return false;
 
         // 2. Check if there is a pinned student in this cell
