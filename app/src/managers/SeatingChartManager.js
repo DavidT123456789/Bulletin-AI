@@ -1135,8 +1135,8 @@ export const SeatingChartManager = {
         const cols = this._getCols();
         this._studentMap = new Map(this._students.map(s => [s.id, s]));
 
-        container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 80px))`;
-        container.style.gridTemplateRows = `repeat(${rows}, var(--sc-cell-h, 88px))`;
+        container.style.gridTemplateColumns = `repeat(${cols}, var(--sc-cell-w, 88px))`;
+        container.style.gridTemplateRows = `repeat(${rows}, var(--sc-cell-h, 96px))`;
         container.innerHTML = '';
 
         for (let r = 0; r < rows; r++) {

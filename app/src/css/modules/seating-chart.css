@@ -4,8 +4,8 @@
 
 /* ────────── CELL DIMENSION TOKENS (Single Source of Truth) ────────── */
 :root {
-    --sc-cell-w: 80px;
-    --sc-cell-h: 88px;
+    --sc-cell-w: 88px;
+    --sc-cell-h: 96px;
 }
 
 /* ────────── VIEW TOGGLE (Header) ────────── */
@@ -556,12 +556,12 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xl);
-    padding: 32px 40px;
+    padding: 20px 24px;
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     align-items: safe center;
-    gap: 20px;
+    gap: 16px;
     position: relative;
     transition: all 0.3s var(--ease-spring);
     width: fit-content;
@@ -614,7 +614,7 @@
 .sc-grid-container {
     display: grid;
     gap: 8px;
-    padding: 12px;
+    padding: 4px;
     transition: grid-template-columns 0.35s var(--ease-spring),
                 grid-template-rows 0.35s var(--ease-spring);
     flex-shrink: 0;
@@ -627,8 +627,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: var(--sc-cell-w, 80px);
-    height: var(--sc-cell-h, 88px);
+    width: var(--sc-cell-w, 88px);
+    height: var(--sc-cell-h, 96px);
     border: 1.5px dashed var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
@@ -749,8 +749,8 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    width: var(--sc-cell-w, 80px) !important;
-    height: var(--sc-cell-h, 88px) !important;
+    width: var(--sc-cell-w, 88px) !important;
+    height: var(--sc-cell-h, 96px) !important;
     border-radius: var(--radius-md) !important;
     background: var(--surface-color) !important;
     box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
@@ -764,8 +764,8 @@
 /* Touch drag ghost — follows finger */
 .sc-touch-ghost {
     position: fixed;
-    width: calc(var(--sc-cell-w, 80px) - 8px);
-    height: calc(var(--sc-cell-h, 88px) - 10px);
+    width: calc(var(--sc-cell-w, 88px) - 8px);
+    height: calc(var(--sc-cell-h, 96px) - 10px);
     opacity: 0.85;
     pointer-events: none;
     z-index: 9999;
@@ -784,9 +784,9 @@
 .sc-cell .student-avatar,
 .sc-drag-clone .student-avatar,
 .sc-touch-ghost .student-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 0.82rem;
+    width: 50px;
+    height: 50px;
+    font-size: 0.95rem;
     flex-shrink: 0;
 }
 
@@ -800,15 +800,15 @@
 .sc-cell-name,
 .sc-drag-clone .sc-student-chip-name,
 .sc-touch-ghost .sc-student-chip-name {
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 500;
     color: var(--text-secondary);
-    max-width: 72px;
+    max-width: 80px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    margin-top: 6px;
+    margin-top: 5px;
     line-height: 1.2;
 }
 
@@ -1200,7 +1200,7 @@
     display: flex;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 24px;
+    margin-top: 4px;
 }
 
 .sc-desk {
@@ -1869,7 +1869,7 @@
 
     /* ── Teacher desk: less margin when sidebar is below ── */
     .sc-desk-row {
-        margin-top: 16px;
+        margin-top: 4px;
     }
 
     /* ── Config Popover mobile alignment ── */
