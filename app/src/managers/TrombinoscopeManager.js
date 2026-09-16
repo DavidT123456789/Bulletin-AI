@@ -92,6 +92,7 @@ export const TrombinoscopeManager = {
     _selectionBox: null,
     _selectionBoxDragActive: false,
     _restoreGroupedDrag: false,
+    _isTransitioning: false,
 
     // ========================================================================
     // INITIALIZATION
@@ -235,6 +236,7 @@ export const TrombinoscopeManager = {
         this._selectionBox = null;
         this._selectionBoxDragActive = false;
         this._restoreGroupedDrag = false;
+        this._isTransitioning = false;
 
         // Cleanup observers
         if (this._imgResizeObserver) {
@@ -310,22 +312,21 @@ export const TrombinoscopeManager = {
     // ========================================================================
 
     _goToStep(step) {
+        if (this._isTransitioning) return;
+
         const previousStep = this._currentStep;
+        if (previousStep === step) return;
         this._currentStep = step;
 
-        // Initialize step content synchronously so target layouts are ready
-        if (step === 2) {
-            this._initStep2();
-        } else if (step === 3) {
-            this._initStep3();
-        }
+        // Switch footers immediately (synchronized with stepper UI)
+        const fromFooter = document.getElementById(`trombiStep${previousStep}Footer`);
+        const toFooter = document.getElementById(`trombiStep${step}Footer`);
+        if (fromFooter) fromFooter.style.display = 'none';
+        if (toFooter) toFooter.style.display = 'flex';
 
         // Animate transition based on direction
-        if (step > previousStep) {
-            this._animateStepTransition(previousStep, step, 'forward');
-        } else {
-            this._animateStepTransition(previousStep, step, 'backward');
-        }
+        const direction = step > previousStep ? 'forward' : 'backward';
+        this._animateStepTransition(previousStep, step, direction);
 
         this._updateStepperUI();
     },
@@ -333,48 +334,10 @@ export const TrombinoscopeManager = {
     _animateStepTransition(fromStep, toStep, direction) {
         const fromContent = document.getElementById(`trombiStep${fromStep}`);
         const toContent = document.getElementById(`trombiStep${toStep}`);
-        const fromFooter = document.getElementById(`trombiStep${fromStep}Footer`);
-        const toFooter = document.getElementById(`trombiStep${toStep}Footer`);
 
-        if (!fromContent || !toContent) return;
-
-        // Switch footers immediately (no animation - content is the same)
-        if (fromFooter) fromFooter.style.display = 'none';
-        if (toFooter) toFooter.style.display = 'flex';
-
-        // Special FLIP animation for Step 1 ↔ Step 2
-        if (fromStep === 1 && toStep === 2) {
-            this._animateFLIPTransition(fromContent, toContent, 'forward');
-            return;
-        }
-        if (fromStep === 2 && toStep === 1) {
-            this._animateFLIPTransition(fromContent, toContent, 'backward');
-            return;
-        }
-
-        // Generic animation for other transitions
-        this._animateGenericTransition(fromContent, toContent, direction);
-    },
-
-    _animateFLIPTransition(fromContent, toContent, direction) {
-        let sourceImageEl, targetWrapper;
-
-        if (direction === 'forward') {
-            sourceImageEl = fromContent.querySelector('#trombiPreviewImg, .drop-zone-image');
-            targetWrapper = toContent.querySelector('.trombi-content-wrapper');
-        } else {
-            sourceImageEl = fromContent.querySelector('.trombi-content-wrapper');
-            targetWrapper = toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
-        }
-
-        if (!sourceImageEl || (!this._imageSrc && !sourceImageEl.src)) {
-            this._animateGenericTransition(fromContent, toContent, direction);
-            return;
-        }
-
-        const sourceRect = sourceImageEl.getBoundingClientRect();
-        if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
-            this._animateGenericTransition(fromContent, toContent, direction);
+        if (!fromContent || !toContent) {
+            if (toStep === 2) this._initStep2();
+            else if (toStep === 3) this._initStep3();
             return;
         }
 
@@ -383,147 +346,55 @@ export const TrombinoscopeManager = {
             fromContent.style.display = 'none';
             toContent.style.display = 'flex';
             toContent.style.opacity = '1';
+            toContent.style.transform = '';
+            if (toStep === 2) this._initStep2();
+            else if (toStep === 3) this._initStep3();
             return;
         }
 
-        // Show toContent to measure destination
-        toContent.style.display = 'flex';
-        toContent.style.opacity = '0';
-        toContent.style.visibility = 'hidden';
+        this._isTransitioning = true;
+        const offset = direction === 'forward' ? -24 : 24;
 
-        if (direction === 'forward') {
-            this._applyZoom();
-            targetWrapper = toContent.querySelector('.trombi-content-wrapper');
-        }
-
-        const targetRect = targetWrapper?.getBoundingClientRect();
-
-        // Fallback if target dimensions are not measurable
-        if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
-            toContent.style.visibility = '';
-            toContent.style.opacity = '1';
-            this._animateGenericTransition(fromContent, toContent, direction);
-            return;
-        }
-
-        // Create ghost element with identical sheet styling (6px radius, realistic drop-shadow)
-        const ghost = document.createElement('div');
-        ghost.className = 'trombi-flip-ghost';
-        ghost.style.cssText = `
-            top: ${sourceRect.top}px;
-            left: ${sourceRect.left}px;
-            width: ${sourceRect.width}px;
-            height: ${sourceRect.height}px;
-            border-radius: var(--radius-sm, 6px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            transition: none;
-        `;
-        ghost.innerHTML = `<img src="${this._imageSrc || sourceImageEl.src || ''}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
-        document.body.appendChild(ghost);
-
-        // Hide source and target during animation
-        sourceImageEl.style.opacity = '0';
-        if (targetWrapper) targetWrapper.style.opacity = '0';
-
-        // Reveal destination container
-        toContent.style.visibility = '';
-        toContent.style.opacity = '1';
-
-        // Prepare side panels for smooth entrance
-        const imagePanel = toContent.querySelector('.trombi-image-panel');
-        const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
-        const dropZone = toContent.querySelector('.trombi-drop-zone');
-
-        if (direction === 'forward') {
-            if (imagePanel) imagePanel.classList.add('morph-target');
-            if (assignmentPanel) assignmentPanel.classList.add('slide-in');
-        } else if (dropZone) {
-            dropZone.style.opacity = '0';
-            dropZone.style.transform = 'scale(0.97)';
-            dropZone.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        }
-
-        // Fade out previous step content
-        fromContent.style.transition = 'opacity 0.2s ease';
+        // Phase 1: Animate out outgoing step smoothly
+        fromContent.style.transition = 'opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)';
         fromContent.style.opacity = '0';
+        fromContent.style.transform = `translateX(${offset}px)`;
 
-        // Trigger animation
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                ghost.style.transition = 'all 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
-                ghost.style.top = `${targetRect.top}px`;
-                ghost.style.left = `${targetRect.left}px`;
-                ghost.style.width = `${targetRect.width}px`;
-                ghost.style.height = `${targetRect.height}px`;
-
-                if (direction === 'forward') {
-                    if (imagePanel) imagePanel.classList.add('revealed');
-                    if (assignmentPanel) assignmentPanel.classList.add('revealed');
-                } else if (dropZone) {
-                    dropZone.style.opacity = '1';
-                    dropZone.style.transform = 'scale(1)';
-                }
-
-                setTimeout(() => {
-                    fromContent.style.display = 'none';
-                    fromContent.style.opacity = '';
-                    fromContent.style.transition = '';
-                    sourceImageEl.style.opacity = '';
-
-                    if (targetWrapper) {
-                        targetWrapper.style.opacity = '1';
-                    }
-
-                    ghost.remove();
-
-                    if (direction === 'forward') {
-                        if (imagePanel) imagePanel.classList.remove('morph-target', 'revealed');
-                        if (assignmentPanel) assignmentPanel.classList.remove('slide-in', 'revealed');
-                    } else if (dropZone) {
-                        dropZone.style.transition = '';
-                        dropZone.style.transform = '';
-                    }
-                }, 330);
-            });
-        });
-    },
-
-    _animateGenericTransition(fromContent, toContent, direction) {
-        // Prepare the incoming step
-        toContent.style.display = 'flex';
-        toContent.style.opacity = '0';
-        toContent.style.transform = direction === 'forward' ? 'translateX(30px)' : 'translateX(-30px)';
-
-        // Animate out the current step
-        fromContent.style.transition = 'opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-        fromContent.style.opacity = '0';
-        fromContent.style.transform = direction === 'forward' ? 'translateX(-30px)' : 'translateX(30px)';
-
-        // After outgoing animation, animate in the new step
+        // Phase 2: Once outgoing is hidden, show incoming step and animate in
         setTimeout(() => {
             fromContent.style.display = 'none';
             fromContent.style.transform = '';
             fromContent.style.opacity = '';
             fromContent.style.transition = '';
 
-            // Animate in the new step
-            toContent.style.transition = 'opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+            // Mount incoming step into layout - now it has 100% of the modal viewport height
+            toContent.style.display = 'flex';
+            toContent.style.opacity = '0';
+            toContent.style.transform = `translateX(${-offset}px)`;
+
+            // Initialize content when toContent has 100% of the modal viewport height
+            if (toStep === 2) {
+                this._initStep2();
+            } else if (toStep === 3) {
+                this._initStep3();
+            }
 
             requestAnimationFrame(() => {
+                toContent.style.transition = 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
                 toContent.style.opacity = '1';
                 toContent.style.transform = 'translateX(0)';
 
-                // Animate child elements sequentially for premium feel
-                this._animateStepChildren(toContent, this._currentStep);
+                if (toStep === 3) {
+                    this._animateStepChildren(toContent, 3);
+                }
             });
 
-            // Cleanup after animation
             setTimeout(() => {
                 toContent.style.transition = '';
                 toContent.style.transform = '';
-            }, 500);
-
-        }, 250);
+                this._isTransitioning = false;
+            }, 300);
+        }, 200);
     },
 
     _animateStepChildren(container, step) {
