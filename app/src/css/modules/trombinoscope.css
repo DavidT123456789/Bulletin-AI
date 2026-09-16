@@ -1293,6 +1293,27 @@
    Step Transition Animations (iOS 2025 Premium)
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Continuous Image Glide Ghost (FLIP iOS/Keynote Magic Move) */
+.trombi-flip-ghost {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    border-radius: var(--radius-sm, 6px);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: transparent;
+    will-change: top, left, width, height, opacity;
+}
+
+.trombi-flip-ghost img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: transparent;
+    border-radius: inherit;
+    display: block;
+}
+
 /* Step content transition states */
 .trombi-step-content.animating-out {
     opacity: 0;

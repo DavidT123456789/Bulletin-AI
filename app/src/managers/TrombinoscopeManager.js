@@ -352,6 +352,234 @@ export const TrombinoscopeManager = {
             return;
         }
 
+        // Seamless continuous image glide between Step 1 (Upload) and Step 2 (Association)
+        if ((fromStep === 1 && toStep === 2) || (fromStep === 2 && toStep === 1)) {
+            this._animateStep1Step2Transition(fromContent, toContent, direction);
+            return;
+        }
+
+        // Standard lateral slide for other steps (Step 2 ↔ Step 3)
+        this._animateGenericTransition(fromContent, toContent, direction, toStep);
+    },
+
+    _animateStep1Step2Transition(fromContent, toContent, direction) {
+        if (direction === 'forward') {
+            // STEP 1 -> STEP 2
+            const sourceImageEl = fromContent.querySelector('#trombiPreviewImg, .drop-zone-image');
+            if (!sourceImageEl || !this._imageSrc) {
+                this._animateGenericTransition(fromContent, toContent, direction, 2);
+                return;
+            }
+
+            const sourceRect = sourceImageEl.getBoundingClientRect();
+            if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
+                this._animateGenericTransition(fromContent, toContent, direction, 2);
+                return;
+            }
+
+            this._isTransitioning = true;
+
+            // 1. Create ghost element exactly on the source image (6px radius, realistic drop shadow)
+            const ghost = document.createElement('div');
+            ghost.className = 'trombi-flip-ghost';
+            ghost.style.cssText = `
+                position: fixed;
+                z-index: 9999;
+                pointer-events: none;
+                top: ${sourceRect.top}px;
+                left: ${sourceRect.left}px;
+                width: ${sourceRect.width}px;
+                height: ${sourceRect.height}px;
+                border-radius: var(--radius-sm, 6px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                overflow: hidden;
+                background: transparent;
+                transition: none;
+                will-change: top, left, width, height, opacity;
+            `;
+            ghost.innerHTML = `<img src="${this._imageSrc}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
+            document.body.appendChild(ghost);
+
+            // 2. Hide Step 1 completely so Step 2 receives 100% of the modal viewport height
+            fromContent.style.display = 'none';
+
+            // 3. Mount Step 2 and initialize content with true full height
+            toContent.style.display = 'flex';
+            toContent.style.opacity = '1';
+            this._initStep2();
+            this._applyZoom();
+
+            // 4. Measure destination sheet (.trombi-content-wrapper)
+            const targetWrapper = toContent.querySelector('.trombi-content-wrapper');
+            const targetRect = targetWrapper?.getBoundingClientRect();
+
+            if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
+                ghost.remove();
+                this._isTransitioning = false;
+                return;
+            }
+
+            // Hide the real target wrapper while ghost is smoothly flying into position
+            targetWrapper.style.opacity = '0';
+
+            // Prepare the student list panel and toolbar for progressive entrance
+            const assignmentPanel = toContent.querySelector('.trombi-assignment-panel');
+            const zoomControls = toContent.querySelector('.trombi-zoom-controls');
+            const pageBar = toContent.querySelector('#trombiPageSelectorBar');
+
+            if (assignmentPanel) {
+                assignmentPanel.style.transform = 'translateX(28px)';
+                assignmentPanel.style.opacity = '0';
+            }
+            if (zoomControls) {
+                zoomControls.style.opacity = '0';
+            }
+            if (pageBar && pageBar.style.display !== 'none') {
+                pageBar.style.opacity = '0';
+            }
+
+            // 5. Animate ghost gliding to targetRect while student list appears on right
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const duration = '0.36s';
+                    const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+                    ghost.style.transition = `top ${duration} ${easing}, left ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`;
+                    ghost.style.top = `${targetRect.top}px`;
+                    ghost.style.left = `${targetRect.left}px`;
+                    ghost.style.width = `${targetRect.width}px`;
+                    ghost.style.height = `${targetRect.height}px`;
+
+                    if (assignmentPanel) {
+                        assignmentPanel.style.transition = `opacity ${duration} ${easing}, transform ${duration} ${easing}`;
+                        assignmentPanel.style.transform = 'translateX(0)';
+                        assignmentPanel.style.opacity = '1';
+                    }
+                    if (zoomControls) {
+                        zoomControls.style.transition = 'opacity 0.28s ease 0.08s';
+                        zoomControls.style.opacity = '1';
+                    }
+                    if (pageBar && pageBar.style.display !== 'none') {
+                        pageBar.style.transition = 'opacity 0.28s ease 0.08s';
+                        pageBar.style.opacity = '1';
+                    }
+
+                    setTimeout(() => {
+                        targetWrapper.style.opacity = '1';
+                        ghost.remove();
+
+                        if (assignmentPanel) {
+                            assignmentPanel.style.transition = '';
+                            assignmentPanel.style.transform = '';
+                            assignmentPanel.style.opacity = '';
+                        }
+                        if (zoomControls) {
+                            zoomControls.style.transition = '';
+                            zoomControls.style.opacity = '';
+                        }
+                        if (pageBar) {
+                            pageBar.style.transition = '';
+                            pageBar.style.opacity = '';
+                        }
+                        this._isTransitioning = false;
+                    }, 380);
+                });
+            });
+        } else {
+            // STEP 2 -> STEP 1 (Backward)
+            const sourceWrapper = fromContent.querySelector('.trombi-content-wrapper');
+            if (!sourceWrapper || !this._imageSrc) {
+                this._animateGenericTransition(fromContent, toContent, direction, 1);
+                return;
+            }
+
+            const sourceRect = sourceWrapper.getBoundingClientRect();
+            if (!sourceRect || sourceRect.width === 0 || sourceRect.height === 0) {
+                this._animateGenericTransition(fromContent, toContent, direction, 1);
+                return;
+            }
+
+            this._isTransitioning = true;
+
+            // 1. Create ghost on Step 2 sheet
+            const ghost = document.createElement('div');
+            ghost.className = 'trombi-flip-ghost';
+            ghost.style.cssText = `
+                position: fixed;
+                z-index: 9999;
+                pointer-events: none;
+                top: ${sourceRect.top}px;
+                left: ${sourceRect.left}px;
+                width: ${sourceRect.width}px;
+                height: ${sourceRect.height}px;
+                border-radius: var(--radius-sm, 6px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                overflow: hidden;
+                background: transparent;
+                transition: none;
+                will-change: top, left, width, height, opacity;
+            `;
+            ghost.innerHTML = `<img src="${this._imageSrc}" alt="" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block;">`;
+            document.body.appendChild(ghost);
+
+            // 2. Hide Step 2 completely so Step 1 gets 100% height
+            fromContent.style.display = 'none';
+
+            // 3. Mount Step 1
+            toContent.style.display = 'flex';
+            toContent.style.opacity = '1';
+
+            // Target in Step 1
+            const targetImageEl = toContent.querySelector('#trombiPreviewImg, .drop-zone-image');
+            const targetRect = targetImageEl?.getBoundingClientRect();
+
+            if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
+                ghost.remove();
+                this._isTransitioning = false;
+                return;
+            }
+
+            targetImageEl.style.opacity = '0';
+
+            const guidePanel = toContent.querySelector('.wizard-guide-panel');
+            if (guidePanel) {
+                guidePanel.style.transform = 'translateX(-24px)';
+                guidePanel.style.opacity = '0';
+            }
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const duration = '0.36s';
+                    const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+                    ghost.style.transition = `top ${duration} ${easing}, left ${duration} ${easing}, width ${duration} ${easing}, height ${duration} ${easing}`;
+                    ghost.style.top = `${targetRect.top}px`;
+                    ghost.style.left = `${targetRect.left}px`;
+                    ghost.style.width = `${targetRect.width}px`;
+                    ghost.style.height = `${targetRect.height}px`;
+
+                    if (guidePanel) {
+                        guidePanel.style.transition = `opacity ${duration} ${easing}, transform ${duration} ${easing}`;
+                        guidePanel.style.transform = 'translateX(0)';
+                        guidePanel.style.opacity = '1';
+                    }
+
+                    setTimeout(() => {
+                        targetImageEl.style.opacity = '1';
+                        ghost.remove();
+                        if (guidePanel) {
+                            guidePanel.style.transition = '';
+                            guidePanel.style.transform = '';
+                            guidePanel.style.opacity = '';
+                        }
+                        this._isTransitioning = false;
+                    }, 380);
+                });
+            });
+        }
+    },
+
+    _animateGenericTransition(fromContent, toContent, direction, toStep) {
         this._isTransitioning = true;
         const offset = direction === 'forward' ? -24 : 24;
 
