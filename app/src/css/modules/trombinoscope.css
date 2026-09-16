@@ -210,6 +210,7 @@
     height: 100%;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     animation: trombiImageReveal 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
@@ -1449,24 +1450,40 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Multi-page transition crossfade */
-@keyframes trombiPageFade {
+/* Multi-page transition: Directional Slide & Reveal (iOS 2026 style) */
+@keyframes trombiPageSlideNext {
     0% {
-        opacity: 0.55;
-        transform: scale(0.994);
+        opacity: 0.15;
+        transform: translateX(36px) scale(0.975);
     }
     100% {
         opacity: 1;
-        transform: scale(1);
+        transform: translateX(0) scale(1);
     }
 }
 
-.trombi-page-switching {
-    animation: trombiPageFade 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+@keyframes trombiPageSlidePrev {
+    0% {
+        opacity: 0.15;
+        transform: translateX(-36px) scale(0.975);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.trombi-page-slide-next {
+    animation: trombiPageSlideNext 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.trombi-page-slide-prev {
+    animation: trombiPageSlidePrev 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .trombi-page-switching {
+    .trombi-page-slide-next,
+    .trombi-page-slide-prev {
         animation: none;
     }
 }

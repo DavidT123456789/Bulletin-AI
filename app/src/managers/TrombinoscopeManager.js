@@ -657,6 +657,7 @@ export const TrombinoscopeManager = {
 
     _previewPdfPageInStep1(pageIndex) {
         if (!this._parsedPdfData || !this._parsedPdfData.pages[pageIndex]) return;
+        const isNext = pageIndex > this._currentPageIndex;
         this._currentPageIndex = pageIndex;
         const page = this._parsedPdfData.pages[pageIndex];
         this._imageSrc = page.canvas.toDataURL('image/jpeg', 0.9);
@@ -665,11 +666,12 @@ export const TrombinoscopeManager = {
 
         const previewImg = document.getElementById('trombiPreviewImg');
         if (previewImg) {
-            previewImg.classList.remove('trombi-page-switching');
+            const animClass = isNext ? 'trombi-page-slide-next' : 'trombi-page-slide-prev';
+            previewImg.classList.remove('trombi-page-slide-next', 'trombi-page-slide-prev');
             void previewImg.offsetWidth;
-            previewImg.classList.add('trombi-page-switching');
+            previewImg.classList.add(animClass);
             previewImg.addEventListener('animationend', () => {
-                previewImg.classList.remove('trombi-page-switching');
+                previewImg.classList.remove(animClass);
             }, { once: true });
             previewImg.src = this._imageSrc;
         }
@@ -1045,6 +1047,7 @@ export const TrombinoscopeManager = {
             this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
         }
 
+        const isNext = pageIndex > this._currentPageIndex;
         this._currentPageIndex = pageIndex;
         const page = this._parsedPdfData.pages[pageIndex];
 
@@ -1060,11 +1063,12 @@ export const TrombinoscopeManager = {
 
         const contentWrapper = document.querySelector('.trombi-content-wrapper');
         if (contentWrapper) {
-            contentWrapper.classList.remove('trombi-page-switching');
+            const animClass = isNext ? 'trombi-page-slide-next' : 'trombi-page-slide-prev';
+            contentWrapper.classList.remove('trombi-page-slide-next', 'trombi-page-slide-prev');
             void contentWrapper.offsetWidth;
-            contentWrapper.classList.add('trombi-page-switching');
+            contentWrapper.classList.add(animClass);
             contentWrapper.addEventListener('animationend', () => {
-                contentWrapper.classList.remove('trombi-page-switching');
+                contentWrapper.classList.remove(animClass);
             }, { once: true });
         }
 
