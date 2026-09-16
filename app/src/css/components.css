@@ -1412,7 +1412,7 @@ textarea {
 }
 
 .btn-dropdown-item {
-    color: var(--text-primary);
+    color: var(--text-secondary);
     padding: 10px 12px;
     border-radius: var(--radius-sm);
     display: flex;
@@ -1432,14 +1432,16 @@ textarea {
     color: var(--text-primary);
 }
 
-.btn-dropdown-item:hover i {
+.btn-dropdown-item:hover i,
+.btn-dropdown-item:hover iconify-icon {
     color: var(--text-primary);
 }
 
-.btn-dropdown-item i {
+.btn-dropdown-item i,
+.btn-dropdown-item iconify-icon {
     width: 16px;
     text-align: center;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     transition: color var(--transition-fast);
 }
 

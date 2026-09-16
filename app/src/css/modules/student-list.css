@@ -1335,7 +1335,7 @@
     background: transparent;
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
     text-align: left;
@@ -1350,14 +1350,14 @@
 
 .action-dropdown-item:hover i,
 .action-dropdown-item:hover iconify-icon {
-    color: inherit;
+    color: var(--text-primary);
 }
 
 .action-dropdown-item i,
 .action-dropdown-item iconify-icon {
     width: 16px;
     text-align: center;
-    color: inherit;
+    color: var(--text-tertiary);
     font-size: 16px;
     display: inline-flex;
     align-items: center;

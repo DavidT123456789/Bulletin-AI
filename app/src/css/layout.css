@@ -943,7 +943,7 @@ body.is-cloud-syncing label {
 
 .menu-item.update-item i,
 .menu-item.update-item iconify-icon {
-    color: var(--icon-btn-color);
+    color: var(--text-tertiary);
 }
 
 .menu-item.update-item:hover i,
@@ -967,7 +967,7 @@ body.is-cloud-syncing label {
 
 [data-theme="dark"] .menu-item.update-item i,
 [data-theme="dark"] .menu-item.update-item iconify-icon {
-    color: var(--icon-btn-color);
+    color: var(--text-tertiary);
 }
 
 [data-theme="dark"] .menu-item.update-item:hover i,
@@ -1053,7 +1053,7 @@ body.is-cloud-syncing label {
 .menu-item i,
 .menu-item iconify-icon {
     font-size: 18px;
-    color: var(--icon-btn-color);
+    color: var(--text-tertiary);
     min-width: 24px;
     display: flex;
     justify-content: center;

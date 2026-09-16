@@ -158,12 +158,22 @@
 }
 
 .class-dropdown-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--text-secondary);
     letter-spacing: -0.005em;
     user-select: none;
     cursor: default;
+}
+
+.class-dropdown-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    letter-spacing: normal;
 }
 
 .class-dropdown-header-actions {
@@ -173,7 +183,7 @@
 }
 
 .class-dropdown-header-actions .btn-icon-small iconify-icon {
-    font-size: 1.12rem;
+    font-size: 1.05rem;
     transition: transform var(--transition-fast);
 }
 
@@ -187,11 +197,11 @@
 
 /* Global style for all small icon buttons */
 .btn-icon-small {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     border: 1px solid transparent;
     cursor: pointer;
     display: flex;
@@ -205,6 +215,11 @@
     background: var(--item-hover-bg);
     color: var(--text-primary);
     border-color: transparent;
+}
+
+.btn-icon-small:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
 }
 
 .btn-icon-small.danger:hover {

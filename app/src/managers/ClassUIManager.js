@@ -597,7 +597,7 @@ export const ClassUIManager = {
 
         const titleEl = DOM.classDropdownTitle || document.getElementById('classDropdownTitle');
         if (titleEl) {
-            titleEl.textContent = `Mes classes (${classesCount})`;
+            titleEl.innerHTML = `Mes classes <span class="class-dropdown-count">(${classesCount})</span>`;
             titleEl.classList.add('tooltip');
             titleEl.setAttribute('data-tooltip', `Total : ${totalStudents} élève${totalStudents > 1 ? 's' : ''}`);
         }
