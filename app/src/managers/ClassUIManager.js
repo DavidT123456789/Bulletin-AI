@@ -1126,6 +1126,7 @@ export const ClassUIManager = {
 
                     row.classList.add('editing', 'renaming');
                     row.removeAttribute('draggable');
+                    row.removeAttribute('tabindex');
 
                     // Remplacement in-situ du libellé par l'input
                     nameEl.outerHTML = `
@@ -1171,6 +1172,7 @@ export const ClassUIManager = {
                         row.innerHTML = originalContent;
                         row.classList.remove('editing', 'renaming');
                         row.setAttribute('draggable', 'true');
+                        row.setAttribute('tabindex', '0');
                         const newRenameBtn = row.querySelector('.manage-rename-btn');
                         const newDuplicateBtn = row.querySelector('.manage-duplicate-btn');
                         const newDeleteBtn = row.querySelector('.manage-delete-btn');
@@ -1247,10 +1249,12 @@ export const ClassUIManager = {
                     `;
 
                     row.classList.add('editing');
+                    row.removeAttribute('tabindex');
 
                     row.querySelector('.cancel-delete-btn').onclick = () => {
                         row.innerHTML = originalContent;
                         row.classList.remove('editing');
+                        row.setAttribute('tabindex', '0');
                         const newDeleteBtn = row.querySelector('.manage-delete-btn');
                         if (newDeleteBtn) bindDeleteHandler(newDeleteBtn);
                         const newRenameBtn = row.querySelector('.manage-rename-btn');

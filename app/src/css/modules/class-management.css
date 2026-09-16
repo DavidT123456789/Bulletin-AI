@@ -1079,17 +1079,17 @@
     border-bottom: none;
 }
 
-.class-management-item:not(.active-switch):hover {
+.class-management-item:not(.active-switch):not(.editing):hover {
     background-color: var(--bg-color);
     border-bottom-color: var(--border-color);
     box-shadow: none;
 }
 
-[data-theme="dark"] .class-management-item:not(.active-switch):hover {
+[data-theme="dark"] .class-management-item:not(.active-switch):not(.editing):hover {
     background-color: var(--bg-hover);
 }
 
-.class-management-item:focus-visible {
+.class-management-item:not(.active-switch):not(.editing):focus-visible {
     background-color: var(--item-hover-bg);
     outline: none;
     box-shadow: inset 0 0 0 2px var(--primary-color);
@@ -1350,7 +1350,7 @@
     box-shadow: none;
 }
 
-.class-management-item.active-switch:focus-visible {
+.class-management-item.active-switch:not(.editing):focus-visible {
     background-color: var(--primary-color);
     background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
@@ -1735,58 +1735,24 @@
     color: var(--text-tertiary);
 }
 
-.class-management-item.editing {
+.class-management-item.editing,
+.class-management-item.editing:focus,
+.class-management-item.editing:focus-visible,
+.class-management-item.editing:focus-within {
     cursor: default;
-    background: var(--surface-color) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding: 16px 20px;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 16px;
-    outline: none;
-}
-
-.class-management-item.editing:first-child {
-    border-top-left-radius: calc(var(--radius-md) - 1px);
-    border-top-right-radius: calc(var(--radius-md) - 1px);
-}
-
-.class-management-item.editing:last-child {
-    border-bottom-left-radius: calc(var(--radius-md) - 1px);
-    border-bottom-right-radius: calc(var(--radius-md) - 1px);
-    border-bottom: none;
-}
-
-.class-management-item.editing:only-child {
-    border-radius: calc(var(--radius-md) - 1px);
-}
-
-.class-management-item.editing:hover {
-    transform: none !important;
-    background: var(--surface-color) !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 /* Delete confirmation (danger state with soft tint, preserving corners) */
 .class-management-item.editing:not(.renaming) {
-    background: rgba(var(--error-rgb), 0.04) !important;
-    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.35) !important;
+    background-color: rgba(var(--error-rgb), 0.04);
+    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.35);
 }
 
 .class-management-item.editing:not(.renaming):hover {
-    background: rgba(var(--error-rgb), 0.06) !important;
-    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.45) !important;
-}
-
-/* Rename editing: clean, flush surface without harsh outer box-shadow */
-.class-management-item.editing.renaming {
-    background: var(--surface-color) !important;
-    box-shadow: none !important;
-}
-
-.class-management-item.editing.renaming:hover {
-    background: var(--surface-color) !important;
-    box-shadow: none !important;
+    background-color: rgba(var(--error-rgb), 0.06);
+    box-shadow: inset 0 0 0 1.5px rgba(var(--error-rgb), 0.45);
 }
 
 /* ====================================================================
@@ -1989,10 +1955,36 @@
 }
 
 /* Active switch variation when renaming */
+.class-management-item.active-switch.renaming,
+.class-management-item.active-switch.renaming:focus,
+.class-management-item.active-switch.renaming:focus-visible,
+.class-management-item.active-switch.renaming:focus-within {
+    background: var(--primary-color) !important;
+    background-color: var(--primary-color) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.class-management-item.active-switch.renaming:hover {
+    background: var(--primary-color) !important;
+    background-color: var(--primary-color) !important;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) !important;
+    box-shadow: none !important;
+}
+
 .class-management-item.active-switch.renaming .inline-field-input {
     background: #ffffff;
     color: #18181b;
     border-color: rgba(255, 255, 255, 0.6);
+}
+
+.class-management-item.active-switch.renaming .inline-field-input:hover {
+    border-color: #ffffff;
+}
+
+.class-management-item.active-switch.renaming .inline-field-input::placeholder {
+    color: #71717a;
 }
 
 .class-management-item.active-switch.renaming .inline-field-input:focus {
