@@ -176,5 +176,104 @@ describe('PronoteTrombiParser Unit Tests', () => {
             expect(students[0].zone.cy).toBeLessThan(students[0].textY); // Au-dessus du texte
             expect(students[0].zone.r).toBeGreaterThan(0);
         });
+
+        it('should align student without photo with classmates on the same row', () => {
+            const mockViewport = {
+                width: 1200,
+                height: 1600,
+                scale: 2,
+                convertToViewportPoint: (x, y) => [x, y]
+            };
+
+            // 2 colonnes, 2 lignes :
+            // Ligne 1 : CASTEL Gaultier (col 1, avec photo), DA COSTA Gjallim (col 2, avec photo)
+            // Ligne 2 : ENFERT Tom (col 1, SANS photo), ENNAJI Sofia (col 2, avec photo)
+            const mockItems = [
+                // Row 1
+                { str: 'CASTEL Gaultier', transform: [0, 0, 0, 0, 200, 300], width: 100, height: 10 },
+                { str: 'DA COSTA Gjallim', transform: [0, 0, 0, 0, 600, 300], width: 100, height: 10 },
+                // Row 2 : ENFERT Tom a des initiales "ET" dans sa boîte photo
+                { str: 'ET', transform: [0, 0, 0, 0, 200, 480], width: 30, height: 20 },
+                { str: 'ENFERT Tom', transform: [0, 0, 0, 0, 200, 600], width: 80, height: 10 },
+                { str: 'ENNAJI Sofia', transform: [0, 0, 0, 0, 600, 600], width: 80, height: 10 }
+            ];
+
+            // Images réelles : CASTEL (row 1, col 1), DA COSTA (row 1, col 2), ENNAJI (row 2, col 2)
+            // ENFERT Tom n'a PAS d'image (juste le carré gris avec "ET")
+            const mockImages = [
+                // CASTEL : photo centrée à Y=200, hauteur=140
+                { x: 130, y: 130, width: 140, height: 140, cx: 200, cy: 200, r: 70 },
+                // DA COSTA : photo centrée à Y=200, hauteur=140
+                { x: 530, y: 130, width: 140, height: 140, cx: 600, cy: 200, r: 70 },
+                // ENNAJI : photo centrée à Y=500, hauteur=140
+                { x: 530, y: 430, width: 140, height: 140, cx: 600, cy: 500, r: 70 }
+            ];
+
+            const students = extractStudentsFromTextItems(mockItems, mockViewport, 0, mockImages);
+
+            // "ET" ne doit PAS être un élève ! Il y a exactement 4 élèves
+            expect(students).toHaveLength(4);
+
+            const tom = students.find(s => s.prenom === 'Tom');
+            const sofia = students.find(s => s.prenom === 'Sofia');
+            const gaultier = students.find(s => s.prenom === 'Gaultier');
+
+            expect(tom).toBeDefined();
+            expect(sofia).toBeDefined();
+            expect(gaultier).toBeDefined();
+
+            // Tom doit être aligné horizontalement sur sa colonne (X ~ 200)
+            expect(tom.zone.cx).toBeCloseTo(tom.colCenterX, 0);
+
+            // Crucial : Le centre Y de Tom doit être parfaitement aligné avec celui de Sofia (sa camarade de ligne)
+            expect(tom.zone.cy).toBe(sofia.zone.cy);
+
+            // Le rayon de Tom doit être identique à celui de Sofia
+            expect(tom.zone.r).toBe(sofia.zone.r);
+
+            // La boîte photo de Tom doit être au même niveau Y que celle de Sofia
+            expect(tom.photoBounds.y).toBe(sofia.photoBounds.y);
+            expect(tom.photoBounds.height).toBe(sofia.photoBounds.height);
+
+            // Et Tom ne doit PAS empiéter sur Gaultier (ligne du dessus)
+            expect(tom.zone.cy).toBeGreaterThan(gaultier.textY);
+        });
+
+        it('should use document-wide calibration when an entire row has no photos', () => {
+            const mockViewport = {
+                width: 1200,
+                height: 1600,
+                scale: 2,
+                convertToViewportPoint: (x, y) => [x, y]
+            };
+
+            // Row 1 a des photos, Row 2 n'a aucune photo
+            const mockItems = [
+                { str: 'ALVES Lucas', transform: [0, 0, 0, 0, 200, 300], width: 100, height: 10 },
+                { str: 'BERNARD Julie', transform: [0, 0, 0, 0, 600, 300], width: 100, height: 10 },
+                { str: 'CLAUDE Eric', transform: [0, 0, 0, 0, 200, 600], width: 80, height: 10 },
+                { str: 'DUPONT Marie', transform: [0, 0, 0, 0, 600, 600], width: 80, height: 10 }
+            ];
+
+            // Seule Row 1 a des images
+            const mockImages = [
+                { x: 130, y: 130, width: 140, height: 140, cx: 200, cy: 200, r: 70 },
+                { x: 530, y: 130, width: 140, height: 140, cx: 600, cy: 200, r: 70 }
+            ];
+
+            const students = extractStudentsFromTextItems(mockItems, mockViewport, 0, mockImages);
+            expect(students).toHaveLength(4);
+
+            const eric = students.find(s => s.prenom === 'Eric');
+            const marie = students.find(s => s.prenom === 'Marie');
+
+            // Eric et Marie doivent avoir le même rayon calibré que les élèves de Row 1
+            expect(eric.zone.r).toBe(Math.round(70 * 0.94));
+            expect(marie.zone.r).toBe(Math.round(70 * 0.94));
+
+            // Eric et Marie doivent être alignés sur le même Y
+            expect(eric.zone.cy).toBe(marie.zone.cy);
+            expect(eric.zone.cy).toBeGreaterThan(300); // Bien en-dessous de Row 1
+        });
     });
 });

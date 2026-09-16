@@ -149,6 +149,11 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
         const str = normalizeText(item.str);
         if (!str || isHeaderOrFooterText(str)) continue;
 
+        // Ignorer les initiales isolées affichées en grand dans les boîtes sans photo (ex: "ET" de taille 42pt)
+        if (/^[A-Z]{1,3}$/.test(str) && ((item.height || 10) >= 18 || (item.transform?.[0] || 10) >= 18)) {
+            continue;
+        }
+
         // Conversion en coordonnées canvas (0,0 en haut à gauche)
         const [canvasX, canvasY] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
         const width = (item.width || str.length * 6) * viewport.scale;
@@ -189,8 +194,8 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
     // Trier les colonnes de gauche à droite
     columns.sort((a, b) => a.centerX - b.centerX);
 
-    const students = [];
     const colWidth = viewport.width / (columns.length || 4);
+    const rawStudents = [];
 
     // Dans chaque colonne, trier les items verticalement (du haut vers le bas)
     columns.forEach((col, colIndex) => {
@@ -236,56 +241,16 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
             groupedEntries.push(currentEntry);
         }
 
-        groupedEntries.forEach((entry, rowIndex) => {
+        // Éliminer les initiales orphelines de remplacement (ex: "ET") situées dans la boîte photo au-dessus du nom
+        const filteredEntries = groupedEntries.filter((entry, idx, arr) => {
+            const text = entry.textParts.join(' ').trim();
+            return !(/^[A-Z]{1,3}$/.test(text) && idx < arr.length - 1);
+        });
+
+        filteredEntries.forEach((entry, rowIndex) => {
             const rawFullName = entry.textParts.join(' ');
             const { nom, prenom } = splitStudentFullName(rawFullName);
-
-            // 1. Chercher l'image correspondante extraite du flux PDF (précision au pixel près)
-            let matchedRect = null;
-            if (imageRects && imageRects.length > 0) {
-                matchedRect = imageRects.find(rect => {
-                    const dx = Math.abs(rect.cx - col.centerX);
-                    const dy = entry.y - (rect.y + rect.height);
-                    return dx < colWidth * 0.4 && dy >= -15 && dy < colWidth * 0.6;
-                });
-            }
-
-            let cx, cy, r, photoBounds;
-            if (matchedRect) {
-                // Cadrage extrait du flux PDF : centré géométriquement sur la photo
-                // avec micro-abaissement de 5.5% pour cadrer idéalement le regard et compenser le buste
-                cx = matchedRect.cx;
-                cy = matchedRect.cy + Math.round(matchedRect.height * 0.055);
-                // Rayon calibré à 92% de la demi-boîte : correspond précisément à 20% sur la réglette de taille
-                r = Math.round(matchedRect.r * 0.92);
-                photoBounds = {
-                    x: matchedRect.x,
-                    y: matchedRect.y,
-                    width: matchedRect.width,
-                    height: matchedRect.height
-                };
-            } else {
-                // Fallback géométrique corrigé (Pronote utilise des photos carrées ~96x96pt)
-                const photoWidth = colWidth * 0.66;
-                const photoHeight = photoWidth;
-                const gapY = 16 * (viewport.scale || 1);
-
-                const photoBottom = entry.y - gapY;
-                const photoTop = photoBottom - photoHeight;
-                const photoLeft = col.centerX - (photoWidth / 2);
-
-                cx = col.centerX;
-                cy = photoTop + (photoHeight / 2) + Math.round(photoHeight * 0.055);
-                r = Math.round((photoWidth / 2) * 0.92);
-                photoBounds = {
-                    x: photoLeft,
-                    y: photoTop,
-                    width: photoWidth,
-                    height: photoHeight
-                };
-            }
-
-            students.push({
+            rawStudents.push({
                 pageIndex,
                 colIndex,
                 rowIndex,
@@ -293,15 +258,171 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
                 nom,
                 prenom,
                 colCenterX: col.centerX,
-                textY: entry.y,
-                photoBounds,
-                zone: {
-                    cx,
-                    cy,
-                    r
-                }
+                textY: entry.y
             });
         });
+    });
+
+    // Passe 1 : Associer chaque élève ayant une photo réelle à son rectangle dans imageRects
+    const usedRects = new Set();
+    const studentsWithMatches = rawStudents.map(student => {
+        let matchedRect = null;
+        if (imageRects && imageRects.length > 0) {
+            let bestRect = null;
+            let bestDy = Infinity;
+
+            for (const rect of imageRects) {
+                if (usedRects.has(rect)) continue;
+                const dx = Math.abs(rect.cx - student.colCenterX);
+                const dy = student.textY - (rect.y + rect.height);
+                const maxDx = colWidth * 0.4;
+                const minDy = -20 * (viewport.scale || 1);
+                const maxDy = Math.max(60 * (viewport.scale || 1), colWidth * 0.5);
+
+                if (dx < maxDx && dy >= minDy && dy <= maxDy) {
+                    if (Math.abs(dy) < Math.abs(bestDy)) {
+                        bestRect = rect;
+                        bestDy = dy;
+                    }
+                }
+            }
+
+            if (bestRect) {
+                usedRects.add(bestRect);
+                matchedRect = bestRect;
+            }
+        }
+
+        return {
+            ...student,
+            matchedRect
+        };
+    });
+
+    // Passe 2 : Calibration de la géométrie type à partir des photos réelles détectées sur la page
+    const matchedStudents = studentsWithMatches.filter(s => s.matchedRect !== null);
+    const median = arr => {
+        if (!arr || arr.length === 0) return 0;
+        const sorted = [...arr].sort((a, b) => a - b);
+        return sorted[Math.floor(sorted.length / 2)];
+    };
+
+    let typicalWidth = 0;
+    let typicalHeight = 0;
+    let typicalRadius = 0;
+    let typicalDeltaY = 0;
+    let typicalGapY = 0;
+
+    if (matchedStudents.length > 0) {
+        typicalWidth = median(matchedStudents.map(s => s.matchedRect.width));
+        typicalHeight = median(matchedStudents.map(s => s.matchedRect.height));
+        typicalRadius = median(matchedStudents.map(s => s.matchedRect.r));
+        typicalDeltaY = median(matchedStudents.map(s => s.textY - s.matchedRect.cy));
+        typicalGapY = median(matchedStudents.map(s => s.textY - (s.matchedRect.y + s.matchedRect.height)));
+    }
+
+    // Passe 3 : Calcul du cadrage pour chaque élève (nominal ou alignement contextuel précis)
+    const students = studentsWithMatches.map(student => {
+        let cx, cy, r, photoBounds;
+
+        if (student.matchedRect) {
+            // Cadrage extrait du flux PDF : centré sur le visage (rehaussement calibré de 2.5%
+            // avec rayon calibré à 94% pour un diamètre élargi de 4px sans déborder en haut)
+            cx = student.matchedRect.cx;
+            cy = student.matchedRect.cy - Math.round(student.matchedRect.height * 0.025);
+            r = Math.round(student.matchedRect.r * 0.94);
+            photoBounds = {
+                x: student.matchedRect.x,
+                y: student.matchedRect.y,
+                width: student.matchedRect.width,
+                height: student.matchedRect.height
+            };
+        } else {
+            // Élève sans photo (ex: carré gris avec initiales "ET")
+            // Priorité 1 : Aligner sur les photos des camarades situés sur la même ligne
+            const sameRowMatches = matchedStudents.filter(s =>
+                s.rowIndex === student.rowIndex || Math.abs(s.textY - student.textY) < 35 * (viewport.scale || 1)
+            );
+
+            if (sameRowMatches.length > 0) {
+                const rowCy = median(sameRowMatches.map(s => s.matchedRect.cy));
+                const rowY = median(sameRowMatches.map(s => s.matchedRect.y));
+                const rowH = median(sameRowMatches.map(s => s.matchedRect.height));
+                const rowW = median(sameRowMatches.map(s => s.matchedRect.width));
+                const rowR = median(sameRowMatches.map(s => s.matchedRect.r));
+
+                cx = student.colCenterX;
+                cy = rowCy - Math.round(rowH * 0.025);
+                r = Math.round(rowR * 0.94);
+                photoBounds = {
+                    x: student.colCenterX - (rowW / 2),
+                    y: rowY,
+                    width: rowW,
+                    height: rowH
+                };
+            } else if (matchedStudents.length > 0) {
+                // Priorité 2 : Utiliser les dimensions calibrées sur l'ensemble de la page
+                const photoTop = student.textY - typicalGapY - typicalHeight;
+                cx = student.colCenterX;
+                cy = student.textY - typicalDeltaY - Math.round(typicalHeight * 0.025);
+                r = Math.round(typicalRadius * 0.94);
+                photoBounds = {
+                    x: student.colCenterX - (typicalWidth / 2),
+                    y: photoTop,
+                    width: typicalWidth,
+                    height: typicalHeight
+                };
+            } else {
+                // Priorité 3 : Fallback sécurisé en cas d'absence totale de photo sur la page
+                // On borne la hauteur au pas entre les lignes pour ne jamais déborder sur l'élève du dessus
+                const uniqueYs = [...new Set(studentsWithMatches.map(s => s.textY))].sort((a, b) => a - b);
+                let rowPitch = 0;
+                if (uniqueYs.length > 1) {
+                    const pitches = [];
+                    for (let i = 1; i < uniqueYs.length; i++) {
+                        const diff = uniqueYs[i] - uniqueYs[i - 1];
+                        if (diff > 30 * (viewport.scale || 1)) pitches.push(diff);
+                    }
+                    if (pitches.length > 0) rowPitch = median(pitches);
+                }
+
+                const maxH = rowPitch > 0 ? (rowPitch - 20 * (viewport.scale || 1)) : colWidth * 0.66;
+                const photoWidth = Math.max(30 * (viewport.scale || 1), Math.min(colWidth * 0.66, maxH));
+                const photoHeight = photoWidth;
+                const gapY = 8 * (viewport.scale || 1);
+
+                const photoBottom = student.textY - gapY;
+                const photoTop = photoBottom - photoHeight;
+                const photoLeft = student.colCenterX - (photoWidth / 2);
+
+                cx = student.colCenterX;
+                cy = photoTop + (photoHeight / 2) - Math.round(photoHeight * 0.025);
+                r = Math.round((photoWidth / 2) * 0.94);
+                photoBounds = {
+                    x: photoLeft,
+                    y: photoTop,
+                    width: photoWidth,
+                    height: photoHeight
+                };
+            }
+        }
+
+        return {
+            pageIndex: student.pageIndex,
+            colIndex: student.colIndex,
+            rowIndex: student.rowIndex,
+            rawFullName: student.rawFullName,
+            nom: student.nom,
+            prenom: student.prenom,
+            colCenterX: student.colCenterX,
+            textY: student.textY,
+            photoBounds,
+            zone: {
+                cx,
+                cy,
+                r
+            }
+        };
     });
 
     // Trier les élèves dans l'ordre de lecture naturel : ligne par ligne (rowIndex, puis colIndex)
@@ -323,31 +444,39 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
 export async function extractImageRectsFromPage(page, viewport) {
     if (!page || typeof page.getOperatorList !== 'function') return [];
     try {
+        const pdfjs = await loadPdfJs().catch(() => null);
+        const transformOp = pdfjs?.OPS?.transform ?? 12;
+        const paintImageOp = pdfjs?.OPS?.paintImageXObject ?? 85;
+        const paintJpegOp = pdfjs?.OPS?.paintJpegXObject ?? 82;
+        const paintMaskOp = pdfjs?.OPS?.paintImageMaskXObject ?? 83;
+
         const ops = await page.getOperatorList();
         const rects = [];
         for (let i = 0; i < ops.fnArray.length; i++) {
             const fn = ops.fnArray[i];
             // 85 = paintImageXObject, 82 = paintJpegXObject, 83 = paintImageMaskXObject
-            if (fn === 85 || fn === 82 || fn === 83) {
+            if (fn === paintImageOp || fn === paintJpegOp || fn === paintMaskOp || fn === 85 || fn === 82 || fn === 83) {
                 for (let j = i - 1; j >= Math.max(0, i - 10); j--) {
-                    if (ops.fnArray[j] === 13) { // 13 = transform
+                    if (ops.fnArray[j] === transformOp || ops.fnArray[j] === 12 || ops.fnArray[j] === 13) {
                         const matrix = ops.argsArray[j];
-                        const [vx, vy] = viewport.convertToViewportPoint(matrix[4], matrix[5] + matrix[3]);
-                        const [vx2, vy2] = viewport.convertToViewportPoint(matrix[4] + matrix[0], matrix[5]);
-                        const width = vx2 - vx;
-                        const height = vy2 - vy;
-                        if (width > 40 && height > 40 && width < viewport.width * 0.6 && height < viewport.height * 0.6) {
-                            rects.push({
-                                x: vx,
-                                y: vy,
-                                width,
-                                height,
-                                cx: vx + width / 2,
-                                cy: vy + height / 2,
-                                r: Math.min(width, height) / 2
-                            });
+                        if (Array.isArray(matrix) && matrix.length === 6) {
+                            const [vx, vy] = viewport.convertToViewportPoint(matrix[4], matrix[5] + matrix[3]);
+                            const [vx2, vy2] = viewport.convertToViewportPoint(matrix[4] + matrix[0], matrix[5]);
+                            const width = vx2 - vx;
+                            const height = vy2 - vy;
+                            if (width > 40 && height > 40 && width < viewport.width * 0.6 && height < viewport.height * 0.6) {
+                                rects.push({
+                                    x: vx,
+                                    y: vy,
+                                    width,
+                                    height,
+                                    cx: vx + width / 2,
+                                    cy: vy + height / 2,
+                                    r: Math.min(width, height) / 2
+                                });
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
