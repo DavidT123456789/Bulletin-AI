@@ -705,11 +705,11 @@ label {
 
 /* --- Inputs & Forms (Nebula Style) --- */
 /* Style "Filled" avec bordure transparente pour éviter les sauts au focus */
-input:not([type="range"]),
+input:not([type="range"]):not(.custom-input),
 textarea,
 select {
     padding: 12.5px 14.5px;
-    border: 1px solid transparent;
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 14px;
     background-color: var(--bg-color);
@@ -787,7 +787,7 @@ select optgroup {
 
 
 /* --- Hover State: Subtle primary tint + gradient border (consistent with list hover) --- */
-input:not([type="range"]):hover:not(:disabled):not(:focus),
+input:not([type="range"]):not(.custom-input):hover:not(:disabled):not(:focus),
 textarea:hover:not(:disabled):not(:focus) {
     border: 1px solid transparent !important;
     /* Subtle primary tint like list row hover + gradient border */
@@ -805,7 +805,7 @@ select:hover:not(:disabled):not(:focus) {
 }
 
 /* --- Focus State: Dynamic rotating gradient (signature effect) --- */
-input:not([type="range"]):focus,
+input:not([type="range"]):not(.custom-input):focus,
 textarea:focus {
     outline: none;
     background-color: transparent;
@@ -835,12 +835,6 @@ select:focus {
     outline: none !important;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-}
-
-input:not([type="range"]),
-textarea,
-select {
-    border: 1px solid var(--border-color);
 }
 
 /* --- Input Number Spinners - Design Nebula Premium --- */

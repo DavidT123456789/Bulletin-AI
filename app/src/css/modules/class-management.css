@@ -1561,19 +1561,51 @@
 }
 
 @keyframes slideDownExpandModal {
-    from {
+    0% {
         opacity: 0;
         max-height: 0;
         padding-top: 0;
         padding-bottom: 0;
-        transform: translateY(-10px);
+        margin-bottom: 0;
+        border-color: transparent;
+        transform: translateY(-8px);
     }
-    to {
+    40% {
+        border-color: var(--border-color);
+    }
+    100% {
         opacity: 1;
-        max-height: 120px;
-        padding-top: 14px;
-        padding-bottom: 14px;
+        max-height: 52px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+        border-color: var(--border-color);
         transform: translateY(0);
+    }
+}
+
+@keyframes slideUpCollapseModal {
+    0% {
+        opacity: 1;
+        max-height: 52px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+        border-color: var(--border-color);
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 0;
+        border-color: transparent;
+    }
+    100% {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border-color: transparent;
+        transform: translateY(-8px);
     }
 }
 
@@ -1625,12 +1657,32 @@
     font-weight: 500;
     border: none !important;
     background: transparent !important;
+    background-image: none !important;
+    animation: none !important;
     color: var(--text-primary);
-    outline: none;
+    outline: none !important;
     margin-right: 8px;
     width: 0;
     box-shadow: none !important;
     transition: all var(--transition-fast);
+}
+
+.inline-create-form.class-dropdown-item .inline-class-input:hover,
+.inline-create-form.class-dropdown-item .inline-class-input:focus,
+.inline-create-form.class-dropdown-item .inline-class-input:focus-visible,
+.inline-create-form.class-dropdown-item .inline-class-input:active,
+.inline-create-form.class-dropdown-item .inline-class-input:hover:not(:disabled):not(:focus) {
+    border: 0 none transparent !important;
+    outline: 0 none transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
 }
 
 .inline-create-form.class-dropdown-item .inline-create-btn,
@@ -1683,15 +1735,15 @@
     color: var(--text-tertiary);
 }
 
-/* Disable card hover effect when editing — preserve card border radius and flat list harmony */
 .class-management-item.editing {
     cursor: default;
     background: var(--surface-color) !important;
     border-bottom: 1px solid var(--border-color) !important;
     padding: 16px 20px;
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: 16px;
     outline: none;
 }
 
@@ -1735,67 +1787,6 @@
 .class-management-item.editing.renaming:hover {
     background: var(--surface-color) !important;
     box-shadow: none !important;
-}
-
-/* Inline Forms Layout */
-.rename-inline-form {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    animation: slideInConfirm 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.inline-rename-input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: var(--bg-color);
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all var(--transition-fast);
-}
-
-.inline-rename-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
-    background: var(--surface-color);
-}
-
-
-
-.rename-inline-form .save-rename-btn,
-.rename-inline-form .cancel-rename-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: all var(--transition-fast);
-}
-
-.rename-inline-form .save-rename-btn:not(:disabled):hover {
-    background: rgba(var(--success-color-rgb), 0.1);
-    color: var(--success-dark);
-}
-
-.rename-inline-form .save-rename-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.rename-inline-form .cancel-rename-btn:hover {
-    background: rgba(var(--error-color-rgb), 0.1);
-    color: var(--error-dark);
 }
 
 /* ====================================================================
@@ -1886,78 +1877,294 @@
 }
 
 /* ====================================================================
-   INLINE CREATE FORM (Modal variant)
+   SINGLE SOURCE OF TRUTH: INLINE ROW CONTROLS (Creation & Renaming)
+   Standardized layout, inputs, and action buttons across the modal
    ==================================================================== */
 
-.inline-create-class-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 18px;
-    background: var(--surface-color);
-    border: 1px dashed var(--primary-color);
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-    box-shadow: var(--shadow-sm);
-    animation: slideDownExpandModal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+@keyframes slideDownExpandRow {
+    0% {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        transform: translateY(-8px);
+        overflow: hidden;
+    }
+    100% {
+        opacity: 1;
+        max-height: 80px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        transform: translateY(0);
+    }
 }
 
-.inline-create-class-form .form-row {
+@keyframes slideUpCollapseRow {
+    0% {
+        opacity: 1;
+        max-height: 80px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        transform: translateY(-8px);
+        overflow: hidden;
+    }
+}
+
+.class-management-item.creating-class-row {
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    cursor: default;
+    animation: slideDownExpandRow 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.class-management-item.creating-class-row:hover {
+    background: var(--surface-color) !important;
+}
+
+.class-management-item.creating-class-row:first-child {
+    border-top-left-radius: calc(var(--radius-md) - 1px);
+    border-top-right-radius: calc(var(--radius-md) - 1px);
+}
+
+/* Informative non-interactive icon on the left (never mistaken for a button) */
+.class-management-item .creating-icon,
+.class-management-item .editing-icon {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--text-tertiary);
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 0.45;
+    cursor: default !important;
+    pointer-events: none;
+    font-size: 1.15rem;
+}
+
+.class-management-item.creating-class-row .class-management-info {
+    display: flex;
+    flex-direction: row;
     align-items: center;
     width: 100%;
 }
 
-.inline-create-class-form .new-class-input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid var(--border-color);
+/* In-Situ Renaming State */
+.class-management-item.renaming {
+    cursor: default;
+}
+
+.class-management-item.renaming .class-drag-handle {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: default;
+}
+
+.class-management-item.renaming .class-info-header {
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+/* Hide stat badge during in-situ rename so input has 100% width of the header */
+.class-management-item.renaming .class-stat-badge {
+    display: none !important;
+}
+
+.class-management-item.renaming .class-management-meta {
+    opacity: 0.85;
+    transition: opacity var(--transition-fast);
+}
+
+.class-management-item.renaming .class-management-actions {
+    opacity: 1;
+}
+
+/* Active switch variation when renaming */
+.class-management-item.active-switch.renaming .inline-field-input {
+    background: #ffffff;
+    color: #18181b;
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.class-management-item.active-switch.renaming .inline-field-input:focus {
+    box-shadow: 0 0 0 2px #ffffff, 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn.confirm:not(:disabled) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn.confirm:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.32);
+    color: #ffffff;
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn.confirm:disabled {
+    color: rgba(255, 255, 255, 0.45);
+    opacity: 0.5;
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn.cancel {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.class-management-item.active-switch.renaming .inline-action-btn.cancel:hover {
+    background: rgba(239, 68, 68, 0.35);
+    color: #ffffff;
+}
+
+/* Shared input field for creation and renaming */
+.inline-field-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
     background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-primary);
-    border-radius: var(--radius-md);
     outline: none;
-    transition: all var(--transition-fast);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 }
 
-.inline-create-class-form .new-class-input:focus {
+.inline-field-input::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+.inline-field-input:hover {
+    border-color: rgba(var(--primary-color-rgb), 0.4);
+}
+
+.inline-field-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
     background: var(--surface-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
 }
 
-.inline-create-class-form .create-class-confirm,
-.inline-create-class-form .create-class-cancel {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
+/* Shared action buttons (Confirm & Cancel) */
+.inline-action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: none;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: var(--close-btn-icon-size, 18px);
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
     transition: all var(--transition-fast);
 }
 
-.inline-create-class-form .create-class-confirm:not(:disabled):hover {
-    background: rgba(var(--success-color-rgb), 0.1);
-    color: var(--success-dark);
+/* Confirm button - active state (valid text entered) */
+.inline-action-btn.confirm:not(:disabled) {
+    color: var(--text-secondary);
 }
 
-.inline-create-class-form .create-class-confirm:disabled {
-    opacity: 0.4;
+.inline-action-btn.confirm:not(:disabled):hover {
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+/* Confirm button - disabled state (empty input) */
+.inline-action-btn.confirm:disabled {
+    color: var(--text-quaternary);
+    opacity: 0.35;
     cursor: not-allowed;
+    pointer-events: none;
 }
 
-.inline-create-class-form .create-class-cancel:hover {
-    background: rgba(var(--error-color-rgb), 0.1);
-    color: var(--error-dark);
+/* Cancel button - strictly aligned with modal close-btn */
+.inline-action-btn.cancel {
+    color: var(--text-tertiary);
+}
+
+.inline-action-btn.cancel:hover {
+    background: var(--error-light);
+    color: var(--error-color);
+}
+
+.inline-action-btn:active {
+    opacity: 0.8;
+}
+
+/* Autofill immunity */
+.new-class-input:-webkit-autofill,
+.new-class-input:-webkit-autofill:hover,
+.new-class-input:-webkit-autofill:focus,
+.new-class-input:-webkit-autofill:active,
+.inline-class-input:-webkit-autofill,
+.inline-class-input:-webkit-autofill:hover,
+.inline-class-input:-webkit-autofill:focus,
+.inline-class-input:-webkit-autofill:active,
+.inline-rename-input:-webkit-autofill,
+.inline-rename-input:-webkit-autofill:hover,
+.inline-rename-input:-webkit-autofill:focus,
+.inline-rename-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--surface-color) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+    caret-color: var(--text-primary) !important;
+}
+
+/* ====================================================================
+   NEW CLASS ITEM ENTRANCE ANIMATION (Fluid insertion in list)
+   ==================================================================== */
+
+@keyframes classItemCreatedEnter {
+    0% {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        transform: translateY(-8px) scale(0.99);
+        filter: brightness(1.2);
+    }
+    40% {
+        opacity: 1;
+        max-height: 80px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        transform: translateY(0) scale(1);
+        filter: brightness(1.15);
+    }
+    100% {
+        opacity: 1;
+        max-height: 80px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+    }
+}
+
+.class-management-item.class-item-just-created {
+    overflow: hidden;
+    animation: classItemCreatedEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* ====================================================================
