@@ -1742,6 +1742,7 @@
     cursor: default;
     box-shadow: none !important;
     outline: none !important;
+    outline-offset: 0 !important;
 }
 
 /* Delete confirmation (danger state with soft tint, preserving corners) */
@@ -1925,8 +1926,32 @@
 }
 
 /* In-Situ Renaming State */
-.class-management-item.renaming {
+.class-management-item.renaming,
+.class-management-item.renaming:focus,
+.class-management-item.renaming:focus-visible,
+.class-management-item.renaming:focus-within {
     cursor: default;
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+}
+
+.class-management-item:not(.active-switch).renaming,
+.class-management-item:not(.active-switch).renaming:hover,
+.class-management-item:not(.active-switch).renaming:focus,
+.class-management-item:not(.active-switch).renaming:focus-visible,
+.class-management-item:not(.active-switch).renaming:focus-within {
+    background: var(--surface-color) !important;
+    background-color: var(--surface-color) !important;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+}
+
+.class-management-item:not(.active-switch).renaming:last-child {
+    border-bottom: none;
 }
 
 .class-management-item.renaming .class-drag-handle {

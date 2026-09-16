@@ -1127,6 +1127,7 @@ export const ClassUIManager = {
                     row.classList.add('editing', 'renaming');
                     row.removeAttribute('draggable');
                     row.removeAttribute('tabindex');
+                    row.blur?.();
 
                     // Remplacement in-situ du libellé par l'input
                     nameEl.outerHTML = `
