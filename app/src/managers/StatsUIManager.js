@@ -447,17 +447,21 @@ export const StatsUI = {
 
         // Update Heterogeneity Badge (dans dispersion-card header)
         const hetBadge = document.getElementById('heterogeneityLabel');
-        if (hetBadge && stats.heterogeneity) {
-            if (stats.heterogeneity.label === 'Indéterminée') {
-                hetBadge.textContent = filtered.length === 0 ? '' : '⩾ 2 notes requises';
+        if (hetBadge) {
+            const het = stats.heterogeneity;
+            if (!het || filtered.length === 0) {
+                hetBadge.textContent = '';
+                hetBadge.style.display = 'none';
+                hetBadge.className = 'homogeneity-badge';
+            } else if (het.label === 'Indéterminée') {
+                hetBadge.textContent = '⩾ 2 notes requises';
                 hetBadge.className = 'homogeneity-badge muted';
+                hetBadge.style.display = '';
             } else {
-                hetBadge.textContent = stats.heterogeneity.label;
-                hetBadge.className = `homogeneity-badge ${stats.heterogeneity.colorClass}`;
+                hetBadge.textContent = het.label;
+                hetBadge.className = `homogeneity-badge ${het.colorClass}`;
+                hetBadge.style.display = '';
             }
-        } else if (hetBadge) {
-            hetBadge.textContent = '';
-            hetBadge.className = 'homogeneity-badge';
         }
 
         // Update Histogram (en parallèle avec les animations)

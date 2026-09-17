@@ -1179,6 +1179,10 @@
     white-space: nowrap;
 }
 
+.homogeneity-badge:empty {
+    display: none;
+}
+
 .homogeneity-badge.positive {
     background: rgba(var(--success-rgb), 0.1);
     color: var(--success-color);

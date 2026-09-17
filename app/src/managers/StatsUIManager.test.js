@@ -26,7 +26,10 @@ vi.mock('../utils/Utils.js', () => ({
             if (diff >= 0.5) return 'positive';
             if (diff <= -0.5) return 'negative';
             return 'stable';
-        })
+        }),
+        getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
+        getPeriodLabel: vi.fn(() => 'Trimestre 1'),
+        getGradeClass: vi.fn(() => 'grade-range-12-16')
     }
 }));
 
@@ -224,6 +227,64 @@ describe('StatsUIManager', () => {
             expect(document.getElementById('progressChartBar').style.width).toBe('100%');
             expect(document.getElementById('stableChartBar').style.width).toBe('0%');
             expect(document.getElementById('regressionChartBar').style.width).toBe('0%');
+        });
+    });
+
+    describe('updateStats - heterogeneity badge', () => {
+        let hetBadge;
+
+        beforeEach(async () => {
+            const { appState } = await import('../state/State.js');
+            appState.currentPeriod = 'T1';
+            appState.filteredResults = [];
+
+            hetBadge = document.createElement('span');
+            hetBadge.id = 'heterogeneityLabel';
+            hetBadge.className = 'homogeneity-badge';
+            document.body.appendChild(hetBadge);
+        });
+
+        it('should hide badge when there are 0 students', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.filteredResults = [];
+
+            await StatsUI.updateStats();
+
+            expect(hetBadge.style.display).toBe('none');
+            expect(hetBadge.textContent).toBe('');
+        });
+
+        it('should show "⩾ 2 notes requises" when only 1 grade exists', async () => {
+            const { appState } = await import('../state/State.js');
+            const { StatsService } = await import('../services/StatsService.js');
+            StatsService.calculateHeterogeneity.mockReturnValue({ label: 'Indéterminée', colorClass: 'stable', value: 0 });
+
+            appState.filteredResults = [
+                { studentData: { periods: { T1: { grade: 14 } } } }
+            ];
+
+            await StatsUI.updateStats();
+
+            expect(hetBadge.style.display).toBe('');
+            expect(hetBadge.textContent).toBe('⩾ 2 notes requises');
+            expect(hetBadge.className).toContain('muted');
+        });
+
+        it('should display the heterogeneity label and color class when 2+ grades exist', async () => {
+            const { appState } = await import('../state/State.js');
+            const { StatsService } = await import('../services/StatsService.js');
+            StatsService.calculateHeterogeneity.mockReturnValue({ label: 'Homogène', colorClass: 'positive', value: 1.5 });
+
+            appState.filteredResults = [
+                { studentData: { periods: { T1: { grade: 14 } } } },
+                { studentData: { periods: { T1: { grade: 15 } } } }
+            ];
+
+            await StatsUI.updateStats();
+
+            expect(hetBadge.style.display).toBe('');
+            expect(hetBadge.textContent).toBe('Homogène');
+            expect(hetBadge.className).toContain('positive');
         });
     });
 });
