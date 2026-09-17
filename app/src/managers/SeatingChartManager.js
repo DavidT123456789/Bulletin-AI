@@ -156,7 +156,6 @@ export const SeatingChartManager = {
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
                         <div class="sc-search-box">
-                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                             <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
                             <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>
