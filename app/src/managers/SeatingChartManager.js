@@ -1644,12 +1644,13 @@ export const SeatingChartManager = {
         }
 
         // --- Toolbar Pill Info ---
-        if (this._isLocked) {
-            info.innerHTML = unplaced > 0
-                ? `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span>`
-                : `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}`;
+        const seatsLabel = `<span class="sc-footer-seats"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
+        if (total === 0) {
+            info.innerHTML = seatsLabel;
+        } else if (unplaced > 0) {
+            info.innerHTML = `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span> · ${seatsLabel}`;
         } else {
-            info.innerHTML = `<span class="sc-footer-seats">Places libres : <strong class="sc-dynamic-value">${availableSeats}</strong></span>`;
+            info.innerHTML = `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''} · ${seatsLabel}`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();

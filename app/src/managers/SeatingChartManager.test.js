@@ -449,5 +449,35 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(SeatingChartManager._orientation).toBe('student');
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
     });
+
+    it('devrait afficher un format unifié « X élèves · Y places libres » en édition et en consultation', () => {
+        // 2 élèves, grille 3x3 (9 places), 0 placé -> unplaced = 2, available = 9
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._updateFooter();
+        expect(document.getElementById('scFooterInfo').textContent).toContain('2 non placés');
+        expect(document.getElementById('scFooterInfo').textContent).toContain('9 places libres');
+
+        // Mode consultation (verrouillé) : même format avec alerte si non placés
+        SeatingChartManager._isLocked = true;
+        SeatingChartManager._updateFooter();
+        expect(document.getElementById('scFooterInfo').textContent).toContain('2 non placés');
+        expect(document.getElementById('scFooterInfo').textContent).toContain('9 places libres');
+
+        // Placer tous les élèves
+        SeatingChartManager._gridState[0][0] = 's1';
+        SeatingChartManager._gridState[0][1] = 's2';
+        SeatingChartManager._students[0].seatingPosition = { row: 0, col: 0 };
+        SeatingChartManager._students[1].seatingPosition = { row: 0, col: 1 };
+
+        // Tous placés en édition : « 2 élèves · 7 places libres »
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._updateFooter();
+        expect(document.getElementById('scFooterInfo').textContent).toBe('2 élèves · 7 places libres');
+
+        // Tous placés en consultation : identique
+        SeatingChartManager._isLocked = true;
+        SeatingChartManager._updateFooter();
+        expect(document.getElementById('scFooterInfo').textContent).toBe('2 élèves · 7 places libres');
+    });
 });
 
