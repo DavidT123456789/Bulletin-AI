@@ -237,25 +237,51 @@ export const SeatingChartManager = {
             this._toggleConfigPopover();
         });
 
-        const captureBeforeSlide = () => this._snapshotGrid();
-        
+        let isSliding = false;
+        const startSlide = () => {
+            if (!isSliding) {
+                this._snapshotGrid();
+                isSliding = true;
+            }
+        };
+
         const colsSlider = document.getElementById('scColsSlider');
-        colsSlider?.addEventListener('pointerdown', captureBeforeSlide);
+        colsSlider?.addEventListener('pointerdown', startSlide);
+        colsSlider?.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
+                startSlide();
+            }
+        });
         colsSlider?.addEventListener('input', (e) => {
-            document.getElementById('scColsValue').textContent = e.target.value;
+            startSlide();
+            const valEl = document.getElementById('scColsValue');
+            if (valEl) valEl.textContent = e.target.value;
+            this._onGridConfigChange(true);
         });
         colsSlider?.addEventListener('change', () => {
-            this._onGridConfigChange();
+            isSliding = false;
+            this._onGridConfigChange(false);
         });
 
         const rowsSlider = document.getElementById('scRowsSlider');
-        rowsSlider?.addEventListener('pointerdown', captureBeforeSlide);
+        rowsSlider?.addEventListener('pointerdown', startSlide);
+        rowsSlider?.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
+                startSlide();
+            }
+        });
         rowsSlider?.addEventListener('input', (e) => {
-            document.getElementById('scRowsValue').textContent = e.target.value;
+            startSlide();
+            const valEl = document.getElementById('scRowsValue');
+            if (valEl) valEl.textContent = e.target.value;
+            this._onGridConfigChange(true);
         });
         rowsSlider?.addEventListener('change', () => {
-            this._onGridConfigChange();
+            isSliding = false;
+            this._onGridConfigChange(false);
         });
+
+        window.addEventListener('pointerup', () => { isSliding = false; });
 
         document.getElementById('scSearchInput')?.addEventListener('input', (e) => {
             document.getElementById('scSearchClear')?.classList.toggle('visible', e.target.value.length > 0);
@@ -879,10 +905,15 @@ export const SeatingChartManager = {
         StorageManager.saveAppState();
     },
 
-    _onGridConfigChange() {
+    _onGridConfigChange(interactive = false) {
         const newRows = this._getRows();
         const newCols = this._getCols();
         const oldRows = this._gridState ? this._gridState.length : newRows;
+        const oldCols = this._gridState?.[0]?.length ?? newCols;
+
+        if (newRows === oldRows && newCols === oldCols && interactive) {
+            return;
+        }
         
         const placed = this._getPlacedMap();
         this._initGrid(newRows, newCols);
@@ -930,7 +961,9 @@ export const SeatingChartManager = {
         this._savePositionsToState(); // Persiste immédiatement les nouvelles coordonnées
         this._render();
         this._saveGridConfig();
-        this._staggerCellEntrance();
+        if (!interactive) {
+            this._staggerCellEntrance();
+        }
     },
 
     _getCurrentClass() {

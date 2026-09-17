@@ -2282,13 +2282,13 @@
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    padding: 12px;
-    min-width: 170px;
+    padding: 12px 14px;
+    width: 220px;
     transform-origin: top center;
     z-index: 100;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     opacity: 0;
     transform: translateX(-40%) translateY(-6px) scale(0.95);
     pointer-events: none;
@@ -2318,16 +2318,16 @@
 .sc-config-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .sc-config-label {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-secondary);
-    width: 58px;
+    width: 60px;
     flex-shrink: 0;
-    margin-top: 3px; /* Correction visuelle d'alignement avec la réglette */
+    margin-top: 1px;
 }
 
 .sc-config-row input[type="range"] {
@@ -2336,9 +2336,9 @@
     appearance: none;
     background: transparent;
     cursor: pointer;
-    margin: 0 -8px;
-    width: calc(100% + 16px);
-    height: 20px; /* Zone d'interaction compacte et centrée */
+    margin: 0;
+    width: auto;
+    height: 22px;
     outline: none;
 }
 
