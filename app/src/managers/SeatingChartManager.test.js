@@ -404,6 +404,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
     it('devrait basculer de la vue Enseignant vers la vue Élèves et inversement', () => {
         expect(SeatingChartManager._orientation).toBe('teacher');
         expect(document.getElementById('scDesk').textContent).toContain('Bureau');
+        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(false);
 
         SeatingChartManager._toggleOrientation();
         expect(SeatingChartManager._orientation).toBe('student');
@@ -411,7 +412,8 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(appState.seatingGrid.orientation).toBe('student');
         expect(document.getElementById('scDesk').textContent).toContain('Tableau & Bureau');
         expect(document.getElementById('scDesk').textContent).not.toContain('Vue élèves');
-        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:square-academic-cap-linear');
+        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(true);
+        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
         expect(document.getElementById('scFooterInfo').innerHTML).not.toContain('Vue Élèves');
 
         SeatingChartManager._toggleOrientation();
@@ -419,6 +421,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('teacher');
         expect(appState.seatingGrid.orientation).toBe('teacher');
         expect(document.getElementById('scDesk').textContent).toBe('Bureau');
+        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(false);
         expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
     });
 

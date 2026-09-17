@@ -855,11 +855,11 @@ export const SeatingChartManager = {
         orientationBtns.forEach(btn => {
             if (!btn) return;
             btn.classList.toggle('active', isStudent);
-            btn.setAttribute('aria-label', isStudent ? 'Passer en vue Professeur' : 'Passer en vue Élèves (Vidéoprojection)');
-            btn.setAttribute('data-tooltip', isStudent ? 'Vue Professeur' : 'Vue Élèves (Projection)');
+            btn.setAttribute('aria-label', isStudent ? 'Vue Élèves active (cliquer pour revenir en vue Professeur)' : 'Passer en vue Élèves (Vidéoprojection)');
+            btn.setAttribute('data-tooltip', isStudent ? 'Vue Élèves active' : 'Vue Élèves (Projection)');
             const icon = btn.querySelector('iconify-icon');
             if (icon) {
-                icon.setAttribute('icon', isStudent ? 'solar:square-academic-cap-linear' : 'solar:users-group-rounded-linear');
+                icon.setAttribute('icon', 'solar:users-group-rounded-linear');
             }
         });
         TooltipsUI.initTooltips();
