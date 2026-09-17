@@ -2508,9 +2508,13 @@
 }
 
 /* ────────── ORIENTATION TOGGLE ────────── */
-.sc-action-btn.sc-orientation-btn.active {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+.sc-action-btn.sc-orientation-btn.active,
+#seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active,
+[data-theme="dark"] #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
+    background: var(--primary-color) !important;
+    color: #ffffff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb, 79, 70, 229), 0.4);
 }
 
 .sc-action-btn.sc-orientation-btn iconify-icon {
