@@ -2135,8 +2135,8 @@
 }
 
 .sc-action-btn.sc-auto-place-btn.active {
-    background: var(--item-hover-bg-elevated, var(--bg-tertiary));
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .sc-placement-popover {
@@ -2212,7 +2212,7 @@
     }
 
     .sc-popover-item:not(.sc-popover-item-disabled):hover iconify-icon {
-        color: var(--primary-color);
+        color: var(--text-primary);
     }
 }
 
@@ -2268,9 +2268,8 @@
 }
 
 .sc-action-btn.sc-config-trigger.active {
-    background: var(--surface-color);
-    color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .sc-config-popover {
@@ -2278,9 +2277,11 @@
     top: calc(100% + 8px);
     left: 45%;
     background: var(--surface-color);
-    border: 1px solid var(--glass-surface-border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     padding: 12px;
     min-width: 170px;
     transform-origin: top center;
@@ -2303,8 +2304,8 @@
     width: 8px;
     height: 8px;
     background: var(--surface-color);
-    border-top: 1px solid var(--glass-surface-border);
-    border-left: 1px solid var(--glass-surface-border);
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
     transform: rotate(45deg);
 }
 
