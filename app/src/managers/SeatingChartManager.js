@@ -157,7 +157,7 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
                         <div class="sc-search-box">
                             <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
-                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
+                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" type="button">
                                 <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
                         </div>
@@ -276,6 +276,16 @@ export const SeatingChartManager = {
         document.getElementById('scSearchInput')?.addEventListener('input', (e) => {
             document.getElementById('scSearchClear')?.classList.toggle('visible', e.target.value.length > 0);
             this._renderSidebar();
+        });
+
+        document.getElementById('scSearchInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && e.target.value) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.target.value = '';
+                document.getElementById('scSearchClear')?.classList.remove('visible');
+                this._renderSidebar();
+            }
         });
 
         document.getElementById('scSearchClear')?.addEventListener('click', () => {

@@ -21,6 +21,23 @@ a, button, input, select, textarea, [role="button"], .student-row, .student-row 
     touch-action: manipulation;
 }
 
+/* Disable native browser clear/reveal buttons (Edge/IE ::-ms-clear, WebKit search cancel) to prevent duplicate buttons */
+input::-ms-clear,
+input::-ms-reveal {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+input::-webkit-search-decoration,
+input::-webkit-search-cancel-button,
+input::-webkit-search-results-button,
+input::-webkit-search-results-decoration {
+    -webkit-appearance: none !important;
+    display: none !important;
+}
+
+
 /* Premium Focus Outline System - Disabled on click/touch, enabled on keyboard navigation */
 *:focus {
     outline: none !important;

@@ -375,7 +375,7 @@
 .sc-search-box input {
     width: 100%;
     box-sizing: border-box;
-    padding: 8px 32px 8px 14px;
+    padding: 8px 34px 8px 14px;
     border: var(--input-border-width) solid var(--border-color);
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
@@ -390,24 +390,40 @@
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
+.sc-search-box input::-ms-clear,
+.sc-search-box input::-ms-reveal {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.sc-search-box input::-webkit-search-decoration,
+.sc-search-box input::-webkit-search-cancel-button,
+.sc-search-box input::-webkit-search-results-button,
+.sc-search-box input::-webkit-search-results-decoration {
+    -webkit-appearance: none !important;
+    display: none !important;
+}
+
 .sc-search-clear {
     position: absolute;
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border: none;
-    background: transparent;
+    background: var(--bg-tertiary);
     border-radius: var(--radius-pill);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-size: 11px;
     cursor: pointer;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
 }
 
 .sc-search-clear iconify-icon {
@@ -422,13 +438,13 @@
 }
 
 .sc-search-clear:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    transform: scale(1.1);
+    background: var(--text-tertiary);
+    color: var(--surface-color);
+    transform: translateY(-50%) scale(1.08);
 }
 
 .sc-search-clear:active {
-    transform: scale(0.95);
+    transform: translateY(-50%) scale(0.92);
 }
 
 .sc-student-list {
