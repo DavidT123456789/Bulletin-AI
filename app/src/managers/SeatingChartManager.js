@@ -177,7 +177,7 @@ export const SeatingChartManager = {
                     <div class="sc-classroom-board" id="scClassroomBoard">
                         <div class="sc-grid-container" id="scGridContainer"></div>
                         <div class="sc-desk-row">
-                            <div class="sc-desk" id="scDesk"><iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Bureau</span></div>
+                            <div class="sc-desk" id="scDesk"><iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
                         </div>
                     </div>
                 </div>
@@ -842,9 +842,7 @@ export const SeatingChartManager = {
         // Update desk text & icon
         const desk = document.getElementById('scDesk');
         if (desk) {
-            desk.innerHTML = isStudent
-                ? '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau & Bureau</span>'
-                : '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Bureau</span>';
+            desk.innerHTML = '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span>';
         }
 
         // Update orientation action buttons
