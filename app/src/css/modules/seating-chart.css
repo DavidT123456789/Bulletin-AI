@@ -1163,11 +1163,20 @@
 .sc-cell.empty.sc-cell-special-aesh,
 .sc-cell.empty.sc-cell-special-blocked {
     opacity: 0.72;
+    transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
 }
 
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-aesh,
 #seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
     pointer-events: none;
+}
+
+/* Edit mode: cell restores full opacity on hover so overlay tool buttons have 100% luminance */
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh:hover,
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-blocked:hover {
+        opacity: 1;
+    }
 }
 
 .sc-cell.empty.sc-cell-special-aesh {
@@ -1200,6 +1209,19 @@
 .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
     color: var(--error-color);
     font-weight: 600;
+}
+
+/* In consultation/locked mode, "Condamné" becomes quiet neutral zinc so it doesn't distract from students */
+#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked {
+    border-color: var(--border-color);
+    background: rgba(var(--surface-color-rgb), 0.18);
+    opacity: 0.45;
+}
+
+#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+#seatingChartView[data-locked="true"] .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+    color: var(--text-tertiary);
+    font-weight: 500;
 }
 
 .sc-special-icon {
@@ -1283,6 +1305,12 @@
         border-color: var(--primary-color);
         color: white;
         transform: scale(1.15);
+    }
+
+    .sc-special-btn[data-type="aesh"]:hover {
+        background: var(--purple-color);
+        border-color: var(--purple-color);
+        color: white;
     }
 
     .sc-special-btn[data-type="blocked"]:hover {
@@ -1685,6 +1713,16 @@
         background: transparent !important;
         box-shadow: none !important;
         opacity: 0 !important;
+    }
+
+    .sc-cell.empty.sc-cell-special-blocked {
+        border: 1.5px dashed #ccc !important;
+        background: rgba(0, 0, 0, 0.02) !important;
+    }
+
+    .sc-cell.empty.sc-cell-special-blocked .sc-special-icon,
+    .sc-cell.empty.sc-cell-special-blocked .sc-cell-name {
+        color: #777 !important;
     }
     
     .sc-cell.occupied { 
