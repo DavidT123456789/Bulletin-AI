@@ -672,106 +672,126 @@
 }
 
 /* ====================================================================
-   SMART ACTION BUTTON INLINE - Minimalist Notification Style
-   Switches between Generate (purple) and Update (orange) modes
+   SMART ACTION BUTTON INLINE - Minimalist Capsule Pill Style (V3)
+   Switches between Generate (AI) and Update (Refresh) modes
    ==================================================================== */
 .btn-smart-action-inline {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 50%;
-    background: transparent; /* Fond totalement retiré au repos */
-    color: var(--text-primary) !important;
-    border: none;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px 0 9px;
+    border-radius: var(--radius-pill);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    line-height: 1;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
     pointer-events: auto;
     position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .btn-smart-action-inline {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .btn-smart-action-inline:hover {
     background: var(--item-hover-bg);
-    transform: scale(1.05); /* Grow the whole button on hover */
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-smart-action-inline:active {
-    transform: scale(0.92);
+    transform: scale(0.96);
 }
 
-/* Icon internal transition */
+/* Icon base transition */
 .btn-smart-action-inline .smart-action-icon {
-    font-size: 16px;
-    color: var(--text-secondary);
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), color 0.2s ease;
+    font-size: 15px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color var(--transition-fast);
 }
 
-[data-theme="dark"] .btn-smart-action-inline .smart-action-icon {
-    color: var(--text-primary);
-}
-
-.btn-smart-action-inline:hover .smart-action-icon {
-    color: var(--text-primary);
-}
-
-/* Flip the magic wand so the handle points left, moving it away from the badge */
+/* Mode Generate: Solar magic stick points upwards-right at 45° via rotate(90deg) */
 .btn-smart-action-inline.mode-generate .smart-action-icon {
-    transform: scaleX(-1);
+    color: var(--primary-color);
+    transform: translate(0, 0) rotate(90deg);
+    transform-origin: center;
 }
 
+[data-theme="dark"] .btn-smart-action-inline.mode-generate .smart-action-icon {
+    color: var(--primary-bright);
+}
+
+/* Hover: thrust forward along wand axis (45° diagonal: +X right, -Y up) */
 .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
-    transform: scaleX(-1) scale(1.1) rotate(-5deg);
+    transform: translate(2.5px, -2.5px) rotate(90deg) scale(1.12);
+    color: var(--primary-hover);
+}
+
+[data-theme="dark"] .btn-smart-action-inline.mode-generate:hover .smart-action-icon {
+    color: var(--color-blue-bright);
+}
+
+/* Mode Update: Refresh icon */
+.btn-smart-action-inline.mode-update .smart-action-icon {
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .btn-smart-action-inline.mode-update .smart-action-icon {
+    color: var(--warning-bright);
+}
+
+.btn-smart-action-inline.mode-update:hover {
+    border-color: rgba(var(--warning-rgb), 0.35);
 }
 
 .btn-smart-action-inline.mode-update:hover .smart-action-icon {
     transform: rotate(90deg);
 }
 
-/* Badge notification overlay - Floating minimalist number */
-.smart-action-badge {
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
-    min-width: 14px;
-    height: 14px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600; /* Entre 500 et 700 (Semi-bold) */
-    background: transparent; /* Aucun fond */
-    z-index: 2;
-    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+/* Badge count - Inline typography with neutral color (strictly no purple) */
+.btn-smart-action-inline .smart-action-badge,
+.btn-smart-action-inline.mode-generate .smart-action-badge,
+.btn-smart-action-inline #generateBadgeInline,
+.btn-smart-action-inline #updateBadgeInline {
+    position: static !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    font-variant-numeric: tabular-nums !important;
+    letter-spacing: -0.01em !important;
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    transition: color var(--transition-fast);
 }
 
-/* Cleanup leftover styles from previous iteration */
-.sortable-header:hover .smart-action-badge {
-    background: transparent;
-}
-
-/* Hover scales the number slightly */
-.btn-smart-action-inline:hover .smart-action-badge {
-    transform: scale(1.1);
-}
-
-/* Mode Generate (Purple/AI) - Text alone gets the color */
-.btn-smart-action-inline.mode-generate .smart-action-badge {
-    color: var(--color-violet);
-}
-
-/* Mode Update (Orange/Warning) - Text alone gets the color */
-.btn-smart-action-inline.mode-update .smart-action-badge {
-    color: var(--warning-color, #f59e0b);
+.btn-smart-action-inline:hover .smart-action-badge,
+.btn-smart-action-inline.mode-generate:hover .smart-action-badge,
+.btn-smart-action-inline:hover #generateBadgeInline,
+.btn-smart-action-inline:hover #updateBadgeInline {
+    color: var(--text-primary) !important;
 }
 
 /* Animation d'apparition */
 @keyframes inline-btn-appear {
     from {
         opacity: 0;
-        transform: scale(0.8);
+        transform: scale(0.85);
     }
     to {
         opacity: 1;
@@ -780,24 +800,26 @@
 }
 
 .btn-smart-action-inline.animate-in {
-    animation: inline-btn-appear 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: inline-btn-appear 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 /* Loading & disabled state */
 .btn-smart-action-inline.loading,
 .btn-smart-action-inline:disabled {
     pointer-events: none !important;
-    opacity: 0.5 !important;
+    opacity: 0.6 !important;
     cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
-/* Animations spécifiques selon le mode */
+/* Animations spécifiques selon le mode - tap strictly along wand diagonal */
 @keyframes wand-tap {
     0%, 100% {
-        transform: scaleX(-1) rotate(0deg) scale(1);
+        transform: translate(0, 0) rotate(90deg) scale(1);
     }
     50% {
-        transform: scaleX(-1) rotate(-15deg) scale(1.15);
+        transform: translate(3px, -3px) rotate(90deg) scale(1.15);
     }
 }
 
