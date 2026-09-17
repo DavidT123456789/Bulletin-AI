@@ -867,8 +867,10 @@ export const SeatingChartManager = {
         // Animated tactile flip transition on board
         const board = document.getElementById('scClassroomBoard');
         if (board) {
+            board.classList.remove('sc-orienting');
+            void board.offsetWidth;
             board.classList.add('sc-orienting');
-            setTimeout(() => board.classList.remove('sc-orienting'), 250);
+            setTimeout(() => board.classList.remove('sc-orienting'), 550);
         }
 
         this._renderGrid();
