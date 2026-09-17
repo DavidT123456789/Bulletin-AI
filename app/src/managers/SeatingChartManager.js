@@ -826,11 +826,11 @@ export const SeatingChartManager = {
 
     _toggleOrientation() {
         const next = this._orientation === 'student' ? 'teacher' : 'student';
-        this._applyOrientation(next);
+        this._applyOrientation(next, true);
         this._saveGridConfig();
     },
 
-    _applyOrientation(orientation) {
+    _applyOrientation(orientation, animate = false) {
         this._orientation = orientation;
         const view = document.getElementById('seatingChartView');
         if (view) {
@@ -860,15 +860,23 @@ export const SeatingChartManager = {
             const icon = btn.querySelector('iconify-icon');
             if (icon) {
                 icon.setAttribute('icon', 'solar:users-group-rounded-linear');
+                if (animate) {
+                    icon.classList.remove('sc-anim-spin-forward', 'sc-anim-spin-backward');
+                    void icon.offsetWidth;
+                    icon.classList.add(isStudent ? 'sc-anim-spin-forward' : 'sc-anim-spin-backward');
+                    setTimeout(() => {
+                        icon.classList.remove('sc-anim-spin-forward', 'sc-anim-spin-backward');
+                    }, 550);
+                }
             }
         });
         TooltipsUI.initTooltips();
 
         // Animated tactile flip transition on board
         const board = document.getElementById('scClassroomBoard');
-        if (board) {
+        if (board && animate) {
             board.classList.add('sc-orienting');
-            setTimeout(() => board.classList.remove('sc-orienting'), 250);
+            setTimeout(() => board.classList.remove('sc-orienting'), 300);
         }
 
         this._renderGrid();

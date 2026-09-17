@@ -2508,6 +2508,18 @@
 }
 
 /* ────────── ORIENTATION TOGGLE ────────── */
+.sc-action-btn.sc-orientation-btn {
+    transition: background var(--transition-base),
+                color var(--transition-base),
+                border-color var(--transition-base),
+                box-shadow var(--transition-spring),
+                transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.sc-action-btn.sc-orientation-btn:active {
+    transform: scale(0.88);
+}
+
 .sc-action-btn.sc-orientation-btn.active,
 #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active,
 [data-theme="dark"] #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
@@ -2518,9 +2530,55 @@
 }
 
 .sc-action-btn.sc-orientation-btn iconify-icon {
-    transition: transform 0.3s var(--ease-spring);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center;
+    will-change: transform;
 }
 
-.sc-action-btn.sc-orientation-btn:active iconify-icon {
-    transform: rotate(180deg);
+/* Apple-grade spring spin (Forward: Teacher → Student) */
+.sc-action-btn.sc-orientation-btn iconify-icon.sc-anim-spin-forward {
+    animation: sc-spring-spin-forward 0.52s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+}
+
+/* Apple-grade spring spin (Backward: Student → Teacher) */
+.sc-action-btn.sc-orientation-btn iconify-icon.sc-anim-spin-backward {
+    animation: sc-spring-spin-backward 0.52s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+}
+
+@keyframes sc-spring-spin-forward {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    18% {
+        transform: scale(0.84) rotate(-22deg);
+    }
+    62% {
+        transform: scale(1.14) rotate(376deg);
+    }
+    84% {
+        transform: scale(0.97) rotate(358deg);
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+    }
+}
+
+@keyframes sc-spring-spin-backward {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    18% {
+        transform: scale(0.84) rotate(22deg);
+    }
+    62% {
+        transform: scale(1.14) rotate(-376deg);
+    }
+    84% {
+        transform: scale(0.97) rotate(-358deg);
+    }
+    100% {
+        transform: scale(1) rotate(-360deg);
+    }
 }
