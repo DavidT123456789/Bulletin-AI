@@ -97,8 +97,8 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
                                 <div class="sc-placement-wrapper">
-                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer les élèves" data-tooltip="Agencer les élèves">
-                                        <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer la classe" data-tooltip="Agencer la classe">
+                                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
                                         <button class="sc-popover-item" data-mode="alpha-asc" type="button">
@@ -1154,7 +1154,10 @@ export const SeatingChartManager = {
         if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
         if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
         if (clearBtn) clearBtn.disabled = placedCount === 0;
-        if (autoPlaceBtn) autoPlaceBtn.disabled = totalCount === 0;
+        if (autoPlaceBtn) {
+            autoPlaceBtn.disabled = totalCount === 0;
+            if (totalCount > 0) autoPlaceBtn.removeAttribute('disabled');
+        }
     },
 
     // ========================================================================

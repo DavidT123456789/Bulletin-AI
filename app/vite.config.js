@@ -25,7 +25,7 @@ export default defineConfig({
       manifest: false, // Utilise public/manifest.webmanifest
       workbox: {
         clientsClaim: true,
-        skipWaiting: false,
+        skipWaiting: true,
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,png,svg,ico,woff,woff2}', 'app.html'],
         navigateFallback: null, // Don't cache navigation requests
