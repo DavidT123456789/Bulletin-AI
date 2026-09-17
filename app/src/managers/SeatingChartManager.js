@@ -561,7 +561,7 @@ export const SeatingChartManager = {
 
     /** Stagger cell entrance (used after render) */
     _staggerCellEntrance(baseDelay = 0) {
-        const cells = document.querySelectorAll('#scGridContainer .sc-cell');
+        const cells = document.querySelectorAll('#scGridContainer .sc-cell:not([class*="sc-cell-special-"])');
         cells.forEach((cell, i) => {
             cell.style.setProperty('--cell-i', i);
             if (baseDelay > 0) {
