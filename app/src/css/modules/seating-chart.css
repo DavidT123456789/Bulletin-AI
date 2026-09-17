@@ -276,7 +276,8 @@
 
 /* Hide edit tools strictly gracefully */
 #seatingChartView[data-locked="true"] .sc-edit-only {
-    display: none !important;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ────────── PROGRESS BAR ────────── */
@@ -328,30 +329,41 @@
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    position: relative;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
 }
 
 /* ────────── SIDEBAR ────────── */
 .sc-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
     width: 260px;
-    flex-shrink: 0;
+    z-index: 200;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-color);
     background: var(--surface-color);
-    transition: margin-left 0.45s cubic-bezier(0.32, 0.72, 0, 1),
-                opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1);
-    overflow: visible;
-    will-change: margin-left, opacity;
-    position: relative;
-    z-index: 200;
+    box-shadow: var(--shadow-sm);
+    translate: 0 0;
+    opacity: 1;
+    transition: translate 0.5s cubic-bezier(0.25, 0.85, 0.3, 1),
+                opacity 0.4s ease,
+                visibility 0.5s;
     padding-top: 56px;
+    overflow: visible;
 }
 
 .sc-sidebar-header {
     padding: 12px var(--content-padding-x, 24px) 8px;
     flex-shrink: 0;
     max-height: 150px;
-    transition: all 0.4s var(--ease-spring);
+    transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.3s ease,
+                padding 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
 }
 
@@ -509,6 +521,7 @@
 /* ────────── GRID AREA ────────── */
 .sc-grid-area {
     flex: 1;
+    width: 100%;
     display: flex;
     flex-direction: column;
     /* Use safe center to avoid cutting off left content on mobile when the grid overflows */
@@ -519,9 +532,7 @@
     overflow: auto;
     min-width: 0;
     min-height: 0;
-    background-color: var(--bg-color);
-    background-image: radial-gradient(rgba(var(--text-secondary-rgb), 0.08) 1.2px, transparent 1.2px);
-    background-size: 18px 18px;
+    background: transparent;
 }
 
 /* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
@@ -550,7 +561,11 @@
     align-items: safe center;
     gap: 16px;
     position: relative;
-    transition: all 0.3s var(--ease-spring);
+    translate: 130px 0;
+    transition: translate 0.5s cubic-bezier(0.25, 0.85, 0.3, 1),
+                box-shadow 0.2s ease,
+                border-color 0.2s ease,
+                background-color 0.2s ease;
     width: fit-content;
 }
 
@@ -564,41 +579,75 @@
     margin-bottom: 4px;
 }
 
+/* Prevent scrollbar flicker while card rotates */
+#seatingChartView:has(.sc-classroom-board.sc-orienting) .sc-grid-area {
+    overflow: hidden;
+}
+
 #seatingChartView[data-orientation="student"] .sc-classroom-board.sc-orienting {
-    animation: sc-board-flip-up 0.55s var(--ease-spring);
+    animation: sc-board-rotate-student 0.52s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
+    will-change: transform, opacity;
 }
 
 #seatingChartView[data-orientation="teacher"] .sc-classroom-board.sc-orienting {
-    animation: sc-board-flip-down 0.55s var(--ease-spring);
+    animation: sc-board-rotate-teacher 0.52s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
+    will-change: transform, opacity;
 }
 
-@keyframes sc-board-flip-up {
+#seatingChartView .sc-classroom-board.sc-orienting .sc-desk {
+    animation: sc-desk-orient-settle 0.45s var(--ease-spring);
+}
+
+@keyframes sc-board-rotate-student {
     0% {
-        transform: perspective(1200px) rotateX(0deg);
-        opacity: 1;
+        opacity: 0.35;
+        transform: rotate(-180deg) scale(0.92);
     }
-    35% {
-        transform: perspective(1200px) rotateX(14deg);
-        opacity: 0.6;
+    60% {
+        opacity: 1;
+        transform: rotate(3deg) scale(1.008);
+    }
+    82% {
+        transform: rotate(-1deg) scale(0.998);
     }
     100% {
-        transform: perspective(1200px) rotateX(0deg);
         opacity: 1;
+        transform: rotate(0deg) scale(1);
     }
 }
 
-@keyframes sc-board-flip-down {
+@keyframes sc-board-rotate-teacher {
     0% {
-        transform: perspective(1200px) rotateX(0deg);
-        opacity: 1;
+        opacity: 0.35;
+        transform: rotate(180deg) scale(0.92);
     }
-    35% {
-        transform: perspective(1200px) rotateX(-14deg);
-        opacity: 0.6;
+    60% {
+        opacity: 1;
+        transform: rotate(-3deg) scale(1.008);
+    }
+    82% {
+        transform: rotate(1deg) scale(0.998);
     }
     100% {
-        transform: perspective(1200px) rotateX(0deg);
         opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+@keyframes sc-desk-orient-settle {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.9);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.04);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
@@ -955,12 +1004,24 @@
 
 /* ────────── LOCKED STATE ────────── */
 
-/* Sidebar: fully hidden in locked mode — clean read-only view */
+/* Sidebar: fully hidden in locked mode — clean read-only view (120Hz GPU translate) */
 #seatingChartView[data-locked="true"] .sc-sidebar {
-    margin-left: -260px;
+    translate: -100% 0;
     opacity: 0;
     pointer-events: none;
-    overflow: hidden;
+    visibility: hidden;
+    transition: translate 0.42s cubic-bezier(0.25, 1, 0.3, 1),
+                opacity 0.35s ease,
+                visibility 0.42s;
+}
+
+/* Classroom Board: centered in screen in locked mode (120Hz GPU translate) */
+#seatingChartView[data-locked="true"] .sc-classroom-board {
+    translate: 0 0;
+    transition: translate 0.42s cubic-bezier(0.25, 1, 0.3, 1),
+                box-shadow 0.2s ease,
+                border-color 0.2s ease,
+                background-color 0.2s ease;
 }
 
 /* Progress bar: hidden in locked mode — it's an editing affordance */
@@ -1533,6 +1594,7 @@
     }
 
     .sc-classroom-board {
+        translate: 0 0 !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -1653,24 +1715,34 @@
     }
 
     .sc-sidebar {
+        position: relative;
         width: 100%;
         max-height: none;
+        translate: none !important;
         border-right: none;
         border-top: 1px solid var(--border-color);
         border-bottom: none;
         padding-top: 0;
         flex-shrink: 0;
         overflow: visible;
+        transition: max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* Locked sidebar collapses vertically on mobile */
     #seatingChartView[data-locked="true"] .sc-sidebar {
+        translate: none !important;
         width: 100%;
         max-height: 0;
         margin-left: 0;
         margin-top: 0;
         border-top: none;
         overflow: hidden;
+    }
+
+    .sc-classroom-board,
+    #seatingChartView[data-locked="true"] .sc-classroom-board {
+        translate: 0 0 !important;
     }
 
     /* ── Sidebar Toolbar: single compact pill ── */
@@ -2019,6 +2091,9 @@
     .sc-student-chip.sc-chip-returning,
     .sc-grid-area.sc-lock-morph,
     .sc-desk.sc-desk-entering,
+    .sc-classroom-board.sc-orienting,
+    .sc-classroom-board.sc-orienting .sc-desk,
+    .sc-action-btn.sc-orientation-btn.active iconify-icon,
     #seatingChartView.sc-entering .sc-toolbar,
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
@@ -2118,7 +2193,8 @@
 }
 
 #seatingChartView[data-locked="true"] .sc-edit-only {
-    display: none !important;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Action Buttons */
@@ -2477,27 +2553,18 @@
     gap: 8px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 0.25s ease, transform 0.3s ease, visibility 0.3s;
     transform: translateY(-8px);
     z-index: 100;
     visibility: hidden;
 }
 
-#seatingChartView[data-locked="true"] .sc-floating-actions.sc-read-only-only {
+#seatingChartView[data-locked="true"] .sc-floating-actions {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
     visibility: visible;
-     /* Slight delay to let sidebar close */
-}
-
-/* Base state for read-only items */
-.sc-read-only-only {
-    display: none;
-}
-
-#seatingChartView[data-locked="true"] .sc-read-only-only {
-    display: flex;
+    transition: opacity 0.35s ease 0.05s, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1) 0.05s, visibility 0.42s;
 }
 
 .sc-floating-actions .sc-action-btn {
@@ -2544,11 +2611,12 @@
     transition: background var(--transition-base),
                 color var(--transition-base),
                 border-color var(--transition-base),
-                box-shadow var(--transition-spring);
+                box-shadow var(--transition-spring),
+                transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .sc-action-btn.sc-orientation-btn:active {
-    transform: none !important;
+    transform: scale(0.88) !important;
 }
 
 .sc-action-btn.sc-orientation-btn.active,
@@ -2565,10 +2633,9 @@
     align-items: center;
     justify-content: center;
     transform-origin: center center;
-    transition: transform 0.6s var(--ease-spring);
-    will-change: transform;
+    transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
 .sc-action-btn.sc-orientation-btn.active iconify-icon {
-    transform: rotate(360deg);
+    transform: rotate(180deg) scale(1.1);
 }

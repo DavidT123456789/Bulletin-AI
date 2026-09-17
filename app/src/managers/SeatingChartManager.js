@@ -551,18 +551,23 @@ export const SeatingChartManager = {
     },
 
     /** Stagger cell entrance (used after render) */
-    _staggerCellEntrance() {
+    _staggerCellEntrance(baseDelay = 0) {
         const cells = document.querySelectorAll('#scGridContainer .sc-cell');
         cells.forEach((cell, i) => {
             cell.style.setProperty('--cell-i', i);
+            if (baseDelay > 0) {
+                cell.style.animationDelay = `calc(${baseDelay}ms + ${i * 20}ms)`;
+            }
             cell.classList.add('sc-cell-stagger');
         });
+        const duration = cells.length * 20 + 400 + baseDelay;
         setTimeout(() => {
             cells.forEach(c => {
                 c.classList.remove('sc-cell-stagger');
                 c.style.removeProperty('--cell-i');
+                c.style.removeProperty('animation-delay');
             });
-        }, cells.length * 25 + 400);
+        }, duration);
     },
 
     /** Animate a single cell as "placed" (from sidebar) */
@@ -765,6 +770,7 @@ export const SeatingChartManager = {
             btn.classList.toggle('locked', locked);
             btn.setAttribute('aria-checked', (!locked).toString());
         }
+        this._updateCellsDraggability();
     },
 
     _toggleLock() {
@@ -775,17 +781,23 @@ export const SeatingChartManager = {
 
         btn.classList.toggle('locked', this._isLocked);
         btn.setAttribute('aria-checked', (!this._isLocked).toString());
+        view.dataset.locked = this._isLocked;
 
         this._clearSelection();
         if (this._isLocked) this._closeConfigPopover();
-        
-        // Defer intensive serialization to allow CSS transition to start instantly
-        setTimeout(() => this._saveGridConfig(), 100);
 
         this._updateSidebarLockState();
         this._updateFooter();
 
-        // Update grid draggability and tooltips without rebuilding DOM
+        // Defer non-critical DOM updates to keep the animation at 60/120 FPS
+        setTimeout(() => {
+            this._saveGridConfig();
+            this._updateCellsDraggability();
+            TooltipsUI?.initTooltips?.();
+        }, 50);
+    },
+
+    _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
             cell.draggable = !this._isLocked && !isPinned;
@@ -798,18 +810,6 @@ export const SeatingChartManager = {
                 cell.removeAttribute('data-tooltip');
             }
         });
-
-        // Re-initialize tooltips
-        TooltipsUI.initTooltips();
-
-        if (this._isLocked) {
-            view.dataset.locked = this._isLocked;
-        } else {
-            // Defer unlocking view datatset to let the sidebar populate first
-            requestAnimationFrame(() => {
-                view.dataset.locked = this._isLocked;
-            });
-        }
     },
 
     /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
@@ -826,11 +826,11 @@ export const SeatingChartManager = {
 
     _toggleOrientation() {
         const next = this._orientation === 'student' ? 'teacher' : 'student';
-        this._applyOrientation(next);
+        this._applyOrientation(next, true);
         this._saveGridConfig();
     },
 
-    _applyOrientation(orientation) {
+    _applyOrientation(orientation, animate = false) {
         this._orientation = orientation;
         const view = document.getElementById('seatingChartView');
         if (view) {
@@ -862,16 +862,22 @@ export const SeatingChartManager = {
         });
         TooltipsUI.initTooltips();
 
-        // Animated tactile flip transition on board
-        const board = document.getElementById('scClassroomBoard');
-        if (board) {
-            board.classList.remove('sc-orienting');
-            void board.offsetWidth;
-            board.classList.add('sc-orienting');
-            setTimeout(() => board.classList.remove('sc-orienting'), 550);
+        if (animate) {
+            // 180° rotation spring transition on board
+            const board = document.getElementById('scClassroomBoard');
+            if (board) {
+                board.classList.remove('sc-orienting');
+                void board.offsetWidth;
+                board.classList.add('sc-orienting');
+                setTimeout(() => board.classList.remove('sc-orienting'), 550);
+            }
+
+            this._renderGrid();
+            this._staggerCellEntrance(140);
+        } else {
+            this._renderGrid();
         }
 
-        this._renderGrid();
         this._updateFooter();
         this._scrollToDesk();
     },

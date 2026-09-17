@@ -37,15 +37,13 @@
     display: flex;
     flex-direction: column;
     background: var(--modal-bg);
-    /* iOS 2025 Spring Animation with blur */
+    /* Apple Sheet / Card 120Hz Animation */
     opacity: 0;
-    transform: scale(0.92) translateY(16px);
-    filter: blur(4px);
-    transition: opacity 0.45s var(--ease-spring),
-        transform 0.45s var(--ease-spring),
-        filter 0.35s var(--ease-spring);
+    transform: scale(0.95) translateY(14px);
+    transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
     /* GPU optimization - promote to own layer */
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
     transform-style: preserve-3d;
     backface-visibility: hidden;
 }
@@ -53,17 +51,14 @@
 .modal.modal-visible .modal-content {
     opacity: 1;
     transform: scale(1) translateY(0);
-    filter: blur(0);
 }
 
-/* Animation de fermeture - SpÃƒÂ©cificitÃƒÂ© augmentÃƒÂ©e pour avoir prioritÃƒÂ© sur modal-visible */
+/* Animation de fermeture - Spécificité augmentée pour avoir priorité sur modal-visible */
 .modal.modal-visible.modal-closing .modal-content {
     opacity: 0 !important;
-    transform: scale(0.95) translateY(8px) !important;
-    filter: blur(2px) !important;
-    transition: opacity 0.25s var(--ease-spring),
-        transform 0.25s var(--ease-spring),
-        filter 0.2s var(--ease-spring) !important;
+    transform: scale(0.96) translateY(8px) !important;
+    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Backdrop fade out during closing */

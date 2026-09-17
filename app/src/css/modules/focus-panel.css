@@ -54,8 +54,8 @@
     transform: translateX(100%);
     /* iOS Spring easing for authentic feel */
     transition:
-        transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
-        box-shadow 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+        transform 0.46s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.46s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -93,7 +93,7 @@
     z-index: var(--z-focus-panel-backdrop);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.4s ease, visibility 0.4s ease;
+    transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.38s;
 }
 
 .focus-panel-backdrop.visible {
