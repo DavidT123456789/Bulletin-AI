@@ -509,6 +509,7 @@
 .sc-student-chip-name .student-prenom {
     font-weight: 400;
     color: var(--text-secondary);
+    margin-left: 2px;
 }
 
 /* ────────── GRID AREA ────────── */
