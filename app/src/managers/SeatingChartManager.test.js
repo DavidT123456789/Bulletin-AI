@@ -215,7 +215,6 @@ describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sid
         ];
 
         SeatingChartManager._isLocked = false;
-        SeatingChartManager._sidebarSortOrder = 'asc';
         SeatingChartManager._undoStack = [];
         SeatingChartManager._redoStack = [];
         SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();

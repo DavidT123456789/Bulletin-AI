@@ -367,18 +367,22 @@
     margin-bottom: 14px;
 }
 
-.sc-search-box { position: relative; }
+.sc-search-box {
+    position: relative;
+    width: 100%;
+}
 
 .sc-search-box input {
     width: 100%;
-    padding: 7px 32px 7px 32px;
+    box-sizing: border-box;
+    padding: 7px 32px 7px 36px;
     border: var(--input-border-width) solid var(--border-color);
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
     color: var(--text-primary);
     font-size: 0.82rem;
     outline: none;
-    transition: all 0.2s;
+    transition: all 0.2s var(--ease-spring);
 }
 
 .sc-search-box input:focus { 
@@ -388,10 +392,9 @@
 
 .sc-search-box > iconify-icon {
     position: absolute;
-    left: 10px;
-    top: 0;
-    bottom: 0;
-    margin: auto 0;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 1em;
     height: 1em;
     display: flex;
@@ -411,10 +414,9 @@
 
 .sc-search-clear {
     position: absolute;
-    right: 7px;
-    top: 0;
-    bottom: 0;
-    margin: auto 0;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 22px;
     height: 22px;
     border: none;
@@ -427,7 +429,7 @@
     place-items: center;
     opacity: 0;
     pointer-events: none;
-    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .sc-search-clear iconify-icon {
@@ -2278,20 +2280,6 @@
     color: var(--text-secondary);
 }
 
-/* Sidebar sort controls */
-.sc-sidebar-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.sc-sidebar-controls .sc-search-box {
-    flex: 1;
-}
-
-.sc-sidebar-sort-btn {
-    flex-shrink: 0;
-}
 
 /* ---------- CONFIG POPOVER (Restored) ---------- */
 .sc-config-wrapper {

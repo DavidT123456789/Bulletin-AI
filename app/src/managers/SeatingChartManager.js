@@ -27,7 +27,6 @@ export const SeatingChartManager = {
     _touchSourceInfo: null,
     _configPopoverOpen: false,
     _placementPopoverOpen: false,
-    _sidebarSortOrder: 'asc',
     _prevPlacedCount: 0,
     _selectedChipIds: [],
     _lastSelectedGridPos: null,
@@ -156,16 +155,11 @@ export const SeatingChartManager = {
                     </div>
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
-                        <div class="sc-sidebar-controls">
-                            <div class="sc-search-box">
-                                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                                <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
-                                <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
-                                    <iconify-icon icon="ph:x"></iconify-icon>
-                                </button>
-                            </div>
-                            <button class="sc-action-btn sc-sidebar-sort-btn" id="scSidebarSortBtn" aria-label="Trier A à Z" data-tooltip="Trier : A → Z" type="button">
-                                <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                        <div class="sc-search-box">
+                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
+                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
                             </button>
                         </div>
                     </div>
@@ -219,9 +213,6 @@ export const SeatingChartManager = {
                 this._closePlacementPopover();
                 this._autoPlace(mode);
             }
-        });
-        document.getElementById('scSidebarSortBtn')?.addEventListener('click', () => {
-            this._toggleSidebarSort();
         });
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
@@ -377,18 +368,6 @@ export const SeatingChartManager = {
         this._placementPopoverOpen = false;
     },
 
-    _toggleSidebarSort() {
-        this._sidebarSortOrder = this._sidebarSortOrder === 'asc' ? 'desc' : 'asc';
-        const btn = document.getElementById('scSidebarSortBtn');
-        if (btn) {
-            const isDesc = this._sidebarSortOrder === 'desc';
-            btn.innerHTML = `<iconify-icon icon="${isDesc ? 'solar:sort-from-bottom-to-top-linear' : 'solar:sort-by-alphabet-linear'}"></iconify-icon>`;
-            btn.setAttribute('data-tooltip', isDesc ? 'Trier : Z → A' : 'Trier : A → Z');
-            btn.setAttribute('aria-label', isDesc ? 'Trier de Z à A' : 'Trier de A à Z');
-        }
-        this._renderSidebar();
-        TooltipsUI.initTooltips();
-    },
 
     _toggleConfigPopover() {
         if (!this._configPopoverOpen) {
@@ -1475,10 +1454,9 @@ export const SeatingChartManager = {
         if (!list) return;
 
         const unplaced = this._getUnplacedStudents();
-        const sorted = [...unplaced].sort((a, b) => {
-            const cmp = `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' });
-            return this._sidebarSortOrder === 'desc' ? -cmp : cmp;
-        });
+        const sorted = [...unplaced].sort((a, b) =>
+            `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+        );
 
         const searchTerm = (document.getElementById('scSearchInput')?.value || '').toLowerCase();
 
