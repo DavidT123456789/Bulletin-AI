@@ -111,7 +111,11 @@ export const SeatingChartManager = {
                                         </button>
                                         <button class="sc-popover-item" data-mode="random" type="button">
                                             <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                                            <span>Hasard (Mélanger)</span>
+                                            <span>Mélanger (regroupé)</span>
+                                        </button>
+                                        <button class="sc-popover-item" data-mode="random-disperse" type="button">
+                                            <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                                            <span>Disperser (toute la salle)</span>
                                         </button>
                                         <div class="sc-popover-divider"></div>
                                         <div class="sc-popover-item sc-popover-item-disabled" title="Disponible prochainement">
@@ -1840,12 +1844,117 @@ export const SeatingChartManager = {
 
         const unplaced = this._getUnplacedStudents();
         const placedIds = this._getPlacedIds();
+        const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
+
+        // Cas : Dispersion aléatoire sur l'ensemble de la salle (idéal examen / devoir surveillé)
+        if (mode === 'random-disperse') {
+            // 1. Récupérer tous les élèves mobiles : ceux placés non épinglés + ceux non placés
+            const movableStudents = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const id = this._gridState[r]?.[c];
+                    if (id) {
+                        const studentResult = resultsMap.get(id);
+                        if (!studentResult?.seatingPosition?.pinned) {
+                            const student = this._students.find(s => s.id === id) || studentResult;
+                            movableStudents.push(student);
+                        }
+                    }
+                }
+            }
+            unplaced.forEach(s => {
+                if (!movableStudents.some(m => m.id === s.id)) {
+                    movableStudents.push(s);
+                }
+            });
+
+            if (movableStudents.length === 0) {
+                UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
+                return;
+            }
+
+            // 2. Récupérer toutes les places candidates (non condamnées et non occupées par un élève épinglé)
+            const candidateSpots = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (this._isSpecialSpot(r, c)) continue;
+                    const currentId = this._gridState[r]?.[c];
+                    if (currentId && resultsMap.get(currentId)?.seatingPosition?.pinned) {
+                        continue;
+                    }
+                    candidateSpots.push({ r, c });
+                }
+            }
+
+            if (candidateSpots.length === 0) {
+                UI.showNotification('Aucune place disponible dans la salle.', 'warning');
+                return;
+            }
+
+            this._snapshotGrid();
+
+            // 3. Vider les places mobiles actuelles
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const id = this._gridState[r]?.[c];
+                    if (id && !resultsMap.get(id)?.seatingPosition?.pinned) {
+                        this._gridState[r][c] = null;
+                    }
+                }
+            }
+
+            // 4. Mélanger les places candidates (Fisher-Yates)
+            for (let i = candidateSpots.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidateSpots[i], candidateSpots[j]] = [candidateSpots[j], candidateSpots[i]];
+            }
+
+            // 5. Mélanger les élèves mobiles
+            for (let i = movableStudents.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [movableStudents[i], movableStudents[j]] = [movableStudents[j], movableStudents[i]];
+            }
+
+            const k = Math.min(candidateSpots.length, movableStudents.length);
+            const placedCells = [];
+
+            for (let i = 0; i < k; i++) {
+                const spot = candidateSpots[i];
+                const student = movableStudents[i];
+                this._gridState[spot.r][spot.c] = student.id;
+                placedCells.push({ row: spot.r, col: spot.c, index: i });
+            }
+
+            this._dismissOnboardingHint();
+            this._savePositionsToState();
+            this._render();
+
+            requestAnimationFrame(() => {
+                placedCells.forEach(({ row, col, index }) => {
+                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+                    if (!cell) return;
+                    cell.style.setProperty('--place-i', index);
+                    cell.classList.add('sc-auto-placed');
+                    cell.addEventListener('animationend', () => {
+                        cell.classList.remove('sc-auto-placed');
+                        cell.style.removeProperty('--place-i');
+                    }, { once: true });
+                });
+            });
+
+            this._scrollToDesk();
+
+            const remaining = movableStudents.length - k;
+            if (remaining > 0) {
+                UI.showNotification(`${k} élèves placés. ${remaining} ne rentrent pas — augmentez la grille.`, 'warning');
+            }
+            return;
+        }
 
         // Cas 1 : Tous les élèves sont déjà placés sur la grille -> réorganiser les élèves non-épinglés
         if (unplaced.length === 0 && placedIds.size > 0) {
             const movable = [];
             const occupiedSpots = [];
-            const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -2196,15 +2305,19 @@ export const SeatingChartManager = {
                 <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
             </div>
             <div class="sc-onboarding-actions">
-                <button type="button" class="sc-onboarding-btn primary" id="scHintAutoBtn">
+                <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
                     <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
                     <span>Placer (A → Z)</span>
                 </button>
                 <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
                     <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                    <span>Placer au hasard</span>
+                    <span>Mélanger (regroupé)</span>
                 </button>
-                <button type="button" class="sc-onboarding-btn secondary" id="scHintManualBtn">
+                <button type="button" class="sc-onboarding-btn secondary" id="scHintDisperseBtn">
+                    <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                    <span>Disperser (toute la salle)</span>
+                </button>
+                <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
                     <span>Placer manuellement</span>
                 </button>
             </div>
@@ -2219,6 +2332,10 @@ export const SeatingChartManager = {
         hint.querySelector('#scHintRandomBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._autoPlace('random');
+        });
+        hint.querySelector('#scHintDisperseBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace('random-disperse');
         });
         hint.querySelector('#scHintManualBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();

@@ -330,4 +330,30 @@ describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sid
         // Tous les 4 élèves sont maintenant placés
         expect(SeatingChartManager._getPlacedIds().size).toBe(4);
     });
+
+    it('devrait disperser les élèves dans toute la salle en mode random-disperse tout en protégeant les épinglés', () => {
+        // Épingle s3 à (1, 1)
+        const student3 = appState.generatedResults.find(s => s.id === 's3');
+        student3.seatingPosition = { row: 1, col: 1, pinned: true };
+        SeatingChartManager._gridState[1][1] = 's3';
+
+        SeatingChartManager._autoPlace('random-disperse');
+
+        // s3 est toujours en (1, 1)
+        expect(SeatingChartManager._gridState[1][1]).toBe('s3');
+        // Les 4 élèves sont placés
+        expect(SeatingChartManager._getPlacedIds().size).toBe(4);
+
+        // Vérifier que tous les 4 identifiants uniques sont bien sur la grille
+        const placedIds = [];
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (SeatingChartManager._gridState[r][c]) {
+                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                }
+            }
+        }
+        expect(new Set(placedIds)).toEqual(new Set(['s1', 's2', 's3', 's4']));
+    });
 });
+

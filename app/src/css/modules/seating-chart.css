@@ -1318,7 +1318,7 @@
 
 .sc-onboarding-btn.secondary {
     background: var(--bg-secondary);
-    color: var(--text-secondary);
+    color: var(--text-primary);
     border: 1px solid var(--border-color);
 }
 
@@ -1326,8 +1326,28 @@
     .sc-onboarding-btn.secondary:hover {
         background: var(--bg-tertiary);
         color: var(--text-primary);
+        border-color: var(--border-hover, var(--border-color));
         transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
+    }
+}
+
+.sc-onboarding-btn.text-only {
+    background: transparent;
+    color: var(--text-tertiary);
+    border: none;
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    margin-top: 2px;
+}
+
+@media (hover: hover) {
+    .sc-onboarding-btn.text-only:hover {
+        color: var(--text-primary);
+        background: transparent;
+        transform: none;
+        box-shadow: none;
     }
 }
 
@@ -2161,7 +2181,7 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     padding: 6px;
-    min-width: 195px;
+    min-width: 215px;
     transform-origin: top left;
     z-index: 100;
     display: flex;
