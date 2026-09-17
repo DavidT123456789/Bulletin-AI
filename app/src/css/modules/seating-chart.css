@@ -2160,6 +2160,130 @@
     outline-offset: 2px;
 }
 
+/* ---------- PLACEMENT POPOVER ---------- */
+.sc-placement-wrapper {
+    position: relative;
+}
+
+.sc-action-btn.sc-auto-place-btn.active {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.sc-placement-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--glass-surface-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    min-width: 190px;
+    transform-origin: top left;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.95);
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease-material), transform 0.25s var(--ease-bounce);
+}
+
+.sc-placement-popover::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 12px;
+    width: 8px;
+    height: 8px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--glass-surface-border);
+    border-left: 1px solid var(--glass-surface-border);
+    transform: rotate(45deg);
+}
+
+.sc-placement-popover.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.sc-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sc-popover-item iconify-icon {
+    font-size: 1.15rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.sc-popover-item:hover {
+    background: var(--bg-secondary);
+}
+
+.sc-popover-item:active {
+    transform: scale(0.98);
+}
+
+.sc-popover-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+.sc-popover-item-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    justify-content: space-between;
+}
+
+.sc-popover-item-disabled iconify-icon {
+    color: var(--text-tertiary);
+}
+
+.sc-popover-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+/* Sidebar sort controls */
+.sc-sidebar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sc-sidebar-controls .sc-search-box {
+    flex: 1;
+}
+
+.sc-sidebar-sort-btn {
+    flex-shrink: 0;
+}
+
 /* ---------- CONFIG POPOVER (Restored) ---------- */
 .sc-config-wrapper {
     position: relative;

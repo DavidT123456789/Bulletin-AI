@@ -187,3 +187,147 @@ describe('SeatingChartManager - Scope des places spéciales (Salle vs Classe)', 
         expect(SeatingChartManager._isValidDropTarget(2, 2)).toBe(true);
     });
 });
+
+describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sidebar', () => {
+    let classTest;
+
+    beforeEach(() => {
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        userSettings.academic.seatingGrid = {
+            rows: 3,
+            cols: 3,
+            locked: false,
+            specialLayout: {}
+        };
+        appState.classes = userSettings.academic.classes;
+        appState.seatingGrid = userSettings.academic.seatingGrid;
+
+        classTest = ClassManager.createClass('4ème C');
+        appState.currentClassId = classTest.id;
+        userSettings.academic.currentClassId = classTest.id;
+
+        appState.generatedResults = [
+            { id: 's1', classId: classTest.id, nom: 'Dupont', prenom: 'Alice', seatingPosition: null },
+            { id: 's2', classId: classTest.id, nom: 'Martin', prenom: 'Benoit', seatingPosition: null },
+            { id: 's3', classId: classTest.id, nom: 'Bernard', prenom: 'Chloe', seatingPosition: null },
+            { id: 's4', classId: classTest.id, nom: 'Zidane', prenom: 'David', seatingPosition: null }
+        ];
+
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._sidebarSortOrder = 'asc';
+        SeatingChartManager._undoStack = [];
+        SeatingChartManager._redoStack = [];
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._initGrid(3, 3);
+    });
+
+    it('devrait placer les élèves dans l\'ordre alphabétique A-Z par défaut', () => {
+        SeatingChartManager._autoPlace('alpha-asc');
+
+        const placedIds = [];
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (SeatingChartManager._gridState[r][c]) {
+                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                }
+            }
+        }
+
+        // 4 élèves placés
+        expect(placedIds.length).toBe(4);
+        // Ordre alphabétique croissant : Bernard (s3), Dupont (s1), Martin (s2), Zidane (s4)
+        expect(placedIds).toEqual(['s3', 's1', 's2', 's4']);
+    });
+
+    it('devrait placer les élèves dans l\'ordre alphabétique inversé Z-A', () => {
+        SeatingChartManager._autoPlace('alpha-desc');
+
+        const placedIds = [];
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (SeatingChartManager._gridState[r][c]) {
+                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                }
+            }
+        }
+
+        expect(placedIds.length).toBe(4);
+        // Ordre alphabétique décroissant : Zidane (s4), Martin (s2), Dupont (s1), Bernard (s3)
+        expect(placedIds).toEqual(['s4', 's2', 's1', 's3']);
+    });
+
+    it('devrait placer tous les élèves au hasard en mode random', () => {
+        SeatingChartManager._autoPlace('random');
+
+        const placedIds = [];
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (SeatingChartManager._gridState[r][c]) {
+                    placedIds.push(SeatingChartManager._gridState[r][c]);
+                }
+            }
+        }
+
+        expect(placedIds.length).toBe(4);
+        expect(new Set(placedIds)).toEqual(new Set(['s1', 's2', 's3', 's4']));
+    });
+
+    it('devrait utiliser _shuffle sur une grille vide pour faire un placement aléatoire', () => {
+        // Grille initialement vide
+        expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+
+        SeatingChartManager._shuffle();
+
+        // Après shuffle sur grille vide, les 4 élèves doivent être placés
+        expect(SeatingChartManager._getPlacedIds().size).toBe(4);
+    });
+
+    it('devrait préserver strictement la place d\'un élève épinglé lors de la réorganisation (A-Z, Z-A, shuffle)', () => {
+        // Place initialement tous les élèves
+        SeatingChartManager._autoPlace('alpha-asc');
+
+        // On épingle l'élève s1 (Dupont Alice) à sa place actuelle
+        const student1 = appState.generatedResults.find(s => s.id === 's1');
+        student1.seatingPosition = { ...student1.seatingPosition, pinned: true };
+
+        // Trouver la position de s1
+        let s1Row = -1, s1Col = -1;
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (SeatingChartManager._gridState[r][c] === 's1') {
+                    s1Row = r;
+                    s1Col = c;
+                }
+            }
+        }
+        expect(s1Row).toBeGreaterThanOrEqual(0);
+
+        // Réorganisation en Z-A : s1 DOIT rester exactement à (s1Row, s1Col)
+        SeatingChartManager._autoPlace('alpha-desc');
+        expect(SeatingChartManager._gridState[s1Row][s1Col]).toBe('s1');
+
+        // Réorganisation aléatoire : s1 DOIT toujours rester à (s1Row, s1Col)
+        SeatingChartManager._autoPlace('random');
+        expect(SeatingChartManager._gridState[s1Row][s1Col]).toBe('s1');
+
+        // Shuffle : s1 DOIT toujours rester à (s1Row, s1Col)
+        SeatingChartManager._shuffle();
+        expect(SeatingChartManager._gridState[s1Row][s1Col]).toBe('s1');
+    });
+
+    it('devrait préserver un élève épinglé sur une grille partiellement remplie lors du placement automatique', () => {
+        // Épingle un élève s2 à la case (0, 0)
+        const student2 = appState.generatedResults.find(s => s.id === 's2');
+        student2.seatingPosition = { row: 0, col: 0, pinned: true };
+        SeatingChartManager._gridState[0][0] = 's2';
+
+        // Placer les autres élèves non placés
+        SeatingChartManager._autoPlace('alpha-asc');
+
+        // s2 est toujours en (0, 0)
+        expect(SeatingChartManager._gridState[0][0]).toBe('s2');
+        // Tous les 4 élèves sont maintenant placés
+        expect(SeatingChartManager._getPlacedIds().size).toBe(4);
+    });
+});

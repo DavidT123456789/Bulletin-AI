@@ -26,6 +26,8 @@ export const SeatingChartManager = {
     _touchDragEl: null,
     _touchSourceInfo: null,
     _configPopoverOpen: false,
+    _placementPopoverOpen: false,
+    _sidebarSortOrder: 'asc',
     _prevPlacedCount: 0,
     _selectedChipIds: [],
     _lastSelectedGridPos: null,
@@ -94,9 +96,31 @@ export const SeatingChartManager = {
                         </div>
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
-                                <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique" data-tooltip="Placer auto">
-                                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                                </button>
+                                <div class="sc-placement-wrapper">
+                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique" data-tooltip="Placer auto">
+                                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                                    </button>
+                                    <div class="sc-placement-popover" id="scPlacementPopover">
+                                        <button class="sc-popover-item" data-mode="alpha-asc" type="button">
+                                            <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                                            <span>Alphabétique (A → Z)</span>
+                                        </button>
+                                        <button class="sc-popover-item" data-mode="alpha-desc" type="button">
+                                            <iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>
+                                            <span>Inversé (Z → A)</span>
+                                        </button>
+                                        <button class="sc-popover-item" data-mode="random" type="button">
+                                            <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                                            <span>Hasard (Mélanger)</span>
+                                        </button>
+                                        <div class="sc-popover-divider"></div>
+                                        <div class="sc-popover-item sc-popover-item-disabled" title="Disponible prochainement">
+                                            <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>
+                                            <span>Intelligent (Journal)</span>
+                                            <span class="sc-popover-badge">Bientôt</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <button class="sc-action-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
                                     <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
                                 </button>
@@ -131,11 +155,16 @@ export const SeatingChartManager = {
                     </div>
                     <div class="sc-sidebar-header">
                         <div class="sc-sidebar-title" id="scSidebarTitle"><span>Élèves non placés</span></div>
-                        <div class="sc-search-box">
-                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                            <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
-                            <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
-                                <iconify-icon icon="ph:x"></iconify-icon>
+                        <div class="sc-sidebar-controls">
+                            <div class="sc-search-box">
+                                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                                <input type="text" id="scSearchInput" placeholder="Rechercher..." autocomplete="off">
+                                <button class="sc-search-clear" id="scSearchClear" aria-label="Effacer" data-tooltip="Effacer" type="button">
+                                    <iconify-icon icon="ph:x"></iconify-icon>
+                                </button>
+                            </div>
+                            <button class="sc-action-btn sc-sidebar-sort-btn" id="scSidebarSortBtn" aria-label="Trier A à Z" data-tooltip="Trier : A → Z" type="button">
+                                <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
                             </button>
                         </div>
                     </div>
@@ -177,7 +206,22 @@ export const SeatingChartManager = {
     _setupEventListeners() {
         document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => this._printChart());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
-        document.getElementById('scAutoPlaceBtn')?.addEventListener('click', () => this._autoPlace());
+        document.getElementById('scAutoPlaceBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._togglePlacementPopover();
+        });
+        document.getElementById('scPlacementPopover')?.addEventListener('click', (e) => {
+            const item = e.target.closest('.sc-popover-item');
+            if (!item || item.classList.contains('sc-popover-item-disabled')) return;
+            const mode = item.dataset.mode;
+            if (mode) {
+                this._closePlacementPopover();
+                this._autoPlace(mode);
+            }
+        });
+        document.getElementById('scSidebarSortBtn')?.addEventListener('click', () => {
+            this._toggleSidebarSort();
+        });
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
         document.getElementById('scRedoBtn')?.addEventListener('click', () => this._redo());
@@ -244,14 +288,19 @@ export const SeatingChartManager = {
             if (this._configPopoverOpen && !e.target.closest('.sc-config-wrapper')) {
                 this._closeConfigPopover();
             }
+            if (this._placementPopoverOpen && !e.target.closest('.sc-placement-wrapper')) {
+                this._closePlacementPopover();
+            }
             if (this._selectedChipIds.length > 0 && !e.target.closest('.sc-student-chip') && !e.target.closest('.sc-cell')) {
                 this._clearSelection();
             }
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._selectedChipIds.length > 0) {
-                this._clearSelection();
+            if (e.key === 'Escape') {
+                if (this._placementPopoverOpen) this._closePlacementPopover();
+                if (this._configPopoverOpen) this._closeConfigPopover();
+                if (this._selectedChipIds.length > 0) this._clearSelection();
             }
         });
 
@@ -281,17 +330,53 @@ export const SeatingChartManager = {
     },
 
     // ========================================================================
-    // CONFIG POPOVER
+    // CONFIG & PLACEMENT POPOVERS
     // ========================================================================
+
+    _togglePlacementPopover() {
+        this._placementPopoverOpen ? this._closePlacementPopover() : this._openPlacementPopover();
+    },
+
+    _openPlacementPopover() {
+        this._closeConfigPopover();
+        const popover = document.getElementById('scPlacementPopover');
+        if (!popover) return;
+        popover.classList.add('open');
+        document.getElementById('scAutoPlaceBtn')?.classList.add('active');
+        this._placementPopoverOpen = true;
+    },
+
+    _closePlacementPopover() {
+        const popover = document.getElementById('scPlacementPopover');
+        if (!popover) return;
+        popover.classList.remove('open');
+        document.getElementById('scAutoPlaceBtn')?.classList.remove('active');
+        this._placementPopoverOpen = false;
+    },
+
+    _toggleSidebarSort() {
+        this._sidebarSortOrder = this._sidebarSortOrder === 'asc' ? 'desc' : 'asc';
+        const btn = document.getElementById('scSidebarSortBtn');
+        if (btn) {
+            const isDesc = this._sidebarSortOrder === 'desc';
+            btn.innerHTML = `<iconify-icon icon="${isDesc ? 'solar:sort-from-bottom-to-top-linear' : 'solar:sort-by-alphabet-linear'}"></iconify-icon>`;
+            btn.setAttribute('data-tooltip', isDesc ? 'Trier : Z → A' : 'Trier : A → Z');
+            btn.setAttribute('aria-label', isDesc ? 'Trier de Z à A' : 'Trier de A à Z');
+        }
+        this._renderSidebar();
+        TooltipsUI.initTooltips();
+    },
 
     _toggleConfigPopover() {
         if (!this._configPopoverOpen) {
+            this._closePlacementPopover();
             document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
         }
         this._configPopoverOpen ? this._closeConfigPopover() : this._openConfigPopover();
     },
 
     _openConfigPopover() {
+        this._closePlacementPopover();
         const popover = document.getElementById('scConfigPopover');
         if (!popover) return;
         popover.classList.add('open');
@@ -329,6 +414,7 @@ export const SeatingChartManager = {
                 this._savePositionsToState();
                 this._saveGridConfig();
                 this._closeConfigPopover();
+                this._closePlacementPopover();
             });
         } else {
             this._students = this._getCurrentClassStudents();
@@ -372,6 +458,9 @@ export const SeatingChartManager = {
     onClassChange(hasResults) {
         this.updateToggleVisibility(hasResults);
         if (!this._isActive) return;
+
+        this._closeConfigPopover();
+        this._closePlacementPopover();
 
         if (!hasResults) {
             this.switchToView('list');
@@ -763,11 +852,13 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _getRows() {
-        return parseInt(document.getElementById('scRowsSlider')?.value) || DEFAULT_ROWS;
+        const sliderVal = parseInt(document.getElementById('scRowsSlider')?.value);
+        return !isNaN(sliderVal) ? sliderVal : (appState.seatingGrid?.rows ?? DEFAULT_ROWS);
     },
 
     _getCols() {
-        return parseInt(document.getElementById('scColsSlider')?.value) || DEFAULT_COLS;
+        const sliderVal = parseInt(document.getElementById('scColsSlider')?.value);
+        return !isNaN(sliderVal) ? sliderVal : (appState.seatingGrid?.cols ?? DEFAULT_COLS);
     },
 
     _loadGridConfig() {
@@ -1331,11 +1422,16 @@ export const SeatingChartManager = {
         if (!list) return;
 
         const unplaced = this._getUnplacedStudents();
+        const sorted = [...unplaced].sort((a, b) => {
+            const cmp = `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' });
+            return this._sidebarSortOrder === 'desc' ? -cmp : cmp;
+        });
+
         const searchTerm = (document.getElementById('scSearchInput')?.value || '').toLowerCase();
 
         const filtered = searchTerm
-            ? unplaced.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
-            : unplaced;
+            ? sorted.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
+            : sorted;
 
         list.innerHTML = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
@@ -1683,24 +1779,103 @@ export const SeatingChartManager = {
     // ACTIONS — with animation orchestration
     // ========================================================================
 
-    _autoPlace() {
+    _autoPlace(mode = 'alpha-asc') {
         if (this._isLocked) return;
 
+        const rows = this._getRows();
+        const cols = this._getCols();
+
+        if (!this._gridState || this._gridState.length !== rows) {
+            this._initGrid(rows, cols);
+        }
+
         const unplaced = this._getUnplacedStudents();
+        const placedIds = this._getPlacedIds();
+
+        // Cas 1 : Tous les élèves sont déjà placés sur la grille -> réorganiser les élèves non-épinglés
+        if (unplaced.length === 0 && placedIds.size > 0) {
+            const movable = [];
+            const occupiedSpots = [];
+            const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const id = this._gridState[r]?.[c];
+                    if (id) {
+                        const studentResult = resultsMap.get(id);
+                        if (!studentResult?.seatingPosition?.pinned) {
+                            const student = this._students.find(s => s.id === id) || studentResult;
+                            movable.push(student);
+                            occupiedSpots.push({ r, c });
+                        }
+                    }
+                }
+            }
+
+            if (movable.length === 0) {
+                UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
+                return;
+            }
+
+            this._snapshotGrid();
+
+            // Trier selon le mode
+            const ordered = [...movable];
+            if (mode === 'alpha-desc') {
+                ordered.sort((a, b) => `${b.nom} ${b.prenom}`.localeCompare(`${a.nom} ${a.prenom}`, 'fr', { sensitivity: 'base' }));
+            } else if (mode === 'random') {
+                for (let i = ordered.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+                }
+            } else {
+                ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
+            }
+
+            // Vider temporairement les places mobiles (les épinglés ne bougent absolument pas)
+            occupiedSpots.forEach(spot => {
+                this._gridState[spot.r][spot.c] = null;
+            });
+
+            // Réassigner dans l'ordre choisi
+            const placedCells = [];
+            ordered.forEach((student, i) => {
+                const spot = occupiedSpots[i];
+                this._gridState[spot.r][spot.c] = student.id;
+                placedCells.push({ row: spot.r, col: spot.c, index: i });
+            });
+
+            this._savePositionsToState();
+            this._render();
+
+            requestAnimationFrame(() => {
+                placedCells.forEach(({ row, col, index }) => {
+                    const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+                    if (!cell) return;
+                    cell.style.setProperty('--place-i', index);
+                    cell.classList.add('sc-auto-placed');
+                    cell.addEventListener('animationend', () => {
+                        cell.classList.remove('sc-auto-placed');
+                        cell.style.removeProperty('--place-i');
+                    }, { once: true });
+                });
+            });
+
+            return;
+        }
+
+        // Cas 2 : Il y a des élèves non placés -> les placer dans les places libres
         if (unplaced.length === 0) {
             UI.showNotification('Tous les élèves sont déjà placés.', 'info');
             return;
         }
         this._snapshotGrid();
 
-        const rows = this._getRows();
-        const cols = this._getCols();
-
         // Collecter toutes les places vides dans l'ordre de lecture classique (haut vers bas, gauche vers droite)
         const availableSpots = [];
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (!this._gridState[r][c] && !this._isSpecialSpot(r, c)) {
+                if (!this._gridState[r]?.[c] && !this._isSpecialSpot(r, c)) {
                     availableSpots.push({ r, c });
                 }
             }
@@ -1709,15 +1884,28 @@ export const SeatingChartManager = {
         const k = Math.min(availableSpots.length, unplaced.length);
         if (k === 0) return;
 
+        // Tri des élèves selon le mode choisi
+        const ordered = [...unplaced];
+        if (mode === 'alpha-desc') {
+            ordered.sort((a, b) => `${b.nom} ${b.prenom}`.localeCompare(`${a.nom} ${a.prenom}`, 'fr', { sensitivity: 'base' }));
+        } else if (mode === 'random') {
+            for (let i = ordered.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+            }
+        } else {
+            ordered.sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
+        }
+
         // On prend les K dernières places (les plus proches du bureau au fond)
         const spotsToFill = availableSpots.slice(-k);
         let placed = 0;
         const placedCells = [];
 
-        // On assigne les élèves non placés dans l'ordre alphabétique à ces places
+        // On assigne les élèves dans l'ordre sélectionné à ces places
         for (let i = 0; i < k; i++) {
             const spot = spotsToFill[i];
-            const student = unplaced[i];
+            const student = ordered[i];
             
             this._gridState[spot.r][spot.c] = student.id;
             placedCells.push({ row: spot.r, col: spot.c, index: placed });
@@ -1752,6 +1940,16 @@ export const SeatingChartManager = {
     /** Shuffles non-pinned students across ALL valid available seats */
     _shuffle() {
         if (this._isLocked) return;
+
+        const placedIds = this._getPlacedIds();
+        const unplaced = this._getUnplacedStudents();
+
+        // Si le plan est vide : placer directement toute la classe au hasard
+        if (placedIds.size === 0 && unplaced.length > 0) {
+            this._autoPlace('random');
+            return;
+        }
+
         this._snapshotGrid();
 
         const rows = this._getRows();
@@ -2024,8 +2222,12 @@ export const SeatingChartManager = {
             </div>
             <div class="sc-onboarding-actions">
                 <button type="button" class="sc-onboarding-btn primary" id="scHintAutoBtn">
-                    <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                    <span>Placer automatiquement (A-Z)</span>
+                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                    <span>Placer (A → Z)</span>
+                </button>
+                <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
+                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                    <span>Placer au hasard</span>
                 </button>
                 <button type="button" class="sc-onboarding-btn secondary" id="scHintManualBtn">
                     <span>Placer manuellement</span>
@@ -2037,7 +2239,11 @@ export const SeatingChartManager = {
 
         hint.querySelector('#scHintAutoBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this._autoPlace();
+            this._autoPlace('alpha-asc');
+        });
+        hint.querySelector('#scHintRandomBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._autoPlace('random');
         });
         hint.querySelector('#scHintManualBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
