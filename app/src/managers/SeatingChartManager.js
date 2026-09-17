@@ -20,6 +20,7 @@ const MAX_UNDO_LEVELS = 5;
 export const SeatingChartManager = {
     _isActive: false,
     _isLocked: false,
+    _orientation: 'teacher',
     _gridState: [],
     _students: [],
     _dragSource: null,
@@ -130,6 +131,9 @@ export const SeatingChartManager = {
                                 <button class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
+                                <button class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Passer en vue Élèves (Vidéoprojection)" data-tooltip="Vue Élèves (Projection)">
+                                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                </button>
                                 <div class="sc-config-wrapper">
                                     <button class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
@@ -180,6 +184,9 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions (Read-Only Mode) -->
                 <div class="sc-floating-actions sc-read-only-only">
+                    <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Passer en vue Élèves (Vidéoprojection)" data-tooltip="Vue Élèves (Projection)">
+                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                    </button>
                     <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
                     </button>
@@ -225,6 +232,8 @@ export const SeatingChartManager = {
             }
         });
         document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
+        document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
+        document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
 
         document.getElementById('scConfigBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -812,6 +821,62 @@ export const SeatingChartManager = {
     },
 
     // ========================================================================
+    // VIEW ORIENTATION (Teacher ⇄ Student Projection)
+    // ========================================================================
+
+    _toggleOrientation() {
+        const next = this._orientation === 'student' ? 'teacher' : 'student';
+        this._applyOrientation(next);
+        this._saveGridConfig();
+    },
+
+    _applyOrientation(orientation) {
+        this._orientation = orientation;
+        const view = document.getElementById('seatingChartView');
+        if (view) {
+            view.dataset.orientation = orientation;
+        }
+
+        const isStudent = orientation === 'student';
+
+        // Update desk text & icon
+        const desk = document.getElementById('scDesk');
+        if (desk) {
+            desk.innerHTML = isStudent
+                ? '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau & Bureau</span>'
+                : '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Bureau</span>';
+        }
+
+        // Update orientation action buttons
+        const orientationBtns = [
+            document.getElementById('scOrientationBtn'),
+            document.getElementById('scFloatingOrientationBtn')
+        ];
+        orientationBtns.forEach(btn => {
+            if (!btn) return;
+            btn.classList.toggle('active', isStudent);
+            btn.setAttribute('aria-label', isStudent ? 'Passer en vue Professeur' : 'Passer en vue Élèves (Vidéoprojection)');
+            btn.setAttribute('data-tooltip', isStudent ? 'Vue Professeur' : 'Vue Élèves (Projection)');
+            const icon = btn.querySelector('iconify-icon');
+            if (icon) {
+                icon.setAttribute('icon', isStudent ? 'solar:square-academic-cap-linear' : 'solar:users-group-rounded-linear');
+            }
+        });
+        TooltipsUI.initTooltips();
+
+        // Animated tactile flip transition on board
+        const board = document.getElementById('scClassroomBoard');
+        if (board) {
+            board.classList.add('sc-orienting');
+            setTimeout(() => board.classList.remove('sc-orienting'), 250);
+        }
+
+        this._renderGrid();
+        this._updateFooter();
+        this._scrollToDesk();
+    },
+
+    // ========================================================================
     // PRINT
     // ========================================================================
 
@@ -831,11 +896,14 @@ export const SeatingChartManager = {
             ? `<div class="sc-print-warning">⚠ ${unplaced} élève${unplaced > 1 ? 's' : ''} non placé${unplaced > 1 ? 's' : ''}</div>`
             : '';
 
+        const isStudent = this._orientation === 'student';
+        const orientationLabel = isStudent ? ' — Vue Élèves (Projection)' : ' — Vue Enseignant';
+
         const header = document.createElement('div');
         header.className = 'sc-print-header';
         header.innerHTML = `
             <span class="sc-print-date">${dateStr}</span>
-            <span class="sc-print-class">${className} <span class="sc-print-count">(${studentCount} élèves)</span></span>
+            <span class="sc-print-class">${className}${orientationLabel} <span class="sc-print-count">(${studentCount} élèves)</span></span>
             <span class="sc-print-brand">Bulletin AI</span>
             ${unplacedHtml}
         `;
@@ -876,6 +944,8 @@ export const SeatingChartManager = {
         const config = appState.seatingGrid;
         const rows = config?.rows || DEFAULT_ROWS;
         const cols = config?.cols || DEFAULT_COLS;
+        this._orientation = config?.orientation || 'teacher';
+        this._applyOrientation(this._orientation);
 
         const rowSlider = document.getElementById('scRowsSlider');
         const colSlider = document.getElementById('scColsSlider');
@@ -888,6 +958,7 @@ export const SeatingChartManager = {
             rows: this._getRows(),
             cols: this._getCols(),
             locked: this._isLocked,
+            orientation: this._orientation || 'teacher',
             specialLayout: appState.seatingGrid?.specialLayout || {}
         };
         StorageManager.saveAppState();
@@ -1271,8 +1342,11 @@ export const SeatingChartManager = {
         container.style.gridTemplateRows = `repeat(${rows}, var(--sc-cell-h, 96px))`;
         container.innerHTML = '';
 
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
+        const isStudent = this._orientation === 'student';
+        for (let displayR = 0; displayR < rows; displayR++) {
+            for (let displayC = 0; displayC < cols; displayC++) {
+                const r = isStudent ? (rows - 1 - displayR) : displayR;
+                const c = isStudent ? (cols - 1 - displayC) : displayC;
                 container.appendChild(this._createCell(r, c));
             }
         }
@@ -1385,7 +1459,10 @@ export const SeatingChartManager = {
             }
 
             const totalRows = this._getRows();
-            cell.style.setProperty('--row-depth', totalRows > 1 ? row / (totalRows - 1) : 0.5);
+            const depthRatio = totalRows > 1
+                ? (this._orientation === 'student' ? (totalRows - 1 - row) / (totalRows - 1) : row / (totalRows - 1))
+                : 0.5;
+            cell.style.setProperty('--row-depth', depthRatio);
 
             const tools = document.createElement('div');
             tools.className = 'sc-cell-special-tools';
@@ -2268,11 +2345,18 @@ export const SeatingChartManager = {
             setTimeout(() => {
                 const gridArea = document.getElementById('scGridArea');
                 if (gridArea) {
-                    // Force absolute bottom scroll, bypassing element boundaries to ensure padding is visible
-                    gridArea.scrollTo({
-                        top: gridArea.scrollHeight + 500,
-                        behavior: 'smooth'
-                    });
+                    if (this._orientation === 'student') {
+                        gridArea.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                    } else {
+                        // Force absolute bottom scroll, bypassing element boundaries to ensure padding is visible
+                        gridArea.scrollTo({
+                            top: gridArea.scrollHeight + 500,
+                            behavior: 'smooth'
+                        });
+                    }
                 }
             }, 100); // Slight delay to ensure DOM layout and animations have updated height
         });

@@ -356,3 +356,95 @@ describe('SeatingChartManager - Ordre de placement (A-Z, Z-A, Hasard) et Tri Sid
     });
 });
 
+describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / Projection)', () => {
+    let classA;
+
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="seatingChartView">
+                <div id="scClassroomBoard" class="sc-classroom-board">
+                    <div id="scGridContainer" class="sc-grid-container"></div>
+                    <div class="sc-desk-row">
+                        <div id="scDesk" class="sc-desk"><span>Bureau</span></div>
+                    </div>
+                </div>
+                <div id="scFooterInfo"></div>
+                <button id="scOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
+                <button id="scFloatingOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
+            </div>
+        `;
+
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        userSettings.academic.seatingGrid = {
+            rows: 3,
+            cols: 3,
+            locked: false,
+            orientation: 'teacher',
+            specialLayout: {}
+        };
+        appState.classes = userSettings.academic.classes;
+        appState.currentClassId = null;
+        appState.seatingGrid = userSettings.academic.seatingGrid;
+        appState.generatedResults = [
+            { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: 'c1' },
+            { id: 's2', nom: 'MARTIN', prenom: 'Bob', classId: 'c1' }
+        ];
+
+        classA = ClassManager.createClass('6ème A');
+        classA.id = 'c1';
+        appState.currentClassId = 'c1';
+        userSettings.academic.currentClassId = 'c1';
+
+        SeatingChartManager._students = appState.generatedResults;
+        SeatingChartManager._initGrid(3, 3);
+        SeatingChartManager._orientation = 'teacher';
+    });
+
+    it('devrait basculer de la vue Enseignant vers la vue Élèves et inversement', () => {
+        expect(SeatingChartManager._orientation).toBe('teacher');
+        expect(document.getElementById('scDesk').textContent).toContain('Bureau');
+
+        SeatingChartManager._toggleOrientation();
+        expect(SeatingChartManager._orientation).toBe('student');
+        expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
+        expect(appState.seatingGrid.orientation).toBe('student');
+        expect(document.getElementById('scDesk').textContent).toContain('Tableau & Bureau');
+        expect(document.getElementById('scDesk').textContent).not.toContain('Vue élèves');
+        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:square-academic-cap-linear');
+        expect(document.getElementById('scFooterInfo').innerHTML).not.toContain('Vue Élèves');
+
+        SeatingChartManager._toggleOrientation();
+        expect(SeatingChartManager._orientation).toBe('teacher');
+        expect(document.getElementById('seatingChartView').dataset.orientation).toBe('teacher');
+        expect(appState.seatingGrid.orientation).toBe('teacher');
+        expect(document.getElementById('scDesk').textContent).toBe('Bureau');
+        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
+    });
+
+    it('devrait ordonner les cellules de la grille en miroir 180° en vue Élèves', () => {
+        // En vue teacher :
+        SeatingChartManager._applyOrientation('teacher');
+        let cells = document.querySelectorAll('#scGridContainer .sc-cell');
+        expect(cells[0].dataset.row).toBe('0');
+        expect(cells[0].dataset.col).toBe('0');
+        expect(cells[cells.length - 1].dataset.row).toBe('2');
+        expect(cells[cells.length - 1].dataset.col).toBe('2');
+
+        // En vue student : la première cellule affichée est le premier rang face au tableau (row=2, col=2)
+        SeatingChartManager._applyOrientation('student');
+        cells = document.querySelectorAll('#scGridContainer .sc-cell');
+        expect(cells[0].dataset.row).toBe('2');
+        expect(cells[0].dataset.col).toBe('2');
+        expect(cells[cells.length - 1].dataset.row).toBe('0');
+        expect(cells[cells.length - 1].dataset.col).toBe('0');
+    });
+
+    it('devrait restaurer l\'orientation depuis la configuration sauvegardée', () => {
+        appState.seatingGrid.orientation = 'student';
+        SeatingChartManager._loadGridConfig();
+        expect(SeatingChartManager._orientation).toBe('student');
+        expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
+    });
+});
+
