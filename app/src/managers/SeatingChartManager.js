@@ -97,7 +97,7 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
                                 <div class="sc-placement-wrapper">
-                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Ordre alphabétique" data-tooltip="Ordre alphabétique">
+                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer les élèves" data-tooltip="Agencer les élèves">
                                         <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
@@ -121,9 +121,6 @@ export const SeatingChartManager = {
                                         </div>
                                     </div>
                                 </div>
-                                <button class="sc-action-btn" id="scShuffleBtn" aria-label="Mélanger" data-tooltip="Mélanger">
-                                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                                </button>
                                 <button class="sc-action-btn sc-undo-btn" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" disabled>
                                     <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
                                 </button>
@@ -1149,7 +1146,6 @@ export const SeatingChartManager = {
         const undoBtn = document.getElementById('scUndoBtn');
         const redoBtn = document.getElementById('scRedoBtn');
         const clearBtn = document.getElementById('scClearBtn');
-        const shuffleBtn = document.getElementById('scShuffleBtn');
         const autoPlaceBtn = document.getElementById('scAutoPlaceBtn');
 
         const placedCount = this._getPlacedIds().size;
@@ -1158,7 +1154,6 @@ export const SeatingChartManager = {
         if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
         if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
         if (clearBtn) clearBtn.disabled = placedCount === 0;
-        if (shuffleBtn) shuffleBtn.disabled = totalCount < 2;
         if (autoPlaceBtn) autoPlaceBtn.disabled = totalCount === 0;
     },
 
@@ -1816,6 +1811,10 @@ export const SeatingChartManager = {
                 UI.showNotification('Tous les élèves placés sont épinglés.', 'info');
                 return;
             }
+            if (movable.length < 2 && mode === 'random') {
+                UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
+                return;
+            }
 
             this._snapshotGrid();
 
@@ -1937,87 +1936,9 @@ export const SeatingChartManager = {
         }
     },
 
-    /** Shuffles non-pinned students across ALL valid available seats */
+    /** Shuffles non-pinned students across valid seats */
     _shuffle() {
-        if (this._isLocked) return;
-
-        const placedIds = this._getPlacedIds();
-        const unplaced = this._getUnplacedStudents();
-
-        // Si le plan est vide : placer directement toute la classe au hasard
-        if (placedIds.size === 0 && unplaced.length > 0) {
-            this._autoPlace('random');
-            return;
-        }
-
-        this._snapshotGrid();
-
-        const rows = this._getRows();
-        const cols = this._getCols();
-        const movableIds = [];
-        const validCells = [];
-        const resultsMap = new Map((appState.generatedResults || []).map(x => [x.id, x]));
-
-        // Gather all movable students and all valid places
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const id = this._gridState[r][c];
-                const isSpecial = this._isSpecialSpot(r, c);
-                
-                if (id) {
-                    if (!resultsMap.get(id)?.seatingPosition?.pinned) {
-                        movableIds.push(id);
-                        validCells.push({ row: r, col: c });
-                    }
-                } else if (!isSpecial) {
-                    validCells.push({ row: r, col: c });
-                }
-            }
-        }
-
-        if (movableIds.length < 2) {
-            UI.showNotification('Pas assez d\'élèves à mélanger.', 'info');
-            return;
-        }
-
-        // Clear the grid cells where movable students currently are
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const id = this._gridState[r][c];
-                if (id && !resultsMap.get(id)?.seatingPosition?.pinned) {
-                    this._gridState[r][c] = null;
-                }
-            }
-        }
-
-        // Shuffle all valid cells to randomly distribute the students
-        for (let i = validCells.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [validCells[i], validCells[j]] = [validCells[j], validCells[i]];
-        }
-
-        // Assign each movable student a randomly selected cell
-        const selectedCells = validCells.slice(0, movableIds.length);
-        movableIds.forEach((id, i) => {
-            const cell = selectedCells[i];
-            this._gridState[cell.row][cell.col] = id;
-        });
-
-        this._savePositionsToState();
-        this._render();
-
-        requestAnimationFrame(() => {
-            selectedCells.forEach(({ row, col }, index) => {
-                const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-                if (!cell) return;
-                cell.style.setProperty('--place-i', index);
-                cell.classList.add('sc-auto-placed');
-                cell.addEventListener('animationend', () => {
-                    cell.classList.remove('sc-auto-placed');
-                    cell.style.removeProperty('--place-i');
-                }, { once: true });
-            });
-        });
+        this._autoPlace('random');
     },
 
     /** Hides native ghost and creates a floating clone that follows the cursor */

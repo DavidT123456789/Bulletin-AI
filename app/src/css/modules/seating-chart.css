@@ -1009,18 +1009,6 @@
     display: none !important;
 }
 
-/* Disable auto-place when all placed */
-#seatingChartView[data-all-placed="true"][data-locked="false"] .sc-auto-place-btn {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-/* Disable shuffle when < 2 placed */
-#seatingChartView[data-placed-count="0"] #scShuffleBtn,
-#seatingChartView[data-placed-count="1"] #scShuffleBtn {
-    opacity: 0.4;
-    pointer-events: none;
-}
 
 /* Lock button icon pulse when all students placed — invite to lock */
 #seatingChartView[data-all-placed="true"][data-locked="false"] .sc-lock-btn iconify-icon {
