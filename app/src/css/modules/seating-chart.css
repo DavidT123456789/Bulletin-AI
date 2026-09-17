@@ -1897,6 +1897,16 @@
     border-color: var(--border-color);
 }
 
+[data-theme="dark"] .sc-stat-value,
+[data-theme="dark"] .sc-badge-pinned {
+    color: var(--primary-bright);
+}
+
+[data-theme="dark"] .sc-empty-success-icon {
+    color: var(--primary-bright);
+    filter: drop-shadow(0 0 28px rgba(var(--primary-color-rgb, 79, 70, 229), 0.4));
+}
+
 /* ────────── EMPTY STATE ────────── */
 #seatingChartView[data-all-placed="true"] .sc-sidebar-header {
     max-height: 0;
@@ -1942,9 +1952,10 @@
 
 .sc-empty-success-icon {
     font-size: 4.8rem;
-    color: var(--primary-color);
+    color: var(--primary-bright, var(--primary-color));
     margin-bottom: auto;
-    filter: drop-shadow(0 8px 24px rgba(var(--primary-color-rgb, 79, 70, 229), 0.15));
+    filter: drop-shadow(0 8px 24px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2));
+    transition: color var(--transition-base), filter var(--transition-base);
 }
 
 @keyframes scFadeUp {
