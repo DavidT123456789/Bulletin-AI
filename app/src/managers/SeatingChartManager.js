@@ -97,8 +97,8 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
                                 <div class="sc-placement-wrapper">
-                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placement automatique" data-tooltip="Placer auto">
-                                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                                    <button class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Ordre alphabétique" data-tooltip="Ordre alphabétique">
+                                        <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
                                         <button class="sc-popover-item" data-mode="alpha-asc" type="button">
@@ -1153,13 +1153,13 @@ export const SeatingChartManager = {
         const autoPlaceBtn = document.getElementById('scAutoPlaceBtn');
 
         const placedCount = this._getPlacedIds().size;
-        const unplacedCount = this._getUnplacedStudents().length;
+        const totalCount = this._students.length;
 
         if (undoBtn) undoBtn.disabled = this._undoStack.length === 0;
         if (redoBtn) redoBtn.disabled = this._redoStack.length === 0;
         if (clearBtn) clearBtn.disabled = placedCount === 0;
-        if (shuffleBtn) shuffleBtn.disabled = placedCount < 2;
-        if (autoPlaceBtn) autoPlaceBtn.disabled = unplacedCount === 0;
+        if (shuffleBtn) shuffleBtn.disabled = totalCount < 2;
+        if (autoPlaceBtn) autoPlaceBtn.disabled = totalCount === 0;
     },
 
     // ========================================================================
