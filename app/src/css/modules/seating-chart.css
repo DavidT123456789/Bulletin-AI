@@ -252,21 +252,35 @@
 .sc-toolbar-info {
     justify-self: auto;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    box-sizing: border-box;
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: default;
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 7px 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0 16px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--glass-surface-border);
     box-shadow: var(--shadow-sm);
     pointer-events: auto;
 }
 
-
+.sc-toolbar-dot {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-tertiary);
+    font-weight: 700;
+    opacity: 0.45;
+    font-size: 0.9em;
+    user-select: none;
+    line-height: 1;
+}
 
 .sc-toolbar-info strong {
     font-weight: 600;
@@ -721,16 +735,26 @@
     cursor: default;
 }
 
-.sc-cell.empty {
-    /* Smooth fade for locked mode (more discrete) */
-    opacity: calc(0.25 + var(--row-depth, 0.5) * 0.2);
+/* In consultation/locked mode, empty desks are subtle ghost silhouettes without dashed borders */
+#seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.45);
+    opacity: 1;
+    pointer-events: none;
 }
 
-/* In edit mode, standard empty cells are very visible (inviting placement) */
+/* In edit mode, standard empty cells are clearly visible (inviting placement) */
 #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
-    opacity: 0.85;
-    border: 1.5px dashed rgba(var(--text-secondary-rgb), 0.25);
-    background: rgba(var(--text-secondary-rgb), 0.02);
+    opacity: 1;
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.35);
+    background: rgba(var(--surface-color-rgb), 0.25);
+}
+
+@media (hover: hover) {
+    #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+        border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.55);
+        background: rgba(var(--surface-color-rgb), 0.4);
+    }
 }
 
 /* Empty cells become clickable when sidebar selection is active */
@@ -880,6 +904,7 @@
     object-fit: cover;
     border-radius: 50%;
 }
+
 
 .sc-cell-name,
 .sc-drag-clone .sc-student-chip-name,
@@ -1033,27 +1058,27 @@
 
 /* Unplaced indicator styling */
 .sc-unplaced-hint {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-weight: 400;
+    gap: 5px;
+    font-weight: 500;
     color: var(--error-color);
-    font-size: 0.78rem;
-    animation: scUnplacedFade 0.5s var(--ease-material) both;
+    font-size: 0.8rem;
 }
 
 .sc-unplaced-hint iconify-icon {
-    font-size: 1.2em;
+    font-size: 1.15em;
 }
 
-.sc-footer-seats {
-    color: var(--text-secondary);
+.sc-footer-students,
+.sc-footer-seats,
+.sc-unplaced-text {
     font-weight: 500;
 }
 
-@keyframes scUnplacedFade {
-    from { opacity: 0; transform: translateX(-4px); }
-    to   { opacity: 1; transform: translateX(0); }
+.sc-footer-students,
+.sc-footer-seats {
+    color: var(--text-secondary);
 }
 
 /* ────────── CHIP SELECTION ────────── */
@@ -1067,14 +1092,6 @@
     box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
 }
 
-/* Empty cells subtly visible in locked mode — provides spatial reference */
-#seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
-    opacity: 1; 
-    transform: scale(0.98);
-    pointer-events: none;
-    background: color-mix(in srgb, var(--surface-color) 55%, transparent);
-    border-color: color-mix(in srgb, var(--surface-color) 40%, transparent);
-}
 
 /* Occupied cells non-draggable in locked mode */
 #seatingChartView[data-locked="true"] .sc-cell.occupied {
@@ -1087,9 +1104,10 @@
     box-shadow: var(--shadow-sm);
 }
 
-/* Hide remove/pin in locked — clean read-only view */
+/* Hide remove/pin and scope badge in locked — clean read-only view */
 #seatingChartView[data-locked="true"] .sc-cell-remove,
-#seatingChartView[data-locked="true"] .sc-cell-pin {
+#seatingChartView[data-locked="true"] .sc-cell-pin,
+#seatingChartView[data-locked="true"] .sc-cell-scope-badge {
     display: none !important;
 }
 
@@ -1125,11 +1143,12 @@
     border-color: transparent;
     box-shadow: none;
     opacity: 0;
+    transition: opacity 0.2s var(--ease-spring), border-color 0.2s, background 0.2s;
 }
 
 #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle {
-    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.15);
-    opacity: 0.3;
+    border: 1.5px dashed rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.18);
+    opacity: 0.35;
 }
 
 /* Special cells with designated role (AESH, Condamnée) */
@@ -1140,6 +1159,12 @@
 }
 
 @media (hover: hover) {
+    #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aisle:hover {
+        opacity: 1;
+        border-color: rgba(var(--text-quaternary-rgb, 150, 150, 150), 0.45);
+        background: rgba(var(--surface-color-rgb), 0.25);
+    }
+
     #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-aesh:hover,
     #seatingChartView[data-locked="false"] .sc-cell.empty.sc-cell-special-blocked:hover {
         opacity: 1;
@@ -1292,19 +1317,44 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 28px;
-    border-radius: var(--radius-md);
-    background: rgba(var(--primary-color-rgb), 0.015);
+    padding: 8px 22px;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--primary-color-rgb), 0.03);
     border: 1.5px solid var(--border-color);
     color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 500;
     user-select: none;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
-    transition: opacity 0.3s, transform 0.3s var(--ease-spring);
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                transform 0.25s var(--ease-spring),
+                box-shadow 0.2s ease;
 }
 
-.sc-desk iconify-icon { font-size: 1.1em; }
+.sc-desk:hover {
+    background: var(--item-hover-bg, rgba(0, 0, 0, 0.04));
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-xs);
+}
+
+.sc-desk:active {
+    transform: scale(0.98);
+}
+
+.sc-desk:focus-visible {
+    outline: none;
+    border-color: var(--border-color);
+    box-shadow: 0 0 0 2px var(--focus-ring, rgba(255, 255, 255, 0.2));
+}
+
+.sc-desk .sc-desk-cap {
+    font-size: 1.15em;
+}
 
 /* ────────── ONBOARDING GHOST HINT ────────── */
 
@@ -1946,15 +1996,17 @@
     .sc-floating-actions {
         top: calc(56px + 12px);
         left: 12px;
+        padding: 2px 3px;
+        gap: 2px;
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn {
-        width: 36px;
-        height: 36px;
+        width: 30px !important;
+        height: 30px !important;
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn iconify-icon {
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
 
     .sc-floating-status .sc-toolbar-info {
@@ -1997,9 +2049,16 @@
 }
 
 [data-theme="dark"] .sc-desk {
-    background: rgba(var(--primary-color-rgb), 0.02);
+    background: rgba(255, 255, 255, 0.02);
     border-color: var(--border-color);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .sc-desk:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] .sc-toolbar-info,
@@ -2022,6 +2081,24 @@
 [data-theme="dark"] .sc-empty-success-icon {
     color: var(--primary-bright);
     filter: drop-shadow(0 0 28px rgba(var(--primary-color-rgb, 79, 70, 229), 0.4));
+}
+
+/* Dark theme empty desks: subtle visible silhouette in consultation, clear in edit */
+[data-theme="dark"] #seatingChartView[data-locked="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+[data-theme="dark"] #seatingChartView[data-locked="false"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border: 1.5px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+@media (hover: hover) {
+    [data-theme="dark"] #seatingChartView[data-locked="false"]:not([data-has-selection="true"]) .sc-cell.empty:not([class*="sc-cell-special-"]):hover {
+        border-color: rgba(255, 255, 255, 0.45);
+        background: rgba(255, 255, 255, 0.1);
+    }
 }
 
 /* ────────── EMPTY STATE ────────── */
@@ -2543,14 +2620,24 @@
     text-align: right;
 }
 
-/* ---------- READING MODE FLOATING ACTIONS ---------- */
-/* Re-entry point and Print button when sidebar is hidden */
+/* ---------- READING MODE FLOATING ACTIONS (COMPACT CAPSULE) ---------- */
+/* Re-entry point, Orientation toggle, and Print button when sidebar is hidden */
 .sc-floating-actions {
     position: absolute;
     top: calc(56px + var(--content-padding-x, 24px));
     left: var(--content-padding-x, 24px);
-    display: flex;
-    gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+    box-sizing: border-box;
+    gap: 3px;
+    padding: 0 4px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-surface-border);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.3s ease, visibility 0.3s;
@@ -2567,32 +2654,52 @@
     transition: opacity 0.35s ease 0.05s, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1) 0.05s, visibility 0.42s;
 }
 
-.sc-floating-actions .sc-action-btn {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-surface-border);
-    box-shadow: var(--shadow-sm);
-    width: 38px;
-    height: 38px;
-    border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .sc-floating-actions .sc-action-btn {
+[data-theme="dark"] .sc-floating-actions {
     background: rgba(30, 30, 30, 0.85);
     border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
 }
 
+/* Seamless ghost icon buttons: NO contours or borders at rest */
+.sc-floating-actions .sc-action-btn {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: var(--radius-pill) !important;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background var(--transition-fast),
+                color var(--transition-fast),
+                transform 0.15s ease;
+}
+
+.sc-floating-actions .sc-action-btn iconify-icon {
+    font-size: 1.15rem;
+}
+
+/* Soft hover wash: no harsh borders */
 @media (hover: hover) {
-    .sc-floating-actions .sc-action-btn:hover,
-    [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
-        background: var(--primary-color);
-        color: white;
-        border-color: transparent;
-        box-shadow: var(--shadow-md);
+    .sc-floating-actions .sc-action-btn:hover {
+        background: var(--item-hover-bg, rgba(0, 0, 0, 0.05)) !important;
+        color: var(--text-primary) !important;
     }
+
+    [data-theme="dark"] .sc-floating-actions .sc-action-btn:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+    }
+}
+
+.sc-floating-actions .sc-action-btn:active {
+    transform: scale(0.9) !important;
 }
 
 /* Sidebar drag-over target highlight (drag to remove) */

@@ -131,7 +131,7 @@ export const SeatingChartManager = {
                                 <button class="sc-action-btn sc-redo-btn" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" disabled>
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
-                                <button class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Passer en vue Élèves (Vidéoprojection)" data-tooltip="Vue Élèves (Projection)">
+                                <button class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
@@ -177,20 +177,20 @@ export const SeatingChartManager = {
                     <div class="sc-classroom-board" id="scClassroomBoard">
                         <div class="sc-grid-container" id="scGridContainer"></div>
                         <div class="sc-desk-row">
-                            <div class="sc-desk" id="scDesk"><iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
+                            <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Floating Actions (Read-Only Mode) -->
-                <div class="sc-floating-actions sc-read-only-only">
-                    <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Passer en vue Élèves (Vidéoprojection)" data-tooltip="Vue Élèves (Projection)">
+                <!-- Floating Actions Capsule (Read-Only Mode) -->
+                <div class="sc-floating-actions sc-floating-capsule sc-read-only-only" id="scFloatingActions">
+                    <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
-                    <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer" data-tooltip="Imprimer le plan">
+                    <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
                     </button>
-                    <button class="sc-action-btn" id="scUnlockFloatingBtn" aria-label="Déverrouiller" data-tooltip="Mode Édition">
+                    <button class="sc-action-btn" id="scUnlockFloatingBtn" aria-label="Mode Édition" data-tooltip="Mode Édition">
                         <iconify-icon icon="solar:lock-linear"></iconify-icon>
                     </button>
                 </div>
@@ -234,6 +234,15 @@ export const SeatingChartManager = {
         document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
         document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
+
+        const desk = document.getElementById('scDesk');
+        desk?.addEventListener('click', () => this._toggleOrientation());
+        desk?.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                this._toggleOrientation();
+            }
+        });
 
         document.getElementById('scConfigBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -839,10 +848,19 @@ export const SeatingChartManager = {
 
         const isStudent = orientation === 'student';
 
-        // Update desk text & icon
+        const tooltip = isStudent
+            ? 'Vue Élèves active • Inverser'
+            : 'Vue Prof active • Inverser';
+        const ariaLabel = isStudent
+            ? 'Vue Élèves active (cliquer pour inverser la vue)'
+            : 'Vue Prof active (cliquer pour inverser la vue)';
+
+        // Update desk text, icons & accessibility
         const desk = document.getElementById('scDesk');
         if (desk) {
-            desk.innerHTML = '<iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span>';
+            desk.innerHTML = '<iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span>';
+            desk.setAttribute('aria-label', ariaLabel);
+            desk.setAttribute('data-tooltip', tooltip);
         }
 
         // Update orientation action buttons
@@ -853,8 +871,8 @@ export const SeatingChartManager = {
         orientationBtns.forEach(btn => {
             if (!btn) return;
             btn.classList.toggle('active', isStudent);
-            btn.setAttribute('aria-label', isStudent ? 'Vue Élèves active (cliquer pour revenir en vue Professeur)' : 'Passer en vue Élèves (Vidéoprojection)');
-            btn.setAttribute('data-tooltip', isStudent ? 'Vue Élèves active' : 'Vue Élèves (Projection)');
+            btn.setAttribute('aria-label', ariaLabel);
+            btn.setAttribute('data-tooltip', tooltip);
             const icon = btn.querySelector('iconify-icon');
             if (icon) {
                 icon.setAttribute('icon', 'solar:users-group-rounded-linear');
@@ -878,7 +896,6 @@ export const SeatingChartManager = {
             this._renderGrid();
         }
 
-        this._updateFooter();
         this._scrollToDesk();
     },
 
@@ -1652,9 +1669,9 @@ export const SeatingChartManager = {
         if (total === 0) {
             info.innerHTML = seatsLabel;
         } else if (unplaced > 0) {
-            info.innerHTML = `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon> <strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span> · ${seatsLabel}`;
+            info.innerHTML = `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon><span class="sc-unplaced-text"><strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span></span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
         } else {
-            info.innerHTML = `<strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''} · ${seatsLabel}`;
+            info.innerHTML = `<span class="sc-footer-students"><strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}</span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();

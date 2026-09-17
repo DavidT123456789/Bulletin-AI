@@ -392,6 +392,7 @@
     /* Zinc 50 */
     --text-secondary: #a1a1aa;
     /* Zinc 400 */
+    --text-secondary-rgb: 161, 161, 170;
     --text-tertiary: #71717a;
     /* Zinc 500 */
     --text-tertiary-rgb: 113, 113, 122;

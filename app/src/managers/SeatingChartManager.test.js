@@ -450,6 +450,43 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
     });
 
+    it('devrait basculer l\'orientation au clic et au clavier sur le Tableau (scDesk)', () => {
+        SeatingChartManager._setupEventListeners();
+
+        expect(SeatingChartManager._orientation).toBe('teacher');
+        const desk = document.getElementById('scDesk');
+
+        // Clic sur le tableau
+        desk.click();
+        expect(SeatingChartManager._orientation).toBe('student');
+        expect(desk.getAttribute('data-tooltip')).toBe('Vue Élèves active • Inverser');
+        expect(desk.getAttribute('aria-label')).toBe('Vue Élèves active (cliquer pour inverser la vue)');
+
+        // Touche Entrée sur le tableau
+        desk.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(SeatingChartManager._orientation).toBe('teacher');
+        expect(desk.getAttribute('data-tooltip')).toBe('Vue Prof active • Inverser');
+        expect(desk.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
+
+        // Touche Espace sur le tableau
+        desk.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        expect(SeatingChartManager._orientation).toBe('student');
+    });
+
+    it('devrait mettre à jour l\'état et le tooltip harmonisé de la capsule flottante', () => {
+        const floatingBtn = document.getElementById('scFloatingOrientationBtn');
+
+        SeatingChartManager._applyOrientation('student');
+        expect(floatingBtn.classList.contains('active')).toBe(true);
+        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Élèves active • Inverser');
+        expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Élèves active (cliquer pour inverser la vue)');
+
+        SeatingChartManager._applyOrientation('teacher');
+        expect(floatingBtn.classList.contains('active')).toBe(false);
+        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Prof active • Inverser');
+        expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
+    });
+
     it('devrait afficher un format unifié « X élèves · Y places libres » en édition et en consultation', () => {
         // 2 élèves, grille 3x3 (9 places), 0 placé -> unplaced = 2, available = 9
         SeatingChartManager._isLocked = false;
