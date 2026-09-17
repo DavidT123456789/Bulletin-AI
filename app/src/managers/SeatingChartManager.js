@@ -253,14 +253,12 @@ export const SeatingChartManager = {
             }
         });
         colsSlider?.addEventListener('input', (e) => {
-            startSlide();
             const valEl = document.getElementById('scColsValue');
             if (valEl) valEl.textContent = e.target.value;
-            this._onGridConfigChange(true);
         });
         colsSlider?.addEventListener('change', () => {
             isSliding = false;
-            this._onGridConfigChange(false);
+            this._onGridConfigChange();
         });
 
         const rowsSlider = document.getElementById('scRowsSlider');
@@ -271,14 +269,12 @@ export const SeatingChartManager = {
             }
         });
         rowsSlider?.addEventListener('input', (e) => {
-            startSlide();
             const valEl = document.getElementById('scRowsValue');
             if (valEl) valEl.textContent = e.target.value;
-            this._onGridConfigChange(true);
         });
         rowsSlider?.addEventListener('change', () => {
             isSliding = false;
-            this._onGridConfigChange(false);
+            this._onGridConfigChange();
         });
 
         window.addEventListener('pointerup', () => { isSliding = false; });
@@ -905,17 +901,34 @@ export const SeatingChartManager = {
         StorageManager.saveAppState();
     },
 
-    _onGridConfigChange(interactive = false) {
+    _onGridConfigChange() {
         const newRows = this._getRows();
         const newCols = this._getCols();
         const oldRows = this._gridState ? this._gridState.length : newRows;
-        const oldCols = this._gridState?.[0]?.length ?? newCols;
-
-        if (newRows === oldRows && newCols === oldCols && interactive) {
-            return;
-        }
         
-        const placed = this._getPlacedMap();
+        // Récupère toutes les positions connues des étudiants (y compris ceux temporairement hors de la grille visible)
+        const placed = {};
+        this._students.forEach(s => {
+            const pos = s.seatingPosition;
+            if (pos?.row != null && pos?.col != null) {
+                placed[s.id] = { row: pos.row, col: pos.col, pinned: pos.pinned || false };
+            }
+        });
+        if (this._gridState) {
+            for (let r = 0; r < this._gridState.length; r++) {
+                for (let c = 0; c < this._gridState[r].length; c++) {
+                    const id = this._gridState[r][c];
+                    if (id) {
+                        placed[id] = {
+                            row: r,
+                            col: c,
+                            pinned: placed[id]?.pinned || false
+                        };
+                    }
+                }
+            }
+        }
+
         this._initGrid(newRows, newCols);
 
         // Calcule le décalage pour ajouter/supprimer les rangées par le haut (éloigné du bureau)
@@ -925,6 +938,7 @@ export const SeatingChartManager = {
         // Repositionne les étudiants
         for (const [resultId, pos] of Object.entries(placed)) {
             const newR = pos.row + rowOffset;
+            pos.row = newR;
             if (newR >= 0 && newR < newRows && pos.col < newCols) {
                 this._gridState[newR][pos.col] = resultId;
             }
@@ -958,12 +972,10 @@ export const SeatingChartManager = {
             });
         }
 
-        this._savePositionsToState(); // Persiste immédiatement les nouvelles coordonnées
+        this._savePositionsToState(true); // Conserve les coordonnées des élèves temporairement hors-grille
         this._render();
         this._saveGridConfig();
-        if (!interactive) {
-            this._staggerCellEntrance();
-        }
+        this._staggerCellEntrance();
     },
 
     _getCurrentClass() {
@@ -1212,7 +1224,7 @@ export const SeatingChartManager = {
         });
     },
 
-    _savePositionsToState() {
+    _savePositionsToState(preserveOutOfBounds = false) {
         const placed = this._getPlacedMap();
 
         this._students.forEach(s => {
@@ -1220,9 +1232,15 @@ export const SeatingChartManager = {
             if (!result) return;
 
             const pos = placed[s.id];
-            result.seatingPosition = pos
-                ? { row: pos.row, col: pos.col, pinned: result.seatingPosition?.pinned || false }
-                : null;
+            if (pos) {
+                result.seatingPosition = {
+                    row: pos.row,
+                    col: pos.col,
+                    pinned: result.seatingPosition?.pinned || false
+                };
+            } else if (!preserveOutOfBounds || !result.seatingPosition) {
+                result.seatingPosition = null;
+            }
             result._lastModified = Date.now();
             s.seatingPosition = result.seatingPosition;
         });
