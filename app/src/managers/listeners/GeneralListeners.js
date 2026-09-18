@@ -424,8 +424,6 @@ export const GeneralListeners = {
         const cloudLoadBtn = document.getElementById('cloudLoadMenuBtn');
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
-                if (cloudLoadBtn.classList.contains('disabled')) return;
-
                 const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
                 const originalLabel = labelEl?.textContent;
 

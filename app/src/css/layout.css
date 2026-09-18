@@ -1096,6 +1096,10 @@ body.is-cloud-syncing label {
     transition: color var(--transition-fast);
 }
 
+.cloud-status-text {
+    white-space: nowrap;
+}
+
 .cloud-sync-status.in-sync .cloud-status-icon {
     color: var(--success-color);
 }
@@ -1170,6 +1174,14 @@ body.is-cloud-syncing label {
 }
 
 /* Cloud Save/Load Menu Items (Unified with standard .menu-item) */
+.cloud-btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.25;
+    min-width: 0;
+}
+
 .cloud-save-menu-item .cloud-save-label {
     font-weight: 500;
     color: var(--text-secondary);
@@ -1178,8 +1190,34 @@ body.is-cloud-syncing label {
     transition: color var(--transition-fast);
 }
 
+.cloud-btn-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+}
+
 .cloud-save-menu-item:hover .cloud-save-label {
     color: var(--text-primary);
+}
+
+.cloud-save-menu-item:hover .cloud-btn-hint {
+    color: var(--text-secondary);
+}
+
+.cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint {
+    color: var(--primary-color);
+}
+
+.cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
+    color: var(--primary-hover);
+}
+
+[data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint,
+[data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
+    color: var(--color-sky-bright);
 }
 
 .cloud-save-menu-item.saving {
@@ -1219,56 +1257,13 @@ body.is-cloud-syncing label {
     color: var(--text-tertiary);
 }
 
-/* Cloud sync state — action recommended (subtle accent background matching menu-item radius) */
-.cloud-save-menu-item.cloud-action-recommended {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    border-radius: var(--dropdown-item-radius);
-}
-
-.cloud-save-menu-item.cloud-action-recommended:hover {
-    background: rgba(var(--primary-color-rgb), 0.14);
-}
-
-.cloud-save-menu-item.cloud-action-recommended .cloud-save-label {
-    color: var(--primary-hover);
-}
-
-[data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended .cloud-save-label {
-    color: var(--color-sky-bright);
-}
-
+/* Cloud sync state — action recommended (accent color applied to hint and icon, standard hover) */
 .cloud-save-menu-item.cloud-action-recommended > iconify-icon {
     color: var(--primary-color);
 }
 
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended > iconify-icon {
     color: var(--color-sky-bright);
-}
-
-/* Cloud sync state — conflict detected (warning accent background) */
-.cloud-save-menu-item.cloud-conflict {
-    background: rgba(var(--warning-color-rgb), 0.1);
-    border-radius: var(--dropdown-item-radius);
-}
-
-.cloud-save-menu-item.cloud-conflict:hover {
-    background: rgba(var(--warning-color-rgb), 0.16);
-}
-
-.cloud-save-menu-item.cloud-conflict .cloud-save-label {
-    color: var(--warning-dark);
-}
-
-[data-theme="dark"] .cloud-save-menu-item.cloud-conflict .cloud-save-label {
-    color: var(--warning-bright);
-}
-
-.cloud-save-menu-item.cloud-conflict > iconify-icon {
-    color: var(--warning-color);
-}
-
-[data-theme="dark"] .cloud-save-menu-item.cloud-conflict > iconify-icon {
-    color: var(--warning-bright);
 }
 
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */

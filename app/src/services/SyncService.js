@@ -184,9 +184,14 @@ export const SyncService = {
             if (!saveBtn) return;
 
             // Reset all sync state classes
-            const syncClasses = ['disabled', 'cloud-action-recommended', 'cloud-conflict'];
+            const syncClasses = ['disabled', 'cloud-action-recommended'];
             syncClasses.forEach(c => saveBtn.classList.remove(c));
             if (loadBtn) syncClasses.forEach(c => loadBtn.classList.remove(c));
+
+            const saveHint = document.getElementById('cloudSaveHint');
+            const loadHint = document.getElementById('cloudLoadHint');
+            if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
+            if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
 
             const config = {
                 connected: {
@@ -264,7 +269,6 @@ export const SyncService = {
 
             // --- Sync state computation (connected only) ---
             if (state === 'connected') {
-                if (statusEl) statusEl.style.display = 'flex';
                 const syncState = this._computeSyncState();
                 this._lastSyncState = syncState;
                 this._applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl);
@@ -302,9 +306,20 @@ export const SyncService = {
      * @private
      */
     _computeSyncState() {
-        const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+        const currentHash = StorageManager.computeCurrentDataHash();
+        const syncHash = localStorage.getItem('bulletin_last_sync_hash');
+
+        let lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
         const lSync = this.lastSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0');
         const rMod = this.remoteSyncTime || 0;
+
+        // If data hash matches the cloud sync hash, local data is strictly identical
+        if (syncHash && currentHash === syncHash) {
+            if (lMod > lSync) {
+                lMod = lSync;
+                localStorage.setItem('bulletin_last_modified', lSync.toString());
+            }
+        }
 
         const hasLocalChanges = lMod > lSync;
         const hasCloudChanges = rMod > 0 && rMod > (lSync + this._DRIFT_TOLERANCE_MS);
@@ -322,9 +337,16 @@ export const SyncService = {
     _applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl) {
         const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
         const statusIconEl = statusEl?.querySelector('.cloud-status-icon');
+        const saveHint = document.getElementById('cloudSaveHint');
+        const loadHint = document.getElementById('cloudLoadHint');
 
-        if (statusEl) {
-            statusEl.className = `cloud-sync-status tooltip ${syncState}`;
+        if (saveHint) {
+            saveHint.style.display = 'none';
+            saveHint.textContent = '';
+        }
+        if (loadHint) {
+            loadHint.style.display = 'none';
+            loadHint.textContent = '';
         }
 
         if (loadBtn) {
@@ -336,41 +358,45 @@ export const SyncService = {
 
         switch (syncState) {
             case 'in-sync':
+                if (statusEl) statusEl.style.display = 'flex';
                 if (statusTextEl) statusTextEl.textContent = 'Cloud synchronisé';
                 iconName = 'solar:cloud-check-linear';
                 tooltipText = 'Vos données locales et votre sauvegarde Cloud sont synchronisées.';
-                if (loadBtn) {
-                    loadBtn.classList.add('disabled');
-                    loadBtn.setAttribute('data-tooltip', 'Vos données locales sont déjà identiques au Cloud');
-                }
                 break;
 
             case 'local-changes':
-                if (statusTextEl) {
-                    statusTextEl.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifications locales';
+                if (statusEl) statusEl.style.display = 'none';
+                if (saveHint) {
+                    saveHint.style.display = 'block';
+                    saveHint.textContent = 'Modifications locales';
                 }
-                iconName = 'solar:cloud-upload-linear';
-                tooltipText = 'Des modifications locales n\'ont pas encore été envoyées sur le Cloud. Cliquez sur Sauvegarder pour les conserver.';
                 saveBtn.classList.add('cloud-action-recommended');
                 break;
 
             case 'cloud-changes':
-                if (statusTextEl) {
-                    statusTextEl.textContent = 'Cloud : version plus récente';
+                if (statusEl) statusEl.style.display = 'none';
+                if (loadHint) {
+                    loadHint.style.display = 'block';
+                    loadHint.textContent = 'Version Cloud plus récente';
                 }
-                iconName = 'solar:cloud-download-linear';
-                tooltipText = 'Une sauvegarde plus récente existe sur le Cloud (enregistrée depuis un autre appareil). Cliquez sur Restaurer pour la récupérer.';
                 if (loadBtn) loadBtn.classList.add('cloud-action-recommended');
                 break;
 
             case 'conflict':
-                if (statusTextEl) {
-                    statusTextEl.textContent = 'Modifications des deux côtés';
+                if (saveHint) {
+                    saveHint.style.display = 'block';
+                    saveHint.textContent = 'Modifications locales';
                 }
-                iconName = 'solar:danger-triangle-linear';
-                tooltipText = 'Des modifications ont été effectuées à la fois sur cet appareil et sur le Cloud.<br>Choisissez Sauvegarder pour garder votre travail actuel, ou Restaurer pour récupérer la version distante.';
-                saveBtn.classList.add('cloud-conflict');
-                if (loadBtn) loadBtn.classList.add('cloud-conflict');
+                if (loadHint) {
+                    loadHint.style.display = 'block';
+                    loadHint.textContent = 'Version distante';
+                }
+                if (statusEl) {
+                    statusEl.style.display = 'flex';
+                    if (statusTextEl) statusTextEl.textContent = 'Versions divergentes';
+                    iconName = 'solar:danger-triangle-linear';
+                    tooltipText = 'Des modifications existent en local et sur le Cloud. Choisissez quelle version conserver.';
+                }
                 break;
         }
 
@@ -379,6 +405,7 @@ export const SyncService = {
         }
 
         if (statusEl) {
+            statusEl.className = `cloud-sync-status tooltip ${syncState}`;
             statusEl.dataset.tooltip = tooltipText;
             if (statusEl._tippy) {
                 statusEl._tippy.setContent(tooltipText);
@@ -649,6 +676,9 @@ export const SyncService = {
 
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+
+        // Update remote time to match since local is now strictly aligned with remote
+        this.remoteSyncTime = this.lastSyncTime;
 
         // Save data hash at sync time and align modified timestamp
         const syncHash = StorageManager.computeCurrentDataHash();

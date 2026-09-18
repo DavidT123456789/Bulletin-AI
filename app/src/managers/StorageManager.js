@@ -40,15 +40,25 @@ let App;
 
 /** @const {string[]} Clés de navigation et d'état d'interface à ignorer lors du calcul du hash de données */
 const UI_AND_NAV_KEYS = [
+    'theme',
+    'accentColor',
+    'isAppreciationFullView',
+    'activeView',
     'currentClassId',
     'currentPeriod',
     'currentSubject',
     'currentInputMode',
     'activeStatFilter',
-    'activeView',
     'refinementEdits',
     'apiKeyStatus',
-    'validatedApiKeys'
+    'validatedApiKeys',
+    'openaiApiKey',
+    'googleApiKey',
+    'openrouterApiKey',
+    'anthropicApiKey',
+    'mistralApiKey',
+    'ollamaBaseUrl',
+    'ollamaInstalledModels'
 ];
 
 export const StorageManager = {
@@ -226,7 +236,7 @@ export const StorageManager = {
         this._ensureConfigUpgrades();
 
         this._isFirstLoadSave = true;
-        this.saveAppState();
+        await this.saveAppState();
 
         this._requestPersistentStorage();
         this._checkPendingRestore();
@@ -1081,6 +1091,8 @@ export const StorageManager = {
                 }
             }
 
+            this._ensureDefaultState();
+            this._ensureConfigUpgrades();
             await this.saveAppState();
             if (App && App.updateUIOnLoad) App.updateUIOnLoad();
 

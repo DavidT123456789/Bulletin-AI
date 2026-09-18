@@ -347,12 +347,18 @@
                                 <button id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item tooltip"
                                     style="display: none;" data-tooltip="Envoyer vos données vers le Cloud">
                                     <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
-                                    <span class="cloud-save-label">Sauvegarder</span>
+                                    <div class="cloud-btn-content">
+                                        <span class="cloud-save-label">Sauvegarder</span>
+                                        <span class="cloud-btn-hint" id="cloudSaveHint" style="display: none;"></span>
+                                    </div>
                                 </button>
                                 <button id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item tooltip"
                                     style="display: none;" data-tooltip="Récupérer vos données depuis le Cloud">
                                     <iconify-icon icon="solar:cloud-download-linear"></iconify-icon>
-                                    <span class="cloud-save-label">Restaurer</span>
+                                    <div class="cloud-btn-content">
+                                        <span class="cloud-save-label">Restaurer</span>
+                                        <span class="cloud-btn-hint" id="cloudLoadHint" style="display: none;"></span>
+                                    </div>
                                 </button>
                                 <div id="cloudSyncStatus" class="cloud-sync-status tooltip" style="display: none;"
                                     data-tooltip="Vos données locales et votre sauvegarde Cloud sont synchronisées.">
@@ -3132,7 +3138,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build d361229 · 18 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build bac45fe · 18 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
