@@ -334,6 +334,10 @@
                                     <iconify-icon icon="solar:question-circle-linear"></iconify-icon> Aide
                                 </button>
                                 <div id="cloudSeparator" class="menu-separator"></div>
+                                <div id="cloudSyncStatus" class="cloud-sync-status" style="display: none;">
+                                    <span class="cloud-status-dot"></span>
+                                    <span class="cloud-status-text" id="cloudSyncStatusText">Cloud synchronisé</span>
+                                </div>
                                 <button id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
                                     style="display: none;" data-tooltip="Sauvegardez vos données dans votre espace personnel pour ne jamais les perdre et y accéder partout.">
                                     <iconify-icon icon="logos:google-drive"></iconify-icon>
@@ -348,13 +352,11 @@
                                     style="display: none;" data-tooltip="Envoyer vos données vers le Cloud">
                                     <iconify-icon icon="solar:cloud-upload-linear"></iconify-icon>
                                     <span class="cloud-save-label">Sauvegarder</span>
-                                    <span class="cloud-save-time" id="cloudSaveTimeHint"></span>
                                 </button>
                                 <button id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item tooltip"
                                     style="display: none;" data-tooltip="Récupérer vos données depuis le Cloud">
                                     <iconify-icon icon="solar:cloud-download-linear"></iconify-icon>
                                     <span class="cloud-save-label">Restaurer</span>
-                                    <span class="cloud-save-time" id="cloudLoadTimeHint"></span>
                                 </button>
                                 <div id="pwaInstallSeparator" class="menu-separator" style="display: none;"></div>
                                 <button id="installPwaBtn" class="menu-item" style="display: none;">
@@ -3129,7 +3131,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build bf6710b · 18 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 7e3a0bd · 18 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

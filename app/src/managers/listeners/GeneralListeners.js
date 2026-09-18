@@ -316,7 +316,7 @@ export const GeneralListeners = {
                 if (SyncService.isConnected()) {
                     await SyncService.checkRemoteStatus();
                 }
-                this._updateCloudReminder();
+                this._updateCloudReminder(SyncService);
             } catch { /* Ignore */ }
         });
 
@@ -536,25 +536,37 @@ export const GeneralListeners = {
     /**
      * Update the cloud reminder dot on the menu button.
      * Delegates to SyncService._computeSyncState for a unified state check.
+     * @param {Object} [syncService] - Optional SyncService instance
      * @private
      */
-    _updateCloudReminder() {
+    async _updateCloudReminder(syncService) {
         if (!localStorage.getItem('bulletin_sync_provider')) return;
 
-        const needsAction = this._hasUnsyncedChanges();
+        let service = syncService;
+        if (!service) {
+            try {
+                const mod = await import('../../services/SyncService.js');
+                service = mod.SyncService;
+            } catch { /* Ignore */ }
+        }
+
+        const needsAction = this._hasUnsyncedChanges(service);
         DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
     },
 
     /**
-     * Check if local data has unsynced changes (used for menu dot and boot check).
-     * Mirrors SyncService._computeSyncState logic without requiring the service import.
+     * Check if local data or cloud has unsynced changes (used for menu dot and boot check).
+     * @param {Object} [syncService] - Optional SyncService reference to check remote status
      * @returns {boolean}
      * @private
      */
-    _hasUnsyncedChanges() {
+    _hasUnsyncedChanges(syncService) {
         const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
         const lastModified = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-        return lastModified > lastSync;
+        const hasLocal = lastModified > lastSync;
+        const remoteSync = syncService?.remoteSyncTime || 0;
+        const hasRemote = remoteSync > 0 && remoteSync > (lastSync + 5000);
+        return hasLocal || hasRemote;
     },
 
     /**

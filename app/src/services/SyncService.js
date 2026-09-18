@@ -178,6 +178,8 @@ export const SyncService = {
             const reconnectBtn = document.getElementById('cloudReconnectBtn');
             const connectBtn = document.getElementById('cloudConnectBtn');
             const separator = document.getElementById('cloudSeparator');
+            const statusEl = document.getElementById('cloudSyncStatus');
+            const statusTextEl = document.getElementById('cloudSyncStatusText');
 
             if (!saveBtn) return;
 
@@ -213,6 +215,7 @@ export const SyncService = {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
                 if (reconnectBtn) reconnectBtn.style.display = 'none';
+                if (statusEl) statusEl.style.display = 'none';
                 if (separator) separator.style.display = 'block';
                 if (connectBtn) connectBtn.style.display = 'flex';
                 return;
@@ -222,8 +225,8 @@ export const SyncService = {
             if (connectBtn) connectBtn.style.display = 'none';
             if (separator) separator.style.display = 'block';
 
-            saveBtn.style.display = 'grid';
-            if (loadBtn) loadBtn.style.display = 'grid';
+            saveBtn.style.display = 'flex';
+            if (loadBtn) loadBtn.style.display = 'flex';
 
             // Update icon
             const iconEl = saveBtn.querySelector('iconify-icon');
@@ -241,7 +244,7 @@ export const SyncService = {
             }
 
             // Disable Save/Load when not actively connected
-            if (state !== 'connected') {
+            if (state !== 'connected' && state !== 'syncing') {
                 saveBtn.classList.add('disabled');
                 if (loadBtn) loadBtn.classList.add('disabled');
             }
@@ -260,28 +263,27 @@ export const SyncService = {
             }
 
             // --- Sync state computation (connected only) ---
-            const timeHint = saveBtn.querySelector('#cloudSaveTimeHint');
-            const loadTimeHint = document.getElementById('cloudLoadTimeHint');
-            const hintClasses = ['cloud-in-sync', 'cloud-action-recommended', 'cloud-conflict'];
-
             if (state === 'connected') {
+                if (statusEl) statusEl.style.display = 'flex';
                 const syncState = this._computeSyncState();
                 this._lastSyncState = syncState;
-
-                // Reset hint classes
-                if (timeHint) hintClasses.forEach(c => timeHint.classList.remove(c));
-                if (loadTimeHint) hintClasses.forEach(c => loadTimeHint.classList.remove(c));
-
-                this._applySyncStateUI(syncState, saveBtn, loadBtn, timeHint, loadTimeHint);
+                this._applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl);
+            } else if (state === 'syncing') {
+                if (statusEl) {
+                    statusEl.style.display = 'flex';
+                    statusEl.className = 'cloud-sync-status syncing';
+                    if (statusTextEl) statusTextEl.textContent = 'Synchronisation...';
+                }
             } else {
-                if (timeHint) {
-                    timeHint.style.display = 'none';
-                    hintClasses.forEach(c => timeHint.classList.remove(c));
-                }
-                if (loadTimeHint) {
-                    loadTimeHint.style.display = 'none';
-                    hintClasses.forEach(c => loadTimeHint.classList.remove(c));
-                }
+                if (statusEl) statusEl.style.display = 'none';
+            }
+
+            // Update menu reminder dot based on syncState
+            const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
+            if (menuBtn) {
+                const needsReminder = state === 'connected' &&
+                    (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
+                menuBtn.classList.toggle('has-cloud-reminder', !!needsReminder);
             }
         }, 100);
     },
@@ -312,68 +314,40 @@ export const SyncService = {
     },
 
     /**
-     * Apply sync state to UI elements (hints + button classes).
+     * Apply sync state to UI elements (unified header status + button classes).
      * @private
      */
-    _applySyncStateUI(syncState, saveBtn, loadBtn, timeHint, loadTimeHint) {
+    _applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl) {
         const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
+
+        if (statusEl) {
+            statusEl.className = `cloud-sync-status ${syncState}`;
+        }
 
         switch (syncState) {
             case 'in-sync':
-                if (timeHint) {
-                    timeHint.textContent = 'À jour';
-                    timeHint.classList.add('cloud-in-sync');
-                    timeHint.style.display = 'block';
-                }
-                if (loadTimeHint) {
-                    loadTimeHint.textContent = 'Cloud : identique';
-                    loadTimeHint.classList.add('cloud-in-sync');
-                    loadTimeHint.style.display = 'block';
-                }
+                if (statusTextEl) statusTextEl.textContent = 'Cloud synchronisé';
                 break;
 
             case 'local-changes':
-                if (timeHint) {
-                    timeHint.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifié';
-                    timeHint.classList.add('cloud-action-recommended');
-                    timeHint.style.display = 'block';
+                if (statusTextEl) {
+                    statusTextEl.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifications locales';
                 }
                 saveBtn.classList.add('cloud-action-recommended');
-
-                if (loadTimeHint) {
-                    loadTimeHint.textContent = 'Cloud : plus ancien';
-                    loadTimeHint.style.display = 'block';
-                }
                 break;
 
             case 'cloud-changes':
-                if (timeHint) {
-                    timeHint.textContent = 'À jour';
-                    timeHint.classList.add('cloud-in-sync');
-                    timeHint.style.display = 'block';
-                }
-
-                if (loadTimeHint) {
-                    loadTimeHint.textContent = 'Cloud : plus récent';
-                    loadTimeHint.classList.add('cloud-action-recommended');
-                    loadTimeHint.style.display = 'block';
+                if (statusTextEl) {
+                    statusTextEl.textContent = 'Cloud : version plus récente';
                 }
                 if (loadBtn) loadBtn.classList.add('cloud-action-recommended');
                 break;
 
             case 'conflict':
-                if (timeHint) {
-                    timeHint.textContent = lMod ? this._formatRelativeTime(lMod) : 'Modifié';
-                    timeHint.classList.add('cloud-conflict');
-                    timeHint.style.display = 'block';
+                if (statusTextEl) {
+                    statusTextEl.textContent = '⚠️ Conflit de versions';
                 }
                 saveBtn.classList.add('cloud-conflict');
-
-                if (loadTimeHint) {
-                    loadTimeHint.textContent = 'Cloud : plus récent';
-                    loadTimeHint.classList.add('cloud-conflict');
-                    loadTimeHint.style.display = 'block';
-                }
                 if (loadBtn) loadBtn.classList.add('cloud-conflict');
                 break;
         }
