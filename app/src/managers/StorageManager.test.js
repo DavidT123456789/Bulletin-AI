@@ -21,7 +21,7 @@ vi.mock('../services/DBService.js', () => ({
 // Mock state module with new structure
 vi.mock('../state/State.js', () => ({
     userSettings: {
-        ui: { theme: 'dark' },
+        ui: { theme: 'dark', activeView: 'list' },
         academic: {
             periodSystem: 'trimestres',
             useSubjectPersonalization: true,
@@ -165,6 +165,7 @@ describe('StorageManager', () => {
             expect(stateCall).toBeDefined();
             const savedData = JSON.parse(stateCall[1]);
             expect(savedData.settings.theme).toBe('dark');
+            expect(savedData.settings.activeView).toBe('list');
             expect(savedData.generatedResults).toBeUndefined(); // Should NOT be in LS
 
             // Check IndexedDB (Big Data)
@@ -179,7 +180,7 @@ describe('StorageManager', () => {
             // Mock LocalStorage (Settings)
             const savedState = {
                 version: '4.3.0',
-                settings: { theme: 'light' }
+                settings: { theme: 'light', activeView: 'plan' }
             };
             mockLocalStorage['bulletin-assistant-state'] = JSON.stringify(savedState);
 
@@ -190,6 +191,7 @@ describe('StorageManager', () => {
             await StorageManager.loadAppState();
 
             expect(userSettings.ui.theme).toBe('light');
+            expect(userSettings.ui.activeView).toBe('plan');
             expect(runtimeState.data.generatedResults).toEqual(mockDbResults);
         });
 

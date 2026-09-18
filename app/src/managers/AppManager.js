@@ -112,10 +112,8 @@ export const App = {
         // Seating Chart: Initialize
         SeatingChartManager.init();
 
-        // Show view toggle if the current class has results
-        SeatingChartManager.updateToggleVisibility(
-            (appState.generatedResults || []).some(r => r.classId === appState.currentClassId)
-        );
+        // Restore last active view (plan or list) and update toggle visibility
+        SeatingChartManager.restoreActiveView();
     },
 
     // --- Initialisation et Setup ---

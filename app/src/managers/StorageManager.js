@@ -45,6 +45,7 @@ const UI_AND_NAV_KEYS = [
     'currentSubject',
     'currentInputMode',
     'activeStatFilter',
+    'activeView',
     'refinementEdits',
     'apiKeyStatus',
     'validatedApiKeys'
@@ -98,6 +99,7 @@ export const StorageManager = {
                     if (settings.theme !== undefined) userSettings.ui.theme = settings.theme;
                     if (settings.isAppreciationFullView !== undefined) userSettings.ui.isAppreciationFullView = settings.isAppreciationFullView;
                     if (settings.accentColor !== undefined) userSettings.ui.accentColor = settings.accentColor;
+                    if (settings.activeView !== undefined) userSettings.ui.activeView = settings.activeView;
 
                     // Academic Settings
                     if (settings.periodSystem !== undefined) userSettings.academic.periodSystem = settings.periodSystem;
@@ -532,6 +534,7 @@ export const StorageManager = {
             theme: userSettings.ui.theme,
             isAppreciationFullView: userSettings.ui.isAppreciationFullView,
             accentColor: userSettings.ui.accentColor || 'blue',
+            activeView: userSettings.ui.activeView || 'list',
 
             useSubjectPersonalization: userSettings.academic.useSubjectPersonalization,
             periodSystem: userSettings.academic.periodSystem,
@@ -600,6 +603,7 @@ export const StorageManager = {
             'currentSubject',
             'currentInputMode',
             'activeStatFilter',
+            'activeView',
             'refinementEdits'
         ];
         keysToRemove.forEach(k => delete settings[k]);

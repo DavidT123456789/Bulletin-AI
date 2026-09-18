@@ -56,12 +56,13 @@ export const SeatingChartManager = {
         const toggle = document.createElement('div');
         toggle.className = 'ui-segmented-control view-toggle';
         toggle.id = 'viewToggle';
+        const activeView = appState.activeView || 'list';
         toggle.innerHTML = `
-            <button class="ui-segment view-toggle-btn active" data-view="list" aria-label="Vue liste">
+            <button class="ui-segment view-toggle-btn ${activeView === 'list' ? 'active' : ''}" data-view="list" aria-label="Vue liste">
                 <iconify-icon icon="solar:list-linear"></iconify-icon>
                 <span>Liste</span>
             </button>
-            <button class="ui-segment view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
+            <button class="ui-segment view-toggle-btn ${activeView === 'plan' ? 'active' : ''}" data-view="plan" aria-label="Vue plan de classe">
                 <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>
                 <span>Plan</span>
             </button>
@@ -426,7 +427,8 @@ export const SeatingChartManager = {
     // VIEW SWITCHING — with entrance/exit animations
     // ========================================================================
 
-    switchToView(view) {
+    switchToView(view, options = {}) {
+        const { silent = false, immediate = false } = typeof options === 'boolean' ? { silent: options } : options;
         const wrapper = document.querySelector('.main-content-wrapper');
         const viewEl = document.getElementById('seatingChartView');
         const fab = document.getElementById('addStudentFab');
@@ -435,7 +437,7 @@ export const SeatingChartManager = {
         const isList = view === 'list';
 
         if (isList) {
-            this._animateViewExit(viewEl, () => {
+            const finishList = () => {
                 wrapper.dataset.view = 'list';
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
@@ -445,12 +447,29 @@ export const SeatingChartManager = {
                 this._saveGridConfig();
                 this._closeConfigPopover();
                 this._closePlacementPopover();
-            });
+            };
+
+            if (immediate) {
+                finishList();
+            } else {
+                this._animateViewExit(viewEl, finishList);
+            }
         } else {
             this._students = this._getCurrentClassStudents();
             if (this._students.length === 0) {
-                UI.showNotification('Aucun élève dans cette classe.', 'warning');
+                if (!silent) {
+                    UI.showNotification('Aucun élève dans cette classe.', 'warning');
+                }
                 wrapper.dataset.view = 'list';
+                if (appState.activeView !== 'list') {
+                    appState.activeView = 'list';
+                    StorageManager?.saveAppState();
+                }
+                document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'list'));
+                const toggleWrapper = document.getElementById('viewToggle');
+                if (toggleWrapper && window.UI && typeof window.UI.updateGlider === 'function') {
+                    window.UI.updateGlider(toggleWrapper, immediate);
+                }
                 return;
             }
             wrapper.dataset.view = 'plan';
@@ -468,9 +487,18 @@ export const SeatingChartManager = {
             this._undoStack = [];
             this._redoStack = [];
             this._render();
-            this._animateViewEnter(viewEl);
-            this._scrollToDesk();
-            this._maybeShowOnboardingHint();
+            if (!immediate) {
+                this._animateViewEnter(viewEl);
+                this._scrollToDesk();
+                this._maybeShowOnboardingHint();
+            } else {
+                this._scrollToDesk();
+            }
+        }
+
+        if (appState.activeView !== view) {
+            appState.activeView = view;
+            StorageManager?.saveAppState();
         }
 
         document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -478,13 +506,26 @@ export const SeatingChartManager = {
         const toggleWrapper = document.getElementById('viewToggle');
         if (toggleWrapper) {
             if (window.UI && typeof window.UI.updateGlider === 'function') {
-                window.UI.updateGlider(toggleWrapper);
+                window.UI.updateGlider(toggleWrapper, immediate);
             }
         }
     },
 
     open() { this.switchToView('plan'); },
     close() { this.switchToView('list'); },
+
+    /** Restaure la dernière vue active (plan ou liste) au chargement de l'application */
+    restoreActiveView() {
+        const targetView = appState.activeView || 'list';
+        const hasResults = (appState.generatedResults || []).some(r => r.classId === appState.currentClassId);
+        this.updateToggleVisibility(hasResults);
+
+        if (targetView === 'plan' && hasResults) {
+            this.switchToView('plan', { silent: true, immediate: true });
+        } else {
+            this.switchToView('list', { silent: true, immediate: true });
+        }
+    },
 
     /** Called when class changes — reload data or revert to list */
     onClassChange(hasResults) {

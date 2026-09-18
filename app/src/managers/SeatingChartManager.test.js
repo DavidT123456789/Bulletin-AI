@@ -697,4 +697,88 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
     });
 });
 
+describe('SeatingChartManager - Mémorisation de la vue et restauration au démarrage', () => {
+    let classA, emptyClass;
+
+    beforeEach(() => {
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        userSettings.ui.activeView = 'list';
+        appState.classes = userSettings.academic.classes;
+        appState.currentClassId = null;
+        appState.activeView = 'list';
+        appState.generatedResults = [];
+
+        classA = ClassManager.createClass('3ème A');
+        emptyClass = ClassManager.createClass('3ème Vide');
+
+        appState.generatedResults = [
+            { id: 's1', classId: classA.id, nom: 'Dupont', prenom: 'Jean', seatingPosition: null },
+            { id: 's2', classId: classA.id, nom: 'Martin', prenom: 'Sophie', seatingPosition: null }
+        ];
+
+        document.body.innerHTML = `
+            <div class="main-content-wrapper" data-view="list">
+                <header class="header">
+                    <div class="header-actions">
+                        <div class="ui-segmented-control view-toggle" id="viewToggle">
+                            <button class="ui-segment view-toggle-btn active" data-view="list">Liste</button>
+                            <button class="ui-segment view-toggle-btn" data-view="plan">Plan</button>
+                        </div>
+                    </div>
+                </header>
+                <div class="main-content">
+                    <section class="output-section">
+                        <div id="seatingChartView" style="display: none;">
+                            <div id="scGridContainer"></div>
+                            <div id="scDesk"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        `;
+    });
+
+    it('devrait basculer en vue plan et enregistrer activeView = plan', () => {
+        appState.currentClassId = classA.id;
+        SeatingChartManager.switchToView('plan', { immediate: true });
+
+        expect(appState.activeView).toBe('plan');
+        expect(document.querySelector('.main-content-wrapper').dataset.view).toBe('plan');
+        expect(document.getElementById('seatingChartView').style.display).toBe('');
+    });
+
+    it('devrait basculer en vue liste et enregistrer activeView = list', () => {
+        appState.currentClassId = classA.id;
+        SeatingChartManager.switchToView('plan', { immediate: true });
+        expect(appState.activeView).toBe('plan');
+
+        SeatingChartManager.switchToView('list', { immediate: true });
+        expect(appState.activeView).toBe('list');
+        expect(document.querySelector('.main-content-wrapper').dataset.view).toBe('list');
+        expect(document.getElementById('seatingChartView').style.display).toBe('none');
+    });
+
+    it('devrait restaurer automatiquement la vue plan au démarrage si des élèves sont présents', () => {
+        appState.currentClassId = classA.id;
+        appState.activeView = 'plan';
+
+        SeatingChartManager.restoreActiveView();
+
+        expect(appState.activeView).toBe('plan');
+        expect(document.querySelector('.main-content-wrapper').dataset.view).toBe('plan');
+        expect(document.getElementById('seatingChartView').style.display).toBe('');
+    });
+
+    it('devrait se replier élégamment sur la vue liste si la classe courante est vide', () => {
+        appState.currentClassId = emptyClass.id;
+        appState.activeView = 'plan';
+
+        SeatingChartManager.restoreActiveView();
+
+        expect(appState.activeView).toBe('list');
+        expect(document.querySelector('.main-content-wrapper').dataset.view).toBe('list');
+    });
+});
+
 
