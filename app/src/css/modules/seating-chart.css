@@ -679,29 +679,66 @@
     z-index: 100;
 }
 
-/* ────────── STATUS PILL (BOTTOM-RIGHT, CONSULTATION ONLY) ────────── */
+/* ────────── STATUS PILL (TOP-RIGHT, UNIFIED CAPSULE) ────────── */
 .sc-status-pill {
-    position: absolute;
-    bottom: 20px;
-    right: 24px;
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
-    border-radius: var(--radius-full, 999px);
+    height: 38px;
+    box-sizing: border-box;
+    padding: 0 16px;
+    border-radius: var(--radius-pill, 999px);
     font-size: 0.8rem;
     font-weight: 600;
     pointer-events: auto;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    z-index: 100;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
     transition: all var(--transition-fast, 0.2s);
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
 }
 
 #seatingChartView[data-locked="false"] .sc-status-pill {
     display: none !important;
+}
+
+#seatingChartView[data-locked="true"] .sc-toolbar-info {
+    display: none !important;
+}
+
+.sc-status-pill-sep {
+    opacity: 0.35;
+    user-select: none;
+    font-weight: 400;
+}
+
+.sc-status-pill-unplaced {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .sc-status-pill-unplaced {
+    color: #fbbf24;
+}
+
+.sc-status-pill-unplaced iconify-icon {
+    font-size: 0.95rem;
+}
+
+.sc-footer-all-placed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #10b981;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .sc-footer-all-placed {
+    color: #34d399;
 }
 
 .sc-status-pill iconify-icon {
@@ -2101,9 +2138,11 @@
         font-size: 1.05rem;
     }
 
-    .sc-floating-status .sc-toolbar-info {
+    .sc-floating-status .sc-toolbar-info,
+    .sc-floating-status .sc-status-pill {
         font-size: 0.7rem;
-        padding: 4px 10px;
+        height: 32px;
+        padding: 0 10px;
     }
 
     /* ── Teacher desk: less margin when sidebar is below ── */

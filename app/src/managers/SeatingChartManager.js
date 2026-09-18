@@ -169,9 +169,10 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-                    <!-- Top Status Pill -->
-                    <div class="sc-floating-status">
+                    <!-- Top Status Capsule (Unified: consultation status or edit capacity) -->
+                    <div class="sc-floating-status" id="scFloatingStatus">
                         <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
+                        <div class="sc-status-pill" id="scStatusPill" role="status"></div>
                     </div>
 
                     <div class="sc-classroom-board" id="scClassroomBoard">
@@ -180,9 +181,6 @@ export const SeatingChartManager = {
                             <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
                         </div>
                     </div>
-
-                    <!-- Bottom-Right Status Pill (Consultation Mode) -->
-                    <div class="sc-status-pill" id="scStatusPill" role="status"></div>
                 </div>
 
                 <!-- Floating Actions Capsule (Read-Only Mode) -->
@@ -1723,14 +1721,14 @@ export const SeatingChartManager = {
             }
         }
 
-        // --- Toolbar Pill Info ---
+        // --- Toolbar Pill Info (Mode Édition : capacité et statut de placement) ---
         const seatsLabel = `<span class="sc-footer-seats"><strong class="sc-dynamic-value">${availableSeats}</strong> place${availableSeats > 1 ? 's' : ''} libre${availableSeats > 1 ? 's' : ''}</span>`;
         if (total === 0) {
             info.innerHTML = seatsLabel;
         } else if (unplaced > 0) {
             info.innerHTML = `<span class="sc-unplaced-hint"><iconify-icon icon="solar:danger-triangle-linear"></iconify-icon><span class="sc-unplaced-text"><strong>${unplaced}</strong> non placé${unplaced > 1 ? 's' : ''}</span></span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
         } else {
-            info.innerHTML = `<span class="sc-footer-students"><strong class="sc-dynamic-value">${total}</strong> élève${total > 1 ? 's' : ''}</span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
+            info.innerHTML = `<span class="sc-footer-all-placed"><iconify-icon icon="solar:check-circle-linear"></iconify-icon><span>Tous placés</span></span> <span class="sc-toolbar-dot" aria-hidden="true">·</span> ${seatsLabel}`;
         }
 
         if (prev !== placed && prev !== 0) this._animateCounterBump();
@@ -1835,15 +1833,29 @@ export const SeatingChartManager = {
         if (info.status === 'locked') {
             pill.style.display = '';
             const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
-            pill.innerHTML = `<iconify-icon icon="solar:lock-bold"></iconify-icon><span>Validé${dateText}</span>`;
-            pill.setAttribute('data-tooltip', info.unplaced > 0 
+            const unplacedWarning = info.unplaced > 0
+                ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
+                : '';
+            pill.innerHTML = `<iconify-icon icon="solar:lock-bold"></iconify-icon><span>Validé${dateText}</span>${unplacedWarning}`;
+            const tooltipText = info.unplaced > 0 
                 ? `Plan validé et figé (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})` 
-                : 'Plan de classe validé et figé');
+                : 'Plan de classe validé et figé';
+            pill.removeAttribute('title');
+            pill.setAttribute('data-tooltip', tooltipText);
+            TooltipsUI?.updateTooltip?.(pill, tooltipText);
         } else if (info.status === 'testing') {
             pill.style.display = '';
             const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
-            pill.innerHTML = `<iconify-icon icon="solar:test-tube-linear"></iconify-icon><span>En test${dateText}</span>`;
-            pill.setAttribute('data-tooltip', 'Plan en cours d\'ajustement ou d\'essai en classe');
+            const unplacedWarning = info.unplaced > 0
+                ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
+                : '';
+            pill.innerHTML = `<iconify-icon icon="solar:test-tube-linear"></iconify-icon><span>En test${dateText}</span>${unplacedWarning}`;
+            const tooltipText = info.unplaced > 0
+                ? `Plan en cours d'essai en classe (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})`
+                : 'Plan en cours d\'ajustement ou d\'essai en classe';
+            pill.removeAttribute('title');
+            pill.setAttribute('data-tooltip', tooltipText);
+            TooltipsUI?.updateTooltip?.(pill, tooltipText);
         } else {
             // Empty plan in consultation mode: no pill needed
             pill.style.display = 'none';

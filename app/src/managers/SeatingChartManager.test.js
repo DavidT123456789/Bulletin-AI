@@ -487,15 +487,9 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
     });
 
-    it('devrait afficher un format unifié « X élèves · Y places libres » en édition et en consultation', () => {
+    it('devrait afficher la capacité et le statut de placement (« Tous placés / X non placés · Y places libres ») en mode édition', () => {
         // 2 élèves, grille 3x3 (9 places), 0 placé -> unplaced = 2, available = 9
         SeatingChartManager._isLocked = false;
-        SeatingChartManager._updateFooter();
-        expect(document.getElementById('scFooterInfo').textContent).toContain('2 non placés');
-        expect(document.getElementById('scFooterInfo').textContent).toContain('9 places libres');
-
-        // Mode consultation (verrouillé) : même format avec alerte si non placés
-        SeatingChartManager._isLocked = true;
         SeatingChartManager._updateFooter();
         expect(document.getElementById('scFooterInfo').textContent).toContain('2 non placés');
         expect(document.getElementById('scFooterInfo').textContent).toContain('9 places libres');
@@ -506,15 +500,10 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         SeatingChartManager._students[0].seatingPosition = { row: 0, col: 0 };
         SeatingChartManager._students[1].seatingPosition = { row: 0, col: 1 };
 
-        // Tous placés en édition : « 2 élèves · 7 places libres »
+        // Tous placés en édition : « Tous placés · 7 places libres »
         SeatingChartManager._isLocked = false;
         SeatingChartManager._updateFooter();
-        expect(document.getElementById('scFooterInfo').textContent).toBe('2 élèves · 7 places libres');
-
-        // Tous placés en consultation : identique
-        SeatingChartManager._isLocked = true;
-        SeatingChartManager._updateFooter();
-        expect(document.getElementById('scFooterInfo').textContent).toBe('2 élèves · 7 places libres');
+        expect(document.getElementById('scFooterInfo').textContent).toBe('Tous placés · 7 places libres');
     });
 });
 
@@ -686,6 +675,25 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         SeatingChartManager._maybeShowOnboardingHint();
         expect(gridArea.querySelector('.sc-onboarding-hint')).not.toBeNull();
         gridArea.remove();
+    });
+
+    it('devrait afficher l\'avertissement d\'élèves non placés dans la pastille de statut unifiée', () => {
+        const pill = document.getElementById('scStatusPill');
+        appState.currentClassId = classA.id; // classA : 3 élèves, 2 placés, 1 non placé
+        SeatingChartManager._isLocked = true;
+        classA.seatingLocked = true;
+
+        SeatingChartManager._updateStatusPill();
+        expect(pill.style.display).toBe('');
+        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('1 non placé');
+
+        // Si tous les élèves sont placés (classe B : 2 sur 2)
+        appState.currentClassId = classB.id;
+        classB.seatingLocked = true;
+        SeatingChartManager._updateStatusPill();
+        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).not.toContain('non placé');
     });
 });
 
