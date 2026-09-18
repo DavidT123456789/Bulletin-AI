@@ -518,3 +518,175 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
     });
 });
 
+describe('SeatingChartManager - Individualisation du verrouillage et cycle de vie par classe', () => {
+    let classA, classB;
+
+    beforeEach(() => {
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        userSettings.academic.seatingGrid = {
+            rows: 5,
+            cols: 6,
+            locked: false,
+            specialLayout: {}
+        };
+        appState.classes = userSettings.academic.classes;
+        appState.seatingGrid = userSettings.academic.seatingGrid;
+        appState.generatedResults = [];
+
+        classA = ClassManager.createClass('6ème A');
+        classB = ClassManager.createClass('5ème B');
+
+        // Ajouter 3 élèves à classA et 2 élèves à classB
+        appState.generatedResults = [
+            { id: 'a1', classId: classA.id, nom: 'Alpha', prenom: 'Alice', seatingPosition: { row: 0, col: 0 } },
+            { id: 'a2', classId: classA.id, nom: 'Bravo', prenom: 'Bob', seatingPosition: { row: 0, col: 1 } },
+            { id: 'a3', classId: classA.id, nom: 'Charlie', prenom: 'Chloé', seatingPosition: null },
+            { id: 'b1', classId: classB.id, nom: 'Delta', prenom: 'David', seatingPosition: { row: 1, col: 0 } },
+            { id: 'b2', classId: classB.id, nom: 'Echo', prenom: 'Emma', seatingPosition: { row: 1, col: 1 } }
+        ];
+
+        document.body.innerHTML = `
+            <div id="seatingChartView" data-locked="false">
+                <div class="sc-floating-status">
+                    <div class="sc-status-pill" id="scStatusPill"></div>
+                    <div class="sc-toolbar-info" id="scFooterInfo"></div>
+                </div>
+                <div id="scLockBtn" class="sc-toggle-switch"></div>
+                <button id="scUnlockFloatingBtn"></button>
+                <div id="scGridContainer"></div>
+                <div id="scSidebarTitle"></div>
+            </div>
+            <div id="viewToggle"></div>
+        `;
+    });
+
+    it('devrait isoler le verrouillage : verrouiller la classe A n\'impacte pas la classe B', () => {
+        appState.currentClassId = classA.id;
+        userSettings.academic.currentClassId = classA.id;
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+
+        // Verrouiller classe A
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._toggleLock();
+
+        expect(SeatingChartManager._isLocked).toBe(true);
+        expect(classA.seatingLocked).toBe(true);
+        expect(classA.seatingValidatedAt).toBeTruthy();
+        expect(classB.seatingLocked).toBe(false);
+
+        // Bascule vers classe B via onClassChange
+        appState.currentClassId = classB.id;
+        userSettings.academic.currentClassId = classB.id;
+        SeatingChartManager.onClassChange(true);
+
+        // Classe B doit être en mode édition (non verrouillée)
+        expect(SeatingChartManager._isLocked).toBe(false);
+
+        // Revenir vers classe A
+        appState.currentClassId = classA.id;
+        userSettings.academic.currentClassId = classA.id;
+        SeatingChartManager.onClassChange(true);
+
+        // Classe A doit restaurer son état verrouillé
+        expect(SeatingChartManager._isLocked).toBe(true);
+    });
+
+    it('devrait valider et figer un plan même si un élève (parti) reste non placé dans la liste', () => {
+        appState.currentClassId = classA.id;
+        userSettings.academic.currentClassId = classA.id;
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._initGrid(5, 6);
+        SeatingChartManager._loadPositionsFromState();
+
+        // 2 placés sur 3 élèves (1 élève parti non placé)
+        expect(SeatingChartManager._getPlacedIds().size).toBe(2);
+
+        // Le prof verrouille/valide le plan
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._toggleLock();
+
+        expect(SeatingChartManager._isLocked).toBe(true);
+        expect(classA.seatingLocked).toBe(true);
+
+        // Statut de la classe
+        const status = SeatingChartManager.getClassSeatingStatus(classA);
+        expect(status.status).toBe('locked');
+        expect(status.unplaced).toBe(1);
+        expect(status.placed).toBe(2);
+
+        // La pilule de statut doit afficher « Validé »
+        const pill = document.getElementById('scStatusPill');
+        expect(pill.textContent).toContain('Validé');
+    });
+
+    it('devrait retourner le bon statut de cycle de vie (empty, testing, locked)', () => {
+        // Classe sans aucun élève placé
+        const classEmpty = ClassManager.createClass('3ème D');
+        const emptyStatus = SeatingChartManager.getClassSeatingStatus(classEmpty);
+        expect(emptyStatus.status).toBe('empty');
+        expect(emptyStatus.shortLabel).toBe('À faire');
+
+        // Classe B avec élèves placés mais non verrouillée
+        classB.seatingLocked = false;
+        classB.seatingUpdatedAt = Date.now();
+        const testingStatus = SeatingChartManager.getClassSeatingStatus(classB);
+        expect(testingStatus.status).toBe('testing');
+        expect(testingStatus.shortLabel).toBe('En test');
+
+        // Classe B verrouillée
+        classB.seatingLocked = true;
+        classB.seatingValidatedAt = Date.now();
+        const lockedStatus = SeatingChartManager.getClassSeatingStatus(classB);
+        expect(lockedStatus.status).toBe('locked');
+        expect(lockedStatus.shortLabel).toBe('Validé');
+    });
+
+    it('devrait masquer la pastille flottante en mode édition (pour éviter la redondance) et sur plan vide', () => {
+        const pill = document.getElementById('scStatusPill');
+        appState.currentClassId = classA.id;
+
+        // En mode édition (non verrouillé) : la pastille doit être masquée
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._updateStatusPill();
+        expect(pill.style.display).toBe('none');
+
+        // En mode consultation/verrouillé avec des élèves placés : la pastille s'affiche
+        SeatingChartManager._isLocked = true;
+        classA.seatingLocked = true;
+        SeatingChartManager._updateStatusPill();
+        expect(pill.style.display).toBe('');
+        expect(pill.textContent).toContain('Validé');
+
+        // Classe vide en mode verrouillé/consultation : pas de pastille "Mode Édition"
+        const emptyClass = ClassManager.createClass('6ème Test Empty');
+        appState.currentClassId = emptyClass.id;
+        SeatingChartManager._isLocked = true;
+        SeatingChartManager._updateStatusPill();
+        expect(pill.style.display).toBe('none');
+        expect(pill.innerHTML).toBe('');
+    });
+
+    it('ne devrait pas afficher la carte d\'onboarding hint si le mode verrouillé/consultation est actif', () => {
+        const gridArea = document.createElement('div');
+        gridArea.id = 'scGridArea';
+        document.body.appendChild(gridArea);
+
+        // Pas d'élèves placés mais verrouillé
+        SeatingChartManager._gridState = [[null, null]];
+        SeatingChartManager._isLocked = true;
+
+        SeatingChartManager._maybeShowOnboardingHint();
+        expect(gridArea.querySelector('.sc-onboarding-hint')).toBeNull();
+
+        // En mode édition : l'onboarding hint doit apparaître
+        SeatingChartManager._isLocked = false;
+        SeatingChartManager._maybeShowOnboardingHint();
+        expect(gridArea.querySelector('.sc-onboarding-hint')).not.toBeNull();
+        gridArea.remove();
+    });
+});
+
+

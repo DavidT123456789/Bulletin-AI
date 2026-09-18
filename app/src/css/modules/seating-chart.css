@@ -679,6 +679,63 @@
     z-index: 100;
 }
 
+/* ────────── STATUS PILL (BOTTOM-RIGHT, CONSULTATION ONLY) ────────── */
+.sc-status-pill {
+    position: absolute;
+    bottom: 20px;
+    right: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full, 999px);
+    font-size: 0.8rem;
+    font-weight: 600;
+    pointer-events: auto;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: all var(--transition-fast, 0.2s);
+    animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
+}
+
+#seatingChartView[data-locked="false"] .sc-status-pill {
+    display: none !important;
+}
+
+.sc-status-pill iconify-icon {
+    font-size: 1.05rem;
+}
+
+.sc-status-pill.sc-status-locked {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .sc-status-pill.sc-status-locked {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.sc-status-pill.sc-status-testing {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .sc-status-pill.sc-status-testing {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.sc-status-pill.sc-status-empty {
+    display: none !important;
+}
+
 .sc-floating-status .sc-toolbar-info {
     pointer-events: auto;
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.2s both;
@@ -1429,6 +1486,10 @@
     background: rgba(30, 30, 40, 0.8);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+#seatingChartView[data-locked="true"] .sc-onboarding-hint {
+    display: none !important;
 }
 
 .sc-onboarding-hint.sc-hint-exiting {

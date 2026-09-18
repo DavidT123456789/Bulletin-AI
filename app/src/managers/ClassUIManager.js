@@ -15,6 +15,7 @@ import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { Utils } from '../utils/Utils.js';
+import { TooltipsUI } from './TooltipsManager.js';
 
 let UI;
 let StorageManager;
@@ -111,6 +112,14 @@ export const ClassUIManager = {
                 }
             }
         });
+
+        // Mise à jour réactive des pastilles de plan de classe lors d'un changement de statut
+        window.addEventListener('seating-chart:status-changed', () => {
+            if (this._isDropdownOpen) {
+                const classes = ClassManager.getAllClasses();
+                this._updateClassProgressIndicators(classes);
+            }
+        });
     },
 
     /**
@@ -188,6 +197,7 @@ export const ClassUIManager = {
         DOM.headerClassChip?.classList.remove('active');
         DOM.headerClassChip?.blur?.();
         DOM.classDropdown.classList.remove('visible');
+        TooltipsUI?.cleanupTooltipsIn?.(DOM.classDropdown);
 
         // Hide after animation
         setTimeout(() => {
@@ -375,7 +385,8 @@ export const ClassUIManager = {
                         ${demoBadgeHtml}
                     </span>
                     <span class="class-meta">
-                        <iconify-icon icon="solar:calendar-linear"></iconify-icon> ${cls.year || 'Non définie'}
+                        <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${cls.year || 'Non définie'}</span>
+                        <span class="class-seating-badge is-hidden" data-class-id="${cls.id}"></span>
                     </span>
                 </div>
                 <div class="class-progress-badge" data-class-id="${cls.id}">
@@ -410,6 +421,7 @@ export const ClassUIManager = {
 
         // Update progress indicators asynchronously
         this._updateClassProgressIndicators(classes);
+        TooltipsUI?.initTooltips?.();
 
         // Défilement automatique vers la classe active si le dropdown est ouvert
         if (this._isDropdownOpen) {
@@ -607,7 +619,10 @@ export const ClassUIManager = {
         if (titleEl) {
             titleEl.innerHTML = `Mes classes <span class="class-dropdown-count">(${classesCount})</span>`;
             titleEl.classList.add('tooltip');
-            titleEl.setAttribute('data-tooltip', `Total : ${totalStudents} élève${totalStudents > 1 ? 's' : ''}`);
+            titleEl.removeAttribute('title');
+            const totalTooltip = `Total : ${totalStudents} élève${totalStudents > 1 ? 's' : ''}`;
+            titleEl.setAttribute('data-tooltip', totalTooltip);
+            TooltipsUI?.updateTooltip?.(titleEl, totalTooltip);
         }
     },
 
@@ -632,8 +647,10 @@ export const ClassUIManager = {
 
             if (totalStudents === 0) {
                 badge.innerHTML = `<span class="progress-count">0</span>`;
-                badge.title = 'Aucun élève';
+                badge.removeAttribute('title');
+                badge.setAttribute('data-tooltip', 'Aucun élève');
                 badge.dataset.status = 'empty';
+                TooltipsUI?.updateTooltip?.(badge, 'Aucun élève');
                 continue;
             }
 
@@ -660,18 +677,59 @@ export const ClassUIManager = {
             badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
 
             // Set tooltip and status for potential CSS styling
+            let tooltipText = '';
             if (errorCount > 0) {
-                badge.title = `${totalStudents} élève(s) – ${errorCount} erreur(s)`;
+                tooltipText = `${totalStudents} élève(s) – ${errorCount} erreur(s)`;
                 badge.dataset.status = 'error';
             } else if (completedCount === totalStudents && totalStudents > 0) {
-                badge.title = `${totalStudents} élève(s) – appréciations OK`;
+                tooltipText = `${totalStudents} élève(s) – appréciations OK`;
                 badge.dataset.status = 'complete';
             } else if (completedCount > 0) {
-                badge.title = `${completedCount}/${totalStudents} appréciations générées`;
+                tooltipText = `${completedCount}/${totalStudents} appréciations générées`;
                 badge.dataset.status = 'partial';
             } else {
-                badge.title = `${totalStudents} élève(s)`;
+                tooltipText = `${totalStudents} élève(s)`;
                 badge.dataset.status = 'pending';
+            }
+            badge.removeAttribute('title');
+            badge.setAttribute('data-tooltip', tooltipText);
+            TooltipsUI?.updateTooltip?.(badge, tooltipText);
+
+            // Update seating chart indicator
+            const seatingBadge = DOM.classDropdownList?.querySelector(
+                `.class-seating-badge[data-class-id="${cls.id}"]`
+            );
+            if (seatingBadge && SeatingChartManager?.getClassSeatingStatus) {
+                const seatingInfo = SeatingChartManager.getClassSeatingStatus(cls);
+                seatingBadge.removeAttribute('title');
+                if (seatingInfo.status === 'locked') {
+                    seatingBadge.className = 'class-seating-badge is-locked';
+                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
+                    const dateNote = seatingInfo.dateStr ? ` (${seatingInfo.dateStr})` : '';
+                    const unplacedNote = seatingInfo.unplaced > 0 ? ` · ${seatingInfo.unplaced} non placé${seatingInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const seatingTooltip = `Plan de classe : Validé${dateNote}${unplacedNote}`;
+                    seatingBadge.setAttribute('data-tooltip', seatingTooltip);
+                    TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
+                } else if (seatingInfo.status === 'testing') {
+                    seatingBadge.className = 'class-seating-badge is-testing';
+                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>`;
+                    const dateNote = seatingInfo.dateStr ? ` (${seatingInfo.dateStr})` : '';
+                    const unplacedNote = seatingInfo.unplaced > 0 ? ` · ${seatingInfo.unplaced} non placé${seatingInfo.unplaced > 1 ? 's' : ''}` : '';
+                    const seatingTooltip = `Plan de classe : En test${dateNote}${unplacedNote}`;
+                    seatingBadge.setAttribute('data-tooltip', seatingTooltip);
+                    TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
+                } else if (SeatingChartManager._isActive) {
+                    seatingBadge.className = 'class-seating-badge is-empty';
+                    seatingBadge.innerHTML = `<iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>`;
+                    const seatingTooltip = 'Plan de classe : À faire';
+                    seatingBadge.setAttribute('data-tooltip', seatingTooltip);
+                    TooltipsUI?.updateTooltip?.(seatingBadge, seatingTooltip);
+                } else {
+                    seatingBadge.className = 'class-seating-badge is-hidden';
+                    seatingBadge.innerHTML = '';
+                    seatingBadge.removeAttribute('data-tooltip');
+                    if (seatingBadge._tippy) seatingBadge._tippy.destroy();
+                }
             }
         }
     },

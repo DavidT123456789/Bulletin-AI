@@ -104,6 +104,9 @@ export const ClassManager = {
             year: currentYear,
             subject: subject || appState.currentSubject || 'Français',
             level: level || detectLevelFromName(name),
+            seatingLocked: false,
+            seatingValidatedAt: null,
+            seatingUpdatedAt: null,
             createdAt: now,
             updatedAt: now
         };

@@ -180,6 +180,9 @@ export const SeatingChartManager = {
                             <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
                         </div>
                     </div>
+
+                    <!-- Bottom-Right Status Pill (Consultation Mode) -->
+                    <div class="sc-status-pill" id="scStatusPill" role="status"></div>
                 </div>
 
                 <!-- Floating Actions Capsule (Read-Only Mode) -->
@@ -458,9 +461,11 @@ export const SeatingChartManager = {
             this._isActive = true;
             this._loadGridConfig();
             this._loadPositionsFromState();
+            const currentClass = this._getCurrentClass();
+            const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
             const locked = this._getPlacedIds().size === 0
                 ? false
-                : appState.seatingGrid?.locked ?? false;
+                : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
             this._applyLockState(locked);
             this._undoStack = [];
             this._redoStack = [];
@@ -501,9 +506,12 @@ export const SeatingChartManager = {
         this._loadGridConfig();
         this._loadPositionsFromState();
 
-        if (this._getPlacedIds().size === 0) {
-            this._applyLockState(false);
-        }
+        const currentClass = this._getCurrentClass();
+        const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
+        const locked = this._getPlacedIds().size === 0
+            ? false
+            : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
+        this._applyLockState(locked);
 
         this._render();
         this._staggerCellEntrance();
@@ -778,6 +786,13 @@ export const SeatingChartManager = {
         if (btn) {
             btn.classList.toggle('locked', locked);
             btn.setAttribute('aria-checked', (!locked).toString());
+            btn.setAttribute('aria-label', locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
+            btn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
+        }
+        const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
+        if (floatingUnlockBtn) {
+            floatingUnlockBtn.setAttribute('aria-label', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
+            floatingUnlockBtn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
         }
         this._updateCellsDraggability();
     },
@@ -790,10 +805,42 @@ export const SeatingChartManager = {
 
         btn.classList.toggle('locked', this._isLocked);
         btn.setAttribute('aria-checked', (!this._isLocked).toString());
+        btn.setAttribute('aria-label', this._isLocked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
+        btn.setAttribute('data-tooltip', this._isLocked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
         view.dataset.locked = this._isLocked;
 
+        const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
+        if (floatingUnlockBtn) {
+            floatingUnlockBtn.setAttribute('aria-label', this._isLocked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
+            floatingUnlockBtn.setAttribute('data-tooltip', this._isLocked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
+        }
+
         this._clearSelection();
-        if (this._isLocked) this._closeConfigPopover();
+        if (this._isLocked) {
+            this._closeConfigPopover();
+            this._dismissOnboardingHint();
+        } else {
+            this._maybeShowOnboardingHint();
+        }
+
+        const currentClass = this._getCurrentClass();
+        if (currentClass) {
+            const placedCount = this._getPlacedIds().size;
+            if (this._isLocked) {
+                if (placedCount > 0) {
+                    currentClass.seatingLocked = true;
+                    currentClass.seatingValidatedAt = Date.now();
+                    UI?.showNotification?.('Plan de classe validé et figé', 'success');
+                } else {
+                    currentClass.seatingLocked = false;
+                    UI?.showNotification?.('Mode Consultation', 'info');
+                }
+            } else {
+                currentClass.seatingLocked = false;
+                currentClass.seatingUpdatedAt = Date.now();
+                UI?.showNotification?.('Mode Édition actif', 'info');
+            }
+        }
 
         this._updateSidebarLockState();
         this._updateFooter();
@@ -803,6 +850,9 @@ export const SeatingChartManager = {
             this._saveGridConfig();
             this._updateCellsDraggability();
             TooltipsUI?.initTooltips?.();
+            window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
+                detail: { classId: currentClass?.id, locked: this._isLocked }
+            }));
         }, 50);
     },
 
@@ -984,6 +1034,10 @@ export const SeatingChartManager = {
             orientation: this._orientation || 'teacher',
             specialLayout: appState.seatingGrid?.specialLayout || {}
         };
+        const currentClass = this._getCurrentClass();
+        if (currentClass) {
+            currentClass.seatingLocked = this._isLocked;
+        }
         StorageManager.saveAppState();
     },
 
@@ -1331,6 +1385,11 @@ export const SeatingChartManager = {
             s.seatingPosition = result.seatingPosition;
         });
 
+        const currentClass = this._getCurrentClass();
+        if (currentClass) {
+            currentClass.seatingUpdatedAt = Date.now();
+        }
+
         StorageManager.saveAppState();
     },
 
@@ -1346,7 +1405,7 @@ export const SeatingChartManager = {
         this._updateUndoRedoButtons();
         TooltipsUI.initTooltips();
 
-        if (this._getPlacedIds().size > 0) {
+        if (this._getPlacedIds().size > 0 || this._isLocked) {
             this._dismissOnboardingHint();
         } else {
             this._maybeShowOnboardingHint();
@@ -1695,6 +1754,101 @@ export const SeatingChartManager = {
             }
         }
 
+        this._updateStatusPill();
+    },
+
+    _formatShortDate(timestamp) {
+        if (!timestamp) return '';
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return '';
+            return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(date);
+        } catch {
+            return '';
+        }
+    },
+
+    getClassSeatingStatus(cls) {
+        if (!cls) return { status: 'empty', label: 'À faire', shortLabel: 'À faire', icon: 'solar:map-point-linear', unplaced: 0, placed: 0, total: 0 };
+
+        const classResults = (appState.generatedResults || []).filter(r => r.classId === cls.id);
+        const total = classResults.length;
+        const placed = classResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
+        const unplaced = total - placed;
+
+        if (total === 0 || placed === 0) {
+            return {
+                status: 'empty',
+                label: 'À faire',
+                shortLabel: 'À faire',
+                icon: 'solar:map-point-linear',
+                placed,
+                total,
+                unplaced
+            };
+        }
+
+        if (cls.seatingLocked) {
+            const dateStr = this._formatShortDate(cls.seatingValidatedAt);
+            const label = dateStr ? `Validé (${dateStr})` : 'Validé';
+            return {
+                status: 'locked',
+                label,
+                shortLabel: 'Validé',
+                dateStr,
+                icon: 'solar:lock-bold',
+                placed,
+                total,
+                unplaced
+            };
+        }
+
+        const dateStr = this._formatShortDate(cls.seatingUpdatedAt);
+        const label = dateStr ? `En test (${dateStr})` : 'En test';
+        return {
+            status: 'testing',
+            label,
+            shortLabel: 'En test',
+            dateStr,
+            icon: 'solar:test-tube-linear',
+            placed,
+            total,
+            unplaced
+        };
+    },
+
+    _updateStatusPill() {
+        const pill = document.getElementById('scStatusPill');
+        if (!pill) return;
+
+        // In edit mode, the left sidebar already clearly indicates "Mode Édition actif"
+        if (!this._isLocked) {
+            pill.style.display = 'none';
+            pill.innerHTML = '';
+            return;
+        }
+
+        const currentClass = this._getCurrentClass();
+        const info = this.getClassSeatingStatus(currentClass);
+
+        pill.className = `sc-status-pill sc-status-${info.status}`;
+        if (info.status === 'locked') {
+            pill.style.display = '';
+            const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
+            pill.innerHTML = `<iconify-icon icon="solar:lock-bold"></iconify-icon><span>Validé${dateText}</span>`;
+            pill.setAttribute('data-tooltip', info.unplaced > 0 
+                ? `Plan validé et figé (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})` 
+                : 'Plan de classe validé et figé');
+        } else if (info.status === 'testing') {
+            pill.style.display = '';
+            const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
+            pill.innerHTML = `<iconify-icon icon="solar:test-tube-linear"></iconify-icon><span>En test${dateText}</span>`;
+            pill.setAttribute('data-tooltip', 'Plan en cours d\'ajustement ou d\'essai en classe');
+        } else {
+            // Empty plan in consultation mode: no pill needed
+            pill.style.display = 'none';
+            pill.innerHTML = '';
+        }
     },
 
     // ========================================================================
@@ -2387,7 +2541,7 @@ export const SeatingChartManager = {
     },
 
     _maybeShowOnboardingHint() {
-        if (this._getPlacedIds().size > 0) return;
+        if (this._getPlacedIds().size > 0 || this._isLocked) return;
 
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea || gridArea.querySelector('.sc-onboarding-hint')) return;

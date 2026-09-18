@@ -35,6 +35,7 @@ const getCommonTippyConfig = () => {
         hideOnClick: true,
         trigger: 'mouseenter',
         touch: ['hold', 500],
+        zIndex: 10001,
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
             if (ModalUI._isIgnoringTooltips) return false;
