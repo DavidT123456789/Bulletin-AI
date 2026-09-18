@@ -1066,62 +1066,74 @@ body.is-cloud-syncing label {
     color: var(--text-primary);
 }
 
-/* Cloud Sync Status Header */
+/* Cloud Sync Status (Centered below buttons) */
 .cloud-sync-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px 4px 12px;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px 2px 12px;
     font-size: 11px;
     font-weight: 500;
     color: var(--text-tertiary);
     letter-spacing: 0.01em;
     user-select: none;
+    text-align: center;
+    cursor: default;
+    transition: opacity var(--transition-fast);
 }
 
-.cloud-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+.cloud-sync-status:hover {
+    opacity: 0.9;
+}
+
+.cloud-status-icon {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    background-color: var(--text-quaternary);
-    transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: color var(--transition-fast);
 }
 
-.cloud-sync-status.in-sync .cloud-status-dot {
-    background-color: var(--success-color);
-    box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+.cloud-sync-status.in-sync .cloud-status-icon {
+    color: var(--success-color);
 }
 
 .cloud-sync-status.in-sync .cloud-status-text {
-    color: var(--text-secondary);
+    color: var(--success-color);
 }
 
-.cloud-sync-status.local-changes .cloud-status-dot {
-    background-color: var(--warning-color);
-    box-shadow: 0 0 6px rgba(234, 88, 12, 0.4);
+[data-theme="dark"] .cloud-sync-status.in-sync .cloud-status-icon {
+    color: var(--success-bright);
+}
+
+[data-theme="dark"] .cloud-sync-status.in-sync .cloud-status-text {
+    color: var(--success-bright);
+}
+
+.cloud-sync-status.local-changes .cloud-status-icon {
+    color: var(--warning-color);
 }
 
 .cloud-sync-status.local-changes .cloud-status-text {
     color: var(--warning-dark);
 }
 
-[data-theme="dark"] .cloud-sync-status.local-changes .cloud-status-dot {
-    background-color: var(--warning-bright);
+[data-theme="dark"] .cloud-sync-status.local-changes .cloud-status-icon {
+    color: var(--warning-bright);
 }
 
 [data-theme="dark"] .cloud-sync-status.local-changes .cloud-status-text {
     color: var(--warning-bright);
 }
 
-.cloud-sync-status.cloud-changes .cloud-status-dot {
-    background-color: var(--primary-color);
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+.cloud-sync-status.cloud-changes .cloud-status-icon {
+    color: var(--primary-color);
 }
 
-[data-theme="dark"] .cloud-sync-status.cloud-changes .cloud-status-dot {
-    background-color: var(--color-sky-bright);
-    box-shadow: 0 0 6px rgba(125, 211, 252, 0.4);
+[data-theme="dark"] .cloud-sync-status.cloud-changes .cloud-status-icon {
+    color: var(--color-sky-bright);
 }
 
 .cloud-sync-status.cloud-changes .cloud-status-text {
@@ -1132,13 +1144,12 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
-.cloud-sync-status.conflict .cloud-status-dot {
-    background-color: var(--warning-color);
-    box-shadow: 0 0 6px rgba(234, 88, 12, 0.5);
+.cloud-sync-status.conflict .cloud-status-icon {
+    color: var(--warning-color);
 }
 
-[data-theme="dark"] .cloud-sync-status.conflict .cloud-status-dot {
-    background-color: var(--warning-bright);
+[data-theme="dark"] .cloud-sync-status.conflict .cloud-status-icon {
+    color: var(--warning-bright);
 }
 
 .cloud-sync-status.conflict .cloud-status-text {
@@ -1149,20 +1160,13 @@ body.is-cloud-syncing label {
     color: var(--warning-bright);
 }
 
-.cloud-sync-status.syncing .cloud-status-dot {
-    background-color: var(--primary-color);
-    animation: dot-pulse 1s infinite alternate;
+.cloud-sync-status.syncing .cloud-status-icon {
+    color: var(--primary-color);
+    animation: icon-spin 1.2s linear infinite;
 }
 
-@keyframes dot-pulse {
-    from {
-        opacity: 0.4;
-        transform: scale(0.85);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1.15);
-    }
+[data-theme="dark"] .cloud-sync-status.syncing .cloud-status-icon {
+    color: var(--primary-bright);
 }
 
 /* Cloud Save/Load Menu Items (Unified with standard .menu-item) */
@@ -1204,10 +1208,9 @@ body.is-cloud-syncing label {
     }
 }
 
-/* État désactivé (non connecté) */
+/* État désactivé (non connecté ou action non nécessaire) */
 .cloud-save-menu-item.disabled {
-    opacity: 0.4;
-    pointer-events: none;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
