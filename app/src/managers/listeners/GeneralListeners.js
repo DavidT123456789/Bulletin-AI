@@ -551,7 +551,9 @@ export const GeneralListeners = {
         }
 
         const needsAction = this._hasUnsyncedChanges(service);
+        const isConflict = service?._lastSyncState === 'conflict';
         DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
+        DOM.headerMenuBtn?.classList.toggle('has-cloud-conflict', isConflict);
     },
 
     /**

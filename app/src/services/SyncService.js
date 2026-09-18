@@ -289,7 +289,9 @@ export const SyncService = {
             if (menuBtn) {
                 const needsReminder = state === 'connected' &&
                     (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
+                const isConflict = state === 'connected' && this._lastSyncState === 'conflict';
                 menuBtn.classList.toggle('has-cloud-reminder', !!needsReminder);
+                menuBtn.classList.toggle('has-cloud-conflict', isConflict);
             }
         }, 100);
     },

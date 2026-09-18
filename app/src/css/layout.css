@@ -784,9 +784,22 @@
     --dot-target-bg: var(--primary-color);
 }
 
-/* Specific styling for cloud backup reminder (warning color) if no update is present */
+/* Specific styling for cloud backup reminder (accent color matching save invitation) */
 .menu-btn.has-cloud-reminder:not(.has-update):not(.cloud-syncing) {
+    --dot-target-bg: var(--primary-color);
+}
+
+[data-theme="dark"] .menu-btn.has-cloud-reminder:not(.has-update):not(.cloud-syncing) {
+    --dot-target-bg: var(--color-sky-bright);
+}
+
+/* Specific styling for version conflict (warning color) */
+.menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-color);
+}
+
+[data-theme="dark"] .menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing) {
+    --dot-target-bg: var(--warning-bright);
 }
 
 .menu-btn.has-update::before,

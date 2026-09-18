@@ -216,16 +216,28 @@ export const GoogleDriveProvider = {
         if (this._fileId) return this._fileId;
 
         try {
-            // Search for existing file
+            // Search for existing file - sort by modifiedTime desc to ALWAYS get the newest file
             const response = await window.gapi.client.drive.files.list({
                 spaces: 'appDataFolder',
-                q: `name='${SYNC_FILENAME}'`,
+                q: `name='${SYNC_FILENAME}' and trashed = false`,
                 fields: 'files(id, name, modifiedTime)',
-                pageSize: 1
+                orderBy: 'modifiedTime desc',
+                pageSize: 10
             });
 
-            if (response.result.files?.length > 0) {
-                this._fileId = response.result.files[0].id;
+            const files = response.result.files || [];
+            if (files.length > 0) {
+                this._fileId = files[0].id;
+
+                // Clean up any stale duplicate files if multiple exist in AppData
+                if (files.length > 1) {
+                    for (let i = 1; i < files.length; i++) {
+                        try {
+                            await window.gapi.client.drive.files.delete({ fileId: files[i].id });
+                        } catch { /* best-effort cleanup */ }
+                    }
+                }
+
                 return this._fileId;
             }
 
@@ -253,6 +265,8 @@ export const GoogleDriveProvider = {
      */
     async read() {
         try {
+            // Invalidate cached fileId to ensure we always pick the newest file from Drive
+            this._fileId = null;
             const fileId = await this._ensureFile();
 
             const response = await window.gapi.client.drive.files.get({
@@ -260,8 +274,11 @@ export const GoogleDriveProvider = {
                 alt: 'media'
             });
 
+            if (response.result && typeof response.result === 'object') {
+                return response.result;
+            }
             if (response.body) {
-                return JSON.parse(response.body);
+                return typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
             }
             return null;
 
@@ -323,6 +340,7 @@ export const GoogleDriveProvider = {
      */
     async getMetadata() {
         try {
+            this._fileId = null;
             const fileId = await this._ensureFile();
 
             const response = await window.gapi.client.drive.files.get({
