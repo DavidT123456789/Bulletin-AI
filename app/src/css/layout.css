@@ -1097,6 +1097,14 @@ body.is-cloud-syncing label {
     color: var(--color-sky-bright);
 }
 
+.cloud-btn-hint.hint-conflict {
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .cloud-btn-hint.hint-conflict {
+    color: var(--warning-bright);
+}
+
 @keyframes hint-pulse {
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.5; }

@@ -201,7 +201,7 @@ export const SyncService = {
                 },
                 syncing: {
                     icon: 'solar:spinner-bold-duotone',
-                    label: 'Envoi...',
+                    label: 'Sauvegarder',
                     spin: true
                 },
                 local: {
@@ -272,7 +272,7 @@ export const SyncService = {
                 const saveHint = document.getElementById('cloudSaveHint');
                 if (saveHint) {
                     saveHint.style.display = 'block';
-                    saveHint.textContent = 'Synchronisation...';
+                    saveHint.textContent = 'Envoi en cours...';
                     saveHint.className = 'cloud-btn-hint hint-syncing';
                 }
             } else {
@@ -375,10 +375,12 @@ export const SyncService = {
                 if (saveHint) {
                     saveHint.style.display = 'block';
                     saveHint.textContent = 'Modifications locales';
+                    saveHint.classList.add('hint-conflict');
                 }
                 if (loadHint) {
                     loadHint.style.display = 'block';
                     loadHint.textContent = 'Version distante';
+                    loadHint.classList.add('hint-conflict');
                 }
                 break;
         }
