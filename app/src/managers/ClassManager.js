@@ -460,17 +460,16 @@ export const ClassManager = {
     },
 
     /**
-     * Récupère les élèves/résultats d'une classe
-     * @param {string} [classId] - ID de la classe (ou courante si non spécifié)
-     * @returns {Array} Résultats filtrés par classe
+     * Récupère de façon synchrone les élèves d'une classe (physique ou reconstituée)
+     * @param {string|null} [classId=null] - ID de la classe
+     * @param {Array|null} [sourceResults=null] - Liste source (par défaut appState.generatedResults)
+     * @returns {Array} Liste des élèves correspondant à la classe
      */
-    async getClassStudents(classId = null) {
-        // Utiliser directement userSettings pour cohérence avec switchClass
-        const targetClassId = classId || userSettings.academic.currentClassId;
-        const allResults = await DBService.getAll('generatedResults') || [];
+    getStudentsForClass(classId = null, sourceResults = null) {
+        const targetClassId = classId || appState.currentClassId || userSettings.academic.currentClassId;
+        const allResults = sourceResults || appState.generatedResults || [];
 
         if (!targetClassId) {
-            // Mode legacy: retourner tous les résultats sans classId
             return allResults.filter(r => !r.classId);
         }
 
@@ -484,6 +483,17 @@ export const ClassManager = {
         }
 
         return allResults.filter(r => r.classId === targetClassId);
+    },
+
+    /**
+     * Récupère les élèves/résultats d'une classe depuis la base de données
+     * @param {string} [classId] - ID de la classe (ou courante si non spécifié)
+     * @returns {Array} Résultats filtrés par classe
+     */
+    async getClassStudents(classId = null) {
+        const targetClassId = classId || userSettings.academic.currentClassId;
+        const allResults = await DBService.getAll('generatedResults') || [];
+        return this.getStudentsForClass(targetClassId, allResults);
     },
 
     /**
@@ -708,26 +718,6 @@ export const ClassManager = {
  * @private
  */
     async _filterResultsByClass(classId) {
-        // Utiliser les données en mémoire, pas IndexedDB
-        // Cela préserve les suppressions et modifications en cours
-        const allResults = appState.generatedResults || [];
-
-        if (!classId) {
-            // Pas de filtre, garder tous les résultats
-            appState.filteredResults = [...allResults];
-        } else if (this.isVirtualClass(classId)) {
-            const vClass = this.getVirtualClasses().find(c => c.id === classId);
-            if (vClass) {
-                appState.filteredResults = allResults.filter(r => {
-                    const origin = r.studentData?.classe || r.classe || r.originClass || '';
-                    return origin && Utils.normalizeClassName(origin) === vClass.normName;
-                });
-            } else {
-                appState.filteredResults = [];
-            }
-        } else {
-            // Filtrer par classId
-            appState.filteredResults = allResults.filter(r => r.classId === classId);
-        }
+        appState.filteredResults = this.getStudentsForClass(classId);
     }
 };

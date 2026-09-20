@@ -22,8 +22,9 @@ let StorageManager;
 
 export const ClassUIManager = {
     _isDropdownOpen: false,
-    _isVirtualSectionCollapsed: false,
+    _showVirtualClasses: localStorage.getItem('bulletin_show_virtual_classes') !== 'false',
     _originalDropdownParent: null, // Store original parent for teleportation
+    _virtualAnimationTimer: null,
 
     /**
      * Initialise le ClassUIManager avec les dépendances
@@ -366,6 +367,53 @@ export const ClassUIManager = {
         const virtualClasses = ClassManager.getVirtualClasses();
         const hasVirtualClasses = virtualClasses.length > 0;
 
+        // Barre de filtre pour afficher/masquer les classes reconstituées
+        if (DOM.classDropdownVirtualSubbar) {
+            if (hasVirtualClasses) {
+                DOM.classDropdownVirtualSubbar.style.display = 'flex';
+                DOM.classDropdownVirtualSubbar.innerHTML = `
+                    <button type="button" class="class-virtual-filter-btn tooltip ${this._showVirtualClasses ? 'active' : ''}" 
+                            id="toggleVirtualClassesBtn" 
+                            data-tooltip="${this._showVirtualClasses ? 'Masquer les classes reconstituées' : 'Afficher les classes reconstituées'}" 
+                            aria-label="Classes reconstituées"
+                            aria-pressed="${this._showVirtualClasses ? 'true' : 'false'}">
+                        <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                        <span>Reconstituées</span>
+                        <span class="filter-count">${virtualClasses.length}</span>
+                    </button>
+                `;
+                const toggleBtn = document.getElementById('toggleVirtualClassesBtn');
+                toggleBtn?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const willShow = !this._showVirtualClasses;
+                    this._showVirtualClasses = willShow;
+                    localStorage.setItem('bulletin_show_virtual_classes', willShow ? 'true' : 'false');
+
+                    toggleBtn.classList.toggle('active', willShow);
+                    toggleBtn.setAttribute('aria-pressed', willShow ? 'true' : 'false');
+                    const newTooltip = willShow ? 'Masquer les classes reconstituées' : 'Afficher les classes reconstituées';
+                    toggleBtn.setAttribute('data-tooltip', newTooltip);
+                    TooltipsUI?.updateTooltip?.(toggleBtn, newTooltip);
+
+                    // Si on masque les classes reconstituées alors que la classe courante en est une :
+                    // On bascule automatiquement sur son premier groupe source ou la première classe réelle
+                    const currentClass = ClassManager.getCurrentClass();
+                    if (!willShow && currentClass?.isVirtual) {
+                        const fallbackId = currentClass.sourceGroupIds?.[0] || ClassManager.getAllClasses()[0]?.id;
+                        if (fallbackId) {
+                            await this.handleClassSwitch(fallbackId);
+                            return;
+                        }
+                    }
+
+                    this._animateVirtualClassesToggle(willShow);
+                });
+            } else {
+                DOM.classDropdownVirtualSubbar.style.display = 'none';
+                DOM.classDropdownVirtualSubbar.innerHTML = '';
+            }
+        }
+
         const hasOnlyDemoOrNoRealClass = !classes.some(c => !ClassManager.isDemoClass(c.id));
         const ctaBtnHtml = hasOnlyDemoOrNoRealClass ? `
             <button type="button" class="class-dropdown-create-btn" id="dropdownCreateClassCta">
@@ -374,58 +422,40 @@ export const ClassUIManager = {
             </button>
         ` : '';
 
-        // En-tête de section Mes Groupes si des classes virtuelles existent
-        const groupsSectionHeaderHtml = hasVirtualClasses ? `
-            <div class="class-dropdown-section-header">
-                <span class="section-title">
-                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                    <span>Mes Groupes</span>
-                </span>
-                <span class="section-badge">${classes.length}</span>
-            </div>
-        ` : '';
+        // Fusion des classes et des classes reconstituées dans l'ordre alphabétique naturel
+        const regularItems = classes.map(cls => ({
+            ...cls,
+            displayName: Utils.formatClassDisplayName(cls.name),
+            isVirtual: false
+        }));
 
-        const classItemsHtml = classes.map(cls => {
-            const isDemo = ClassManager.isDemoClass(cls.id);
-            const demoBadgeHtml = isDemo ? '<span class="class-item-demo-badge">Démo</span>' : '';
-            return `
-            <div class="class-dropdown-item ${cls.id === currentClassId ? 'active' : ''}" 
-                 data-class-id="${cls.id}"
-                 tabindex="0"
-                 role="option"
-                 aria-selected="${cls.id === currentClassId ? 'true' : 'false'}">
-                <div class="class-info">
-                    <span class="class-name">
-                        ${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}
-                        ${demoBadgeHtml}
-                    </span>
-                    <span class="class-meta">
-                        <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${cls.year || 'Non définie'}</span>
-                        <span class="class-seating-badge is-hidden" data-class-id="${cls.id}"></span>
-                    </span>
-                </div>
-                <div class="class-progress-badge" data-class-id="${cls.id}">
-                    <span class="progress-loader"></span>
-                </div>
-            </div>
-        `;
-        }).join('');
+        const virtualItems = hasVirtualClasses
+            ? virtualClasses.map(vClass => ({
+                ...vClass,
+                displayName: Utils.formatClassDisplayName(vClass.name),
+                isVirtual: true
+            }))
+            : [];
 
-        // Section Classes complètes
-        let virtualSectionHtml = '';
-        if (hasVirtualClasses) {
-            const virtualItemsHtml = this._isVirtualSectionCollapsed ? '' : virtualClasses.map(vClass => {
-                const sourceNames = vClass.sourceGroupNames?.join(' & ') || '';
+        const allItems = [...regularItems, ...virtualItems].sort((a, b) =>
+            a.displayName.localeCompare(b.displayName, undefined, { numeric: true, sensitivity: 'base' })
+        );
+
+        const classItemsHtml = allItems.map(item => {
+            if (item.isVirtual) {
+                const isCollapsed = !this._showVirtualClasses;
+                const sourceNames = item.sourceGroupNames?.join(' & ') || '';
                 return `
-                <div class="class-dropdown-item class-dropdown-item--virtual ${vClass.id === currentClassId ? 'active' : ''}" 
-                     data-class-id="${vClass.id}"
-                     tabindex="0"
+                <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}" 
+                     data-class-id="${item.id}"
+                     tabindex="${isCollapsed ? '-1' : '0'}"
                      role="option"
-                     aria-selected="${vClass.id === currentClassId ? 'true' : 'false'}">
+                     aria-selected="${item.id === currentClassId ? 'true' : 'false'}"
+                     ${isCollapsed ? 'aria-hidden="true"' : ''}>
                     <div class="class-info">
                         <span class="class-name">
-                            ${this._escapeHtml(vClass.name)}
-                            <span class="class-item-virtual-badge">Complète</span>
+                            ${this._escapeHtml(item.displayName)}
+                            <span class="class-item-virtual-badge">Reconstituée</span>
                         </span>
                         <span class="class-meta">
                             <span class="class-meta-sources" title="Groupes sources : ${this._escapeHtml(sourceNames)}">
@@ -434,44 +464,39 @@ export const ClassUIManager = {
                             </span>
                         </span>
                     </div>
-                    <div class="class-progress-badge" data-class-id="${vClass.id}">
-                        <span class="progress-count">${vClass.studentCount} él.</span>
+                    <div class="class-progress-badge" data-class-id="${item.id}">
+                        <span class="progress-count">${item.studentCount} él.</span>
                     </div>
                 </div>
                 `;
-            }).join('');
+            }
 
-            virtualSectionHtml = `
-                <div class="class-dropdown-section-header class-dropdown-section-header--virtual" id="virtualClassesSectionToggle" role="button" tabindex="0" title="Cliquer pour replier ou déplier les classes complètes">
-                    <span class="section-title">
-                        <iconify-icon icon="solar:diploma-linear"></iconify-icon>
-                        <span>Classes complètes</span>
+            const isDemo = ClassManager.isDemoClass(item.id);
+            const demoBadgeHtml = isDemo ? '<span class="class-item-demo-badge">Démo</span>' : '';
+            return `
+            <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}" 
+                 data-class-id="${item.id}"
+                 tabindex="0"
+                 role="option"
+                 aria-selected="${item.id === currentClassId ? 'true' : 'false'}">
+                <div class="class-info">
+                    <span class="class-name">
+                        ${this._escapeHtml(item.displayName)}
+                        ${demoBadgeHtml}
                     </span>
-                    <span class="section-badge">${virtualClasses.length}</span>
-                    <iconify-icon icon="solar:alt-arrow-down-linear" class="section-chevron ${this._isVirtualSectionCollapsed ? 'collapsed' : ''}"></iconify-icon>
+                    <span class="class-meta">
+                        <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${item.year || 'Non définie'}</span>
+                        <span class="class-seating-badge is-hidden" data-class-id="${item.id}"></span>
+                    </span>
                 </div>
-                ${virtualItemsHtml}
+                <div class="class-progress-badge" data-class-id="${item.id}">
+                    <span class="progress-loader"></span>
+                </div>
+            </div>
             `;
-        }
+        }).join('');
 
-        DOM.classDropdownList.innerHTML = ctaBtnHtml + groupsSectionHeaderHtml + classItemsHtml + virtualSectionHtml;
-
-        // Gestion du repliage/dépliage de la section des classes virtuelles
-        const virtualToggle = document.getElementById('virtualClassesSectionToggle');
-        if (virtualToggle) {
-            const handleToggle = (e) => {
-                e.stopPropagation();
-                this._isVirtualSectionCollapsed = !this._isVirtualSectionCollapsed;
-                this.renderClassList();
-            };
-            virtualToggle.addEventListener('click', handleToggle);
-            virtualToggle.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleToggle(e);
-                }
-            });
-        }
+        DOM.classDropdownList.innerHTML = ctaBtnHtml + classItemsHtml;
 
         // Bind dropdown create class CTA
         document.getElementById('dropdownCreateClassCta')?.addEventListener('click', () => {
@@ -481,6 +506,7 @@ export const ClassUIManager = {
         // Bind click and keyboard events on class items
         DOM.classDropdownList.querySelectorAll('.class-dropdown-item').forEach(item => {
             const selectClass = async () => {
+                if (item.classList.contains('is-collapsed')) return;
                 const classId = item.dataset.classId;
                 await this.handleClassSwitch(classId);
             };
@@ -504,6 +530,66 @@ export const ClassUIManager = {
                 DOM.classDropdownList?.querySelector('.class-dropdown-item.active')?.scrollIntoView({ block: 'nearest' });
             });
         }
+    },
+
+    /**
+     * Anime le déploiement ou le rangement des classes reconstituées dans le menu déroulant
+     * @param {boolean} willShow - Vrai pour déploiement, faux pour repli/rangement
+     */
+    _animateVirtualClassesToggle(willShow) {
+        if (!DOM.classDropdownList) return;
+
+        const virtualElements = Array.from(DOM.classDropdownList.querySelectorAll('.class-dropdown-item--virtual'));
+        if (virtualElements.length === 0) {
+            this.renderClassList();
+            return;
+        }
+
+        const count = virtualElements.length;
+
+        if (willShow) {
+            virtualElements.forEach((el, index) => {
+                el.style.transitionDelay = `${index * 35}ms`;
+                el.classList.remove('is-collapsed');
+                el.setAttribute('tabindex', '0');
+                el.removeAttribute('aria-hidden');
+            });
+
+            // Smart Scroll contextuel : Si la première classe reconstituée est hors du champ visuel, défiler en douceur
+            const firstVirtual = virtualElements[0];
+            if (firstVirtual && DOM.classDropdownList) {
+                const list = DOM.classDropdownList;
+                const isOutOfView = firstVirtual.offsetTop < list.scrollTop || (firstVirtual.offsetTop + 40) > (list.scrollTop + list.clientHeight);
+                if (isOutOfView) {
+                    firstVirtual.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        } else {
+            virtualElements.forEach((el, index) => {
+                const delay = (count - 1 - index) * 25;
+                el.style.transitionDelay = `${delay}ms`;
+                el.classList.add('is-collapsed');
+                el.setAttribute('tabindex', '-1');
+                el.setAttribute('aria-hidden', 'true');
+            });
+
+            // Smart Scroll contextuel : S'assurer que la classe active reste bien dans le champ visuel après le repli
+            const activeItem = DOM.classDropdownList?.querySelector('.class-dropdown-item.active:not(.is-collapsed)');
+            if (activeItem) {
+                setTimeout(() => {
+                    activeItem.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+                }, 280);
+            }
+        }
+
+        // Nettoyer les transitionDelay inline après la fin de l'animation pour préserver la réactivité du hover
+        const totalDuration = 350 + count * 35;
+        clearTimeout(this._virtualAnimationTimer);
+        this._virtualAnimationTimer = setTimeout(() => {
+            virtualElements.forEach(el => {
+                el.style.transitionDelay = '';
+            });
+        }, totalDuration);
     },
 
     /**
@@ -737,7 +823,7 @@ export const ClassUIManager = {
             const totalStudents = classResults.length;
 
             if (totalStudents === 0) {
-                badge.innerHTML = `<span class="progress-count">0</span>`;
+                badge.innerHTML = `<span class="progress-count">0 él.</span>`;
                 badge.removeAttribute('title');
                 badge.setAttribute('data-tooltip', 'Aucun élève');
                 badge.dataset.status = 'empty';
@@ -765,7 +851,7 @@ export const ClassUIManager = {
 
             // Render badge - NEUTRAL: juste le nombre d'élèves, pas d'icône d'état
             // (Decision: afficher SEULEMENT les erreurs sans les autres états est incohérent)
-            badge.innerHTML = `<span class="progress-count">${totalStudents}</span>`;
+            badge.innerHTML = `<span class="progress-count">${totalStudents} él.</span>`;
 
             // Set tooltip and status for potential CSS styling
             let tooltipText = '';

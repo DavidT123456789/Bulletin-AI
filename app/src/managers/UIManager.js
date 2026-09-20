@@ -32,6 +32,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { GliderManager } from './GliderManager.js';
 import { AnimationManager } from './AnimationManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
+import { ClassManager } from './ClassManager.js';
 
 /**
  * @typedef {Object} ConfirmOptions
@@ -1518,9 +1519,7 @@ export const UI = {
         const currentClassId = appState.currentClassId;
 
         // CORRECTIF: Filtrer par classe actuelle AVANT de compter
-        const classResults = appState.generatedResults.filter(r =>
-            !currentClassId || r.classId === currentClassId
-        );
+        const classResults = ClassManager.getStudentsForClass(currentClassId);
 
         const activeStudents = classResults.filter(result => {
             const statuses = result.studentData?.statuses || [];

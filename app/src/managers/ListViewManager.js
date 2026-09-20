@@ -22,6 +22,7 @@ import { ModalUI } from './ModalUIManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
+import { ClassManager } from './ClassManager.js';
 
 /**
  * Module de gestion de la vue Liste (tableau des élèves)
@@ -84,9 +85,7 @@ export const ListViewManager = {
         // Handle empty results
         if (results.length === 0) {
             const currentClassId = appState.currentClassId;
-            const remainingInClass = (appState.generatedResults || []).filter(
-                r => !currentClassId || r.classId === currentClassId
-            ).length;
+            const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
 
             if (remainingInClass === 0) {
                 import('./AppreciationsManager.js').then(({ AppreciationsManager }) => {
@@ -235,9 +234,7 @@ export const ListViewManager = {
 
         // Render with standard FLIP animation or transition to empty state
         const currentClassId = appState.currentClassId;
-        const remainingInClass = (appState.generatedResults || []).filter(
-            r => !currentClassId || r.classId === currentClassId
-        ).length;
+        const remainingInClass = ClassManager.getStudentsForClass(currentClassId).length;
 
         if (remainingInClass === 0) {
             const { AppreciationsManager } = await import('./AppreciationsManager.js');

@@ -69,6 +69,7 @@ export function initDOM() {
     DOM.headerStudentCount = document.getElementById('headerStudentCount');
     DOM.classDropdown = document.getElementById('classDropdown');
     DOM.classDropdownTitle = document.getElementById('classDropdownTitle');
+    DOM.classDropdownVirtualSubbar = document.getElementById('classDropdownVirtualSubbar');
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');

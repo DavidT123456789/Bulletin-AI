@@ -12,6 +12,7 @@ import { StorageManager } from './StorageManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
+import { ClassManager } from './ClassManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -517,7 +518,7 @@ export const SeatingChartManager = {
     /** Restaure la dernière vue active (plan ou liste) au chargement de l'application */
     restoreActiveView() {
         const targetView = appState.activeView || 'list';
-        const hasResults = (appState.generatedResults || []).some(r => r.classId === appState.currentClassId);
+        const hasResults = ClassManager.getStudentsForClass(appState.currentClassId).length > 0;
         this.updateToggleVisibility(hasResults);
 
         if (targetView === 'plan' && hasResults) {
@@ -546,10 +547,18 @@ export const SeatingChartManager = {
         this._loadPositionsFromState();
 
         const currentClass = this._getCurrentClass();
-        const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
-        const locked = this._getPlacedIds().size === 0
-            ? false
-            : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
+        const isVirtual = currentClass?.isVirtual || ClassManager.isVirtualClass(appState.currentClassId);
+        
+        // Les classes reconstituées sont verrouillées en mode consultation par défaut
+        let locked = false;
+        if (isVirtual) {
+            locked = true;
+        } else {
+            const hasExplicitClassLock = currentClass && typeof currentClass.seatingLocked === 'boolean';
+            locked = this._getPlacedIds().size === 0
+                ? false
+                : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
+        }
         this._applyLockState(locked);
 
         this._render();
@@ -565,9 +574,7 @@ export const SeatingChartManager = {
 
     updateToggleVisibility(hasResults) {
         const toggle = document.getElementById('viewToggle');
-        const isVirtual = typeof appState.currentClassId === 'string' && appState.currentClassId.startsWith('virtual_');
-        if (toggle) toggle.classList.toggle('visible', hasResults && !isVirtual);
-        if (isVirtual && this._isActive) this.switchToView('list');
+        if (toggle) toggle.classList.toggle('visible', hasResults);
     },
 
     // ========================================================================
@@ -1161,7 +1168,7 @@ export const SeatingChartManager = {
     _getCurrentClass() {
         const classId = appState.currentClassId;
         if (!classId) return null;
-        return (appState.classes || []).find(c => c.id === classId) || null;
+        return ClassManager.getClassById(classId) || (appState.classes || []).find(c => c.id === classId) || null;
     },
 
     _getCellSpecial(row, col) {
@@ -1279,14 +1286,26 @@ export const SeatingChartManager = {
     _getPlacedMap() {
         const map = {};
         this._gridState.forEach((row, r) => {
-            row.forEach((id, c) => { if (id) map[id] = { row: r, col: c }; });
+            row.forEach((val, c) => {
+                if (Array.isArray(val)) {
+                    val.forEach(id => { if (id) map[id] = { row: r, col: c }; });
+                } else if (val) {
+                    map[val] = { row: r, col: c };
+                }
+            });
         });
         return map;
     },
 
     _getPlacedIds() {
         const ids = new Set();
-        this._gridState.forEach(row => row.forEach(id => { if (id) ids.add(id); }));
+        this._gridState.forEach(row => row.forEach(val => {
+            if (Array.isArray(val)) {
+                val.forEach(id => { if (id) ids.add(id); });
+            } else if (val) {
+                ids.add(val);
+            }
+        }));
         return ids;
     },
 
@@ -1397,9 +1416,16 @@ export const SeatingChartManager = {
         this._students.forEach(s => {
             const pos = s.seatingPosition;
             if (pos?.row != null && pos?.col != null &&
-                pos.row < rows && pos.col < cols && !this._gridState[pos.row][pos.col] &&
+                pos.row < rows && pos.col < cols &&
                 !this._isSpecialSpot(pos.row, pos.col)) {
-                this._gridState[pos.row][pos.col] = s.id;
+                const existing = this._gridState[pos.row][pos.col];
+                if (!existing) {
+                    this._gridState[pos.row][pos.col] = s.id;
+                } else if (Array.isArray(existing)) {
+                    if (!existing.includes(s.id)) existing.push(s.id);
+                } else if (existing !== s.id) {
+                    this._gridState[pos.row][pos.col] = [existing, s.id];
+                }
             }
         });
     },
@@ -1480,10 +1506,12 @@ export const SeatingChartManager = {
         cell.dataset.row = row;
         cell.dataset.col = col;
 
-        const resultId = this._gridState[row]?.[col];
-        const student = resultId ? this._studentMap?.get(resultId) ?? null : null;
+        const cellContent = this._gridState[row]?.[col];
+        const studentIds = Array.isArray(cellContent) ? cellContent : (cellContent ? [cellContent] : []);
+        const students = studentIds.map(id => this._studentMap?.get(id)).filter(Boolean);
 
-        if (student) {
+        if (students.length === 1) {
+            const student = students[0];
             cell.dataset.resultId = student.id;
             const isPinned = student.seatingPosition?.pinned || false;
             cell.classList.add('occupied');
@@ -1552,6 +1580,40 @@ export const SeatingChartManager = {
 
                 this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
             }
+        } else if (students.length > 1) {
+            // Empilement moderne pour plusieurs élèves sur la même place (ex: classe reconstituée)
+            cell.classList.add('occupied', 'sc-cell-stacked');
+            cell.dataset.resultId = students[0].id;
+
+            const tooltipNames = students.map(s => Utils.formatStudentName(s.nom, s.prenom)).join(' • ');
+            cell.setAttribute('data-tooltip', tooltipNames);
+
+            const avatarsHtml = students.map((s, idx) => `
+                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" title="${Utils.formatStudentName(s.nom, s.prenom)}">
+                    ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                </div>
+            `).join('');
+
+            const namesHtml = students.map(s => `
+                <span class="sc-stacked-name" data-result-id="${s.id}" title="${Utils.formatStudentName(s.nom, s.prenom)}">${s.prenom || ''} ${(s.nom || '')[0] || ''}.</span>
+            `).join('');
+
+            cell.innerHTML = `
+                <div class="sc-stacked-avatar-cluster">
+                    ${avatarsHtml}
+                    <span class="sc-stacked-count-pill">${students.length}</span>
+                </div>
+                <div class="sc-stacked-names-list">
+                    ${namesHtml}
+                </div>
+            `;
+
+            // Clic sur la cellule ou un élève spécifique ouvre le FocusPanel
+            cell.addEventListener('click', (e) => {
+                const targetStudentEl = e.target.closest('[data-result-id]');
+                const targetId = targetStudentEl?.dataset?.resultId || students[0].id;
+                FocusPanelManager.open(targetId);
+            });
         } else {
             cell.classList.add('empty');
             
@@ -1811,7 +1873,7 @@ export const SeatingChartManager = {
     getClassSeatingStatus(cls) {
         if (!cls) return { status: 'empty', label: 'À faire', shortLabel: 'À faire', icon: 'solar:map-point-linear', unplaced: 0, placed: 0, total: 0 };
 
-        const classResults = (appState.generatedResults || []).filter(r => r.classId === cls.id);
+        const classResults = ClassManager.getStudentsForClass(cls.id);
         const total = classResults.length;
         const placed = classResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
         const unplaced = total - placed;
@@ -2561,8 +2623,7 @@ export const SeatingChartManager = {
 
     _getCurrentClassStudents() {
         const classId = appState.currentClassId;
-        return (appState.generatedResults || [])
-            .filter(r => r.classId === classId)
+        return ClassManager.getStudentsForClass(classId)
             .map(r => ({
                 id: r.id, nom: r.nom, prenom: r.prenom,
                 studentPhoto: r.studentPhoto,

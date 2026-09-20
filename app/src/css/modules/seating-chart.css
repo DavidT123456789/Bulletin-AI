@@ -2877,3 +2877,111 @@
 .sc-action-btn.sc-orientation-btn.active iconify-icon {
     transform: rotate(180deg) scale(1.1);
 }
+
+/* ────────── CELLULE EMPILÉE (MULTI-ÉLÈVES) ────────── */
+.sc-cell.sc-cell-stacked {
+    padding: 6px 4px;
+    gap: 4px;
+    background: var(--card-bg, rgba(var(--surface-color-rgb), 0.65));
+    border: 1.5px solid rgba(99, 102, 241, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(99, 102, 241, 0.15);
+    cursor: pointer;
+    overflow: visible;
+}
+
+[data-theme="dark"] .sc-cell.sc-cell-stacked {
+    background: rgba(30, 32, 48, 0.7);
+    border-color: rgba(129, 140, 248, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+
+.sc-cell.sc-cell-stacked:hover {
+    transform: translateY(-2px) scale(1.02);
+    border-color: var(--primary-color, #6366f1);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+.sc-stacked-avatar-cluster {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 4px;
+}
+
+.sc-stacked-avatar {
+    position: relative;
+    transition: transform 0.2s var(--ease-spring), z-index 0.2s;
+    cursor: pointer;
+}
+
+.sc-stacked-avatar:not(:first-child) {
+    margin-left: -12px;
+}
+
+.sc-stacked-avatar .student-avatar-wrap {
+    border: 2px solid var(--surface-color, #ffffff);
+    box-shadow: var(--shadow-xs);
+    border-radius: 50%;
+    transition: transform 0.2s var(--ease-spring);
+}
+
+[data-theme="dark"] .sc-stacked-avatar .student-avatar-wrap {
+    border-color: #1e2030;
+}
+
+.sc-stacked-avatar:hover {
+    transform: scale(1.18) translateY(-2px);
+    z-index: 10 !important;
+}
+
+.sc-stacked-count-pill {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: var(--radius-pill);
+    background: var(--primary-color, #6366f1);
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    z-index: 15;
+    pointer-events: none;
+}
+
+.sc-stacked-names-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.sc-stacked-name {
+    font-size: 0.67rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--text-primary);
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 1px 4px;
+    border-radius: var(--radius-xs);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-stacked-name:hover {
+    background: var(--item-hover-bg);
+    color: var(--primary-color);
+}
+

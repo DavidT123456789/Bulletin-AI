@@ -53,7 +53,7 @@ export const ResultsUIManager = {
         // Si aucune classe n'existe, sourceResults est vide (pas de mode legacy)
         let sourceResults = [];
         if (hasAnyClasses && currentClassId) {
-            sourceResults = appState.generatedResults.filter(r => r.classId === currentClassId);
+            sourceResults = ClassManager.getStudentsForClass(currentClassId);
         } else if (!hasAnyClasses) {
             // Aucune classe : afficher état vide
             sourceResults = [];
@@ -106,7 +106,8 @@ export const ResultsUIManager = {
             });
         }
 
-        const currentClassName = userSettings?.academic?.classes?.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+        const currentClass = ClassManager.getCurrentClass();
+        const currentClassName = currentClass?.name || '';
 
         const filteredAndSorted = viewableResults
             .filter(r => {
@@ -435,11 +436,7 @@ export const ResultsUIManager = {
         const currentPeriod = appState.currentPeriod;
         const currentClassId = appState.currentClassId;
 
-        let sourceResults = appState.generatedResults || [];
-
-        if (currentClassId) {
-            sourceResults = sourceResults.filter(r => r.classId === currentClassId);
-        }
+        const sourceResults = ClassManager.getStudentsForClass(currentClassId);
 
         // Count pending (empty/placeholder)
         const pendingCount = sourceResults.filter(r => {
@@ -729,11 +726,7 @@ export const ResultsUIManager = {
         const currentPeriod = appState.currentPeriod;
         const currentClassId = appState.currentClassId;
 
-        // CRITICAL FIX: Use generatedResults as source of truth (not filteredResults which may be stale)
-        let sourceResults = appState.generatedResults || [];
-        if (currentClassId) {
-            sourceResults = sourceResults.filter(r => r.classId === currentClassId);
-        }
+        const sourceResults = ClassManager.getStudentsForClass(currentClassId);
 
         // Find all results that need updating (dirty OR error)
         const toRegen = sourceResults.filter(r => {

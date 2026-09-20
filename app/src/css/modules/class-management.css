@@ -339,15 +339,15 @@
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Badge "Complète" dans les items de classe du dropdown */
+/* Badge "Reconstituée" dans les items de classe du dropdown */
 .class-item-virtual-badge {
     display: inline-flex;
     align-items: center;
-    padding: 1px 6px;
+    padding: 1px 7px;
     font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.01em;
     border-radius: var(--radius-pill);
     background: rgba(99, 102, 241, 0.12);
     color: var(--accent-color, #6366f1);
@@ -357,7 +357,7 @@
 }
 
 [data-theme="dark"] .class-item-virtual-badge {
-    background: rgba(129, 140, 248, 0.2);
+    background: rgba(129, 140, 248, 0.18);
     color: #a5b4fc;
     border-color: rgba(129, 140, 248, 0.35);
 }
@@ -368,67 +368,81 @@
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* En-têtes de section dans le dropdown (Mes Groupes / Classes complètes) */
-.class-dropdown-section-header {
+/* Barre de filtre pour les classes reconstituées */
+.class-dropdown-subbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px 6px 10px;
-    margin-top: 6px;
-    margin-bottom: 2px;
-    border-top: 1px solid var(--border-color);
+    justify-content: flex-start;
+    padding: 5px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(var(--surface-color-rgb), 0.2);
+}
+
+.class-virtual-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: transparent;
     color: var(--text-tertiary);
     font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
     user-select: none;
 }
 
-.class-dropdown-section-header:first-child {
-    margin-top: 0;
-    border-top: none;
-    padding-top: 2px;
-}
-
-.class-dropdown-section-header .section-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.class-dropdown-section-header .section-title iconify-icon {
-    font-size: 0.95rem;
-}
-
-.class-dropdown-section-header .section-badge {
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: var(--radius-pill);
-    background: var(--item-hover-bg);
-    color: var(--text-secondary);
-}
-
-.class-dropdown-section-header--virtual {
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.class-dropdown-section-header--virtual:hover {
+.class-virtual-filter-btn:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
+    border-color: var(--border-color-hover, var(--border-color));
 }
 
-.class-dropdown-section-header--virtual .section-chevron {
-    font-size: 0.85rem;
-    transition: transform var(--transition-fast);
-    margin-left: 6px;
+.class-virtual-filter-btn:active {
+    transform: scale(0.95);
 }
 
-.class-dropdown-section-header--virtual .section-chevron.collapsed {
-    transform: rotate(-90deg);
+.class-virtual-filter-btn.active {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-color, #6366f1);
+    border-color: rgba(99, 102, 241, 0.35);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .class-virtual-filter-btn.active {
+    background: rgba(129, 140, 248, 0.16);
+    color: #a5b4fc;
+    border-color: rgba(129, 140, 248, 0.35);
+}
+
+.class-virtual-filter-btn iconify-icon {
+    font-size: 0.88rem;
+    transition: transform 0.25s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.class-virtual-filter-btn.active iconify-icon {
+    transform: scale(1.1);
+}
+
+.class-virtual-filter-btn .filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--text-color-rgb, 120, 120, 120), 0.12);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+
+.class-virtual-filter-btn.active .filter-count {
+    background: rgba(99, 102, 241, 0.22);
+    color: inherit;
 }
 
 /* Meta sources pour classe virtuelle */
@@ -670,6 +684,58 @@
 .class-dropdown-item:hover .class-student-count {
     background: var(--surface-color);
     border-color: var(--border-color);
+}
+
+/* ====================================================================
+   CLASSES RECONSTITUÉES (Animations déploiement & rangement fluide)
+   ==================================================================== */
+
+.class-dropdown-item.class-dropdown-item--virtual {
+    overflow: hidden;
+    max-height: 80px;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transform-origin: top center;
+    box-sizing: border-box;
+    transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.32s cubic-bezier(0.34, 1.25, 0.64, 1),
+                padding-top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                padding-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                border-top-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                border-bottom-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                background var(--transition-fast, 0.15s),
+                border-color var(--transition-fast, 0.15s),
+                visibility 0.32s;
+    visibility: visible;
+}
+
+.class-dropdown-item.class-dropdown-item--virtual.is-collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    transform: translateY(-6px) scale(0.97) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden;
+    transition: max-height 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                padding-top 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                padding-bottom 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-top 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-bottom 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                border-top-width 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                border-bottom-width 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+                background var(--transition-fast, 0.15s),
+                border-color var(--transition-fast, 0.15s),
+                visibility 0s 0.26s;
 }
 
 /* ====================================================================

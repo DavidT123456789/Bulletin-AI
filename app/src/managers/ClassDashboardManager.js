@@ -12,6 +12,7 @@ import { AIService } from '../services/AIService.js';
 import { StorageManager } from './StorageManager.js';
 import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
+import { ClassManager } from './ClassManager.js';
 
 /**
  * Class Dashboard Manager
@@ -137,7 +138,7 @@ export const ClassDashboardManager = {
 
         // If specific class requested, fetch from main repository
         if (classId) {
-            sourceData = (appState.generatedResults || []).filter(r => r.classId === classId);
+            sourceData = ClassManager.getStudentsForClass(classId);
         }
 
         // Robust data gathering that doesn't fail on appreciation errors

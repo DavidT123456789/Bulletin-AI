@@ -119,4 +119,24 @@ describe('ClassManager - Virtual Classes (Classes complètes)', () => {
         expect(current.name).toBe('3ᵉ1');
         expect(current.isVirtual).toBe(true);
     });
+
+    it('devrait retourner les bons élèves via getStudentsForClass pour les classes réelles et reconstituées', () => {
+        const group1 = ClassManager.createClass('3 G1');
+        const group2 = ClassManager.createClass('3 G2');
+
+        const student1 = { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: group1.id, studentData: { classe: '3 1' } };
+        const student2 = { id: 's2', nom: 'MARTIN', prenom: 'Bob', classId: group2.id, studentData: { classe: '3 1' } };
+        const student3 = { id: 's3', nom: 'DURAND', prenom: 'David', classId: group2.id, studentData: { classe: '3 2' } };
+
+        appState.generatedResults = [student1, student2, student3];
+
+        // Groupe physique 3 G1 -> student1
+        expect(ClassManager.getStudentsForClass(group1.id).map(s => s.id)).toEqual(['s1']);
+        // Groupe physique 3 G2 -> student2, student3
+        expect(ClassManager.getStudentsForClass(group2.id).map(s => s.id)).toEqual(['s2', 's3']);
+        // Classe reconstituée 3 1 -> student1, student2
+        expect(ClassManager.getStudentsForClass('virtual_31').map(s => s.id)).toEqual(['s1', 's2']);
+        // Classe reconstituée 3 2 -> student3
+        expect(ClassManager.getStudentsForClass('virtual_32').map(s => s.id)).toEqual(['s3']);
+    });
 });

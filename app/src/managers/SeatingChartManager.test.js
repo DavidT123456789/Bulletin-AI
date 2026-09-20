@@ -781,4 +781,54 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
     });
 });
 
+describe('SeatingChartManager - Classes reconstituées et empilement des élèves', () => {
+    it('devrait afficher le toggle de plan de classe pour une classe reconstituée avec élèves', () => {
+        const group1 = ClassManager.createClass('3 TECHNOLOGIE G1');
+        appState.generatedResults = [
+            { id: 's1', classId: group1.id, nom: 'Dupont', prenom: 'Alice', studentData: { classe: '3 1' } }
+        ];
+
+        document.body.innerHTML = `<div id="viewToggle" class="view-toggle"></div>`;
+        appState.currentClassId = 'virtual_31';
+
+        SeatingChartManager.updateToggleVisibility(true);
+        expect(document.getElementById('viewToggle').classList.contains('visible')).toBe(true);
+    });
+
+    it('devrait empiler plusieurs élèves partageant la même place dans une classe reconstituée', () => {
+        const group1 = ClassManager.createClass('3 TECHNOLOGIE G1');
+        const group2 = ClassManager.createClass('3 TECHNOLOGIE G2');
+
+        // Deux élèves issus de deux groupes différents, placés aux mêmes coordonnées (row 0, col 0)
+        appState.generatedResults = [
+            { id: 's1', classId: group1.id, nom: 'Dupont', prenom: 'Alice', studentData: { classe: '3 1' }, seatingPosition: { row: 0, col: 0 } },
+            { id: 's2', classId: group2.id, nom: 'Martin', prenom: 'Bob', studentData: { classe: '3 1' }, seatingPosition: { row: 0, col: 0 } }
+        ];
+
+        appState.currentClassId = 'virtual_31';
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        expect(SeatingChartManager._students.length).toBe(2);
+
+        SeatingChartManager._loadPositionsFromState();
+
+        // La case [0][0] doit contenir un tableau avec les deux élèves empilés
+        expect(SeatingChartManager._gridState[0][0]).toEqual(['s1', 's2']);
+
+        // _getPlacedIds doit inclure les deux élèves
+        const placedIds = SeatingChartManager._getPlacedIds();
+        expect(placedIds.has('s1')).toBe(true);
+        expect(placedIds.has('s2')).toBe(true);
+
+        // Rendu de la cellule
+        SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+        const cell = SeatingChartManager._createCell(0, 0);
+
+        expect(cell.classList.contains('sc-cell-stacked')).toBe(true);
+        expect(cell.querySelector('.sc-stacked-count-pill').textContent).toBe('2');
+        expect(cell.textContent).toContain('Alice');
+        expect(cell.textContent).toContain('Bob');
+    });
+});
+
+
 
