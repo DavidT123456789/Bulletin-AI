@@ -70,6 +70,7 @@ export function initDOM() {
     DOM.classDropdown = document.getElementById('classDropdown');
     DOM.classDropdownTitle = document.getElementById('classDropdownTitle');
     DOM.classDropdownVirtualSubbar = document.getElementById('classDropdownVirtualSubbar');
+    DOM.toggleVirtualClassesBtn = document.getElementById('toggleVirtualClassesBtn');
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');

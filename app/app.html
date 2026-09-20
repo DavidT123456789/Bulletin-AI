@@ -241,7 +241,13 @@
                     </div>
                     <div id="classDropdown" class="class-dropdown" style="display: none;">
                         <div class="class-dropdown-header">
-                            <span class="class-dropdown-title tooltip" id="classDropdownTitle">Mes classes</span>
+                            <div class="class-dropdown-title-group">
+                                <span class="class-dropdown-title tooltip" id="classDropdownTitle">Mes classes</span>
+                                <button type="button" class="class-virtual-filter-btn tooltip" id="toggleVirtualClassesBtn" style="display: none;" aria-label="Classes reconstituées" aria-pressed="false">
+                                    <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                                    <span class="filter-count">0</span>
+                                </button>
+                            </div>
                             <div class="class-dropdown-header-actions">
                                 <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
                                     <iconify-icon icon="solar:add-linear"></iconify-icon>
@@ -3136,7 +3142,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 84c8a2a · 20 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build a930994 · 20 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

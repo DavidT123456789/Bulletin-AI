@@ -367,23 +367,27 @@ export const ClassUIManager = {
         const virtualClasses = ClassManager.getVirtualClasses();
         const hasVirtualClasses = virtualClasses.length > 0;
 
-        // Barre de filtre pour afficher/masquer les classes reconstituées
-        if (DOM.classDropdownVirtualSubbar) {
+        // Pastille de filtre compacte dans l'en-tête (à côté du titre)
+        const toggleBtn = DOM.toggleVirtualClassesBtn || document.getElementById('toggleVirtualClassesBtn');
+        if (toggleBtn) {
             if (hasVirtualClasses) {
-                DOM.classDropdownVirtualSubbar.style.display = 'flex';
-                DOM.classDropdownVirtualSubbar.innerHTML = `
-                    <button type="button" class="class-virtual-filter-btn tooltip ${this._showVirtualClasses ? 'active' : ''}" 
-                            id="toggleVirtualClassesBtn" 
-                            data-tooltip="${this._showVirtualClasses ? 'Masquer les classes reconstituées' : 'Afficher les classes reconstituées'}" 
-                            aria-label="Classes reconstituées"
-                            aria-pressed="${this._showVirtualClasses ? 'true' : 'false'}">
-                        <iconify-icon icon="solar:diploma-linear"></iconify-icon>
-                        <span>Reconstituées</span>
-                        <span class="filter-count">${virtualClasses.length}</span>
-                    </button>
-                `;
-                const toggleBtn = document.getElementById('toggleVirtualClassesBtn');
-                toggleBtn?.addEventListener('click', async (e) => {
+                toggleBtn.style.display = 'inline-flex';
+                toggleBtn.classList.toggle('active', this._showVirtualClasses);
+                toggleBtn.setAttribute('aria-pressed', this._showVirtualClasses ? 'true' : 'false');
+                const countEl = toggleBtn.querySelector('.filter-count');
+                if (countEl) countEl.textContent = virtualClasses.length;
+                const newTooltip = this._showVirtualClasses
+                    ? `Masquer les ${virtualClasses.length} classes reconstituées`
+                    : `Afficher les ${virtualClasses.length} classes reconstituées`;
+                toggleBtn.setAttribute('data-tooltip', newTooltip);
+                TooltipsUI?.updateTooltip?.(toggleBtn, newTooltip);
+            } else {
+                toggleBtn.style.display = 'none';
+            }
+
+            if (!toggleBtn.dataset.bound) {
+                toggleBtn.dataset.bound = 'true';
+                toggleBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const willShow = !this._showVirtualClasses;
                     this._showVirtualClasses = willShow;
@@ -391,7 +395,10 @@ export const ClassUIManager = {
 
                     toggleBtn.classList.toggle('active', willShow);
                     toggleBtn.setAttribute('aria-pressed', willShow ? 'true' : 'false');
-                    const newTooltip = willShow ? 'Masquer les classes reconstituées' : 'Afficher les classes reconstituées';
+                    const vClasses = ClassManager.getVirtualClasses();
+                    const newTooltip = willShow
+                        ? `Masquer les ${vClasses.length} classes reconstituées`
+                        : `Afficher les ${vClasses.length} classes reconstituées`;
                     toggleBtn.setAttribute('data-tooltip', newTooltip);
                     TooltipsUI?.updateTooltip?.(toggleBtn, newTooltip);
 
@@ -408,10 +415,12 @@ export const ClassUIManager = {
 
                     this._animateVirtualClassesToggle(willShow);
                 });
-            } else {
-                DOM.classDropdownVirtualSubbar.style.display = 'none';
-                DOM.classDropdownVirtualSubbar.innerHTML = '';
             }
+        }
+
+        if (DOM.classDropdownVirtualSubbar) {
+            DOM.classDropdownVirtualSubbar.style.display = 'none';
+            DOM.classDropdownVirtualSubbar.innerHTML = '';
         }
 
         const hasOnlyDemoOrNoRealClass = !classes.some(c => !ClassManager.isDemoClass(c.id));

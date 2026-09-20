@@ -13,7 +13,13 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
     beforeEach(() => {
         // Reset DOM elements
         document.body.innerHTML = `
-            <div id="classDropdownTitle"></div>
+            <div class="class-dropdown-title-group">
+                <div id="classDropdownTitle"></div>
+                <button type="button" class="class-virtual-filter-btn" id="toggleVirtualClassesBtn" style="display: none;">
+                    <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                    <span class="filter-count">0</span>
+                </button>
+            </div>
             <div id="classDropdownVirtualSubbar" class="class-dropdown-subbar" style="display: none;"></div>
             <div id="classDropdownList" class="class-dropdown-list"></div>
             <div id="headerClassName"></div>
@@ -23,6 +29,7 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         `;
 
         DOM.classDropdownTitle = document.getElementById('classDropdownTitle');
+        DOM.toggleVirtualClassesBtn = document.getElementById('toggleVirtualClassesBtn');
         DOM.classDropdownVirtualSubbar = document.getElementById('classDropdownVirtualSubbar');
         DOM.classDropdownList = document.getElementById('classDropdownList');
         DOM.headerClassName = document.getElementById('headerClassName');
@@ -40,7 +47,7 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         ClassUIManager._showVirtualClasses = true;
     });
 
-    it('devrait afficher la sous-barre avec le bouton de filtre lorsque des classes reconstituées existent', () => {
+    it('devrait afficher la pastille compacte de filtre dans l\'en-tête lorsque des classes reconstituées existent', () => {
         const group1 = ClassManager.createClass('3 TECHNOLOGIE G1');
         const group2 = ClassManager.createClass('3 TECHNOLOGIE G2');
 
@@ -51,10 +58,9 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
 
         ClassUIManager.renderClassList();
 
-        expect(DOM.classDropdownVirtualSubbar.style.display).toBe('flex');
         const toggleBtn = document.getElementById('toggleVirtualClassesBtn');
         expect(toggleBtn).not.toBeNull();
-        expect(toggleBtn.textContent).toContain('Reconstituées');
+        expect(toggleBtn.style.display).toBe('inline-flex');
         expect(toggleBtn.textContent).toContain('1'); // 1 classe reconstituée (3ᵉ1)
     });
 
