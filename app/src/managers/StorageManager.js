@@ -58,7 +58,10 @@ const UI_AND_NAV_KEYS = [
     'anthropicApiKey',
     'mistralApiKey',
     'ollamaBaseUrl',
-    'ollamaInstalledModels'
+    'ollamaInstalledModels',
+    'currentAIModel',
+    'enableApiFallback',
+    'ollamaEnabled'
 ];
 
 export const StorageManager = {

@@ -217,7 +217,6 @@ export const SyncService = {
                 saveBtn.style.display = 'none';
                 if (loadBtn) loadBtn.style.display = 'none';
                 if (reconnectBtn) reconnectBtn.style.display = 'none';
-                if (statusEl) statusEl.style.display = 'none';
                 if (separator) separator.style.display = 'block';
                 if (connectBtn) connectBtn.style.display = 'flex';
                 return;
@@ -623,6 +622,7 @@ export const SyncService = {
         localStorage.setItem('bulletin_last_sync_hash', syncHash);
         localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
         StorageManager._lastDataHash = syncHash;
+        StorageManager._lastSaveHash = null;
 
         this._updateCloudIndicator('connected');
         this._setStatus('idle');
@@ -652,11 +652,13 @@ export const SyncService = {
         // Update remote time to match since local is now strictly aligned with remote
         this.remoteSyncTime = this.lastSyncTime;
 
-        // Save data hash at sync time and align modified timestamp
+        // Save data hash at sync time and align ALL internal hashes to prevent
+        // subsequent saveAppState calls from re-setting bulletin_last_modified
         const syncHash = StorageManager.computeCurrentDataHash();
         localStorage.setItem('bulletin_last_sync_hash', syncHash);
         localStorage.setItem('bulletin_last_modified', this.lastSyncTime.toString());
         StorageManager._lastDataHash = syncHash;
+        StorageManager._lastSaveHash = null;
 
         this._updateCloudIndicator('connected');
         this._setStatus('idle');

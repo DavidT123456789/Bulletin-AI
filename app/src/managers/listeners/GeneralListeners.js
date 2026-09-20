@@ -565,7 +565,17 @@ export const GeneralListeners = {
     _hasUnsyncedChanges(syncService) {
         const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
         const lastModified = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-        const hasLocal = lastModified > lastSync;
+        let hasLocal = lastModified > lastSync;
+
+        // Safety net: if timestamps say "modified" but data hash matches cloud, it's a false positive
+        if (hasLocal) {
+            const syncHash = localStorage.getItem('bulletin_last_sync_hash');
+            if (syncHash && StorageManager.computeCurrentDataHash() === syncHash) {
+                hasLocal = false;
+                localStorage.setItem('bulletin_last_modified', lastSync.toString());
+            }
+        }
+
         const remoteSync = syncService?.remoteSyncTime || 0;
         const hasRemote = remoteSync > 0 && remoteSync > (lastSync + 5000);
         return hasLocal || hasRemote;
