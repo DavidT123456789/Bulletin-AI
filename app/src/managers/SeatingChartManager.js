@@ -565,8 +565,9 @@ export const SeatingChartManager = {
 
     updateToggleVisibility(hasResults) {
         const toggle = document.getElementById('viewToggle');
-        if (toggle) toggle.classList.toggle('visible', hasResults);
-        if (!hasResults && this._isActive) this.switchToView('list');
+        const isVirtual = typeof appState.currentClassId === 'string' && appState.currentClassId.startsWith('virtual_');
+        if (toggle) toggle.classList.toggle('visible', hasResults && !isVirtual);
+        if (isVirtual && this._isActive) this.switchToView('list');
     },
 
     // ========================================================================

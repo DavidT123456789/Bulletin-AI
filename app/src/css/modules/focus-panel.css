@@ -284,11 +284,47 @@
 }
 
 .focus-name-prenom {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     font-size: 18px;
     font-weight: 400;
-    /* Allégé selon la maquette */
-    line-height: 1;
+    line-height: 1.2;
     color: var(--text-secondary);
+}
+
+.focus-origin-class-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2.5px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    letter-spacing: 0.3px;
+    vertical-align: middle;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.focus-origin-class-badge iconify-icon {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    transition: color 0.2s ease;
+}
+
+.focus-origin-class-badge:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-color: var(--border-hover-color, var(--border-color));
+}
+
+.focus-origin-class-badge:hover iconify-icon {
+    color: var(--primary-color);
 }
 
 /* Hovering either avatar OR name highlights the background behind the name */

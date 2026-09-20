@@ -459,10 +459,24 @@ export const FocusPanelHeader = {
             }
         }
 
+        const activeClassId = userSettings?.academic?.currentClassId || appState?.currentClassId;
+        const currentClassName = userSettings?.academic?.classes?.find(c => c.id === activeClassId)?.name || '';
+        const originClass = Utils.getOriginClass(result, currentClassName);
+        const displayClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
+        const originBadge = displayClass ? `
+            <span class="focus-origin-class-badge" data-tooltip="Classe d'origine : ${Utils.escapeHtml(displayClass)}">
+                <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                <span>Classe ${Utils.escapeHtml(displayClass)}</span>
+            </span>
+        ` : '';
+
         nameEl.innerHTML = `
             <span class="focus-name-details">
                 <span class="focus-name-nom">${Utils.escapeHtml(nom).toUpperCase()}</span>
-                <span class="focus-name-prenom">${Utils.escapeHtml(prenom)}</span>
+                <span class="focus-name-prenom">
+                    <span>${Utils.escapeHtml(prenom)}</span>
+                    ${originBadge}
+                </span>
             </span>
             <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon"></iconify-icon>
         `;

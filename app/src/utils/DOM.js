@@ -62,8 +62,10 @@ export function initDOM() {
     DOM.headerMenuDropdown = document.getElementById('headerMenuDropdown');
     // Class selector elements
     DOM.headerClassChip = document.getElementById('headerClassChip');
+    DOM.headerClassIcon = document.getElementById('headerClassIcon');
     DOM.headerClassName = document.getElementById('headerClassName');
     DOM.headerClassTag = document.getElementById('headerClassTag');
+    DOM.headerVirtualClassTag = document.getElementById('headerVirtualClassTag');
     DOM.headerStudentCount = document.getElementById('headerStudentCount');
     DOM.classDropdown = document.getElementById('classDropdown');
     DOM.classDropdownTitle = document.getElementById('classDropdownTitle');

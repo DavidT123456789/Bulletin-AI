@@ -727,13 +727,15 @@ export const TrombinoscopeManager = {
             if (parsed.className) {
                 const classBadge = document.getElementById('trombiClassBadge');
                 if (classBadge) {
-                    classBadge.textContent = `Classe ${parsed.className}`;
+                    const displayClassName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className;
+                    classBadge.textContent = `${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}`;
                 }
             }
 
             if (footerInfo) {
                 const pagesCountText = parsed.numPages > 1 ? ` (${parsed.numPages} pages)` : '';
-                footerInfo.textContent = `${parsed.students.length} élèves détectés • Classe ${parsed.className || 'Auto'}${pagesCountText}`;
+                const displayClassName = parsed.className ? (Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className) : 'Auto';
+                footerInfo.textContent = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountText}`;
             }
 
             const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
@@ -2788,6 +2790,8 @@ export const TrombinoscopeManager = {
                     id: pdfS.id,
                     nom: pdfS.nom,
                     prenom: pdfS.prenom,
+                    originClass: pdfS.originClass || null,
+                    classe: pdfS.classe || null,
                     studentPhoto: matched?.studentPhoto || null,
                     matchedExistingId: matched?.id || null
                 };
@@ -3088,7 +3092,8 @@ export const TrombinoscopeManager = {
                     students.push({
                         id: pdfStudent.id,
                         nom: pdfStudent.nom,
-                        prenom: pdfStudent.prenom
+                        prenom: pdfStudent.prenom,
+                        classe: pdfStudent.classe || pdfStudent.originClass || ''
                     });
                 }
             }
@@ -3235,20 +3240,28 @@ export const TrombinoscopeManager = {
 
             // If from parsed PDF, ensure class and students exist
             if (this._parsedPdfData) {
-                const targetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
+                const rawTargetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
+                const targetName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(rawTargetName) : rawTargetName;
                 const existingClasses = ClassManager.getAllClasses() || [];
                 const currentClass = ClassManager.getCurrentClass?.();
                 const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
                 const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
 
-                // 1. Recherche correspondance exacte (insensible à la casse)
-                targetClass = existingClasses.find(c => c.name.toLowerCase() === targetName.toLowerCase());
+                // 1. Recherche correspondance exacte (insensible à la casse sur nom formaté ou brut)
+                targetClass = existingClasses.find(c => 
+                    c.name.toLowerCase() === targetName.toLowerCase() || 
+                    c.name.toLowerCase() === rawTargetName.toLowerCase()
+                );
 
                 // 2. Recherche tolérante / normalisée (ex: "5°1" vs "5 1", "6ème A" vs "6 A")
                 if (!targetClass && Utils.normalizeClassName) {
                     const targetNorm = Utils.normalizeClassName(targetName);
-                    if (targetNorm) {
-                        targetClass = existingClasses.find(c => Utils.normalizeClassName(c.name) === targetNorm);
+                    const rawNorm = Utils.normalizeClassName(rawTargetName);
+                    if (targetNorm || rawNorm) {
+                        targetClass = existingClasses.find(c => {
+                            const cNorm = Utils.normalizeClassName(c.name);
+                            return (targetNorm && cNorm === targetNorm) || (rawNorm && cNorm === rawNorm);
+                        });
                     }
                 }
 
@@ -3283,6 +3296,7 @@ export const TrombinoscopeManager = {
                                 const newStudentResult = StudentDataManager.createPendingResult({
                                     nom: pdfStudent.nom,
                                     prenom: pdfStudent.prenom,
+                                    classe: pdfStudent.classe || pdfStudent.originClass || '',
                                     periods: {}
                                 });
                                 newStudentResult.classId = targetClass.id;

@@ -1,4 +1,4 @@
-import { appState } from '../state/State.js';
+import { appState, userSettings } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 // import { UI } from './UIManager.js'; // REMOVED to avoid circular dependency
@@ -106,9 +106,23 @@ export const ResultsUIManager = {
             });
         }
 
+        const currentClassName = userSettings?.academic?.classes?.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+
         const filteredAndSorted = viewableResults
             .filter(r => {
-                if (!Utils.matchesSearch([r.nom, r.prenom, Utils.decodeHtmlEntities(r.appreciation || '')], term)) return false;
+                const originClass = Utils.getOriginClass(r, currentClassName);
+                const displayOriginClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
+                const searchFields = [
+                    r.nom,
+                    r.prenom,
+                    originClass,
+                    displayOriginClass,
+                    originClass ? `classe ${originClass}` : '',
+                    displayOriginClass ? `classe ${displayOriginClass}` : '',
+                    originClass ? Utils.normalizeClassName(originClass) : '',
+                    Utils.decodeHtmlEntities(r.appreciation || '')
+                ];
+                if (!Utils.matchesSearch(searchFields, term)) return false;
                 if (!filter) return true;
                 if (filter === 'totalCount') return true;
 

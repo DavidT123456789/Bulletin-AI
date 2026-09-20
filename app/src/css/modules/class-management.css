@@ -100,6 +100,35 @@
     border-color: rgba(245, 158, 11, 0.45);
 }
 
+.class-chip .class-virtual-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-color, #6366f1);
+    height: 20px;
+    padding: 0 8px;
+    border-radius: var(--radius-pill);
+    font-size: 0.70rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-left: 2px;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .class-chip .class-virtual-tag {
+    background: rgba(129, 140, 248, 0.18);
+    color: #a5b4fc;
+    border-color: rgba(129, 140, 248, 0.35);
+}
+
+.class-chip:hover .class-virtual-tag,
+.class-chip.active .class-virtual-tag {
+    border-color: rgba(99, 102, 241, 0.45);
+}
+
 .class-chip .class-chevron {
     font-size: 14px;
     color: var(--text-tertiary);
@@ -308,6 +337,111 @@
     background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
     border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Badge "Complète" dans les items de classe du dropdown */
+.class-item-virtual-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-pill);
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-color, #6366f1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .class-item-virtual-badge {
+    background: rgba(129, 140, 248, 0.2);
+    color: #a5b4fc;
+    border-color: rgba(129, 140, 248, 0.35);
+}
+
+.class-dropdown-item.active .class-item-virtual-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* En-têtes de section dans le dropdown (Mes Groupes / Classes complètes) */
+.class-dropdown-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px 6px 10px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    user-select: none;
+}
+
+.class-dropdown-section-header:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 2px;
+}
+
+.class-dropdown-section-header .section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.class-dropdown-section-header .section-title iconify-icon {
+    font-size: 0.95rem;
+}
+
+.class-dropdown-section-header .section-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    background: var(--item-hover-bg);
+    color: var(--text-secondary);
+}
+
+.class-dropdown-section-header--virtual {
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.class-dropdown-section-header--virtual:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.class-dropdown-section-header--virtual .section-chevron {
+    font-size: 0.85rem;
+    transition: transform var(--transition-fast);
+    margin-left: 6px;
+}
+
+.class-dropdown-section-header--virtual .section-chevron.collapsed {
+    transform: rotate(-90deg);
+}
+
+/* Meta sources pour classe virtuelle */
+.class-meta-sources {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.class-dropdown-item.active .class-meta-sources {
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* Demo Toolbar Pill */

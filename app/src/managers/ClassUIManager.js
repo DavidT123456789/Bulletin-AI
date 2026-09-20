@@ -22,6 +22,7 @@ let StorageManager;
 
 export const ClassUIManager = {
     _isDropdownOpen: false,
+    _isVirtualSectionCollapsed: false,
     _originalDropdownParent: null, // Store original parent for teleportation
 
     /**
@@ -362,12 +363,26 @@ export const ClassUIManager = {
             return;
         }
 
+        const virtualClasses = ClassManager.getVirtualClasses();
+        const hasVirtualClasses = virtualClasses.length > 0;
+
         const hasOnlyDemoOrNoRealClass = !classes.some(c => !ClassManager.isDemoClass(c.id));
         const ctaBtnHtml = hasOnlyDemoOrNoRealClass ? `
             <button type="button" class="class-dropdown-create-btn" id="dropdownCreateClassCta">
                 <iconify-icon icon="solar:add-circle-bold"></iconify-icon>
                 <span>Créer ma classe</span>
             </button>
+        ` : '';
+
+        // En-tête de section Mes Groupes si des classes virtuelles existent
+        const groupsSectionHeaderHtml = hasVirtualClasses ? `
+            <div class="class-dropdown-section-header">
+                <span class="section-title">
+                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                    <span>Mes Groupes</span>
+                </span>
+                <span class="section-badge">${classes.length}</span>
+            </div>
         ` : '';
 
         const classItemsHtml = classes.map(cls => {
@@ -381,7 +396,7 @@ export const ClassUIManager = {
                  aria-selected="${cls.id === currentClassId ? 'true' : 'false'}">
                 <div class="class-info">
                     <span class="class-name">
-                        ${this._escapeHtml(cls.name)}
+                        ${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}
                         ${demoBadgeHtml}
                     </span>
                     <span class="class-meta">
@@ -396,7 +411,67 @@ export const ClassUIManager = {
         `;
         }).join('');
 
-        DOM.classDropdownList.innerHTML = ctaBtnHtml + classItemsHtml;
+        // Section Classes complètes
+        let virtualSectionHtml = '';
+        if (hasVirtualClasses) {
+            const virtualItemsHtml = this._isVirtualSectionCollapsed ? '' : virtualClasses.map(vClass => {
+                const sourceNames = vClass.sourceGroupNames?.join(' & ') || '';
+                return `
+                <div class="class-dropdown-item class-dropdown-item--virtual ${vClass.id === currentClassId ? 'active' : ''}" 
+                     data-class-id="${vClass.id}"
+                     tabindex="0"
+                     role="option"
+                     aria-selected="${vClass.id === currentClassId ? 'true' : 'false'}">
+                    <div class="class-info">
+                        <span class="class-name">
+                            ${this._escapeHtml(vClass.name)}
+                            <span class="class-item-virtual-badge">Complète</span>
+                        </span>
+                        <span class="class-meta">
+                            <span class="class-meta-sources" title="Groupes sources : ${this._escapeHtml(sourceNames)}">
+                                <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                <span>${this._escapeHtml(sourceNames)}</span>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="class-progress-badge" data-class-id="${vClass.id}">
+                        <span class="progress-count">${vClass.studentCount} él.</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            virtualSectionHtml = `
+                <div class="class-dropdown-section-header class-dropdown-section-header--virtual" id="virtualClassesSectionToggle" role="button" tabindex="0" title="Cliquer pour replier ou déplier les classes complètes">
+                    <span class="section-title">
+                        <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                        <span>Classes complètes</span>
+                    </span>
+                    <span class="section-badge">${virtualClasses.length}</span>
+                    <iconify-icon icon="solar:alt-arrow-down-linear" class="section-chevron ${this._isVirtualSectionCollapsed ? 'collapsed' : ''}"></iconify-icon>
+                </div>
+                ${virtualItemsHtml}
+            `;
+        }
+
+        DOM.classDropdownList.innerHTML = ctaBtnHtml + groupsSectionHeaderHtml + classItemsHtml + virtualSectionHtml;
+
+        // Gestion du repliage/dépliage de la section des classes virtuelles
+        const virtualToggle = document.getElementById('virtualClassesSectionToggle');
+        if (virtualToggle) {
+            const handleToggle = (e) => {
+                e.stopPropagation();
+                this._isVirtualSectionCollapsed = !this._isVirtualSectionCollapsed;
+                this.renderClassList();
+            };
+            virtualToggle.addEventListener('click', handleToggle);
+            virtualToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleToggle(e);
+                }
+            });
+        }
 
         // Bind dropdown create class CTA
         document.getElementById('dropdownCreateClassCta')?.addEventListener('click', () => {
@@ -522,7 +597,10 @@ export const ClassUIManager = {
         UI?.updateStats?.();
 
         // Notify seating chart of class change
-        const hasResults = (appState.generatedResults || []).some(r => r.classId === classId);
+        const isVirtualSwitch = ClassManager.isVirtualClass(classId);
+        const hasResults = isVirtualSwitch
+            ? (appState.filteredResults || []).length > 0
+            : (appState.generatedResults || []).some(r => r.classId === classId);
         SeatingChartManager.onClassChange(hasResults);
 
         // Si l'état vide est affiché pour cette classe, déclencher l'apparition fluide en cascade
@@ -560,18 +638,31 @@ export const ClassUIManager = {
         }
 
         const isDemo = currentClass ? ClassManager.isDemoClass(currentClass.id) : false;
+        const isVirtual = currentClass ? ClassManager.isVirtualClass(currentClass.id) : false;
 
         if (DOM.headerClassName) {
             if (currentClass) {
-                DOM.headerClassName.textContent = currentClass.name;
+                DOM.headerClassName.textContent = Utils.formatClassDisplayName(currentClass.name);
             } else {
                 DOM.headerClassName.textContent = 'Nouvelle classe';
             }
         }
 
+        // Mettre à jour l'icône du header chip selon le type de classe
+        if (DOM.headerClassIcon) {
+            DOM.headerClassIcon.innerHTML = isVirtual
+                ? '<iconify-icon icon="solar:diploma-bold"></iconify-icon>'
+                : '<iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>';
+        }
+
         // Afficher ou masquer le badge Démo dans le chip du header
         if (DOM.headerClassTag) {
             DOM.headerClassTag.style.display = isDemo ? 'inline-flex' : 'none';
+        }
+
+        // Afficher ou masquer le badge Classe complète dans le chip du header
+        if (DOM.headerVirtualClassTag) {
+            DOM.headerVirtualClassTag.style.display = isVirtual ? 'inline-flex' : 'none';
         }
 
         // Afficher ou masquer la micro-pastille contextuelle dans la toolbar
@@ -1558,7 +1649,7 @@ export const ClassUIManager = {
                                 
                                 <div class="class-management-info">
                                     <div class="class-info-header">
-                                        <span class="class-management-name">${this._escapeHtml(cls.name)}</span>
+                                        <span class="class-management-name">${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}</span>
                                         ${averageBadge}
                                     </div>
                                     

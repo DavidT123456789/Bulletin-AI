@@ -188,7 +188,9 @@ export const Utils = {
      * @returns {{nom: string, prenom: string}} Objet avec nom et prénom
      */
     parseNomPrenom(fullName) {
-        const words = fullName.trim().split(/\s+/).filter(Boolean);
+        if (!fullName || typeof fullName !== 'string') return { nom: '', prenom: '' };
+        const cleanFullName = fullName.replace(/\s*\([^)]+\)\s*$/g, '').trim();
+        const words = cleanFullName.split(/\s+/).filter(Boolean);
         if (words.length === 0) return { nom: '', prenom: '' };
 
         let lastCapIndex = -1;
@@ -300,17 +302,120 @@ export const Utils = {
      * @param {string} prenom - Prénom
      * @param {boolean} [html=false] - Si true, retourne du HTML avec le prénom entouré d'un span
      * @param {string} [highlightQuery=''] - Optionnel: requête de recherche pour surligner les correspondances
+     * @param {string} [originClass=''] - Optionnel: classe d'origine pour les groupes
      * @returns {string} Le nom formaté
      */
-    formatStudentName(nom, prenom, html = false, highlightQuery = '') {
+    formatStudentName(nom, prenom, html = false, highlightQuery = '', originClass = '') {
         const nomUpper = (nom || '').trim().toUpperCase();
         const prenomClean = (prenom || '').trim();
         if (html) {
             const nomDisplay = highlightQuery ? this.highlightMatch(nomUpper, highlightQuery) : this.escapeHtml(nomUpper);
             const prenomDisplay = highlightQuery ? this.highlightMatch(prenomClean, highlightQuery) : this.escapeHtml(prenomClean);
-            return `<span class="student-nom">${nomDisplay}</span> <span class="student-prenom">${prenomDisplay}</span>`;
+            const displayOrigin = originClass ? this.formatClassDisplayName(originClass) : '';
+            const originBadge = displayOrigin ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${this.escapeHtml(displayOrigin)}">${this.escapeHtml(displayOrigin)}</span>` : '';
+            return `<span class="student-nom">${nomDisplay}</span> <span class="student-prenom">${prenomDisplay}${originBadge}</span>`;
         }
         return `${nomUpper} ${prenomClean}`.trim();
+    },
+
+    /**
+     * Formate un nom de classe selon les conventions typographiques françaises (ex: "3 1" -> "3ᵉ1", "5°2" -> "5ᵉ2")
+     * @param {string} name - Nom brut de la classe
+     * @returns {string} Nom de classe formaté de façon conventionnelle
+     */
+    formatClassDisplayName(name) {
+        if (!name || typeof name !== 'string') return '';
+        const trimmed = name.trim();
+        if (!trimmed) return '';
+
+        // Détection groupe collège : "3 TECHNOLOGIE G1", "3 G1", "4 SCIENCES G2", "3 Groupe 1" -> "3ᵉG1"
+        const collegeGroupMatch = trimmed.match(/^([3-6])\s*(?:(?:eme|ème|ieme|ième|e|°|-)\s*)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        if (collegeGroupMatch) {
+            const level = collegeGroupMatch[1];
+            const groupNum = collegeGroupMatch[2].toUpperCase();
+            return `${level}ᵉG${groupNum}`;
+        }
+
+        // Détection groupe lycée : "2nde G1", "1ere TECHNOLOGIE G2", "Term G1"
+        const lycee2ndeGroup = trimmed.match(/^2\s*(?:nde|de|nd)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        if (lycee2ndeGroup) return `2ⁿᵈG${lycee2ndeGroup[1].toUpperCase()}`;
+
+        const lycee1ereGroup = trimmed.match(/^1\s*(?:ere|ère|er)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        if (lycee1ereGroup) return `1ʳᵉG${lycee1ereGroup[1].toUpperCase()}`;
+
+        const lyceeTermGroup = trimmed.match(/^(?:term(?:inale)?|tle).*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i);
+        if (lyceeTermGroup) return `TleG${lyceeTermGroup[1].toUpperCase()}`;
+
+        // Détection collège standard : 6, 5, 4, 3 suivi d'un numéro, d'une lettre ou d'un nom
+        // Exemples : "3 1", "3-1", "3°1", "3e1", "3eme 1", "3ème 1", "6 A", "4-B", "3 Picasso", "3"
+        const collegeMatch = trimmed.match(/^([3-6])(?:\s*(?:(?:eme|ème|ieme|ième|e|°|-)\s*)?([0-9A-Za-zÀ-ÿ].*))?$/i);
+        if (collegeMatch) {
+            const level = collegeMatch[1];
+            const suffix = collegeMatch[2]?.trim();
+            if (!suffix) return `${level}ᵉ`;
+            const sep = suffix.length > 2 && !/^\d+$/.test(suffix) ? ' ' : '';
+            return `${level}ᵉ${sep}${suffix}`;
+        }
+
+        // Détection Seconde : "2nde 1", "2de 1", "2nd 1"
+        const secondeMatch = trimmed.match(/^2\s*(?:nde|de|nd)\s*([0-9A-Za-zÀ-ÿ].*)$/i);
+        if (secondeMatch) {
+            const suffix = secondeMatch[1].trim();
+            const sep = suffix.length > 2 && !/^\d+$/.test(suffix) ? ' ' : '';
+            return `2ⁿᵈ${sep}${suffix}`;
+        }
+
+        // Détection Première : "1ere 1", "1ère 1", "1er 1"
+        const premiereMatch = trimmed.match(/^1\s*(?:ere|ère|er)\s*([0-9A-Za-zÀ-ÿ].*)$/i);
+        if (premiereMatch) {
+            const suffix = premiereMatch[1].trim();
+            const sep = suffix.length > 2 && !/^\d+$/.test(suffix) ? ' ' : '';
+            return `1ʳᵉ${sep}${suffix}`;
+        }
+
+        // Détection Terminale : "Term 1", "Tle 1", "Terminale 1"
+        const terminaleMatch = trimmed.match(/^(?:term(?:inale)?|tle)\s*([0-9A-Za-zÀ-ÿ].*)$/i);
+        if (terminaleMatch) {
+            const suffix = terminaleMatch[1].trim();
+            const sep = suffix.length > 2 && !/^\d+$/.test(suffix) ? ' ' : '';
+            return `Tle${sep}${suffix}`;
+        }
+
+        return trimmed;
+    },
+
+    /**
+     * Détermine si un nom de classe correspond à un groupe (ex: "3ᵉG1", "3 G1", "3 TECHNOLOGIE G1", "Groupe Techno")
+     * @param {string} name - Nom de la classe
+     * @returns {boolean} True si la classe est un groupe
+     */
+    isGroupClassName(name) {
+        if (!name || typeof name !== 'string') return false;
+        const trimmed = name.trim();
+        if (!trimmed) return false;
+        return (
+            /^[3-6]\s*(?:(?:eme|ème|ieme|ième|e|°|-)\s*)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^2\s*(?:nde|de|nd)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^1\s*(?:ere|ère|er)?.*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /^(?:term(?:inale)?|tle).*?\b(?:g|gr|grp|groupe)\s*([0-9]+|[a-z]\b)/i.test(trimmed) ||
+            /\b(?:groupe|grp)\b/i.test(trimmed)
+        );
+    },
+
+    /**
+     * Récupère la classe d'origine d'un élève si elle est distincte de la classe courante
+     * @param {Object} result - Objet élève
+     * @param {string} [currentClassName=''] - Nom de la classe active
+     * @returns {string} Classe d'origine ou chaîne vide
+     */
+    getOriginClass(result, currentClassName = '') {
+        if (!result) return '';
+        const origin = (result.studentData?.classe || result.classe || result.originClass || '').trim();
+        if (!origin) return '';
+        if (currentClassName && this.normalizeClassName(origin) === this.normalizeClassName(currentClassName)) {
+            return '';
+        }
+        return origin;
     },
 
     /**
@@ -320,7 +425,9 @@ export const Utils = {
      * @returns {string} Clé normalisée (ex: "martin-lucas")
      */
     normalizeName(nom, prenom) {
-        return `${nom || ''} ${prenom || ''}`.trim().toLowerCase().replace(/\s+/g, '-');
+        const cleanNom = (nom || '').replace(/\s*\([^)]+\)/g, '').trim();
+        const cleanPrenom = (prenom || '').replace(/\s*\([^)]+\)/g, '').trim();
+        return `${cleanNom} ${cleanPrenom}`.trim().toLowerCase().replace(/\s+/g, '-');
     },
 
     /**
@@ -334,7 +441,7 @@ export const Utils = {
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '') // Enlever accents
-            .replace(/[°]/g, '') // Enlever symbole degré
+            .replace(/[°ᵉⁿᵈʳ]/g, '') // Enlever symboles degré et exposants ordinaux
             .replace(/(?:eme|ieme|\^e|nde|nd|ere|re)(?![a-z])/gi, '') // Enlever suffixes ordinaux
             .replace(/[^a-z0-9]/gi, '') // Ne garder que lettres et chiffres
             .trim();

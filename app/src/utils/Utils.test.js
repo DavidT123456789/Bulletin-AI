@@ -127,12 +127,27 @@ describe('Utils', () => {
             expect(result.nom).toBe('Martin');
             expect(result.prenom).toBe('');
         });
+
+        it('devrait ignorer les annotations de classe entre parenthèses', () => {
+            const result1 = Utils.parseNomPrenom('BOUKHARI Sami (3 1)');
+            expect(result1.nom).toBe('BOUKHARI');
+            expect(result1.prenom).toBe('Sami');
+
+            const result2 = Utils.parseNomPrenom('ERDOGAN PAUTRAS Helin (3 4)');
+            expect(result2.nom).toBe('ERDOGAN PAUTRAS');
+            expect(result2.prenom).toBe('Helin');
+        });
     });
 
     describe('normalizeName', () => {
         it('devrait normaliser pour comparaison', () => {
             expect(Utils.normalizeName('MARTIN', 'Lucas')).toBe('martin-lucas');
             expect(Utils.normalizeName('Martin', 'LUCAS')).toBe('martin-lucas');
+        });
+
+        it('devrait ignorer les annotations de classe entre parenthèses', () => {
+            expect(Utils.normalizeName('BOUKHARI (3 1)', 'Sami')).toBe('boukhari-sami');
+            expect(Utils.normalizeName('BOUKHARI', 'Sami')).toBe('boukhari-sami');
         });
     });
 
@@ -156,6 +171,117 @@ describe('Utils', () => {
         it('devrait gérer les valeurs vides ou nulles', () => {
             expect(Utils.normalizeClassName('')).toBe('');
             expect(Utils.normalizeClassName(null)).toBe('');
+        });
+
+        it('devrait normaliser les classes avec exposants Unicode (3ᵉ1 -> 31)', () => {
+            expect(Utils.normalizeClassName('3ᵉ1')).toBe('31');
+            expect(Utils.normalizeClassName('6ᵉA')).toBe('6a');
+            expect(Utils.normalizeClassName('2ⁿᵈ3')).toBe('23');
+            expect(Utils.normalizeClassName('1ʳᵉ2')).toBe('12');
+        });
+    });
+
+    describe('formatClassDisplayName', () => {
+        it('devrait formater les classes de collège avec exposant conventionnel ᵉ', () => {
+            expect(Utils.formatClassDisplayName('3 1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('3-1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('3°1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('3e1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('3ème 1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('3eme 1')).toBe('3ᵉ1');
+            expect(Utils.formatClassDisplayName('6 A')).toBe('6ᵉA');
+            expect(Utils.formatClassDisplayName('5°2')).toBe('5ᵉ2');
+            expect(Utils.formatClassDisplayName('4 B')).toBe('4ᵉB');
+            expect(Utils.formatClassDisplayName('3 Picasso')).toBe('3ᵉ Picasso');
+            expect(Utils.formatClassDisplayName('3')).toBe('3ᵉ');
+        });
+
+        it('devrait formater les classes de lycée (2nde, 1ere, Term)', () => {
+            expect(Utils.formatClassDisplayName('2nde 3')).toBe('2ⁿᵈ3');
+            expect(Utils.formatClassDisplayName('1ere 2')).toBe('1ʳᵉ2');
+            expect(Utils.formatClassDisplayName('1ère 1')).toBe('1ʳᵉ1');
+            expect(Utils.formatClassDisplayName('Term 4')).toBe('Tle4');
+        });
+
+        it('devrait formater les groupes de collège et lycée selon la convention (ex: 3ᵉG1, 2ⁿᵈG1)', () => {
+            expect(Utils.formatClassDisplayName('3 TECHNOLOGIE G1')).toBe('3ᵉG1');
+            expect(Utils.formatClassDisplayName('3 G1')).toBe('3ᵉG1');
+            expect(Utils.formatClassDisplayName('3 G 1')).toBe('3ᵉG1');
+            expect(Utils.formatClassDisplayName('4 SCIENCES G2')).toBe('4ᵉG2');
+            expect(Utils.formatClassDisplayName('2nde G1')).toBe('2ⁿᵈG1');
+            expect(Utils.formatClassDisplayName('1ere G2')).toBe('1ʳᵉG2');
+            expect(Utils.formatClassDisplayName('Term G1')).toBe('TleG1');
+        });
+
+        it('devrait préserver les autres dénominations ou valeurs vides', () => {
+            expect(Utils.formatClassDisplayName('CM2 B')).toBe('CM2 B');
+            expect(Utils.formatClassDisplayName('Groupe Techno')).toBe('Groupe Techno');
+            expect(Utils.formatClassDisplayName('')).toBe('');
+            expect(Utils.formatClassDisplayName(null)).toBe('');
+        });
+    });
+
+    describe('isGroupClassName', () => {
+        it('devrait identifier correctement les dénominations de groupes', () => {
+            expect(Utils.isGroupClassName('3 TECHNOLOGIE G1')).toBe(true);
+            expect(Utils.isGroupClassName('3 G1')).toBe(true);
+            expect(Utils.isGroupClassName('3ᵉG1')).toBe(true);
+            expect(Utils.isGroupClassName('3 G 1')).toBe(true);
+            expect(Utils.isGroupClassName('4 SCIENCES G2')).toBe(true);
+            expect(Utils.isGroupClassName('3 Groupe 1')).toBe(true);
+            expect(Utils.isGroupClassName('2nde G1')).toBe(true);
+            expect(Utils.isGroupClassName('1ere G2')).toBe(true);
+            expect(Utils.isGroupClassName('Term G1')).toBe(true);
+            expect(Utils.isGroupClassName('Groupe Techno')).toBe(true);
+        });
+
+        it('devrait identifier comme non-groupe les classes complètes ordinaires', () => {
+            expect(Utils.isGroupClassName('5 1')).toBe(false);
+            expect(Utils.isGroupClassName('5ᵉ1')).toBe(false);
+            expect(Utils.isGroupClassName('3 4')).toBe(false);
+            expect(Utils.isGroupClassName('6 A')).toBe(false);
+            expect(Utils.isGroupClassName('CM2 B')).toBe(false);
+            expect(Utils.isGroupClassName('')).toBe(false);
+            expect(Utils.isGroupClassName(null)).toBe(false);
+        });
+    });
+
+    describe('formatStudentName', () => {
+        it('devrait formater le nom et prénom en texte brut', () => {
+            expect(Utils.formatStudentName('BOUKHARI', 'Sami')).toBe('BOUKHARI Sami');
+            expect(Utils.formatStudentName('martin', 'lucas')).toBe('MARTIN lucas');
+        });
+
+        it('devrait formater en HTML sans badge si aucune classe d\'origine fournie', () => {
+            const html = Utils.formatStudentName('BOUKHARI', 'Sami', true);
+            expect(html).toBe('<span class="student-nom">BOUKHARI</span> <span class="student-prenom">Sami</span>');
+        });
+
+        it('devrait inclure le badge de classe d\'origine en HTML formaté de façon conventionnelle (3ᵉ1)', () => {
+            const html = Utils.formatStudentName('BOUKHARI', 'Sami', true, '', '3 1');
+            expect(html).toContain('<span class="student-origin-class-tag" title="Classe d\'origine : 3ᵉ1">3ᵉ1</span>');
+        });
+    });
+
+    describe('getOriginClass', () => {
+        it('devrait retourner la classe d\'origine si différente de la classe courante', () => {
+            const student = { nom: 'BOUKHARI', prenom: 'Sami', studentData: { classe: '3 1' } };
+            expect(Utils.getOriginClass(student, 'Groupe Techno')).toBe('3 1');
+        });
+
+        it('devrait retourner vide si la classe d\'origine correspond à la classe courante', () => {
+            const student = { nom: 'MARTIN', prenom: 'Lucas', studentData: { classe: '3°1' } };
+            expect(Utils.getOriginClass(student, '3 1')).toBe('');
+        });
+
+        it('devrait fallback sur result.classe ou result.originClass', () => {
+            expect(Utils.getOriginClass({ classe: '3 4' }, 'Groupe')).toBe('3 4');
+            expect(Utils.getOriginClass({ originClass: '3 2' }, 'Groupe')).toBe('3 2');
+        });
+
+        it('devrait retourner vide si aucun élève ou aucune classe', () => {
+            expect(Utils.getOriginClass(null, 'Groupe')).toBe('');
+            expect(Utils.getOriginClass({}, 'Groupe')).toBe('');
         });
     });
 
@@ -181,6 +307,27 @@ describe('Utils', () => {
             expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Foiselle Morgane')).toBe(true);
             expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Mor Foi')).toBe(true);
             expect(Utils.matchesSearch(['FOISELLE', 'Morgane'], 'Lucas')).toBe(false);
+        });
+
+        it('devrait matcher la classe d\'origine dans les champs de recherche', () => {
+            const originClass = '3 1';
+            const displayOriginClass = Utils.formatClassDisplayName(originClass);
+            const fields = [
+                'BOUKHARI',
+                'Sami',
+                originClass,
+                displayOriginClass,
+                `classe ${originClass}`,
+                `classe ${displayOriginClass}`,
+                Utils.normalizeClassName(originClass)
+            ];
+            expect(Utils.matchesSearch(fields, '3 1')).toBe(true);
+            expect(Utils.matchesSearch(fields, '31')).toBe(true);
+            expect(Utils.matchesSearch(fields, '3ᵉ1')).toBe(true);
+            expect(Utils.matchesSearch(fields, 'classe 3 1')).toBe(true);
+            expect(Utils.matchesSearch(fields, 'classe 3ᵉ1')).toBe(true);
+            expect(Utils.matchesSearch(fields, 'Sami 3 1')).toBe(true);
+            expect(Utils.matchesSearch(fields, '3 4')).toBe(false);
         });
     });
 

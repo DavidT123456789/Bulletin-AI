@@ -97,6 +97,29 @@ describe('PronoteTrombiParser Unit Tests', () => {
                 prenom: ''
             });
         });
+
+        it('should clean origin class annotation from group trombinoscopes', () => {
+            expect(splitStudentFullName('BOUKHARI Sami (3 1)')).toEqual({
+                nom: 'BOUKHARI',
+                prenom: 'Sami',
+                originClass: '3 1'
+            });
+            expect(splitStudentFullName('ERDOGAN PAUTRAS Helin (3 1)')).toEqual({
+                nom: 'ERDOGAN PAUTRAS',
+                prenom: 'Helin',
+                originClass: '3 1'
+            });
+            expect(splitStudentFullName('CHARLOT Mila (3 4)')).toEqual({
+                nom: 'CHARLOT',
+                prenom: 'Mila',
+                originClass: '3 4'
+            });
+            expect(splitStudentFullName('BULTE--LAURIA Alexis (6°2)')).toEqual({
+                nom: 'BULTE--LAURIA',
+                prenom: 'Alexis',
+                originClass: '6°2'
+            });
+        });
     });
 
     describe('extractTrombiMetadata', () => {
@@ -113,6 +136,7 @@ describe('PronoteTrombiParser Unit Tests', () => {
             expect(meta.totalStudents).toBe(28);
             expect(meta.schoolName).toBe('Collège Jean Monnet - Epernay');
             expect(meta.schoolYear).toBe('2026-2027');
+            expect(meta.isGroup).toBe(false);
         });
 
         it('should handle alternative class notations', () => {
@@ -120,6 +144,20 @@ describe('PronoteTrombiParser Unit Tests', () => {
             const meta = extractTrombiMetadata(raw);
             expect(meta.className).toBe('6ème B');
             expect(meta.totalStudents).toBe(26);
+            expect(meta.isGroup).toBe(false);
+        });
+
+        it('should extract group name and isGroup flag from group trombinoscope', () => {
+            const raw = `
+                Collège Jean Monnet - Epernay Année scolaire 2026-2027
+                Trombinoscope du groupe 3 TECHNOLOGIE G1
+                20 élèves
+            `;
+            const meta = extractTrombiMetadata(raw);
+            expect(meta.className).toBe('3 TECHNOLOGIE G1');
+            expect(meta.totalStudents).toBe(20);
+            expect(meta.schoolName).toBe('Collège Jean Monnet - Epernay');
+            expect(meta.isGroup).toBe(true);
         });
     });
 
@@ -274,6 +312,52 @@ describe('PronoteTrombiParser Unit Tests', () => {
             // Eric et Marie doivent être alignés sur le même Y
             expect(eric.zone.cy).toBe(marie.zone.cy);
             expect(eric.zone.cy).toBeGreaterThan(300); // Bien en-dessous de Row 1
+        });
+
+        it('should clean class annotations and extract originClass in group trombinoscopes', () => {
+            const mockViewport = {
+                width: 1200,
+                height: 1600,
+                scale: 2,
+                convertToViewportPoint: (x, y) => [x, y]
+            };
+
+            // Simule un trombinoscope de groupe Pronote avec la classe sous le nom
+            const mockItems = [
+                // Col 1 : BOUKHARI Sami, puis (3 1) en-dessous
+                { str: 'BOUKHARI Sami', transform: [0, 0, 0, 0, 200, 300], width: 100, height: 10 },
+                { str: '(3 1)', transform: [0, 0, 0, 0, 200, 320], width: 30, height: 10 },
+                // Col 2 : Multi-lignes ERDOGAN PAUTRAS, Helin, puis (3 1)
+                { str: 'ERDOGAN PAUTRAS', transform: [0, 0, 0, 0, 600, 300], width: 120, height: 10 },
+                { str: 'Helin', transform: [0, 0, 0, 0, 600, 320], width: 40, height: 10 },
+                { str: '(3 1)', transform: [0, 0, 0, 0, 600, 340], width: 30, height: 10 },
+                // Col 1, ligne 2 : CHARLOT Mila avec classe (3 4)
+                { str: 'CHARLOT Mila', transform: [0, 0, 0, 0, 200, 600], width: 90, height: 10 },
+                { str: '(3 4)', transform: [0, 0, 0, 0, 200, 620], width: 30, height: 10 }
+            ];
+
+            const students = extractStudentsFromTextItems(mockItems, mockViewport, 0);
+
+            // Exactement 3 élèves détectés (les (3 1) et (3 4) ne sont pas des élèves)
+            expect(students).toHaveLength(3);
+
+            const sami = students.find(s => s.prenom === 'Sami');
+            expect(sami).toBeDefined();
+            expect(sami.nom).toBe('BOUKHARI');
+            expect(sami.prenom).toBe('Sami');
+            expect(sami.originClass).toBe('3 1');
+
+            const helin = students.find(s => s.prenom === 'Helin');
+            expect(helin).toBeDefined();
+            expect(helin.nom).toBe('ERDOGAN PAUTRAS');
+            expect(helin.prenom).toBe('Helin');
+            expect(helin.originClass).toBe('3 1');
+
+            const mila = students.find(s => s.prenom === 'Mila');
+            expect(mila).toBeDefined();
+            expect(mila.nom).toBe('CHARLOT');
+            expect(mila.prenom).toBe('Mila');
+            expect(mila.originClass).toBe('3 4');
         });
     });
 });

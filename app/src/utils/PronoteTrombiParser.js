@@ -24,10 +24,9 @@ export function normalizeText(str) {
 export function isHeaderOrFooterText(text) {
     const lower = text.toLowerCase();
     return (
-        lower.includes('trombinoscope de la classe') ||
+        lower.includes('trombinoscope') ||
         lower.includes('professeur principal') ||
         lower.includes('année scolaire') ||
-        lower.includes('trombinoscope édité') ||
         lower.includes('page ') ||
         lower.includes('collège') ||
         lower.includes('lycée') ||
@@ -37,18 +36,28 @@ export function isHeaderOrFooterText(text) {
 }
 
 /**
- * Sépare un nom complet d'élève en { nom, prenom }
+ * Sépare un nom complet d'élève en { nom, prenom, [originClass] }
  * Règle Pronote : le nom de famille est en MAJUSCULES, le prénom a une casse mixte (Ex: "AUBERT Noe", "DE OLIVEIRA FERREIRA Bianca")
+ * Nettoie également les annotations de classe d'origine (Ex: "(3 1)", "(3 4)") présentes dans les trombinoscopes de groupes.
  * @param {string} fullStr 
- * @returns {{ nom: string, prenom: string }}
+ * @returns {{ nom: string, prenom: string, originClass?: string }}
  */
 export function splitStudentFullName(fullStr) {
-    const cleaned = normalizeText(fullStr);
+    let cleaned = normalizeText(fullStr);
     if (!cleaned) return { nom: '', prenom: '' };
+
+    let originClass = '';
+    const classMatch = cleaned.match(/\s*\(([^)]+)\)\s*/);
+    if (classMatch) {
+        originClass = normalizeText(classMatch[1]);
+        cleaned = normalizeText(cleaned.replace(/\s*\([^)]+\)\s*/g, ' '));
+    }
 
     const words = cleaned.split(' ').filter(Boolean);
     if (words.length === 1) {
-        return { nom: words[0].toUpperCase(), prenom: '' };
+        const res = { nom: words[0].toUpperCase(), prenom: '' };
+        if (originClass) res.originClass = originClass;
+        return res;
     }
 
     const uppercaseWords = [];
@@ -71,10 +80,12 @@ export function splitStudentFullName(fullStr) {
 
     // Cas nominal : mots majuscules = nom, mots mixtes = prénom
     if (uppercaseWords.length > 0 && mixedcaseWords.length > 0) {
-        return {
+        const res = {
             nom: uppercaseWords.join(' '),
             prenom: mixedcaseWords.join(' ')
         };
+        if (originClass) res.originClass = originClass;
+        return res;
     }
 
     // Fallback si tout est en majuscule ou tout en minuscule :
@@ -82,30 +93,35 @@ export function splitStudentFullName(fullStr) {
     const lastWord = words[words.length - 1];
     const initialWords = words.slice(0, words.length - 1);
 
-    return {
+    const res = {
         nom: initialWords.join(' ').toUpperCase(),
         prenom: lastWord
     };
+    if (originClass) res.originClass = originClass;
+    return res;
 }
 
 /**
  * Extrait les métadonnées depuis le texte de la première page
  * @param {string} pageText 
- * @returns {{ className: string, totalStudents: number, schoolName: string, schoolYear: string }}
+ * @returns {{ className: string, totalStudents: number, schoolName: string, schoolYear: string, isGroup: boolean }}
  */
 export function extractTrombiMetadata(pageText) {
     const result = {
         className: '',
         totalStudents: 0,
         schoolName: '',
-        schoolYear: ''
+        schoolYear: '',
+        isGroup: false
     };
 
     if (!pageText) return result;
 
-    // Détection de la classe : "Trombinoscope de la classe 5 1" ou "Trombinoscope de la classe 6ème B"
-    const classMatch = pageText.match(/Trombinoscope\s+de\s+la\s+classe\s+([^\n\r\t]+)/i);
+    // Détection de la classe ou du groupe :
+    // "Trombinoscope de la classe 5 1", "Trombinoscope du groupe 3 TECHNOLOGIE G1", "Trombinoscope de la division 2nde 3"
+    const classMatch = pageText.match(/Trombinoscope\s+(?:de\s+la\s+classe|du\s+groupe|de\s+la\s+division|de\s+groupe|classe|groupe|division)\s*:?\s*([^\n\r\t]+)/i);
     if (classMatch) {
+        result.isGroup = /groupe/i.test(classMatch[0]);
         let rawClass = classMatch[1].trim();
         // Nettoyer si suivi du nombre d'élèves ou du professeur
         rawClass = rawClass.split(/\d+\s+élèves/i)[0];
@@ -241,15 +257,39 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
             groupedEntries.push(currentEntry);
         }
 
-        // Éliminer les initiales orphelines de remplacement (ex: "ET") situées dans la boîte photo au-dessus du nom
+        // Éliminer les initiales orphelines de remplacement (ex: "ET") et les annotations de classe isolées (ex: "(3 1)")
         const filteredEntries = groupedEntries.filter((entry, idx, arr) => {
             const text = entry.textParts.join(' ').trim();
-            return !(/^[A-Z]{1,3}$/.test(text) && idx < arr.length - 1);
+            if (/^[A-Z]{1,3}$/.test(text) && idx < arr.length - 1) return false;
+            if (/^\s*\([^)]+\)\s*$/.test(text)) return false;
+            return true;
         });
 
         filteredEntries.forEach((entry, rowIndex) => {
-            const rawFullName = entry.textParts.join(' ');
-            const { nom, prenom } = splitStudentFullName(rawFullName);
+            let originClass = '';
+            const cleanedParts = [];
+            for (const part of entry.textParts) {
+                const trimmed = part.trim();
+                const standaloneMatch = trimmed.match(/^\(([^)]+)\)$/);
+                if (standaloneMatch) {
+                    originClass = standaloneMatch[1].trim();
+                } else {
+                    const inlineMatch = trimmed.match(/\s*\(([^)]+)\)\s*$/);
+                    if (inlineMatch) {
+                        originClass = inlineMatch[1].trim();
+                        cleanedParts.push(trimmed.replace(/\s*\([^)]+\)\s*$/, '').trim());
+                    } else {
+                        cleanedParts.push(trimmed);
+                    }
+                }
+            }
+
+            const rawFullName = cleanedParts.join(' ').trim();
+            const split = splitStudentFullName(rawFullName);
+            const nom = split.nom;
+            const prenom = split.prenom;
+            const studentClass = originClass || split.originClass || '';
+
             rawStudents.push({
                 pageIndex,
                 colIndex,
@@ -257,6 +297,8 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
                 rawFullName,
                 nom,
                 prenom,
+                originClass: studentClass || undefined,
+                classe: studentClass || undefined,
                 colCenterX: col.centerX,
                 textY: entry.y
             });
@@ -414,6 +456,8 @@ export function extractStudentsFromTextItems(textItems, viewport, pageIndex = 0,
             rawFullName: student.rawFullName,
             nom: student.nom,
             prenom: student.prenom,
+            originClass: student.originClass || undefined,
+            classe: student.classe || undefined,
             colCenterX: student.colCenterX,
             textY: student.textY,
             photoBounds,
@@ -590,6 +634,7 @@ export async function parsePronoteTrombiPdf(fileOrBuffer, options = {}) {
 
     return {
         isPronoteTrombi: true,
+        isGroup: metadata.isGroup || false,
         className: metadata.className || 'Classe',
         totalStudentsCount: metadata.totalStudents || allStudents.length,
         detectedStudentsCount: allStudents.length,

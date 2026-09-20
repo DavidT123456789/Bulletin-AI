@@ -8,6 +8,7 @@
 import { appState, userSettings } from '../state/State.js';
 import { DBService } from '../services/DBService.js';
 import { detectLevelFromName } from '../utils/LevelDetector.js';
+import { Utils } from '../utils/Utils.js';
 
 let UI;
 let StorageManager;
@@ -169,6 +170,11 @@ export const ClassManager = {
      * @returns {boolean} Succès de la suppression
      */
     async deleteClass(classId, deleteData = true) {
+        if (this.isVirtualClass(classId)) {
+            console.warn(`[ClassManager] Impossible de supprimer une classe virtuelle : ${classId}`);
+            return false;
+        }
+
         const classes = userSettings.academic.classes || [];
         const classIndex = classes.findIndex(c => c.id === classId);
 
@@ -262,28 +268,134 @@ export const ClassManager = {
     },
 
     /**
+     * Vérifie si un identifiant correspond à une classe virtuelle (complète)
+     * @param {string} classId - Identifiant de la classe
+     * @returns {boolean} True si classe virtuelle
+     */
+    isVirtualClass(classId) {
+        return typeof classId === 'string' && classId.startsWith('virtual_');
+    },
+
+    /**
+     * Récupère les classes complètes reconstituées dynamiquement
+     * à partir des classes d'origine des élèves répartis dans les groupes.
+     * @returns {Array<Object>} Liste des classes virtuelles
+     */
+    getVirtualClasses() {
+        const allResults = appState.generatedResults || [];
+        if (allResults.length === 0) return [];
+
+        const classes = this.getAllClasses();
+        const classMap = new Map(classes.map(c => [c.id, c]));
+
+        // Noms normalisés des classes existantes qui ne sont PAS des groupes
+        const realNonGroupNormNames = new Set(
+            classes
+                .filter(c => !Utils.isGroupClassName(c.name))
+                .map(c => Utils.normalizeClassName(c.name))
+        );
+
+        const virtualMap = new Map();
+
+        allResults.forEach(student => {
+            const rawOrigin = (student.studentData?.classe || student.classe || student.originClass || '').trim();
+            if (!rawOrigin) return;
+
+            const normOrigin = Utils.normalizeClassName(rawOrigin);
+            if (!normOrigin) return;
+
+            // Si une classe complète physique standard existe déjà, pas besoin de classe virtuelle
+            if (realNonGroupNormNames.has(normOrigin)) return;
+
+            const parentClass = classMap.get(student.classId);
+            const parentName = parentClass?.name || '';
+            const isParentGroup = Utils.isGroupClassName(parentName);
+            const parentNorm = parentClass ? Utils.normalizeClassName(parentName) : '';
+
+            // L'élève doit provenir d'un groupe ou d'une classe où l'origine est différente du parent
+            if (!isParentGroup && parentNorm === normOrigin) return;
+
+            if (!virtualMap.has(normOrigin)) {
+                virtualMap.set(normOrigin, {
+                    id: `virtual_${normOrigin}`,
+                    name: Utils.formatClassDisplayName(rawOrigin),
+                    rawName: rawOrigin,
+                    normName: normOrigin,
+                    level: detectLevelFromName(rawOrigin),
+                    year: parentClass?.year || this._getCurrentSchoolYear(),
+                    isVirtual: true,
+                    students: [],
+                    sourceGroupIds: new Set()
+                });
+            }
+
+            const entry = virtualMap.get(normOrigin);
+            entry.students.push(student);
+            if (student.classId) {
+                entry.sourceGroupIds.add(student.classId);
+            }
+        });
+
+        if (virtualMap.size === 0) return [];
+
+        return Array.from(virtualMap.values())
+            .map(entry => {
+                const sourceGroupIds = Array.from(entry.sourceGroupIds);
+                const sourceGroupNames = sourceGroupIds
+                    .map(id => classMap.get(id)?.name)
+                    .filter(Boolean)
+                    .map(name => Utils.formatClassDisplayName(name));
+
+                return {
+                    id: entry.id,
+                    name: entry.name,
+                    rawName: entry.rawName,
+                    normName: entry.normName,
+                    level: entry.level,
+                    year: entry.year,
+                    isVirtual: true,
+                    studentCount: entry.students.length,
+                    sourceGroupIds,
+                    sourceGroupNames
+                };
+            })
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    },
+
+    /**
      * Change la classe courante
      * @param {string} classId - ID de la nouvelle classe courante
      * @param {boolean} [refreshUI=true] - Rafraîchir l'interface
      */
     async switchClass(classId) {
-        const classes = userSettings.academic.classes || [];
-        const targetClass = classes.find(c => c.id === classId);
+        const isVirtual = this.isVirtualClass(classId);
+        let targetClass = null;
 
-        if (!targetClass && classId !== null) {
-            console.warn(`[ClassManager] Classe non trouvée: ${classId}`);
-            return;
+        if (isVirtual) {
+            targetClass = this.getVirtualClasses().find(c => c.id === classId);
+            if (!targetClass) {
+                console.warn(`[ClassManager] Classe virtuelle non trouvée: ${classId}`);
+                return;
+            }
+        } else {
+            const classes = userSettings.academic.classes || [];
+            targetClass = classes.find(c => c.id === classId);
+
+            if (!targetClass && classId !== null) {
+                console.warn(`[ClassManager] Classe non trouvée: ${classId}`);
+                return;
+            }
         }
 
         // Mettre à jour le state
         userSettings.academic.currentClassId = classId;
+        appState.currentClassId = classId;
 
         // Filtrer les résultats pour cette classe
         await this._filterResultsByClass(classId);
 
         // Sauvegarder
         StorageManager?.saveAppState();
-        // Le header affiche déjà la classe active, pas besoin de notification
     },
 
     /**
@@ -317,9 +429,9 @@ export const ClassManager = {
      * @returns {Object|null} Classe courante ou null
      */
     getCurrentClass() {
-        const classId = appState.currentClassId;
+        const classId = appState.currentClassId || userSettings.academic.currentClassId;
         if (!classId) return null;
-        return this.getAllClasses().find(c => c.id === classId) || null;
+        return this.getClassById(classId);
     },
 
     /**
@@ -328,6 +440,10 @@ export const ClassManager = {
      * @returns {Object|null} La classe ou null
      */
     getClassById(classId) {
+        if (!classId) return null;
+        if (this.isVirtualClass(classId)) {
+            return this.getVirtualClasses().find(c => c.id === classId) || null;
+        }
         return this.getAllClasses().find(c => c.id === classId) || null;
     },
 
@@ -337,7 +453,9 @@ export const ClassManager = {
      * @returns {boolean} True si classe d'exemple
      */
     isDemoClass(classId = null) {
+        if (classId && this.isVirtualClass(classId)) return false;
         const cls = classId ? this.getClassById(classId) : this.getCurrentClass();
+        if (cls?.isVirtual) return false;
         return cls?.name === 'Classe Exemple' || cls?.isDemo === true;
     },
 
@@ -354,6 +472,15 @@ export const ClassManager = {
         if (!targetClassId) {
             // Mode legacy: retourner tous les résultats sans classId
             return allResults.filter(r => !r.classId);
+        }
+
+        if (this.isVirtualClass(targetClassId)) {
+            const vClass = this.getVirtualClasses().find(c => c.id === targetClassId);
+            if (!vClass) return [];
+            return allResults.filter(r => {
+                const origin = r.studentData?.classe || r.classe || r.originClass || '';
+                return origin && Utils.normalizeClassName(origin) === vClass.normName;
+            });
         }
 
         return allResults.filter(r => r.classId === targetClassId);
@@ -588,6 +715,16 @@ export const ClassManager = {
         if (!classId) {
             // Pas de filtre, garder tous les résultats
             appState.filteredResults = [...allResults];
+        } else if (this.isVirtualClass(classId)) {
+            const vClass = this.getVirtualClasses().find(c => c.id === classId);
+            if (vClass) {
+                appState.filteredResults = allResults.filter(r => {
+                    const origin = r.studentData?.classe || r.classe || r.originClass || '';
+                    return origin && Utils.normalizeClassName(origin) === vClass.normName;
+                });
+            } else {
+                appState.filteredResults = [];
+            }
         } else {
             // Filtrer par classId
             appState.filteredResults = allResults.filter(r => r.classId === classId);

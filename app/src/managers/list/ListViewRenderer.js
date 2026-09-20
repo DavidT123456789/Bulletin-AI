@@ -3,7 +3,7 @@
  * Handles HTML rendering and DOM updates for the List View
  */
 
-import { appState } from '../../state/State.js';
+import { appState, userSettings } from '../../state/State.js';
 import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
@@ -43,12 +43,14 @@ export const ListViewRenderer = {
         const isSelected = ListSelectionManager.selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
         const searchQuery = document.getElementById('searchInput')?.value || '';
+        const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+        const originClass = Utils.getOriginClass(result, currentClassName);
 
         tr.innerHTML = `
             <td class="student-name-cell">
                 <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                     ${avatarHTML}
-                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
+                    <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
                 </div>
             </td>
             <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
@@ -133,9 +135,11 @@ export const ListViewRenderer = {
             }
 
             const searchQuery = document.getElementById('searchInput')?.value || '';
+            const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+            const originClass = Utils.getOriginClass(result, currentClassName);
             identityWrapper.innerHTML = `
                 ${avatarHTML}
-                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
+                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
             `;
         }
 
@@ -379,13 +383,15 @@ export const ListViewRenderer = {
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
                 const searchQuery = document.getElementById('searchInput')?.value || '';
+                const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+                const originClass = Utils.getOriginClass(result, currentClassName);
 
                 html += `
                     <tr data-student-id="${result.id}" class="student-row"${tabIndexAttr}>
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
                                 ${avatarHTML}
-                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery)}</span>
+                                <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originClass)}</span>
                             </div>
                         </td>
                         <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>

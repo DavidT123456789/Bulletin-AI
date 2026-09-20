@@ -1028,6 +1028,37 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         TrombinoscopeManager._removeImage();
         expect(badge.textContent).toBe('4°3');
     });
+
+    it('should display Groupe in badge when isGroup is true', async () => {
+        const { parsePronoteTrombiPdf } = await import('../utils/PronoteTrombiParser.js');
+
+        parsePronoteTrombiPdf.mockResolvedValueOnce({
+            className: '3 TECHNOLOGIE G1',
+            isGroup: true,
+            schoolYear: '2026-2027',
+            studentsCount: 1,
+            students: [
+                { id: 's1', nom: 'BOUKHARI', prenom: 'Sami', originClass: '3 1' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 1,
+                canvas: { toDataURL: () => 'data:image/jpeg;base64,data' },
+                zones: [{ id: 1, cx: 200, cy: 300, r: 60, studentId: 's1' }]
+            }]
+        });
+
+        TrombinoscopeManager.open();
+        const badge = document.getElementById('trombiClassBadge');
+
+        const mockFile = new File(['fake content'], 'groupe.pdf', { type: 'application/pdf' });
+        await TrombinoscopeManager._loadPdf(mockFile);
+
+        expect(badge.textContent).toBe('Groupe 3 TECHNOLOGIE G1');
+        TrombinoscopeManager._removeImage();
+    });
 });
 
 

@@ -221,9 +221,19 @@ export const StorageManager = {
 
             const currentClassId = userSettings.academic.currentClassId;
             if (currentClassId) {
-                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
-                    r => r.classId === currentClassId
-                );
+                if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
+                    const normOrigin = currentClassId.replace('virtual_', '');
+                    runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
+                        r => {
+                            const origin = r.studentData?.classe || r.classe || r.originClass || '';
+                            return origin && Utils.normalizeClassName(origin) === normOrigin;
+                        }
+                    );
+                } else {
+                    runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
+                        r => r.classId === currentClassId
+                    );
+                }
             } else {
                 runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
                     r => !r.classId

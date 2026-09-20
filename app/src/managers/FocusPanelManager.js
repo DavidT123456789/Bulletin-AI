@@ -1818,17 +1818,8 @@ export const FocusPanelManager = {
             // Edit mode will enable interactivity via FocusPanelHeader.toggleEditMode()
         }
 
-        // === 1. HEADER: Student Name ===
-        const nameEl = document.getElementById('focusStudentName');
-        if (nameEl) {
-            nameEl.innerHTML = `
-                <span class="focus-name-details">
-                    <span class="focus-name-nom">${Utils.escapeHtml(result.nom).toUpperCase()}</span>
-                    <span class="focus-name-prenom">${Utils.escapeHtml(result.prenom)}</span>
-                </span>
-                <iconify-icon icon="solar:pen-bold" class="focus-name-edit-icon"></iconify-icon>
-            `;
-        }
+        // === 1. HEADER: Student Name & Badges ===
+        FocusPanelHeader.updateHeaderName(result);
 
         // === 2. HEADER: Status Badges ===
         FocusPanelHeader.renderStatusBadges(result.studentData.statuses || []);

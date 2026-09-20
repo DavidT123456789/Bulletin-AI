@@ -41,11 +41,28 @@ export const CrossClassSearchManager = {
         let totalCount = 0;
 
         allResults.forEach(result => {
-            // Ignorer la classe courante
-            if (result.classId === currentClassId || !result.classId) return;
+            // Ignorer la classe courante (physique ou virtuelle)
+            if (currentClassId?.startsWith('virtual_')) {
+                const normVirtual = currentClassId.replace('virtual_', '');
+                const studentOriginNorm = Utils.normalizeClassName(result.studentData?.classe || result.classe || '');
+                if (studentOriginNorm === normVirtual) return;
+            } else if (result.classId === currentClassId || !result.classId) {
+                return;
+            }
 
-            // Recherche flexible sur nom, prénom (accent-insensitive & word-order agnostic)
-            if (!Utils.matchesSearch([result.nom, result.prenom], searchTerm)) return;
+            // Recherche flexible sur nom, prénom et classe d'origine (accent-insensitive & word-order agnostic)
+            const originClass = result.studentData?.classe || result.classe || '';
+            const displayOriginClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
+            const searchFields = [
+                result.nom,
+                result.prenom,
+                originClass,
+                displayOriginClass,
+                originClass ? `classe ${originClass}` : '',
+                displayOriginClass ? `classe ${displayOriginClass}` : '',
+                originClass ? Utils.normalizeClassName(originClass) : ''
+            ];
+            if (!Utils.matchesSearch(searchFields, searchTerm)) return;
 
             // Récupérer les infos de la classe
             const classInfo = ClassManager.getClassById(result.classId);
@@ -67,6 +84,7 @@ export const CrossClassSearchManager = {
                 id: result.id,
                 nom: result.nom,
                 prenom: result.prenom,
+                originClass: originClass,
                 grade: grade,
                 studentPhoto: result.studentPhoto
             });
@@ -174,6 +192,10 @@ export const CrossClassSearchManager = {
                 const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm');
                 const nomHighlighted = Utils.highlightMatch(student.nom, this._lastTerm);
                 const prenomHighlighted = Utils.highlightMatch(student.prenom, this._lastTerm);
+                const displayClass = student.originClass ? Utils.formatClassDisplayName(student.originClass) : '';
+                const originClassTag = (displayClass && Utils.normalizeClassName(student.originClass) !== Utils.normalizeClassName(group.className))
+                    ? ` <span class="student-origin-class-tag" title="Classe d'origine : ${this._escapeHtml(displayClass)}">${this._escapeHtml(displayClass)}</span>`
+                    : '';
 
                 html += `
                     <div class="cross-class-result" 
@@ -184,7 +206,7 @@ export const CrossClassSearchManager = {
                         ${avatarHtml}
                         <span class="cross-class-name">
                             ${nomHighlighted} 
-                            <span class="cross-class-prenom">${prenomHighlighted}</span>
+                            <span class="cross-class-prenom">${prenomHighlighted}</span>${originClassTag}
                         </span>
                         <div class="cross-class-overlay">
                             <iconify-icon icon="ph:arrow-right-bold"></iconify-icon>
