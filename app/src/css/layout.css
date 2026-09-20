@@ -1079,111 +1079,27 @@ body.is-cloud-syncing label {
     color: var(--text-primary);
 }
 
-/* Cloud Sync Status (Centered below buttons) */
-.cloud-sync-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 6px 12px 2px 12px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    letter-spacing: 0.01em;
-    user-select: none;
-    text-align: center;
-    cursor: default;
-    transition: opacity var(--transition-fast);
-}
-
-.cloud-sync-status:hover {
-    opacity: 0.9;
-}
-
-.cloud-status-icon {
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: color var(--transition-fast);
-}
-
-.cloud-status-text {
-    white-space: nowrap;
-}
-
-.cloud-sync-status.in-sync .cloud-status-icon {
+/* Cloud button hints — state variants */
+.cloud-btn-hint.hint-in-sync {
     color: var(--success-color);
 }
 
-.cloud-sync-status.in-sync .cloud-status-text {
-    color: var(--success-color);
-}
-
-[data-theme="dark"] .cloud-sync-status.in-sync .cloud-status-icon {
+[data-theme="dark"] .cloud-btn-hint.hint-in-sync {
     color: var(--success-bright);
 }
 
-[data-theme="dark"] .cloud-sync-status.in-sync .cloud-status-text {
-    color: var(--success-bright);
-}
-
-.cloud-sync-status.local-changes .cloud-status-icon {
-    color: var(--warning-color);
-}
-
-.cloud-sync-status.local-changes .cloud-status-text {
-    color: var(--warning-dark);
-}
-
-[data-theme="dark"] .cloud-sync-status.local-changes .cloud-status-icon {
-    color: var(--warning-bright);
-}
-
-[data-theme="dark"] .cloud-sync-status.local-changes .cloud-status-text {
-    color: var(--warning-bright);
-}
-
-.cloud-sync-status.cloud-changes .cloud-status-icon {
+.cloud-btn-hint.hint-syncing {
     color: var(--primary-color);
+    animation: hint-pulse 1.2s ease-in-out infinite;
 }
 
-[data-theme="dark"] .cloud-sync-status.cloud-changes .cloud-status-icon {
+[data-theme="dark"] .cloud-btn-hint.hint-syncing {
     color: var(--color-sky-bright);
 }
 
-.cloud-sync-status.cloud-changes .cloud-status-text {
-    color: var(--primary-hover);
-}
-
-[data-theme="dark"] .cloud-sync-status.cloud-changes .cloud-status-text {
-    color: var(--color-sky-bright);
-}
-
-.cloud-sync-status.conflict .cloud-status-icon {
-    color: var(--warning-color);
-}
-
-[data-theme="dark"] .cloud-sync-status.conflict .cloud-status-icon {
-    color: var(--warning-bright);
-}
-
-.cloud-sync-status.conflict .cloud-status-text {
-    color: var(--warning-dark);
-}
-
-[data-theme="dark"] .cloud-sync-status.conflict .cloud-status-text {
-    color: var(--warning-bright);
-}
-
-.cloud-sync-status.syncing .cloud-status-icon {
-    color: var(--primary-color);
-    animation: icon-spin 1.2s linear infinite;
-}
-
-[data-theme="dark"] .cloud-sync-status.syncing .cloud-status-icon {
-    color: var(--primary-bright);
+@keyframes hint-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
 }
 
 /* Cloud Save/Load Menu Items (Unified with standard .menu-item) */

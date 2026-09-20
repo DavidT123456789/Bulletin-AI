@@ -178,9 +178,6 @@ export const SyncService = {
             const reconnectBtn = document.getElementById('cloudReconnectBtn');
             const connectBtn = document.getElementById('cloudConnectBtn');
             const separator = document.getElementById('cloudSeparator');
-            const statusEl = document.getElementById('cloudSyncStatus');
-            const statusTextEl = document.getElementById('cloudSyncStatusText');
-
             if (!saveBtn) return;
 
             // Reset all sync state classes
@@ -271,17 +268,19 @@ export const SyncService = {
             if (state === 'connected') {
                 const syncState = this._computeSyncState();
                 this._lastSyncState = syncState;
-                this._applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl);
+                this._applySyncStateUI(syncState, saveBtn, loadBtn);
             } else if (state === 'syncing') {
-                if (statusEl) {
-                    statusEl.style.display = 'flex';
-                    statusEl.className = 'cloud-sync-status syncing';
-                    const iconEl = statusEl.querySelector('.cloud-status-icon');
-                    if (iconEl) iconEl.setAttribute('icon', 'solar:spinner-bold-duotone');
-                    if (statusTextEl) statusTextEl.textContent = 'Synchronisation...';
+                const saveHint = document.getElementById('cloudSaveHint');
+                if (saveHint) {
+                    saveHint.style.display = 'block';
+                    saveHint.textContent = 'Synchronisation...';
+                    saveHint.className = 'cloud-btn-hint hint-syncing';
                 }
             } else {
-                if (statusEl) statusEl.style.display = 'none';
+                const saveHint = document.getElementById('cloudSaveHint');
+                const loadHint = document.getElementById('cloudLoadHint');
+                if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
+                if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
             }
 
             // Update menu reminder dot based on syncState
@@ -336,52 +335,41 @@ export const SyncService = {
      * Apply sync state to UI elements (unified header status + button classes).
      * @private
      */
-    _applySyncStateUI(syncState, saveBtn, loadBtn, statusEl, statusTextEl) {
-        const lMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-        const statusIconEl = statusEl?.querySelector('.cloud-status-icon');
+    _applySyncStateUI(syncState, saveBtn, loadBtn) {
         const saveHint = document.getElementById('cloudSaveHint');
         const loadHint = document.getElementById('cloudLoadHint');
 
-        if (saveHint) {
-            saveHint.style.display = 'none';
-            saveHint.textContent = '';
-        }
-        if (loadHint) {
-            loadHint.style.display = 'none';
-            loadHint.textContent = '';
-        }
+        saveBtn?.classList.remove('cloud-action-recommended');
+        loadBtn?.classList.remove('cloud-action-recommended');
 
-        if (loadBtn) {
-            loadBtn.setAttribute('data-tooltip', 'Récupérer vos données depuis le Cloud');
-        }
+        if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; saveHint.className = 'cloud-btn-hint'; }
+        if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; loadHint.className = 'cloud-btn-hint'; }
 
-        let iconName = 'solar:cloud-check-linear';
-        let tooltipText = '';
+        if (loadBtn) loadBtn.setAttribute('data-tooltip', 'Récupérer vos données depuis le Cloud');
 
         switch (syncState) {
             case 'in-sync':
-                if (statusEl) statusEl.style.display = 'flex';
-                if (statusTextEl) statusTextEl.textContent = 'Cloud synchronisé';
-                iconName = 'solar:cloud-check-linear';
-                tooltipText = 'Vos données locales et votre sauvegarde Cloud sont synchronisées.';
+                if (saveHint) {
+                    saveHint.style.display = 'block';
+                    saveHint.textContent = '✓ À jour';
+                    saveHint.classList.add('hint-in-sync');
+                }
                 break;
 
             case 'local-changes':
-                if (statusEl) statusEl.style.display = 'none';
                 if (saveHint) {
                     saveHint.style.display = 'block';
                     saveHint.textContent = 'Modifications locales';
                 }
-                saveBtn.classList.add('cloud-action-recommended');
+                saveBtn?.classList.add('cloud-action-recommended');
                 break;
 
             case 'cloud-changes':
-                if (statusEl) statusEl.style.display = 'none';
                 if (loadHint) {
                     loadHint.style.display = 'block';
                     loadHint.textContent = 'Version Cloud plus récente';
                 }
-                if (loadBtn) loadBtn.classList.add('cloud-action-recommended');
+                loadBtn?.classList.add('cloud-action-recommended');
                 break;
 
             case 'conflict':
@@ -393,25 +381,7 @@ export const SyncService = {
                     loadHint.style.display = 'block';
                     loadHint.textContent = 'Version distante';
                 }
-                if (statusEl) {
-                    statusEl.style.display = 'flex';
-                    if (statusTextEl) statusTextEl.textContent = 'Versions divergentes';
-                    iconName = 'solar:danger-triangle-linear';
-                    tooltipText = 'Des modifications existent en local et sur le Cloud. Choisissez quelle version conserver.';
-                }
                 break;
-        }
-
-        if (statusIconEl) {
-            statusIconEl.setAttribute('icon', iconName);
-        }
-
-        if (statusEl) {
-            statusEl.className = `cloud-sync-status tooltip ${syncState}`;
-            statusEl.dataset.tooltip = tooltipText;
-            if (statusEl._tippy) {
-                statusEl._tippy.setContent(tooltipText);
-            }
         }
     },
 
