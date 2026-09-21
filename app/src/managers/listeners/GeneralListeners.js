@@ -588,9 +588,8 @@ export const GeneralListeners = {
     initCloudReminder() {
         if (!localStorage.getItem('bulletin_sync_provider')) return;
 
-        if (this._hasUnsyncedChanges()) {
-            DOM.headerMenuBtn?.classList.add('has-cloud-reminder');
-        }
+        const needsAction = this._hasUnsyncedChanges();
+        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
     }
 };
 

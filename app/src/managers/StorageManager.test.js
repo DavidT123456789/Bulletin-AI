@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StorageManager } from './StorageManager.js';
+import { userSettings, runtimeState } from '../state/State.js';
 
 // Mock DBService
 vi.mock('../services/DBService.js', () => ({
@@ -265,6 +266,39 @@ describe('StorageManager', () => {
             const hash = StorageManager.computeCurrentDataHash();
             expect(hash.length).toBe(16);
             expect(/^[0-9a-f]{16}$/.test(hash)).toBe(true);
+        });
+
+        it('should keep data hash invariant when only _lastModified or seatingUpdatedAt changes', () => {
+            runtimeState.data.generatedResults = [{
+                id: 'student_1',
+                _lastModified: 1000,
+                studentData: {
+                    nom: 'Dupont',
+                    periods: {
+                        T1: { grade: 14, appreciation: 'Très bon travail', _lastModified: 1000 }
+                    }
+                }
+            }];
+            userSettings.academic.classes = [{
+                id: 'class_1',
+                name: '3ème A',
+                seatingUpdatedAt: 1000
+            }];
+
+            const initialHash = StorageManager.computeCurrentDataHash();
+
+            // Mutate ONLY timestamps
+            runtimeState.data.generatedResults[0]._lastModified = 9999999;
+            runtimeState.data.generatedResults[0].studentData.periods.T1._lastModified = 8888888;
+            userSettings.academic.classes[0].seatingUpdatedAt = 7777777;
+
+            const newHash = StorageManager.computeCurrentDataHash();
+            expect(newHash).toBe(initialHash);
+
+            // Mutate real data -> hash MUST change
+            runtimeState.data.generatedResults[0].studentData.periods.T1.appreciation = 'Travail exceptionnel';
+            const changedHash = StorageManager.computeCurrentDataHash();
+            expect(changedHash).not.toBe(initialHash);
         });
     });
 });

@@ -601,8 +601,33 @@ export const StorageManager = {
         const settings = this._buildSettingsSnapshot();
         const dataSettings = { ...settings };
         UI_AND_NAV_KEYS.forEach(k => delete dataSettings[k]);
-        const stringifiedResults = runtimeState.data.generatedResults ? JSON.stringify(runtimeState.data.generatedResults) : '[]';
-        const rawData = JSON.stringify({ version: APP_VERSION, settings: dataSettings }) + stringifiedResults;
+
+        // Exclure les horodatages transitoires des classes
+        if (Array.isArray(dataSettings.classes)) {
+            dataSettings.classes = dataSettings.classes.map(c => {
+                const { seatingUpdatedAt, ...rest } = c;
+                return rest;
+            });
+        }
+
+        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified)
+        const cleanResults = (runtimeState.data.generatedResults || []).map(r => {
+            const clean = { ...r };
+            delete clean._lastModified;
+            if (clean.studentData?.periods) {
+                const cleanPeriods = {};
+                for (const [p, pData] of Object.entries(clean.studentData.periods)) {
+                    if (pData) {
+                        const { _lastModified, ...pRest } = pData;
+                        cleanPeriods[p] = pRest;
+                    }
+                }
+                clean.studentData = { ...clean.studentData, periods: cleanPeriods };
+            }
+            return clean;
+        });
+
+        const rawData = JSON.stringify(dataSettings) + JSON.stringify(cleanResults);
         return this._hashString(rawData);
     },
 
@@ -679,10 +704,10 @@ export const StorageManager = {
             this._lastDataHash = currentDataHash;
         } else {
             this._lastDataHash = currentDataHash;
-            // On first load, if we have a sync time but no sync hash, initialize it (only if clean)
+            // On first load, if we have a sync time and state was clean, align sync hash
             const lastSync = parseInt(localStorage.getItem('bulletin_last_sync') || '0');
             const lastMod = parseInt(localStorage.getItem('bulletin_last_modified') || '0');
-            if (lastSync > 0 && !lastSyncHash && lastMod <= lastSync) {
+            if (lastSync > 0 && lastMod <= lastSync) {
                 localStorage.setItem('bulletin_last_sync_hash', currentDataHash);
             }
         }
@@ -1012,7 +1037,8 @@ export const StorageManager = {
                     currentAIModel: settings.currentAIModel || appState.currentAIModel,
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
-                    seatingGrid: settings.seatingGrid || appState.seatingGrid
+                    seatingGrid: settings.seatingGrid || appState.seatingGrid,
+                    journalThreshold: settings.journalThreshold ?? appState.journalThreshold
                 });
                 stats.settingsImported = true;
             }
@@ -1084,19 +1110,23 @@ export const StorageManager = {
                             }
                         });
 
-                        runtimeState.data.generatedResults = existingResults;
+                        let mergedResults = this.migrateData(existingResults);
+                        mergedResults = Utils.deduplicateResults(mergedResults);
+                        runtimeState.data.generatedResults = mergedResults;
                         await DBService.clear('generatedResults');
-                        await DBService.putAll('generatedResults', existingResults);
+                        await DBService.putAll('generatedResults', mergedResults);
                     } else {
                         const newResults = importedResults.map(r => ({
                             ...r,
                             _lastModified: r._lastModified || Date.now()
                         }));
-                        runtimeState.data.generatedResults = newResults;
+                        let cleanResults = this.migrateData(newResults);
+                        cleanResults = Utils.deduplicateResults(cleanResults);
+                        runtimeState.data.generatedResults = cleanResults;
 
                         await DBService.clear('generatedResults');
-                        await DBService.putAll('generatedResults', newResults);
-                        stats.imported = newResults.length;
+                        await DBService.putAll('generatedResults', cleanResults);
+                        stats.imported = cleanResults.length;
                     }
                 } else if (!options.mergeData) {
                     runtimeState.data.generatedResults = [];

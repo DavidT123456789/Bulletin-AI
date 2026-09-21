@@ -439,13 +439,16 @@ export const SeatingChartManager = {
 
         if (isList) {
             const finishList = () => {
+                const wasActive = this._isActive;
                 wrapper.dataset.view = 'list';
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
                 this._isActive = false;
                 this._clearSelection();
-                this._savePositionsToState();
-                this._saveGridConfig();
+                if (wasActive) {
+                    this._savePositionsToState(true);
+                    this._saveGridConfig();
+                }
                 this._closeConfigPopover();
                 this._closePlacementPopover();
             };
@@ -524,7 +527,14 @@ export const SeatingChartManager = {
         if (targetView === 'plan' && hasResults) {
             this.switchToView('plan', { silent: true, immediate: true });
         } else {
-            this.switchToView('list', { silent: true, immediate: true });
+            if (targetView === 'plan' && !hasResults) {
+                appState.activeView = 'list';
+            }
+            const wrapper = document.querySelector('.main-content-wrapper');
+            if (wrapper) wrapper.dataset.view = 'list';
+            const viewEl = document.getElementById('seatingChartView');
+            if (viewEl) viewEl.style.display = 'none';
+            this._isActive = false;
         }
     },
 
@@ -1074,16 +1084,30 @@ export const SeatingChartManager = {
     },
 
     _saveGridConfig() {
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const locked = this._isLocked;
+        const orientation = this._orientation || 'teacher';
+        const currentGrid = appState.seatingGrid;
+
+        const isSame = currentGrid &&
+            currentGrid.rows === rows &&
+            currentGrid.cols === cols &&
+            currentGrid.locked === locked &&
+            currentGrid.orientation === orientation;
+
+        if (isSame) return;
+
         appState.seatingGrid = {
-            rows: this._getRows(),
-            cols: this._getCols(),
-            locked: this._isLocked,
-            orientation: this._orientation || 'teacher',
-            specialLayout: appState.seatingGrid?.specialLayout || {}
+            rows,
+            cols,
+            locked,
+            orientation,
+            specialLayout: currentGrid?.specialLayout || {}
         };
         const currentClass = this._getCurrentClass();
         if (currentClass) {
-            currentClass.seatingLocked = this._isLocked;
+            currentClass.seatingLocked = locked;
         }
         StorageManager.saveAppState();
     },
@@ -1432,31 +1456,44 @@ export const SeatingChartManager = {
 
     _savePositionsToState(preserveOutOfBounds = false) {
         const placed = this._getPlacedMap();
+        let anyChanged = false;
 
         this._students.forEach(s => {
             const result = appState.generatedResults?.find(r => r.id === s.id);
             if (!result) return;
 
             const pos = placed[s.id];
+            let newPos = null;
             if (pos) {
-                result.seatingPosition = {
+                newPos = {
                     row: pos.row,
                     col: pos.col,
                     pinned: result.seatingPosition?.pinned || false
                 };
-            } else if (!preserveOutOfBounds || !result.seatingPosition) {
-                result.seatingPosition = null;
+            } else if (preserveOutOfBounds && result.seatingPosition) {
+                newPos = result.seatingPosition;
             }
-            result._lastModified = Date.now();
-            s.seatingPosition = result.seatingPosition;
+
+            const oldPos = result.seatingPosition;
+            const changed = (!oldPos && newPos) ||
+                (oldPos && !newPos) ||
+                (oldPos && newPos && (oldPos.row !== newPos.row || oldPos.col !== newPos.col || (oldPos.pinned || false) !== (newPos.pinned || false)));
+
+            if (changed) {
+                anyChanged = true;
+                result.seatingPosition = newPos;
+                result._lastModified = Date.now();
+                s.seatingPosition = newPos;
+            }
         });
 
-        const currentClass = this._getCurrentClass();
-        if (currentClass) {
-            currentClass.seatingUpdatedAt = Date.now();
+        if (anyChanged) {
+            const currentClass = this._getCurrentClass();
+            if (currentClass) {
+                currentClass.seatingUpdatedAt = Date.now();
+            }
+            StorageManager.saveAppState();
         }
-
-        StorageManager.saveAppState();
     },
 
     // ========================================================================

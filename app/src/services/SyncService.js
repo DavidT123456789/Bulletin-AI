@@ -705,6 +705,11 @@ export const SyncService = {
      * @private
      */
     async _getLocalData() {
+        const results = runtimeState.data.generatedResults || [];
+        results.forEach(r => {
+            if (!r._lastModified) r._lastModified = Date.now();
+        });
+
         return {
             _meta: {
                 appVersion: APP_VERSION,
@@ -715,10 +720,7 @@ export const SyncService = {
             settings: StorageManager.getExportableSettings(),
             classes: userSettings.academic.classes || [],
             currentClassId: userSettings.academic.currentClassId,
-            generatedResults: (runtimeState.data.generatedResults || []).map(r => ({
-                ...r,
-                _lastModified: r._lastModified || Date.now()
-            }))
+            generatedResults: results
         };
     },
 
