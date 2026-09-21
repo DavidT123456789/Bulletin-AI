@@ -943,7 +943,7 @@ export const SeatingChartManager = {
     _toggleOrientation() {
         const next = this._orientation === 'student' ? 'teacher' : 'student';
         this._applyOrientation(next, true);
-        this._saveGridConfig();
+        localStorage.setItem('bulletin_seating_orientation', next);
     },
 
     _applyOrientation(orientation, animate = false) {
@@ -1074,7 +1074,7 @@ export const SeatingChartManager = {
         const config = appState.seatingGrid;
         const rows = config?.rows || DEFAULT_ROWS;
         const cols = config?.cols || DEFAULT_COLS;
-        this._orientation = config?.orientation || 'teacher';
+        this._orientation = localStorage.getItem('bulletin_seating_orientation') || config?.orientation || 'teacher';
         this._applyOrientation(this._orientation);
 
         const rowSlider = document.getElementById('scRowsSlider');
@@ -1087,14 +1087,12 @@ export const SeatingChartManager = {
         const rows = this._getRows();
         const cols = this._getCols();
         const locked = this._isLocked;
-        const orientation = this._orientation || 'teacher';
         const currentGrid = appState.seatingGrid;
 
         const isSame = currentGrid &&
             currentGrid.rows === rows &&
             currentGrid.cols === cols &&
-            currentGrid.locked === locked &&
-            currentGrid.orientation === orientation;
+            currentGrid.locked === locked;
 
         if (isSame) return;
 
@@ -1102,7 +1100,6 @@ export const SeatingChartManager = {
             rows,
             cols,
             locked,
-            orientation,
             specialLayout: currentGrid?.specialLayout || {}
         };
         const currentClass = this._getCurrentClass();

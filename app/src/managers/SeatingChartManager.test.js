@@ -409,7 +409,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         SeatingChartManager._toggleOrientation();
         expect(SeatingChartManager._orientation).toBe('student');
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
-        expect(appState.seatingGrid.orientation).toBe('student');
+        expect(localStorage.getItem('bulletin_seating_orientation')).toBe('student');
         expect(document.getElementById('scDesk').textContent).toContain('Tableau');
         expect(document.getElementById('scDesk').textContent).not.toContain('Vue élèves');
         expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(true);
@@ -419,7 +419,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         SeatingChartManager._toggleOrientation();
         expect(SeatingChartManager._orientation).toBe('teacher');
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('teacher');
-        expect(appState.seatingGrid.orientation).toBe('teacher');
+        expect(localStorage.getItem('bulletin_seating_orientation')).toBe('teacher');
         expect(document.getElementById('scDesk').textContent).toBe('Tableau');
         expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(false);
         expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
@@ -443,11 +443,16 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(cells[cells.length - 1].dataset.col).toBe('0');
     });
 
-    it('devrait restaurer l\'orientation depuis la configuration sauvegardée', () => {
-        appState.seatingGrid.orientation = 'student';
+    it('devrait restaurer l\'orientation depuis localStorage ou la configuration sauvegardée', () => {
+        localStorage.setItem('bulletin_seating_orientation', 'student');
         SeatingChartManager._loadGridConfig();
         expect(SeatingChartManager._orientation).toBe('student');
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('student');
+
+        localStorage.removeItem('bulletin_seating_orientation');
+        appState.seatingGrid.orientation = 'student';
+        SeatingChartManager._loadGridConfig();
+        expect(SeatingChartManager._orientation).toBe('student');
     });
 
     it('devrait basculer l\'orientation au clic et au clavier sur le Tableau (scDesk)', () => {
