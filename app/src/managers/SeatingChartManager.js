@@ -171,10 +171,12 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-                    <!-- Top Status Capsule (Unified: consultation status or edit capacity) -->
+                    <!-- Top Status Capsule (Consultation Mode: on the left next to sidebar origin) -->
+                    <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
+
+                    <!-- Top Capacity Capsule (Edit Mode: on the right above grid) -->
                     <div class="sc-floating-status" id="scFloatingStatus">
                         <div class="sc-toolbar-info" id="scFooterInfo"><span class="sc-edit-hint">Calcul des places…</span></div>
-                        <div class="sc-status-pill" id="scStatusPill" role="status"></div>
                     </div>
 
                     <div class="sc-classroom-board" id="scClassroomBoard">
@@ -192,9 +194,6 @@ export const SeatingChartManager = {
                     </button>
                     <button class="sc-action-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">
                         <iconify-icon icon="solar:printer-linear"></iconify-icon>
-                    </button>
-                    <button class="sc-action-btn" id="scUnlockFloatingBtn" aria-label="Mode Édition" data-tooltip="Mode Édition">
-                        <iconify-icon icon="solar:lock-linear"></iconify-icon>
                     </button>
                 </div>
             </div>
@@ -230,6 +229,18 @@ export const SeatingChartManager = {
         lockBtn?.addEventListener('click', () => this._toggleLock());
         lockBtn?.addEventListener('keydown', (e) => {
             if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                this._toggleLock();
+            }
+        });
+        const statusPill = document.getElementById('scStatusPill');
+        statusPill?.addEventListener('click', () => {
+            if (this._isLocked) {
+                this._toggleLock();
+            }
+        });
+        statusPill?.addEventListener('keydown', (e) => {
+            if (this._isLocked && (e.key === ' ' || e.key === 'Enter')) {
                 e.preventDefault();
                 this._toggleLock();
             }
@@ -1972,38 +1983,49 @@ export const SeatingChartManager = {
         const currentClass = this._getCurrentClass();
         const info = this.getClassSeatingStatus(currentClass);
 
-        pill.className = `sc-status-pill sc-status-${info.status}`;
-        if (info.status === 'locked') {
-            pill.style.display = '';
-            const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
-            const unplacedWarning = info.unplaced > 0
-                ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
-                : '';
-            pill.innerHTML = `<iconify-icon icon="solar:lock-bold"></iconify-icon><span>Validé${dateText}</span>${unplacedWarning}`;
-            const tooltipText = info.unplaced > 0 
-                ? `Plan validé et figé (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})` 
-                : 'Plan de classe validé et figé';
-            pill.removeAttribute('title');
-            pill.setAttribute('data-tooltip', tooltipText);
-            TooltipsUI?.updateTooltip?.(pill, tooltipText);
-        } else if (info.status === 'testing') {
-            pill.style.display = '';
-            const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
-            const unplacedWarning = info.unplaced > 0
-                ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
-                : '';
-            pill.innerHTML = `<iconify-icon icon="solar:test-tube-linear"></iconify-icon><span>En test${dateText}</span>${unplacedWarning}`;
-            const tooltipText = info.unplaced > 0
-                ? `Plan en cours d'essai en classe (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''})`
-                : 'Plan en cours d\'ajustement ou d\'essai en classe';
-            pill.removeAttribute('title');
-            pill.setAttribute('data-tooltip', tooltipText);
-            TooltipsUI?.updateTooltip?.(pill, tooltipText);
-        } else {
-            // Empty plan in consultation mode: no pill needed
+        if (info.status === 'empty') {
             pill.style.display = 'none';
             pill.innerHTML = '';
+            return;
         }
+
+        pill.className = `sc-status-pill sc-status-${info.status}`;
+        pill.style.display = '';
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
+
+        const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
+        const unplacedWarning = info.unplaced > 0
+            ? `<span class="sc-status-pill-sep">·</span><span class="sc-status-pill-unplaced"><iconify-icon icon="solar:danger-triangle-bold"></iconify-icon><span>${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}</span></span>`
+            : '';
+
+        const isLocked = info.status === 'locked';
+        const iconRest = isLocked ? 'solar:lock-bold' : 'solar:test-tube-linear';
+        const labelRest = isLocked ? 'Validé' : 'En test';
+        const actionLabel = 'Modifier';
+        const tooltipText = info.unplaced > 0 
+            ? `Plan ${isLocked ? 'validé' : 'en test'}${dateText} (${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}) • Cliquer pour modifier` 
+            : `Plan ${isLocked ? 'validé' : 'en test'}${dateText} • Cliquer pour modifier`;
+
+        pill.innerHTML = `
+            <div class="sc-status-pill-inner">
+                <div class="sc-status-pill-side sc-status-pill-rest">
+                    <iconify-icon class="sc-status-pill-icon" icon="${iconRest}"></iconify-icon>
+                    <span class="sc-status-pill-text">${labelRest}</span>
+                    ${unplacedWarning}
+                </div>
+                <div class="sc-status-pill-side sc-status-pill-hover" aria-hidden="true">
+                    <iconify-icon class="sc-status-pill-icon" icon="solar:pen-linear"></iconify-icon>
+                    <span class="sc-status-pill-text">${actionLabel}</span>
+                    ${dateText ? `<span class="sc-status-pill-date">${dateText}</span>` : ''}
+                    ${unplacedWarning}
+                </div>
+            </div>
+        `;
+
+        pill.removeAttribute('title');
+        pill.removeAttribute('data-tooltip');
+        pill.setAttribute('aria-label', `${labelRest}${dateText}. Cliquer pour passer en mode édition`);
     },
 
     // ========================================================================

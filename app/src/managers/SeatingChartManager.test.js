@@ -700,6 +700,36 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         expect(pill.textContent).toContain('Validé');
         expect(pill.textContent).not.toContain('non placé');
     });
+
+    it('devrait basculer en mode édition au clic et au clavier sur la capsule de statut (scStatusPill)', () => {
+        appState.currentClassId = classA.id;
+        SeatingChartManager._isLocked = true;
+        classA.seatingLocked = true;
+        SeatingChartManager._updateStatusPill();
+
+        const pill = document.getElementById('scStatusPill');
+        expect(pill.getAttribute('role')).toBe('button');
+        expect(pill.getAttribute('tabindex')).toBe('0');
+        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('Modifier');
+
+        // Attacher les écouteurs pour ce test
+        SeatingChartManager._setupEventListeners();
+
+        // Clic sur la capsule
+        pill.click();
+        expect(SeatingChartManager._isLocked).toBe(false);
+
+        // Verrouiller à nouveau et tester la touche Entrée
+        SeatingChartManager._isLocked = true;
+        pill.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(SeatingChartManager._isLocked).toBe(false);
+
+        // Verrouiller à nouveau et tester la touche Espace
+        SeatingChartManager._isLocked = true;
+        pill.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        expect(SeatingChartManager._isLocked).toBe(false);
+    });
 });
 
 describe('SeatingChartManager - Mémorisation de la vue et restauration au démarrage', () => {

@@ -679,24 +679,43 @@
     z-index: 100;
 }
 
-/* ────────── STATUS PILL (TOP-RIGHT, UNIFIED CAPSULE) ────────── */
+/* ────────── STATUS PILL (TOP-LEFT, ACTIONABLE CAPSULE) ────────── */
 .sc-status-pill {
-    position: relative;
+    position: absolute;
+    top: calc(56px + var(--content-padding-x, 24px));
+    left: var(--content-padding-x, 24px);
+    right: auto;
+    z-index: 100;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     height: 38px;
     box-sizing: border-box;
-    padding: 0 16px;
+    padding: 0 14px;
     border-radius: var(--radius-pill, 999px);
     font-size: 0.8rem;
     font-weight: 600;
     pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.08));
-    transition: all var(--transition-fast, 0.2s);
+    transition: background var(--transition-fast, 0.2s),
+                border-color var(--transition-fast, 0.2s),
+                box-shadow var(--transition-fast, 0.2s),
+                transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
     animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
+    overflow: hidden;
+}
+
+.sc-status-pill:focus-visible {
+    outline: 2px solid var(--primary-color, #4f46e5);
+    outline-offset: 2px;
+}
+
+.sc-status-pill:active {
+    transform: scale(0.95);
 }
 
 #seatingChartView[data-locked="false"] .sc-status-pill {
@@ -705,6 +724,50 @@
 
 #seatingChartView[data-locked="true"] .sc-toolbar-info {
     display: none !important;
+}
+
+/* Morphing Container */
+.sc-status-pill-inner {
+    display: inline-grid;
+    grid-template-areas: "content";
+    align-items: center;
+    justify-items: center;
+    width: 100%;
+}
+
+.sc-status-pill-side {
+    grid-area: content;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+}
+
+.sc-status-pill-rest {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.sc-status-pill-hover {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+}
+
+.sc-status-pill-date {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
+    font-size: 0.76rem;
+    font-weight: 500;
+    transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease;
 }
 
 .sc-status-pill-sep {
@@ -743,6 +806,7 @@
 
 .sc-status-pill iconify-icon {
     font-size: 1.05rem;
+    display: inline-flex;
 }
 
 .sc-status-pill.sc-status-locked {
@@ -771,6 +835,48 @@
 
 .sc-status-pill.sc-status-empty {
     display: none !important;
+}
+
+/* Hover & Morphing interactions */
+@media (hover: hover) {
+    .sc-status-pill.sc-status-locked:hover {
+        background: rgba(16, 185, 129, 0.22);
+        border-color: rgba(16, 185, 129, 0.45);
+        box-shadow: 0 4px 18px rgba(16, 185, 129, 0.28);
+    }
+
+    [data-theme="dark"] .sc-status-pill.sc-status-locked:hover {
+        background: rgba(16, 185, 129, 0.32);
+        border-color: rgba(16, 185, 129, 0.6);
+        box-shadow: 0 4px 22px rgba(16, 185, 129, 0.35);
+    }
+
+    .sc-status-pill.sc-status-testing:hover {
+        background: rgba(245, 158, 11, 0.22);
+        border-color: rgba(245, 158, 11, 0.45);
+        box-shadow: 0 4px 18px rgba(245, 158, 11, 0.28);
+    }
+
+    [data-theme="dark"] .sc-status-pill.sc-status-testing:hover {
+        background: rgba(245, 158, 11, 0.32);
+        border-color: rgba(245, 158, 11, 0.6);
+        box-shadow: 0 4px 22px rgba(245, 158, 11, 0.35);
+    }
+
+    .sc-status-pill:hover .sc-status-pill-rest {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    .sc-status-pill:hover .sc-status-pill-hover {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .sc-status-pill:hover .sc-status-pill-date {
+        max-width: 120px;
+        opacity: 0.85;
+    }
 }
 
 .sc-floating-status .sc-toolbar-info {
@@ -2117,14 +2223,25 @@
     .sc-toolbar-btn span { display: none; }
 
     /* ── Floating elements adjust for bottom tray ── */
+    .sc-status-pill {
+        top: calc(56px + 12px);
+        left: 12px;
+        right: auto;
+        font-size: 0.7rem;
+        height: 32px;
+        padding: 0 10px;
+    }
+
     .sc-floating-status {
         top: calc(56px + 12px);
         right: 12px;
+        left: auto;
     }
 
     .sc-floating-actions {
         top: calc(56px + 12px);
-        left: 12px;
+        right: 12px;
+        left: auto;
         padding: 2px 3px;
         gap: 2px;
     }
@@ -2138,8 +2255,7 @@
         font-size: 1.05rem;
     }
 
-    .sc-floating-status .sc-toolbar-info,
-    .sc-floating-status .sc-status-pill {
+    .sc-floating-status .sc-toolbar-info {
         font-size: 0.7rem;
         height: 32px;
         padding: 0 10px;
@@ -2752,11 +2868,12 @@
 }
 
 /* ---------- READING MODE FLOATING ACTIONS (COMPACT CAPSULE) ---------- */
-/* Re-entry point, Orientation toggle, and Print button when sidebar is hidden */
+/* Orientation toggle and Print button when sidebar is hidden (Top-Right) */
 .sc-floating-actions {
     position: absolute;
     top: calc(56px + var(--content-padding-x, 24px));
-    left: var(--content-padding-x, 24px);
+    right: var(--content-padding-x, 24px);
+    left: auto;
     display: inline-flex;
     align-items: center;
     height: 38px;
