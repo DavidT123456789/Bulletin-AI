@@ -464,7 +464,7 @@ export const ClassUIManager = {
                         </span>
                     </div>
                     <div class="class-progress-badge" data-class-id="${item.id}">
-                        <span class="progress-count">${item.studentCount} él.</span>
+                        <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> ${item.studentCount}</span>
                     </div>
                 </div>
                 `;
@@ -822,7 +822,7 @@ export const ClassUIManager = {
             const totalStudents = classResults.length;
 
             if (totalStudents === 0) {
-                badge.innerHTML = `<span class="progress-count">0 él.</span>`;
+                badge.innerHTML = `<span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> 0</span>`;
                 badge.removeAttribute('title');
                 badge.setAttribute('data-tooltip', 'Aucun élève');
                 badge.dataset.status = 'empty';
@@ -850,7 +850,7 @@ export const ClassUIManager = {
 
             // Render badge - NEUTRAL: juste le nombre d'élèves, pas d'icône d'état
             // (Decision: afficher SEULEMENT les erreurs sans les autres états est incohérent)
-            badge.innerHTML = `<span class="progress-count">${totalStudents} él.</span>`;
+            badge.innerHTML = `<span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> ${totalStudents}</span>`;
 
             // Set tooltip and status for potential CSS styling
             let tooltipText = '';

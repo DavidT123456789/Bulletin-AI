@@ -233,11 +233,14 @@
                 <div class="class-selector-wrapper">
                     <div id="headerClassChip" class="header-context-chip class-chip tooltip" role="button" tabindex="0"
                         data-tooltip="Changer de classe">
-                        <span class="icon" id="headerClassIcon"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
+                        <span class="icon" id="headerClassIcon" style="display: none;"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
                         <span id="headerClassName">Ma Classe</span>
                         <span id="headerClassTag" class="class-demo-tag" style="display: none;">Démo</span>
                         <span id="headerVirtualClassTag" class="class-virtual-tag" style="display: none;">Reconstituée</span>
-                        <span id="headerStudentCount" class="student-count-badge">0</span>
+                        <span class="student-count-badge">
+                            <iconify-icon icon="solar:users-group-rounded-linear" class="student-count-icon"></iconify-icon>
+                            <span id="headerStudentCount">0</span>
+                        </span>
                         <iconify-icon icon="solar:alt-arrow-down-linear" class="class-chevron"></iconify-icon>
                     </div>
                     <div id="classDropdown" class="class-dropdown" style="display: none;">
@@ -3143,7 +3146,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build fc225b4 · 21 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 3353061 · 21 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

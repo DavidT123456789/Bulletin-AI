@@ -45,20 +45,33 @@
     }
 }
 
+.class-chip #headerClassIcon {
+    display: none !important;
+}
+
 .class-chip .student-count-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     background: rgba(0, 0, 0, 0.06);
     color: var(--text-secondary);
     height: 20px;
     min-width: 24px;
-    padding: 0 6px;
+    padding: 0 7px;
     border-radius: var(--radius-pill);
     font-size: 0.75rem;
     font-weight: 600;
     margin-left: 2px;
     transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.class-chip .student-count-badge iconify-icon,
+.class-chip .student-count-badge .student-count-icon {
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.75;
 }
 
 [data-theme="dark"] .class-chip .student-count-badge {
@@ -69,6 +82,12 @@
 .class-chip.active .student-count-badge {
     background: var(--primary-color);
     color: #ffffff;
+}
+
+.class-chip:hover .student-count-badge iconify-icon,
+.class-chip.active .student-count-badge iconify-icon {
+    color: #ffffff;
+    opacity: 1;
 }
 
 .class-chip .class-demo-tag {
@@ -777,8 +796,12 @@
     border: none;
 }
 
+.progress-count iconify-icon,
 .progress-count i {
-    font-size: 0.65rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.75;
 }
 
 .progress-count.is-complete {
@@ -809,6 +832,11 @@
     background: rgba(255, 255, 255, 0.25);
     color: #ffffff;
     border-color: transparent;
+}
+
+.class-dropdown-item.active .progress-count iconify-icon {
+    color: #ffffff;
+    opacity: 1;
 }
 
 .class-dropdown-item.active .progress-count.is-complete {

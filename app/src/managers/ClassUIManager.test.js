@@ -165,7 +165,7 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         expect(toggleBtn.classList.contains('active')).toBe(false);
     });
 
-    it('devrait harmoniser le badge des effectifs avec le format "X él."', () => {
+    it('devrait afficher l\'icône de groupe et l\'effectif dans le badge', () => {
         const class1 = ClassManager.createClass('4 1');
         appState.generatedResults = [
             { id: 's1', nom: 'DUPONT', prenom: 'Alice', classId: class1.id }
@@ -174,7 +174,8 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         ClassUIManager.renderClassList();
 
         const badge = DOM.classDropdownList.querySelector(`.class-progress-badge[data-class-id="${class1.id}"]`);
-        expect(badge.innerHTML).toContain('1 él.');
+        expect(badge.innerHTML).toContain('users-group-rounded-linear');
+        expect(badge.textContent.trim()).toBe('1');
     });
 });
 
