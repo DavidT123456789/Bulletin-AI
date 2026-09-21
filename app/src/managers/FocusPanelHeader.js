@@ -474,7 +474,7 @@ export const FocusPanelHeader = {
             <span class="focus-name-details">
                 <span class="focus-name-nom">${Utils.escapeHtml(nom).toUpperCase()}</span>
                 <span class="focus-name-prenom">
-                    <span>${Utils.escapeHtml(prenom)}</span>
+                    <span class="focus-prenom-text">${Utils.escapeHtml(prenom)}</span>
                     ${originBadge}
                 </span>
             </span>
