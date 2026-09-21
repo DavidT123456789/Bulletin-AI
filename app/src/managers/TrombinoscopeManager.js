@@ -12,6 +12,8 @@ import { Utils } from '../utils/Utils.js';
 import { parsePronoteTrombiPdf } from '../utils/PronoteTrombiParser.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { StorageManager } from './StorageManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
 
 /**
  * Manages the trombinoscope photo import workflow
@@ -3372,8 +3374,19 @@ export const TrombinoscopeManager = {
                 }
             }
 
+            // Synchronisation réactive immédiate de l'UI
+            ClassUIManager?.updateHeaderDisplay?.();
+            ClassUIManager?.renderClassList?.();
+            ClassUIManager?.pulseHeaderChip?.();
+            AppreciationsManager?.renderResults?.();
+            UI?.updateStats?.();
+            UI?.updateControlButtons?.();
+            UI?.updateAIButtonsState?.();
+
             if (count > 0) {
                 UI.showNotification(`${count} photos importées avec succès`, 'success');
+                window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            } else if (this._parsedPdfData) {
                 window.dispatchEvent(new CustomEvent('studentsUpdated'));
             }
 

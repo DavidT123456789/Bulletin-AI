@@ -923,10 +923,11 @@
     margin: 0;
 }
 
-.class-dropdown-empty i {
-    font-size: 2em;
+.class-dropdown-empty i,
+.class-dropdown-empty iconify-icon {
+    font-size: 24px;
+    color: var(--text-tertiary);
     margin-bottom: 10px;
-    opacity: 0.5;
 }
 
 /* ====================================================================

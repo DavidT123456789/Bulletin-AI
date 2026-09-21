@@ -188,11 +188,11 @@ describe('ClassUIManager - Création instantanée et renommage in-situ', () => {
             <div id="empty-state-card" style="display: none;">
                 <input id="emptyStateClassInput" value="Nouvelle classe">
                 <button id="emptyStateEditBtn"></button>
-                <div class="empty-state-input-wrapper"></div>
+                <div class="empty-state-class-pill"></div>
             </div>
             <template id="empty-state-template">
                 <div class="empty-state-header">
-                    <div class="empty-state-input-wrapper">
+                    <div class="empty-state-class-pill">
                         <input id="emptyStateClassInput" value="Nouvelle classe">
                         <button id="emptyStateEditBtn"></button>
                     </div>

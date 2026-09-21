@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
+import { AppreciationsManager } from './AppreciationsManager.js';
 
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
@@ -56,6 +58,21 @@ vi.mock('./StudentDataManager.js', () => ({
 
 vi.mock('../utils/PronoteTrombiParser.js', () => ({
     parsePronoteTrombiPdf: vi.fn()
+}));
+
+vi.mock('./ClassUIManager.js', () => ({
+    ClassUIManager: {
+        updateHeaderDisplay: vi.fn(),
+        renderClassList: vi.fn(),
+        updateStudentCount: vi.fn(),
+        pulseHeaderChip: vi.fn()
+    }
+}));
+
+vi.mock('./AppreciationsManager.js', () => ({
+    AppreciationsManager: {
+        renderResults: vi.fn()
+    }
 }));
 
 vi.mock('../utils/DOM.js', () => ({
@@ -409,6 +426,9 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         expect(StorageManager.saveAppState).toHaveBeenCalled();
         expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'studentsUpdated' }));
         expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'classChanged' }));
+        expect(ClassUIManager.updateHeaderDisplay).toHaveBeenCalled();
+        expect(ClassUIManager.renderClassList).toHaveBeenCalled();
+        expect(AppreciationsManager.renderResults).toHaveBeenCalled();
     });
 
     it('should switch PDF pages in Step 2 preserving zone changes', () => {

@@ -37,7 +37,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
                                value="Nouvelle classe">
                         <button type="button" class="empty-state-edit-btn" id="emptyStateEditBtn"></button>
                     </div>
-                    <p class="empty-state-subtitle" id="emptyStateSubtitle">Commencez par ajouter vos élèves.</p>
+                    <p class="empty-state-subtitle" id="emptyStateSubtitle">Comment souhaitez-vous ajouter vos élèves ?</p>
                 </div>
                 <div class="empty-state-hub">
                     <div class="empty-state-hub-card" data-action="individual"></div>

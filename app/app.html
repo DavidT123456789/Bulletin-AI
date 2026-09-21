@@ -1335,7 +1335,7 @@
 
             <div class="import-hub-choices">
                 <!-- Individual Student Card -->
-                <div class="import-hub-card" data-action="individual" tabindex="0" role="button">
+                <div class="import-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:user-plus-bold-duotone"></iconify-icon>
                     </div>
@@ -1344,16 +1344,16 @@
                 </div>
 
                 <!-- Mass Import Card -->
-                <div class="import-hub-card" data-action="mass" tabindex="0" role="button">
+                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez une liste d'élèves (avec ou sans notes) depuis Excel, CSV ou Pronote">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:file-text-bold-duotone"></iconify-icon>
                     </div>
-                    <h3 class="import-hub-card-title">Classe entière</h3>
+                    <h3 class="import-hub-card-title">Tableur</h3>
                     <p class="import-hub-card-desc">Excel, CSV ou copier-coller</p>
                 </div>
 
                 <!-- Trombinoscope Import Card -->
-                <div class="import-hub-card" data-action="photos" tabindex="0" role="button">
+                <div class="import-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Créez la classe avec photos et détection automatique depuis le PDF Trombinoscope">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:camera-bold-duotone"></iconify-icon>
                     </div>
@@ -3142,7 +3142,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 7f76935 · 21 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 297c5f6 · 21 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3697,7 +3697,7 @@
             <div class="empty-state-class-pill" id="emptyStateClassPill">
                 <iconify-icon icon="solar:users-group-rounded-linear" class="empty-state-pill-icon" aria-hidden="true"></iconify-icon>
                 <input type="text"
-                       class="empty-state-class-input" 
+                       class="empty-state-class-input custom-input" 
                        id="emptyStateClassInput"
                        value="Nouvelle classe"
                        placeholder="Nom de la classe..."
@@ -3713,17 +3713,13 @@
                     <iconify-icon icon="solar:pen-linear"></iconify-icon>
                 </button>
             </div>
-            <p class="empty-state-subtitle" id="emptyStateSubtitle">Commencez par ajouter vos élèves.</p>
-            <div class="empty-state-trombi-hint" id="emptyStateTrombiHint">
-                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                <span>Le nom s'adaptera automatiquement si vous importez un Trombinoscope Pronote</span>
-            </div>
+            <p class="empty-state-subtitle" id="emptyStateSubtitle">Comment souhaitez-vous ajouter vos élèves ?</p>
         </div>
 
 
         <!-- Hub d'import intégré directement -->
         <div class="empty-state-hub">
-            <div class="empty-state-hub-card" data-action="individual" tabindex="0" role="button">
+            <div class="empty-state-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:user-plus-bold-duotone"></iconify-icon>
                 </div>
@@ -3732,16 +3728,16 @@
                     <p>Saisie manuelle</p>
                 </div>
             </div>
-            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button">
+            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez une liste d'élèves (avec ou sans notes) depuis Excel, CSV ou Pronote">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:file-text-bold-duotone"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
-                    <h4>Classe entière</h4>
+                    <h4>Tableur</h4>
                     <p>Excel, CSV ou copier-coller</p>
                 </div>
             </div>
-            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button">
+            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Créez la classe avec photos et détection automatique depuis le PDF Trombinoscope">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:camera-bold-duotone"></iconify-icon>
                 </div>

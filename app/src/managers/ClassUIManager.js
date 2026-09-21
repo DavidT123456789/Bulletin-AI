@@ -234,13 +234,13 @@ export const ClassUIManager = {
     async createNewClassAndSwitch(options = { autoFocusInput: false }) {
         try {
             const currentClass = ClassManager.getCurrentClass();
-            const allClasses = ClassManager.getAllClasses() || [];
-            const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
-            const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
+            const allClasses = ClassManager.getAllClasses() ?? [];
+            const hasStudents = Boolean(currentClass && (appState.generatedResults ?? []).some(r => r.classId === currentClass.id));
+            const isDemo = Boolean(currentClass && ClassManager.isDemoClass?.(currentClass.id));
 
             // Si la classe active est déjà une "Nouvelle classe" vide (non démo), on la réutilise
             // pour éviter d'empiler des classes fantômes ("Nouvelle classe 2", "Nouvelle classe 3")
-            const isGenericCurrent = currentClass && /^Nouvelle\s+classe(\s+\d+)?$/i.test(currentClass.name.trim());
+            const isGenericCurrent = Boolean(currentClass && /^Nouvelle\s+classe(\s+\d+)?$/i.test(currentClass.name?.trim() ?? ''));
             if (currentClass && !hasStudents && !isDemo && isGenericCurrent) {
                 this.closeDropdown();
                 if (options.autoFocusInput) {
@@ -252,9 +252,9 @@ export const ClassUIManager = {
             // Déterminer le nom générique
             const baseName = 'Nouvelle classe';
             let targetName = baseName;
-            if (allClasses.some(c => c.name.toLowerCase() === baseName.toLowerCase())) {
+            if (allClasses.some(c => c?.name?.toLowerCase() === baseName.toLowerCase())) {
                 let counter = 2;
-                while (allClasses.some(c => c.name.toLowerCase() === `${baseName} ${counter}`.toLowerCase())) {
+                while (allClasses.some(c => c?.name?.toLowerCase() === `${baseName} ${counter}`.toLowerCase())) {
                     counter++;
                 }
                 targetName = `${baseName} ${counter}`;
@@ -262,7 +262,6 @@ export const ClassUIManager = {
 
             // Créer la classe et basculer vers elle
             const newClass = await this._createAndSwitchClass(targetName);
-            this.closeDropdown();
 
             if (options.autoFocusInput) {
                 this.focusEmptyStateInput();
@@ -295,7 +294,19 @@ export const ClassUIManager = {
         }, 120);
     },
 
-
+    /**
+     * Déclenche une micro-animation tactile ressort sur le chip de classe du header
+     */
+    pulseHeaderChip() {
+        if (DOM.headerClassChip) {
+            DOM.headerClassChip.classList.remove('class-created-pop');
+            void DOM.headerClassChip.offsetWidth;
+            DOM.headerClassChip.classList.add('class-created-pop');
+            setTimeout(() => {
+                DOM.headerClassChip?.classList.remove('class-created-pop');
+            }, 550);
+        }
+    },
 
     /**
      * Crée une classe et bascule vers elle avec transition fluide
@@ -309,16 +320,7 @@ export const ClassUIManager = {
             this.renderClassList();
 
             // Rétroaction tactile micro-ressort sur la puce de classe du header
-            if (DOM.headerClassChip) {
-                DOM.headerClassChip.classList.remove('class-created-pop');
-                if (DOM.headerClassChip.offsetWidth !== undefined) {
-                    void DOM.headerClassChip.offsetWidth;
-                }
-                DOM.headerClassChip.classList.add('class-created-pop');
-                setTimeout(() => {
-                    DOM.headerClassChip?.classList.remove('class-created-pop');
-                }, 550);
-            }
+            this.pulseHeaderChip();
             return newClass;
         } catch (error) {
             UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
@@ -338,7 +340,7 @@ export const ClassUIManager = {
         if (classes.length === 0) {
             DOM.classDropdownList.innerHTML = `
                 <div class="class-dropdown-empty">
-                    <iconify-icon icon="solar:mortarboard-linear" style="font-size: 24px; color: var(--text-tertiary);"></iconify-icon>
+                    <iconify-icon icon="solar:mortarboard-linear"></iconify-icon>
                     <p>Aucune classe créée</p>
                     <button type="button" class="btn btn-primary btn-small" id="createFirstClassBtn">
                         <iconify-icon icon="ph:plus"></iconify-icon> Créer ma première classe

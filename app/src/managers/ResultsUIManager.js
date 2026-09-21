@@ -1,7 +1,6 @@
-import { appState, userSettings } from '../state/State.js';
+import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
-// import { UI } from './UIManager.js'; // REMOVED to avoid circular dependency
 import { StorageManager } from './StorageManager.js';
 import { ListViewManager } from './ListViewManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
@@ -338,11 +337,9 @@ export const ResultsUIManager = {
         } else {
             bannerContainer.style.display = 'none';
         }
-        // --- END NEW LOGIC ---
 
         // Afficher l'état vide si la classe courante n'a pas de résultats
         if (sourceResults.length === 0) {
-            // Clear for empty state
             DOM.resultsDiv.innerHTML = '';
 
             const emptyTemplate = document.getElementById('empty-state-template');
@@ -356,10 +353,9 @@ export const ResultsUIManager = {
                 }
 
                 const currentClass = ClassManager.getCurrentClass();
-                const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
                 const subtitle = DOM.emptyStateCard.querySelector('.empty-state-subtitle') || DOM.emptyStateCard.querySelector('p');
                 if (subtitle) {
-                    subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
+                    subtitle.textContent = 'Comment souhaitez-vous ajouter vos élèves ?';
                 }
 
                 // Synchroniser la valeur de l'input si non focalisé par l'utilisateur
@@ -378,34 +374,15 @@ export const ResultsUIManager = {
             const statsPagination = document.getElementById('statsPagination');
             if (statsPagination) statsPagination.style.display = 'none';
         }
-        else if (filteredAndSorted.length === 0) {
-            // CRITICAL FIX: Preserve table structure (and search bar) when filter returns no results
-            // Instead of clearing DOM, call ListViewManager with empty array to show "Aucun élève trouvé"
-            // This keeps the search bar accessible so user can clear their search
-            if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
-            if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
-
-            // Réafficher les statistiques si masquées précédemment
-            if (DOM.statsContainer) DOM.statsContainer.style.display = '';
-            if (DOM.outputHeader) DOM.outputHeader.style.display = '';
-            const statsPag1 = document.getElementById('statsPagination');
-            if (statsPag1) statsPag1.style.display = '';
-
-            // Let ListViewManager handle the empty state - it preserves the table header with search bar
-            ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
-        }
         else {
-            // DON'T clear DOM here - let ListViewManager handle animation
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'none';
             if (DOM.noResultsMessage) DOM.noResultsMessage.style.display = 'none';
 
-            // Réafficher les statistiques si masquées précédemment
             if (DOM.statsContainer) DOM.statsContainer.style.display = '';
             if (DOM.outputHeader) DOM.outputHeader.style.display = '';
-            const statsPag2 = document.getElementById('statsPagination');
-            if (statsPag2) statsPag2.style.display = '';
+            const statsPagination = document.getElementById('statsPagination');
+            if (statsPagination) statsPagination.style.display = '';
 
-            // Liste + Focus UX: Utiliser ListViewManager au lieu des cartes individuelles
             ListViewManager.render(filteredAndSorted, DOM.resultsDiv);
         }
         if (highlightId && highlightType === 'new') {
@@ -572,20 +549,15 @@ export const ResultsUIManager = {
     _bindEmptyStateHubEvents(container) {
         const hubCards = container.querySelectorAll('.empty-state-hub-card');
 
+        const hubActions = {
+            individual: () => FocusPanelManager.openNew(),
+            mass: () => ImportWizardManager.open(),
+            photos: () => TrombinoscopeManager.open()
+        };
+
         hubCards.forEach(card => {
             card.addEventListener('click', () => {
-                const action = card.dataset.action;
-
-                if (action === 'individual') {
-                    // Open Focus Panel in creation mode
-                    FocusPanelManager.openNew();
-                } else if (action === 'mass') {
-                    // Open Import Wizard
-                    ImportWizardManager.open();
-                } else if (action === 'photos') {
-                    // Open Trombinoscope Wizard
-                    TrombinoscopeManager.open();
-                }
+                hubActions[card.dataset.action]?.();
             });
 
             // Keyboard support
@@ -644,30 +616,42 @@ export const ResultsUIManager = {
             }
         });
 
+        const resetToCurrentName = () => {
+            const currentClass = ClassManager.getCurrentClass();
+            input.value = currentClass?.name || 'Nouvelle classe';
+            this._autoSizeClassInput(input);
+            if (DOM.headerClassName) {
+                DOM.headerClassName.textContent = Utils.formatClassDisplayName(input.value);
+            }
+        };
+
+        let isSaving = false;
+        let escaping = false;
+
         const saveClassName = () => {
+            if (isSaving) return;
             const currentClass = ClassManager.getCurrentClass();
             if (!currentClass) return;
 
             const trimmedName = input.value.trim();
             if (!trimmedName) {
-                // Si l'utilisateur a tout effacé, réinitialiser avec le nom actuel
-                input.value = currentClass.name || 'Nouvelle classe';
-                this._autoSizeClassInput(input);
-                if (DOM.headerClassName) {
-                    DOM.headerClassName.textContent = Utils.formatClassDisplayName(input.value);
-                }
+                resetToCurrentName();
                 return;
             }
 
             if (trimmedName !== currentClass.name) {
-                ClassManager.updateClass(currentClass.id, { name: trimmedName });
-                ClassUIManager?.updateHeaderDisplay?.();
-                ClassUIManager?.renderClassList?.();
+                isSaving = true;
+                try {
+                    ClassManager.updateClass(currentClass.id, { name: trimmedName });
+                    ClassUIManager?.updateHeaderDisplay?.();
+                    ClassUIManager?.renderClassList?.();
 
-                // Rétroaction visuelle
-                if (pill) {
-                    pill.classList.add('saved');
-                    setTimeout(() => pill.classList.remove('saved'), 500);
+                    if (pill) {
+                        pill.classList.add('saved');
+                        setTimeout(() => pill.classList.remove('saved'), 500);
+                    }
+                } finally {
+                    isSaving = false;
                 }
             }
         };
@@ -679,34 +663,20 @@ export const ResultsUIManager = {
                 input.blur();
             } else if (e.key === 'Escape') {
                 e.preventDefault();
-                const currentClass = ClassManager.getCurrentClass();
-                input.value = currentClass?.name || 'Nouvelle classe';
-                this._autoSizeClassInput(input);
-                if (DOM.headerClassName) {
-                    DOM.headerClassName.textContent = Utils.formatClassDisplayName(input.value);
-                }
+                escaping = true;
+                resetToCurrentName();
                 input.blur();
             }
         });
 
         input.addEventListener('blur', () => {
+            if (escaping) {
+                escaping = false;
+                return;
+            }
             saveClassName();
         });
     },
-
-    /**
-     * Focalise et sélectionne le champ de nom de classe de l'Empty State
-     */
-    focusEmptyStateClassInput() {
-        setTimeout(() => {
-            const input = document.getElementById('emptyStateClassInput');
-            if (input) {
-                input.focus();
-                input.select();
-            }
-        }, 120);
-    },
-
 
     async regenerateVisible(onlyErrors = false) {
         // Pour les erreurs, on cherche dans TOUS les résultats, pas seulement les filtrés

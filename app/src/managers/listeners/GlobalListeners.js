@@ -41,13 +41,20 @@ export const GlobalListeners = {
      */
     _setupStudentsUpdatedListener() {
         window.addEventListener('studentsUpdated', () => {
-            // Rafraîchir le compteur d'élèves dans l'en-tête et le dropdown
+            ClassUIManager.updateHeaderDisplay();
+            ClassUIManager.renderClassList();
             ClassUIManager.updateStudentCount();
-            // Rafraîchir la liste des élèves
             AppreciationsManager.renderResults();
-            // Rafraîchir les statistiques
             UI?.updateStats?.();
-            // Rafraîchir les boutons de contrôle
+            UI?.updateControlButtons?.();
+        });
+
+        window.addEventListener('classChanged', () => {
+            ClassUIManager.updateHeaderDisplay();
+            ClassUIManager.renderClassList();
+            ClassUIManager.pulseHeaderChip?.();
+            AppreciationsManager.renderResults();
+            UI?.updateStats?.();
             UI?.updateControlButtons?.();
         });
 
