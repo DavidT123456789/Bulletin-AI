@@ -216,7 +216,7 @@ export const ImportWizardManager = {
         // STEPPER NAVIGATION - Clickable steps
         document.querySelectorAll('#importWizardModal .ui-stepper-step[role="button"]').forEach(stepEl => {
             stepEl.addEventListener('click', () => {
-                const targetStep = parseInt(stepEl.dataset.step);
+                const targetStep = parseInt(stepEl.dataset.step, 10);
                 if (targetStep && targetStep !== this.currentStep) {
                     // Only allow going back, or forward if valid
                     if (targetStep < this.currentStep) {
@@ -224,6 +224,12 @@ export const ImportWizardManager = {
                     } else if (targetStep === this.currentStep + 1 && this._canProceedToNextStep()) {
                         this._setStep(targetStep);
                     }
+                }
+            });
+            stepEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    stepEl.click();
                 }
             });
         });
@@ -341,7 +347,7 @@ export const ImportWizardManager = {
         if (!badge) return;
 
         const currentClass = ClassManager.getCurrentClass();
-        badge.textContent = currentClass?.name || '';
+        badge.textContent = currentClass?.name || 'Nouvelle classe';
     },
 
     /**
@@ -491,8 +497,7 @@ export const ImportWizardManager = {
             return;
         }
         if (this.currentStep < 3) {
-            this.currentStep++;
-            this._updateUI();
+            this.goToStep(this.currentStep + 1);
         }
     },
 
@@ -501,8 +506,7 @@ export const ImportWizardManager = {
      */
     prevStep() {
         if (this.currentStep > 1) {
-            this.currentStep--;
-            this._updateUI();
+            this.goToStep(this.currentStep - 1);
         }
     },
 
@@ -511,8 +515,10 @@ export const ImportWizardManager = {
      */
     goToStep(step) {
         if (step >= 1 && step <= 3) {
+            const previousStep = this.currentStep;
+            if (previousStep === step) return;
             this.currentStep = step;
-            this._updateUI();
+            this._updateUI(previousStep);
         }
     },
 
@@ -540,27 +546,35 @@ export const ImportWizardManager = {
 
     /**
      * Update UI based on current step
+     * @param {number} [previousStep] - Optional previous step to determine transition direction
      */
-    _updateUI() {
+    _updateUI(previousStep) {
         // Update stepper visual states
         this._updateStepper();
 
-
+        // Direction-aware animation class (forward: slide-next, backward: slide-prev)
+        const isBackward = previousStep !== undefined && this.currentStep < previousStep;
+        const slideClass = isBackward ? 'slide-prev' : 'slide-next';
 
         // Update step content - scope to modal only
         const modal = document.getElementById('importWizardModal');
         if (modal) {
             modal.querySelectorAll('.wizard-step-content').forEach((el, i) => {
                 const isActive = i + 1 === this.currentStep;
-                el.classList.toggle('active', isActive);
-                el.style.display = isActive ? 'block' : 'none';
+                el.classList.remove('slide-next', 'slide-prev');
+                if (isActive) {
+                    void el.offsetWidth;
+                    el.classList.add('active', slideClass);
+                    el.style.display = 'block';
+                } else {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                }
             });
         }
 
-
-
         // Update guide panel content based on current step
-        this._updateGuidePanel();
+        this._updateGuidePanel(previousStep);
 
         // Update preview if on step 3
         if (this.currentStep === 3) {
@@ -588,13 +602,23 @@ export const ImportWizardManager = {
 
     /**
      * Update the guide panel to show contextual content for current step
+     * @param {number} [previousStep] - Optional previous step to determine transition direction
      * @private
      */
-    _updateGuidePanel() {
+    _updateGuidePanel(previousStep) {
+        const isBackward = previousStep !== undefined && this.currentStep < previousStep;
+        const slideClass = isBackward ? 'slide-prev' : 'slide-next';
         const guideContents = document.querySelectorAll('.guide-content');
         guideContents.forEach(content => {
             const step = parseInt(content.dataset.guideStep);
-            content.classList.toggle('active', step === this.currentStep);
+            const isActive = step === this.currentStep;
+            content.classList.remove('slide-next', 'slide-prev');
+            if (isActive) {
+                void content.offsetWidth;
+                content.classList.add('active', slideClass);
+            } else {
+                content.classList.remove('active');
+            }
         });
     },
 
@@ -677,6 +701,14 @@ export const ImportWizardManager = {
             }
             if (fileNameEl) fileNameEl.textContent = displayName;
 
+            // Update divider text
+            const dividerText = document.getElementById('wizardDividerText');
+            if (dividerText) {
+                if (type === 'file') dividerText.textContent = 'Contenu extrait';
+                else if (type === 'sample') dividerText.textContent = 'Données d\'exemple';
+                else dividerText.textContent = 'ou';
+            }
+
             // Set Icon
             if (fileIconEl) {
                 fileIconEl.className = 'file-preview-icon'; // Reset class
@@ -741,6 +773,8 @@ export const ImportWizardManager = {
         }
 
         if (fileInput) fileInput.value = '';
+        const dividerText = document.getElementById('wizardDividerText');
+        if (dividerText) dividerText.textContent = 'ou';
     },
 
     /**

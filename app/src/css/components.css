@@ -1224,6 +1224,18 @@ textarea {
     box-shadow: 0 8px 24px rgba(var(--primary-color-rgb), 0.12);
 }
 
+[data-theme="dark"] .drop-zone:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .drop-zone:hover .icon,
+[data-theme="dark"] .drop-zone.highlight .icon {
+    color: var(--text-primary);
+}
+
 /* Effet "magique" pour le drag & drop actif - Animation rotative préservée */
 .drop-zone.highlight {
     position: relative;
@@ -1622,8 +1634,8 @@ body.is-offline::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.015);
-    border: 1px dashed rgba(var(--primary-color-rgb), 0.25);
+    background: var(--bg-secondary);
+    border: 1.5px dashed var(--border-color);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-spring);
@@ -1633,19 +1645,41 @@ body.is-offline::before {
     will-change: transform, border-color, background-color;
 }
 
+[data-theme="dark"] .import-drop-zone,
+[data-theme="dark"] .trombi-drop-zone {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 .import-drop-zone:hover,
 .trombi-drop-zone:hover {
-    border-color: rgba(var(--primary-color-rgb), 0.5);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    border-color: var(--text-tertiary);
+    background: var(--bg-hover);
     transform: translateY(-1.5px);
+}
+
+[data-theme="dark"] .import-drop-zone:hover,
+[data-theme="dark"] .trombi-drop-zone:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .import-drop-zone.dragging,
 .import-drop-zone.dragover,
 .trombi-drop-zone.dragging,
 .trombi-drop-zone.dragover {
-    border-color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: var(--text-primary);
+    background: var(--bg-tertiary);
+    transform: scale(1.008);
+}
+
+[data-theme="dark"] .import-drop-zone.dragging,
+[data-theme="dark"] .import-drop-zone.dragover,
+[data-theme="dark"] .trombi-drop-zone.dragging,
+[data-theme="dark"] .trombi-drop-zone.dragover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* Shared Dropzone Content */
@@ -1661,24 +1695,45 @@ body.is-offline::before {
     width: 100%;
 }
 
-/* Shared Icon Container - slightly larger & animated */
+/* Shared Icon Container - frosted elevated surface */
 .import-drop-zone .drop-zone-icon,
 .trombi-drop-zone .drop-zone-icon {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    color: var(--primary-color);
-    font-size: 1.8rem;
-    transition: background 0.2s ease, transform var(--transition-spring);
+    color: var(--text-secondary);
+    font-size: 1.75rem;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform var(--transition-spring), box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .import-drop-zone .drop-zone-icon,
+[data-theme="dark"] .trombi-drop-zone .drop-zone-icon {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .import-drop-zone:hover .drop-zone-icon,
 .trombi-drop-zone:hover .drop-zone-icon {
-    background: rgba(var(--primary-color-rgb), 0.14);
+    background: var(--surface-color);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .import-drop-zone:hover .drop-zone-icon,
+[data-theme="dark"] .trombi-drop-zone:hover .drop-zone-icon {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 /* Spring icon animation on hover */
@@ -1694,7 +1749,7 @@ body.is-offline::before {
 .import-drop-zone:hover .drop-zone-icon i,
 .trombi-drop-zone:hover .drop-zone-icon iconify-icon,
 .trombi-drop-zone:hover .drop-zone-icon i {
-    transform: translateY(-2px) scale(1.04);
+    transform: translateY(-2px) scale(1.06);
 }
 
 /* Shared Text & Title Layout */
@@ -1720,7 +1775,33 @@ body.is-offline::before {
 
 .import-drop-zone .drop-zone-hint u,
 .trombi-drop-zone .drop-zone-hint u {
-    color: var(--primary-color);
+    color: var(--text-primary);
+    font-weight: 500;
     text-decoration: none;
-    border-bottom: 1px dashed var(--primary-color);
+    border-bottom: 1px dashed var(--text-tertiary);
+    padding-bottom: 1px;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+[data-theme="dark"] .import-drop-zone .drop-zone-hint u,
+[data-theme="dark"] .trombi-drop-zone .drop-zone-hint u {
+    color: var(--text-primary);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+}
+
+.import-drop-zone:hover .drop-zone-hint u,
+.trombi-drop-zone:hover .drop-zone-hint u,
+.import-drop-zone .drop-zone-hint u:hover,
+.trombi-drop-zone .drop-zone-hint u:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
+    border-bottom-style: solid;
+}
+
+[data-theme="dark"] .import-drop-zone:hover .drop-zone-hint u,
+[data-theme="dark"] .trombi-drop-zone:hover .drop-zone-hint u,
+[data-theme="dark"] .import-drop-zone .drop-zone-hint u:hover,
+[data-theme="dark"] .trombi-drop-zone .drop-zone-hint u:hover {
+    color: #ffffff;
+    border-bottom-color: #ffffff;
 }

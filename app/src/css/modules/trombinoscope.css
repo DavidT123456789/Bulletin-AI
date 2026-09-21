@@ -80,9 +80,9 @@
 
 /* Header - Harmonized with import-wizard style */
 .trombi-wizard-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     padding: var(--modal-header-padding);
     border-bottom: var(--modal-header-border);
     background: var(--modal-bg);
@@ -95,38 +95,53 @@
 .trombi-header-title {
     display: flex;
     align-items: center;
+    justify-self: start;
+    min-width: 0;
 }
 
 .trombi-title-pill {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
-    color: var(--primary-color);
-    transition: all var(--transition-base);
-}
-
-.trombi-title-pill:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    color: var(--text-primary);
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
 }
 
 .trombi-title-pill i,
 .trombi-title-pill iconify-icon {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 /* Class Name Text inside Pill */
 #trombiClassBadge {
     font-size: 1rem;
     font-weight: 700;
-    max-width: 320px;
+    letter-spacing: -0.01em;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-block;
+    cursor: default;
+    user-select: none;
+}
+
+.trombi-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    justify-self: end;
 }
 
 /* Stepper removed, using global .ui-stepper */
@@ -686,9 +701,9 @@
 }
 
 .grid-tools-toggle-btn.active {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: var(--bg-tertiary);
+    border-color: var(--text-quaternary);
+    color: var(--text-primary);
 }
 
 .grid-tools-toggle-btn .toggle-chevron {
@@ -840,7 +855,7 @@
     text-align: center;
     font-size: 11px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-primary);
     background: var(--surface-color);
     padding: 3px 5px;
     border-radius: 6px;
@@ -1020,9 +1035,9 @@
 }
 
 .assignment-action-btn:hover {
-    color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    background: var(--primary-color-light);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    background: var(--bg-hover);
 }
 
 .assignment-action-btn.danger:hover {
@@ -1066,13 +1081,15 @@
 
 /* Zone ID Number */
 .assignment-id {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--text-primary);
     text-align: center;
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-radius: 4px;
-    padding: 2px 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    padding: 3px 6px;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Avatar placeholder with gradient (when no photo) */
@@ -1322,14 +1339,16 @@
     gap: 8px;
     margin-top: 12px;
     padding: 10px 14px;
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 12px;
     color: var(--text-secondary);
 }
 
-.trombi-hint i {
-    color: var(--primary-color);
+.trombi-hint i,
+.trombi-hint iconify-icon {
+    color: var(--text-secondary);
     font-size: 14px;
 }
 
@@ -1436,9 +1455,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
     margin-bottom: 12px;
-    padding: 4px;
+    padding: 3px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
@@ -1454,18 +1473,28 @@
     gap: 6px;
     padding: 6px 14px;
     font-size: 0.8125rem;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-secondary);
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radius-pill);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.trombi-page-selector-bar .page-tab-btn iconify-icon {
+    font-size: 15px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
 .trombi-page-selector-bar .page-tab-btn:hover {
     color: var(--text-primary);
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--bg-hover);
+}
+
+.trombi-page-selector-bar .page-tab-btn:hover iconify-icon {
+    opacity: 0.9;
 }
 
 .trombi-page-selector-bar .page-tab-btn:active {
@@ -1473,9 +1502,52 @@
 }
 
 .trombi-page-selector-bar .page-tab-btn.active {
-    color: var(--primary-color);
-    background: var(--bg-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--surface-color);
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.trombi-page-selector-bar .page-tab-btn.active iconify-icon {
+    opacity: 1;
+}
+
+.trombi-page-selector-bar .page-tab-count {
+    font-size: 0.88em;
+    font-weight: 400;
+    opacity: 0.72;
+    margin-left: 2px;
+}
+
+.trombi-page-selector-bar .page-tab-btn.active .page-tab-count {
+    opacity: 0.75;
+    font-weight: 400;
+}
+
+/* Dark Mode: Segmented control style with luminous active pill */
+[data-theme="dark"] .trombi-page-selector-bar {
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .trombi-page-selector-bar .page-tab-btn {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .trombi-page-selector-bar .page-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .trombi-page-selector-bar .page-tab-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 /* Multi-page transition: Directional Slide & Reveal (iOS 2026 style) */
@@ -1575,8 +1647,8 @@
 }
 
 .trombi-zoom-controls .zoom-btn:hover {
-    color: var(--primary-color);
-    background: var(--primary-color-light);
+    color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .trombi-zoom-controls .zoom-btn:active {

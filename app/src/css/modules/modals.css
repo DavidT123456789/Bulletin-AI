@@ -497,6 +497,20 @@
 }
 
 /* Unified footer info — neutral text, shared across all wizard modals */
+.import-wizard-footer,
+.trombi-step-footer {
+    position: relative;
+}
+
+.import-wizard-footer .modal-footer-info,
+.trombi-step-footer .modal-footer-info {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
 .modal-footer-info {
     display: inline-flex;
     align-items: center;
@@ -509,19 +523,31 @@
     border-radius: 0;
     line-height: normal;
     opacity: 0;
-    transform: translateY(4px);
-    transition: opacity 0.4s var(--ease-spring),
-        transform 0.4s var(--ease-spring);
+    transition: opacity 0.3s ease;
 }
 
 .modal-footer-info:not(:empty) {
     opacity: 1;
-    transform: translateY(0);
 }
 
 .modal-footer-info strong {
     font-weight: 700;
     color: var(--text-primary);
+}
+
+.modal-footer-info .footer-info-dimmed {
+    font-size: 0.88em;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+    .import-wizard-footer .modal-footer-info,
+    .trombi-step-footer .modal-footer-info {
+        position: static;
+        transform: none;
+    }
 }
 
 /* ====================================================================

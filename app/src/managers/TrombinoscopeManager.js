@@ -155,6 +155,28 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiStep3PrevBtn')?.addEventListener('click', () => this._goToStep(2));
         document.getElementById('trombiConfirmBtn')?.addEventListener('click', () => this._handleImport());
 
+        // STEPPER NAVIGATION - Clickable steps
+        document.querySelectorAll('#trombiWizardModal .ui-stepper-step[role="button"]').forEach(stepEl => {
+            stepEl.addEventListener('click', () => {
+                const targetStep = parseInt(stepEl.dataset.step, 10);
+                if (targetStep && targetStep !== this._currentStep) {
+                    if (targetStep < this._currentStep) {
+                        this._goToStep(targetStep);
+                    } else if (targetStep === 2 && this._currentStep === 1 && (this._imageSrc || this._parsedPdfData)) {
+                        this._goToStep(2);
+                    } else if (targetStep === 3 && this._currentStep === 2) {
+                        this._goToStep(3);
+                    }
+                }
+            });
+            stepEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    stepEl.click();
+                }
+            });
+        });
+
         // Exclude students with photos toggle
         document.getElementById('trombiExcludeWithPhotos')?.addEventListener('change', () => {
             this._autoAssignSilent();
@@ -676,10 +698,19 @@ export const TrombinoscopeManager = {
     },
 
     _updateStepperUI() {
+        const canGoToStep2 = Boolean(this._imageSrc || this._parsedPdfData);
         document.querySelectorAll('#trombiWizardModal .ui-stepper-step').forEach(el => {
-            const stepNum = parseInt(el.dataset.step);
-            el.classList.toggle('active', stepNum === this._currentStep);
-            el.classList.toggle('completed', stepNum < this._currentStep);
+            const stepNum = parseInt(el.dataset.step, 10);
+            el.classList.remove('active', 'completed', 'clickable');
+            if (stepNum === this._currentStep) {
+                el.classList.add('active');
+            } else if (stepNum < this._currentStep) {
+                el.classList.add('completed', 'clickable');
+            } else if (stepNum === 2 && this._currentStep === 1 && canGoToStep2) {
+                el.classList.add('clickable');
+            } else if (stepNum === 3 && this._currentStep === 2) {
+                el.classList.add('clickable');
+            }
         });
     },
 
@@ -731,13 +762,17 @@ export const TrombinoscopeManager = {
                 if (classBadge) {
                     const displayClassName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className;
                     classBadge.textContent = `${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}`;
+                    classBadge.animate?.([
+                        { opacity: 0, transform: 'translateY(6px)', filter: 'blur(3px)' },
+                        { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }
+                    ], { duration: 380, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
                 }
             }
 
             if (footerInfo) {
-                const pagesCountText = parsed.numPages > 1 ? ` (${parsed.numPages} pages)` : '';
+                const pagesCountHtml = parsed.numPages > 1 ? ` <span class="footer-info-dimmed">(${parsed.numPages} pages)</span>` : '';
                 const displayClassName = parsed.className ? (Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className) : 'Auto';
-                footerInfo.textContent = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountText}`;
+                footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountHtml}`;
             }
 
             const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
@@ -747,7 +782,7 @@ export const TrombinoscopeManager = {
                     step1PageBar.innerHTML = parsed.pages.map((p, idx) => `
                         <button type="button" class="page-tab-btn ${idx === 0 ? 'active' : ''}" data-step1-page="${idx}">
                             <iconify-icon icon="solar:document-text-linear"></iconify-icon>
-                            Page ${idx + 1} (${p.studentsCount} élèves)
+                            <span>Page ${idx + 1}</span> <span class="page-tab-count">(${p.studentsCount} élèves)</span>
                         </button>
                     `).join('');
 
@@ -771,6 +806,7 @@ export const TrombinoscopeManager = {
                 nextBtn.disabled = false;
                 nextBtn.innerHTML = 'Suivant <iconify-icon class="iconify-inline" icon="ph:arrow-right-bold"></iconify-icon>';
             }
+            this._updateStepperUI();
         } catch (err) {
             console.error('[TrombinoscopeManager] Échec parsing PDF:', err);
             UI.showNotification('Impossible de lire le trombinoscope PDF', 'error');
@@ -815,6 +851,7 @@ export const TrombinoscopeManager = {
             this._isNewUpload = true; // Mark as new upload
             this._displayImagePreview();
             document.getElementById('trombiStep1NextBtn').disabled = false;
+            this._updateStepperUI();
         };
         img.onerror = () => {
             UI.showNotification('Erreur de chargement de l\'image', 'error');
@@ -890,6 +927,8 @@ export const TrombinoscopeManager = {
         if (classBadge) {
             classBadge.textContent = currentClass?.name || 'Nouvelle classe';
         }
+
+        this._updateStepperUI();
     },
 
     // ========================================================================
@@ -1012,7 +1051,7 @@ export const TrombinoscopeManager = {
                 pageBar.innerHTML = this._parsedPdfData.pages.map((p, idx) => `
                     <button type="button" class="page-tab-btn ${idx === this._currentPageIndex ? 'active' : ''}" data-page-index="${idx}">
                         <iconify-icon icon="solar:document-text-linear"></iconify-icon>
-                        Page ${idx + 1} (${p.studentsCount} élèves)
+                        <span>Page ${idx + 1}</span> <span class="page-tab-count">(${p.studentsCount} élèves)</span>
                     </button>
                 `).join('');
 
