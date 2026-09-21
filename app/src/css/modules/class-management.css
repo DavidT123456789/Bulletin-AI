@@ -463,6 +463,11 @@
     color: var(--text-tertiary);
 }
 
+.class-meta-sources iconify-icon {
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
 .class-dropdown-item.active .class-meta-sources {
     color: rgba(255, 255, 255, 0.85);
 }

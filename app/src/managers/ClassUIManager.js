@@ -458,7 +458,7 @@ export const ClassUIManager = {
                         </span>
                         <span class="class-meta">
                             <span class="class-meta-sources" title="Groupes sources : ${this._escapeHtml(sourceNames)}">
-                                <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
+                                <iconify-icon icon="solar:link-round-linear"></iconify-icon>
                                 <span>${this._escapeHtml(sourceNames)}</span>
                             </span>
                         </span>
