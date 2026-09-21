@@ -810,27 +810,27 @@
 }
 
 .sc-status-pill.sc-status-locked {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
     color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    border: 1px solid rgba(var(--success-rgb, 16, 185, 129), 0.25);
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-locked {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.2);
     color: #34d399;
-    border-color: rgba(16, 185, 129, 0.4);
+    border-color: rgba(var(--success-rgb, 16, 185, 129), 0.4);
 }
 
 .sc-status-pill.sc-status-testing {
-    background: rgba(245, 158, 11, 0.12);
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
     color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    border: 1px solid rgba(var(--warning-rgb, 245, 158, 11), 0.25);
 }
 
 [data-theme="dark"] .sc-status-pill.sc-status-testing {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(var(--warning-rgb, 245, 158, 11), 0.2);
     color: #fbbf24;
-    border-color: rgba(245, 158, 11, 0.4);
+    border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.4);
 }
 
 .sc-status-pill.sc-status-empty {
@@ -840,27 +840,27 @@
 /* Hover & Morphing interactions */
 @media (hover: hover) {
     .sc-status-pill.sc-status-locked:hover {
-        background: rgba(16, 185, 129, 0.22);
-        border-color: rgba(16, 185, 129, 0.45);
-        box-shadow: 0 4px 18px rgba(16, 185, 129, 0.28);
+        background: rgba(var(--success-rgb, 16, 185, 129), 0.18);
+        border-color: rgba(var(--success-rgb, 16, 185, 129), 0.38);
+        box-shadow: 0 2px 10px rgba(var(--success-rgb, 16, 185, 129), 0.14);
     }
 
     [data-theme="dark"] .sc-status-pill.sc-status-locked:hover {
-        background: rgba(16, 185, 129, 0.32);
-        border-color: rgba(16, 185, 129, 0.6);
-        box-shadow: 0 4px 22px rgba(16, 185, 129, 0.35);
+        background: rgba(var(--success-rgb, 16, 185, 129), 0.26);
+        border-color: rgba(var(--success-rgb, 16, 185, 129), 0.5);
+        box-shadow: 0 2px 14px rgba(var(--success-rgb, 16, 185, 129), 0.18);
     }
 
     .sc-status-pill.sc-status-testing:hover {
-        background: rgba(245, 158, 11, 0.22);
-        border-color: rgba(245, 158, 11, 0.45);
-        box-shadow: 0 4px 18px rgba(245, 158, 11, 0.28);
+        background: rgba(var(--warning-rgb, 245, 158, 11), 0.18);
+        border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.38);
+        box-shadow: 0 2px 10px rgba(var(--warning-rgb, 245, 158, 11), 0.14);
     }
 
     [data-theme="dark"] .sc-status-pill.sc-status-testing:hover {
-        background: rgba(245, 158, 11, 0.32);
-        border-color: rgba(245, 158, 11, 0.6);
-        box-shadow: 0 4px 22px rgba(245, 158, 11, 0.35);
+        background: rgba(var(--warning-rgb, 245, 158, 11), 0.26);
+        border-color: rgba(var(--warning-rgb, 245, 158, 11), 0.5);
+        box-shadow: 0 2px 14px rgba(var(--warning-rgb, 245, 158, 11), 0.18);
     }
 
     .sc-status-pill:hover .sc-status-pill-rest {
