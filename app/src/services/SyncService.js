@@ -150,20 +150,85 @@ export const SyncService = {
     // Connection is now fully manual or checked only on explicit user action.
 
     /**
-     * Check remote file status (modification date).
+     * Refresh the full sync status (local hash comparison + remote metadata fetch).
+     * @param {Object} [options]
+     * @param {boolean} [options.showChecking=false] - Whether to display a checking spinner in the menu
+     * @returns {Promise<string>} Current sync state
      */
-    async checkRemoteStatus() {
-        if (!this._provider || !this._isOnline) return;
+    async refreshStatus(options = {}) {
+        const { showChecking = false } = options;
+        const savedProvider = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
+        if (!savedProvider) {
+            this._updateCloudIndicator('local');
+            return 'local';
+        }
+
+        if (this._isChecking) return this._lastSyncState || 'local';
+        this._isChecking = true;
 
         try {
-            const meta = await this._provider.getMetadata();
-            if (meta && meta.lastModified) {
-                this.remoteSyncTime = new Date(meta.lastModified).getTime();
-                this._updateCloudIndicator('connected'); // Refresh UI
+            // Always re-read lastSyncTime from localStorage
+            this.lastSyncTime = parseInt(localStorage.getItem('bulletin_last_sync') || '0') || null;
+
+            // Show subtle checking spinner if requested
+            const saveHint = document.getElementById('cloudSaveHint');
+            const loadHint = document.getElementById('cloudLoadHint');
+            if (showChecking && saveHint) {
+                saveHint.style.display = 'inline-flex';
+                saveHint.style.alignItems = 'center';
+                saveHint.style.gap = '4px';
+                saveHint.className = 'cloud-btn-hint hint-syncing';
+                saveHint.innerHTML = '<span class="cloud-hint-spinner"></span><span>Vérification…</span>';
+                if (loadHint) {
+                    loadHint.style.display = 'none';
+                    loadHint.textContent = '';
+                }
             }
-        } catch (e) {
-            console.warn('[SyncService] Failed to check remote status:', e);
+
+            // Auto-reconnect silently if not connected but configured and online
+            if (!this.isConnected() && this._isOnline) {
+                try {
+                    await this.connect(savedProvider, { silent: true });
+                } catch {
+                    /* Silent connect failure */
+                }
+            }
+
+            if (!this.isConnected()) {
+                this._updateCloudIndicator(this._isOnline ? 'expired' : 'local');
+                return this._isOnline ? 'expired' : 'local';
+            }
+
+            // Check remote with timeout protection (4s)
+            try {
+                const metaPromise = this._provider?.getMetadata?.() || Promise.resolve(null);
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+                const meta = await Promise.race([metaPromise, timeoutPromise]).catch(() => null);
+
+                if (meta && meta.lastModified) {
+                    this.remoteSyncTime = new Date(meta.lastModified).getTime();
+                }
+                this._updateCloudIndicator('connected');
+            } catch (e) {
+                console.warn('[SyncService] Failed to check remote status:', e);
+                if (this._provider?.needsReconnect?.()) {
+                    this._updateCloudIndicator('expired');
+                } else {
+                    this._updateCloudIndicator('connected');
+                }
+            }
+
+            return this._lastSyncState || 'in-sync';
+        } finally {
+            this._isChecking = false;
         }
+    },
+
+    /**
+     * Check remote file status (delegates to refreshStatus).
+     */
+    async checkRemoteStatus() {
+        return this.refreshStatus();
     },
 
     /**
@@ -172,127 +237,128 @@ export const SyncService = {
      * @private
      */
     _updateCloudIndicator(state) {
-        setTimeout(() => {
-            const saveBtn = document.getElementById('cloudSaveMenuBtn');
-            const loadBtn = document.getElementById('cloudLoadMenuBtn');
-            const reconnectBtn = document.getElementById('cloudReconnectBtn');
-            const connectBtn = document.getElementById('cloudConnectBtn');
-            const separator = document.getElementById('cloudSeparator');
-            if (!saveBtn) return;
+        const saveBtn = document.getElementById('cloudSaveMenuBtn');
+        const loadBtn = document.getElementById('cloudLoadMenuBtn');
+        const reconnectBtn = document.getElementById('cloudReconnectBtn');
+        const connectBtn = document.getElementById('cloudConnectBtn');
+        const separator = document.getElementById('cloudSeparator');
+        if (!saveBtn) return;
 
-            // Reset all sync state classes
-            const syncClasses = ['disabled', 'cloud-action-recommended'];
-            syncClasses.forEach(c => saveBtn.classList.remove(c));
-            if (loadBtn) syncClasses.forEach(c => loadBtn.classList.remove(c));
+        // Reset all sync state classes
+        const syncClasses = ['disabled', 'cloud-action-recommended'];
+        syncClasses.forEach(c => saveBtn.classList.remove(c));
+        if (loadBtn) syncClasses.forEach(c => loadBtn.classList.remove(c));
 
+        const saveHint = document.getElementById('cloudSaveHint');
+        const loadHint = document.getElementById('cloudLoadHint');
+        if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
+        if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
+
+        const config = {
+            connected: {
+                icon: 'solar:cloud-upload-linear',
+                label: 'Sauvegarder'
+            },
+            expired: {
+                icon: 'solar:cloud-warning-linear',
+                label: 'Sauvegarder'
+            },
+            syncing: {
+                icon: 'solar:spinner-bold-duotone',
+                label: 'Sauvegarder',
+                spin: true
+            },
+            local: {
+                icon: 'solar:cloud-upload-linear',
+                label: 'Sauvegarder'
+            }
+        };
+
+        const currentConfig = config[state] || config.local;
+
+        // --- First-time user: show only the Connect button ---
+        if (!this._wasConfigured && (state === 'disconnected' || state === 'local')) {
+            saveBtn.style.display = 'none';
+            if (loadBtn) loadBtn.style.display = 'none';
+            if (reconnectBtn) reconnectBtn.style.display = 'none';
+            if (separator) separator.style.display = 'block';
+            if (connectBtn) connectBtn.style.display = 'flex';
+            return;
+        }
+
+        // --- Configured user: hide Connect, show Save/Load ---
+        if (connectBtn) connectBtn.style.display = 'none';
+        if (separator) separator.style.display = 'block';
+
+        saveBtn.style.display = 'flex';
+        if (loadBtn) loadBtn.style.display = 'flex';
+
+        // Update icon
+        const iconEl = saveBtn.querySelector('iconify-icon');
+        if (iconEl) {
+            iconEl.setAttribute('icon', currentConfig.icon);
+            iconEl.classList.toggle('rotate-icon', !!currentConfig.spin);
+            iconEl.style.color = '';
+        }
+
+        // Update label
+        const labelEl = saveBtn.querySelector('.cloud-save-label');
+        if (labelEl) {
+            labelEl.textContent = currentConfig.label;
+            labelEl.style.color = '';
+        }
+
+        // Disable Save/Load when not actively connected
+        if (state !== 'connected' && state !== 'syncing') {
+            saveBtn.classList.add('disabled');
+            if (loadBtn) loadBtn.classList.add('disabled');
+        }
+
+        // Reconnect button (not connected states)
+        if (reconnectBtn) {
+            if (state === 'expired' || (state === 'local' && this._wasConfigured)) {
+                reconnectBtn.style.display = 'flex';
+                const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
+                const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
+                const spanEl = reconnectBtn.querySelector('span');
+                if (spanEl) spanEl.textContent = `Reconnecter ${label}`;
+            } else {
+                reconnectBtn.style.display = 'none';
+            }
+        }
+
+        // --- Sync state computation (connected only) ---
+        if (state === 'connected') {
+            const syncState = this._computeSyncState();
+            this._lastSyncState = syncState;
+            this._applySyncStateUI(syncState, saveBtn, loadBtn);
+        } else if (state === 'syncing') {
+            const saveHint = document.getElementById('cloudSaveHint');
+            if (saveHint) {
+                saveHint.style.display = 'block';
+                saveHint.textContent = 'Envoi en cours...';
+                saveHint.className = 'cloud-btn-hint hint-syncing';
+            }
+        } else {
             const saveHint = document.getElementById('cloudSaveHint');
             const loadHint = document.getElementById('cloudLoadHint');
             if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
             if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
+        }
 
-            const config = {
-                connected: {
-                    icon: 'solar:cloud-upload-linear',
-                    label: 'Sauvegarder'
-                },
-                expired: {
-                    icon: 'solar:cloud-warning-linear',
-                    label: 'Sauvegarder'
-                },
-                syncing: {
-                    icon: 'solar:spinner-bold-duotone',
-                    label: 'Sauvegarder',
-                    spin: true
-                },
-                local: {
-                    icon: 'solar:cloud-upload-linear',
-                    label: 'Sauvegarder'
-                }
-            };
-
-            const currentConfig = config[state] || config.local;
-
-            // --- First-time user: show only the Connect button ---
-            if (!this._wasConfigured && (state === 'disconnected' || state === 'local')) {
-                saveBtn.style.display = 'none';
-                if (loadBtn) loadBtn.style.display = 'none';
-                if (reconnectBtn) reconnectBtn.style.display = 'none';
-                if (separator) separator.style.display = 'block';
-                if (connectBtn) connectBtn.style.display = 'flex';
-                return;
-            }
-
-            // --- Configured user: hide Connect, show Save/Load ---
-            if (connectBtn) connectBtn.style.display = 'none';
-            if (separator) separator.style.display = 'block';
-
-            saveBtn.style.display = 'flex';
-            if (loadBtn) loadBtn.style.display = 'flex';
-
-            // Update icon
-            const iconEl = saveBtn.querySelector('iconify-icon');
-            if (iconEl) {
-                iconEl.setAttribute('icon', currentConfig.icon);
-                iconEl.classList.toggle('rotate-icon', !!currentConfig.spin);
-                iconEl.style.color = '';
-            }
-
-            // Update label
-            const labelEl = saveBtn.querySelector('.cloud-save-label');
-            if (labelEl) {
-                labelEl.textContent = currentConfig.label;
-                labelEl.style.color = '';
-            }
-
-            // Disable Save/Load when not actively connected
-            if (state !== 'connected' && state !== 'syncing') {
-                saveBtn.classList.add('disabled');
-                if (loadBtn) loadBtn.classList.add('disabled');
-            }
-
-            // Reconnect button (not connected states)
-            if (reconnectBtn) {
-                if (state === 'expired' || (state === 'local' && this._wasConfigured)) {
-                    reconnectBtn.style.display = 'flex';
-                    const providerName = this.currentProviderName || localStorage.getItem('bulletin_sync_provider');
-                    const label = { google: 'Google Drive', dropbox: 'Dropbox' }[providerName] || 'Cloud';
-                    const spanEl = reconnectBtn.querySelector('span');
-                    if (spanEl) spanEl.textContent = `Reconnecter ${label}`;
-                } else {
-                    reconnectBtn.style.display = 'none';
-                }
-            }
-
-            // --- Sync state computation (connected only) ---
-            if (state === 'connected') {
-                const syncState = this._computeSyncState();
-                this._lastSyncState = syncState;
-                this._applySyncStateUI(syncState, saveBtn, loadBtn);
-            } else if (state === 'syncing') {
-                const saveHint = document.getElementById('cloudSaveHint');
-                if (saveHint) {
-                    saveHint.style.display = 'block';
-                    saveHint.textContent = 'Envoi en cours...';
-                    saveHint.className = 'cloud-btn-hint hint-syncing';
-                }
-            } else {
-                const saveHint = document.getElementById('cloudSaveHint');
-                const loadHint = document.getElementById('cloudLoadHint');
-                if (saveHint) { saveHint.style.display = 'none'; saveHint.textContent = ''; }
-                if (loadHint) { loadHint.style.display = 'none'; loadHint.textContent = ''; }
-            }
-
-            // Update menu reminder dot based on syncState
-            const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
-            if (menuBtn) {
-                const needsReminder = state === 'connected' &&
-                    (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
-                const isConflict = state === 'connected' && this._lastSyncState === 'conflict';
-                menuBtn.classList.toggle('has-cloud-reminder', !!needsReminder);
-                menuBtn.classList.toggle('has-cloud-conflict', isConflict);
-            }
-        }, 100);
+        // Update menu reminder dot based on syncState
+        const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
+        if (menuBtn) {
+            const needsReminder = state === 'connected' &&
+                (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
+            const isConflict = state === 'connected' && this._lastSyncState === 'conflict';
+            menuBtn.classList.toggle('has-cloud-reminder', !!needsReminder);
+            menuBtn.classList.toggle('has-cloud-conflict', isConflict);
+        }
     },
+
+    /** @type {boolean} Guard against concurrent refreshStatus calls */
+    _isChecking: false,
 
     /** @type {string|null} Last computed sync state for use in confirmation dialogs */
     _lastSyncState: null,
@@ -319,6 +385,8 @@ export const SyncService = {
                 lMod = lSync;
                 localStorage.setItem('bulletin_last_modified', lSync.toString());
             }
+        } else if (!syncHash && lSync > 0 && lMod <= lSync) {
+            localStorage.setItem('bulletin_last_sync_hash', currentHash);
         }
 
         const hasLocalChanges = lMod > lSync;

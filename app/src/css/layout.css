@@ -1063,8 +1063,8 @@ body.is-cloud-syncing label {
     background-color: var(--item-hover-bg);
 }
 
-.menu-item i,
-.menu-item iconify-icon {
+.menu-item > i,
+.menu-item > iconify-icon {
     font-size: 18px;
     color: var(--text-tertiary);
     min-width: 24px;
@@ -1074,8 +1074,8 @@ body.is-cloud-syncing label {
     transition: color var(--transition-fast);
 }
 
-.menu-item:hover i,
-.menu-item:hover iconify-icon {
+.menu-item:hover > i,
+.menu-item:hover > iconify-icon {
     color: var(--text-primary);
 }
 
@@ -1128,12 +1128,31 @@ body.is-cloud-syncing label {
 }
 
 .cloud-btn-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 11px;
     font-weight: 400;
     color: var(--text-tertiary);
     margin-top: 1px;
     white-space: nowrap;
     transition: color var(--transition-fast);
+}
+
+.cloud-btn-hint iconify-icon {
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.cloud-hint-spinner {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
 }
 
 .cloud-save-menu-item:hover .cloud-save-label {

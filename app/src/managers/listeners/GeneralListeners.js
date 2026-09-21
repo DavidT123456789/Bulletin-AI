@@ -96,6 +96,8 @@ export const GeneralListeners = {
                         DOM.headerMenuDropdown.style.zIndex = '10001'; // Above everything
                         DOM.headerMenuDropdown.style.width = '220px'; // Ensure good width
                     }
+
+                    this._onMenuOpen();
                 } else {
                     closeMenu();
                 }
@@ -308,17 +310,6 @@ export const GeneralListeners = {
                 }
             });
         }
-
-        // --- Refresh sync state on menu open ---
-        DOM.headerMenuBtn?.addEventListener('click', async () => {
-            try {
-                const { SyncService } = await import('../../services/SyncService.js');
-                if (SyncService.isConnected()) {
-                    await SyncService.checkRemoteStatus();
-                }
-                this._updateCloudReminder(SyncService);
-            } catch { /* Ignore */ }
-        });
 
         // --- Save button: guard empty data + confirmation + auto-reconnect ---
         cloudSaveBtn.addEventListener('click', async () => {
@@ -579,6 +570,22 @@ export const GeneralListeners = {
         const remoteSync = syncService?.remoteSyncTime || 0;
         const hasRemote = remoteSync > 0 && remoteSync > (lastSync + 5000);
         return hasLocal || hasRemote;
+    },
+
+    /**
+     * Triggered when header menu dropdown opens.
+     * Automatically refreshes cloud sync status with checking spinner.
+     * @private
+     */
+    async _onMenuOpen() {
+        if (!localStorage.getItem('bulletin_sync_provider')) return;
+        try {
+            const SyncService = window.SyncService || (await import('../../services/SyncService.js')).SyncService;
+            await SyncService.refreshStatus({ showChecking: true });
+            this._updateCloudReminder(SyncService);
+        } catch (e) {
+            console.warn('[GeneralListeners] Failed to refresh cloud state on menu open:', e);
+        }
     },
 
     /**
