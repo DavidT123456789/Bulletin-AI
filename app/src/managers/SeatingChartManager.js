@@ -905,7 +905,12 @@ export const SeatingChartManager = {
         // Defer non-critical DOM updates to keep the animation at 60/120 FPS
         setTimeout(() => {
             this._saveGridConfig();
-            this._updateCellsDraggability();
+            if (!this._isLocked) {
+                this._renderGrid();
+                this._updateSidebarLockState();
+            } else {
+                this._updateCellsDraggability();
+            }
             TooltipsUI?.initTooltips?.();
             window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
                 detail: { classId: currentClass?.id, locked: this._isLocked }
