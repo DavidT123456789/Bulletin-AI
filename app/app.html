@@ -3142,7 +3142,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build a930994 · 20 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 7f76935 · 21 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
@@ -3693,8 +3693,32 @@
     </template>
 
     <template id="empty-state-template">
-        <h3>Générez vos premiers bulletins</h3>
-        <p>Commencez par ajouter vos élèves.</p>
+        <div class="empty-state-header">
+            <div class="empty-state-class-pill" id="emptyStateClassPill">
+                <iconify-icon icon="solar:users-group-rounded-linear" class="empty-state-pill-icon" aria-hidden="true"></iconify-icon>
+                <input type="text"
+                       class="empty-state-class-input" 
+                       id="emptyStateClassInput"
+                       value="Nouvelle classe"
+                       placeholder="Nom de la classe..."
+                       autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       spellcheck="false"
+                       data-lpignore="true"
+                       data-1p-ignore="true"
+                       maxlength="50"
+                       aria-label="Nom de la classe">
+                <button type="button" class="empty-state-edit-btn" id="emptyStateEditBtn" data-tooltip="Modifier le nom" aria-label="Modifier le nom de la classe">
+                    <iconify-icon icon="solar:pen-linear"></iconify-icon>
+                </button>
+            </div>
+            <p class="empty-state-subtitle" id="emptyStateSubtitle">Commencez par ajouter vos élèves.</p>
+            <div class="empty-state-trombi-hint" id="emptyStateTrombiHint">
+                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                <span>Le nom s'adaptera automatiquement si vous importez un Trombinoscope Pronote</span>
+            </div>
+        </div>
 
 
         <!-- Hub d'import intégré directement -->

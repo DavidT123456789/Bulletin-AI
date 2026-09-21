@@ -1089,7 +1089,7 @@ body.is-cloud-syncing label {
 }
 
 .cloud-btn-hint.hint-syncing {
-    color: var(--primary-color);
+    color: var(--color-sky-deep);
     animation: hint-pulse 1.2s ease-in-out infinite;
 }
 
@@ -1145,11 +1145,12 @@ body.is-cloud-syncing label {
 }
 
 .cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint {
-    color: var(--primary-color);
+    color: var(--color-sky-deep);
+    font-weight: 500;
 }
 
 .cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
-    color: var(--primary-hover);
+    color: var(--color-sky-deep);
 }
 
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint,
@@ -1196,7 +1197,7 @@ body.is-cloud-syncing label {
 
 /* Cloud sync state — action recommended (accent color applied to hint and icon, standard hover) */
 .cloud-save-menu-item.cloud-action-recommended > iconify-icon {
-    color: var(--primary-color);
+    color: var(--color-sky-deep);
 }
 
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended > iconify-icon {

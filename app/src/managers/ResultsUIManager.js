@@ -8,6 +8,7 @@ import { ImportWizardManager } from './ImportWizardManager.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { ClassManager } from './ClassManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
@@ -351,19 +352,21 @@ export const ResultsUIManager = {
                     DOM.emptyStateCard.innerHTML = '';
                     DOM.emptyStateCard.appendChild(emptyTemplate.content.cloneNode(true));
                     this._bindEmptyStateHubEvents(DOM.emptyStateCard);
+                    this._bindEmptyStateClassInput(DOM.emptyStateCard);
                 }
 
                 const currentClass = ClassManager.getCurrentClass();
                 const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true);
-                const subtitle = DOM.emptyStateCard.querySelector('p');
+                const subtitle = DOM.emptyStateCard.querySelector('.empty-state-subtitle') || DOM.emptyStateCard.querySelector('p');
                 if (subtitle) {
-                    const className = currentClass?.name?.trim();
-                    if (className) {
-                        const preposition = /^[aeiouyéèêëàâîïôûù]/i.test(className) ? "d'" : 'de ';
-                        subtitle.textContent = `Commencez par ajouter vos élèves ${preposition}${className} et leurs données du ${periodLabel}.`;
-                    } else {
-                        subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
-                    }
+                    subtitle.textContent = `Commencez par ajouter vos élèves et leurs données du ${periodLabel}.`;
+                }
+
+                // Synchroniser la valeur de l'input si non focalisé par l'utilisateur
+                const classInput = DOM.emptyStateCard.querySelector('#emptyStateClassInput');
+                if (classInput && document.activeElement !== classInput) {
+                    classInput.value = currentClass?.name || 'Nouvelle classe';
+                    this._autoSizeClassInput(classInput);
                 }
             }
             if (DOM.emptyStateCard) DOM.emptyStateCard.style.display = 'flex';
@@ -594,6 +597,116 @@ export const ResultsUIManager = {
             });
         });
     },
+
+    /**
+     * Ajuste la largeur du champ de saisie selon la longueur du nom
+     * @param {HTMLInputElement} input
+     * @private
+     */
+    _autoSizeClassInput(input) {
+        if (!input) return;
+        const len = Math.max((input.value || input.placeholder || '').length, 12);
+        input.style.width = `${Math.min(Math.max(len + 2, 14), 38)}ch`;
+    },
+
+    /**
+     * Attache les écouteurs sur le champ de renommage in-situ de l'Empty State
+     * @param {HTMLElement} container
+     * @private
+     */
+    _bindEmptyStateClassInput(container) {
+        const input = container.querySelector('#emptyStateClassInput');
+        const editBtn = container.querySelector('#emptyStateEditBtn');
+        const pill = input?.closest('.empty-state-class-pill');
+        if (!input) return;
+
+        pill?.addEventListener('click', (e) => {
+            if (e.target !== input) {
+                e.stopPropagation();
+                input.focus();
+                input.select();
+            }
+        });
+
+        editBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            input.focus();
+            input.select();
+        });
+
+        input.addEventListener('input', () => {
+            this._autoSizeClassInput(input);
+            // Synchronisation en direct dans l'en-tête (Live Sync)
+            const currentClass = ClassManager.getCurrentClass();
+            const trimmed = input.value.trim();
+            if (DOM.headerClassName) {
+                DOM.headerClassName.textContent = Utils.formatClassDisplayName(trimmed || currentClass?.name || 'Nouvelle classe');
+            }
+        });
+
+        const saveClassName = () => {
+            const currentClass = ClassManager.getCurrentClass();
+            if (!currentClass) return;
+
+            const trimmedName = input.value.trim();
+            if (!trimmedName) {
+                // Si l'utilisateur a tout effacé, réinitialiser avec le nom actuel
+                input.value = currentClass.name || 'Nouvelle classe';
+                this._autoSizeClassInput(input);
+                if (DOM.headerClassName) {
+                    DOM.headerClassName.textContent = Utils.formatClassDisplayName(input.value);
+                }
+                return;
+            }
+
+            if (trimmedName !== currentClass.name) {
+                ClassManager.updateClass(currentClass.id, { name: trimmedName });
+                ClassUIManager?.updateHeaderDisplay?.();
+                ClassUIManager?.renderClassList?.();
+
+                // Rétroaction visuelle
+                if (pill) {
+                    pill.classList.add('saved');
+                    setTimeout(() => pill.classList.remove('saved'), 500);
+                }
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveClassName();
+                input.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                const currentClass = ClassManager.getCurrentClass();
+                input.value = currentClass?.name || 'Nouvelle classe';
+                this._autoSizeClassInput(input);
+                if (DOM.headerClassName) {
+                    DOM.headerClassName.textContent = Utils.formatClassDisplayName(input.value);
+                }
+                input.blur();
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            saveClassName();
+        });
+    },
+
+    /**
+     * Focalise et sélectionne le champ de nom de classe de l'Empty State
+     */
+    focusEmptyStateClassInput() {
+        setTimeout(() => {
+            const input = document.getElementById('emptyStateClassInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 120);
+    },
+
 
     async regenerateVisible(onlyErrors = false) {
         // Pour les erreurs, on cherche dans TOUS les résultats, pas seulement les filtrés

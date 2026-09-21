@@ -225,88 +225,76 @@ export const ClassUIManager = {
     },
 
     /**
-     * Affiche un input inline dans le dropdown pour créer une nouvelle classe
+     * Crée une nouvelle classe immédiatement avec un nom générique intelligent,
+     * bascule vers elle et affiche la page de présentation prête à l'emploi.
+     * @param {Object} [options]
+     * @param {boolean} [options.autoFocusInput=false] - Si true, focalise et sélectionne le champ sur l'Empty State
+     * @returns {Promise<Object|null>}
      */
-    showNewClassPrompt() {
-        if (!this._isDropdownOpen) {
-            this.openDropdown();
-        }
-        if (!DOM.classDropdownList) return;
+    async createNewClassAndSwitch(options = { autoFocusInput: false }) {
+        try {
+            const currentClass = ClassManager.getCurrentClass();
+            const allClasses = ClassManager.getAllClasses() || [];
+            const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
+            const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
 
-        // Vérifier si l'input existe déjà
-        const existingInput = DOM.classDropdownList.querySelector('.inline-create-form');
-        if (existingInput) {
-            existingInput.querySelector('input')?.focus();
-            return;
-        }
-
-        // Créer le formulaire inline
-        const formHtml = `
-            <form class="inline-create-form class-dropdown-item" action="javascript:void(0)" autocomplete="off">
-                <input type="text" class="inline-class-input custom-input" 
-                       placeholder="Classe (ex. 6ème A)..." 
-                       autocomplete="off"
-                       autocorrect="off"
-                       autocapitalize="off"
-                       spellcheck="false"
-                       data-lpignore="true"
-                       data-1p-ignore="true"
-                       data-form-type="other"
-                       maxlength="50"
-                       name="dropdown_school_class_title">
-                <div class="inline-create-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                    <button type="button" class="inline-create-btn" disabled title="Valider">
-                        <iconify-icon icon="ph:check"></iconify-icon>
-                    </button>
-                    <button type="button" class="inline-cancel-btn" title="Annuler">
-                        <iconify-icon icon="ph:x"></iconify-icon>
-                    </button>
-                </div>
-            </form>
-        `;
-
-        // Insérer au début de la liste
-        DOM.classDropdownList.insertAdjacentHTML('afterbegin', formHtml);
-
-        const form = DOM.classDropdownList.querySelector('.inline-create-form');
-        const input = form.querySelector('.inline-class-input');
-        const createBtn = form.querySelector('.inline-create-btn');
-        const cancelBtn = form.querySelector('.inline-cancel-btn');
-
-        // Focus
-        setTimeout(() => input?.focus(), 50);
-
-        // Handlers
-        const removeForm = () => {
-            form.style.animation = 'slideUpCollapse 0.2s ease-out forwards';
-            setTimeout(() => form.remove(), 180);
-        };
-
-        input.oninput = () => {
-            createBtn.disabled = input.value.trim().length === 0;
-        };
-
-        input.onkeydown = (e) => {
-            if (e.key === 'Enter' && input.value.trim()) {
-                e.preventDefault();
-                createBtn.click();
-            } else if (e.key === 'Escape') {
-                removeForm();
+            // Si la classe active est déjà une "Nouvelle classe" vide (non démo), on la réutilise
+            // pour éviter d'empiler des classes fantômes ("Nouvelle classe 2", "Nouvelle classe 3")
+            const isGenericCurrent = currentClass && /^Nouvelle\s+classe(\s+\d+)?$/i.test(currentClass.name.trim());
+            if (currentClass && !hasStudents && !isDemo && isGenericCurrent) {
+                this.closeDropdown();
+                if (options.autoFocusInput) {
+                    this.focusEmptyStateInput();
+                }
+                return currentClass;
             }
-        };
 
-        cancelBtn.onclick = removeForm;
-
-        createBtn.onclick = async () => {
-            const className = input.value.trim();
-            if (className) {
-                createBtn.disabled = true;
-                input.disabled = true;
-                await this._createAndSwitchClass(className);
-                removeForm();
+            // Déterminer le nom générique
+            const baseName = 'Nouvelle classe';
+            let targetName = baseName;
+            if (allClasses.some(c => c.name.toLowerCase() === baseName.toLowerCase())) {
+                let counter = 2;
+                while (allClasses.some(c => c.name.toLowerCase() === `${baseName} ${counter}`.toLowerCase())) {
+                    counter++;
+                }
+                targetName = `${baseName} ${counter}`;
             }
-        };
+
+            // Créer la classe et basculer vers elle
+            const newClass = await this._createAndSwitchClass(targetName);
+            this.closeDropdown();
+
+            if (options.autoFocusInput) {
+                this.focusEmptyStateInput();
+            }
+
+            return newClass;
+        } catch (error) {
+            UI?.showNotification?.(`Erreur : ${error.message}`, 'error');
+            return null;
+        }
     },
+
+    /**
+     * Rétrocompatibilité : déclenche la création fluide de classe
+     */
+    showNewClassPrompt(options = {}) {
+        return this.createNewClassAndSwitch({ autoFocusInput: false, ...options });
+    },
+
+    /**
+     * Place le curseur dans le champ de nom de classe de l'Empty State et sélectionne le texte
+     */
+    focusEmptyStateInput() {
+        setTimeout(() => {
+            const input = document.getElementById('emptyStateClassInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 120);
+    },
+
 
 
     /**

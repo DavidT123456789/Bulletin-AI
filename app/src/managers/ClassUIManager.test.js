@@ -177,3 +177,98 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         expect(badge.innerHTML).toContain('1 él.');
     });
 });
+
+describe('ClassUIManager - Création instantanée et renommage in-situ', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="classDropdown" class="class-dropdown"></div>
+            <div id="classDropdownList" class="class-dropdown-list"></div>
+            <div id="headerClassName"></div>
+            <div id="headerClassChip"></div>
+            <div id="empty-state-card" style="display: none;">
+                <input id="emptyStateClassInput" value="Nouvelle classe">
+                <button id="emptyStateEditBtn"></button>
+                <div class="empty-state-input-wrapper"></div>
+            </div>
+            <template id="empty-state-template">
+                <div class="empty-state-header">
+                    <div class="empty-state-input-wrapper">
+                        <input id="emptyStateClassInput" value="Nouvelle classe">
+                        <button id="emptyStateEditBtn"></button>
+                    </div>
+                </div>
+                <div class="empty-state-hub"></div>
+            </template>
+        `;
+        DOM.classDropdown = document.getElementById('classDropdown');
+        DOM.classDropdownList = document.getElementById('classDropdownList');
+        DOM.headerClassName = document.getElementById('headerClassName');
+        DOM.headerClassChip = document.getElementById('headerClassChip');
+        DOM.emptyStateCard = document.getElementById('empty-state-card');
+
+        userSettings.academic.classes = [];
+        userSettings.academic.currentClassId = null;
+        appState.currentClassId = null;
+        appState.generatedResults = [];
+    });
+
+    it('devrait créer immédiatement une classe générique et basculer vers elle', async () => {
+        const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockResolvedValue();
+        const focusSpy = vi.spyOn(ClassUIManager, 'focusEmptyStateInput').mockImplementation(() => {});
+
+        const created = await ClassUIManager.createNewClassAndSwitch({ autoFocusInput: true });
+
+        expect(created).not.toBeNull();
+        expect(created.name).toBe('Nouvelle classe');
+        expect(switchSpy).toHaveBeenCalledWith(created.id);
+        expect(focusSpy).toHaveBeenCalled();
+
+        switchSpy.mockRestore();
+        focusSpy.mockRestore();
+    });
+
+    it('devrait réutiliser la classe courante si elle est déjà vide avec un nom par défaut', async () => {
+        const emptyClass = ClassManager.createClass('Nouvelle classe');
+        appState.currentClassId = emptyClass.id;
+        userSettings.academic.currentClassId = emptyClass.id;
+
+        const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockResolvedValue();
+        const focusSpy = vi.spyOn(ClassUIManager, 'focusEmptyStateInput').mockImplementation(() => {});
+
+        const result = await ClassUIManager.createNewClassAndSwitch({ autoFocusInput: true });
+
+        expect(result.id).toBe(emptyClass.id);
+        // Ne doit pas avoir créé une 2e classe
+        expect(ClassManager.getAllClasses().length).toBe(1);
+        expect(switchSpy).not.toHaveBeenCalled();
+        expect(focusSpy).toHaveBeenCalled();
+
+        switchSpy.mockRestore();
+        focusSpy.mockRestore();
+    });
+
+    it('devrait incrémenter le numéro si "Nouvelle classe" existe déjà avec des élèves', async () => {
+        const class1 = ClassManager.createClass('Nouvelle classe');
+        appState.generatedResults = [{ id: 's1', classId: class1.id }];
+
+        const switchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockResolvedValue();
+        vi.spyOn(ClassUIManager, 'focusEmptyStateInput').mockImplementation(() => {});
+
+        const result = await ClassUIManager.createNewClassAndSwitch();
+
+        expect(result.name).toBe('Nouvelle classe 2');
+        expect(ClassManager.getAllClasses().length).toBe(2);
+
+        switchSpy.mockRestore();
+    });
+
+    it('devrait rediriger showNewClassPrompt vers createNewClassAndSwitch', async () => {
+        const createSpy = vi.spyOn(ClassUIManager, 'createNewClassAndSwitch').mockResolvedValue({ id: 'c1' });
+
+        await ClassUIManager.showNewClassPrompt();
+
+        expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ autoFocusInput: false }));
+        createSpy.mockRestore();
+    });
+});
+
