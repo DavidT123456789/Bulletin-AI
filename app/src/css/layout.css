@@ -1068,6 +1068,8 @@ body.is-cloud-syncing label {
     font-size: 18px;
     color: var(--text-tertiary);
     min-width: 24px;
+    width: 24px;
+    height: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1231,7 +1233,10 @@ body.is-cloud-syncing label {
 .cloud-connect-item iconify-icon {
     font-size: 18px;
     min-width: 24px;
+    width: 24px;
+    height: 24px;
     display: inline-flex;
+    align-items: center;
     justify-content: center;
 }
 
@@ -1258,8 +1263,12 @@ body.is-cloud-syncing label {
 .cloud-reconnect-item iconify-icon {
     font-size: 18px;
     display: inline-flex;
-    min-width: 24px;
+    align-items: center;
     justify-content: center;
+    min-width: 24px;
+    width: 24px;
+    height: 24px;
+    color: var(--warning-color);
     transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
@@ -1270,6 +1279,29 @@ body.is-cloud-syncing label {
 
 [data-theme="dark"] .cloud-reconnect-item:hover iconify-icon {
     color: var(--warning-bright);
+}
+
+/* Wrapper carré pour rotation centrée d'icônes non-carrées */
+.icon-spin-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    will-change: transform;
+}
+
+/* Alignement optique et géométrique du centroïde du logo Google Drive (triangle équilatéral) */
+.icon-spin-wrapper > iconify-icon[icon="logos:google-drive"],
+.cloud-connect-item .icon-spin-wrapper > iconify-icon,
+.cloud-reconnect-item .icon-spin-wrapper > iconify-icon {
+    transform: translateY(-0.083em);
+}
+
+button > .icon-spin-wrapper {
+    vertical-align: middle;
+    margin-right: 6px;
 }
 
 /* Separator Line */

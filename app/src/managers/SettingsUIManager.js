@@ -759,11 +759,11 @@ export const SettingsUIManager = {
     async validateOllamaConnection() {
         // Afficher le spinner
         if (DOM.validateOllamaBtn) {
-            DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>';
+            DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
             DOM.validateOllamaBtn.disabled = true;
         }
         if (DOM.ollamaValidationIcon) {
-            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>';
+            DOM.ollamaValidationIcon.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
         }
 
         try {

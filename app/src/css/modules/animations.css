@@ -28,6 +28,20 @@ iconify-icon.icon-spin,
     will-change: transform;
 }
 
+/* Wrapper carré pour rotation centrée d'icônes non-carrées */
+.icon-spin-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: spin 1s linear infinite;
+    will-change: transform;
+}
+
+/* Alignement optique et géométrique du centroïde du logo Google Drive (triangle équilatéral) */
+.icon-spin-wrapper > iconify-icon[icon="logos:google-drive"] {
+    transform: translateY(-0.083em);
+}
+
 @keyframes pulse-update {
     0% {
         box-shadow: var(--shadow-sm);

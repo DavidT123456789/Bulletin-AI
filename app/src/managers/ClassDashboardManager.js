@@ -745,7 +745,7 @@ export const ClassDashboardManager = {
                     <div class="skeleton-line" style="width: 85%;"></div>
                 </div>
                 <span class="generating-badge active">
-                    <iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>
+                    <iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>
                     <span>Analyse de la classe en cours...</span>
                 </span>
             </div>
@@ -753,7 +753,7 @@ export const ClassDashboardManager = {
 
         if (generateBtn) {
             generateBtn.disabled = true;
-            generateBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="spin"></iconify-icon> Génération...';
+            generateBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Génération...';
         }
 
         try {

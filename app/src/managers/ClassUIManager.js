@@ -602,7 +602,7 @@ export const ClassUIManager = {
         const row = document.querySelector(`.class-management-item[data-class-id="${classId}"]`);
         if (row) {
             const btn = row.querySelector('.confirm-delete-btn');
-            if (btn) btn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="spin"></iconify-icon>';
+            if (btn) btn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
         }
 
         try {

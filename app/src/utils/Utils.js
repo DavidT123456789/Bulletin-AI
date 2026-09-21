@@ -814,7 +814,7 @@ export const Utils = {
     getSkeletonHTML(compact = false, label = 'Génération...', pending = false) {
         const compactClass = compact ? ' compact' : '';
         const badgeClass = pending ? 'pending' : 'active';
-        const iconName = pending ? 'solar:clock-circle-bold' : 'solar:spinner-linear';
+        const iconName = pending ? 'solar:clock-circle-bold' : 'ph:spinner-gap-bold';
         const spinClass = pending ? '' : 'rotate-icon';
 
         // HTML minifié pour éviter les nœuds de texte (whitespace) qui causent des espacements

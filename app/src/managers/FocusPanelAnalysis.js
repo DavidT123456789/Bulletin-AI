@@ -297,7 +297,7 @@ export const FocusPanelAnalysis = {
         switch (state) {
             case 'loading':
                 badge.classList.add('loading');
-                badge.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="icon-spin"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon>';
                 break;
             case 'done':
                 badge.classList.add('done');

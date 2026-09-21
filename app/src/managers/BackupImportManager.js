@@ -178,7 +178,7 @@ export const BackupImportManager = {
         modal.querySelector('#backupImportConfirmBtn')?.addEventListener('click', async () => {
             const btn = modal.querySelector('#backupImportConfirmBtn');
             btn.disabled = true;
-            btn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Import en cours...';
+            btn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon> Import en cours...';
 
             const selectedCategories = {};
             const checkboxes = modal.querySelectorAll('#backupCategoryList input[type="checkbox"]');

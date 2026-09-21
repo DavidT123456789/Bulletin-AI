@@ -293,8 +293,17 @@ export const GeneralListeners = {
         const connectBtn = document.getElementById('cloudConnectBtn');
         if (connectBtn) {
             connectBtn.addEventListener('click', async () => {
+                const iconEl = connectBtn.querySelector('iconify-icon');
+                let wrapper = null;
+
                 try {
                     connectBtn.classList.add('saving');
+                    if (iconEl) {
+                        wrapper = document.createElement('span');
+                        wrapper.className = 'icon-spin-wrapper';
+                        iconEl.parentNode.insertBefore(wrapper, iconEl);
+                        wrapper.appendChild(iconEl);
+                    }
                     const { SyncService } = await import('../../services/SyncService.js');
                     const connected = await SyncService.connect('google');
                     if (connected) {
@@ -307,6 +316,10 @@ export const GeneralListeners = {
                     UI.showNotification('Erreur de connexion : ' + error.message, 'error');
                 } finally {
                     connectBtn.classList.remove('saving');
+                    if (wrapper && iconEl) {
+                        wrapper.parentNode.insertBefore(iconEl, wrapper);
+                        wrapper.remove();
+                    }
                 }
             });
         }
@@ -494,13 +507,15 @@ export const GeneralListeners = {
         if (reconnectBtn) {
             reconnectBtn.addEventListener('click', async () => {
                 const iconEl = reconnectBtn.querySelector('iconify-icon');
-                const originalIcon = iconEl?.getAttribute('icon');
+                let wrapper = null;
 
                 try {
                     reconnectBtn.classList.add('saving');
                     if (iconEl) {
-                        iconEl.setAttribute('icon', 'solar:spinner-bold-duotone');
-                        iconEl.classList.add('icon-spin');
+                        wrapper = document.createElement('span');
+                        wrapper.className = 'icon-spin-wrapper';
+                        iconEl.parentNode.insertBefore(wrapper, iconEl);
+                        wrapper.appendChild(iconEl);
                     }
 
                     const { SyncService } = await import('../../services/SyncService.js');
@@ -515,9 +530,9 @@ export const GeneralListeners = {
                     UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
                 } finally {
                     reconnectBtn.classList.remove('saving');
-                    if (iconEl) {
-                        iconEl.setAttribute('icon', originalIcon);
-                        iconEl.classList.remove('icon-spin');
+                    if (wrapper && iconEl) {
+                        wrapper.parentNode.insertBefore(iconEl, wrapper);
+                        wrapper.remove();
                     }
                 }
             });

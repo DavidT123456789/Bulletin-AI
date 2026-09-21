@@ -682,7 +682,7 @@ export const ListViewRenderer = {
             'pending': '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>',
             'error': '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>',
             'done': '<iconify-icon icon="solar:check-circle-bold"></iconify-icon>',
-            'generating': '<iconify-icon icon="solar:spinner-linear" class="rotate-icon"></iconify-icon>'
+            'generating': '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>'
         };
 
         const label = labels[status] || status;

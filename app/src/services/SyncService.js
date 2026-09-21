@@ -264,7 +264,7 @@ export const SyncService = {
                 label: 'Sauvegarder'
             },
             syncing: {
-                icon: 'solar:spinner-bold-duotone',
+                icon: 'ph:spinner-gap-bold',
                 label: 'Sauvegarder',
                 spin: true
             },

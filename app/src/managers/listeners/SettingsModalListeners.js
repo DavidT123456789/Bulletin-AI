@@ -737,7 +737,7 @@ export const SettingsModalListeners = {
         }
 
         // Afficher le loading
-        DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Génération...';
+        DOM.refreshPreviewBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon> Génération...';
         DOM.refreshPreviewBtn.disabled = true;
         if (previewResult) {
             previewResult.innerHTML = '<div class="loading-state-centered"><div class="loading-spinner"></div><span>Génération en cours...</span></div>';
@@ -1080,7 +1080,7 @@ export const SettingsModalListeners = {
         if (DOM.connectGoogleBtn) {
             DOM.connectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon> Connexion...';
+                    DOM.connectGoogleBtn.innerHTML = '<span class="icon-spin-wrapper"><iconify-icon icon="logos:google-drive"></iconify-icon></span> Connexion...';
                     DOM.connectGoogleBtn.disabled = true;
 
                     // Dynamic import of SyncService
@@ -1126,7 +1126,7 @@ export const SettingsModalListeners = {
         if (cloudSaveBtn) {
             cloudSaveBtn.addEventListener('click', async () => {
                 try {
-                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Sauvegarde...';
+                    cloudSaveBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Sauvegarde...';
                     cloudSaveBtn.disabled = true;
                     DOM.headerMenuBtn?.classList.add('cloud-syncing');
 
@@ -1160,7 +1160,7 @@ export const SettingsModalListeners = {
                     'Vos données locales seront remplacées par celles du Cloud.',
                     async () => {
                         try {
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Chargement...';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Chargement...';
                             cloudLoadBtn.disabled = true;
                             document.body.classList.add('is-cloud-syncing');
                             DOM.headerMenuBtn?.classList.add('cloud-syncing');
@@ -1202,7 +1202,7 @@ export const SettingsModalListeners = {
         if (DOM.disconnectGoogleBtn) {
             DOM.disconnectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="icon-spin"></iconify-icon>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon>';
                     DOM.disconnectGoogleBtn.disabled = true;
 
                     const { SyncService } = await import('../../services/SyncService.js');

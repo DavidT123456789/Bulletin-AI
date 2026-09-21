@@ -41,7 +41,7 @@ export const AnimationManager = {
         if (!card) return;
         const badge = card.querySelector('.generating-badge');
         if (badge) {
-            badge.innerHTML = '<iconify-icon icon="solar:spinner-bold-duotone" class="rotate-icon"></iconify-icon> Génération...';
+            badge.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Génération...';
             badge.classList.remove('pending');
             badge.classList.add('active');
         }
