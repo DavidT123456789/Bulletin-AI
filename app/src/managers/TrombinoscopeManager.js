@@ -801,6 +801,28 @@ export const TrombinoscopeManager = {
                 }
             }
 
+            if (parsed.students.length === 0) {
+                this._removeImage();
+                const shouldSwitch = await UI.showCustomConfirm(
+                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                    null,
+                    null,
+                    {
+                        title: 'Aucune photo détectée',
+                        confirmText: 'Ouvrir dans Liste & Notes',
+                        cancelText: 'Annuler',
+                        isDanger: false
+                    }
+                );
+                if (shouldSwitch) {
+                    this.close();
+                    const { ImportWizardManager } = await import('./ImportWizardManager.js');
+                    ImportWizardManager.open();
+                    ImportWizardManager._handleFile(file);
+                }
+                return;
+            }
+
             const nextBtn = document.getElementById('trombiStep1NextBtn');
             if (nextBtn) {
                 nextBtn.disabled = false;
@@ -809,8 +831,24 @@ export const TrombinoscopeManager = {
             this._updateStepperUI();
         } catch (err) {
             console.error('[TrombinoscopeManager] Échec parsing PDF:', err);
-            UI.showNotification('Impossible de lire le trombinoscope PDF', 'error');
             this._removeImage();
+            const shouldSwitch = await UI.showCustomConfirm(
+                'Ce document PDF ne correspond pas à un format de trombinoscope avec photos. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                null,
+                null,
+                {
+                    title: 'Format trombinoscope non reconnu',
+                    confirmText: 'Ouvrir dans Liste & Notes',
+                    cancelText: 'Annuler',
+                    isDanger: false
+                }
+            );
+            if (shouldSwitch) {
+                this.close();
+                const { ImportWizardManager } = await import('./ImportWizardManager.js');
+                ImportWizardManager.open();
+                ImportWizardManager._handleFile(file);
+            }
         }
     },
 

@@ -647,6 +647,33 @@ export const ImportWizardManager = {
                 const { extractTextFromPdf } = await import('../utils/PdfUtils.js');
                 const textContent = await extractTextFromPdf(file);
 
+                // Détection intelligente : PDF Trombinoscope déposé par erreur
+                const lowerText = (textContent || '').toLowerCase();
+                const isTrombi = lowerText.includes('trombinoscope') || (lowerText.includes('professeur principal') && lowerText.includes('élèves'));
+                if (isTrombi) {
+                    setLoading(false);
+                    const shouldSwitch = await UI.showCustomConfirm(
+                        'Ce document PDF semble être un trombinoscope Pronote. Souhaitez-vous l\'ouvrir dans l\'assistant Trombinoscope pour créer votre classe et importer vos élèves avec leurs photos ?',
+                        null,
+                        null,
+                        {
+                            title: 'Trombinoscope détecté',
+                            confirmText: 'Créer la classe & photos',
+                            cancelText: 'Continuer comme texte seul',
+                            isDanger: false
+                        }
+                    );
+
+                    if (shouldSwitch) {
+                        this.close();
+                        this._resetFile();
+                        TrombinoscopeManager.open();
+                        TrombinoscopeManager._loadFile(file);
+                        return;
+                    }
+                    setLoading(true, 'Extraction du PDF...');
+                }
+
                 document.getElementById('wizardDataTextarea').value = textContent;
                 this._animateTextUpdate();
                 setLoading(false);

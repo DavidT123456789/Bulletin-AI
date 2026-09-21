@@ -69,6 +69,10 @@
     transition: background 0.25s ease-out, backdrop-filter 0.25s ease-out !important;
 }
 
+#customConfirmModal {
+    z-index: 1050;
+}
+
 .modal-content-confirm {
     max-width: 460px;
 }
