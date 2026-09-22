@@ -1117,7 +1117,8 @@ export const SettingsModalListeners = {
                     console.error('Google sync connection error:', error);
                     DOM.connectGoogleBtn.innerHTML = 'Connecter';
                     DOM.connectGoogleBtn.disabled = false;
-                    UI.showNotification('Erreur de connexion : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de connexion : ' + errorMsg, 'error');
                 }
             });
         }
@@ -1131,7 +1132,51 @@ export const SettingsModalListeners = {
                     DOM.headerMenuBtn?.classList.add('cloud-syncing');
 
                     const { SyncService } = await import('../../services/SyncService.js');
-                    await SyncService.saveToCloud();
+                    if (!SyncService.isConnected()) {
+                        const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+                        const reconnected = await SyncService.connect(providerName);
+                        if (!reconnected) {
+                            UI.showNotification('Connexion annulée.', 'warning');
+                            return;
+                        }
+                    }
+
+                    // Refresh status to verify if another device saved more recently
+                    await SyncService.refreshStatus();
+                    const syncState = SyncService._lastSyncState;
+                    const isCloudNewer = syncState === 'cloud-changes' || syncState === 'conflict';
+                    if (isCloudNewer) {
+                        const remoteDateStr = SyncService.remoteSyncTime
+                            ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                            : 'récemment';
+                        const confirmed = await UI.showCustomConfirm(
+                            `Une version plus récente existe sur le Cloud (${remoteDateStr}), probablement enregistrée depuis un autre appareil.<br><br>Voulez-vous vraiment <strong>écraser</strong> ces données avec vos données locales ?`,
+                            null, null,
+                            {
+                                title: '⚠️ Conflit : Version Cloud plus récente',
+                                confirmText: 'Écraser la version Cloud',
+                                cancelText: 'Annuler',
+                                isDanger: true
+                            }
+                        );
+                        if (!confirmed) return;
+                    }
+
+                    try {
+                        await SyncService.saveToCloud();
+                    } catch (saveErr) {
+                        if (saveErr?.isAuthError || saveErr?.status === 401 || !SyncService.isConnected()) {
+                            const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+                            const reconnected = await SyncService.connect(providerName);
+                            if (reconnected) {
+                                await SyncService.saveToCloud();
+                            } else {
+                                throw saveErr;
+                            }
+                        } else {
+                            throw saveErr;
+                        }
+                    }
 
                     DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
 
@@ -1141,9 +1186,10 @@ export const SettingsModalListeners = {
                         lastSaveEl.textContent = `Dernière sauvegarde : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
                     }
 
-                    UI.showNotification('Données sauvegardées sur Google Drive !', 'success');
+                    UI.showNotification('Données sauvegardées sur le Cloud !', 'success');
                 } catch (error) {
-                    UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de sauvegarde : ' + errorMsg, 'error');
                 } finally {
                     DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                     cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:upload-minimalistic-bold"></iconify-icon> Sauvegarder';
@@ -1178,7 +1224,8 @@ export const SettingsModalListeners = {
                                 UI.showNotification('Aucune donnée trouvée sur Google Drive.', 'warning');
                             }
                         } catch (error) {
-                            UI.showNotification('Erreur de chargement : ' + error.message, 'error');
+                            const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                            UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
                         } finally {
                             document.body.classList.remove('is-cloud-syncing');
                             DOM.headerMenuBtn?.classList.remove('cloud-syncing');
@@ -1235,7 +1282,8 @@ export const SettingsModalListeners = {
                     console.error('Google sync disconnection error:', error);
                     DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-bold"></iconify-icon>';
                     DOM.disconnectGoogleBtn.disabled = false;
-                    UI.showNotification('Erreur de déconnexion : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de déconnexion : ' + errorMsg, 'error');
                 }
             });
         }

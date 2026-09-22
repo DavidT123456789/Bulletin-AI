@@ -203,7 +203,7 @@ export const SyncService = {
             try {
                 const metaPromise = this._provider?.getMetadata?.() || Promise.resolve(null);
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
-                const meta = await Promise.race([metaPromise, timeoutPromise]).catch(() => null);
+                const meta = await Promise.race([metaPromise, timeoutPromise]);
 
                 if (meta && meta.lastModified) {
                     this.remoteSyncTime = new Date(meta.lastModified).getTime();
@@ -211,8 +211,9 @@ export const SyncService = {
                 this._updateCloudIndicator('connected');
             } catch (e) {
                 console.warn('[SyncService] Failed to check remote status:', e);
-                if (this._provider?.needsReconnect?.()) {
+                if (this._provider?.needsReconnect?.() || e?.isAuthError || !this.isConnected()) {
                     this._updateCloudIndicator('expired');
+                    return 'expired';
                 } else {
                     this._updateCloudIndicator('connected');
                 }
@@ -566,6 +567,7 @@ export const SyncService = {
                 window.UI?.showNotification(`Reconnecté à ${displayLabel}`, 'success');
                 this._updateCloudIndicator('connected');
                 this._updateUIConnected(this.currentProviderName);
+                await this.refreshStatus({ showChecking: true });
                 return true;
             }
         } catch (e) {
@@ -638,11 +640,15 @@ export const SyncService = {
     },
 
     /**
-     * Check if currently connected to a provider.
+     * Check if currently connected to a provider with a valid session/token.
      * @returns {boolean}
      */
     isConnected() {
-        return this._provider !== null && this.currentProviderName !== null;
+        if (!this._provider || !this.currentProviderName) return false;
+        if (typeof this._provider.isConnected === 'function') {
+            return this._provider.isConnected();
+        }
+        return true;
     },
 
     /**

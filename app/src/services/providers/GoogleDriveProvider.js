@@ -164,9 +164,8 @@ export const GoogleDriveProvider = {
                     },
                 });
 
-                // If we have an expired token, try silent refresh first
-                // Otherwise, or if forcePrompt, ask for consent
-                const prompt = (savedToken && options.silent) ? 'none' : 'consent';
+                // If forcePrompt is requested, ask for consent; if silent, use 'none'; otherwise '' avoids re-prompting consent
+                const prompt = options.forcePrompt ? 'consent' : (options.silent ? 'none' : '');
                 tokenClient.requestAccessToken({ prompt });
             });
 
@@ -185,11 +184,22 @@ export const GoogleDriveProvider = {
     },
 
     /**
-     * Check if currently connected.
+     * Check if currently connected with a valid token.
+     * Includes a 60-second safety buffer before expiry.
      * @returns {boolean}
      */
     isConnected() {
-        return this._token !== null && Date.now() < (this._token.expiry || 0);
+        if (!this._token) {
+            const savedToken = localStorage.getItem('bulletin_google_token');
+            if (savedToken) {
+                try {
+                    this._token = JSON.parse(savedToken);
+                } catch {
+                    return false;
+                }
+            }
+        }
+        return this._token !== null && (Date.now() + 60000) < (this._token.expiry || 0);
     },
 
     /**
@@ -202,6 +212,45 @@ export const GoogleDriveProvider = {
         this._token = null;
         this._fileId = null;
         localStorage.removeItem('bulletin_google_token');
+    },
+
+    // =========================================================================
+    // ERROR HANDLING & HELPERS
+    // =========================================================================
+
+    /**
+     * Normalize and handle Google API errors (especially auth expiration).
+     * @private
+     * @param {*} error - Error caught from gapi or fetch
+     * @param {string} [defaultMsg='Erreur Google Drive'] - Default message
+     * @returns {Error} Normalized error with .status and .isAuthError
+     */
+    _handleApiError(error, defaultMsg = 'Erreur Google Drive') {
+        const status = error?.status || error?.result?.error?.code;
+        const statusText = error?.result?.error?.status;
+        const rawMsg = error?.result?.error?.message || error?.message;
+
+        const isAuthError = status === 401 ||
+                            status === 403 ||
+                            statusText === 'UNAUTHENTICATED' ||
+                            (typeof rawMsg === 'string' && (
+                                rawMsg.includes('invalid authentication credentials') ||
+                                rawMsg.includes('Invalid Credentials') ||
+                                rawMsg.includes('auth')
+                            ));
+
+        if (isAuthError) {
+            this._needsReconnect = true;
+            this._token = null;
+            localStorage.removeItem('bulletin_google_token');
+        }
+
+        const message = rawMsg || (isAuthError ? 'Session Google Drive expirée. Veuillez vous reconnecter.' : defaultMsg);
+        const err = error instanceof Error ? error : new Error(message);
+        err.message = message;
+        err.status = status;
+        err.isAuthError = isAuthError;
+        return err;
     },
 
     // =========================================================================
@@ -255,7 +304,7 @@ export const GoogleDriveProvider = {
 
         } catch (error) {
             console.error('[GoogleDrive] File operation failed:', error);
-            throw error;
+            throw this._handleApiError(error, 'Impossible d\'accéder au fichier sur Google Drive');
         }
     },
 
@@ -283,11 +332,11 @@ export const GoogleDriveProvider = {
             return null;
 
         } catch (error) {
-            if (error.status === 404) {
+            if (error?.status === 404) {
                 return null; // File doesn't exist yet
             }
             console.error('[GoogleDrive] Read failed:', error);
-            throw error;
+            throw this._handleApiError(error, 'Impossible de lire les données sur Google Drive');
         }
     },
 
@@ -319,18 +368,25 @@ export const GoogleDriveProvider = {
                 `--${boundary}--`
             ].join('\r\n');
 
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
+            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${this._token.access_token}`,
+                    'Authorization': `Bearer ${this._token?.access_token}`,
                     'Content-Type': `multipart/related; boundary=${boundary}`
                 },
                 body: body
             });
 
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const err = new Error(errorData?.error?.message || `Erreur Google Drive: HTTP ${response.status}`);
+                err.status = response.status;
+                throw err;
+            }
+
         } catch (error) {
             console.error('[GoogleDrive] Write failed:', error);
-            throw error;
+            throw this._handleApiError(error, 'Impossible d\'enregistrer les données sur Google Drive');
         }
     },
 
@@ -355,6 +411,10 @@ export const GoogleDriveProvider = {
 
         } catch (error) {
             console.error('[GoogleDrive] Metadata fetch failed:', error);
+            const err = this._handleApiError(error);
+            if (err.isAuthError) {
+                throw err;
+            }
             return null;
         }
     }

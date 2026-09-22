@@ -313,7 +313,8 @@ export const GeneralListeners = {
                         UI.showNotification('Connexion annulée.', 'warning');
                     }
                 } catch (error) {
-                    UI.showNotification('Erreur de connexion : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de connexion : ' + errorMsg, 'error');
                 } finally {
                     connectBtn.classList.remove('saving');
                     if (wrapper && iconEl) {
@@ -362,21 +363,54 @@ export const GeneralListeners = {
                     return;
                 }
 
-                closeMenu();
+                // 1. Ensure connection FIRST if expired or not connected
+                if (!SyncService.isConnected()) {
+                    if (labelEl) labelEl.textContent = 'Connexion…';
+                    const connected = await ensureConnected(SyncService);
+                    if (!connected) {
+                        if (labelEl) labelEl.textContent = originalLabel;
+                        UI.showNotification('Connexion annulée.', 'warning');
+                        return;
+                    }
+                }
 
+                // 2. Fetch latest remote state to know if another device saved more recently
+                if (labelEl) labelEl.textContent = 'Vérification…';
+                await SyncService.refreshStatus();
+
+                closeMenu();
+                if (labelEl) labelEl.textContent = originalLabel;
+
+                // 3. Evaluate if Cloud has newer changes from another device
                 const syncState = SyncService._lastSyncState;
                 const isCloudNewer = syncState === 'cloud-changes' || syncState === 'conflict';
-                const detailsHtml = isCloudNewer
-                    ? `<p style="margin-bottom:8px;"><strong>Attention :</strong> Le Cloud contient des modifications plus récentes (probablement depuis un autre appareil).</p>
-                       <p>Si vous sauvegardez, la version Cloud sera <strong>écrasée</strong> par vos données locales.</p>`
-                    : `<p>Ceci remplacera la sauvegarde Cloud existante. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`;
+                
+                let detailsHtml = '';
+                if (isCloudNewer) {
+                    const remoteDateStr = SyncService.remoteSyncTime
+                        ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : 'récemment';
+                    detailsHtml = `
+                        <p style="margin-bottom:8px; font-weight:600; color:var(--danger, #ef4444);">
+                            ⚠️ Une sauvegarde plus récente existe sur le Cloud (${remoteDateStr}), enregistrée depuis un autre appareil.
+                        </p>
+                        <p style="margin-bottom:8px;">
+                            Si vous confirmez la sauvegarde, <strong>les données du Cloud seront écrasées et remplacées</strong> par vos données locales actuelles.
+                        </p>
+                        <p style="opacity:0.85;">
+                            Si vous souhaitez récupérer le travail fait sur l'autre appareil, cliquez sur <em>Annuler</em> puis sur <em>Restaurer</em>.
+                        </p>
+                    `;
+                } else {
+                    detailsHtml = `<p>Ceci mettra à jour votre sauvegarde Cloud avec vos données locales actuelles. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`;
+                }
 
                 const confirmed = await UI.showCustomConfirm(
                     `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
                     null, null,
                     {
-                        title: 'Sauvegarder vers le Cloud ?',
-                        confirmText: 'Sauvegarder',
+                        title: isCloudNewer ? '⚠️ Conflit : Écraser la version Cloud ?' : 'Sauvegarder vers le Cloud ?',
+                        confirmText: isCloudNewer ? 'Écraser la version Cloud' : 'Sauvegarder',
                         cancelText: 'Annuler',
                         isDanger: isCloudNewer,
                         detailsHtml
@@ -393,25 +427,33 @@ export const GeneralListeners = {
                     mainWrapper?.classList.add('is-cloud-syncing');
                     cloudSaveBtn.classList.add('saving');
 
-                    if (!SyncService.isConnected()) {
-                        if (labelEl) labelEl.textContent = 'Connexion';
-                        const connected = await ensureConnected(SyncService);
-                        if (!connected) {
-                            UI.showNotification('Connexion annulée.', 'warning');
-                            return;
+                    if (labelEl) labelEl.textContent = 'Envoi…';
+                    saveProgressToast = UI.showNotification('Sauvegarde de vos données sur le Cloud…', 'info', 0);
+
+                    try {
+                        await SyncService.saveToCloud();
+                    } catch (saveErr) {
+                        if (saveErr?.isAuthError || saveErr?.status === 401 || !SyncService.isConnected()) {
+                            if (labelEl) labelEl.textContent = 'Reconnexion…';
+                            const reconnected = await ensureConnected(SyncService);
+                            if (reconnected) {
+                                if (labelEl) labelEl.textContent = 'Envoi…';
+                                await SyncService.saveToCloud();
+                            } else {
+                                throw saveErr;
+                            }
+                        } else {
+                            throw saveErr;
                         }
                     }
-
-                    if (labelEl) labelEl.textContent = 'Envoi';
-                    saveProgressToast = UI.showNotification('Sauvegarde de vos données sur le Cloud…', 'info', 0);
-                    await SyncService.saveToCloud();
 
                     DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
                     saveProgressToast?.dismiss?.();
                     UI.showNotification('Données envoyées sur le Cloud !', 'success');
                 } catch (error) {
                     saveProgressToast?.dismiss?.();
-                    UI.showNotification('Erreur de sauvegarde : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de sauvegarde : ' + errorMsg, 'error');
                 } finally {
                     DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                     document.body.classList.remove('is-cloud-syncing');
@@ -435,11 +477,19 @@ export const GeneralListeners = {
                     const { SyncService } = await import('../../services/SyncService.js');
 
                     if (!SyncService.isConnected()) {
+                        if (labelEl) labelEl.textContent = 'Connexion…';
                         const connected = await ensureConnected(SyncService);
-                        if (!connected) return;
+                        if (!connected) {
+                            if (labelEl) labelEl.textContent = originalLabel;
+                            return;
+                        }
                     }
 
+                    if (labelEl) labelEl.textContent = 'Vérification…';
+                    await SyncService.refreshStatus();
+
                     closeMenu();
+                    if (labelEl) labelEl.textContent = originalLabel;
 
                     const syncState = SyncService._lastSyncState;
                     const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
@@ -478,7 +528,8 @@ export const GeneralListeners = {
                                 }
                             } catch (error) {
                                 restoreProgressToast?.dismiss?.();
-                                UI.showNotification('Erreur de restauration : ' + error.message, 'error');
+                                const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                                UI.showNotification('Erreur de restauration : ' + errorMsg, 'error');
                             } finally {
                                 DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                                 document.body.classList.remove('is-cloud-syncing');
@@ -519,15 +570,17 @@ export const GeneralListeners = {
                     }
 
                     const { SyncService } = await import('../../services/SyncService.js');
-                    const success = await SyncService.reconnect({ skipIndicator: true });
+                    const success = await SyncService.reconnect({ skipIndicator: false });
 
                     if (success) {
-                        closeMenu();
+                        this._updateCloudReminder(SyncService);
+                        UI.showNotification('Reconnecté - Statut Cloud actualisé', 'success');
                     } else {
                         UI.showNotification('Reconnexion annulée', 'info');
                     }
                 } catch (error) {
-                    UI.showNotification('Erreur de reconnexion : ' + error.message, 'error');
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de reconnexion : ' + errorMsg, 'error');
                 } finally {
                     reconnectBtn.classList.remove('saving');
                     if (wrapper && iconEl) {
