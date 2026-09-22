@@ -125,8 +125,8 @@
 }
 
 .notification.info .notification-coalesce-badge {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
+    background: rgba(var(--info-rgb), 0.12);
+    color: var(--info-color);
 }
 
 .notification.prompt .notification-coalesce-badge {
@@ -182,8 +182,8 @@
 /* Info - Solid with Blue Accent */
 .notification.info > iconify-icon:first-child,
 .notification.info > i:first-child {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: rgba(var(--info-rgb), 0.1);
+    color: var(--info-color);
 }
 
 /* Prompt - Premium Solid Purple Accent (AI features) */
