@@ -312,6 +312,7 @@ export const FocusPanelNavigation = {
         }
 
         content.scrollTop = 0;
+        document.querySelector('.focus-header')?.classList.remove('scrolled');
 
         // 4. Trigger Inline Animations (iOS Gallery Physics)
         requestAnimationFrame(() => {

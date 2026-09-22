@@ -903,6 +903,10 @@ export const FocusPanelManager = {
         if (panel) panel.classList.add('open');
         if (backdrop) backdrop.classList.add('visible');
 
+        const focusContent = panel?.querySelector('.focus-main-page .focus-content');
+        if (focusContent) focusContent.scrollTop = 0;
+        panel?.querySelector('.focus-header')?.classList.remove('scrolled');
+
         // Mark active row in list view for visual feedback
         this._updateActiveRow(studentId);
 
@@ -1027,6 +1031,7 @@ export const FocusPanelManager = {
 
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
+        panel?.querySelector('.focus-header')?.classList.remove('scrolled');
 
         // Clear active row highlight and trigger closed flash animation
         if (this.currentStudentId) {

@@ -120,27 +120,32 @@
     top: 0;
     left: 0;
     right: 0;
-    transition: box-shadow 0.4s var(--ease-spring),
-        border-radius 0.4s var(--ease-spring),
-        padding 0.4s var(--ease-spring),
-        margin 0.4s var(--ease-spring),
-        background 0.4s var(--ease-material),
-        border-color 0.4s var(--ease-material),
-        transform 0.4s var(--ease-spring);
+    transition: box-shadow 0.35s var(--ease-spring),
+        border-radius 0.35s var(--ease-spring),
+        padding 0.35s var(--ease-spring),
+        margin 0.35s var(--ease-spring),
+        background 0.35s var(--ease-material),
+        border-color 0.35s var(--ease-material),
+        transform 0.35s var(--ease-spring);
     /* Performance optimization for scroll animations */
     will-change: transform, box-shadow, background, border-color;
 }
 
-/* Scrolled State: The card rises progressively to let others pass underneath */
-.focus-header.scrolled {
-    /* Dynamic Island Soft Shadow */
-    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-    transform: translateY(-4px);
-    /* Légèrement plus haut */
-    background: rgba(255, 255, 255, 0.70);
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
-    border-color: rgba(255, 255, 255, 0.4);
+/* ====================================================================
+   Scrolled State: Dynamic Island Floating Capsule (iOS 2026 Style)
+   Morphs the header into a sleek, compact pill with concentric avatar
+   ==================================================================== */
+.focus-header.scrolled:not(.editing) {
+    border-radius: var(--radius-pill);
+    padding: 5px 12px 5px 5px;
+    margin: 6px 16px 8px 16px;
+    gap: 10px;
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.12), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] .focus-header {
@@ -149,12 +154,91 @@
     border-color: transparent;
 }
 
-[data-theme="dark"] .focus-header.scrolled {
-    background: rgba(24, 24, 27, 0.70);
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
-    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.15);
-    border-color: var(--border-color);
+[data-theme="dark"] .focus-header.scrolled:not(.editing) {
+    background: rgba(24, 24, 27, 0.82);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.45), 0 4px 12px -2px rgba(0, 0, 0, 0.25);
+}
+
+/* Concentric avatar in scrolled capsule */
+.focus-header.scrolled:not(.editing) .focus-header-left,
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    min-height: 40px;
+}
+
+.focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    border: 1.5px solid var(--surface-color) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Compact typography in scrolled mode */
+.focus-header.scrolled:not(.editing) .focus-student-name {
+    gap: 4px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+}
+
+.focus-header.scrolled:not(.editing) .focus-name-details {
+    gap: 1px;
+    min-width: 0;
+}
+
+.focus-header.scrolled:not(.editing) .focus-name-nom {
+    font-size: 14.5px;
+    line-height: 1.15;
+    font-weight: 700;
+}
+
+.focus-header.scrolled:not(.editing) .focus-name-prenom {
+    font-size: 12.5px;
+    line-height: 1.15;
+    gap: 6px;
+}
+
+.focus-header.scrolled:not(.editing) .focus-name-prenom .focus-origin-class-badge {
+    padding: 1px 5px;
+    font-size: 9.5px;
+}
+
+.focus-header.scrolled:not(.editing) .focus-name-edit-icon,
+.focus-header.scrolled:not(.editing) .focus-status-badges {
+    display: none !important;
+}
+
+/* Action buttons in scrolled capsule */
+.focus-header.scrolled:not(.editing) .focus-analyze-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.focus-header.scrolled:not(.editing) .focus-nav-buttons {
+    padding: 3px 8px;
+    height: 32px;
+    gap: 2px;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+}
+
+.focus-header.scrolled:not(.editing) .focus-position {
+    font-size: 11px;
+}
+
+.focus-header.scrolled:not(.editing) .focus-close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
 }
 
 /* Edit Mode adjustments */
@@ -172,11 +256,13 @@
     justify-content: center;
     flex-shrink: 0;
     gap: 8px;
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: all 0.35s var(--ease-spring);
 }
 
 .focus-header .focus-panel-avatar-container {
     position: relative;
+    transition: width 0.35s var(--ease-spring),
+        height 0.35s var(--ease-spring);
 }
 
 .focus-header .focus-panel-avatar-container .student-avatar {
@@ -186,9 +272,11 @@
     border: 1.5px solid var(--surface-color) !important;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08) !important;
     margin: 0 !important;
-    transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-        height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-        font-size 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: width 0.35s var(--ease-spring),
+        height 0.35s var(--ease-spring),
+        font-size 0.35s var(--ease-spring),
+        border 0.35s var(--ease-spring),
+        box-shadow 0.35s var(--ease-spring);
 }
 
 .focus-header .focus-panel-avatar-container .avatar-selection-overlay {
@@ -281,6 +369,7 @@
     overflow-wrap: break-word;
     word-break: break-word;
     margin-bottom: 0;
+    transition: font-size 0.35s var(--ease-spring), line-height 0.35s var(--ease-spring);
 }
 
 .focus-name-prenom {
@@ -292,6 +381,7 @@
     font-weight: 400;
     line-height: 1.2;
     color: var(--text-secondary);
+    transition: font-size 0.35s var(--ease-spring), line-height 0.35s var(--ease-spring);
 }
 
 .focus-origin-class-badge {
@@ -4391,6 +4481,114 @@
         min-width: auto;
         text-align: center;
         padding: 0;
+    }
+
+    /* =======================================================
+       MOBILE SCROLLED STATE - Ultra-compact dynamic capsule
+       Concentric avatar, streamlined single-line typography
+       ======================================================= */
+    .focus-header.scrolled:not(.editing) {
+        flex-wrap: nowrap !important;
+        padding: 4px 8px 4px 4px !important;
+        margin: 6px 8px 8px 8px !important;
+        gap: 8px !important;
+        border-radius: var(--radius-pill) !important;
+        align-items: center !important;
+        height: 46px !important;
+        box-sizing: border-box !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-header-left,
+    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 15px !important;
+        border: 1.5px solid var(--surface-color) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-header-content {
+        order: 2 !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 0 2px !important;
+        align-self: center !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-header-read {
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-student-name {
+        gap: 2px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-details {
+        gap: 1px !important;
+        min-width: 0 !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-nom {
+        font-size: 13.5px !important;
+        line-height: 1.15 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-prenom {
+        font-size: 11.5px !important;
+        line-height: 1.15 !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-prenom .focus-origin-class-badge {
+        padding: 1px 4px !important;
+        font-size: 9px !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-status-badges {
+        display: none !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-analyze-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 13px !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-nav-buttons {
+        padding: 2px 7px !important;
+        height: 26px !important;
+        border-radius: var(--radius-pill) !important;
+        flex-shrink: 0 !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-position {
+        font-size: 10.5px !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-close-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 13px !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
     }
 
     /* ============================================
