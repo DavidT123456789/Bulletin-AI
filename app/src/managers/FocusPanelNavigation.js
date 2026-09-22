@@ -312,7 +312,11 @@ export const FocusPanelNavigation = {
         }
 
         content.scrollTop = 0;
-        document.querySelector('.focus-header')?.classList.remove('scrolled');
+        const navHeader = document.querySelector('.focus-header');
+        if (navHeader) {
+            navHeader.style.removeProperty('--scroll-p');
+            navHeader.classList.remove('scrolled');
+        }
 
         // 4. Trigger Inline Animations (iOS Gallery Physics)
         requestAnimationFrame(() => {

@@ -120,32 +120,27 @@
     top: 0;
     left: 0;
     right: 0;
-    transition: box-shadow 0.35s var(--ease-spring),
-        border-radius 0.35s var(--ease-spring),
-        padding 0.35s var(--ease-spring),
-        margin 0.35s var(--ease-spring),
-        background 0.35s var(--ease-material),
-        border-color 0.35s var(--ease-material),
-        transform 0.35s var(--ease-spring);
-    /* Performance optimization for scroll animations */
     will-change: transform, box-shadow, background, border-color;
 }
 
 /* ====================================================================
-   Scrolled State: Dynamic Island Floating Capsule (iOS 2026 Style)
-   Morphs the header into a sleek, compact pill with concentric avatar
+   Progressive Dynamic Island Capsule (iOS 2026 Style)
+   Smoothly interpolates via --scroll-p with scroll depth
    ==================================================================== */
-.focus-header.scrolled:not(.editing) {
-    border-radius: var(--radius-pill);
-    padding: 5px 12px 5px 5px;
-    margin: 6px 16px 8px 16px;
-    gap: 10px;
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.12), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+.focus-header:not(.editing) {
+    --p: var(--scroll-p, 0);
+    border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
+    padding: calc(8px - 3px * var(--p)) 12px calc(8px - 3px * var(--p)) calc(6px - 1px * var(--p));
+    margin: calc(8px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
+    gap: calc(14px - 4px * var(--p));
+    transform: translateY(calc(-2px * var(--p)));
+    background: rgba(255, 255, 255, calc(0.85 * var(--p)));
+    backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
+    -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
+    border: 1px solid rgba(0, 0, 0, calc(0.08 * var(--p)));
+    box-shadow: 0 calc(8px * var(--p)) calc(28px * var(--p)) -4px rgba(0, 0, 0, calc(0.12 * var(--p))),
+                0 calc(2px * var(--p)) calc(6px * var(--p)) -2px rgba(0, 0, 0, calc(0.04 * var(--p)));
+    will-change: transform, box-shadow, background, border-color, border-radius;
 }
 
 [data-theme="dark"] .focus-header {
@@ -154,58 +149,68 @@
     border-color: transparent;
 }
 
-[data-theme="dark"] .focus-header.scrolled:not(.editing) {
-    background: rgba(24, 24, 27, 0.82);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.45), 0 4px 12px -2px rgba(0, 0, 0, 0.25);
+[data-theme="dark"] .focus-header:not(.editing) {
+    background: rgba(24, 24, 27, calc(0.82 * var(--p)));
+    backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
+    -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
+    border: 1px solid rgba(255, 255, 255, calc(0.1 * var(--p)));
+    box-shadow: 0 calc(12px * var(--p)) calc(32px * var(--p)) -4px rgba(0, 0, 0, calc(0.45 * var(--p))),
+                0 calc(4px * var(--p)) calc(12px * var(--p)) -2px rgba(0, 0, 0, calc(0.25 * var(--p)));
 }
 
-/* Concentric avatar in scrolled capsule */
-.focus-header.scrolled:not(.editing) .focus-header-left,
-.focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px;
-    min-height: 40px;
+/* Concentric avatar with progressive scale */
+.focus-header:not(.editing) .focus-header-left,
+.focus-header:not(.editing) .focus-panel-avatar-container {
+    width: calc(76px - 36px * var(--p)) !important;
+    height: calc(76px - 36px * var(--p)) !important;
+    min-width: calc(76px - 36px * var(--p));
+    min-height: calc(76px - 36px * var(--p));
 }
 
-.focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 16px !important;
+.focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
+    width: calc(76px - 36px * var(--p)) !important;
+    height: calc(76px - 36px * var(--p)) !important;
+    font-size: calc(31px - 15px * var(--p)) !important;
     border: 1.5px solid var(--surface-color) !important;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 calc(2px - 1px * var(--p)) calc(8px - 4px * var(--p)) 0 rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Compact typography in scrolled mode */
-.focus-header.scrolled:not(.editing) .focus-student-name {
-    gap: 4px;
-    padding: 2px 6px;
-    margin: -2px -6px;
+.focus-header:not(.editing) .focus-student-name {
+    gap: calc(12px - 8px * var(--p));
+    padding: calc(6px - 4px * var(--p)) calc(12px - 6px * var(--p));
+    margin: calc(-6px + 4px * var(--p)) calc(-12px + 6px * var(--p));
 }
 
-.focus-header.scrolled:not(.editing) .focus-name-details {
-    gap: 1px;
+.focus-header:not(.editing) .focus-name-details {
+    gap: calc(5px - 4px * var(--p));
     min-width: 0;
 }
 
-.focus-header.scrolled:not(.editing) .focus-name-nom {
-    font-size: 14.5px;
+.focus-header:not(.editing) .focus-name-nom {
+    font-size: calc(24px - 9.5px * var(--p));
     line-height: 1.15;
     font-weight: 700;
 }
 
-.focus-header.scrolled:not(.editing) .focus-name-prenom {
-    font-size: 12.5px;
+.focus-header:not(.editing) .focus-name-prenom {
+    font-size: calc(18px - 5.5px * var(--p));
     line-height: 1.15;
     gap: 6px;
 }
 
-.focus-header.scrolled:not(.editing) .focus-name-prenom .focus-origin-class-badge {
-    padding: 1px 5px;
-    font-size: 9.5px;
+.focus-header:not(.editing) .focus-name-prenom .focus-origin-class-badge {
+    padding: calc(1.5px - 0.5px * var(--p)) 5px;
+    font-size: calc(10.5px - 1px * var(--p));
+}
+
+.focus-header:not(.editing) .focus-name-edit-icon {
+    opacity: calc(1 - var(--p) * 3);
+    pointer-events: none;
+}
+
+.focus-header:not(.editing) .focus-status-badges {
+    opacity: calc(1 - var(--p) * 2.5);
 }
 
 .focus-header.scrolled:not(.editing) .focus-name-edit-icon,
@@ -214,29 +219,29 @@
 }
 
 /* Action buttons in scrolled capsule */
-.focus-header.scrolled:not(.editing) .focus-analyze-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+.focus-header:not(.editing) .focus-analyze-btn {
+    width: calc(36px - 4px * var(--p));
+    height: calc(36px - 4px * var(--p));
+    font-size: calc(15px - 1px * var(--p));
     flex-shrink: 0;
 }
 
-.focus-header.scrolled:not(.editing) .focus-nav-buttons {
-    padding: 3px 8px;
-    height: 32px;
+.focus-header:not(.editing) .focus-nav-buttons {
+    padding: calc(4px - 1px * var(--p)) calc(10px - 2px * var(--p));
+    height: calc(34px - 2px * var(--p));
     gap: 2px;
     border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
-.focus-header.scrolled:not(.editing) .focus-position {
-    font-size: 11px;
+.focus-header:not(.editing) .focus-position {
+    font-size: calc(12px - 1px * var(--p));
 }
 
-.focus-header.scrolled:not(.editing) .focus-close-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+.focus-header:not(.editing) .focus-close-btn {
+    width: calc(36px - 4px * var(--p));
+    height: calc(36px - 4px * var(--p));
+    font-size: calc(15px - 1px * var(--p));
     flex-shrink: 0;
     border-radius: 50%;
 }
@@ -4484,37 +4489,37 @@
     }
 
     /* =======================================================
-       MOBILE SCROLLED STATE - Ultra-compact dynamic capsule
-       Concentric avatar, streamlined single-line typography
+       MOBILE PROGRESSIVE SCROLLED STATE - Ultra-compact dynamic capsule
+       Concentric avatar, progressive scroll-linked interpolation
        ======================================================= */
-    .focus-header.scrolled:not(.editing) {
+    .focus-header:not(.editing) {
+        --p: var(--scroll-p, 0);
         flex-wrap: nowrap !important;
-        padding: 4px 8px 4px 4px !important;
-        margin: 6px 8px 8px 8px !important;
+        padding: 4px calc(4px + 4px * var(--p)) 4px 4px !important;
+        margin: calc(10px - 4px * var(--p)) 8px calc(12px - 4px * var(--p)) 8px !important;
         gap: 8px !important;
-        border-radius: var(--radius-pill) !important;
+        border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p)) !important;
         align-items: center !important;
-        height: 46px !important;
         box-sizing: border-box !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-header-left,
-    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
-        width: 38px !important;
-        height: 38px !important;
-        min-width: 38px !important;
-        min-height: 38px !important;
+    .focus-header:not(.editing) .focus-header-left,
+    .focus-header:not(.editing) .focus-panel-avatar-container {
+        width: calc(64px - 26px * var(--p)) !important;
+        height: calc(64px - 26px * var(--p)) !important;
+        min-width: calc(64px - 26px * var(--p)) !important;
+        min-height: calc(64px - 26px * var(--p)) !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 15px !important;
+    .focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
+        width: calc(64px - 26px * var(--p)) !important;
+        height: calc(64px - 26px * var(--p)) !important;
+        font-size: calc(26px - 11px * var(--p)) !important;
         border: 1.5px solid var(--surface-color) !important;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-header-content {
+    .focus-header:not(.editing) .focus-header-content {
         order: 2 !important;
         flex: 1 1 0 !important;
         min-width: 0 !important;
@@ -4522,32 +4527,32 @@
         align-self: center !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-header-read {
+    .focus-header:not(.editing) .focus-header-read {
         flex-wrap: nowrap !important;
         gap: 4px !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-student-name {
+    .focus-header:not(.editing) .focus-student-name {
         gap: 2px !important;
         padding: 0 !important;
         margin: 0 !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-name-details {
+    .focus-header:not(.editing) .focus-name-details {
         gap: 1px !important;
         min-width: 0 !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-name-nom {
-        font-size: 13.5px !important;
+    .focus-header:not(.editing) .focus-name-nom {
+        font-size: calc(18px - 4.5px * var(--p)) !important;
         line-height: 1.15 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-name-prenom {
-        font-size: 11.5px !important;
+    .focus-header:not(.editing) .focus-name-prenom {
+        font-size: calc(16px - 4.5px * var(--p)) !important;
         line-height: 1.15 !important;
         gap: 4px !important;
         white-space: nowrap !important;
@@ -4555,38 +4560,42 @@
         text-overflow: ellipsis !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-name-prenom .focus-origin-class-badge {
+    .focus-header:not(.editing) .focus-name-prenom .focus-origin-class-badge {
         padding: 1px 4px !important;
         font-size: 9px !important;
+    }
+
+    .focus-header:not(.editing) .focus-status-badges {
+        opacity: calc(1 - var(--p) * 2.5);
     }
 
     .focus-header.scrolled:not(.editing) .focus-status-badges {
         display: none !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-analyze-btn {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 13px !important;
+    .focus-header:not(.editing) .focus-analyze-btn {
+        width: calc(32px - 4px * var(--p)) !important;
+        height: calc(32px - 4px * var(--p)) !important;
+        font-size: calc(14px - 1px * var(--p)) !important;
         border-radius: 50% !important;
         flex-shrink: 0 !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-nav-buttons {
-        padding: 2px 7px !important;
-        height: 26px !important;
+    .focus-header:not(.editing) .focus-nav-buttons {
+        padding: calc(3px - 1px * var(--p)) calc(9px - 2px * var(--p)) !important;
+        height: calc(28px - 2px * var(--p)) !important;
         border-radius: var(--radius-pill) !important;
         flex-shrink: 0 !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-position {
-        font-size: 10.5px !important;
+    .focus-header:not(.editing) .focus-position {
+        font-size: calc(11px - 0.5px * var(--p)) !important;
     }
 
-    .focus-header.scrolled:not(.editing) .focus-close-btn {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 13px !important;
+    .focus-header:not(.editing) .focus-close-btn {
+        width: calc(32px - 4px * var(--p)) !important;
+        height: calc(32px - 4px * var(--p)) !important;
+        font-size: calc(14px - 1px * var(--p)) !important;
         border-radius: 50% !important;
         flex-shrink: 0 !important;
     }

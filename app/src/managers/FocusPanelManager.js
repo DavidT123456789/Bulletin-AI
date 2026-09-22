@@ -156,12 +156,35 @@ export const FocusPanelManager = {
         const generateBtn = document.getElementById('focusGenerateBtn');
         const copyBtn = document.getElementById('focusCopyBtn');
 
-        // Dynamic shadow on scroll: reinforce pill shadow when content scrolls underneath
+        // Dynamic scroll-driven morphing: progressively interpolates header into compact floating capsule
         const focusContent = panel?.querySelector('.focus-main-page .focus-content');
         const focusHeader = panel?.querySelector('.focus-header');
         if (focusContent && focusHeader) {
+            let scrollRafId = null;
+            const SCROLL_RANGE = 70; // Pixels of scroll for complete capsule transformation
+
+            const updateHeaderScrollProgress = () => {
+                scrollRafId = null;
+                if (!focusHeader || !focusContent) return;
+
+                // Retain default expanded layout in edit mode
+                if (focusHeader.classList.contains('editing')) {
+                    focusHeader.style.removeProperty('--scroll-p');
+                    focusHeader.classList.remove('scrolled');
+                    return;
+                }
+
+                const scrollTop = Math.max(0, focusContent.scrollTop);
+                const progress = Math.min(1, scrollTop / SCROLL_RANGE);
+
+                focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
+                focusHeader.classList.toggle('scrolled', progress > 0.01);
+            };
+
             focusContent.addEventListener('scroll', () => {
-                focusHeader.classList.toggle('scrolled', focusContent.scrollTop > 8);
+                if (scrollRafId === null) {
+                    scrollRafId = requestAnimationFrame(updateHeaderScrollProgress);
+                }
             }, { passive: true });
         }
 
@@ -905,7 +928,11 @@ export const FocusPanelManager = {
 
         const focusContent = panel?.querySelector('.focus-main-page .focus-content');
         if (focusContent) focusContent.scrollTop = 0;
-        panel?.querySelector('.focus-header')?.classList.remove('scrolled');
+        const focusHeader = panel?.querySelector('.focus-header');
+        if (focusHeader) {
+            focusHeader.style.removeProperty('--scroll-p');
+            focusHeader.classList.remove('scrolled');
+        }
 
         // Mark active row in list view for visual feedback
         this._updateActiveRow(studentId);
@@ -1031,7 +1058,11 @@ export const FocusPanelManager = {
 
         if (panel) panel.classList.remove('open');
         if (backdrop) backdrop.classList.remove('visible');
-        panel?.querySelector('.focus-header')?.classList.remove('scrolled');
+        const focusHeader = panel?.querySelector('.focus-header');
+        if (focusHeader) {
+            focusHeader.style.removeProperty('--scroll-p');
+            focusHeader.classList.remove('scrolled');
+        }
 
         // Clear active row highlight and trigger closed flash animation
         if (this.currentStudentId) {
