@@ -161,7 +161,7 @@ export const FocusPanelManager = {
         const focusHeader = panel?.querySelector('.focus-header');
         if (focusContent && focusHeader) {
             let scrollRafId = null;
-            const SCROLL_RANGE = 70; // Pixels of scroll for complete capsule transformation
+            const SCROLL_RANGE = 40; // Pixels of scroll for complete capsule transformation (completes before cards pass underneath)
 
             const updateHeaderScrollProgress = () => {
                 scrollRafId = null;
