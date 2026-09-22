@@ -182,8 +182,8 @@
     width: calc(76px - 28px * var(--p)) !important;
     height: calc(76px - 28px * var(--p)) !important;
     font-size: calc(31px - 11px * var(--p)) !important;
-    border: 1.5px solid var(--surface-color) !important;
-    box-shadow: 0 calc(2px - 1px * var(--p)) calc(8px - 4px * var(--p)) 0 rgba(0, 0, 0, 0.08) !important;
+    border: max(0px, calc(1.5px - 10px * var(--p))) solid var(--surface-color) !important;
+    box-shadow: 0 max(0px, calc(2px - 12px * var(--p))) max(0px, calc(8px - 48px * var(--p))) 0 rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Student name & details in read mode */
@@ -4552,8 +4552,8 @@
         width: calc(64px - 20px * var(--p)) !important;
         height: calc(64px - 20px * var(--p)) !important;
         font-size: calc(26px - 8px * var(--p)) !important;
-        border: 1.5px solid var(--surface-color) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
+        border: max(0px, calc(1.5px - 10px * var(--p))) solid var(--surface-color) !important;
+        box-shadow: 0 max(0px, calc(1px - 6px * var(--p))) max(0px, calc(4px - 24px * var(--p))) rgba(0, 0, 0, 0.12) !important;
     }
 
     .focus-header:not(.editing) .focus-header-content {
