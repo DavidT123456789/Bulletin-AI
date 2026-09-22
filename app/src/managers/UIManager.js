@@ -1551,22 +1551,17 @@ export const UI = {
             DOM.headerStudentCount.textContent = totalCount;
         }
 
-        let tooltipLines = [`${totalCount} ${totalCount > 1 ? 'élèves' : 'élève'} au total.`];
-        if (newCount > 0) {
-            tooltipLines.push(`<span style="color: var(--success-color); font-weight: 600;">Nouveaux : ${newCount}</span>`);
-        }
-        if (departedCount > 0) {
-            tooltipLines.push(`<span style="color: var(--error-color); font-weight: 600;">Départs : ${departedCount}</span>`);
-        }
-
-        let tooltipText = tooltipLines[0];
-        if (tooltipLines.length > 1) {
-            tooltipText += '<br>' + tooltipLines.slice(1).join(' | ');
+        const studentCountBadge = DOM.headerStudentCount?.closest('.student-count-badge');
+        if (studentCountBadge) {
+            let label = `${totalCount} ${totalCount > 1 ? 'élèves' : 'élève'}`;
+            if (newCount > 0) label += `, dont ${newCount} nouveau${newCount > 1 ? 'x' : ''}`;
+            if (departedCount > 0) label += `, ${departedCount} départ${departedCount > 1 ? 's' : ''}`;
+            studentCountBadge.setAttribute('aria-label', label);
         }
 
-        DOM.headerClassChip.setAttribute('data-tooltip', tooltipText);
-
-        this.initTooltips();
+        DOM.headerClassChip.removeAttribute('data-tooltip');
+        DOM.headerClassChip.classList.remove('tooltip');
+        DOM.headerClassChip._tippy?.destroy?.();
     },
 
     // Result card functions delegated to ResultCardsUIManager - REMOVED (Legacy Card View Deprecated)
