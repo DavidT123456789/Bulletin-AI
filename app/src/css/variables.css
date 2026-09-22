@@ -14,16 +14,16 @@
     --accent-color: #9333ea;
     --accent-rgb: 147, 51, 234;
 
-    /* Neutres : Palette Zinc (True Neutral) */
-    --bg-color: #f7f7f8;
-    --bg-color-rgb: 247, 247, 248;
-    /* Zinc 50 */
-    --bg-secondary: #f4f4f5;
-    /* Zinc 100 */
-    --bg-tertiary: #e4e4e7;
-    /* Zinc 200 */
-    --bg-hover: #e4e4e7;
-    /* Zinc 200 */
+    /* Neutres : Palette Minérale Neutre Absolue (100% Achromatique) */
+    --bg-color: #f4f4f4;
+    --bg-color-rgb: 244, 244, 244;
+    /* Pure Neutral Satin Background (R=G=B=244) */
+    --bg-secondary: #ededed;
+    /* Muted Neutral Control Surfaces */
+    --bg-tertiary: #e5e5e5;
+    /* Neutral 200 */
+    --bg-hover: #e5e5e5;
+    /* Neutral 200 */
 
     --surface-color: #ffffff;
     --surface-color-rgb: 255, 255, 255;
@@ -44,20 +44,20 @@
 
     /* --- Système Glassmorphism Unifié (Modern Tech) --- */
     /* Niveau 1 : Base (Panneaux fixes) */
-    --glass-base-bg: rgba(248, 250, 252, 0.75);
+    --glass-base-bg: rgba(244, 244, 244, 0.8);
     --glass-base-border: rgba(226, 232, 240, 0.6);
     --glass-base-blur: 24px;
 
     /* Niveau 2 : Surface (Cartes interactions) */
     --glass-surface-bg: rgba(255, 255, 255, 0.85);
-    --glass-surface-border: rgba(255, 255, 255, 0.8);
+    --glass-surface-border: transparent;
     --glass-surface-blur: 16px;
 
     /* --- Universal Card Style (Single Source of Truth) --- */
     --card-glass-bg: #ffffff;
     /* Solid white for maximum contrast */
-    --card-glass-border: rgba(255, 255, 255, 0.8);
-    /* Luminous white border */
+    --card-glass-border: transparent;
+    /* Seamless borderless soft card */
 
     /* Niveau 3 : Overlay (Modales / Popovers) - Frosted glass effect */
     --glass-overlay-bg: rgba(255, 255, 255, 0.8);
@@ -116,8 +116,8 @@
     --input-fill-bg: var(--bg-secondary);
     --card-input-padding: 12px 16px;
 
-    /* Ombres "Lift" (Blue tint) */
-    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+    /* Ombres "Lift" (Satin soft) */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
     --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
     --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
     --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.15);
