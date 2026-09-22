@@ -462,7 +462,7 @@ export const ListViewRenderer = {
                     existingTable.querySelectorAll('.period-column-exit').forEach(el => {
                         el.remove();
                     });
-                }, 240);
+                }, 290);
             }
         } else {
             const fullHtml = `

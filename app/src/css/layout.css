@@ -1810,8 +1810,6 @@ button > .icon-spin-wrapper {
         width: 0px;
         min-width: 0px;
         max-width: 0px;
-        padding-left: 0px !important;
-        padding-right: 0px !important;
         opacity: 0;
     }
     40% {
@@ -1821,8 +1819,6 @@ button > .icon-spin-wrapper {
         width: 54px;
         min-width: 54px;
         max-width: 54px;
-        padding-left: 4px !important;
-        padding-right: 4px !important;
         opacity: 1;
     }
 }
@@ -1833,8 +1829,6 @@ button > .icon-spin-wrapper {
         width: 0px;
         min-width: 0px;
         max-width: 0px;
-        padding-left: 0px !important;
-        padding-right: 0px !important;
         opacity: 0;
     }
     40% {
@@ -1844,8 +1838,6 @@ button > .icon-spin-wrapper {
         width: 36px;
         min-width: 36px;
         max-width: 36px;
-        padding-left: 2px !important;
-        padding-right: 2px !important;
         opacity: 1;
     }
 }
@@ -1890,21 +1882,17 @@ td.evolution-cell.period-column-enter {
 @keyframes period-grade-col-fold {
     0% {
         width: 54px;
-        min-width: 54px;
+        min-width: 0px;
         max-width: 54px;
-        padding-left: 4px !important;
-        padding-right: 4px !important;
         opacity: 1;
     }
-    50% {
-        opacity: 0.3;
+    40% {
+        opacity: 0.5;
     }
     100% {
         width: 0px;
         min-width: 0px;
         max-width: 0px;
-        padding-left: 0px !important;
-        padding-right: 0px !important;
         opacity: 0;
     }
 }
@@ -1912,21 +1900,17 @@ td.evolution-cell.period-column-enter {
 @keyframes period-evo-col-fold {
     0% {
         width: 36px;
-        min-width: 36px;
+        min-width: 0px;
         max-width: 36px;
-        padding-left: 2px !important;
-        padding-right: 2px !important;
         opacity: 1;
     }
-    50% {
-        opacity: 0.3;
+    40% {
+        opacity: 0.5;
     }
     100% {
         width: 0px;
         min-width: 0px;
         max-width: 0px;
-        padding-left: 0px !important;
-        padding-right: 0px !important;
         opacity: 0;
     }
 }
@@ -1936,6 +1920,10 @@ td.evolution-cell.period-column-enter {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
     }
+    50% {
+        opacity: 0;
+        transform: translate3d(-4px, 0, 0) scale(0.95);
+    }
     100% {
         opacity: 0;
         transform: translate3d(-8px, 0, 0) scale(0.92);
@@ -1944,23 +1932,33 @@ td.evolution-cell.period-column-enter {
 
 th.grade-header.period-column-exit,
 td.grade-cell.period-column-exit {
-    animation: period-grade-col-fold 0.20s cubic-bezier(0.32, 0.72, 0, 1) both;
-    overflow: hidden;
-    white-space: nowrap;
+    animation: period-grade-col-fold 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    min-width: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
 }
 
 th.evolution-header.period-column-exit,
 td.evolution-cell.period-column-exit {
-    animation: period-evo-col-fold 0.20s cubic-bezier(0.32, 0.72, 0, 1) both;
-    overflow: hidden;
-    white-space: nowrap;
+    animation: period-evo-col-fold 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    min-width: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
 }
 
 .period-column-exit .header-content-wrapper,
 .period-column-exit .grade-content-wrapper,
 .period-column-exit .grade-evolution,
 .period-column-exit.grade-evolution {
-    animation: period-col-content-fold 0.18s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: period-col-content-fold 0.28s cubic-bezier(0.25, 1, 0.5, 1) both;
     will-change: transform, opacity;
 }
 

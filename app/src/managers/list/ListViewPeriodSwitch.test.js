@@ -147,5 +147,20 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         const evoCell = table.querySelector('.evolution-cell[data-period="S2"]');
         expect(s2Cell.classList.contains('period-column-exit')).toBe(true);
         expect(evoCell.classList.contains('period-column-exit')).toBe(true);
+
+        // After 290ms, cleanup removes the exiting elements
+        vi.useFakeTimers();
+        // Trigger renderFresh again with fake timers to test timer behavior
+        ListViewRenderer.renderFresh(container, results, periods, 0, {
+            isPeriodSwitch: true,
+            isRetreating: true,
+            isAdvancing: false,
+            previousPeriod: 'S2',
+            currentPeriod: 'S1'
+        });
+        expect(container.querySelectorAll('.period-column-exit').length).toBeGreaterThan(0);
+        vi.advanceTimersByTime(290);
+        expect(container.querySelectorAll('.period-column-exit').length).toBe(0);
+        vi.useRealTimers();
     });
 });
