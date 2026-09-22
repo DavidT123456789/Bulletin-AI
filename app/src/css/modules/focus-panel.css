@@ -107,7 +107,7 @@
 .focus-header {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 8px;
     padding: 8px 12px 8px 6px;
     margin: 8px 16px 12px 16px;
     background: transparent;
@@ -132,7 +132,6 @@
     border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
     padding: calc(8px - 6px * var(--p)) 12px calc(8px - 6px * var(--p)) calc(6px - 4px * var(--p));
     margin: calc(8px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
-    gap: calc(14px - 4px * var(--p));
     transform: translateY(calc(-2px * var(--p)));
     background: rgba(255, 255, 255, calc(0.85 * var(--p)));
     backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
@@ -644,7 +643,7 @@
     width: 0;
     padding: 0;
     margin: 0;
-    margin-right: -12px;
+    margin-right: -8px;
     /* Counters the flex gap when hidden */
     overflow: hidden;
     pointer-events: none;
