@@ -4657,6 +4657,13 @@
        MOBILE EDIT MODE - Optimized vertical layout
        ============================================ */
 
+    .focus-header.editing .focus-close-btn,
+    .focus-header.editing .focus-save-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 14px !important;
+    }
+
     /* Content area - push down below the avatar/nav row */
 
     /* Edit form takes full width */
@@ -4891,39 +4898,6 @@
     .focus-back-btn {
         min-width: 44px;
         min-height: 44px;
-    }
-
-    /* Align height of standalone buttons */
-    .focus-nav-btn.focus-close-btn,
-    .focus-nav-btn.focus-analyze-btn {
-        min-width: 38px;
-        min-height: 38px;
-        width: 38px;
-        height: 38px;
-    }
-
-    /* Harmonise height of Nav Pill and its inner buttons */
-    .focus-nav-buttons {
-        height: 38px;
-        align-items: center;
-    }
-
-    .focus-nav-buttons .focus-nav-btn {
-        min-width: 34px;
-        min-height: 34px;
-        width: 34px;
-        height: 34px;
-    }
-
-    /* Le focus-save-btn doit toujours utiliser 'width' pour gérer sa taille (fluidité de l'animation) */
-    .focus-nav-btn.focus-save-btn {
-        min-width: 0 !important;
-    }
-
-    /* Override width in edit mode on mobile for smooth transition to 38px */
-    .focus-header.editing .focus-save-btn {
-        width: 38px;
-        height: 38px;
     }
 
     /* Invisible touch target expansion to ensure 44px hitbox on touch screens */
