@@ -194,6 +194,7 @@ describe('FocusPanelStatus', () => {
                 promptHash: 'hash_initial',
                 generationPeriod: 'T1',
                 appreciation: 'Texte initial.',
+                wasGenerated: false,
                 studentData: {
                     context: 'MODIFIED',
                     periods: {
@@ -206,6 +207,7 @@ describe('FocusPanelStatus', () => {
             expect(status.state).toBe('dirty');
             expect(status.isDirty).toBe(true);
             expect(status.hasContent).toBe(true);
+            expect(status.tooltip).toContain('Cliquez pour marquer comme vérifiée');
         });
 
         it('devrait identifier une appréciation à jour (state: uptodate)', () => {
@@ -226,6 +228,28 @@ describe('FocusPanelStatus', () => {
             expect(status.hasContent).toBe(true);
             expect(status.isDirty).toBe(false);
             expect(status.hasError).toBe(false);
+        });
+
+        it('devrait redevenir uptodate lorsque le promptHash est resynchronisé après réécriture manuelle', () => {
+            // Contexte modifié (génère 'hash_new')
+            const student = {
+                id: 'student-1',
+                promptHash: 'hash_new',
+                generationPeriod: 'T1',
+                appreciation: 'Texte réécrit manuellement après modification du contexte.',
+                wasGenerated: false,
+                appreciationSource: 'manual',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: {
+                        T1: { appreciation: 'Texte réécrit manuellement après modification du contexte.' }
+                    }
+                }
+            };
+
+            const status = FocusPanelStatus.getAppreciationStatus(student, 'T1');
+            expect(status.state).toBe('uptodate');
+            expect(status.isDirty).toBe(false);
         });
     });
 });

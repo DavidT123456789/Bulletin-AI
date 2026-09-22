@@ -34,7 +34,7 @@ export const ListViewRenderer = {
         tr.dataset.studentId = result.id;
         tr.className = 'student-row';
         // Only make focusable on desktop to prevent mobile/touch focus highlight artifacts
-        if (!window.matchMedia('(pointer: coarse)').matches) {
+        if (!window.matchMedia?.('(pointer: coarse)')?.matches) {
             tr.tabIndex = 0;
         }
 
@@ -259,9 +259,10 @@ export const ListViewRenderer = {
      * @param {Array} results - Résultats
      * @param {Array} periods - Périodes
      * @param {number} currentPeriodIndex - Index période courante
+     * @param {Object} [options={}] - Options de rendu (isPeriodSwitch, etc.)
      * @private
      */
-    renderFresh(container, results, periods, currentPeriodIndex) {
+    renderFresh(container, results, periods, currentPeriodIndex, options = {}) {
         // Read view preference
         const isExpanded = appState.isAppreciationFullView;
         const tableClass = isExpanded ? 'student-list-table appreciation-full-view' : 'student-list-table';
@@ -270,103 +271,113 @@ export const ListViewRenderer = {
         const iconClass = isExpanded ? 'solar:minimize-square-linear appreciation-toggle-icon' : 'solar:maximize-square-linear appreciation-toggle-icon';
         const title = isExpanded ? 'Réduire' : 'Voir tout le texte';
 
-        // Build table HTML (no animation classes in HTML - we'll add them after)
-        let html = `
-            <div class="student-list-view">
-                <table class="${tableClass}">
-                    <thead>
-                        <tr>
-                            <th class="name-header-with-search sortable-header" data-sort-field="name">
-                                <div class="header-content-wrapper" id="nameHeaderContent" data-tooltip="Trier par nom">
-                                    Nom
-                                    <span class="sort-icon-placeholder name-sort-icon"></span>
-                                </div>
-                                <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" aria-label="Rechercher" data-tooltip="Rechercher (Ctrl+F)">
-                                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                                </button>
-                                <div class="inline-search-container" id="inlineSearchContainer">
-                                    <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
-                                        <iconify-icon icon="solar:magnifer-linear" class="inline-search-close-icon"></iconify-icon>
-                                    </button>
-                                    <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
-                                    <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
-                                        <iconify-icon icon="ph:x"></iconify-icon>
-                                    </button>
-                                </div>
-                            </th>
-                            <th class="sortable-header status-header" data-sort-field="status" data-tooltip="Trier par statut">
-                                <div class="header-content-wrapper">
-                                    Statut<span class="sort-icon-placeholder"></span>
-                                </div>
-                            </th>
-                            ${this.renderGradeHeaders(periods.slice(0, currentPeriodIndex + 1))}
-                            <th class="${headerClass}" style="position: relative;">
-                                <div class="header-tooltip-target" data-tooltip="${title}" style="position: absolute; inset: 0; z-index: 1;"></div>
-                                <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
-                                <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
-                                <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
-                                    <span style="display: inline-flex; align-items: center;">
-                                        Appréciation
-                                    </span>
-                                    <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
-                                        <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
-                                            <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
-                                        </button>
-                                        <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
-                                            <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
-                                            <span class="smart-action-badge" id="generateBadgeInline">0</span>
-                                        </button>
-                                        <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
-                                            <iconify-icon icon="solar:refresh-linear" class="smart-action-icon"></iconify-icon>
-                                            <span class="smart-action-badge" id="updateBadgeInline">0</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="action-header">
-                                <div class="header-content-wrapper global-actions-dropdown">
-                                    <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" data-tooltip="Actions">
-                                        <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
-                                    </button>
-                                    <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
-                                        <!-- SECTION SELECTION -->
-                                        <button class="action-dropdown-item" id="selectAllBtn-global">
-                                            <iconify-icon icon="solar:checklist-linear"></iconify-icon> Tout sélectionner
-                                        </button>
-                                        
-                                        <!-- SECTION VUE -->
-                                        <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
-                                            <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser la classe
-                                        </button>
+        const isPeriodSwitch = !!options.isPeriodSwitch;
+        const previousIndex = options.previousPeriod ? periods.indexOf(options.previousPeriod) : -1;
+        const isAdvancing = options.isAdvancing ?? (isPeriodSwitch && previousIndex !== -1 && currentPeriodIndex > previousIndex);
+        const isRetreating = options.isRetreating ?? (isPeriodSwitch && previousIndex !== -1 && currentPeriodIndex < previousIndex);
+        const headerPeriodCount = isRetreating ? (previousIndex + 1) : (currentPeriodIndex + 1);
 
-                                        <!-- SECTION COPIER -->
-                                        <h5 class="dropdown-header">COPIER</h5>
-                                        <button class="action-dropdown-item" id="copyAllAppreciationsBtn">
-                                            <iconify-icon icon="solar:copy-linear"></iconify-icon> Toutes les appréciations
-                                        </button>
-                                        <button class="action-dropdown-item" id="copyStudentNamesBtn">
-                                            <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Uniquement les noms
-                                        </button>
+        const renderOptions = {
+            isPeriodSwitch,
+            isAdvancing,
+            isRetreating,
+            currentPeriodIndex,
+            previousIndex,
+            headerPeriodCount
+        };
 
-                                        <!-- SECTION EXPORT -->
-                                        <h5 class="dropdown-header">EXPORTER</h5>
-                                        <button class="action-dropdown-item" id="exportPdfBtn">
-                                            <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
-                                        </button>
-                                        <button class="action-dropdown-item" id="exportCsvBtn">
-                                            <iconify-icon icon="solar:file-text-linear"></iconify-icon> Tableau (CSV)
-                                        </button>
-                                        <button class="action-dropdown-item" id="exportJsonBtn">
-                                            <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
-                                        </button>
-                                    </div>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        const theadContent = `
+            <tr>
+                <th class="name-header-with-search sortable-header" data-sort-field="name">
+                    <div class="header-content-wrapper" id="nameHeaderContent" data-tooltip="Trier par nom">
+                        Nom
+                        <span class="sort-icon-placeholder name-sort-icon"></span>
+                    </div>
+                    <button type="button" class="inline-search-trigger-btn header-action-trigger" id="inlineSearchTrigger" aria-label="Rechercher" data-tooltip="Rechercher (Ctrl+F)">
+                        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    </button>
+                    <div class="inline-search-container" id="inlineSearchContainer">
+                        <button type="button" class="inline-search-close-btn" id="inlineSearchClose" aria-label="Fermer la recherche" data-tooltip="Fermer la recherche">
+                            <iconify-icon icon="solar:magnifer-linear" class="inline-search-close-icon"></iconify-icon>
+                        </button>
+                        <input type="text" class="inline-search-input" id="inlineSearchInput" placeholder="Rechercher..." autocomplete="off">
+                        <button type="button" class="inline-search-clear" id="inlineSearchClear" aria-label="Effacer">
+                            <iconify-icon icon="ph:x"></iconify-icon>
+                        </button>
+                    </div>
+                </th>
+                <th class="sortable-header status-header" data-sort-field="status" data-tooltip="Trier par statut">
+                    <div class="header-content-wrapper">
+                        Statut<span class="sort-icon-placeholder"></span>
+                    </div>
+                </th>
+                ${this.renderGradeHeaders(periods.slice(0, headerPeriodCount), renderOptions)}
+                <th class="${headerClass}" style="position: relative;">
+                    <div class="header-tooltip-target" data-tooltip="${title}" style="position: absolute; inset: 0; z-index: 1;"></div>
+                    <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
+                    <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
+                    <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
+                        <span style="display: inline-flex; align-items: center;">
+                            Appréciation
+                        </span>
+                        <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
+                            <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
+                                <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
+                            </button>
+                            <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
+                                <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
+                                <span class="smart-action-badge" id="generateBadgeInline">0</span>
+                            </button>
+                            <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
+                                <iconify-icon icon="solar:refresh-linear" class="smart-action-icon"></iconify-icon>
+                                <span class="smart-action-badge" id="updateBadgeInline">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </th>
+                <th class="action-header">
+                    <div class="header-content-wrapper global-actions-dropdown">
+                        <button class="btn-action-menu-header" id="tableActionsBtnToggle" aria-label="Actions" data-tooltip="Actions">
+                            <iconify-icon icon="solar:menu-dots-bold" style="transform: rotate(90deg);"></iconify-icon>
+                        </button>
+                        <div class="global-actions-dropdown-menu" id="tableActionsDropdown">
+                            <!-- SECTION SELECTION -->
+                            <button class="action-dropdown-item" id="selectAllBtn-global">
+                                <iconify-icon icon="solar:checklist-linear"></iconify-icon> Tout sélectionner
+                            </button>
+                            
+                            <!-- SECTION VUE -->
+                            <button class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
+                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser la classe
+                            </button>
+
+                            <!-- SECTION COPIER -->
+                            <h5 class="dropdown-header">COPIER</h5>
+                            <button class="action-dropdown-item" id="copyAllAppreciationsBtn">
+                                <iconify-icon icon="solar:copy-linear"></iconify-icon> Toutes les appréciations
+                            </button>
+                            <button class="action-dropdown-item" id="copyStudentNamesBtn">
+                                <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> Uniquement les noms
+                            </button>
+
+                            <!-- SECTION EXPORT -->
+                            <h5 class="dropdown-header">EXPORTER</h5>
+                            <button class="action-dropdown-item" id="exportPdfBtn">
+                                <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
+                            </button>
+                            <button class="action-dropdown-item" id="exportCsvBtn">
+                                <iconify-icon icon="solar:file-text-linear"></iconify-icon> Tableau (CSV)
+                            </button>
+                            <button class="action-dropdown-item" id="exportJsonBtn">
+                                <iconify-icon icon="solar:code-square-linear"></iconify-icon> Données (JSON)
+                            </button>
+                        </div>
+                    </div>
+                </th>
+            </tr>
         `;
 
+        let tbodyContent = '';
         results.forEach((result, index) => {
             try {
                 // Safeguard against missing studentData
@@ -378,7 +389,7 @@ export const ListViewRenderer = {
                 const appreciationCell = this.getAppreciationCell(result);
 
                 const isSelected = ListSelectionManager.selectedIds.has(result.id);
-                const tabIndexAttr = window.matchMedia('(pointer: coarse)').matches ? '' : ' tabindex="0"';
+                const tabIndexAttr = window.matchMedia?.('(pointer: coarse)')?.matches ? '' : ' tabindex="0"';
 
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
@@ -386,7 +397,7 @@ export const ListViewRenderer = {
                 const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
                 const originClass = Utils.getOriginClass(result, currentClassName);
 
-                html += `
+                tbodyContent += `
                     <tr data-student-id="${result.id}" class="student-row"${tabIndexAttr}>
                         <td class="student-name-cell">
                             <div class="student-identity-wrapper ${isSelected ? 'selected' : ''}">
@@ -395,7 +406,7 @@ export const ListViewRenderer = {
                             </div>
                         </td>
                         <td class="status-cell">${this.getStudentStatusCellContent(result)}</td>
-                        ${this.renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex)}
+                        ${this.renderGradeCells(studentData.periods || {}, periods, currentPeriodIndex, renderOptions)}
                         <td class="appreciation-cell">${appreciationCell}</td>
                         <td class="action-cell">
                             <div class="action-dropdown">
@@ -409,63 +420,108 @@ export const ListViewRenderer = {
                 `;
             } catch (e) {
                 console.error("Erreur rendu élève:", result?.nom, e);
-                html += `
+                tbodyContent += `
                     <tr class="error-row">
-                        <td colspan="${(currentPeriodIndex + 1) * 2 + 3}">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
+                        <td colspan="${headerPeriodCount * 2 + 3}">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
                     </tr>
                 `;
             }
         });
 
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+        const existingView = container.querySelector('.student-list-view');
+        const existingTable = existingView ? existingView.querySelector('.student-list-table') : null;
 
-        // ANTI-FLASH: Hide container, replace content, then fade in
-        container.style.opacity = '0';
-        container.innerHTML = html;
+        if (isPeriodSwitch && existingView && existingTable) {
+            // PERIOD SWITCH: Preserve .student-list-view container to avoid ANY background destroy/recreate
+            // ZERO black flash: solid surface color remains continuously visible on screen
+            container.style.opacity = '1';
+            container.style.transition = '';
+            existingTable.className = tableClass;
+            existingTable.innerHTML = `
+                <thead>
+                    ${theadContent}
+                </thead>
+                <tbody>
+                    ${tbodyContent}
+                </tbody>
+            `;
 
-        // Force reflow
-        void container.offsetHeight;
+            this.callbacks.attachEventListeners(existingView);
+            this.updateHeaderSortIcons(existingView);
 
-        // Quick fade-in of container
-        container.style.transition = 'opacity 0.15s ease-out';
-        container.style.opacity = '1';
-
-        const viewElement = container.querySelector('.student-list-view');
-        if (viewElement) {
-            const rows = viewElement.querySelectorAll('.student-row');
-            const rowCount = rows.length;
-
-            // Calculate staggered delays for premium effect
-            const maxTotalDuration = 300; // Max total stagger time in ms
-            const delayPerRow = Math.min(20, maxTotalDuration / Math.max(rowCount, 1));
-
-            // Apply staggered row animations after container fade
-            requestAnimationFrame(() => {
-                rows.forEach((row, index) => {
-                    row.style.setProperty('--row-delay', `${index * delayPerRow}ms`);
-                    row.classList.add('row-animate-in');
-                });
-            });
-
-            // Clean up after animations complete
-            const cleanupDelay = 200 + maxTotalDuration + 300; // fade + stagger + animation duration
-            setTimeout(() => {
-                if (container) { // Check existence as view might have changed
-                    container.style.transition = '';
-                    container.style.opacity = '';
-                    rows.forEach(row => {
-                        row.classList.remove('row-animate-in');
-                        row.style.removeProperty('--row-delay');
+            // Clean up entrance/exit animation classes once transition completes to leave DOM pristine
+            if (isAdvancing) {
+                setTimeout(() => {
+                    existingTable.querySelectorAll('.period-column-enter').forEach(el => {
+                        el.classList.remove('period-column-enter');
                     });
-                }
-            }, cleanupDelay);
+                }, 320);
+            }
+            if (isRetreating) {
+                setTimeout(() => {
+                    existingTable.querySelectorAll('.period-column-exit').forEach(el => {
+                        el.remove();
+                    });
+                }, 240);
+            }
+        } else {
+            const fullHtml = `
+                <div class="student-list-view">
+                    <table class="${tableClass}">
+                        <thead>
+                            ${theadContent}
+                        </thead>
+                        <tbody>
+                            ${tbodyContent}
+                        </tbody>
+                    </table>
+                </div>
+            `;
 
-            this.callbacks.attachEventListeners(viewElement);
-            this.updateHeaderSortIcons(viewElement);
+            // ANTI-FLASH (Initial / class change): Hide container, replace content, then fade in
+            container.style.opacity = '0';
+            container.innerHTML = fullHtml;
+
+            // Force reflow
+            void container.offsetHeight;
+
+            // Quick fade-in of container
+            container.style.transition = 'opacity 0.15s ease-out';
+            container.style.opacity = '1';
+
+            const viewElement = container.querySelector('.student-list-view');
+            if (viewElement) {
+                const rows = viewElement.querySelectorAll('.student-row');
+                const rowCount = rows.length;
+
+                // Calculate staggered delays for premium effect
+                const maxTotalDuration = 300; // Max total stagger time in ms
+                const delayPerRow = Math.min(20, maxTotalDuration / Math.max(rowCount, 1));
+
+                // Apply staggered row animations after container fade
+                requestAnimationFrame(() => {
+                    rows.forEach((row, index) => {
+                        row.style.setProperty('--row-delay', `${index * delayPerRow}ms`);
+                        row.classList.add('row-animate-in');
+                    });
+                });
+
+                // Clean up after animations complete
+                const cleanupDelay = 200 + maxTotalDuration + 300; // fade + stagger + animation duration
+                setTimeout(() => {
+                    if (container) { // Check existence as view might have changed
+                        container.style.transition = '';
+                        container.style.opacity = '';
+                        rows.forEach(row => {
+                            row.classList.remove('row-animate-in');
+                            row.style.removeProperty('--row-delay');
+                        });
+                    }
+                }, cleanupDelay);
+
+                this.callbacks.attachEventListeners(viewElement);
+                this.updateHeaderSortIcons(viewElement);
+            }
         }
     },
 
@@ -473,14 +529,30 @@ export const ListViewRenderer = {
     /**
      * Génère les headers de notes avec colonnes d'évolution
      * @param {Array} periods - Périodes à afficher
+     * @param {Object} [options={}] - Options de micro-animation
      * @returns {string} HTML des headers
      * @private
      */
-    renderGradeHeaders(periods) {
+    renderGradeHeaders(periods, options = {}) {
         let html = '';
+        const isPeriodSwitch = !!options.isPeriodSwitch;
+        const isAdvancing = !!options.isAdvancing;
+        const isRetreating = !!options.isRetreating;
+        const currentPeriodIndex = options.currentPeriodIndex ?? (periods.length - 1);
+        const lastIdx = periods.length - 1;
+
         periods.forEach((p, i) => {
+            let colClass = 'grade-header sortable-header';
+            if (isPeriodSwitch) {
+                if (isAdvancing && i === lastIdx && lastIdx > 0) {
+                    colClass += ' period-column-enter';
+                } else if (isRetreating && i > currentPeriodIndex) {
+                    colClass += ' period-column-exit';
+                }
+            }
+
             // Colonne de note - Sortable
-            html += `<th class="grade-header sortable-header" data-sort-field="grade" data-sort-param="${p}" data-tooltip="Trier par notes ${p}">
+            html += `<th class="${colClass}" data-period="${p}" data-sort-field="grade" data-sort-param="${p}" data-tooltip="Trier par notes ${p}">
                         <div class="header-content-wrapper">
                              ${Utils.getPeriodLabel(p, false)} <span class="sort-icon-placeholder"></span>
                         </div>
@@ -490,7 +562,16 @@ export const ListViewRenderer = {
             if (i < periods.length - 1) {
                 // Evolution is relevant to the NEXT period (target period)
                 const nextP = periods[i + 1];
-                html += `<th class="evolution-header sortable-header" data-sort-field="evolution" data-sort-param="${nextP}" data-tooltip="Trier par évolution vers ${nextP}">
+                let evoClass = 'evolution-header sortable-header';
+                if (isPeriodSwitch) {
+                    if (isAdvancing && (i + 1) === lastIdx && lastIdx > 0) {
+                        evoClass += ' period-column-enter';
+                    } else if (isRetreating && (i + 1) > currentPeriodIndex) {
+                        evoClass += ' period-column-exit';
+                    }
+                }
+
+                html += `<th class="${evoClass}" data-period="${nextP}" data-sort-field="evolution" data-sort-param="${nextP}" data-tooltip="Trier par évolution vers ${nextP}">
                              <div class="header-content-wrapper">
                                  <iconify-icon icon="solar:chart-2-bold" class="evolution-icon"></iconify-icon> <span class="sort-icon-placeholder"></span>
                              </div>
@@ -529,17 +610,23 @@ export const ListViewRenderer = {
 
     /**
      * Rend les cellules de notes pour un élève avec colonnes d'évolution séparées
-     * @param {Object} periods - Données par période
+     * @param {Object} periodsData - Données par période
      * @param {Array} allPeriods - Liste de toutes les périodes
      * @param {number} currentIndex - Index de la période courante
+     * @param {Object} [options={}] - Options de micro-animation
      * @returns {string} HTML des cellules
      * @private
      */
-    renderGradeCells(periodsData, allPeriods, currentIndex) {
+    renderGradeCells(periodsData, allPeriods, currentIndex, options = {}) {
         let html = '';
         const safePeriodsData = periodsData || {}; // Ensure object (renamed for clarity)
+        const isPeriodSwitch = !!options.isPeriodSwitch;
+        const isAdvancing = !!options.isAdvancing;
+        const isRetreating = !!options.isRetreating;
+        const activeIndex = options.currentPeriodIndex ?? currentIndex;
+        const maxIndex = options.headerPeriodCount ? (options.headerPeriodCount - 1) : currentIndex;
 
-        for (let i = 0; i <= currentIndex; i++) {
+        for (let i = 0; i <= maxIndex; i++) {
             try {
                 const p = allPeriods[i];
                 if (!p) continue; // Skip if period name is somehow missing
@@ -558,9 +645,18 @@ export const ListViewRenderer = {
                     ? ` class="tooltip" data-tooltip="Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''}"`
                     : '';
 
+                let cellClass = 'grade-cell';
+                if (isPeriodSwitch) {
+                    if (isAdvancing && i === currentIndex && currentIndex > 0) {
+                        cellClass += ' period-column-enter';
+                    } else if (isRetreating && i > activeIndex) {
+                        cellClass += ' period-column-exit';
+                    }
+                }
+
                 // Cellule de note
                 html += `
-                    <td class="grade-cell">
+                    <td class="${cellClass}" data-period="${p}">
                         <div class="grade-content-wrapper"${tooltipAttr}>
                         ${grade !== null
                         ? `<span class="grade-value ${gradeClass}">${grade.toFixed(1).replace('.', ',')}</span>`
@@ -571,7 +667,7 @@ export const ListViewRenderer = {
                 `;
 
                 // Cellule d'évolution (entre cette note et la suivante)
-                if (i < currentIndex) {
+                if (i < maxIndex) {
                     let evolutionHtml = '';
                     try {
                         const nextP = allPeriods[i + 1];
@@ -596,12 +692,21 @@ export const ListViewRenderer = {
                     } catch (evoErr) {
                         console.warn("Evolution render error", evoErr);
                     }
-                    html += `<td class="evolution-cell">${evolutionHtml}</td>`;
+                    let evoCellClass = 'evolution-cell';
+                    if (isPeriodSwitch) {
+                        if (isAdvancing && (i + 1) === currentIndex) {
+                            evoCellClass += ' period-column-enter';
+                        } else if (isRetreating && (i + 1) > activeIndex) {
+                            evoCellClass += ' period-column-exit';
+                        }
+                    }
+                    const nextP = allPeriods[i + 1];
+                    html += `<td class="${evoCellClass}" data-period="${nextP}">${evolutionHtml}</td>`;
                 }
             } catch (cellErr) {
                 console.error("Cell render error", p, cellErr);
                 html += `<td class="grade-cell error">?</td>`;
-                if (i < currentIndex) html += `<td class="evolution-cell"></td>`;
+                if (i < maxIndex) html += `<td class="evolution-cell"></td>`;
             }
         }
 

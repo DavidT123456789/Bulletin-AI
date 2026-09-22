@@ -319,7 +319,7 @@ export const FocusPanelStatus = {
             const isAI = result?.wasGenerated === true;
             tooltip = isAI
                 ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
-                : 'Données modifiées depuis l\'écriture.\nPensez à vérifier l\'appréciation.';
+                : 'Données modifiées depuis l\'écriture.\nCliquez pour marquer comme vérifiée.';
         } else {
             state = 'uptodate';
             tooltip = '';

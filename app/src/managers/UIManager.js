@@ -418,118 +418,98 @@ export const UI = {
         // Skip if already on this period
         if (appState.currentPeriod === period) return;
 
-        // [FIX] Save context for the OLD period BEFORE changing appState.currentPeriod
-        // This ensures that any edits made to context/grade/appreciation in Focus Panel
-        // are saved to the correct period before we switch
-        if (FocusPanelManager.isOpen() && FocusPanelManager.currentStudentId) {
+        // Save context for the OLD period BEFORE changing appState.currentPeriod
+        if (FocusPanelManager?.isOpen() && FocusPanelManager.currentStudentId) {
             FocusPanelManager.saveCurrentContext();
         }
 
-        // Trigger period-specific animation (horizontal slide - temporal navigation feel)
-        const containersToAnimate = Array.from(
-            document.querySelectorAll('.stats-container, #outputList, .output-header, #empty-state-card')
-        ).filter(el => {
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && style.visibility !== 'hidden';
-        });
-        containersToAnimate.forEach(el => {
-            el.classList.remove('period-refresh-animation');
-            void el.offsetWidth; // Force reflow
-            el.classList.add('period-refresh-animation');
+        // Update active period in state
+        appState.currentPeriod = period;
+
+        // Synchronize radio button selection
+        document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => {
+            r.checked = (r.value === period);
         });
 
-        // Delay data swap to sync with slide peak (50% of 350ms ≈ 175ms)
-        setTimeout(() => {
-            appState.currentPeriod = period;
-            document.querySelectorAll('#mainPeriodSelector input[name="periodModeRadio"]').forEach(r => r.checked = r.value === period);
-            if (DOM.sidebarPeriodContext) {
-                DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
-            }
-            this.updatePeriodSystemUI();
+        // Trigger progressive label expansion & synchronized glider transition
+        this.updatePeriodLabels();
+        if (DOM.mainPeriodSelector) {
+            this.updateGlider(DOM.mainPeriodSelector);
+        }
 
-            // Update glider
-            if (DOM.mainPeriodSelector) this.updateGlider(DOM.mainPeriodSelector);
+        // Update sidebar period indicators
+        if (DOM.sidebarPeriodContext) {
+            DOM.sidebarPeriodContext.textContent = Utils.getPeriodLabel(period, true);
+        }
+        if (DOM.currentPeriodLabel) {
+            DOM.currentPeriodLabel.textContent = Utils.getPeriodLabel(period, true);
+        }
+        if (DOM.contextPeriodLabel) {
+            DOM.contextPeriodLabel.textContent = `(${Utils.getPeriodLabel(period, false)})`;
+        }
 
-            AppreciationsManager.renderResults();
+        // Refresh list results and stats in-place (ZERO black flash, solid background preserved)
+        AppreciationsManager?.renderResults();
 
-            // [FIX] Refresh Focus Panel if open to show the new period's appreciation and context
-            if (FocusPanelManager.isOpen()) {
-                if (FocusPanelManager.currentStudentId) {
-                    FocusPanelManager.open(FocusPanelManager.currentStudentId);
-                } else {
-                    // No student ID means we're in creation mode
-                    // Re-render the timeline to reflect the new period's context
-                    FocusPanelManager._renderStudentDetailsTimeline(null, true);
+        // Refresh Focus Panel if open to reflect new period
+        if (FocusPanelManager?.isOpen()) {
+            if (FocusPanelManager.currentStudentId) {
+                FocusPanelManager.open(FocusPanelManager.currentStudentId);
+            } else {
+                FocusPanelManager._renderStudentDetailsTimeline(null, true);
 
-                    // Also update the context card period label
-                    const gradeLabel = document.getElementById('focusCurrentGradeLabel');
-                    if (gradeLabel) {
-                        gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false) + ' :';
-                    }
+                const gradeLabel = document.getElementById('focusCurrentGradeLabel');
+                if (gradeLabel) {
+                    gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false) + ' :';
+                }
 
-                    // Clear inputs for new period (since it's a new student with no data)
-                    const gradeInput = document.getElementById('focusCurrentGradeInput');
-                    if (gradeInput) gradeInput.value = '';
+                const gradeInput = document.getElementById('focusCurrentGradeInput');
+                if (gradeInput) gradeInput.value = '';
 
-                    const contextInput = document.getElementById('focusContextInput');
-                    if (contextInput) contextInput.value = '';
+                const contextInput = document.getElementById('focusContextInput');
+                if (contextInput) contextInput.value = '';
 
-                    // Update generate button label
-                    const generateBtn = document.getElementById('focusGenerateBtn');
-                    if (generateBtn) {
-                        const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                        generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
-                    }
+                const generateBtn = document.getElementById('focusGenerateBtn');
+                if (generateBtn) {
+                    const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
+                    generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+                }
 
-                    // Update Previous Grades chips (force refresh for creation mode)
-                    const prevGradesEl = document.getElementById('focusPreviousGrades');
-                    if (prevGradesEl) {
-                        prevGradesEl.innerHTML = '';
-                        const periods = Utils.getPeriods();
-                        const currentIdx = periods.indexOf(appState.currentPeriod);
+                const prevGradesEl = document.getElementById('focusPreviousGrades');
+                if (prevGradesEl) {
+                    prevGradesEl.innerHTML = '';
+                    const periods = Utils.getPeriods();
+                    const currentIdx = periods.indexOf(appState.currentPeriod);
 
-                        periods.forEach((p, idx) => {
-                            if (idx >= currentIdx) return;
+                    periods.forEach((p, idx) => {
+                        if (idx >= currentIdx) return;
 
-                            // Render chip "--" for consistency
-                            const chip = document.createElement('span');
-                            chip.className = 'previous-grade-chip';
-                            
-                            const periodLabel = Utils.getPeriodLabel(p, true);
-                            chip.classList.add('tooltip');
-                            chip.setAttribute('data-tooltip', `${periodLabel} : --`);
-                            chip.innerHTML = `<span class="prev-grade-value grade-value">--</span>`;
-                            prevGradesEl.appendChild(chip);
+                        const chip = document.createElement('span');
+                        chip.className = 'previous-grade-chip tooltip';
+                        const periodLabel = Utils.getPeriodLabel(p, true);
+                        chip.setAttribute('data-tooltip', `${periodLabel} : --`);
+                        chip.innerHTML = `<span class="prev-grade-value grade-value">--</span>`;
+                        prevGradesEl.appendChild(chip);
 
-                            // Render empty evolution arrow placeholder
-                            const nextPeriod = periods[idx + 1];
-                            if (nextPeriod) {
-                                const evoEl = document.createElement('span');
-                                evoEl.className = 'evolution-container-inline';
-                                if (nextPeriod === appState.currentPeriod) {
-                                    evoEl.id = 'focusCurrentEvolutionArrow';
-                                }
-                                prevGradesEl.appendChild(evoEl);
+                        const nextPeriod = periods[idx + 1];
+                        if (nextPeriod) {
+                            const evoEl = document.createElement('span');
+                            evoEl.className = 'evolution-container-inline';
+                            if (nextPeriod === appState.currentPeriod) {
+                                evoEl.id = 'focusCurrentEvolutionArrow';
                             }
-                        });
-                    }
+                            prevGradesEl.appendChild(evoEl);
+                        }
+                    });
                 }
             }
+        }
 
-            StorageManager.saveAppState();
+        StorageManager?.saveAppState();
 
-            // [FIX] Dispatch custom event so Lab/Prompt Inspector can sync
-            document.dispatchEvent(new CustomEvent('periodChanged', {
-                detail: { period: appState.currentPeriod }
-            }));
-
-            // Cleanup animation after it finishes
-            setTimeout(() => {
-                containersToAnimate.forEach(el => {
-                    el.classList.remove('period-refresh-animation');
-                });
-            }, 200); // Remaining animation time
-        }, 175);
+        document.dispatchEvent(new CustomEvent('periodChanged', {
+            detail: { period: appState.currentPeriod }
+        }));
     },
     getPeriods() {
         return Utils.getPeriods();
@@ -546,7 +526,15 @@ export const UI = {
             const input = document.getElementById(label.getAttribute('for'));
             if (input && label.dataset.short && label.dataset.full) {
                 const isActive = input.checked;
-                label.textContent = isActive ? label.dataset.full : label.dataset.short;
+                const targetText = isActive ? label.dataset.full : label.dataset.short;
+                const textSpan = label.querySelector('.period-label-text');
+                if (textSpan) {
+                    textSpan.textContent = targetText;
+                    textSpan.classList.toggle('is-expanded', isActive);
+                    textSpan.classList.toggle('is-collapsed', !isActive);
+                } else {
+                    label.innerHTML = `<span class="period-label-text ${isActive ? 'is-expanded' : 'is-collapsed'}">${targetText}</span>`;
+                }
 
                 // Update tooltip based on active state
                 if (isActive) {
@@ -572,6 +560,9 @@ export const UI = {
                 }
             }
         });
+
+        // Keep glider size and position perfectly aligned with current label widths
+        this.updateGlider(DOM.mainPeriodSelector);
     },
     updatePeriodSystemUI() {
         const periods = Utils.getPeriods();
@@ -598,7 +589,9 @@ export const UI = {
                 return `
                 <input type="radio" id="period${p}" name="periodModeRadio" value="${p}" ${isActive ? 'checked' : ''}>
                 <label for="period${p}" class="ui-segment ${tooltip ? 'tooltip' : ''}" ${tooltip ? `data-tooltip="${tooltip}"` : ''} data-short="${Utils.getPeriodLabel(p, false)}" data-full="${Utils.getPeriodLabel(p, true)}">
-                    ${isActive ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
+                    <span class="period-label-text ${isActive ? 'is-expanded' : 'is-collapsed'}">
+                        ${isActive ? Utils.getPeriodLabel(p, true) : Utils.getPeriodLabel(p, false)}
+                    </span>
                 </label>
             `}).join('');
 

@@ -842,13 +842,13 @@ export const Utils = {
      */
     getEvolutionType(diff) {
         if (diff === null || isNaN(diff)) return 'stable';
-        const t = appState.evolutionThresholds;
+        const t = appState.evolutionThresholds || { veryPositive: 2, positive: 0.5, negative: -0.5, veryNegative: -2 };
 
-        if (diff >= t.veryPositive) return 'very-positive';
-        if (diff >= t.positive) return 'positive';
+        if (diff >= (t.veryPositive ?? 2)) return 'very-positive';
+        if (diff >= (t.positive ?? 0.5)) return 'positive';
 
-        if (diff <= t.veryNegative) return 'very-negative';
-        if (diff <= t.negative) return 'negative';
+        if (diff <= (t.veryNegative ?? -2)) return 'very-negative';
+        if (diff <= (t.negative ?? -0.5)) return 'negative';
 
         return 'stable';
     },

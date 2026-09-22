@@ -1543,7 +1543,18 @@
     gap: 6px;
     font-size: 12px;
     font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s ease), transform var(--transition-fast, 0.15s ease);
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.appreciation-status-badge.modified:hover {
+    background: rgba(245, 158, 11, 0.28);
+    transform: scale(1.05);
+}
+
+.appreciation-status-badge.modified:active {
+    transform: scale(0.95);
 }
 
 .appreciation-status-badge.saved {

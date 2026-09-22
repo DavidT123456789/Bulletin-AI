@@ -79,7 +79,7 @@ export const GliderManager = {
      * @param {boolean} immediate - Si true, désactive la transition pour un déplacement instantané
      */
     update(container, immediate = false) {
-        if (!container) return;
+        if (!container || typeof container.querySelector !== 'function') return;
         const glider = container.querySelector('.ui-glider');
         if (!glider) return;
 

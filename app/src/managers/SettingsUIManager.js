@@ -359,6 +359,7 @@ export const SettingsUIManager = {
      * Utilise les pills visuels et le bandeau intelligent pour les alertes.
      */
     updateApiStatusDisplay() {
+        if (typeof document === 'undefined') return;
         // Injecter les icônes à jour avant d'afficher le statut
         this.injectProviderIcons();
 

@@ -46,6 +46,16 @@ export const ListViewEvents = {
          * @private
          */
     attachEventListeners(listContainer) {
+        if (!listContainer) return;
+
+        // Abort previous controller to prevent listener accumulation on container reuse
+        if (listContainer._eventsAbortController) {
+            listContainer._eventsAbortController.abort();
+        }
+        const abortController = new AbortController();
+        listContainer._eventsAbortController = abortController;
+        const { signal } = abortController;
+
         // Sort headers click (exclude appreciation toggle which has its own handler)
         listContainer.querySelectorAll('.sortable-header:not(.appreciation-toggle-header)').forEach(header => {
             header.addEventListener('click', (e) => {
@@ -59,7 +69,7 @@ export const ListViewEvents = {
 
                 e.stopPropagation();
                 EventHandlersManager.handleHeaderSortClick(header);
-            });
+            }, { signal });
         });
 
         // Horizontal mouse wheel scroll for status badges in compact view
@@ -71,7 +81,7 @@ export const ListViewEvents = {
                     badgesContainer.scrollLeft += e.deltaY;
                 }
             }
-        }, { passive: false });
+        }, { passive: false, signal });
 
         // Generate Button (pending appreciations)
         const generateBtn = listContainer.querySelector('#generateBtnInline');
@@ -79,7 +89,7 @@ export const ListViewEvents = {
             generateBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 await MassImportManager.generateAllPending();
-            });
+            }, { signal });
         }
 
         // Update Button (dirty/error appreciations)
@@ -88,7 +98,7 @@ export const ListViewEvents = {
             updateBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 await ResultsUIManager.regenerateDirty();
-            });
+            }, { signal });
         }
 
         // Close any open menus when clicking outside
@@ -150,7 +160,7 @@ export const ListViewEvents = {
                 closeAllMenus();
             }
         };
-        document.addEventListener('click', this._activeDocClickListener, true);
+        document.addEventListener('click', this._activeDocClickListener, { capture: true, signal });
 
         // Click handler
         listContainer.addEventListener('click', (e) => {
@@ -321,7 +331,7 @@ export const ListViewEvents = {
 
                 if (studentId) FocusPanelManager.open(studentId);
             }
-        });
+        }, { signal });
 
         // Right click (context menu) on student row to open actions menu
         listContainer.addEventListener('contextmenu', (e) => {
@@ -366,7 +376,7 @@ export const ListViewEvents = {
                 menu?.classList.add('open');
                 dropdown?.classList.add('open');
             }
-        });
+        }, { signal });
 
         // Close menus on escape key
         // CRITICAL FIX: Remove previous listener to prevent accumulation
@@ -407,7 +417,7 @@ export const ListViewEvents = {
                 ListSelectionManager.toggleSelectVisible(true);
             }
         };
-        document.addEventListener('keydown', this.state.activeKeydownListener);
+        document.addEventListener('keydown', this.state.activeKeydownListener, { signal });
 
         // [FIX] Prevent native text selection/blue rectangle when using Shift+Click
         listContainer.addEventListener('mousedown', (e) => {
@@ -417,7 +427,7 @@ export const ListViewEvents = {
 
                 e.preventDefault();
             }
-        });
+        }, { signal });
 
         // Keyboard navigation - Enter/Space opens Focus Panel
         listContainer.querySelectorAll('.student-row').forEach(row => {
@@ -427,14 +437,14 @@ export const ListViewEvents = {
                     const studentId = row.dataset.studentId;
                     if (studentId) FocusPanelManager.open(studentId);
                 }
-            });
+            }, { signal });
         });
 
         // (Avatar click delegation removed - consolidated above)
 
         // === GLOBAL ACTIONS DROPDOWN LISTENERS ===
         // These are dynamically created in the table header, so we attach them here
-        this.attachGlobalActionsListeners(listContainer, closeAllMenus);
+        this.attachGlobalActionsListeners(listContainer, closeAllMenus, signal);
     },
 
     // ListSelectionManager methods removed
@@ -445,7 +455,7 @@ export const ListViewEvents = {
      * @param {Function} closeAllMenus - Fonction pour fermer tous les menus
      * @private
      */
-    attachGlobalActionsListeners(listContainer, closeAllMenus) {
+    attachGlobalActionsListeners(listContainer, closeAllMenus, signal) {
         // Helper pour ajouter un listener qui ferme le menu
         const addAction = (selector, handler) => {
             const btn = listContainer.querySelector(selector);
@@ -454,7 +464,7 @@ export const ListViewEvents = {
                     e.stopPropagation();
                     closeAllMenus();
                     await handler();
-                });
+                }, { signal });
             }
         };
 
@@ -484,15 +494,16 @@ export const ListViewEvents = {
         });
 
         // Attach inline search listeners
-        this.attachInlineSearchListeners(listContainer);
+        this.attachInlineSearchListeners(listContainer, signal);
     },
 
     /**
      * Attache les listeners pour la recherche inline dans l'entête du tableau
      * @param {HTMLElement} listContainer - Conteneur de la liste
+     * @param {AbortSignal} [signal] - Signal d'annulation
      * @private
      */
-    attachInlineSearchListeners(listContainer) {
+    attachInlineSearchListeners(listContainer, signal) {
         // CLEANUP: Remove previous popstate listener to avoid accumulation
         if (this.state.activePopstateListener) {
             window.removeEventListener('popstate', this.state.activePopstateListener);
@@ -593,7 +604,7 @@ export const ListViewEvents = {
                 _performActivateUI();
             }
         };
-        window.addEventListener('popstate', this.state.activePopstateListener);
+        window.addEventListener('popstate', this.state.activePopstateListener, { signal });
 
         // Click / mousedown on search trigger button to activate search
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
@@ -616,8 +627,8 @@ export const ListViewEvents = {
                 if (!searchContainer.classList.contains('active')) {
                     handleActivation(e);
                 }
-            });
-            searchTrigger.addEventListener('click', handleActivation);
+            }, { signal });
+            searchTrigger.addEventListener('click', handleActivation, { signal });
         }
 
         // Close search when clicking the search close button inside the active bar
@@ -630,20 +641,20 @@ export const ListViewEvents = {
                 deactivateSearch();
             };
 
-            closeBtn.addEventListener('mousedown', handleCloseClick);
-            closeBtn.addEventListener('click', handleCloseClick);
+            closeBtn.addEventListener('mousedown', handleCloseClick, { signal });
+            closeBtn.addEventListener('click', handleCloseClick, { signal });
             closeBtn.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleCloseClick(e);
                 }
-            });
+            }, { signal });
         }
 
         // Prevent clicks inside search container from bubbling
         searchContainer.addEventListener('click', (e) => {
             e.stopPropagation();
-        });
+        }, { signal });
 
         // Also auto-focus the input when search container is clicked (except close/clear buttons)
         searchContainer.addEventListener('mousedown', (e) => {
@@ -654,7 +665,7 @@ export const ListViewEvents = {
                 e.preventDefault();
                 _focusAndPositionCaret();
             }
-        });
+        }, { signal });
 
         // Input event - filter as user types
         searchInput.addEventListener('input', (e) => {
@@ -667,7 +678,7 @@ export const ListViewEvents = {
                 existingInput.value = value;
                 existingInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
-        });
+        }, { signal });
 
         // Clear button
         if (searchClear) {
@@ -675,7 +686,7 @@ export const ListViewEvents = {
                 e.stopPropagation();
                 _clearSearchInput();
                 _focusAndPositionCaret();
-            });
+            }, { signal });
         }
 
         // Escape to close search
@@ -696,7 +707,7 @@ export const ListViewEvents = {
                     }
                 }
             }
-        });
+        }, { signal });
 
         // Click outside to deactivate (if empty)
         document.addEventListener('click', (e) => {
@@ -705,7 +716,7 @@ export const ListViewEvents = {
                     deactivateSearch();
                 }
             }
-        });
+        }, { signal });
 
         // Ctrl+F keyboard shortcut to activate search
         document.addEventListener('keydown', (e) => {
@@ -716,6 +727,6 @@ export const ListViewEvents = {
                     activateSearch();
                 }
             }
-        });
+        }, { signal });
     },
 };

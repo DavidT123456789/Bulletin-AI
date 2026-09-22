@@ -458,16 +458,6 @@ export const FocusPanelManager = {
                             result.wasGenerated = false;
                         }
 
-                        // Ensure baseline for dirty detection (if missing or just created)
-                        if (!result.promptHash) {
-                            result.promptHash = PromptService.getPromptHash({
-                                ...result.studentData,
-                                id: result.id,
-                                currentPeriod: appState.currentPeriod
-                            });
-                            result.generationPeriod = appState.currentPeriod;
-                        }
-
                         result.appreciation = content;
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = content;
@@ -482,6 +472,16 @@ export const FocusPanelManager = {
                     // Debounce UI updates to prevent typing lag
                     clearTimeout(this._appreciationUITimeout);
                     this._appreciationUITimeout = setTimeout(() => {
+                        // Resync hash baseline when user pauses typing (300ms)
+                        // so dirty warning disappears in real-time without typing lag
+                        result.promptHash = PromptService.getPromptHash({
+                            ...result.studentData,
+                            id: result.id,
+                            currentPeriod: appState.currentPeriod
+                        });
+                        result.generationPeriod = appState.currentPeriod;
+                        result.generationSnapshot = null;
+
                         FocusPanelStatus.updateSourceIndicator(result);
                         FocusPanelStatus.updateAppreciationStatus(result);
                         this._updateListRow(result);
@@ -498,11 +498,29 @@ export const FocusPanelManager = {
 
                     if (isRealContent) {
                         FocusPanelHistory.push(content);
+
+                        // Resync hash baseline for manual appreciations only.
+                        // AI appreciations keep their generation hash so dirty
+                        // detection still works when context changes later.
+                        if (result.wasGenerated === false) {
+                            result.promptHash = PromptService.getPromptHash({
+                                ...result.studentData,
+                                id: result.id,
+                                currentPeriod: appState.currentPeriod
+                            });
+                            result.generationPeriod = appState.currentPeriod;
+                            result.generationSnapshot = null;
+                        }
+
                         this._saveContext();
 
-                        // Show "Saved" feedback for manual edits
+                        // Show "Saved" feedback for manual edits without wiping it out immediately
                         if (result.wasGenerated === false) {
                             FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                            FocusPanelStatus.updateSourceIndicator(result);
+                            this._updateListRow(result);
+                        } else {
+                            FocusPanelStatus.refreshAppreciationStatus();
                         }
                     } else {
                         // Clear appreciation when content is empty/placeholder
@@ -510,9 +528,8 @@ export const FocusPanelManager = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
+                        FocusPanelStatus.refreshAppreciationStatus();
                     }
-
-                    FocusPanelStatus.refreshAppreciationStatus();
                 }
             });
 
@@ -572,6 +589,36 @@ export const FocusPanelManager = {
             historyNextBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 FocusPanelHistory.redo();
+            });
+        }
+
+        // Appreciation status badge interaction (dismiss warning or regenerate)
+        const appreciationBadge = document.getElementById('focusAppreciationBadge');
+        if (appreciationBadge) {
+            appreciationBadge.addEventListener('click', () => {
+                if (!appreciationBadge.classList.contains('modified')) return;
+                const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+                if (!result) return;
+
+                if (result.wasGenerated === true) {
+                    // AI generated: trigger regeneration as advertised by tooltip
+                    const generateBtn = document.getElementById('focusGenerateBtn');
+                    generateBtn?.click();
+                } else {
+                    // Manual: user confirms appreciation is verified with current data
+                    result.promptHash = PromptService.getPromptHash({
+                        ...result.studentData,
+                        id: result.id,
+                        currentPeriod: appState.currentPeriod
+                    });
+                    result.generationPeriod = appState.currentPeriod;
+                    result.generationSnapshot = null;
+
+                    StorageManager.saveAppState();
+                    this._updateListRow(result);
+                    FocusPanelStatus.updateSourceIndicator(result);
+                    FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                }
             });
         }
 

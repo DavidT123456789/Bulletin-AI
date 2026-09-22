@@ -537,6 +537,8 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
     width: 54px;
+    min-width: 54px;
+    max-width: 54px;
     padding: 14px 4px !important;
 }
 
@@ -553,12 +555,16 @@
 /* Grade header - compact width for T1/T2/T3 labels */
 .grade-header {
     width: 54px;
+    min-width: 54px;
+    max-width: 54px;
     padding: 14px 4px !important;
 }
 
 /* Evolution header - direct hover effect (pseudo-element doesn't work with border-collapse) */
 .evolution-header {
     width: 36px;
+    min-width: 36px;
+    max-width: 36px;
     padding: 14px 2px !important;
 }
 
@@ -580,6 +586,8 @@
 /* Evolution cell styling */
 .evolution-cell {
     width: 36px;
+    min-width: 36px;
+    max-width: 36px;
     padding: 14px 2px !important;
     text-align: center;
     vertical-align: middle;
@@ -604,13 +612,13 @@
 .evolution-cell .grade-evolution.positive iconify-icon,
 .grade-cell .grade-evolution.negative iconify-icon,
 .evolution-cell .grade-evolution.negative iconify-icon {
-    font-size: 1.25em; /* Compensate for the thinner zigzag graphic design */
+    transform: rotate(0deg);
 }
 
 .grade-cell .grade-evolution:hover,
 .evolution-cell .grade-evolution:hover {
-    transform: scale(1.3);
     opacity: 1;
+    transform: scale(1.15);
 }
 
 .grade-cell .grade-evolution.positive,
@@ -633,7 +641,6 @@
 .appreciation-cell {
     width: auto;
     text-align: left;
-    transition: padding 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     position: relative;
     /* Anchor for absolute positioning */
 }

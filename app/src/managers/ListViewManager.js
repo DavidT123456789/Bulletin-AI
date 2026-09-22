@@ -33,7 +33,7 @@ export const ListViewManager = {
     _createRowElement(r, p, c) { return ListViewRenderer.createRowElement(r, p, c); },
     _updateRowContent(row, res) { ListViewRenderer.updateRowContent(row, res); },
     updateStudentRow(id) { return ListViewRenderer.updateStudentRow(id); },
-    _renderFresh(c, r, p, idx) { ListViewRenderer.renderFresh(c, r, p, idx); },
+    _renderFresh(c, r, p, idx, options) { ListViewRenderer.renderFresh(c, r, p, idx, options); },
     _updateHeaderSortIcons(v) { ListViewRenderer.updateHeaderSortIcons(v); },
     _getAppreciationSkeletonHTML(label, pending) { return ListViewRenderer.getAppreciationSkeletonHTML(label, pending); },
     _getStudentStatusCellContent(result) { return ListViewRenderer.getStudentStatusCellContent(result); },
@@ -42,7 +42,7 @@ export const ListViewManager = {
 
     // Inject dependencies into SelectionManager
     initSelectionManager() {
-        ListSelectionManager.init({
+        ListSelectionManager?.init?.({
             updateStudentRow: (id) => this.updateStudentRow(id),
             setRowStatus: (id, status) => this.setRowStatus(id, status),
             renderList: () => this.render(appState.filteredResults, document.getElementById('outputList'))
@@ -133,6 +133,7 @@ export const ListViewManager = {
         // Class change: ensures event listeners are properly attached
         // Period change: ensures header columns match data cells (T1/T2/T3 column count varies)
         const currentClassId = appState.currentClassId;
+        const previousPeriod = this._lastRenderedPeriod;
         const classChanged = this._lastRenderedClassId !== null && this._lastRenderedClassId !== currentClassId;
         const periodChanged = this._lastRenderedPeriod !== null && this._lastRenderedPeriod !== currentPeriod;
 
@@ -142,7 +143,17 @@ export const ListViewManager = {
         if (classChanged || periodChanged) {
             // Class or period changed - force fresh render to ensure header/cell alignment
             this.clearSelections(); // Reset selections on class/period change
-            this._renderFresh(container, results, periods, currentPeriodIndex);
+            const previousIndex = (periodChanged && previousPeriod) ? periods.indexOf(previousPeriod) : -1;
+            const isRetreating = periodChanged && !classChanged && previousIndex !== -1 && currentPeriodIndex < previousIndex;
+            const isAdvancing = periodChanged && !classChanged && previousIndex !== -1 && currentPeriodIndex > previousIndex;
+            this._renderFresh(container, results, periods, currentPeriodIndex, {
+                isPeriodSwitch: periodChanged && !classChanged,
+                previousPeriod,
+                currentPeriod,
+                isRetreating,
+                isAdvancing,
+                previousIndex
+            });
             return;
         }
 
@@ -402,7 +413,9 @@ export const ListViewManager = {
      * @private
      */
     _toggleAppreciationColumn(listContainer) {
-        const table = listContainer.querySelector('.student-list-table');
+        const table = listContainer.classList.contains('student-list-table')
+            ? listContainer
+            : listContainer.querySelector('.student-list-table');
         if (!table) return;
 
         const isFullView = table.classList.contains('appreciation-full-view');
@@ -440,14 +453,14 @@ export const ListViewManager = {
 
 // Initialize the selection manager bindings
 ListViewManager.initSelectionManager();
-ListViewRenderer.init({
+ListViewRenderer?.init?.({
     attachEventListeners: (el) => ListViewEvents.attachEventListeners(el)
 });
-ListViewAnimations.init({
+ListViewAnimations?.init?.({
     renderFresh: (c, r, p, idx) => ListViewRenderer.renderFresh(c, r, p, idx),
     updateHeaderSortIcons: (v) => ListViewRenderer.updateHeaderSortIcons(v)
 });
-ListViewEvents.init({
+ListViewEvents?.init?.({
     copySingleAppreciation: (id) => ListViewManager._copySingleAppreciation(id),
     bulkReset: (ids) => ListViewManager._bulkReset(ids),
     deleteStudent: (id, row) => ListViewManager._deleteStudent(id, row),

@@ -714,6 +714,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 24px; /* Préserve l'espace pour les badges/chips afin d'éliminer tout décalage vertical */
+    box-sizing: border-box;
     margin-bottom: 12px;
 }
 
@@ -813,7 +815,10 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    padding: 0 10px;
+    height: 24px;
+    line-height: 24px;
+    box-sizing: border-box;
     border-radius: var(--radius-pill);
     font-size: 0.7rem;
     font-weight: 600;
@@ -821,6 +826,18 @@
     background: var(--bg-secondary);
     color: var(--text-secondary);
     white-space: nowrap;
+    animation: evolution-chip-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes evolution-chip-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Chip positif - Minimaliste */
@@ -1294,9 +1311,14 @@
 
 /* Badge Homogénéité - Minimaliste (harmonisé avec evolution-chip) */
 .homogeneity-badge {
+    display: inline-flex;
+    align-items: center;
     font-size: 0.7rem;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 0 10px;
+    height: 24px;
+    line-height: 24px;
+    box-sizing: border-box;
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
     color: var(--text-secondary);

@@ -12,6 +12,7 @@ import { appState } from '../state/State.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
+import { PromptService } from '../services/PromptService.js';
 
 export const SpeechRecognitionManager = {
     /** @type {SpeechRecognition|null} */
@@ -298,6 +299,13 @@ export const SpeechRecognitionManager = {
         result.wasGenerated = false;
         result.appreciationSource = 'manual';
         result.tokenUsage = null;
+        result.promptHash = PromptService.getPromptHash({
+            ...result.studentData,
+            id: result.id,
+            currentPeriod: appState.currentPeriod
+        });
+        result.generationPeriod = appState.currentPeriod;
+        result.generationSnapshot = null;
 
         // Hide AI indicator
         const aiIndicator = document.getElementById('focusAiIndicator');

@@ -54,7 +54,7 @@ vi.mock('../utils/DOM.js', () => ({
         settingsModal: null,
         loadingOverlay: null,
         loadingText: null,
-        mainPeriodSelector: { innerHTML: '', querySelectorAll: vi.fn(() => []) },
+        mainPeriodSelector: { innerHTML: '', querySelectorAll: vi.fn(() => []), querySelector: vi.fn(() => null) },
         singleStudentPeriodInputs: { innerHTML: '', querySelectorAll: vi.fn(() => []) },
         massImportSection: { style: { display: '' } },
         singleStudentFormDiv: { style: { display: '' } },
@@ -614,5 +614,50 @@ describe('UIManager', () => {
         });
     });
 
-    // Tests renderVocabList supprimés - fonctionnalité vocabulaire dépréciée
+    describe('setPeriod', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            document.body.innerHTML = `
+                <div class="stats-container"></div>
+                <div id="outputList"></div>
+            `;
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('should do nothing if already on requested period', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.currentPeriod = 'T1';
+
+            UI.setPeriod('T1');
+
+            expect(appState.currentPeriod).toBe('T1');
+        });
+
+        it('should update period immediately in appState', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.currentPeriod = 'T1';
+
+            UI.setPeriod('T2');
+
+            expect(appState.currentPeriod).toBe('T2');
+        });
+
+        it('should dispatch periodChanged event with new period', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.currentPeriod = 'T1';
+
+            const listener = vi.fn();
+            document.addEventListener('periodChanged', listener, { once: true });
+
+            UI.setPeriod('T3');
+
+            expect(listener).toHaveBeenCalledTimes(1);
+            expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+                detail: { period: 'T3' }
+            }));
+        });
+    });
 });

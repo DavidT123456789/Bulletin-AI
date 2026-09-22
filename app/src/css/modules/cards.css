@@ -969,8 +969,8 @@
 .student-list-table th,
 .student-list-table td {
     vertical-align: middle;
-    padding: 12px 16px;
-    /* Augmentation des marges internes pour aérer */
+    padding: 14px 16px;
+    /* Marges internes aérées et cohérentes */
 }
 
 .student-list-table th {
@@ -1029,11 +1029,9 @@
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color var(--transition-fast);
 }
 
-/* La flèche d'évolution est positionnée en absolu à droite pour ne pas décaler la note */
-/* Ajustement normal pour la cellule */
+/* Ajustement normal pour la cellule de note */
 .student-list-table td.grade-cell {
-    padding: 12px 16px;
-    /* Reset padding standard */
+    padding: 14px 4px !important;
 }
 
 /* La flèche d'évolution est maintenant AVANT la note (inline) */
@@ -1048,10 +1046,10 @@
 /* Evolution column in tables - triable column */
 .student-list-table .evolution-header,
 .student-list-table .evolution-cell {
-    width: 32px;
-    min-width: 32px;
-    max-width: 38px;
-    padding: 0 4px !important;
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    padding: 14px 2px !important;
     text-align: center;
 }
 
