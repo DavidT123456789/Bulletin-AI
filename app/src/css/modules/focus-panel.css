@@ -4631,14 +4631,18 @@
     }
 
     .focus-header:not(.editing) .focus-nav-buttons {
-        padding: calc(3px - 1px * var(--p)) calc(9px - 2px * var(--p)) !important;
-        height: calc(28px - 2px * var(--p)) !important;
+        padding: 0 calc(9px - 2px * var(--p)) !important;
+        height: calc(32px - 4px * var(--p)) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         border-radius: var(--radius-pill) !important;
         flex-shrink: 0 !important;
     }
 
     .focus-header:not(.editing) .focus-position {
         font-size: calc(11px - 0.5px * var(--p)) !important;
+        line-height: 1 !important;
     }
 
     .focus-header:not(.editing) .focus-close-btn {
