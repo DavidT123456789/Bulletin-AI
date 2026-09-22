@@ -508,7 +508,7 @@
 
 /* Assignment Panel: Fixed width or natural width, doesn't shrink */
 .trombi-assignment-panel {
-    width: 320px;
+    width: 365px;
     /* Fixed optimal width for list */
     flex-shrink: 0;
     /* Never shrink the sidebar */
@@ -1005,13 +1005,43 @@
 .assignment-row {
     display: grid;
     /* Preview | Zone # | Student Select | Actions */
-    grid-template-columns: 40px 40px 1fr auto;
-    gap: 8px;
+    grid-template-columns: 36px 30px 1fr auto;
+    gap: 6px;
     align-items: center;
-    padding: 6px 8px;
+    padding: 5px 8px;
     background: var(--bg-secondary);
-    border-radius: 6px;
-    transition: background 0.2s ease;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid transparent;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.assignment-row.is-new-student {
+    background: rgba(var(--success-rgb), 0.07);
+    border-color: rgba(var(--success-rgb), 0.3);
+}
+
+.assignment-row.is-new-student .live-preview-canvas {
+    border-color: var(--success-color);
+    box-shadow: 0 0 0 2px rgba(var(--success-rgb), 0.2);
+}
+
+.assignment-row.is-new-student .assignment-id {
+    border-color: rgba(var(--success-rgb), 0.4);
+    color: var(--success-dark);
+    background: rgba(var(--success-rgb), 0.1);
+}
+
+.assignment-row.is-new-student:hover {
+    background: rgba(var(--success-rgb), 0.12);
+}
+
+[data-theme="dark"] .assignment-row.is-new-student {
+    background: rgba(var(--success-rgb), 0.12);
+    border-color: rgba(var(--success-rgb), 0.35);
+}
+
+[data-theme="dark"] .assignment-row.is-new-student .assignment-id {
+    color: var(--success-bright);
 }
 
 .assignment-actions {
@@ -1072,8 +1102,8 @@
 }
 
 .live-preview-canvas {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 2px solid var(--primary-color);
     image-rendering: -webkit-optimize-contrast;
@@ -1081,21 +1111,22 @@
 
 /* Zone ID Number */
 .assignment-id {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: center;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm, 6px);
-    padding: 3px 6px;
+    padding: 2px 4px;
     font-variant-numeric: tabular-nums;
+    min-width: 26px;
 }
 
 /* Avatar placeholder with gradient (when no photo) */
 .assignment-avatar-placeholder {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: var(--gradient-primary);
     display: flex;
@@ -1116,13 +1147,13 @@
 
 .assignment-select {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background-color: var(--surface-color);
     background-image: none !important;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
     cursor: pointer;
     appearance: none;
@@ -1140,10 +1171,206 @@
     border-color: rgba(var(--primary-color-rgb), 0.4);
 }
 
-.assignment-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
-    outline: none;
+.assignment-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+}
+
+.assignment-select-wrapper .assignment-select {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Step 2 Badges */
+.trombi-student-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.3;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.trombi-student-badge iconify-icon {
+    font-size: 11px;
+}
+
+.trombi-student-badge.is-new {
+    background: var(--success-light);
+    color: var(--success-dark);
+    border: 1px solid rgba(var(--success-rgb), 0.3);
+}
+
+[data-theme="dark"] .trombi-student-badge.is-new {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success-bright);
+    border-color: rgba(var(--success-rgb), 0.4);
+}
+
+.trombi-student-badge.is-existing {
+    background: var(--surface-color);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .trombi-student-badge.is-existing {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+/* Header summary in Step 2 */
+.trombi-assignment-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trombi-header-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    user-select: none;
+}
+
+.trombi-header-count-pill.is-new {
+    background: var(--success-light);
+    color: var(--success-dark);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .trombi-header-count-pill.is-new {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+/* Stat badges in footers */
+.trombi-stat-badge {
+    font-weight: 600;
+}
+
+.trombi-stat-badge.is-new {
+    color: var(--success-color);
+}
+
+/* Step 3: Reassurance Banner */
+.trombi-reassurance-banner-wrapper {
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.trombi-reassurance-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--surface-color);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    animation: trombiBannerFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes trombiBannerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.trombi-reassurance-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.trombi-reassurance-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--success-light);
+    color: var(--success-color);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.trombi-reassurance-text {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.trombi-reassurance-text strong {
+    font-weight: 600;
+}
+
+.trombi-reassurance-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.trombi-reassurance-toggle-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: color var(--transition-fast);
+}
+
+.trombi-reassurance-toggle-label:hover {
+    color: var(--text-primary);
+}
+
+.trombi-reassurance-badge {
+    padding: 3px 9px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.trombi-reassurance-badge.is-new {
+    background: var(--success-light);
+    color: var(--success-dark);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .trombi-reassurance-banner {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .trombi-reassurance-badge.is-new {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* Step 3: Preview Grid */
@@ -1182,15 +1409,49 @@
 }
 
 .preview-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 10px;
+    gap: 8px;
+    padding: 12px 10px 10px;
     background: var(--bg-secondary);
-    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     font-size: 11px;
     text-align: center;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.preview-item.is-new-student {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.preview-item.is-dimmed {
+    opacity: 0.45;
+    filter: grayscale(0.2);
+    transition: opacity var(--transition-fast), filter var(--transition-fast);
+}
+
+.preview-item.is-dimmed:hover {
+    opacity: 0.85;
+    filter: none;
+}
+
+.preview-canvas-wrapper {
+    position: relative;
+    width: 75px;
+    height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .preview-item .preview-canvas {
@@ -1199,15 +1460,67 @@
     border-radius: 50%;
     border: 2px solid var(--primary-color);
     object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.preview-item span {
-    font-weight: 500;
+.preview-item.is-new-student .preview-canvas {
+    border-color: var(--success-color);
+}
+
+.trombi-preview-badge {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px 8px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    text-transform: uppercase;
+    user-select: none;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.trombi-preview-badge iconify-icon {
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.trombi-preview-badge.is-new {
+    background: var(--success-color);
+    color: #ffffff;
+}
+
+.trombi-preview-badge.is-existing {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .trombi-preview-badge.is-existing {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.preview-item .preview-student-name,
+.preview-item > span:not(.preview-canvas-wrapper):not(.trombi-preview-badge) {
+    font-weight: 600;
     color: var(--text-primary);
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 0.75rem;
 }
 
 

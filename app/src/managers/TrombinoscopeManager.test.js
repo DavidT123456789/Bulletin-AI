@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
+import { appState } from '../state/State.js';
 
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
@@ -1080,6 +1081,389 @@ describe('TrombinoscopeManager PDF Import & Multi-Page Flow', () => {
         TrombinoscopeManager._removeImage();
     });
 });
+
+describe('TrombinoscopeManager Mid-Year Student Re-upload & Data Safety', () => {
+    beforeEach(() => {
+        TrombinoscopeManager._reset();
+        appState.generatedResults = [];
+        appState.filteredResults = [];
+        vi.clearAllMocks();
+    });
+
+    it('should accurately partition PDF students into newStudents and existingStudents via _getTargetClassInfo', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([
+            { id: 'c-43', name: '4°3' }
+        ]);
+
+        appState.generatedResults = [
+            {
+                id: 'student-dupont',
+                nom: 'DUPONT',
+                prenom: 'Jean',
+                classId: 'c-43',
+                periods: { T1: { appreciation: 'Excellent travail, très sérieux.' } }
+            },
+            {
+                id: 'student-martin',
+                nom: 'MARTIN',
+                prenom: 'Sophie',
+                classId: 'c-43',
+                periods: { T1: { appreciation: 'Bonne participation.' } }
+            }
+        ];
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 3,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'MARTIN', prenom: 'Sophie' },
+                { id: 'pdf-s3', nom: 'LECLERC', prenom: 'Arthur' }
+            ],
+            numPages: 1,
+            pages: [{ zones: [] }]
+        };
+
+        const info = TrombinoscopeManager._getTargetClassInfo();
+
+        expect(info.isUpdate).toBe(true);
+        expect(info.targetClass.id).toBe('c-43');
+        expect(info.existingClassStudents).toHaveLength(2);
+        expect(info.existingStudents).toHaveLength(2);
+        expect(info.newStudents).toHaveLength(1);
+        expect(info.newStudents[0].nom).toBe('LECLERC');
+        expect(info.newStudents[0].prenom).toBe('Arthur');
+    });
+
+    it('should render distinct status badges in Step 2 assignment grid and display header count pill', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([
+            { id: 'c-43', name: '4°3' }
+        ]);
+
+        appState.generatedResults = [
+            { id: 'student-dupont', nom: 'DUPONT', prenom: 'Jean', classId: 'c-43' }
+        ];
+
+        document.body.innerHTML = `
+            <div class="trombi-assignment-panel-header">
+                <h4>Associer les élèves aux zones</h4>
+            </div>
+            <div id="trombiAssignmentGrid"></div>
+            <span id="trombiZonesInfo"></span>
+        `;
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'LECLERC', prenom: 'Arthur' }
+            ],
+            numPages: 1,
+            pages: [{
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1' },
+                    { id: 2, studentId: 'pdf-s2' }
+                ]
+            }]
+        };
+        TrombinoscopeManager._currentPageIndex = 0;
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 'pdf-s1' },
+            { id: 2, studentId: 'pdf-s2' }
+        ];
+
+        TrombinoscopeManager._renderAssignmentGrid();
+
+        const headerPill = document.querySelector('.trombi-header-count-pill');
+        expect(headerPill).not.toBeNull();
+        expect(headerPill.textContent).toContain('+1 nouveau');
+
+        const rows = document.querySelectorAll('.assignment-row');
+        expect(rows.length).toBe(2);
+
+        // First row is existing student DUPONT Jean (no badge to avoid visual clutter)
+        const badgeRow1 = rows[0].querySelector('.trombi-student-badge');
+        expect(badgeRow1).toBeNull();
+
+        // Second row is new mid-year student LECLERC Arthur
+        const badgeRow2 = rows[1].querySelector('.trombi-student-badge');
+        expect(badgeRow2).not.toBeNull();
+        expect(badgeRow2.classList.contains('is-new')).toBe(true);
+        expect(badgeRow2.textContent).toContain('Nouveau');
+    });
+
+    it('should render reassurance banner, toggle for existing photos, and dynamic button label in Step 3 for mid-year re-upload', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([
+            { id: 'c-43', name: '4°3' }
+        ]);
+
+        appState.generatedResults = [
+            { id: 'student-dupont', nom: 'DUPONT', prenom: 'Jean', classId: 'c-43' }
+        ];
+
+        document.body.innerHTML = `
+            <div id="trombiStep3">
+                <div id="trombiReassuranceBanner"></div>
+                <div id="trombiPreviewGrid"></div>
+                <div id="trombiConfirmInfo"></div>
+                <button id="trombiConfirmBtn"></button>
+            </div>
+        `;
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'LECLERC', prenom: 'Arthur' }
+            ],
+            numPages: 1,
+            pages: [{
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1' },
+                    { id: 2, studentId: 'pdf-s2' }
+                ]
+            }]
+        };
+        TrombinoscopeManager._currentPageIndex = 0;
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 'pdf-s1' },
+            { id: 2, studentId: 'pdf-s2' }
+        ];
+
+        TrombinoscopeManager._initStep3();
+
+        const banner = document.getElementById('trombiReassuranceBanner');
+        expect(banner.style.display).not.toBe('none');
+        expect(banner.textContent).toContain('Données pédagogiques protégées');
+        expect(banner.textContent).toContain('strictement conservés');
+
+        const toggle = banner.querySelector('#trombiUpdateExistingToggle');
+        expect(toggle).not.toBeNull();
+        expect(toggle.checked).toBe(false); // Unchecked by default when new students are detected
+
+        const confirmBtn = document.getElementById('trombiConfirmBtn');
+        // Default: Add the new student only
+        expect(confirmBtn.textContent).toContain('Ajouter');
+        expect(confirmBtn.textContent).toContain('Arthur');
+
+        const previewItems = document.querySelectorAll('.preview-item');
+        expect(previewItems.length).toBe(2);
+        // Existing student has no badge and is dimmed
+        expect(previewItems[0].querySelector('.trombi-preview-badge')).toBeNull();
+        expect(previewItems[0].classList.contains('is-dimmed')).toBe(true);
+        // New student has the Nouveau badge and is not dimmed
+        expect(previewItems[1].querySelector('.trombi-preview-badge.is-new')).not.toBeNull();
+        expect(previewItems[1].classList.contains('is-dimmed')).toBe(false);
+
+        // Toggle ON: update existing photos
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change'));
+
+        expect(confirmBtn.textContent).toContain('Importer (1 nouveau, 2 photos)');
+        expect(previewItems[0].classList.contains('is-dimmed')).toBe(false);
+    });
+
+    it('should preserve existing student data and photos completely by default when adding new student', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { UI } = await import('./UIManager.js');
+
+        const existingStudent = {
+            id: 'student-dupont',
+            nom: 'DUPONT',
+            prenom: 'Jean',
+            classId: 'c-43',
+            studentPhoto: { data: 'data:old-photo', source: 'manual' },
+            periods: {
+                T1: {
+                    appreciation: 'Excellent travail conservé intact.',
+                    grades: [18, 19]
+                }
+            },
+            journalEntries: [{ date: '2024-10-15', note: 'Observation conservée' }]
+        };
+
+        appState.generatedResults = [existingStudent];
+
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([
+            { id: 'c-43', name: '4°3' }
+        ]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c-43', name: '4°3' });
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'LECLERC', prenom: 'Arthur' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+                    { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+            { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+        ];
+
+        // Default: _updateExistingPhotos is false (or not set)
+        TrombinoscopeManager._updateExistingPhotos = false;
+        await TrombinoscopeManager._handleImport();
+
+        // 1. Existing student was preserved intact: including old photo!
+        const preservedDupont = appState.generatedResults.find(r => r.id === 'student-dupont');
+        expect(preservedDupont).toBeDefined();
+        expect(preservedDupont.periods.T1.appreciation).toBe('Excellent travail conservé intact.');
+        expect(preservedDupont.periods.T1.grades).toEqual([18, 19]);
+        expect(preservedDupont.studentPhoto.data).toBe('data:old-photo');
+
+        // 2. New student LECLERC was created and appended
+        const newLeclerc = appState.generatedResults.find(r => r.nom === 'LECLERC');
+        expect(newLeclerc).toBeDefined();
+        expect(newLeclerc.prenom).toBe('Arthur');
+        expect(newLeclerc.classId).toBe('c-43');
+
+        // 3. Notification confirms safe import preserving existing photos
+        expect(UI.showNotification).toHaveBeenCalledWith(
+            expect.stringContaining('1 nouvel élève ajouté • Photos existantes et données conservées'),
+            'success'
+        );
+    });
+
+    it('should update all photos when _updateExistingPhotos is explicitly enabled', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+        const { UI } = await import('./UIManager.js');
+
+        const existingStudent = {
+            id: 'student-dupont',
+            nom: 'DUPONT',
+            prenom: 'Jean',
+            classId: 'c-43',
+            studentPhoto: { data: 'data:old-photo', source: 'manual' },
+            periods: { T1: { appreciation: 'Bien' } }
+        };
+
+        appState.generatedResults = [existingStudent];
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([{ id: 'c-43', name: '4°3' }]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c-43', name: '4°3' });
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'DUPONT', prenom: 'Jean' },
+                { id: 'pdf-s2', nom: 'LECLERC', prenom: 'Arthur' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+                    { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+            { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+        ];
+
+        TrombinoscopeManager._updateExistingPhotos = true;
+        await TrombinoscopeManager._handleImport();
+
+        expect(UI.showNotification).toHaveBeenCalledWith(
+            expect.stringContaining('1 nouvel élève ajouté, 2 photos importées • Données conservées'),
+            'success'
+        );
+    });
+
+    it('should render clean student names without Inscrit/Nouveau pollution in Step 2 options and highlight new student row', async () => {
+        const { ClassManager } = await import('./ClassManager.js');
+
+        const existingStudent = {
+            id: 'student-noel',
+            nom: 'NOEL',
+            prenom: 'Johnas',
+            classId: 'c-43'
+        };
+
+        appState.generatedResults = [existingStudent];
+        ClassManager.getAllClasses = vi.fn().mockReturnValue([{ id: 'c-43', name: '4°3' }]);
+        ClassManager.getCurrentClass = vi.fn().mockReturnValue({ id: 'c-43', name: '4°3' });
+
+        TrombinoscopeManager._parsedPdfData = {
+            className: '4 3',
+            studentsCount: 2,
+            students: [
+                { id: 'pdf-s1', nom: 'NOEL', prenom: 'Johnas' },
+                { id: 'pdf-s2', nom: 'PAILLARD', prenom: 'Léonie' }
+            ],
+            numPages: 1,
+            pages: [{
+                width: 1000,
+                height: 1400,
+                studentsCount: 2,
+                zones: [
+                    { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+                    { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+                ]
+            }]
+        };
+        TrombinoscopeManager._zones = [
+            { id: 1, studentId: 'pdf-s1', cx: 100, cy: 100, r: 40 },
+            { id: 2, studentId: 'pdf-s2', cx: 200, cy: 100, r: 40 }
+        ];
+
+        document.body.innerHTML = `
+            <div class="trombi-assignment-panel-header"><h4>Associer les élèves</h4></div>
+            <div id="trombiAssignmentGrid"></div>
+            <span id="trombiZonesInfo"></span>
+        `;
+
+        TrombinoscopeManager._renderAssignmentGrid();
+
+        const grid = document.getElementById('trombiAssignmentGrid');
+        const rows = grid.querySelectorAll('.assignment-row');
+        expect(rows.length).toBe(2);
+
+        // Row 1 (Existing student NOEL Johnas):
+        const row1 = rows[0];
+        expect(row1.classList.contains('is-new-student')).toBe(false);
+        expect(row1.querySelector('.trombi-student-badge.is-new')).toBeNull();
+
+        const row1Select = row1.querySelector('select');
+        const row1OptionTexts = Array.from(row1Select.options).map(o => o.textContent.trim());
+        expect(row1OptionTexts).toContain('NOEL Johnas');
+        expect(row1OptionTexts.some(t => t.includes('Inscrit') || t.includes('Nouveau'))).toBe(false);
+
+        // Row 2 (New student PAILLARD Léonie):
+        const row2 = rows[1];
+        expect(row2.classList.contains('is-new-student')).toBe(true);
+        expect(row2.querySelector('.trombi-student-badge.is-new')).not.toBeNull();
+        expect(row2.querySelector('.trombi-student-badge.is-new').textContent).toContain('Nouveau');
+
+        const row2Select = row2.querySelector('select');
+        const row2OptionTexts = Array.from(row2Select.options).map(o => o.textContent.trim());
+        expect(row2OptionTexts).toContain('PAILLARD Léonie');
+        expect(row2OptionTexts.some(t => t.includes('Inscrit') || t.includes('Nouveau'))).toBe(false);
+    });
+});
+
 
 
 

@@ -307,6 +307,13 @@ export const TrombinoscopeManager = {
         document.getElementById('trombiZonesInfo')?.replaceChildren();
         document.getElementById('trombiConfirmInfo')?.replaceChildren();
 
+        const reassuranceBanner = document.getElementById('trombiReassuranceBanner');
+        if (reassuranceBanner) {
+            reassuranceBanner.style.display = 'none';
+            reassuranceBanner.replaceChildren();
+        }
+        this._updateExistingPhotos = null;
+
         const classBadge = document.getElementById('trombiClassBadge');
         if (classBadge) {
             const currentClass = ClassManager.getCurrentClass?.();
@@ -715,8 +722,86 @@ export const TrombinoscopeManager = {
     },
 
     // ========================================================================
-    // STEP 1: IMAGE UPLOAD
+    // STEP 1: IMAGE UPLOAD & CLASS RECONCILIATION
     // ========================================================================
+
+    /**
+     * Identifie la classe cible et analyse la distinction entre élèves existants et nouveaux
+     * @returns {{ targetClass: Object|null, existingClassStudents: Array, newStudents: Array, existingStudents: Array, isUpdate: boolean }}
+     */
+    _getTargetClassInfo() {
+        const existingClasses = ClassManager.getAllClasses?.() || [];
+        const currentClass = ClassManager.getCurrentClass?.();
+
+        if (!this._parsedPdfData) {
+            const existingClassStudents = currentClass
+                ? (appState.generatedResults || []).filter(r => r.classId === currentClass.id)
+                : (appState.filteredResults || []);
+            return {
+                targetClass: currentClass,
+                existingClassStudents,
+                newStudents: [],
+                existingStudents: existingClassStudents,
+                isUpdate: false
+            };
+        }
+
+        const rawTargetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
+        const targetName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(rawTargetName) : rawTargetName;
+        const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
+        const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
+
+        // 1. Recherche correspondance exacte (insensible à la casse sur nom formaté ou brut)
+        let targetClass = existingClasses.find(c =>
+            c.name.toLowerCase() === targetName.toLowerCase() ||
+            c.name.toLowerCase() === rawTargetName.toLowerCase()
+        );
+
+        // 2. Recherche tolérante / normalisée (ex: "5°1" vs "5 1", "6ème A" vs "6 A")
+        if (!targetClass && Utils.normalizeClassName) {
+            const targetNorm = Utils.normalizeClassName(targetName);
+            const rawNorm = Utils.normalizeClassName(rawTargetName);
+            if (targetNorm || rawNorm) {
+                targetClass = existingClasses.find(c => {
+                    const cNorm = Utils.normalizeClassName(c.name);
+                    return (targetNorm && cNorm === targetNorm) || (rawNorm && cNorm === rawNorm);
+                });
+            }
+        }
+
+        // 3. Réutilisation de la classe active si vide et non-démo
+        if (!targetClass && currentClass && !hasStudents && !isDemo) {
+            targetClass = currentClass;
+        }
+
+        const existingClassStudents = targetClass
+            ? (appState.generatedResults || []).filter(r => r.classId === targetClass.id)
+            : (currentClass ? (appState.generatedResults || []).filter(r => r.classId === currentClass.id) : []);
+
+        const pdfStudents = this._parsedPdfData.students || [];
+        const existingStudents = [];
+        const newStudents = [];
+
+        for (const pdfS of pdfStudents) {
+            const matched = existingClassStudents.find(es =>
+                es.id === pdfS.id ||
+                Utils.normalizeName(es.nom, es.prenom) === Utils.normalizeName(pdfS.nom, pdfS.prenom)
+            );
+            if (matched) {
+                existingStudents.push({ ...pdfS, matchedExisting: matched });
+            } else {
+                newStudents.push(pdfS);
+            }
+        }
+
+        return {
+            targetClass,
+            existingClassStudents,
+            newStudents,
+            existingStudents,
+            isUpdate: existingStudents.length > 0
+        };
+    },
 
     _loadFile(file) {
         if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
@@ -772,7 +857,17 @@ export const TrombinoscopeManager = {
             if (footerInfo) {
                 const pagesCountHtml = parsed.numPages > 1 ? ` <span class="footer-info-dimmed">(${parsed.numPages} pages)</span>` : '';
                 const displayClassName = parsed.className ? (Utils.formatClassDisplayName ? Utils.formatClassDisplayName(parsed.className) : parsed.className) : 'Auto';
-                footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountHtml}`;
+                const targetInfo = this._getTargetClassInfo();
+
+                if (targetInfo.isUpdate) {
+                    if (targetInfo.newStudents.length > 0) {
+                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • <span class="trombi-stat-badge is-new">+${targetInfo.newStudents.length} nouveau${targetInfo.newStudents.length > 1 ? 'x' : ''}</span>, ${targetInfo.existingStudents.length} déjà inscrit${targetInfo.existingStudents.length > 1 ? 's' : ''}${pagesCountHtml}`;
+                    } else {
+                        footerInfo.innerHTML = `${parsed.students.length} élèves détectés • Tous déjà inscrits <span class="footer-info-dimmed">(mise à jour photos)</span>${pagesCountHtml}`;
+                    }
+                } else {
+                    footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}${pagesCountHtml}`;
+                }
             }
 
             const step1PageBar = document.getElementById('trombiStep1PageSelectorBar');
@@ -2856,7 +2951,8 @@ export const TrombinoscopeManager = {
         if (!container) return;
 
         let allStudents = [];
-        const existingClassStudents = appState.filteredResults || [];
+        const targetInfo = this._getTargetClassInfo();
+        const existingClassStudents = targetInfo.existingClassStudents;
 
         if (this._parsedPdfData && this._parsedPdfData.students) {
             // Dans le mode PDF trombinoscope, la liste de référence est celle extraite du document
@@ -2872,11 +2968,22 @@ export const TrombinoscopeManager = {
                     originClass: pdfS.originClass || null,
                     classe: pdfS.classe || null,
                     studentPhoto: matched?.studentPhoto || null,
-                    matchedExistingId: matched?.id || null
+                    matchedExistingId: matched?.id || null,
+                    isNew: !matched
                 };
             });
         } else {
-            allStudents = [...existingClassStudents];
+            allStudents = existingClassStudents.map(s => ({ ...s, isNew: false }));
+        }
+
+        // Header summary pill if new students are detected
+        const panelHeaderTitle = document.querySelector('.trombi-assignment-panel-header h4');
+        if (panelHeaderTitle) {
+            const newCount = targetInfo.newStudents.length;
+            const newPill = (targetInfo.isUpdate && newCount > 0)
+                ? ` <span class="trombi-header-count-pill is-new">+${newCount} nouveau${newCount > 1 ? 'x' : ''}</span>`
+                : '';
+            panelHeaderTitle.innerHTML = `Associer les élèves aux zones${newPill}`;
         }
 
         if (this._zones.length === 0) {
@@ -2906,10 +3013,17 @@ export const TrombinoscopeManager = {
 
                 const assignedStudent = allStudents.find(s => s.id === zone.studentId);
                 const assignedName = assignedStudent ? Utils.formatStudentName(assignedStudent.nom, assignedStudent.prenom) : '';
-                const tooltipAttr = assignedName ? `data-tooltip="${assignedName}"` : 'data-tooltip="Choisir un élève..."';
+                const tooltipAttr = assignedName ? `data-tooltip="${assignedName}" title="${assignedName}"` : 'data-tooltip="Choisir un élève..."';
+                const isAssigned = !!assignedStudent;
+                const isNew = assignedStudent?.isNew ?? false;
+                const isNewRow = isAssigned && isPdfMode && targetInfo.isUpdate && isNew;
+
+                const badgeHtml = isNewRow
+                    ? `<span class="trombi-student-badge is-new" data-tooltip="Nouvel élève à ajouter"><iconify-icon icon="solar:user-plus-rounded-bold"></iconify-icon>Nouveau</span>`
+                    : '';
 
                 return `
-                    <div class="assignment-row" data-zone-id="${zone.id}">
+                    <div class="assignment-row ${isNewRow ? 'is-new-student' : ''}" data-zone-id="${zone.id}">
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
                                     data-zone-id="${zone.id}" 
@@ -2919,37 +3033,40 @@ export const TrombinoscopeManager = {
                             #${pageOffset + index + 1}
                         </div>
                         <div class="assignment-student-select">
-                            <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
-                                <option value="">Choisir un élève...</option>
-                                ${dropdownStudents.map(s => {
-                                    // Check if this student is assigned to ANOTHER zone (including other PDF pages)
-                                    const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
-                                        ? this._parsedPdfData.pages.some((p, pIdx) => {
-                                            const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
-                                            return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
-                                        })
-                                        : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
-                                    const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
+                            <div class="assignment-select-wrapper">
+                                <select class="assignment-select" data-zone-id="${zone.id}" ${tooltipAttr}>
+                                    <option value="">Choisir un élève...</option>
+                                    ${dropdownStudents.map(s => {
+                                        // Check if this student is assigned to ANOTHER zone (including other PDF pages)
+                                        const assignedToOther = isPdfMode && this._parsedPdfData.numPages > 1
+                                            ? this._parsedPdfData.pages.some((p, pIdx) => {
+                                                const zonesList = (pIdx === this._currentPageIndex) ? this._zones : (p.zones || []);
+                                                return zonesList.some(z => z.studentId === s.id && !(pIdx === this._currentPageIndex && z.id === zone.id));
+                                            })
+                                            : this._zones.some(z => z.studentId === s.id && z.id !== zone.id);
+                                        const hasPhoto = !isPdfMode && !!s.studentPhoto?.data;
 
-                                    const statusParts = [];
-                                    if (assignedToOther) {
-                                        statusParts.push('déjà sélectionné');
-                                    }
-                                    if (hasPhoto) {
-                                        statusParts.push('déjà assigné');
-                                    }
+                                        const statusParts = [];
+                                        if (assignedToOther) {
+                                            statusParts.push('déjà sélectionné');
+                                        }
+                                        if (hasPhoto) {
+                                            statusParts.push('déjà assigné');
+                                        }
 
-                                    const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
-                                    const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
-                                    const label = `${studentNameFormatted}${statusText}`;
+                                        const statusText = statusParts.length > 0 ? ` (${statusParts.join(', ')})` : '';
+                                        const studentNameFormatted = Utils.formatStudentName(s.nom, s.prenom);
+                                        const label = `${studentNameFormatted}${statusText}`;
 
-                                    return `
-                                        <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
-                                            ${label}
-                                        </option>
-                                    `;
-                                }).join('')}
-                            </select>
+                                        return `
+                                            <option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''} title="${label}">
+                                                ${label}
+                                            </option>
+                                        `;
+                                    }).join('')}
+                                </select>
+                                ${badgeHtml}
+                            </div>
                         </div>
                         <div class="assignment-actions">
                             <button type="button" class="assignment-action-btn shift-down-btn" 
@@ -2971,13 +3088,18 @@ export const TrombinoscopeManager = {
         // Update zones count in footer
         const zonesInfo = document.getElementById('trombiZonesInfo');
         if (zonesInfo) {
+            const newCount = targetInfo.newStudents.length;
+            const newBadgeHtml = (targetInfo.isUpdate && newCount > 0)
+                ? ` • <span class="trombi-stat-badge is-new">+${newCount} nouveau${newCount > 1 ? 'x' : ''}</span>`
+                : '';
+
             if (this._parsedPdfData && this._parsedPdfData.numPages > 1) {
                 const totalZones = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.length || 0), 0);
                 const totalAssigned = this._parsedPdfData.pages.reduce((acc, p) => acc + (p.zones?.filter(z => z.studentId).length || 0), 0);
-                zonesInfo.textContent = `${totalAssigned} / ${totalZones} zones assignées (Page ${this._currentPageIndex + 1}/${this._parsedPdfData.numPages})`;
+                zonesInfo.innerHTML = `${totalAssigned} / ${totalZones} zones assignées${newBadgeHtml} <span class="footer-info-dimmed">(Page ${this._currentPageIndex + 1}/${this._parsedPdfData.numPages})</span>`;
             } else {
                 const assignedCount = this._zones.filter(z => z.studentId).length;
-                zonesInfo.textContent = `${assignedCount} / ${this._zones.length} zones assignées`;
+                zonesInfo.innerHTML = `${assignedCount} / ${this._zones.length} zones assignées${newBadgeHtml}`;
             }
         }
 
@@ -3164,6 +3286,8 @@ export const TrombinoscopeManager = {
             this._parsedPdfData.pages[this._currentPageIndex].zones = this._zones.map(z => ({ ...z }));
         }
 
+        const targetInfo = this._getTargetClassInfo();
+
         let students = [...(appState.filteredResults || [])];
         if (this._parsedPdfData && this._parsedPdfData.students) {
             for (const pdfStudent of this._parsedPdfData.students) {
@@ -3189,12 +3313,17 @@ export const TrombinoscopeManager = {
 
         const confirmInfo = document.getElementById('trombiConfirmInfo');
         const confirmBtn = document.getElementById('trombiConfirmBtn');
+        const reassuranceBanner = document.getElementById('trombiReassuranceBanner');
 
         if (assignedItems.length === 0) {
             confirmInfo?.replaceChildren();
             if (confirmBtn) {
                 confirmBtn.disabled = true;
                 confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos';
+            }
+            if (reassuranceBanner) {
+                reassuranceBanner.style.display = 'none';
+                reassuranceBanner.replaceChildren();
             }
             container.innerHTML = `
                 <div class="empty-state">
@@ -3208,19 +3337,126 @@ export const TrombinoscopeManager = {
         const assignedCount = assignedItems.length;
         const totalStudents = students.length;
 
-        if (confirmInfo) {
-            if (totalStudents > assignedCount) {
-                confirmInfo.innerHTML = `<strong>${assignedCount}</strong> / ${totalStudents} élèves prêts pour l'import`;
-            } else {
-                confirmInfo.innerHTML = `<strong>${assignedCount}</strong> élève${assignedCount > 1 ? 's' : ''} prêt${assignedCount > 1 ? 's' : ''} pour l'import`;
+        // Calculate new vs existing assigned students
+        let newAssignedCount = 0;
+        let existingAssignedCount = 0;
+        if (targetInfo.isUpdate) {
+            for (const item of assignedItems) {
+                const isNew = targetInfo.newStudents.some(ns =>
+                    ns.id === item.zone.studentId ||
+                    (item.zone.studentId && this._parsedPdfData?.students?.find(ps => ps.id === item.zone.studentId && Utils.normalizeName(ps.nom, ps.prenom) === Utils.normalizeName(ns.nom, ns.prenom)))
+                );
+                if (isNew) newAssignedCount++;
+                else existingAssignedCount++;
             }
         }
 
-        if (confirmBtn) {
-            confirmBtn.disabled = false;
-            const photoLabel = assignedCount > 1 ? `${assignedCount} photos` : 'la photo';
-            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer ${photoLabel}`;
+        // Initialize photo update preference: default to false if new students exist, true if only updating photos
+        if (typeof this._updateExistingPhotos !== 'boolean') {
+            this._updateExistingPhotos = targetInfo.isUpdate && newAssignedCount === 0;
         }
+
+        // Render sleek reassurance bar
+        if (reassuranceBanner) {
+            if (targetInfo.isUpdate) {
+                reassuranceBanner.style.display = 'block';
+                if (newAssignedCount > 0) {
+                    reassuranceBanner.innerHTML = `
+                        <div class="trombi-reassurance-banner">
+                            <div class="trombi-reassurance-left">
+                                <div class="trombi-reassurance-icon">
+                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                </div>
+                                <div class="trombi-reassurance-text">
+                                    <strong>Données pédagogiques protégées</strong> • Notes, appréciations et journaux sont strictement conservés (${existingAssignedCount} élève${existingAssignedCount > 1 ? 's' : ''}).
+                                </div>
+                            </div>
+                            <div class="trombi-reassurance-toggle-group">
+                                <label class="trombi-reassurance-toggle-label" for="trombiUpdateExistingToggle">
+                                    Actualiser aussi les photos existantes (${existingAssignedCount})
+                                </label>
+                                <label class="toggle-switch small">
+                                    <input type="checkbox" id="trombiUpdateExistingToggle" ${this._updateExistingPhotos ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    reassuranceBanner.innerHTML = `
+                        <div class="trombi-reassurance-banner">
+                            <div class="trombi-reassurance-left">
+                                <div class="trombi-reassurance-icon">
+                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                </div>
+                                <div class="trombi-reassurance-text">
+                                    <strong>Données pédagogiques protégées</strong> • Seules les photos seront actualisées. Notes et appréciations conservées.
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                reassuranceBanner.style.display = 'none';
+                reassuranceBanner.replaceChildren();
+            }
+        }
+
+        // Reactive update for footer counters, buttons and card dimming
+        const updateFooterAndDimming = () => {
+            const updateExisting = this._updateExistingPhotos;
+
+            // Update dimming on existing student cards
+            const existingCards = container.querySelectorAll('.preview-item.is-existing-student');
+            existingCards.forEach(card => {
+                card.classList.toggle('is-dimmed', !updateExisting && newAssignedCount > 0);
+            });
+
+            // Update footer info
+            if (confirmInfo) {
+                if (targetInfo.isUpdate && newAssignedCount > 0) {
+                    if (!updateExisting) {
+                        confirmInfo.innerHTML = `<strong>${newAssignedCount}</strong> nouvel élève à ajouter • ${existingAssignedCount} élève${existingAssignedCount > 1 ? 's' : ''} existant${existingAssignedCount > 1 ? 's' : ''} inchangé${existingAssignedCount > 1 ? 's' : ''}`;
+                    } else {
+                        confirmInfo.innerHTML = `<strong>${assignedCount}</strong> élèves prêts • <span class="trombi-stat-badge is-new">+${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}</span> • ${existingAssignedCount} déjà inscrit${existingAssignedCount > 1 ? 's' : ''}`;
+                    }
+                } else if (totalStudents > assignedCount) {
+                    confirmInfo.innerHTML = `<strong>${assignedCount}</strong> / ${totalStudents} élèves prêts pour l'import`;
+                } else {
+                    confirmInfo.innerHTML = `<strong>${assignedCount}</strong> élève${assignedCount > 1 ? 's' : ''} prêt${assignedCount > 1 ? 's' : ''} pour l'import`;
+                }
+            }
+
+            // Update confirm button
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                if (targetInfo.isUpdate) {
+                    if (newAssignedCount > 0) {
+                        if (!updateExisting) {
+                            const newStudentObj = targetInfo.newStudents[0];
+                            const studentLabel = (newAssignedCount === 1 && newStudentObj)
+                                ? `Ajouter ${Utils.formatStudentName(newStudentObj.nom, newStudentObj.prenom)}`
+                                : `Ajouter ${newAssignedCount > 1 ? `les ${newAssignedCount} nouveaux élèves` : `le nouvel élève`}`;
+                            confirmBtn.innerHTML = `<iconify-icon icon="ph:user-plus-bold"></iconify-icon> ${studentLabel}`;
+                        } else {
+                            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}, ${assignedCount} photos)`;
+                        }
+                    } else {
+                        confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Mettre à jour les ${assignedCount} photos`;
+                    }
+                } else {
+                    const photoLabel = assignedCount > 1 ? `${assignedCount} photos` : 'la photo';
+                    confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer ${photoLabel}`;
+                }
+            }
+        };
+
+        // Attach toggle listener
+        const toggleInput = reassuranceBanner?.querySelector('#trombiUpdateExistingToggle');
+        toggleInput?.addEventListener('change', (e) => {
+            this._updateExistingPhotos = e.target.checked;
+            updateFooterAndDimming();
+        });
 
         // Create preview canvas for each assigned zone
         container.innerHTML = '<div class="preview-list"></div>';
@@ -3230,18 +3466,34 @@ export const TrombinoscopeManager = {
             const student = students.find(s => s.id === item.zone.studentId) || (this._parsedPdfData?.students?.find(s => s.id === item.zone.studentId));
             if (!student) continue;
 
+            const isNew = targetInfo.isUpdate && targetInfo.newStudents.some(ns =>
+                ns.id === student.id || Utils.normalizeName(ns.nom, ns.prenom) === Utils.normalizeName(student.nom, student.prenom)
+            );
+
+            const isDimmed = targetInfo.isUpdate && !isNew && !this._updateExistingPhotos && newAssignedCount > 0;
             const previewItem = document.createElement('div');
-            previewItem.className = 'preview-item';
+            previewItem.className = `preview-item ${isNew ? 'is-new-student' : 'is-existing-student'} ${isDimmed ? 'is-dimmed' : ''}`;
+
+            // Clean & zen: ONLY new students get a badge! Existing students have NO badge.
+            const badgeHtml = isNew
+                ? `<span class="trombi-preview-badge is-new"><iconify-icon icon="solar:user-plus-rounded-bold"></iconify-icon> Nouveau</span>`
+                : '';
+
             // Buffer 160x160 for HiDPI, displayed at 80x80 CSS
             previewItem.innerHTML = `
-                <canvas class="preview-canvas" width="160" height="160"></canvas>
-                <span>${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
+                <div class="preview-canvas-wrapper">
+                    <canvas class="preview-canvas" width="160" height="160"></canvas>
+                    ${badgeHtml}
+                </div>
+                <span class="preview-student-name">${Utils.formatStudentName(student.nom, student.prenom, true)}</span>
             `;
             list.appendChild(previewItem);
 
             // Draw preview
             this._drawPreview(previewItem.querySelector('canvas'), item.zone, item.pageIndex);
         }
+
+        updateFooterAndDimming();
     },
 
     async _drawPreview(canvas, zone, pageIndex = 0) {
@@ -3316,36 +3568,19 @@ export const TrombinoscopeManager = {
 
         try {
             let targetClass = null;
+            let newStudentsAddedCount = 0;
 
             // If from parsed PDF, ensure class and students exist
             if (this._parsedPdfData) {
+                const targetInfo = this._getTargetClassInfo();
+                targetClass = targetInfo.targetClass;
                 const rawTargetName = (this._parsedPdfData.className || 'Nouvelle Classe').trim();
                 const targetName = Utils.formatClassDisplayName ? Utils.formatClassDisplayName(rawTargetName) : rawTargetName;
-                const existingClasses = ClassManager.getAllClasses() || [];
                 const currentClass = ClassManager.getCurrentClass?.();
                 const hasStudents = currentClass && (appState.generatedResults || []).some(r => r.classId === currentClass.id);
                 const isDemo = currentClass && ClassManager.isDemoClass ? ClassManager.isDemoClass(currentClass.id) : false;
 
-                // 1. Recherche correspondance exacte (insensible à la casse sur nom formaté ou brut)
-                targetClass = existingClasses.find(c => 
-                    c.name.toLowerCase() === targetName.toLowerCase() || 
-                    c.name.toLowerCase() === rawTargetName.toLowerCase()
-                );
-
-                // 2. Recherche tolérante / normalisée (ex: "5°1" vs "5 1", "6ème A" vs "6 A")
-                if (!targetClass && Utils.normalizeClassName) {
-                    const targetNorm = Utils.normalizeClassName(targetName);
-                    const rawNorm = Utils.normalizeClassName(rawTargetName);
-                    if (targetNorm || rawNorm) {
-                        targetClass = existingClasses.find(c => {
-                            const cNorm = Utils.normalizeClassName(c.name);
-                            return (targetNorm && cNorm === targetNorm) || (rawNorm && cNorm === rawNorm);
-                        });
-                    }
-                }
-
-                // 3. Si toujours non trouvée mais la classe active est vide et n'est pas la démo :
-                // On réutilise la classe active (on met à jour son nom avec celui du PDF pour éviter les doublons)
+                // Si toujours non trouvée mais la classe active est vide et n'est pas la démo :
                 if (!targetClass) {
                     if (currentClass && !hasStudents && !isDemo) {
                         ClassManager.updateClass?.(currentClass.id, {
@@ -3381,6 +3616,7 @@ export const TrombinoscopeManager = {
                                 newStudentResult.classId = targetClass.id;
                                 appState.generatedResults.push(newStudentResult);
                                 item.zone.studentId = newStudentResult.id;
+                                newStudentsAddedCount++;
                             }
                         }
                     }
@@ -3396,10 +3632,24 @@ export const TrombinoscopeManager = {
             const assignments = [];
 
             if (this._parsedPdfData) {
+                const targetInfo = this._getTargetClassInfo();
+                const shouldUpdateExisting = this._updateExistingPhotos ?? (targetInfo.isUpdate && targetInfo.newStudents.length === 0);
+
                 for (const item of assignedItems) {
+                    const { studentId, cx, cy } = item.zone;
+
+                    const isNew = targetInfo.isUpdate && targetInfo.newStudents.some(ns =>
+                        ns.id === studentId ||
+                        (this._parsedPdfData?.students?.find(ps => ps.id === studentId && Utils.normalizeName(ps.nom, ps.prenom) === Utils.normalizeName(ns.nom, ns.prenom)))
+                    );
+
+                    // If existing student and user chose NOT to update existing photos: SKIP photo extraction!
+                    if (targetInfo.isUpdate && !isNew && !shouldUpdateExisting) {
+                        continue;
+                    }
+
                     const page = this._parsedPdfData.pages[item.pageIndex];
                     if (!page || !page.canvas) continue;
-                    const { studentId, cx, cy } = item.zone;
                     const r = item.zone.r || this._globalRadius;
                     const diameter = r * 2;
                     const sx = Math.max(0, cx - r);
@@ -3460,7 +3710,14 @@ export const TrombinoscopeManager = {
             UI?.updateControlButtons?.();
             UI?.updateAIButtonsState?.();
 
-            if (count > 0) {
+            if (newStudentsAddedCount > 0) {
+                const shouldUpdateExisting = this._updateExistingPhotos ?? false;
+                const notifText = (shouldUpdateExisting && count > newStudentsAddedCount)
+                    ? `${newStudentsAddedCount} nouvel élève ajouté, ${count} photos importées • Données conservées`
+                    : `${newStudentsAddedCount} nouvel élève ajouté • Photos existantes et données conservées`;
+                UI.showNotification(notifText, 'success');
+                window.dispatchEvent(new CustomEvent('studentsUpdated'));
+            } else if (count > 0) {
                 UI.showNotification(`${count} photos importées avec succès`, 'success');
                 window.dispatchEvent(new CustomEvent('studentsUpdated'));
             } else if (this._parsedPdfData) {
