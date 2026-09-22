@@ -1445,6 +1445,28 @@
     border: 2px solid transparent;
     border-radius: 0;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+/* Custom Sleek Scrollbar for Appreciation Text - Harmonized with context-textarea */
+.focus-appreciation-text::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+}
+
+.focus-appreciation-text::-webkit-scrollbar-track {
+    background: transparent;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.focus-appreciation-text::-webkit-scrollbar-thumb {
+    background: rgba(161, 161, 170, 0.4);
+    border-radius: var(--radius-pill);
+}
+
+.focus-appreciation-text::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 /* Ensure nested block elements (like pasted paragraphs/divs) don't create external spacing at the top/bottom */
@@ -2229,6 +2251,13 @@
 .focus-appreciation-text[contenteditable] {
     position: relative;
     color: var(--text-primary);
+}
+
+/* Prevent scrollbar and ensure harmonious vertical breathing room when empty */
+.focus-appreciation-text:empty,
+.focus-appreciation-text.empty {
+    overflow-y: hidden;
+    min-height: 70px;
 }
 
 .focus-appreciation-text[contenteditable]:empty::before,
@@ -4748,7 +4777,7 @@
     }
 
     .focus-appreciation-text {
-        min-height: 56px;
+        min-height: 72px;
         font-size: 14px;
         line-height: 1.5;
     }
