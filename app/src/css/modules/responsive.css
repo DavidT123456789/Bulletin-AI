@@ -600,7 +600,7 @@
     .header-action-trigger,
     .sort-icon-placeholder,
     .appreciation-toggle-icon,
-    .header-tooltip-target,
+    .appreciation-toggle-btn,
     .dirty-indicator {
         display: none !important;
     }

@@ -295,6 +295,9 @@ export const ListViewEvents = {
             // Toggle appreciation column visibility (click on header)
             const toggleHeader = target.closest('.appreciation-toggle-header');
             if (toggleHeader) {
+                if (target.closest('.appreciation-header-actions') || target.closest('#avgWordsChip')) {
+                    return;
+                }
                 e.stopPropagation();
                 this.callbacks.toggleAppreciationColumn(listContainer);
                 return;

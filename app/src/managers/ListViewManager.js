@@ -432,8 +432,11 @@ export const ListViewManager = {
 
         // Update Tooltips
         const tooltipText = nextIsFull ? 'Réduire' : 'Voir tout le texte';
-        const tooltipTarget = header?.querySelector('.header-tooltip-target');
-        if (tooltipTarget) TooltipsUI.updateTooltip(tooltipTarget, tooltipText);
+        const toggleBtn = header?.querySelector('#appreciationToggleBtn');
+        if (toggleBtn) {
+            TooltipsUI.updateTooltip(toggleBtn, tooltipText);
+            toggleBtn.setAttribute('aria-label', tooltipText);
+        }
         if (mobileBtn) {
             TooltipsUI.updateTooltip(mobileBtn, tooltipText);
             mobileBtn.removeAttribute('title');

@@ -138,12 +138,16 @@
         background-color: var(--item-hover-bg) !important;
     }
 
-    .appreciation-toggle-header:hover .appreciation-toggle-icon {
+    .appreciation-toggle-header:hover .appreciation-toggle-btn {
         opacity: 0.7;
+        color: var(--text-secondary);
     }
 
-    .appreciation-toggle-header.expanded-view:hover .appreciation-toggle-icon {
-        opacity: 0.8;
+    .appreciation-toggle-header:hover .appreciation-toggle-btn:hover {
+        opacity: 1 !important;
+        background: var(--item-hover-bg);
+        color: var(--icon-btn-hover) !important;
+        transform: translateY(-50%) scale(1.1);
     }
 }
 
@@ -863,17 +867,14 @@
 .appreciation-toggle-header:has(#mobileCompactToggleBtn:active)::after,
 .appreciation-toggle-header:has(#avgWordsChip:hover)::after,
 .appreciation-toggle-header:has(#avgWordsChip:active)::after,
+.appreciation-toggle-header:has(.btn-smart-action-inline:hover) .appreciation-toggle-btn,
+.appreciation-toggle-header:has(.btn-smart-action-inline:active) .appreciation-toggle-btn,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover) .appreciation-toggle-btn,
+.appreciation-toggle-header:has(#mobileCompactToggleBtn:active) .appreciation-toggle-btn,
+.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-btn,
+.appreciation-toggle-header:has(#avgWordsChip:active) .appreciation-toggle-btn,
 .name-header-with-search:has(.inline-search-trigger-btn:hover)::after,
 .name-header-with-search:has(.inline-search-trigger-btn:active)::after {
-    opacity: 0 !important;
-}
-
-.appreciation-toggle-header:has(.btn-smart-action-inline:hover) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(.btn-smart-action-inline:active) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:hover) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(#mobileCompactToggleBtn:active) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(#avgWordsChip:hover) .appreciation-toggle-icon,
-.appreciation-toggle-header:has(#avgWordsChip:active) .appreciation-toggle-icon {
     opacity: 0 !important;
 }
 
@@ -884,29 +885,82 @@
 }
 
 /* === Appreciation Column Toggle (Expand/Collapse Content) === */
-/* Note: Uses .sortable-header hover effect for consistency */
 .appreciation-toggle-header .header-content-wrapper {
     position: relative;
     display: inline-flex !important;
 }
 
-/* Expand Icon - appears on hover */
-.appreciation-toggle-icon {
+/* Dedicated Action Button - Placed at left of header, perfectly centered vertically (harmonized with .inline-search-trigger-btn) */
+.appreciation-toggle-btn {
     position: absolute;
     left: 16px;
+    right: auto;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 15px; /* slightly bigger for left placement */
-    opacity: 0;
-    color: var(--text-tertiary);
+    width: 24px;
+    height: 24px;
+    padding: 0;
     margin: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, color 0.25s ease;
-    z-index: 2;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-pill) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), color 0.2s ease !important;
+    z-index: 3;
+    pointer-events: auto;
 }
 
+.appreciation-toggle-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--icon-btn-hover) !important;
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.appreciation-toggle-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.appreciation-toggle-btn i,
+.appreciation-toggle-btn iconify-icon,
+.appreciation-toggle-btn .appreciation-toggle-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    position: static !important;
+    transform: none !important;
+    color: inherit !important;
+    pointer-events: none;
+}
+
+.appreciation-toggle-btn:hover iconify-icon,
+.appreciation-toggle-btn:hover .appreciation-toggle-icon {
+    color: var(--icon-btn-hover) !important;
+}
+
+/* Guard against dynamic / blue color leakage in expanded state */
+.appreciation-toggle-header.expanded-view .appreciation-toggle-btn,
 .appreciation-toggle-header.expanded-view .appreciation-toggle-icon {
-    color: var(--primary-color); /* Keeps the active color state, but inherits opacity:0 */
+    color: var(--text-tertiary);
+}
+
+.appreciation-toggle-header.expanded-view:hover .appreciation-toggle-btn {
+    color: var(--text-secondary);
+}
+
+.appreciation-toggle-header.expanded-view .appreciation-toggle-btn:hover,
+.appreciation-toggle-header.expanded-view .appreciation-toggle-btn:hover .appreciation-toggle-icon {
+    color: var(--icon-btn-hover) !important;
 }
 
 /* Desktop adjustments for expanded view */
@@ -1699,6 +1753,11 @@
         gap: 10px;
         /* Synchronized with global row gaps */
         position: relative;
+    }
+
+    /* Masquer le bouton d'extension de colonne sur tablette/mobile (remplacé par #mobileCompactToggleBtn) */
+    .appreciation-toggle-btn {
+        display: none !important;
     }
 
     /* Masquer le compteur de mots moyen sur mobile pour garder la barre d'outils sur une seule ligne */

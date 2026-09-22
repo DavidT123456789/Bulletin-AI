@@ -313,9 +313,10 @@ export const ListViewRenderer = {
                 </th>
                 ${this.renderGradeHeaders(periods.slice(0, headerPeriodCount), renderOptions)}
                 <th class="${headerClass}" style="position: relative;">
-                    <div class="header-tooltip-target" data-tooltip="${title}" style="position: absolute; inset: 0; z-index: 1;"></div>
+                    <button type="button" class="appreciation-toggle-btn header-action-trigger" id="appreciationToggleBtn" aria-label="${title}" data-tooltip="${title}">
+                        <iconify-icon icon="${iconClass.split(' ')[0]}" class="appreciation-toggle-icon"></iconify-icon>
+                    </button>
                     <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
-                    <iconify-icon icon="${iconClass.split(' ')[0]}" class="${iconClass.split(' ').slice(1).join(' ')}"></iconify-icon>
                     <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
                         <span style="display: inline-flex; align-items: center;">
                             Appréciation
