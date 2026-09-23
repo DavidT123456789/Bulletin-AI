@@ -1345,6 +1345,16 @@
 .missing-key-warning .btn-link {
     margin-left: auto;
     font-weight: 600;
+    font-size: 0.88rem;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+
+.missing-key-warning .btn-link:hover {
+    opacity: 0.8;
 }
 
 /* === Container des clÃƒÂ©s API dans l'accordion === */
@@ -1619,6 +1629,14 @@
     color: var(--warning-color);
 }
 
+.missing-key-warning.banner-warning .btn-link {
+    color: var(--warning-bright, #fbbf24);
+}
+
+[data-theme="light"] .missing-key-warning.banner-warning .btn-link {
+    color: #b45309;
+}
+
 .missing-key-warning.banner-error {
     background: rgba(var(--error-rgb), 0.1);
     border-color: rgba(239, 68, 68, 0.3);
@@ -1627,6 +1645,14 @@
 
 .missing-key-warning.banner-error i {
     color: var(--error-color);
+}
+
+.missing-key-warning.banner-error .btn-link {
+    color: var(--error-bright, #fca5a5);
+}
+
+[data-theme="light"] .missing-key-warning.banner-error .btn-link {
+    color: #dc2626;
 }
 
 /* Compact Modal Style */
@@ -2132,48 +2158,12 @@
 }
 
 /* ====================================================================
-   PRE-RESTORE SNAPSHOT SAFETY CARD (Settings > Data)
+   PRE-RESTORE SNAPSHOT SAFETY ROW (Settings > Data > Local Backup)
    ==================================================================== */
-.pre-restore-snapshot-card {
-    border: 1px solid var(--border-color) !important;
-    background: var(--bg-secondary) !important;
-    border-radius: var(--radius-lg);
-    box-shadow: none;
-    transition: border-color var(--transition-fast), background var(--transition-fast);
-}
-
-[data-theme="dark"] .pre-restore-snapshot-card {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-.pre-restore-snapshot-icon {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.12) !important;
-    color: var(--primary-color, #3b82f6) !important;
-    font-size: 1.15rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-[data-theme="dark"] .pre-restore-snapshot-icon {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.18) !important;
-    color: var(--color-blue-bright, #60a5fa) !important;
-}
-
-.pre-restore-snapshot-layout {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px 16px;
+.pre-restore-snapshot-row {
+    border-top: 1px dashed var(--border-color);
+    padding: 12px 0;
     width: 100%;
-}
-
-.pre-restore-snapshot-content {
-    flex: 1;
-    min-width: 220px;
 }
 
 .pre-restore-snapshot-title-row {
@@ -2181,12 +2171,7 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-}
-
-.pre-restore-snapshot-title-row strong {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    margin-bottom: 2px;
 }
 
 .pre-restore-snapshot-badge {
@@ -2204,28 +2189,6 @@
 [data-theme="dark"] .pre-restore-snapshot-badge {
     background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
     color: #93c5fd;
-}
-
-.pre-restore-snapshot-desc {
-    margin: 4px 0 0;
-    font-size: 0.84rem;
-    color: var(--text-secondary);
-    line-height: 1.45;
-}
-
-.pre-restore-snapshot-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.pre-restore-snapshot-actions .btn {
-    margin-top: 0 !important;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .pre-restore-btn {

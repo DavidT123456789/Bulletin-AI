@@ -272,6 +272,8 @@ export function initDOM() {
     DOM.connectDropboxBtn = document.getElementById('connectDropboxBtn');
     DOM.googleSyncStatus = document.getElementById('googleSyncStatus');
     DOM.googleSyncEmail = document.getElementById('googleSyncEmail');
+    DOM.googleSyncName = document.getElementById('googleSyncName');
+    DOM.googleSyncBadge = document.getElementById('googleSyncBadge');
     DOM.dropboxSyncStatus = document.getElementById('dropboxSyncStatus');
     DOM.syncStatusBar = document.getElementById('syncStatusBar');
     DOM.syncRgpdWarning = document.getElementById('syncRgpdWarning');

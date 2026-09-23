@@ -499,36 +499,50 @@ export const SyncService = {
     },
 
     /**
+     * Get user info (display name, email, photo) from active provider.
+     * @returns {Promise<Object|null>}
+     */
+    async getUserInfo() {
+        if (this._provider?.getUserInfo) {
+            return await this._provider.getUserInfo();
+        }
+        const cached = localStorage.getItem('bulletin_google_user');
+        if (cached) {
+            try { return JSON.parse(cached); } catch { return null; }
+        }
+        return null;
+    },
+
+    /**
      * Update UI to show connected status after successful reconnection.
      * @private
      * @param {string} providerName - 'google' or 'dropbox'
      */
     _updateUIConnected(providerName) {
-        // Delay to ensure DOM is ready
-        setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('sync-status-changed', { detail: { providerName, connected: true } }));
+        setTimeout(async () => {
             if (providerName === 'google') {
-                const statusEl = document.getElementById('googleSyncStatus');
-                const connectBtn = document.getElementById('connectGoogleBtn');
-                const disconnectBtn = document.getElementById('disconnectGoogleBtn');
-                const card = connectBtn?.closest('.sync-provider-card');
-
-                if (statusEl) {
-                    statusEl.textContent = 'Connecté';
-                    statusEl.classList.add('connected');
-                }
-                if (connectBtn) {
-                    connectBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Connecté';
-                    connectBtn.classList.add('btn-success');
-                    connectBtn.style.display = 'none';
-                }
-                if (disconnectBtn) {
-                    disconnectBtn.style.display = 'inline-flex';
-                }
-                if (card) {
-                    card.classList.add('connected');
+                try {
+                    const { SettingsModalListeners } = await import('../managers/listeners/SettingsModalListeners.js');
+                    if (SettingsModalListeners?.updateCloudSyncUI) {
+                        await SettingsModalListeners.updateCloudSyncUI();
+                    }
+                } catch {
+                    // Fallback DOM manipulation if listeners module not ready
+                    const statusEl = document.getElementById('googleSyncStatus');
+                    const connectBtn = document.getElementById('connectGoogleBtn');
+                    const disconnectBtn = document.getElementById('disconnectGoogleBtn');
+                    if (statusEl) {
+                        statusEl.textContent = 'Connecté';
+                        statusEl.classList.add('connected');
+                    }
+                    if (connectBtn) connectBtn.style.display = 'none';
+                    if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+                    const actionsBar = document.getElementById('cloudActionsBar');
+                    if (actionsBar) actionsBar.style.display = 'flex';
                 }
             }
-        }, 500);
+        }, 100);
     },
 
     /**

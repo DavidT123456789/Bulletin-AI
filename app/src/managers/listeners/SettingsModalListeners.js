@@ -1088,34 +1088,16 @@ export const SettingsModalListeners = {
                     const connected = await SyncService.connect('google');
 
                     if (connected) {
-                        DOM.googleSyncStatus.textContent = 'Connecté';
-                        DOM.googleSyncStatus.classList.add('connected');
-
-                        // Find parent card and add connected class
-                        const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
-                        if (card) card.classList.add('connected');
-
-                        // Show Save/Load actions bar
-                        const actionsBar = document.getElementById('cloudActionsBar');
-                        if (actionsBar) actionsBar.style.display = 'flex';
-
-                        // Update UI to show connected state with disconnect button
-                        DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Connecté';
-                        DOM.connectGoogleBtn.classList.add('btn-success');
-                        DOM.connectGoogleBtn.style.display = 'none';
-                        if (DOM.disconnectGoogleBtn) {
-                            DOM.disconnectGoogleBtn.style.display = 'inline-flex';
-                        }
-
+                        await this.updateCloudSyncUI();
                         UI.showNotification('Google Drive connecté ! Utilisez les boutons Sauvegarder/Charger.', 'success');
                     } else {
-                        DOM.connectGoogleBtn.innerHTML = 'Connecter';
+                        DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="logos:google-drive"></iconify-icon> Connecter';
                         DOM.connectGoogleBtn.disabled = false;
                         UI.showNotification('Connexion annulée.', 'warning');
                     }
                 } catch (error) {
                     console.error('Google sync connection error:', error);
-                    DOM.connectGoogleBtn.innerHTML = 'Connecter';
+                    DOM.connectGoogleBtn.innerHTML = '<iconify-icon icon="logos:google-drive"></iconify-icon> Connecter';
                     DOM.connectGoogleBtn.disabled = false;
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
                     UI.showNotification('Erreur de connexion : ' + errorMsg, 'error');
@@ -1194,7 +1176,8 @@ export const SettingsModalListeners = {
                     const lastSaveEl = document.getElementById('cloudLastSave');
                     if (lastSaveEl) {
                         const now = new Date();
-                        lastSaveEl.textContent = `Dernière sauvegarde : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                        const formatted = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        lastSaveEl.textContent = `Dernière sauvegarde : ${formatted}`;
                     }
 
                     if (isMerge && syncResult?.stats) {
@@ -1213,7 +1196,7 @@ export const SettingsModalListeners = {
                     UI.showNotification('Erreur de sauvegarde : ' + errorMsg, 'error');
                 } finally {
                     DOM.headerMenuBtn?.classList.remove('cloud-syncing');
-                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:upload-minimalistic-bold"></iconify-icon> Sauvegarder';
+                    cloudSaveBtn.innerHTML = '<iconify-icon icon="solar:cloud-upload-bold"></iconify-icon> Sauvegarder';
                     cloudSaveBtn.disabled = false;
                 }
             });
@@ -1252,7 +1235,7 @@ export const SettingsModalListeners = {
                      ${hintHtml}`,
                     async () => {
                         try {
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Chargement...';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Restauration...';
                             cloudLoadBtn.disabled = true;
                             document.body.classList.add('is-cloud-syncing');
                             DOM.headerMenuBtn?.classList.add('cloud-syncing');
@@ -1275,7 +1258,7 @@ export const SettingsModalListeners = {
                         } finally {
                             document.body.classList.remove('is-cloud-syncing');
                             DOM.headerMenuBtn?.classList.remove('cloud-syncing');
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon> Charger';
+                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
                             cloudLoadBtn.disabled = false;
                         }
                     },
@@ -1310,7 +1293,7 @@ export const SettingsModalListeners = {
                     if (preRestoreInfo) {
                         preRestoreInfo.textContent = `Sauvegardé automatiquement avant la dernière restauration : ${count} élève${count > 1 ? 's' : ''}${dateStr ? ` (${dateStr})` : ''}.`;
                     }
-                    preRestoreCard.style.display = 'block';
+                    preRestoreCard.style.display = 'flex';
                 } else {
                     preRestoreCard.style.display = 'none';
                 }
@@ -1319,12 +1302,18 @@ export const SettingsModalListeners = {
             }
         };
 
-        document.addEventListener('settings-modal-open', updatePreRestoreCard);
-        document.addEventListener('settings-data-tab-open', updatePreRestoreCard);
+        const refreshDataTab = () => {
+            updatePreRestoreCard();
+            this.updateCloudSyncUI();
+        };
+
+        document.addEventListener('settings-modal-open', refreshDataTab);
+        document.addEventListener('settings-data-tab-open', refreshDataTab);
+        document.addEventListener('sync-status-changed', () => this.updateCloudSyncUI());
 
         const dataTabBtn = document.querySelector('button[onclick*="settings-data"]');
         if (dataTabBtn) {
-            dataTabBtn.addEventListener('click', updatePreRestoreCard);
+            dataTabBtn.addEventListener('click', refreshDataTab);
         }
 
         if (restoreSnapshotBtn) {
@@ -1368,43 +1357,96 @@ export const SettingsModalListeners = {
         if (DOM.disconnectGoogleBtn) {
             DOM.disconnectGoogleBtn.addEventListener('click', async () => {
                 try {
-                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="icon-spin"></iconify-icon>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> <span>Déconnexion...</span>';
                     DOM.disconnectGoogleBtn.disabled = true;
 
                     const { SyncService } = await import('../../services/SyncService.js');
                     await SyncService.disconnect();
 
-                    // Reset UI to disconnected state
-                    DOM.googleSyncStatus.textContent = 'Non connecté';
-                    DOM.googleSyncStatus.classList.remove('connected');
-                    if (DOM.googleSyncEmail) {
-                        DOM.googleSyncEmail.textContent = '';
-                        DOM.googleSyncEmail.style.display = 'none';
-                    }
-                    DOM.connectGoogleBtn.innerHTML = 'Connecter';
-                    DOM.connectGoogleBtn.classList.remove('btn-success');
-                    DOM.connectGoogleBtn.disabled = false;
-                    DOM.connectGoogleBtn.style.display = 'inline-flex';
-                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-bold"></iconify-icon>';
-                    DOM.disconnectGoogleBtn.disabled = false;
-                    DOM.disconnectGoogleBtn.style.display = 'none';
-
-                    // Hide Save/Load actions bar
-                    const actionsBar = document.getElementById('cloudActionsBar');
-                    if (actionsBar) actionsBar.style.display = 'none';
-
-                    const card = DOM.connectGoogleBtn.closest('.sync-provider-card');
-                    if (card) card.classList.remove('connected');
-
+                    await this.updateCloudSyncUI();
                     UI.showNotification('Déconnecté de Google Drive.', 'info');
                 } catch (error) {
                     console.error('Google sync disconnection error:', error);
-                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-bold"></iconify-icon>';
+                    DOM.disconnectGoogleBtn.innerHTML = '<iconify-icon icon="solar:logout-2-linear"></iconify-icon> <span>Déconnecter</span>';
                     DOM.disconnectGoogleBtn.disabled = false;
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
                     UI.showNotification('Erreur de déconnexion : ' + errorMsg, 'error');
                 }
             });
+        }
+    },
+
+    /**
+     * Updates the Google Drive Cloud Sync UI state (account name, email, badge, buttons, and actions row).
+     */
+    async updateCloudSyncUI() {
+        try {
+            const { SyncService } = await import('../../services/SyncService.js');
+            const isConnected = SyncService.isConnected();
+            const connectBtn = DOM.connectGoogleBtn || document.getElementById('connectGoogleBtn');
+            const disconnectBtn = DOM.disconnectGoogleBtn || document.getElementById('disconnectGoogleBtn');
+            const statusBadge = DOM.googleSyncStatus || document.getElementById('googleSyncStatus');
+            const titleBadge = DOM.googleSyncBadge || document.getElementById('googleSyncBadge');
+            const nameEl = DOM.googleSyncName || document.getElementById('googleSyncName');
+            const emailEl = DOM.googleSyncEmail || document.getElementById('googleSyncEmail');
+            const cloudActionsBar = document.getElementById('cloudActionsBar');
+            const lastSaveEl = document.getElementById('cloudLastSave');
+
+            if (isConnected) {
+                if (titleBadge) titleBadge.style.display = 'inline-flex';
+                // Masquer le badge en double à côté du nom de l'utilisateur
+                if (statusBadge) statusBadge.style.display = 'none';
+
+                // Fetch account profile
+                const userInfo = await SyncService.getUserInfo().catch(() => null);
+                if (nameEl) {
+                    nameEl.textContent = userInfo?.displayName || 'Compte Google Drive';
+                }
+                if (emailEl) {
+                    emailEl.textContent = userInfo?.email || 'Compte connecté';
+                }
+
+                if (connectBtn) connectBtn.style.display = 'none';
+                if (disconnectBtn) {
+                    disconnectBtn.style.display = 'inline-flex';
+                    disconnectBtn.disabled = false;
+                    disconnectBtn.innerHTML = '<iconify-icon icon="solar:logout-2-linear"></iconify-icon> <span>Déconnecter</span>';
+                }
+                if (cloudActionsBar) cloudActionsBar.style.display = 'flex';
+
+                if (lastSaveEl && SyncService.lastSyncTime) {
+                    const date = new Date(SyncService.lastSyncTime);
+                    const formatted = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    lastSaveEl.textContent = `Dernière sauvegarde : ${formatted}`;
+                } else if (lastSaveEl && !lastSaveEl.textContent) {
+                    lastSaveEl.textContent = 'Prêt à synchroniser';
+                }
+            } else {
+                if (titleBadge) titleBadge.style.display = 'none';
+                if (statusBadge) {
+                    statusBadge.textContent = 'Non connecté';
+                    statusBadge.className = 'provider-status';
+                }
+                if (nameEl) {
+                    nameEl.textContent = 'Google Drive';
+                }
+                if (emailEl) {
+                    emailEl.textContent = 'Sauvegardez vos données en associant votre compte Google';
+                }
+                if (connectBtn) {
+                    connectBtn.style.display = 'inline-flex';
+                    connectBtn.disabled = false;
+                    connectBtn.innerHTML = '<iconify-icon icon="logos:google-drive"></iconify-icon> Connecter';
+                }
+                if (disconnectBtn) {
+                    disconnectBtn.style.display = 'none';
+                }
+                if (cloudActionsBar) {
+                    cloudActionsBar.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.warn('[SettingsModal] Error updating cloud sync UI:', e);
         }
     }
 };

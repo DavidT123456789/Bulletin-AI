@@ -1793,12 +1793,12 @@
                                 <iconify-icon class="iconify-inline" icon="solar:info-circle-linear"></iconify-icon>
                                 Guide & Aide
                             </button>
-                            <button class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build abf0386)">
+                            <button class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build 2a0b5b8)">
                                 <span class="ui-tabs-action-btn-main">
                                     <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
                                     <span>Mises à jour</span>
                                 </span>
-                                <span class="btn-build-pill" id="settingsBuildBadge">abf0386</span>
+                                <span class="btn-build-pill" id="settingsBuildBadge">2a0b5b8</span>
                             </button>
                         </div>
                     </div>
@@ -1806,9 +1806,9 @@
                     <!-- Content Area -->
                     <div class="ui-tabs-content">
                         <div id="settings-engine" class="help-tab-content active">
-                            <div class="help-section-header">
-                                <div class="help-section-icon"><iconify-icon icon="solar:cpu-bold"></iconify-icon></div>
-                                <p>Choix du modèle d'intelligence artificielle et configuration des clés API.</p>
+                            <div class="settings-tab-header">
+                                <h3 class="settings-tab-title">Intelligence Artificielle</h3>
+                                <p class="settings-tab-subtitle">Choix du modèle et configuration des clés API.</p>
                             </div>
 
                             <div class="help-step-card mb-3">
@@ -2113,12 +2113,9 @@
                             </div> <!-- /help-step-card -->
                         </div> <!-- /settings-engine -->
                         <div id="settings-preferences" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon"><iconify-icon icon="solar:tuning-2-bold"></iconify-icon>
-                                </div>
-                                <p>Ajustez l'affichage, les seuils d'évolution et le système de notation de
-                                    l'application.
-                                </p>
+                            <div class="settings-tab-header">
+                                <h3 class="settings-tab-title">Préférences Générales</h3>
+                                <p class="settings-tab-subtitle">Affichage, seuils d'évolution et système de notation.</p>
                             </div>
 
                             <div class="help-step-card mb-3">
@@ -2301,86 +2298,138 @@
                             </div>
                         </div>
                         <div id="settings-data" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon"><iconify-icon icon="solar:database-bold"></iconify-icon>
-                                </div>
-                                <p>Gérez vos données ou configurez la synchronisation cloud.</p>
+                            <div class="settings-tab-header">
+                                <h3 class="settings-tab-title">Données & Sauvegarde</h3>
+                                <p class="settings-tab-subtitle">Gestion des sauvegardes locales et synchronisation cloud.</p>
                             </div>
 
-                            <div class="help-step-card mb-3">
+                            <!-- Carte 1 : Sauvegarde Cloud (Google Drive) -->
+                            <div class="help-step-card mb-3" id="cloudSyncCard">
                                 <div class="help-step-layout">
-                                    <div class="help-step-number"><iconify-icon
-                                            icon="solar:cloud-upload-bold"></iconify-icon></div>
+                                    <div class="help-step-number">
+                                        <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                                    </div>
                                     <div class="help-step-body" style="width: 100%;">
-                                        <strong>Sauvegarde Cloud (Google Drive)</strong>
-                                        <div class="setting-row mt-2"
-                                            style="padding: 0; background: transparent; border: none; flex-direction: column; align-items: flex-start;"
-                                            id="cloudSyncSection">
-                                            <p class="setting-description mb-2" style="margin-top: 0;">
-                                                Sauvegardez ou restaurez vos données sur votre espace Google Drive
-                                                personnel. Respect RGPD assuré.
+                                        <div class="data-card-header">
+                                            <div class="data-card-title-row">
+                                                <strong>Sauvegarde Cloud (Google Drive)</strong>
+                                                <span class="data-badge data-badge-success" id="googleSyncBadge" style="display: none;">
+                                                    <span class="data-badge-dot"></span>Connecté
+                                                </span>
+                                            </div>
+                                            <p class="data-card-desc">
+                                                Stockage sécurisé sur votre espace Google Drive personnel.
                                             </p>
+                                        </div>
 
-                                            <!-- Provider Selection -->
-                                            <div class="sync-providers" style="margin-top: 8px;">
-                                                <div class="sync-provider-card" data-provider="google">
-                                                    <div class="provider-icon"><iconify-icon class="iconify-inline"
-                                                            icon="logos:google-drive"></iconify-icon></div>
-                                                    <div class="provider-info">
-                                                        <span class="provider-name">Google Drive</span>
-                                                        <span class="provider-status" id="googleSyncStatus">Non
-                                                            connecté</span>
-                                                        <span class="provider-email" id="googleSyncEmail"
-                                                            style="display: none; font-size: 0.8em; color: var(--text-secondary);"></span>
+                                        <!-- Ligne 1 : Compte Google -->
+                                        <div class="data-action-row" id="googleAccountRow">
+                                            <div class="data-action-info">
+                                                <div class="data-provider-cell">
+                                                    <div class="data-provider-icon">
+                                                        <iconify-icon icon="logos:google-drive"></iconify-icon>
                                                     </div>
-                                                    <div class="provider-actions" style="display: flex; gap: 8px;">
-                                                        <button class="btn btn-secondary btn-small"
-                                                            id="connectGoogleBtn">
-                                                            Connecter
-                                                        </button>
-                                                        <button class="btn btn-danger btn-small"
-                                                            id="disconnectGoogleBtn" style="display: none;">
-                                                            <iconify-icon class="iconify-inline"
-                                                                icon="solar:logout-bold"></iconify-icon>
-                                                        </button>
+                                                    <div class="data-provider-details">
+                                                        <div class="data-provider-name-row">
+                                                            <span class="data-provider-name" id="googleSyncName">Google Drive</span>
+                                                            <span class="provider-status" id="googleSyncStatus">Non connecté</span>
+                                                        </div>
+                                                        <span class="data-provider-email" id="googleSyncEmail">Sauvegardez vos données en associant votre compte Google</span>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-secondary btn-small" id="connectGoogleBtn">
+                                                    <iconify-icon icon="logos:google-drive"></iconify-icon>
+                                                    Connecter
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-small data-btn-disconnect" id="disconnectGoogleBtn" style="display: none;" title="Déconnecter le compte">
+                                                    <iconify-icon icon="solar:logout-2-linear"></iconify-icon>
+                                                    <span>Déconnecter</span>
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                            <!-- Save/Load Actions (visible when connected) -->
-                                            <div class="cloud-actions-bar mt-2" id="cloudActionsBar"
-                                                style="display: none;">
-                                                <button class="btn btn-primary btn-small" id="cloudSaveBtn">
+                                        <!-- Ligne 2 : Actions Cloud (visible quand connecté) -->
+                                        <div class="data-action-row" id="cloudActionsBar" style="display: none;">
+                                            <div class="data-action-info">
+                                                <strong class="data-action-title">Synchronisation</strong>
+                                                <span class="data-action-desc">Envoyez vos modifications vers le Drive ou restaurez une copie précédente.</span>
+                                                <span class="data-action-meta" id="cloudLastSave"></span>
+                                            </div>
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-primary btn-small tooltip" id="cloudSaveBtn" data-tooltip="Enregistrer les données locales sur Google Drive">
                                                     <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
                                                     Sauvegarder
                                                 </button>
-                                                <button class="btn btn-secondary btn-small" id="cloudLoadBtn">
+                                                <button type="button" class="btn btn-secondary btn-small tooltip" id="cloudLoadBtn" data-tooltip="Récupérer et restaurer la sauvegarde depuis Google Drive">
                                                     <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
-                                                    Charger
+                                                    Restaurer
                                                 </button>
-                                                <span class="cloud-last-save" id="cloudLastSave"></span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Encart de sécurité : Copie pré-restauration (affiché à la demande si disponible) -->
-                            <div class="help-step-card mb-3 pre-restore-snapshot-card" id="preRestoreSnapshotCard" style="display: none;">
+                            <!-- Carte 2 : Sauvegarde Locale & Restauration -->
+                            <div class="help-step-card mb-3">
                                 <div class="help-step-layout">
-                                    <div class="help-step-number pre-restore-snapshot-icon">
-                                        <iconify-icon icon="solar:history-bold"></iconify-icon>
+                                    <div class="help-step-number">
+                                        <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon>
                                     </div>
-                                    <div class="help-step-body">
-                                        <div class="pre-restore-snapshot-layout">
-                                            <div class="pre-restore-snapshot-content">
+                                    <div class="help-step-body" style="width: 100%;">
+                                        <div class="data-card-header">
+                                            <div class="data-card-title-row">
+                                                <strong>Sauvegarde Locale & Restauration</strong>
+                                            </div>
+                                            <p class="data-card-desc">Exportez vos données, importez un fichier JSON ou rétablissez l'état antérieur.</p>
+                                        </div>
+
+                                        <div class="data-action-row">
+                                            <div class="data-action-info">
+                                                <strong class="data-action-title">Données Complètes</strong>
+                                                <span class="data-action-desc">Sauvegarde intégrale (classes, élèves, historiques...).</span>
+                                            </div>
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-secondary btn-small" id="exportFullBackupBtn">
+                                                    <iconify-icon class="iconify-inline" icon="solar:export-bold"></iconify-icon>
+                                                    Exporter
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-small" id="importFullBackupBtn">
+                                                    <iconify-icon icon="solar:import-bold"></iconify-icon>
+                                                    Importer
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="data-action-row">
+                                            <div class="data-action-info">
+                                                <strong class="data-action-title">Paramètres Uniquement</strong>
+                                                <span class="data-action-desc">Sauvegarde de votre configuration (sans élèves).</span>
+                                            </div>
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-secondary btn-small" id="exportSettingsBtn">
+                                                    <iconify-icon class="iconify-inline" icon="solar:export-bold"></iconify-icon>
+                                                    Exporter
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-small" id="importSettingsBtn">
+                                                    <iconify-icon icon="solar:import-bold"></iconify-icon>
+                                                    Importer
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Ligne 3 (Conditionnelle) : Copie de sécurité antérieure (affichée si snapshot présent) -->
+                                        <div class="data-action-row pre-restore-snapshot-row" id="preRestoreSnapshotCard" style="display: none;">
+                                            <div class="data-action-info">
                                                 <div class="pre-restore-snapshot-title-row">
-                                                    <strong>Copie de sécurité antérieure</strong>
+                                                    <strong class="data-action-title">Copie de sécurité antérieure</strong>
                                                     <span class="pre-restore-snapshot-badge">Archive locale</span>
                                                 </div>
-                                                <p id="preRestoreSnapshotInfo" class="pre-restore-snapshot-desc"></p>
+                                                <span id="preRestoreSnapshotInfo" class="data-action-desc"></span>
                                             </div>
-                                            <div class="pre-restore-snapshot-actions">
+                                            <div class="data-action-buttons">
                                                 <button type="button" class="btn btn-secondary btn-small pre-restore-btn" id="restoreSnapshotBtn">
                                                     <iconify-icon icon="solar:restart-bold"></iconify-icon>
                                                     <span>Rétablir cet état</span>
@@ -2393,118 +2442,43 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="help-step-card mb-3">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number"><iconify-icon
-                                            icon="solar:download-minimalistic-bold"></iconify-icon></div>
-                                    <div class="help-step-body" style="width: 100%;">
-                                        <strong>Sauvegarde Locale (Fichier JSON)</strong>
-                                        <div class="setting-row mt-2"
-                                            style="padding: 0; background: transparent; border: none; align-items: flex-start;">
-                                            <div class="setting-info" style="padding-left: 0; width: 100%;">
-                                                <p class="setting-description mb-4" style="margin-top: 0;">Exportez ou
-                                                    importez vos données (format JSON).</p>
-
-                                                <div class="setting-actions-group"
-                                                    style="justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.1); width: 100%; margin-top: 12px; padding-bottom: 16px; margin-bottom: 16px;">
-                                                    <div style="flex: 1; padding-right: 15px;">
-                                                        <strong
-                                                            style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Données
-                                                            Complètes</strong>
-                                                        <span
-                                                            style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Sauvegarde
-                                                            intégrale (classes, élèves, historiques...).</span>
-                                                    </div>
-                                                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                                        <button class="btn btn-secondary btn-small"
-                                                            id="exportFullBackupBtn">
-                                                            <iconify-icon class="iconify-inline"
-                                                                icon="solar:export-bold"></iconify-icon> Exporter
-                                                        </button>
-                                                        <button class="btn btn-secondary btn-small"
-                                                            id="importFullBackupBtn">
-                                                            <iconify-icon icon="solar:import-bold"></iconify-icon>
-                                                            Importer
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                <div class="setting-actions-group"
-                                                    style="justify-content: space-between; align-items: center; width: 100%;">
-                                                    <div style="flex: 1; padding-right: 15px;">
-                                                        <strong
-                                                            style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Paramètres
-                                                            Uniquement</strong>
-                                                        <span
-                                                            style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Sauvegarde
-                                                            de votre configuration (sans élèves).</span>
-                                                    </div>
-                                                    <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                                        <button class="btn btn-secondary btn-small"
-                                                            id="exportSettingsBtn">
-                                                            <iconify-icon class="iconify-inline"
-                                                                icon="solar:export-bold"></iconify-icon> Exporter
-                                                        </button>
-                                                        <button class="btn btn-secondary btn-small"
-                                                            id="importSettingsBtn">
-                                                            <iconify-icon icon="solar:import-bold"></iconify-icon>
-                                                            Importer
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                             <input type="file" id="importBackupInput" accept=".json" style="display: none;">
 
-                            <div class="help-step-card mt-4"
-                                style="border-color: rgba(var(--error-rgb), 0.3); background: rgba(var(--error-rgb), 0.02);">
+                            <!-- Carte 4 : Zone de danger (Action irréversible) -->
+                            <div class="help-step-card mb-3 data-danger-card">
                                 <div class="help-step-layout">
-                                    <div class="help-step-number"
-                                        style="background: rgba(var(--error-rgb), 0.1); color: var(--error-color);">
+                                    <div class="help-step-number data-danger-icon">
                                         <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
                                     </div>
                                     <div class="help-step-body" style="width: 100%;">
-                                        <strong style="color: var(--error-color);">Action irréversible</strong>
-                                        <p style="margin-bottom: 16px;">Gérez la réinitialisation ou la suppression de
-                                            vos données.</p>
-
-                                        <div class="setting-actions-group"
-                                            style="justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(var(--error-rgb), 0.15); width: 100%; padding-bottom: 16px; margin-bottom: 16px;">
-                                            <div style="flex: 1; padding-right: 15px;">
-                                                <strong
-                                                    style="display: block; font-size: 0.95em; color: var(--text-primary); margin-bottom: 6px;">Réinitialiser
-                                                    les paramètres</strong>
-                                                <span
-                                                    style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Choisissez
-                                                    les paramètres à restaurer par défaut. Vos classes et
-                                                    élèves sont conservés.</span>
+                                        <div class="data-card-header">
+                                            <div class="data-card-title-row">
+                                                <strong class="data-danger-title">Action irréversible</strong>
                                             </div>
-                                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                                <button class="btn btn-danger-outline btn-small"
-                                                    id="resetAllSettingsBtn">
+                                            <p class="data-card-desc">Gérez la réinitialisation ou la suppression de vos données.</p>
+                                        </div>
+
+                                        <div class="data-action-row">
+                                            <div class="data-action-info">
+                                                <strong class="data-action-title">Réinitialiser les paramètres</strong>
+                                                <span class="data-action-desc">Choisissez les paramètres à restaurer par défaut. Vos classes et élèves sont conservés.</span>
+                                            </div>
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-danger-outline btn-small" id="resetAllSettingsBtn">
                                                     Réinitialiser
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div class="setting-actions-group"
-                                            style="justify-content: space-between; align-items: center; width: 100%;">
-                                            <div style="flex: 1; padding-right: 15px;">
-                                                <strong
-                                                    style="display: block; font-size: 0.95em; color: var(--error-color); margin-bottom: 6px;">Supprimer
-                                                    toutes les données</strong>
-                                                <span
-                                                    style="font-size: 0.85em; color: var(--text-secondary); line-height: 1.4; display: block;">Efface
-                                                    TOUT : classes, élèves, appréciations, paramètres.</span>
+                                        <div class="data-action-row">
+                                            <div class="data-action-info">
+                                                <strong class="data-action-title data-danger-title">Supprimer toutes les données</strong>
+                                                <span class="data-action-desc">Efface TOUT : classes, élèves, appréciations, paramètres.</span>
                                             </div>
-                                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                                <button class="btn btn-danger btn-small" id="factoryResetBtn">
-                                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon> Tout
-                                                    supprimer
+                                            <div class="data-action-buttons">
+                                                <button type="button" class="btn btn-danger btn-small" id="factoryResetBtn">
+                                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
+                                                    Tout supprimer
                                                 </button>
                                             </div>
                                         </div>
@@ -3176,7 +3150,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 0e563c0 · 23 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 2a0b5b8 · 23 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

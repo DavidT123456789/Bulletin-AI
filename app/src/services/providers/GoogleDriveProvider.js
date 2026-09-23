@@ -155,6 +155,7 @@ export const GoogleDriveProvider = {
                         localStorage.setItem('bulletin_google_token', JSON.stringify(this._token));
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         this._needsReconnect = false;
+                        this.getUserInfo().catch(() => {});
                         resolve(true);
                     },
                     error_callback: (error) => {
@@ -203,15 +204,64 @@ export const GoogleDriveProvider = {
     },
 
     /**
+     * Get user info (display name, email, photo) for the connected Google account.
+     * Uses cached profile in localStorage if available, or fetches from Drive API about endpoint.
+     * @returns {Promise<{displayName: string, email: string, photo: string}|null>}
+     */
+    async getUserInfo() {
+        if (!this.isConnected()) {
+            return null;
+        }
+
+        const cached = localStorage.getItem('bulletin_google_user');
+        if (cached) {
+            try {
+                return JSON.parse(cached);
+            } catch {
+                localStorage.removeItem('bulletin_google_user');
+            }
+        }
+
+        try {
+            const token = this._token?.access_token;
+            if (!token) return null;
+
+            const res = await fetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink)', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data?.user) {
+                    const info = {
+                        displayName: data.user.displayName || '',
+                        email: data.user.emailAddress || '',
+                        photo: data.user.photoLink || ''
+                    };
+                    localStorage.setItem('bulletin_google_user', JSON.stringify(info));
+                    return info;
+                }
+            }
+        } catch (e) {
+            console.warn('[GoogleDrive] Could not fetch user profile:', e);
+        }
+
+        return null;
+    },
+
+    /**
      * Disconnect and clear tokens.
      */
     async disconnect() {
-        if (this._token?.access_token) {
+        if (this._token?.access_token && typeof google !== 'undefined' && google?.accounts?.oauth2?.revoke) {
             google.accounts.oauth2.revoke(this._token.access_token);
         }
         this._token = null;
         this._fileId = null;
         localStorage.removeItem('bulletin_google_token');
+        localStorage.removeItem('bulletin_google_user');
     },
 
     // =========================================================================
@@ -243,6 +293,7 @@ export const GoogleDriveProvider = {
             this._needsReconnect = true;
             this._token = null;
             localStorage.removeItem('bulletin_google_token');
+            localStorage.removeItem('bulletin_google_user');
         }
 
         const message = rawMsg || (isAuthError ? 'Session Google Drive expirée. Veuillez vous reconnecter.' : defaultMsg);

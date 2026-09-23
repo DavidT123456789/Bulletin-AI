@@ -142,4 +142,29 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(res.stats.addedStudents).toBe(1);
         });
     });
+
+    describe('SyncService.getUserInfo() & GoogleDriveProvider.getUserInfo()', () => {
+        it('should return null when not connected', async () => {
+            expect(await SyncService.getUserInfo()).toBeNull();
+            expect(await GoogleDriveProvider.getUserInfo()).toBeNull();
+        });
+
+        it('should return cached user from localStorage', async () => {
+            const userProfile = { displayName: 'Professeur Test', email: 'prof@ac-paris.fr', photo: 'https://photo.jpg' };
+            localStorage.setItem('bulletin_google_user', JSON.stringify(userProfile));
+
+            const res = await SyncService.getUserInfo();
+            expect(res).toEqual(userProfile);
+        });
+
+        it('GoogleDriveProvider.disconnect() should clear bulletin_google_user from localStorage', async () => {
+            localStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'abc' }));
+            localStorage.setItem('bulletin_google_user', JSON.stringify({ displayName: 'Test' }));
+
+            await GoogleDriveProvider.disconnect();
+
+            expect(localStorage.getItem('bulletin_google_token')).toBeNull();
+            expect(localStorage.getItem('bulletin_google_user')).toBeNull();
+        });
+    });
 });
