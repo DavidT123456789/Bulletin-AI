@@ -90,19 +90,17 @@
     transform: translate(-50%, -50%) scale(1);
 }
 
-/* === CLOSE BUTTON === */
+/* === CLOSE BUTTON: Harmonized with universal close button system === */
 .import-hub-close {
     position: absolute;
-    top: 24px;
-    right: 24px;
-    width: 36px;
-    height: 36px;
+    top: 20px;
+    right: 20px;
+    width: var(--close-btn-size, 32px);
+    height: var(--close-btn-size, 32px);
     border: none;
-    background: rgba(241, 245, 249, 0.5);
-    /* Slate-100/50 */
-    color: var(--text-tertiary);
-    /* Slate-400 */
-    font-size: 1rem;
+    background: var(--close-btn-bg, transparent);
+    color: var(--close-btn-color, var(--text-tertiary));
+    font-size: var(--close-btn-icon-size, 18px);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -112,23 +110,13 @@
     border-radius: 50%;
 }
 
-[data-theme="dark"] .import-hub-close {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.4);
-}
-
-/* RED HOVER STATE FOR CLOSE BUTTON */
 .import-hub-close:hover {
-    background: var(--error-light);
-    color: var(--error-color);
-    /* Red-500 */
-    transform: scale(1.05);
+    background: var(--close-btn-hover-bg);
+    color: var(--close-btn-hover-color);
 }
 
-[data-theme="dark"] .import-hub-close:hover {
-    background: rgba(var(--error-rgb), 0.15);
-    /* Red-500 with opacity */
-    color: var(--error-bright);
+.import-hub-close:active {
+    transform: scale(0.95);
 }
 
 /* === HEADER === */

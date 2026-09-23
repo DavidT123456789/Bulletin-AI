@@ -24,8 +24,8 @@
 }
 
 .close-btn:hover {
-    background: var(--close-btn-hover-bg, var(--error-light));
-    color: var(--close-btn-hover-color, var(--error-color));
+    background: var(--close-btn-hover-bg, var(--item-hover-bg));
+    color: var(--close-btn-hover-color, var(--text-primary));
     transform: scale(1.08);
 }
 
@@ -57,6 +57,6 @@
 }
 
 .close-btn--elevated:hover {
-    background: var(--close-btn-hover-bg, var(--error-light));
-    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+    background: var(--close-btn-hover-bg, var(--item-hover-bg));
+    box-shadow: var(--shadow-sm);
 }

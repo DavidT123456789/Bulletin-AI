@@ -172,11 +172,11 @@
     --color-teal: #14b8a6;
     --color-blue-bright: #60a5fa;
 
-    /* Close Button Design Tokens */
+    /* Close Button Design Tokens (Neutral 2026 - No alarming red) */
     --close-btn-bg: transparent;
     --close-btn-color: var(--icon-btn-color);
-    --close-btn-hover-bg: var(--error-light);
-    --close-btn-hover-color: var(--error-color);
+    --close-btn-hover-bg: var(--item-hover-bg);
+    --close-btn-hover-color: var(--text-primary);
 
     /* Icon Button States (Single Source of Truth) */
     --icon-btn-color: var(--text-tertiary);

@@ -464,7 +464,7 @@ export const FocusPanelHeader = {
         const originClass = Utils.getOriginClass(result, currentClassName);
         const displayClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
         const originBadge = displayClass ? `
-            <span class="focus-origin-class-badge" data-tooltip="Classe d'origine : ${Utils.escapeHtml(displayClass)}">
+            <span class="focus-origin-class-badge">
                 <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                 <span>Classe ${Utils.escapeHtml(displayClass)}</span>
             </span>

@@ -1400,14 +1400,15 @@
 .api-key-header .btn-link {
     font-size: 0.85em;
     font-weight: 500;
-    color: var(--text-secondary);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    transition: color var(--transition-fast);
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
 }
 
 .api-key-header .btn-link:hover {
     color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .api-key-section .api-key-actions {
@@ -1448,6 +1449,39 @@
     justify-content: center;
     align-items: center;
     font-size: 13px;
+    background: var(--item-idle-bg, rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+    border-radius: var(--radius-pill) !important;
+    box-shadow: none !important;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.api-key-section .api-key-actions .btn:hover:not(:disabled):not(.btn-validated) {
+    background: var(--item-hover-bg, rgba(255, 255, 255, 0.1)) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(var(--primary-color-rgb), 0.35) !important;
+}
+
+.api-key-section .api-key-actions .btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.api-key-section .api-key-actions .btn.btn-validated {
+    background: var(--success-color) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 6px rgba(var(--success-color-rgb, 16, 185, 129), 0.25) !important;
+}
+
+/* Ollama dependent fields: dimmed and disabled when toggle is unchecked */
+.api-key-actions-wrap:has(#ollamaEnabledToggle:not(:checked)) .api-key-input-container,
+.api-key-actions-wrap:has(#ollamaEnabledToggle:not(:checked)) #validateOllamaBtn {
+    opacity: 0.35;
+    pointer-events: none;
+    filter: grayscale(0.5);
+    transition: opacity var(--transition-fast), filter var(--transition-fast);
 }
 
 .api-key-section .error-message {

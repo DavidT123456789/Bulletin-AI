@@ -223,12 +223,10 @@
         background-position 0.6s ease;
 }
 
-/* --- BTN-PRIMARY: Solid theme color for standard actions --- */
+/* --- BTN-PRIMARY: Solid theme color for standard actions (Flat 2026) --- */
 .btn-primary {
     background: var(--primary-color);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        0 2px 8px rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.18);
 }
 
 /* --- BTN-AI / BTN-ORGANIC: Shared Gradient for generative actions --- */
@@ -266,9 +264,7 @@
     .btn-primary:hover:not(:disabled) {
         background-color: var(--primary-color);
         background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
-        box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.18),
-            0 3px 10px rgba(var(--primary-color-rgb), 0.22);
+        box-shadow: 0 3px 10px rgba(var(--primary-color-rgb), 0.24);
     }
 
     .btn-ai:hover:not(:disabled),
@@ -305,8 +301,13 @@
     }
 }
 
-/* Active : feedback de pression (shared) */
-.btn-primary:active:not(:disabled),
+/* Active : feedback de pression */
+.btn-primary:active:not(:disabled) {
+    transform: scale(0.97);
+    filter: brightness(0.92);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.2);
+}
+
 .btn-ai:active:not(:disabled),
 .btn-organic:active:not(:disabled) {
     transform: scale(0.97);
