@@ -118,16 +118,22 @@ export const FocusPanelHeader = {
             readMode.classList.add('hidden');
             editMode.classList.add('visible');
 
-            // Update tooltips for edit mode
+            // Accessible labels for edit mode (no intrusive tooltips in compact top header)
             const saveBtn = document.getElementById('focusEditSaveBtn');
             const closeBtn = document.getElementById('focusBackBtn');
             if (saveBtn) {
-                saveBtn.setAttribute('data-tooltip', 'Valider les modifications');
-                saveBtn.classList.add('tooltip');
+                saveBtn.removeAttribute('data-tooltip');
+                saveBtn.classList.remove('tooltip');
+                saveBtn.setAttribute('aria-label', 'Valider les modifications');
+                saveBtn._tippy?.disable();
+                saveBtn._tippy?.hide();
             }
             if (closeBtn) {
-                closeBtn.setAttribute('data-tooltip', 'Annuler les modifications');
-                closeBtn.classList.add('tooltip');
+                closeBtn.removeAttribute('data-tooltip');
+                closeBtn.classList.remove('tooltip');
+                closeBtn.setAttribute('aria-label', 'Annuler les modifications');
+                closeBtn._tippy?.disable();
+                closeBtn._tippy?.hide();
             }
 
             // === ENABLE avatar editing ===
@@ -280,11 +286,19 @@ export const FocusPanelHeader = {
         readMode?.classList.remove('hidden');
         editMode?.classList.remove('visible');
 
-        // Restore original tooltips
+        // Restore original tooltips and accessibility
         const saveBtn = document.getElementById('focusEditSaveBtn');
         const closeBtn = document.getElementById('focusBackBtn');
         saveBtn?.classList.remove('tooltip');
-        closeBtn?.setAttribute('data-tooltip', 'Fermer');
+        saveBtn?.removeAttribute('data-tooltip');
+        saveBtn?.setAttribute('aria-label', 'Valider');
+        if (closeBtn) {
+            closeBtn.setAttribute('data-tooltip', 'Fermer');
+            closeBtn.classList.add('tooltip');
+            closeBtn.setAttribute('aria-label', 'Fermer le panneau');
+            closeBtn._tippy?.enable();
+            closeBtn._tippy?.setContent('Fermer');
+        }
     },
 
     /**

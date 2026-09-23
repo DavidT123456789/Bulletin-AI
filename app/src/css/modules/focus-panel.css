@@ -594,8 +594,7 @@
     }
 
     .focus-nav-btn.focus-close-btn:hover,
-    .focus-nav-btn.focus-analyze-btn:hover,
-    .focus-header.editing .focus-save-btn:hover {
+    .focus-nav-btn.focus-analyze-btn:hover {
         background: var(--surface-color);
         box-shadow: var(--shadow-elevation) !important;
         transform: translateY(-1px);
@@ -662,6 +661,14 @@
     background: var(--surface-color);
     box-shadow: var(--shadow-sm) !important;
     border: 1px solid transparent;
+    color: var(--success-color);
+}
+
+.focus-header.editing .focus-save-btn:hover {
+    color: var(--success-bright, var(--success-color)) !important;
+    background: var(--success-light) !important;
+    box-shadow: var(--shadow-elevation) !important;
+    transform: translateY(-1px);
 }
 
 [data-theme="dark"] .focus-header.editing .focus-save-btn {
@@ -670,11 +677,24 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-
+[data-theme="dark"] .focus-header.editing .focus-save-btn:hover {
+    background: var(--success-light) !important;
+}
 
 /* Close → Cancel style in edit mode */
 .focus-header.editing .focus-close-btn {
     color: var(--error-color);
+}
+
+.focus-header.editing .focus-close-btn:hover {
+    color: var(--error-bright, var(--error-color)) !important;
+    background: var(--error-light) !important;
+    box-shadow: var(--shadow-elevation) !important;
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .focus-header.editing .focus-close-btn:hover {
+    background: var(--error-light) !important;
 }
 
 
