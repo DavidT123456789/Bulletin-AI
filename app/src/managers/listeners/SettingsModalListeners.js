@@ -1145,31 +1145,41 @@ export const SettingsModalListeners = {
                     await SyncService.refreshStatus();
                     const syncState = SyncService._lastSyncState;
                     const isCloudNewer = syncState === 'cloud-changes' || syncState === 'conflict';
+                    
+                    const { runtimeState, userSettings } = await import('../../state/State.js');
+                    const studentCount = runtimeState.data.generatedResults?.length || 0;
+                    const classCount = userSettings.academic.classes?.length || 0;
+
+                    let conflictChoice = 'overwrite';
                     if (isCloudNewer) {
-                        const remoteDateStr = SyncService.remoteSyncTime
-                            ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                            : 'récemment';
-                        const confirmed = await UI.showCustomConfirm(
-                            `Une version plus récente existe sur le Cloud (${remoteDateStr}), probablement enregistrée depuis un autre appareil.<br><br>Voulez-vous vraiment <strong>écraser</strong> ces données avec vos données locales ?`,
-                            null, null,
-                            {
-                                title: '⚠️ Conflit : Version Cloud plus récente',
-                                confirmText: 'Écraser la version Cloud',
-                                cancelText: 'Annuler',
-                                isDanger: true
-                            }
-                        );
-                        if (!confirmed) return;
+                        conflictChoice = await UI.showConflictResolutionModal({
+                            remoteDate: SyncService.remoteSyncTime,
+                            localStudentCount: studentCount,
+                            localClassCount: classCount
+                        });
+
+                        if (conflictChoice === 'cancel') return;
+                        if (conflictChoice === 'restore') {
+                            cloudLoadBtn?.click();
+                            return;
+                        }
                     }
 
+                    const isMerge = conflictChoice === 'merge';
+                    const executeSync = async () => {
+                        if (isMerge) return await SyncService.mergeAndSync();
+                        return await SyncService.saveToCloud();
+                    };
+
+                    let syncResult;
                     try {
-                        await SyncService.saveToCloud();
+                        syncResult = await executeSync();
                     } catch (saveErr) {
                         if (saveErr?.isAuthError || saveErr?.status === 401 || !SyncService.isConnected()) {
                             const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
                             const reconnected = await SyncService.connect(providerName);
                             if (reconnected) {
-                                await SyncService.saveToCloud();
+                                syncResult = await executeSync();
                             } else {
                                 throw saveErr;
                             }
@@ -1179,6 +1189,7 @@ export const SettingsModalListeners = {
                     }
 
                     DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
+                    DOM.headerMenuBtn?.classList.remove('has-cloud-conflict');
 
                     const lastSaveEl = document.getElementById('cloudLastSave');
                     if (lastSaveEl) {
@@ -1186,7 +1197,17 @@ export const SettingsModalListeners = {
                         lastSaveEl.textContent = `Dernière sauvegarde : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
                     }
 
-                    UI.showNotification('Données sauvegardées sur le Cloud !', 'success');
+                    if (isMerge && syncResult?.stats) {
+                        const s = syncResult.stats;
+                        const parts = [];
+                        if (s.addedStudents > 0) parts.push(`+${s.addedStudents} élève${s.addedStudents > 1 ? 's' : ''}`);
+                        if (s.addedJournalEntries > 0) parts.push(`+${s.addedJournalEntries} note${s.addedJournalEntries > 1 ? 's' : ''} journal`);
+                        if (s.addedClasses > 0) parts.push(`+${s.addedClasses} classe${s.addedClasses > 1 ? 's' : ''}`);
+                        const detailStr = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+                        UI.showNotification(`Données fusionnées et sauvegardées sur le Cloud !${detailStr}`, 'success');
+                    } else {
+                        UI.showNotification('Données sauvegardées sur le Cloud !', 'success');
+                    }
                 } catch (error) {
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
                     UI.showNotification('Erreur de sauvegarde : ' + errorMsg, 'error');
@@ -1242,6 +1263,79 @@ export const SettingsModalListeners = {
                         detailsHtml: '<p>Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>'
                     }
                 );
+            });
+        }
+
+        // --- Copie de sécurité pré-restauration dans les Paramètres > Données ---
+        const preRestoreCard = document.getElementById('preRestoreSnapshotCard');
+        const preRestoreInfo = document.getElementById('preRestoreSnapshotInfo');
+        const restoreSnapshotBtn = document.getElementById('restoreSnapshotBtn');
+        const discardSnapshotBtn = document.getElementById('discardSnapshotBtn');
+
+        const updatePreRestoreCard = async () => {
+            if (!preRestoreCard) return;
+            try {
+                const { StorageManager } = await import('../../managers/StorageManager.js');
+                const snapshot = await StorageManager.getPreRestoreSnapshot();
+                if (snapshot && snapshot.generatedResults?.length > 0) {
+                    const count = snapshot.generatedResults.length;
+                    const dateStr = snapshot.createdAt
+                        ? new Date(snapshot.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : '';
+                    if (preRestoreInfo) {
+                        preRestoreInfo.textContent = `État sauvegardé avant la dernière restauration : ${count} élève${count > 1 ? 's' : ''}${dateStr ? ` (${dateStr})` : ''}.`;
+                    }
+                    preRestoreCard.style.display = 'block';
+                } else {
+                    preRestoreCard.style.display = 'none';
+                }
+            } catch {
+                preRestoreCard.style.display = 'none';
+            }
+        };
+
+        document.addEventListener('settings-modal-open', updatePreRestoreCard);
+        document.addEventListener('settings-data-tab-open', updatePreRestoreCard);
+
+        const dataTabBtn = document.querySelector('button[onclick*="settings-data"]');
+        if (dataTabBtn) {
+            dataTabBtn.addEventListener('click', updatePreRestoreCard);
+        }
+
+        if (restoreSnapshotBtn) {
+            restoreSnapshotBtn.addEventListener('click', async () => {
+                const { StorageManager } = await import('../../managers/StorageManager.js');
+                const snapshot = await StorageManager.getPreRestoreSnapshot();
+                if (!snapshot) {
+                    UI.showNotification('Aucune copie de sécurité disponible.', 'warning');
+                    updatePreRestoreCard();
+                    return;
+                }
+                const count = snapshot.generatedResults?.length || 0;
+                const confirmed = await UI.showCustomConfirm(
+                    `Restaurer l'état précédent (<strong>${count} élève${count > 1 ? 's' : ''}</strong>) ?<br><br>Vos données actuelles seront remplacées par cette copie.`,
+                    null, null,
+                    {
+                        title: 'Restaurer la copie antérieure ?',
+                        confirmText: 'Restaurer',
+                        cancelText: 'Annuler',
+                        isDanger: false
+                    }
+                );
+                if (confirmed) {
+                    await StorageManager.restorePreRestoreSnapshot();
+                    UI.showNotification('État précédent restauré !', 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                }
+            });
+        }
+
+        if (discardSnapshotBtn) {
+            discardSnapshotBtn.addEventListener('click', async () => {
+                const { StorageManager } = await import('../../managers/StorageManager.js');
+                await StorageManager.clearPreRestoreSnapshot();
+                updatePreRestoreCard();
+                UI.showNotification('Copie de sécurité supprimée.', 'info');
             });
         }
 

@@ -471,7 +471,10 @@ export const Utils = {
             // IMPORTANT: Include classId in key to preserve homonyms across different classes
             // "Jean DUPONT" in ClasseA and "Jean DUPONT" in ClasseB are DIFFERENT students
             const classId = result.classId || 'no-class';
-            const key = `${classId}::${this.normalizeName(result.nom, result.prenom)}`;
+            const nom = result.nom || result.studentData?.nom;
+            const prenom = result.prenom || result.studentData?.prenom;
+            const normalizedName = this.normalizeName(nom, prenom);
+            const key = normalizedName ? `${classId}::${normalizedName}` : (result.id || `${classId}::unknown`);
 
             if (!studentMap.has(key)) {
                 // Premier résultat pour cet élève - on le copie

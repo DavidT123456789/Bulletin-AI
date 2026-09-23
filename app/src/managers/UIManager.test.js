@@ -660,4 +660,16 @@ describe('UIManager', () => {
             }));
         });
     });
+
+    describe('showConflictResolutionModal', () => {
+        it('should delegate to ModalUI.showConflictResolutionModal', async () => {
+            const { ModalUI } = await import('./ModalUIManager.js');
+            const spy = vi.spyOn(ModalUI, 'showConflictResolutionModal').mockResolvedValue('merge');
+
+            const res = await UI.showConflictResolutionModal({ localStudentCount: 5 });
+
+            expect(spy).toHaveBeenCalledWith({ localStudentCount: 5 });
+            expect(res).toBe('merge');
+        });
+    });
 });

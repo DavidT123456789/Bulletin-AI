@@ -389,6 +389,10 @@ export const UI = {
         return ModalUI.showCustomConfirm(message, onConfirm, onCancel, options);
     },
 
+    showConflictResolutionModal(options = {}) {
+        return ModalUI.showConflictResolutionModal(options);
+    },
+
     // ====================================================================
     //  THÈME ET DARK MODE
     // ====================================================================

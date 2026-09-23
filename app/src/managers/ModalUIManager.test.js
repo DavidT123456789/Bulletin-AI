@@ -279,4 +279,51 @@ describe('ModalUIManager', () => {
             expect(ModalUI._isIgnoringTooltips).toBe(false);
         });
     });
+
+    describe('showConflictResolutionModal', () => {
+        it('should render modal with details and resolve with selected choice', async () => {
+            const promise = ModalUI.showConflictResolutionModal({
+                remoteDate: 1726000000000,
+                localStudentCount: 25
+            });
+
+            const modal = document.getElementById('conflictResolutionModal');
+            expect(modal).not.toBeNull();
+            expect(modal.textContent).toContain('25 élèves');
+
+            const mergeBtn = document.getElementById('conflictChoiceMerge');
+            expect(mergeBtn).not.toBeNull();
+            mergeBtn.click();
+
+            const result = await promise;
+            expect(result).toBe('merge');
+        });
+
+        it('should resolve with overwrite when overwrite button is clicked', async () => {
+            const promise = ModalUI.showConflictResolutionModal();
+            const overwriteBtn = document.getElementById('conflictChoiceOverwrite');
+            overwriteBtn.click();
+
+            const result = await promise;
+            expect(result).toBe('overwrite');
+        });
+
+        it('should resolve with restore when restore button is clicked', async () => {
+            const promise = ModalUI.showConflictResolutionModal();
+            const restoreBtn = document.getElementById('conflictChoiceRestore');
+            restoreBtn.click();
+
+            const result = await promise;
+            expect(result).toBe('restore');
+        });
+
+        it('should resolve with cancel when cancel button is clicked', async () => {
+            const promise = ModalUI.showConflictResolutionModal();
+            const cancelBtn = document.getElementById('conflictCancelBtn');
+            cancelBtn.click();
+
+            const result = await promise;
+            expect(result).toBe('cancel');
+        });
+    });
 });

@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SyncService } from './SyncService.js';
 import { GoogleDriveProvider } from './providers/GoogleDriveProvider.js';
 
+vi.mock('../managers/StorageManager.js', () => ({
+    StorageManager: {
+        savePreRestoreSnapshot: vi.fn(),
+        mergeRemoteData: vi.fn(() => Promise.resolve({ success: true, stats: { addedStudents: 1 } })),
+        getPreRestoreSnapshot: vi.fn(),
+        clearPreRestoreSnapshot: vi.fn()
+    }
+}));
+
 describe('SyncService & GoogleDriveProvider Authentication & Connection State', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -105,6 +114,32 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             const err = GoogleDriveProvider._handleApiError(gapiError);
             expect(err.message).toBe('Session Google Drive expirée. Veuillez vous reconnecter.');
             expect(err.isAuthError).toBe(true);
+        });
+    });
+
+    describe('SyncService.mergeAndSync()', () => {
+        it('should throw an error if no provider is connected', async () => {
+            await expect(SyncService.mergeAndSync()).rejects.toThrow('Aucun provider connecté');
+        });
+
+        it('should take a pre-restore snapshot, merge remote data, and forceUpload', async () => {
+            const { StorageManager } = await import('../managers/StorageManager.js');
+            const mockRemoteData = { generatedResults: [{ id: 's1' }] };
+
+            SyncService._provider = {
+                read: vi.fn().mockResolvedValue(mockRemoteData),
+                write: vi.fn().mockResolvedValue({ success: true })
+            };
+            vi.spyOn(SyncService, 'forceUpload').mockResolvedValue({ success: true });
+            vi.spyOn(SyncService, '_updateCloudIndicator').mockImplementation(() => {});
+
+            const res = await SyncService.mergeAndSync();
+
+            expect(StorageManager.savePreRestoreSnapshot).toHaveBeenCalled();
+            expect(StorageManager.mergeRemoteData).toHaveBeenCalledWith(mockRemoteData);
+            expect(SyncService.forceUpload).toHaveBeenCalled();
+            expect(res.success).toBe(true);
+            expect(res.stats.addedStudents).toBe(1);
         });
     });
 });

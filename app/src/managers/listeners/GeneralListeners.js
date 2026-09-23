@@ -381,42 +381,37 @@ export const GeneralListeners = {
                 closeMenu();
                 if (labelEl) labelEl.textContent = originalLabel;
 
-                // 3. Evaluate if Cloud has newer changes from another device
+                // 3. Évaluer les conflits avec la version distante
                 const syncState = SyncService._lastSyncState;
                 const isCloudNewer = syncState === 'cloud-changes' || syncState === 'conflict';
-                
-                let detailsHtml = '';
-                if (isCloudNewer) {
-                    const remoteDateStr = SyncService.remoteSyncTime
-                        ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                        : 'récemment';
-                    detailsHtml = `
-                        <p style="margin-bottom:8px; font-weight:600; color:var(--danger, #ef4444);">
-                            ⚠️ Une sauvegarde plus récente existe sur le Cloud (${remoteDateStr}), enregistrée depuis un autre appareil.
-                        </p>
-                        <p style="margin-bottom:8px;">
-                            Si vous confirmez la sauvegarde, <strong>les données du Cloud seront écrasées et remplacées</strong> par vos données locales actuelles.
-                        </p>
-                        <p style="opacity:0.85;">
-                            Si vous souhaitez récupérer le travail fait sur l'autre appareil, cliquez sur <em>Annuler</em> puis sur <em>Restaurer</em>.
-                        </p>
-                    `;
-                } else {
-                    detailsHtml = `<p>Ceci mettra à jour votre sauvegarde Cloud avec vos données locales actuelles. Vos données seront accessibles depuis n'importe quel appareil connecté.</p>`;
-                }
+                let conflictChoice = 'overwrite';
 
-                const confirmed = await UI.showCustomConfirm(
-                    `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
-                    null, null,
-                    {
-                        title: isCloudNewer ? '⚠️ Conflit : Écraser la version Cloud ?' : 'Sauvegarder vers le Cloud ?',
-                        confirmText: isCloudNewer ? 'Écraser la version Cloud' : 'Sauvegarder',
-                        cancelText: 'Annuler',
-                        isDanger: isCloudNewer,
-                        detailsHtml
+                if (isCloudNewer) {
+                    conflictChoice = await UI.showConflictResolutionModal({
+                        remoteDate: SyncService.remoteSyncTime,
+                        localStudentCount: studentCount,
+                        localClassCount: classCount
+                    });
+
+                    if (conflictChoice === 'cancel') return;
+                    if (conflictChoice === 'restore') {
+                        document.getElementById('cloudLoadMenuBtn')?.click();
+                        return;
                     }
-                );
-                if (!confirmed) return;
+                } else {
+                    const confirmed = await UI.showCustomConfirm(
+                        `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
+                        null, null,
+                        {
+                            title: 'Sauvegarder vers le Cloud ?',
+                            confirmText: 'Sauvegarder',
+                            cancelText: 'Annuler',
+                            isDanger: false,
+                            detailsHtml: '<p>Ceci mettra à jour votre sauvegarde Cloud avec vos données locales actuelles. Vos données seront accessibles depuis n\'importe quel appareil connecté.</p>'
+                        }
+                    );
+                    if (!confirmed) return;
+                }
 
                 let saveProgressToast = null;
                 const mainWrapper = document.querySelector('.main-content-wrapper');
@@ -427,18 +422,31 @@ export const GeneralListeners = {
                     mainWrapper?.classList.add('is-cloud-syncing');
                     cloudSaveBtn.classList.add('saving');
 
-                    if (labelEl) labelEl.textContent = 'Envoi…';
-                    saveProgressToast = UI.showNotification('Sauvegarde de vos données sur le Cloud…', 'info', 0);
+                    const isMerge = conflictChoice === 'merge';
+                    if (labelEl) labelEl.textContent = isMerge ? 'Fusion…' : 'Envoi…';
+                    saveProgressToast = UI.showNotification(
+                        isMerge ? 'Fusion et synchronisation avec le Cloud…' : 'Sauvegarde de vos données sur le Cloud…',
+                        'info',
+                        0
+                    );
 
+                    const executeSync = async () => {
+                        if (isMerge) {
+                            return await SyncService.mergeAndSync();
+                        }
+                        return await SyncService.saveToCloud();
+                    };
+
+                    let syncResult;
                     try {
-                        await SyncService.saveToCloud();
+                        syncResult = await executeSync();
                     } catch (saveErr) {
                         if (saveErr?.isAuthError || saveErr?.status === 401 || !SyncService.isConnected()) {
                             if (labelEl) labelEl.textContent = 'Reconnexion…';
                             const reconnected = await ensureConnected(SyncService);
                             if (reconnected) {
-                                if (labelEl) labelEl.textContent = 'Envoi…';
-                                await SyncService.saveToCloud();
+                                if (labelEl) labelEl.textContent = isMerge ? 'Fusion…' : 'Envoi…';
+                                syncResult = await executeSync();
                             } else {
                                 throw saveErr;
                             }
@@ -448,8 +456,20 @@ export const GeneralListeners = {
                     }
 
                     DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
+                    DOM.headerMenuBtn?.classList.remove('has-cloud-conflict');
                     saveProgressToast?.dismiss?.();
-                    UI.showNotification('Données envoyées sur le Cloud !', 'success');
+
+                    if (isMerge && syncResult?.stats) {
+                        const s = syncResult.stats;
+                        const parts = [];
+                        if (s.addedStudents > 0) parts.push(`+${s.addedStudents} élève${s.addedStudents > 1 ? 's' : ''}`);
+                        if (s.addedJournalEntries > 0) parts.push(`+${s.addedJournalEntries} note${s.addedJournalEntries > 1 ? 's' : ''} journal`);
+                        if (s.addedClasses > 0) parts.push(`+${s.addedClasses} classe${s.addedClasses > 1 ? 's' : ''}`);
+                        const detailStr = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+                        UI.showNotification(`Données fusionnées et enregistrées sur le Cloud !${detailStr}`, 'success');
+                    } else {
+                        UI.showNotification('Données envoyées sur le Cloud !', 'success');
+                    }
                 } catch (error) {
                     saveProgressToast?.dismiss?.();
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';

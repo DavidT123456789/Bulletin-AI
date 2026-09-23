@@ -770,6 +770,39 @@ export const SyncService = {
         return { success: true };
     },
 
+    /**
+     * Fusionne les données locales et distantes sans perte, puis envoie le résultat au Cloud.
+     * @param {Object} [prefetchedRemoteData=null] - Données distantes pré-chargées optionnelles
+     * @returns {Promise<{success: boolean, stats: Object}>}
+     */
+    async mergeAndSync(prefetchedRemoteData = null) {
+        if (!this._provider) throw new Error('Aucun provider connecté');
+
+        this._setStatus('syncing');
+
+        try {
+            // Snapshot de sécurité local avant fusion
+            await StorageManager.savePreRestoreSnapshot();
+
+            const remoteData = prefetchedRemoteData || await this._provider.read();
+            if (!remoteData || (!remoteData.generatedResults && !remoteData.classes && !remoteData.settings)) {
+                await this.forceUpload();
+                this._setStatus('idle');
+                return { success: true, stats: { addedStudents: 0, updatedStudents: 0, addedJournalEntries: 0, addedClasses: 0 } };
+            }
+
+            const mergeResult = await StorageManager.mergeRemoteData(remoteData);
+            await this.forceUpload();
+
+            this._updateCloudIndicator('connected');
+            this._setStatus('idle');
+            return mergeResult;
+        } catch (error) {
+            this._setStatus('idle');
+            throw error;
+        }
+    },
+
     // =========================================================================
     // HELPERS
     // =========================================================================

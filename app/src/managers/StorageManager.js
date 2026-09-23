@@ -287,6 +287,41 @@ export const StorageManager = {
         } catch { /* best-effort */ }
     },
 
+    async getPreRestoreSnapshot() {
+        try {
+            const backup = await DBService.get('appData', 'pre_restore_backup');
+            if (backup && backup.generatedResults && backup.generatedResults.length > 0) {
+                // Expire après 24h
+                if (Date.now() - (backup.createdAt || 0) > 86400000) {
+                    await this.clearPreRestoreSnapshot();
+                    return null;
+                }
+                return backup;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    },
+
+    async clearPreRestoreSnapshot() {
+        try {
+            await DBService.delete('appData', 'pre_restore_backup');
+            localStorage.removeItem('bulletin_restore_pending');
+        } catch { /* best-effort */ }
+    },
+
+    async restorePreRestoreSnapshot() {
+        const backup = await this.getPreRestoreSnapshot();
+        if (!backup) return false;
+        const res = await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true });
+        if (res?.success) {
+            await this.clearPreRestoreSnapshot();
+            return true;
+        }
+        return false;
+    },
+
     async _checkPendingRestore() {
         const flag = localStorage.getItem('bulletin_restore_pending');
         if (!flag) return;
@@ -301,25 +336,20 @@ export const StorageManager = {
 
             const count = backup.generatedResults.length;
             setTimeout(() => {
-                UI?.showCustomConfirm(
-                    `Vos données ont été restaurées depuis le Cloud.<br><br>L'état précédent (<strong>${count} élève${count > 1 ? 's' : ''}</strong>) a été sauvegardé automatiquement.`,
-                    async () => {
-                        await DBService.delete('appData', 'pre_restore_backup');
-                    },
-                    async () => {
-                        await this.importBackup(JSON.stringify(backup), { mergeData: false, silent: true });
-                        await DBService.delete('appData', 'pre_restore_backup');
-                        UI?.showNotification('État précédent restauré.', 'success');
-                        setTimeout(() => window.location.reload(), 800);
-                    },
-                    {
-                        title: 'Restauration effectuée',
-                        confirmText: 'C\'est bon',
-                        cancelText: 'Annuler la restauration',
-                        isDanger: false
-                    }
-                );
-            }, 1200);
+                if (UI?.showUndoNotification) {
+                    UI.showUndoNotification(
+                        `Données restaurées depuis le Cloud (${count} élève${count > 1 ? 's' : ''})`,
+                        async () => {
+                            const restored = await this.restorePreRestoreSnapshot();
+                            if (restored) {
+                                UI?.showNotification('État précédent restauré.', 'success');
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        },
+                        { duration: 10000, type: 'info' }
+                    );
+                }
+            }, 800);
         } catch { /* snapshot unavailable */ }
     },
 
@@ -1152,6 +1182,233 @@ export const StorageManager = {
             UI.showNotification(`Erreur: ${error.message}`, 'error');
             return { success: false, message: error.message };
         }
+    },
+
+    /**
+     * Fusion intelligente non-destructive entre les données locales et distantes.
+     * Conserve les ajouts locaux (nouveaux élèves, modifications récentes)
+     * tout en intégrant les ajouts et modifications du Cloud (nouveaux élèves, entrées de journal).
+     * @param {Object} remoteData - Données distantes lues depuis le Cloud
+     * @returns {Promise<{success: boolean, stats: Object}>}
+     */
+    async mergeRemoteData(remoteData) {
+        if (!remoteData || typeof remoteData !== 'object') {
+            throw new Error('Données distantes invalides pour la fusion');
+        }
+
+        const stats = {
+            addedStudents: 0,
+            updatedStudents: 0,
+            addedJournalEntries: 0,
+            addedClasses: 0
+        };
+
+        // 1. Fusion des classes (union par ID)
+        if (Array.isArray(remoteData.classes)) {
+            const localClasses = userSettings.academic.classes || [];
+            const localClassIds = new Set(localClasses.map(c => c.id));
+            remoteData.classes.forEach(rClass => {
+                if (!localClassIds.has(rClass.id)) {
+                    localClasses.push(rClass);
+                    localClassIds.add(rClass.id);
+                    stats.addedClasses++;
+                } else {
+                    const localC = localClasses.find(c => c.id === rClass.id);
+                    if (localC && rClass.seatingUpdatedAt && (!localC.seatingUpdatedAt || rClass.seatingUpdatedAt > localC.seatingUpdatedAt)) {
+                        localC.seatingChart = rClass.seatingChart;
+                        localC.seatingUpdatedAt = rClass.seatingUpdatedAt;
+                    }
+                }
+            });
+            userSettings.academic.classes = localClasses;
+        }
+
+        // 2. Fusion des élèves (generatedResults)
+        const localResults = runtimeState.data.generatedResults || [];
+        const remoteResults = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults : [];
+        const localMap = new Map(localResults.map(r => [r.id, r]));
+
+        remoteResults.forEach(remoteStudent => {
+            const localStudent = localMap.get(remoteStudent.id);
+
+            if (!localStudent) {
+                // Élève présent uniquement sur le Cloud -> on l'ajoute en local
+                localResults.push({
+                    ...remoteStudent,
+                    _lastModified: remoteStudent._lastModified || Date.now()
+                });
+                stats.addedStudents++;
+            } else {
+                // Élève présent sur les deux supports -> fusion fine des champs
+                let hasStudentUpdates = false;
+
+                // Compléter les champs d'identification de base manquants en local
+                if (remoteStudent.nom && !localStudent.nom) {
+                    localStudent.nom = remoteStudent.nom;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.prenom && !localStudent.prenom) {
+                    localStudent.prenom = remoteStudent.prenom;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.classe && !localStudent.classe) {
+                    localStudent.classe = remoteStudent.classe;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.classId && !localStudent.classId) {
+                    localStudent.classId = remoteStudent.classId;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.studentData?.nom && !localStudent.studentData?.nom) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    localStudent.studentData.nom = remoteStudent.studentData.nom;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.studentData?.prenom && !localStudent.studentData?.prenom) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    localStudent.studentData.prenom = remoteStudent.studentData.prenom;
+                    hasStudentUpdates = true;
+                }
+                if (remoteStudent.studentData?.classe && !localStudent.studentData?.classe) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    localStudent.studentData.classe = remoteStudent.studentData.classe;
+                    hasStudentUpdates = true;
+                }
+
+                // A. Fusion additive du Journal de bord (aucune note perdue)
+                const localJournal = Array.isArray(localStudent.journal) ? localStudent.journal : [];
+                const remoteJournal = Array.isArray(remoteStudent.journal) ? remoteStudent.journal : [];
+
+                if (remoteJournal.length > 0) {
+                    const localEntryKeys = new Set(localJournal.map(e => e.id || `${e.date}_${(e.note || '').slice(0, 20)}`));
+                    remoteJournal.forEach(remoteEntry => {
+                        const entryKey = remoteEntry.id || `${remoteEntry.date}_${(remoteEntry.note || '').slice(0, 20)}`;
+                        if (!localEntryKeys.has(entryKey)) {
+                            localJournal.push(remoteEntry);
+                            localEntryKeys.add(entryKey);
+                            stats.addedJournalEntries++;
+                            hasStudentUpdates = true;
+                        } else {
+                            const localEntry = localJournal.find(e => (e.id && e.id === remoteEntry.id) || `${e.date}_${(e.note || '').slice(0, 20)}` === entryKey);
+                            if (localEntry && remoteEntry._lastModified && (!localEntry._lastModified || remoteEntry._lastModified > localEntry._lastModified)) {
+                                Object.assign(localEntry, remoteEntry);
+                                hasStudentUpdates = true;
+                            }
+                        }
+                    });
+                    localJournal.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+                    localStudent.journal = localJournal;
+                }
+
+                // B. Fusion des photos d'élèves
+                if (remoteStudent.studentPhoto?.data) {
+                    const localPhotoTime = localStudent.studentPhoto?.uploadedAt ? new Date(localStudent.studentPhoto.uploadedAt).getTime() : 0;
+                    const remotePhotoTime = remoteStudent.studentPhoto.uploadedAt ? new Date(remoteStudent.studentPhoto.uploadedAt).getTime() : 0;
+                    if (!localStudent.studentPhoto?.data || remotePhotoTime > localPhotoTime) {
+                        localStudent.studentPhoto = remoteStudent.studentPhoto;
+                        hasStudentUpdates = true;
+                    }
+                }
+
+                // C. Fusion des périodes (notes, appréciations, contexte)
+                if (remoteStudent.studentData?.periods) {
+                    if (!localStudent.studentData) localStudent.studentData = {};
+                    if (!localStudent.studentData.periods) localStudent.studentData.periods = {};
+
+                    const localPeriods = localStudent.studentData.periods;
+                    const remotePeriods = remoteStudent.studentData.periods;
+
+                    for (const period of Object.keys(remotePeriods)) {
+                        const rPeriodData = remotePeriods[period];
+                        const lPeriodData = localPeriods[period];
+
+                        if (!lPeriodData) {
+                            localPeriods[period] = { ...rPeriodData };
+                            hasStudentUpdates = true;
+                        } else {
+                            const rTime = rPeriodData._lastModified || 0;
+                            const lTime = lPeriodData._lastModified || 0;
+
+                            const rApp = (rPeriodData.appreciation || '').trim();
+                            const lApp = (lPeriodData.appreciation || '').trim();
+
+                            if (rApp && !lApp) {
+                                lPeriodData.appreciation = rPeriodData.appreciation;
+                                lPeriodData._lastModified = rTime || Date.now();
+                                hasStudentUpdates = true;
+                            } else if (rApp && lApp && rTime > lTime) {
+                                lPeriodData.appreciation = rPeriodData.appreciation;
+                                lPeriodData._lastModified = rTime;
+                                hasStudentUpdates = true;
+                            }
+
+                            if (rPeriodData.grade !== undefined && rPeriodData.grade !== null) {
+                                if (lPeriodData.grade === undefined || lPeriodData.grade === null || rTime > lTime) {
+                                    lPeriodData.grade = rPeriodData.grade;
+                                    hasStudentUpdates = true;
+                                }
+                            }
+
+                            if (rPeriodData.context && (!lPeriodData.context || rTime > lTime)) {
+                                lPeriodData.context = rPeriodData.context;
+                                hasStudentUpdates = true;
+                            }
+                        }
+                    }
+                }
+
+                // D. Fusion des statuts (tags)
+                const lStatuses = Array.isArray(localStudent.studentData?.statuses) ? localStudent.studentData.statuses : [];
+                const rStatuses = Array.isArray(remoteStudent.studentData?.statuses) ? remoteStudent.studentData.statuses : [];
+                if (rStatuses.length > 0) {
+                    const combined = Array.from(new Set([...lStatuses, ...rStatuses]));
+                    if (combined.length !== lStatuses.length) {
+                        if (!localStudent.studentData) localStudent.studentData = {};
+                        localStudent.studentData.statuses = combined;
+                        hasStudentUpdates = true;
+                    }
+                }
+
+                if (hasStudentUpdates) {
+                    localStudent._lastModified = Date.now();
+                    stats.updatedStudents++;
+                }
+            }
+        });
+
+        // 3. Nettoyer et dédupliquer
+        let cleanResults = this.migrateData(localResults);
+        cleanResults = Utils.deduplicateResults(cleanResults);
+        runtimeState.data.generatedResults = cleanResults;
+
+        await DBService.clear('generatedResults');
+        await DBService.putAll('generatedResults', cleanResults);
+
+        // 4. Mettre à jour les filtres d'affichage si nécessaire
+        const currentClassId = userSettings.academic.currentClassId;
+        if (currentClassId) {
+            if (typeof currentClassId === 'string' && currentClassId.startsWith('virtual_')) {
+                const normOrigin = currentClassId.replace('virtual_', '');
+                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
+                    r => {
+                        const origin = r.studentData?.classe || r.classe || r.originClass || '';
+                        return origin && Utils.normalizeClassName(origin) === normOrigin;
+                    }
+                );
+            } else {
+                runtimeState.data.filteredResults = runtimeState.data.generatedResults.filter(
+                    r => r.classId === currentClassId
+                );
+            }
+        } else {
+            runtimeState.data.filteredResults = runtimeState.data.generatedResults;
+        }
+
+        // 5. Sauvegarde de l'état
+        await this.saveAppState();
+        if (App?.updateUIOnLoad) App.updateUIOnLoad();
+
+        return { success: true, stats };
     },
 
     importSettings(fileContent) {

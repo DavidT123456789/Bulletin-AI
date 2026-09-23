@@ -226,7 +226,7 @@ export const ModalUI = {
                 this.activeModal = null;
 
                 // Supprimer les modales de confirmation dynamiques
-                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal', 'promptPreviewModal'];
+                const dynamicModals = ['customConfirmModal', 'customChoicesModal', 'hardConfirmModal', 'promptPreviewModal', 'conflictResolutionModal'];
                 if (dynamicModals.includes(modal.id) && modal.parentNode) {
                     modal.parentNode.removeChild(modal);
                 }
@@ -550,6 +550,137 @@ export const ModalUI = {
 
             if (isDanger) cancelBtn.focus();
             else okBtn.focus();
+        });
+    },
+
+    /**
+     * Affiche une modale de résolution de conflit Cloud à 3 choix (Merge, Overwrite, Restore).
+     * @param {Object} options
+     * @param {string|number} [options.remoteDate] - Timestamp de la version Cloud
+     * @param {number} [options.localStudentCount] - Nombre d'élèves en local
+     * @returns {Promise<'merge'|'overwrite'|'restore'|'cancel'>}
+     */
+    showConflictResolutionModal(options = {}) {
+        return new Promise((resolve) => {
+            const {
+                remoteDate = null,
+                localStudentCount = 0
+            } = options;
+
+            const modalId = 'conflictResolutionModal';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+
+            const remoteDateStr = remoteDate
+                ? new Date(remoteDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                : 'récemment';
+
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal';
+
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-content-conflict modal-alert-ios">
+                <div class="modal-alert-body">
+                    <h3 class="modal-alert-title">⚠️ Conflit de synchronisation</h3>
+                    <div class="modal-alert-message">
+                        Une sauvegarde plus récente existe sur le Cloud (<strong>${remoteDateStr}</strong>), enregistrée depuis un autre appareil.<br>
+                        Des modifications locales existent également (${localStudentCount} élève${localStudentCount > 1 ? 's' : ''}).
+                    </div>
+
+                    <div class="conflict-choices-list">
+                        <!-- Option 1: Merge (Recommandé) -->
+                        <button type="button" class="conflict-choice-card recommended" id="conflictChoiceMerge">
+                            <div class="conflict-choice-icon">
+                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon>
+                            </div>
+                            <div class="conflict-choice-body">
+                                <div class="conflict-choice-header">
+                                    <span class="conflict-choice-title">Fusionner les deux versions</span>
+                                    <span class="conflict-badge-rec">Recommandé</span>
+                                </div>
+                                <span class="conflict-choice-desc">
+                                    Combine vos ajouts locaux et les données distantes <strong>sans perte</strong> (nouveaux élèves, entrées de journal de bord, appréciations).
+                                </span>
+                            </div>
+                        </button>
+
+                        <!-- Option 2: Overwrite -->
+                        <button type="button" class="conflict-choice-card" id="conflictChoiceOverwrite">
+                            <div class="conflict-choice-icon">
+                                <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                            </div>
+                            <div class="conflict-choice-body">
+                                <div class="conflict-choice-header">
+                                    <span class="conflict-choice-title">Écraser la version Cloud</span>
+                                </div>
+                                <span class="conflict-choice-desc">
+                                    Remplace le Cloud par cet appareil. Ignore les modifications faites sur l'autre appareil.
+                                </span>
+                            </div>
+                        </button>
+
+                        <!-- Option 3: Restore -->
+                        <button type="button" class="conflict-choice-card" id="conflictChoiceRestore">
+                            <div class="conflict-choice-icon">
+                                <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                            </div>
+                            <div class="conflict-choice-body">
+                                <div class="conflict-choice-header">
+                                    <span class="conflict-choice-title">Remplacer par la version Cloud</span>
+                                </div>
+                                <span class="conflict-choice-desc">
+                                    Abandonne les modifications de cet appareil et recharge la version Cloud (une copie de secours locale sera conservée).
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-alert-actions">
+                    <button type="button" class="btn btn-secondary" id="conflictCancelBtn">Annuler</button>
+                </div>
+            </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            const mergeBtn = document.getElementById('conflictChoiceMerge');
+            const overwriteBtn = document.getElementById('conflictChoiceOverwrite');
+            const restoreBtn = document.getElementById('conflictChoiceRestore');
+            const cancelBtn = document.getElementById('conflictCancelBtn');
+
+            let keyHandler;
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
+            const selectChoice = (choice) => {
+                cleanup();
+                resolve(choice);
+                this.closeModal(modal);
+            };
+
+            mergeBtn.addEventListener('click', () => selectChoice('merge'), { once: true });
+            overwriteBtn.addEventListener('click', () => selectChoice('overwrite'), { once: true });
+            restoreBtn.addEventListener('click', () => selectChoice('restore'), { once: true });
+            cancelBtn.addEventListener('click', () => selectChoice('cancel'), { once: true });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) selectChoice('cancel');
+            });
+
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    selectChoice('cancel');
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+
+            mergeBtn.focus();
         });
     },
 

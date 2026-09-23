@@ -2021,3 +2021,160 @@
     }
 }
 
+/* ====================================================================
+   CONFLICT RESOLUTION MODAL — 3-Choice Smart Merge Pattern
+   ==================================================================== */
+.modal-content-conflict {
+    max-width: 520px;
+    width: 95%;
+}
+
+.modal-content-conflict .modal-alert-actions {
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.conflict-choices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.conflict-choice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--card-item-bg, var(--bg-secondary));
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md, 12px);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s var(--ease-material);
+    font-family: inherit;
+    color: inherit;
+}
+
+.conflict-choice-card:hover {
+    background: var(--bg-secondary);
+    border-color: var(--card-item-hover-border-color, var(--primary-color));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.conflict-choice-card:active {
+    transform: scale(0.99);
+}
+
+.conflict-choice-card.recommended {
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.conflict-choice-card.recommended:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.07);
+    box-shadow: 0 4px 16px rgba(var(--primary-color-rgb), 0.12);
+}
+
+.conflict-choice-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: var(--primary-color);
+}
+
+.conflict-choice-card:not(.recommended) .conflict-choice-icon {
+    color: var(--text-secondary);
+}
+
+.conflict-choice-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.conflict-choice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.conflict-choice-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.conflict-badge-rec {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.conflict-choice-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* ====================================================================
+   PRE-RESTORE SNAPSHOT SAFETY CARD (Settings > Data)
+   ==================================================================== */
+.pre-restore-snapshot-card {
+    border-color: rgba(var(--primary-color-rgb), 0.3) !important;
+    background: rgba(var(--primary-color-rgb), 0.03) !important;
+}
+
+[data-theme="dark"] .pre-restore-snapshot-card {
+    border-color: rgba(var(--primary-color-rgb), 0.4) !important;
+    background: rgba(var(--primary-color-rgb), 0.06) !important;
+}
+
+.pre-restore-snapshot-icon {
+    background: rgba(var(--primary-color-rgb), 0.1) !important;
+    color: var(--primary-color) !important;
+}
+
+.pre-restore-snapshot-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.pre-restore-snapshot-content {
+    flex: 1;
+    min-width: 200px;
+}
+
+.pre-restore-snapshot-desc {
+    margin: 4px 0 0;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.pre-restore-snapshot-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+

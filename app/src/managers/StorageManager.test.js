@@ -15,6 +15,7 @@ vi.mock('../services/DBService.js', () => ({
         getAll: vi.fn(),
         put: vi.fn(),
         putAll: vi.fn(),
+        delete: vi.fn(),
         clear: vi.fn()
     }
 }));
@@ -106,6 +107,7 @@ vi.mock('../config/Config.js', () => ({
 vi.mock('./UIManager.js', () => ({
     UI: {
         showNotification: vi.fn(),
+        showUndoNotification: vi.fn(),
         showCustomConfirm: vi.fn((msg, callback) => callback()),
         updatePeriodSystemUI: vi.fn(),
         updateSettingsPromptFields: vi.fn(),
@@ -301,4 +303,243 @@ describe('StorageManager', () => {
             expect(changedHash).not.toBe(initialHash);
         });
     });
+
+    describe('mergeRemoteData', () => {
+        beforeEach(() => {
+            userSettings.academic.classes = [];
+            userSettings.academic.currentClassId = null;
+            runtimeState.data.generatedResults = [];
+            runtimeState.data.filteredResults = [];
+        });
+
+        it('should add remote students that do not exist locally', async () => {
+            runtimeState.data.generatedResults = [
+                { id: 'student_1', studentData: { nom: 'Dupont', prenom: 'Alice' } }
+            ];
+
+            const remoteData = {
+                generatedResults: [
+                    { id: 'student_2', studentData: { nom: 'Martin', prenom: 'Bob' } }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.addedStudents).toBe(1);
+            expect(runtimeState.data.generatedResults.length).toBe(2);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['student_1', 'student_2']);
+            expect(DBService.putAll).toHaveBeenCalledWith('generatedResults', expect.any(Array));
+        });
+
+        it('should additively merge journal entries without losing local or remote notes', async () => {
+            runtimeState.data.generatedResults = [
+                {
+                    id: 'student_1',
+                    studentData: { nom: 'Dupont' },
+                    journal: [
+                        { id: 'j_local_1', date: '2026-09-10', note: 'Observation locale' }
+                    ]
+                }
+            ];
+
+            const remoteData = {
+                generatedResults: [
+                    {
+                        id: 'student_1',
+                        studentData: { nom: 'Dupont' },
+                        journal: [
+                            { id: 'j_remote_1', date: '2026-09-12', note: 'Note prise sur smartphone' }
+                        ]
+                    }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.addedJournalEntries).toBe(1);
+            const student = runtimeState.data.generatedResults.find(s => s.id === 'student_1');
+            expect(student.journal.length).toBe(2);
+            expect(student.journal.map(j => j.id)).toContain('j_local_1');
+            expect(student.journal.map(j => j.id)).toContain('j_remote_1');
+        });
+
+        it('should resolve appreciation conflicts using _lastModified timestamp', async () => {
+            runtimeState.data.generatedResults = [
+                {
+                    id: 'student_1',
+                    studentData: {
+                        periods: {
+                            T1: { appreciation: 'Ancienne version PC', _lastModified: 1000 }
+                        }
+                    }
+                }
+            ];
+
+            const remoteData = {
+                generatedResults: [
+                    {
+                        id: 'student_1',
+                        studentData: {
+                            periods: {
+                                T1: { appreciation: 'Nouvelle version Smartphone', _lastModified: 2000 }
+                            }
+                        }
+                    }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.updatedStudents).toBe(1);
+            const student = runtimeState.data.generatedResults.find(s => s.id === 'student_1');
+            expect(student.studentData.periods.T1.appreciation).toBe('Nouvelle version Smartphone');
+            expect(student.studentData.periods.T1._lastModified).toBe(2000);
+        });
+
+        it('should preserve local appreciation if local timestamp is newer', async () => {
+            runtimeState.data.generatedResults = [
+                {
+                    id: 'student_1',
+                    studentData: {
+                        periods: {
+                            T1: { appreciation: 'Version la plus récente sur PC', _lastModified: 3000 }
+                        }
+                    }
+                }
+            ];
+
+            const remoteData = {
+                generatedResults: [
+                    {
+                        id: 'student_1',
+                        studentData: {
+                            periods: {
+                                T1: { appreciation: 'Version plus ancienne Smartphone', _lastModified: 1000 }
+                            }
+                        }
+                    }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            const student = runtimeState.data.generatedResults.find(s => s.id === 'student_1');
+            expect(student.studentData.periods.T1.appreciation).toBe('Version la plus récente sur PC');
+            expect(student.studentData.periods.T1._lastModified).toBe(3000);
+        });
+
+        it('should merge classes and statuses as non-destructive unions', async () => {
+            userSettings.academic.classes = [{ id: 'class_a', name: '3ème A' }];
+            runtimeState.data.generatedResults = [
+                {
+                    id: 'student_1',
+                    studentData: { statuses: ['DYS'] }
+                }
+            ];
+
+            const remoteData = {
+                classes: [{ id: 'class_b', name: '3ème B' }],
+                generatedResults: [
+                    {
+                        id: 'student_1',
+                        studentData: { statuses: ['PAP'] }
+                    }
+                ]
+            };
+
+            const result = await StorageManager.mergeRemoteData(remoteData);
+
+            expect(result.success).toBe(true);
+            expect(result.stats.addedClasses).toBe(1);
+            expect(userSettings.academic.classes.length).toBe(2);
+
+            const student = runtimeState.data.generatedResults.find(s => s.id === 'student_1');
+            expect(student.studentData.statuses).toEqual(['DYS', 'PAP']);
+        });
+    });
+
+    describe('PreRestoreSnapshot and _checkPendingRestore', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+        });
+
+        it('should save pre-restore snapshot when results exist', async () => {
+            runtimeState.data.generatedResults = [{ id: 's1' }];
+            userSettings.academic.classes = [{ id: 'c1' }];
+
+            await StorageManager.savePreRestoreSnapshot();
+
+            expect(DBService.put).toHaveBeenCalledWith('appData', expect.objectContaining({
+                key: 'pre_restore_backup',
+                generatedResults: [{ id: 's1' }]
+            }));
+            expect(localStorage.setItem).toHaveBeenCalledWith('bulletin_restore_pending', expect.any(String));
+        });
+
+        it('should return snapshot if within 24h and clear if expired', async () => {
+            const validSnapshot = {
+                key: 'pre_restore_backup',
+                createdAt: Date.now() - 3600000,
+                generatedResults: [{ id: 's1' }]
+            };
+            DBService.get.mockResolvedValueOnce(validSnapshot);
+
+            const res = await StorageManager.getPreRestoreSnapshot();
+            expect(res).toEqual(validSnapshot);
+
+            const expiredSnapshot = {
+                key: 'pre_restore_backup',
+                createdAt: Date.now() - 90000000,
+                generatedResults: [{ id: 's1' }]
+            };
+            DBService.get.mockResolvedValueOnce(expiredSnapshot);
+
+            const expiredRes = await StorageManager.getPreRestoreSnapshot();
+            expect(expiredRes).toBeNull();
+            expect(DBService.delete).toHaveBeenCalledWith('appData', 'pre_restore_backup');
+        });
+
+        it('should clear snapshot and pending flag', async () => {
+            await StorageManager.clearPreRestoreSnapshot();
+
+            expect(DBService.delete).toHaveBeenCalledWith('appData', 'pre_restore_backup');
+            expect(localStorage.removeItem).toHaveBeenCalledWith('bulletin_restore_pending');
+        });
+
+        it('should trigger UI.showUndoNotification on _checkPendingRestore when flag is set', async () => {
+            vi.useFakeTimers();
+            const { UI } = await import('./UIManager.js');
+            mockLocalStorage['bulletin_restore_pending'] = Date.now().toString();
+
+            const snapshot = {
+                key: 'pre_restore_backup',
+                createdAt: Date.now(),
+                generatedResults: [{ id: 's1' }, { id: 's2' }]
+            };
+            DBService.get.mockResolvedValue(snapshot);
+
+            await StorageManager._checkPendingRestore();
+            vi.advanceTimersByTime(1000);
+
+            expect(UI.showUndoNotification).toHaveBeenCalledWith(
+                expect.stringContaining('2 élèves'),
+                expect.any(Function),
+                expect.objectContaining({ duration: 10000, type: 'info' })
+            );
+
+            // Execute undo callback
+            const undoCallback = UI.showUndoNotification.mock.calls[0][1];
+            const restoreSpy = vi.spyOn(StorageManager, 'restorePreRestoreSnapshot').mockResolvedValue(true);
+            await undoCallback();
+            expect(restoreSpy).toHaveBeenCalled();
+            expect(UI.showNotification).toHaveBeenCalledWith('État précédent restauré.', 'success');
+
+            vi.useRealTimers();
+        });
+    });
 });
+
