@@ -1625,16 +1625,33 @@
     color: var(--warning-color);
 }
 
-.missing-key-warning.banner-warning i {
+.missing-key-warning.banner-warning i,
+.missing-key-warning.banner-warning iconify-icon {
     color: var(--warning-color);
 }
 
 .missing-key-warning.banner-warning .btn-link {
     color: var(--warning-bright, #fbbf24);
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.missing-key-warning.banner-warning .btn-link:hover {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.45);
+    color: #ffffff;
 }
 
 [data-theme="light"] .missing-key-warning.banner-warning .btn-link {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.2);
     color: #b45309;
+}
+
+[data-theme="light"] .missing-key-warning.banner-warning .btn-link:hover {
+    background: rgba(245, 158, 11, 0.16);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #92400e;
 }
 
 .missing-key-warning.banner-error {
@@ -1643,16 +1660,73 @@
     color: var(--error-color);
 }
 
-.missing-key-warning.banner-error i {
+.missing-key-warning.banner-error i,
+.missing-key-warning.banner-error iconify-icon {
     color: var(--error-color);
 }
 
 .missing-key-warning.banner-error .btn-link {
     color: var(--error-bright, #fca5a5);
+    background: rgba(var(--error-rgb), 0.12);
+    border-color: rgba(var(--error-rgb), 0.25);
+}
+
+.missing-key-warning.banner-error .btn-link:hover {
+    background: rgba(var(--error-rgb), 0.22);
+    border-color: rgba(var(--error-rgb), 0.45);
+    color: #ffffff;
 }
 
 [data-theme="light"] .missing-key-warning.banner-error .btn-link {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
     color: #dc2626;
+}
+
+[data-theme="light"] .missing-key-warning.banner-error .btn-link:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #b91c1c;
+}
+
+/* Compact Banner Mode (Used in Model Status Summary) */
+.missing-key-warning.compact {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    border-radius: var(--radius-sm);
+    margin-top: 10px;
+    gap: 8px;
+}
+
+.missing-key-warning.compact iconify-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.missing-key-warning.compact .btn-link {
+    margin-left: auto;
+    font-weight: 500;
+    font-size: 0.78rem;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.missing-key-warning.compact .btn-link iconify-icon {
+    font-size: 0.85em;
+    transition: transform var(--transition-fast);
+}
+
+.missing-key-warning.compact .btn-link:hover iconify-icon {
+    transform: translateX(2px);
 }
 
 /* Compact Modal Style */
