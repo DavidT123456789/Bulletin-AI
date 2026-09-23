@@ -1308,7 +1308,7 @@ export const SettingsModalListeners = {
                         ? new Date(snapshot.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
                         : '';
                     if (preRestoreInfo) {
-                        preRestoreInfo.textContent = `État sauvegardé avant la dernière restauration : ${count} élève${count > 1 ? 's' : ''}${dateStr ? ` (${dateStr})` : ''}.`;
+                        preRestoreInfo.textContent = `Sauvegardé automatiquement avant la dernière restauration : ${count} élève${count > 1 ? 's' : ''}${dateStr ? ` (${dateStr})` : ''}.`;
                     }
                     preRestoreCard.style.display = 'block';
                 } else {

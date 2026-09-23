@@ -2135,39 +2135,82 @@
    PRE-RESTORE SNAPSHOT SAFETY CARD (Settings > Data)
    ==================================================================== */
 .pre-restore-snapshot-card {
-    border-color: rgba(var(--primary-color-rgb), 0.3) !important;
-    background: rgba(var(--primary-color-rgb), 0.03) !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-secondary) !important;
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
 }
 
 [data-theme="dark"] .pre-restore-snapshot-card {
-    border-color: rgba(var(--primary-color-rgb), 0.4) !important;
-    background: rgba(var(--primary-color-rgb), 0.06) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 .pre-restore-snapshot-icon {
-    background: rgba(var(--primary-color-rgb), 0.1) !important;
-    color: var(--primary-color) !important;
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.12) !important;
+    color: var(--primary-color, #3b82f6) !important;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .pre-restore-snapshot-icon {
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.18) !important;
+    color: var(--color-blue-bright, #60a5fa) !important;
 }
 
 .pre-restore-snapshot-layout {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px 16px;
     width: 100%;
 }
 
 .pre-restore-snapshot-content {
     flex: 1;
-    min-width: 200px;
+    min-width: 220px;
+}
+
+.pre-restore-snapshot-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pre-restore-snapshot-title-row strong {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pre-restore-snapshot-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.12);
+    color: var(--primary-color, #3b82f6);
+    line-height: 1.2;
+}
+
+[data-theme="dark"] .pre-restore-snapshot-badge {
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
+    color: #93c5fd;
 }
 
 .pre-restore-snapshot-desc {
     margin: 4px 0 0;
-    font-size: 0.85em;
+    font-size: 0.84rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 .pre-restore-snapshot-actions {
@@ -2175,6 +2218,69 @@
     gap: 8px;
     align-items: center;
     flex-shrink: 0;
+}
+
+.pre-restore-snapshot-actions .btn {
+    margin-top: 0 !important;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pre-restore-btn {
+    width: auto !important;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+}
+
+.pre-restore-discard-btn {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.pre-restore-discard-btn iconify-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+    display: block;
+}
+
+.pre-restore-discard-btn:hover,
+.pre-restore-discard-btn:hover:not(:disabled),
+[data-theme="dark"] .pre-restore-discard-btn:hover,
+[data-theme="dark"] .pre-restore-discard-btn:hover:not(:disabled) {
+    color: var(--error-color, #ef4444) !important;
+    background-color: var(--error-light, rgba(239, 68, 68, 0.15)) !important;
+    border-color: rgba(var(--error-rgb, 239, 68, 68), 0.25) !important;
+    transform: scale(1.05);
+}
+
+.pre-restore-discard-btn:active,
+[data-theme="dark"] .pre-restore-discard-btn:active {
+    transform: scale(0.95);
+    background-color: rgba(var(--error-rgb, 239, 68, 68), 0.25) !important;
+}
+
+.pre-restore-discard-btn:focus-visible {
+    outline: 2px solid var(--error-color, #ef4444);
+    outline-offset: 2px;
 }
 
 /* ====================================================================

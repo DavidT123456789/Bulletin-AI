@@ -2374,16 +2374,19 @@
                                     <div class="help-step-body">
                                         <div class="pre-restore-snapshot-layout">
                                             <div class="pre-restore-snapshot-content">
-                                                <strong>Copie de sécurité antérieure</strong>
+                                                <div class="pre-restore-snapshot-title-row">
+                                                    <strong>Copie de sécurité antérieure</strong>
+                                                    <span class="pre-restore-snapshot-badge">Archive locale</span>
+                                                </div>
                                                 <p id="preRestoreSnapshotInfo" class="pre-restore-snapshot-desc"></p>
                                             </div>
                                             <div class="pre-restore-snapshot-actions">
-                                                <button type="button" class="btn btn-secondary btn-small" id="restoreSnapshotBtn">
+                                                <button type="button" class="btn btn-secondary btn-small pre-restore-btn" id="restoreSnapshotBtn">
                                                     <iconify-icon icon="solar:restart-bold"></iconify-icon>
-                                                    Restaurer cet état
+                                                    <span>Rétablir cet état</span>
                                                 </button>
-                                                <button type="button" class="btn btn-ghost btn-small" id="discardSnapshotBtn" title="Supprimer cette copie de secours" aria-label="Supprimer la copie de secours">
-                                                    <iconify-icon icon="ph:x-bold"></iconify-icon>
+                                                <button type="button" class="btn btn-small pre-restore-discard-btn" id="discardSnapshotBtn" title="Supprimer cette copie de secours" aria-label="Supprimer la copie de secours">
+                                                    <iconify-icon icon="solar:trash-bin-trash-bold"></iconify-icon>
                                                 </button>
                                             </div>
                                         </div>
@@ -3173,7 +3176,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build a937c1e · 23 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 0e563c0 · 23 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
