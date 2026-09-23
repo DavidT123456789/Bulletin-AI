@@ -694,6 +694,7 @@
 }
 
 [data-theme="dark"] .focus-header.editing .focus-close-btn:hover {
+    color: var(--error-bright) !important;
     background: var(--error-light) !important;
 }
 
