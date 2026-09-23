@@ -346,7 +346,7 @@ export const StorageManager = {
                                 setTimeout(() => window.location.reload(), 800);
                             }
                         },
-                        { duration: 10000, type: 'info' }
+                        { duration: 7000, type: 'info' }
                     );
                 }
             }, 800);

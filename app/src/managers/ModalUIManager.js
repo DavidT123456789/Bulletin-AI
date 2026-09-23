@@ -264,6 +264,7 @@ export const ModalUI = {
                 cancelText = 'Annuler',
                 extraButton = null,
                 isDanger = true, // Par défaut true pour matcher le comportement legacy d'UIManager (bouton rouge)
+                focusCancel = false,
                 compact = false,
                 modalClass = '',
                 detailsHtml = '' // Permet d'ajouter un accordéon "En savoir plus"
@@ -405,8 +406,8 @@ export const ModalUI = {
             document.addEventListener('keydown', keyHandler);
 
             // Focus management
-            // Focus cancel for safety if danger, else confirm
-            if (isDanger) {
+            // Focus cancel for safety if danger or explicitly requested, else confirm
+            if (isDanger || focusCancel) {
                 cancelBtn.focus();
             } else {
                 okBtn.focus();

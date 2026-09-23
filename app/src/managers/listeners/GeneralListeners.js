@@ -495,6 +495,7 @@ export const GeneralListeners = {
 
                 try {
                     const { SyncService } = await import('../../services/SyncService.js');
+                    const { runtimeState } = await import('../../state/State.js');
 
                     if (!SyncService.isConnected()) {
                         if (labelEl) labelEl.textContent = 'Connexion…';
@@ -513,14 +514,32 @@ export const GeneralListeners = {
 
                     const syncState = SyncService._lastSyncState;
                     const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
-                    const restoreDetailsHtml = hasLocalChanges
-                        ? `<p style="margin-bottom:8px;"><strong>Attention :</strong> Vous avez des modifications locales non sauvegardées qui seront perdues.</p>
-                           <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>`
-                        : `<p style="margin-bottom:8px;">Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>
-                           <p style="opacity:0.8;">Une copie de sécurité de votre état actuel sera créée automatiquement avant la restauration.</p>`;
+                    const studentCount = runtimeState.data.generatedResults?.length || 0;
+                    const remoteDateStr = SyncService.remoteSyncTime
+                        ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : 'récente';
+
+                    const confirmMessage = hasLocalChanges
+                        ? `Vous allez remplacer vos données locales (<strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong>) par la version Cloud du <strong>${remoteDateStr}</strong>.
+                           <div class="modal-alert-shield-box">
+                               <span class="modal-alert-shield-title">
+                                   <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
+                               </span>
+                               Vos données locales actuelles seront archivées avant la restauration. Vous pourrez annuler immédiatement ou rétablir cet état dans les 24h (<em>Paramètres > Données</em>).
+                           </div>
+                           <p class="modal-alert-hint-text">
+                               💡 <em>Pour combiner vos ajouts locaux avec le Cloud sans rien écraser, cliquez sur Annuler puis utilisez le bouton <strong>Sauvegarder</strong> (option Fusionner).</em>
+                           </p>`
+                        : `Vous allez recharger la version Cloud du <strong>${remoteDateStr}</strong> (${studentCount} élève${studentCount > 1 ? 's' : ''} en local).
+                           <div class="modal-alert-shield-box">
+                               <span class="modal-alert-shield-title">
+                                   <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
+                               </span>
+                               Une copie de votre état actuel sera conservée dans <em>Paramètres > Données</em> et pourra être rétablie à tout moment.
+                           </div>`;
 
                     UI.showCustomConfirm(
-                        `Ceci remplacera <strong>toutes</strong> vos données locales actuelles.`,
+                        confirmMessage,
                         async () => {
                             let restoreProgressToast = null;
                             const mainWrapper = document.querySelector('.main-content-wrapper');
@@ -540,7 +559,8 @@ export const GeneralListeners = {
                                 const result = await SyncService.loadFromCloud();
                                 if (result.success) {
                                     restoreProgressToast?.dismiss?.();
-                                    UI.showNotification('Données restaurées avec succès !', 'success');
+                                    const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
+                                    UI.showNotification(`Données restaurées avec succès (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
                                     setTimeout(() => window.location.reload(), 1000);
                                 } else {
                                     restoreProgressToast?.dismiss?.();
@@ -561,10 +581,10 @@ export const GeneralListeners = {
                         null,
                         {
                             title: 'Restaurer depuis le Cloud ?',
-                            confirmText: 'Oui, restaurer',
+                            confirmText: 'Restaurer',
                             cancelText: 'Annuler',
-                            isDanger: true,
-                            detailsHtml: restoreDetailsHtml
+                            isDanger: false,
+                            focusCancel: true
                         }
                     );
                 } catch (error) {
@@ -594,7 +614,6 @@ export const GeneralListeners = {
 
                     if (success) {
                         this._updateCloudReminder(SyncService);
-                        UI.showNotification('Reconnecté - Statut Cloud actualisé', 'success');
                     } else {
                         UI.showNotification('Reconnexion annulée', 'info');
                     }

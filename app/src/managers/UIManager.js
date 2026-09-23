@@ -288,7 +288,7 @@ export const UI = {
      * @returns {{ cancel: Function }} Objet avec méthode cancel pour annuler programmatiquement
      */
     showUndoNotification(message, onUndo, options = {}) {
-        const { duration = 8000, type = 'warning' } = options;
+        const { duration = 7000, type = 'warning' } = options;
 
         const container = document.getElementById('notification-container') || (() => {
             const c = document.createElement('div');
@@ -299,6 +299,7 @@ export const UI = {
 
         const notif = document.createElement('div');
         notif.className = `notification ${type} notification-undo`;
+        notif.title = 'Cliquer pour masquer';
 
         // Accessibility (A11y) Roles
         notif.setAttribute('role', 'alert');
@@ -307,7 +308,10 @@ export const UI = {
         notif.innerHTML = `
             ${NOTIF_ICONS[type] || NOTIF_ICONS.warning}
             <span class="notification-undo-message">${message}</span>
-            <button class="notification-undo-btn">Annuler</button>
+            <button class="notification-undo-btn" title="Annuler cette action">Annuler</button>
+            <button class="notification-undo-close-btn" title="Masquer la notification" aria-label="Masquer">
+                <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+            </button>
             <div class="notification-undo-progress">
                 <div class="notification-undo-progress-fill"></div>
             </div>
@@ -363,6 +367,10 @@ export const UI = {
         notif.querySelector('.notification-undo-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             handleUndo();
+        });
+        notif.addEventListener('click', (e) => {
+            if (e.target.closest('.notification-undo-btn')) return;
+            removeNotification();
         });
         notif.addEventListener('mouseenter', pauseCountdown);
         notif.addEventListener('mouseleave', startCountdown);

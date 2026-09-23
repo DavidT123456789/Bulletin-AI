@@ -208,7 +208,7 @@
     gap: 8px 14px;
     padding-bottom: 12px;
     min-width: 320px;
-    cursor: default;
+    cursor: pointer;
     max-height: 200px;
 }
 
@@ -240,6 +240,27 @@
 
 .notification-undo-btn:active {
     transform: scale(0.95);
+}
+
+.notification-undo-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.notification-undo-close-btn:hover {
+    color: var(--text-primary);
+    transform: scale(1.1);
 }
 
 .notification-undo-progress {

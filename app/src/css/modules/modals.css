@@ -2177,4 +2177,49 @@
     flex-shrink: 0;
 }
 
+/* ====================================================================
+   CONFIRMATION MODAL REASSURANCE BOX
+   ==================================================================== */
+.modal-alert-shield-box {
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 10px);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    text-align: left;
+}
+
+[data-theme="dark"] .modal-alert-shield-box {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.modal-alert-shield-title {
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.modal-alert-shield-title iconify-icon {
+    color: var(--info-color, #3b82f6);
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.modal-alert-hint-text {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+    text-align: left;
+}
+
+
 

@@ -714,8 +714,10 @@ export const SyncService = {
         this._setStatus('syncing');
         const remoteData = prefetchedData || await this._provider.read();
 
+        let importedCount = 0;
         if (remoteData && (remoteData.generatedResults || remoteData.classes || remoteData.settings)) {
-            await StorageManager.importBackup(JSON.stringify(remoteData), { mergeData: false });
+            const importRes = await StorageManager.importBackup(JSON.stringify(remoteData), { mergeData: false, silent: true });
+            importedCount = importRes?.stats?.imported ?? (remoteData.generatedResults?.length || 0);
 
             if (window.App?.updateUIOnLoad) {
                 window.App.updateUIOnLoad();
@@ -738,6 +740,7 @@ export const SyncService = {
 
         this._updateCloudIndicator('connected');
         this._setStatus('idle');
+        return { success: true, count: importedCount };
     },
 
     // =========================================================================
@@ -756,7 +759,7 @@ export const SyncService = {
 
     /**
      * Load data from cloud to local (explicit user action).
-     * @returns {Promise<{success: boolean}>}
+     * @returns {Promise<{success: boolean, count?: number}>}
      */
     async loadFromCloud() {
         if (!this._provider) throw new Error('Aucun provider connecté');
@@ -766,8 +769,8 @@ export const SyncService = {
             return { success: false };
         }
 
-        await this.forceDownload(remoteData);
-        return { success: true };
+        const res = await this.forceDownload(remoteData);
+        return { success: true, count: res?.count };
     },
 
     /**

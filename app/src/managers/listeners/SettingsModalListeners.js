@@ -1223,8 +1223,33 @@ export const SettingsModalListeners = {
         const cloudLoadBtn = document.getElementById('cloudLoadBtn');
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
+                const { SyncService } = await import('../../services/SyncService.js');
+                const { runtimeState } = await import('../../state/State.js');
+                const studentCount = runtimeState.data.generatedResults?.length || 0;
+                const remoteDateStr = SyncService.remoteSyncTime
+                    ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                    : 'récente';
+
+                const providerName = SyncService.currentProviderName || 'google';
+                const providerLabel = providerName === 'dropbox' ? 'Dropbox' : 'Google Drive';
+
+                const syncState = SyncService._lastSyncState;
+                const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
+                const hintHtml = hasLocalChanges
+                    ? `<p class="modal-alert-hint-text">
+                           💡 <em>Pour combiner vos ajouts locaux avec le Cloud sans rien écraser, cliquez sur Annuler puis utilisez le bouton <strong>Sauvegarder</strong> (option Fusionner).</em>
+                       </p>`
+                    : '';
+
                 UI.showCustomConfirm(
-                    'Vos données locales seront remplacées par celles du Cloud.',
+                    `Vous allez remplacer vos données locales (${studentCount} élève${studentCount > 1 ? 's' : ''}) par la sauvegarde ${providerLabel} du <strong>${remoteDateStr}</strong>.
+                     <div class="modal-alert-shield-box">
+                         <span class="modal-alert-shield-title">
+                             <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
+                         </span>
+                         Une copie de secours de vos données actuelles sera conservée dans <em>Paramètres > Données</em> et pourra être rétablie à tout moment.
+                     </div>
+                     ${hintHtml}`,
                     async () => {
                         try {
                             cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Chargement...';
@@ -1235,14 +1260,14 @@ export const SettingsModalListeners = {
                             const { StorageManager } = await import('../../managers/StorageManager.js');
                             await StorageManager.savePreRestoreSnapshot();
 
-                            const { SyncService } = await import('../../services/SyncService.js');
                             const result = await SyncService.loadFromCloud();
 
                             if (result.success) {
-                                UI.showNotification('Données chargées depuis Google Drive !', 'success');
+                                const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
+                                UI.showNotification(`Données chargées depuis ${providerLabel} (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
                                 setTimeout(() => window.location.reload(), 1000);
                             } else {
-                                UI.showNotification('Aucune donnée trouvée sur Google Drive.', 'warning');
+                                UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
                             }
                         } catch (error) {
                             const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
@@ -1256,11 +1281,11 @@ export const SettingsModalListeners = {
                     },
                     null,
                     {
-                        title: 'Restaurer depuis Google Drive ?',
-                        confirmText: 'Oui, restaurer',
+                        title: `Restaurer depuis ${providerLabel} ?`,
+                        confirmText: 'Restaurer',
                         cancelText: 'Annuler',
-                        isDanger: true,
-                        detailsHtml: '<p>Vos données locales (élèves, classes, paramètres) seront écrasées par celles du Cloud.</p>'
+                        isDanger: false,
+                        focusCancel: true
                     }
                 );
             });
