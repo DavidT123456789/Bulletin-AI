@@ -429,7 +429,7 @@
     vertical-align: middle;
     flex-shrink: 0;
     user-select: none;
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    pointer-events: none;
 }
 
 .focus-origin-class-badge iconify-icon {
@@ -440,7 +440,6 @@
     line-height: 1;
     flex-shrink: 0;
     color: var(--text-tertiary);
-    transition: color 0.2s ease;
 }
 
 .focus-origin-class-badge > span {
@@ -448,16 +447,6 @@
     align-items: center;
     line-height: 1;
     margin-top: 0.5px;
-}
-
-.focus-origin-class-badge:hover {
-    color: var(--text-primary);
-    background: var(--bg-tertiary);
-    border-color: var(--border-hover-color, var(--border-color));
-}
-
-.focus-origin-class-badge:hover iconify-icon {
-    color: var(--primary-color);
 }
 
 /* Hovering either avatar OR name highlights the background behind the name */
