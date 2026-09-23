@@ -672,4 +672,61 @@ describe('UIManager', () => {
             expect(res).toBe('merge');
         });
     });
+
+    describe('showNotification', () => {
+        beforeEach(() => {
+            const container = document.getElementById('notification-container');
+            if (container) container.remove();
+        });
+
+        afterEach(() => {
+            const container = document.getElementById('notification-container');
+            if (container) container.remove();
+        });
+
+        it('should render loading notification with separate spinner and message elements', () => {
+            const result = UI.showNotification('Restauration de vos données depuis le Cloud…', 'loading', 0);
+
+            const notif = result.element;
+            expect(notif).toBeDefined();
+            expect(notif.classList.contains('loading')).toBe(true);
+
+            const spinner = notif.querySelector('.notification-spinner');
+            expect(spinner).not.toBeNull();
+            expect(spinner.getAttribute('aria-hidden')).toBe('true');
+
+            const messageEl = notif.querySelector('.notification-message');
+            expect(messageEl).not.toBeNull();
+            expect(messageEl.textContent).toBe('Restauration de vos données depuis le Cloud…');
+
+            // Verify spinner is distinct from message
+            expect(spinner).not.toBe(messageEl);
+            expect(messageEl.classList.contains('notification-spinner')).toBe(false);
+
+            result.dismiss();
+        });
+
+        it('should update message without corrupting spinner when replaceExisting is true', () => {
+            const first = UI.showNotification('Restauration de vos données depuis le Cloud…', 'loading', 0, {
+                group: 'cloud-sync'
+            });
+
+            // Replace existing notification
+            const second = UI.showNotification('Restauration terminée avec succès !', 'loading', 0, {
+                group: 'cloud-sync',
+                replaceExisting: true
+            });
+
+            const spinner = second.element.querySelector('.notification-spinner');
+            expect(spinner).not.toBeNull();
+            expect(spinner.textContent).toBe(''); // spinner must remain clean and empty
+
+            const messageEl = second.element.querySelector('.notification-message');
+            expect(messageEl).not.toBeNull();
+            expect(messageEl.textContent).toBe('Restauration terminée avec succès !');
+
+            second.dismiss();
+        });
+    });
 });
+

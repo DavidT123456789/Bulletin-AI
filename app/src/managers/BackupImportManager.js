@@ -196,6 +196,10 @@ export const BackupImportManager = {
             const isMerge = mergeToggle?.checked ?? true;
 
             try {
+                if (!isMerge) {
+                    await StorageManager.savePreRestoreSnapshot();
+                }
+
                 const result = await StorageManager.importBackup(fileContent, {
                     mergeData: isMerge,
                     categories: selectedCategories,
@@ -259,11 +263,11 @@ export const BackupImportManager = {
             parts.push(`${stats.apiKeysImported} clé${stats.apiKeysImported > 1 ? 's' : ''} API`);
         }
 
-        const mode = isMerge ? 'Fusion' : 'Remplacement';
+        const title = isMerge ? 'Fusion réussie' : 'Importation réussie';
         const summary = parts.length > 0
-            ? `${mode} réussi${isMerge ? '' : 'e'} · ${parts.join(' · ')}`
-            : `${mode} terminé${isMerge ? '' : 'e'} — aucune donnée modifiée`;
+            ? parts.join(' · ')
+            : 'Aucune donnée modifiée';
 
-        UI.showNotification(summary, 'success');
+        UI.showNotification(summary, 'success', 5000, { title });
     }
 };

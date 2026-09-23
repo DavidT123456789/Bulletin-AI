@@ -142,8 +142,18 @@ export const UI = {
             if (groupData?.timeoutId) clearTimeout(groupData.timeoutId);
 
             if (coalescingOptions.replaceExisting) {
-                const span = el.querySelector('span');
-                if (span) span.innerHTML = message;
+                const titleEl = el.querySelector('.notification-title');
+                const subtitleEl = el.querySelector('.notification-subtitle');
+                const span = el.querySelector('.notification-message') || el.querySelector('span:not(.notification-spinner):not(.notification-coalesce-badge)');
+
+                if (coalescingOptions.title && titleEl) {
+                    titleEl.textContent = coalescingOptions.title;
+                    if (subtitleEl) subtitleEl.innerHTML = message;
+                } else if (subtitleEl) {
+                    subtitleEl.innerHTML = message;
+                } else if (span) {
+                    span.innerHTML = message;
+                }
                 const badge = el.querySelector('.notification-coalesce-badge');
                 if (badge) badge.remove();
             } else {
@@ -181,7 +191,27 @@ export const UI = {
             ? `<iconify-icon icon="${coalescingOptions.icon}" aria-hidden="true"></iconify-icon>`
             : (NOTIF_ICONS[type] || NOTIF_ICONS.info);
 
-        notif.innerHTML = `${iconHtml} <span>${message}</span>`;
+        let title = coalescingOptions?.title;
+        let subtitle = message;
+
+        // Auto-extract title from structured messages (e.g., "Erreur : ...", "Échec pour Thomas : ...", "Fichier invalide : ...")
+        if (!title && typeof message === 'string' && !message.includes('<div') && !message.includes('<br>')) {
+            const colonIndex = message.indexOf(' : ');
+            if (colonIndex > 0 && colonIndex <= 30) {
+                const potentialTitle = message.substring(0, colonIndex).trim();
+                const potentialSubtitle = message.substring(colonIndex + 3).trim();
+                if (!potentialTitle.includes('/') && !potentialTitle.includes('http') && potentialSubtitle.length > 0) {
+                    title = potentialTitle;
+                    subtitle = potentialSubtitle;
+                }
+            }
+        }
+
+        const bodyHtml = title
+            ? `<div class="notification-content"><div class="notification-title">${title}</div><div class="notification-subtitle">${subtitle}</div></div>`
+            : `<span class="notification-message">${message}</span>`;
+
+        notif.innerHTML = `${iconHtml} ${bodyHtml}`;
 
         // Interaction: Click to dismiss
         notif.style.cursor = 'pointer';
@@ -253,7 +283,7 @@ export const UI = {
             notif.setAttribute('aria-live', 'polite');
         }
 
-        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span>${message}</span>`;
+        notif.innerHTML = `${NOTIF_ICONS[type] || NOTIF_ICONS.info} <span class="notification-message">${message}</span>`;
         notif.style.cursor = 'pointer';
         container.appendChild(notif);
 
@@ -408,6 +438,10 @@ export const UI = {
 
     showConflictResolutionModal(options = {}) {
         return ModalUI.showConflictResolutionModal(options);
+    },
+
+    showRestoreConfirmationModal(options = {}) {
+        return ModalUI.showRestoreConfirmationModal(options);
     },
 
     // ====================================================================

@@ -686,6 +686,177 @@ export const ModalUI = {
     },
 
     /**
+     * Modale de confirmation comparative pré-restauration.
+     * Affiche un comparatif clair (Cloud vs Local) et supprime l'action aveugle.
+     * 
+     * @param {Object} options
+     * @param {string|number} [options.remoteDate] - Date ou timestamp de la version Cloud
+     * @param {number} [options.remoteStudentCount=0] - Nombre d'élèves distants
+     * @param {number} [options.remoteClassCount=0] - Nombre de classes distantes
+     * @param {number} [options.localStudentCount=0] - Nombre d'élèves locaux actuels
+     * @param {number} [options.localClassCount=0] - Nombre de classes locales actuelles
+     * @param {string} [options.providerName='google'] - Nom du provider (google | dropbox)
+     * @returns {Promise<boolean>} Résout true si confirmé, false sinon
+     */
+    showRestoreConfirmationModal(options = {}) {
+        return new Promise((resolve) => {
+            const {
+                remoteDate = null,
+                remoteStudentCount = 0,
+                remoteClassCount = 0,
+                localStudentCount = 0,
+                localClassCount = 0,
+                providerName = 'google'
+            } = options;
+
+            const modalId = 'restoreConfirmationModal';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+
+            const providerLabel = providerName === 'dropbox' ? 'Dropbox' : 'Google Drive';
+            const providerIcon = providerName === 'dropbox' ? 'logos:dropbox' : 'logos:google-drive';
+
+            let remoteDateStr = 'Date inconnue';
+            let relativeTimeStr = '';
+            let formattedTitleDate = 'Date inconnue';
+            if (remoteDate) {
+                const d = new Date(remoteDate);
+                if (!isNaN(d.getTime())) {
+                    remoteDateStr = d.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const diffMs = Date.now() - d.getTime();
+                    const diffMin = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMin / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+
+                    if (diffMin < 2) relativeTimeStr = 'À l\'instant';
+                    else if (diffMin < 60) relativeTimeStr = `Il y a ${diffMin} min`;
+                    else if (diffHours < 24) relativeTimeStr = `Il y a ${diffHours}h`;
+                    else if (diffDays === 1) relativeTimeStr = 'Hier';
+                    else relativeTimeStr = `Il y a ${diffDays} jrs`;
+
+                    formattedTitleDate = relativeTimeStr ? `${relativeTimeStr} (${remoteDateStr})` : remoteDateStr;
+                }
+            }
+
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal';
+
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-content-restore modal-alert-ios">
+                <div class="modal-alert-body">
+                    <h3 class="modal-alert-title" style="display: flex; align-items: center; gap: 12px;">
+                        <div class="modal-alert-header-icon cloud">
+                            <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                        </div>
+                        <span>Restaurer depuis le Cloud</span>
+                    </h3>
+                    <div class="modal-alert-message">
+                        Vérifiez les données distantes avant de recharger votre espace de travail.
+                    </div>
+
+                    <div class="restore-comparison-grid">
+                        <!-- Carte Cloud -->
+                        <div class="restore-comparison-card cloud">
+                            <div class="restore-card-badge">
+                                <iconify-icon icon="${providerIcon}" style="font-size: 0.9em;"></iconify-icon>
+                                <span>${providerLabel}</span>
+                            </div>
+                            <div class="restore-card-main-stat">
+                                ${formattedTitleDate}
+                            </div>
+                            <div class="restore-card-sub-stat">
+                                ${remoteStudentCount} élève${remoteStudentCount > 1 ? 's' : ''} · ${remoteClassCount} classe${remoteClassCount > 1 ? 's' : ''}
+                            </div>
+                            <div class="restore-card-date">
+                                <iconify-icon icon="solar:check-read-linear"></iconify-icon>
+                                <span>Sauvegarde complète</span>
+                            </div>
+                        </div>
+
+                        <!-- Carte Locale -->
+                        <div class="restore-comparison-card local">
+                            <div class="restore-card-badge">
+                                <iconify-icon icon="solar:laptop-linear" style="font-size: 0.9em;"></iconify-icon>
+                                <span>Session locale</span>
+                            </div>
+                            <div class="restore-card-main-stat">
+                                Session actuelle
+                            </div>
+                            <div class="restore-card-sub-stat">
+                                ${localStudentCount} élève${localStudentCount > 1 ? 's' : ''} · ${localClassCount} classe${localClassCount > 1 ? 's' : ''}
+                            </div>
+                            <div class="restore-card-date">
+                                <iconify-icon icon="solar:laptop-minimalistic-linear"></iconify-icon>
+                                <span>Sur cet appareil</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="restore-safety-notice">
+                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                        <div>
+                            <strong>Sécurité garantie :</strong> une copie de secours de votre espace local (élèves, appréciations, paramètres) sera automatiquement conservée.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-alert-actions">
+                    <button type="button" class="btn btn-secondary" id="restoreConfirmCancelBtn">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="restoreConfirmOkBtn">
+                        <iconify-icon icon="solar:cloud-download-bold"></iconify-icon>
+                        <span>Restaurer</span>
+                    </button>
+                </div>
+            </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            const okBtn = document.getElementById('restoreConfirmOkBtn');
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+
+            let keyHandler;
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
+            const finish = (confirmed) => {
+                cleanup();
+                resolve(confirmed);
+                this.closeModal(modal);
+            };
+
+            okBtn?.addEventListener('click', () => finish(true), { once: true });
+            cancelBtn?.addEventListener('click', () => finish(false), { once: true });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) finish(false);
+            });
+
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    finish(false);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finish(true);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+
+            okBtn?.focus();
+        });
+    },
+
+    /**
      * Modale de confirmation "dure" — l'utilisateur doit taper un mot précis pour confirmer.
      * Utilisée pour les actions irréversibles (factory reset, suppression totale).
      * 

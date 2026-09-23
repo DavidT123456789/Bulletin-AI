@@ -326,4 +326,62 @@ describe('ModalUIManager', () => {
             expect(result).toBe('cancel');
         });
     });
+
+    describe('showRestoreConfirmationModal', () => {
+        it('should render comparison details and resolve true on confirm', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteDate: 1726000000000,
+                remoteStudentCount: 304,
+                remoteClassCount: 8,
+                localStudentCount: 280,
+                localClassCount: 7,
+                providerName: 'google'
+            });
+
+            const modal = document.getElementById('restoreConfirmationModal');
+            expect(modal).not.toBeNull();
+            expect(modal.textContent).toContain('304 élèves');
+            expect(modal.textContent).toContain('8 classes');
+            expect(modal.textContent).toContain('280 élèves');
+            expect(modal.textContent).toContain('Google Drive');
+
+            const okBtn = document.getElementById('restoreConfirmOkBtn');
+            expect(okBtn).not.toBeNull();
+            okBtn.click();
+
+            const result = await promise;
+            expect(result).toBe(true);
+        });
+
+        it('should resolve false when cancel button is clicked', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal({
+                remoteStudentCount: 50,
+                localStudentCount: 10
+            });
+
+            const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+            cancelBtn.click();
+
+            const result = await promise;
+            expect(result).toBe(false);
+        });
+
+        it('should resolve false on Escape key', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            const result = await promise;
+            expect(result).toBe(false);
+        });
+
+        it('should resolve true on Enter key', async () => {
+            const promise = ModalUI.showRestoreConfirmationModal();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+            const result = await promise;
+            expect(result).toBe(true);
+        });
+    });
 });

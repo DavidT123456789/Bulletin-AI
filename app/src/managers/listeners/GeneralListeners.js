@@ -328,7 +328,25 @@ export const GeneralListeners = {
         // --- Save button: guard empty data + confirmation + auto-reconnect ---
         cloudSaveBtn.addEventListener('click', async () => {
             const labelEl = cloudSaveBtn.querySelector('.cloud-save-label');
+            const iconEl = cloudSaveBtn.querySelector('iconify-icon');
             const originalLabel = labelEl?.textContent;
+            const originalIcon = iconEl?.getAttribute('icon') || 'solar:cloud-upload-linear';
+
+            const setCheckingState = (label = 'Vérification…') => {
+                if (labelEl) labelEl.textContent = label;
+                if (iconEl) {
+                    iconEl.setAttribute('icon', 'ph:spinner-gap-bold');
+                    iconEl.classList.add('rotate-icon');
+                }
+            };
+
+            const resetState = () => {
+                if (labelEl) labelEl.textContent = originalLabel;
+                if (iconEl) {
+                    iconEl.setAttribute('icon', originalIcon);
+                    iconEl.classList.remove('rotate-icon');
+                }
+            };
 
             try {
                 const { SyncService } = await import('../../services/SyncService.js');
@@ -365,21 +383,21 @@ export const GeneralListeners = {
 
                 // 1. Ensure connection FIRST if expired or not connected
                 if (!SyncService.isConnected()) {
-                    if (labelEl) labelEl.textContent = 'Connexion…';
+                    setCheckingState('Connexion…');
                     const connected = await ensureConnected(SyncService);
                     if (!connected) {
-                        if (labelEl) labelEl.textContent = originalLabel;
+                        resetState();
                         UI.showNotification('Connexion annulée.', 'warning');
                         return;
                     }
                 }
 
                 // 2. Fetch latest remote state to know if another device saved more recently
-                if (labelEl) labelEl.textContent = 'Vérification…';
+                setCheckingState('Vérification…');
                 await SyncService.refreshStatus();
 
                 closeMenu();
-                if (labelEl) labelEl.textContent = originalLabel;
+                resetState();
 
                 // 3. Évaluer les conflits avec la version distante
                 const syncState = SyncService._lastSyncState;
@@ -465,10 +483,10 @@ export const GeneralListeners = {
                         if (s.addedStudents > 0) parts.push(`+${s.addedStudents} élève${s.addedStudents > 1 ? 's' : ''}`);
                         if (s.addedJournalEntries > 0) parts.push(`+${s.addedJournalEntries} note${s.addedJournalEntries > 1 ? 's' : ''} journal`);
                         if (s.addedClasses > 0) parts.push(`+${s.addedClasses} classe${s.addedClasses > 1 ? 's' : ''}`);
-                        const detailStr = parts.length > 0 ? ` (${parts.join(', ')})` : '';
-                        UI.showNotification(`Données fusionnées et enregistrées sur le Cloud !${detailStr}`, 'success');
+                        const detailStr = parts.length > 0 ? parts.join(' · ') : 'Données synchronisées';
+                        UI.showNotification(detailStr, 'success', 4000, { title: 'Sauvegarde réussie' });
                     } else {
-                        UI.showNotification('Données envoyées sur le Cloud !', 'success');
+                        UI.showNotification('Vos données sont sécurisées sur le Cloud.', 'success', 4000, { title: 'Sauvegarde réussie' });
                     }
                 } catch (error) {
                     saveProgressToast?.dismiss?.();
@@ -491,26 +509,64 @@ export const GeneralListeners = {
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
                 const labelEl = cloudLoadBtn.querySelector('.cloud-save-label');
+                const iconEl = cloudLoadBtn.querySelector('iconify-icon');
                 const originalLabel = labelEl?.textContent;
+                const originalIcon = iconEl?.getAttribute('icon') || 'solar:cloud-download-linear';
+
+                const setCheckingState = (label = 'Vérification…') => {
+                    if (labelEl) labelEl.textContent = label;
+                    if (iconEl) {
+                        iconEl.setAttribute('icon', 'ph:spinner-gap-bold');
+                        iconEl.classList.add('rotate-icon');
+                    }
+                };
+
+                const resetState = () => {
+                    if (labelEl) labelEl.textContent = originalLabel;
+                    if (iconEl) {
+                        iconEl.setAttribute('icon', originalIcon);
+                        iconEl.classList.remove('rotate-icon');
+                    }
+                };
 
                 try {
                     const { SyncService } = await import('../../services/SyncService.js');
                     const { runtimeState } = await import('../../state/State.js');
 
                     if (!SyncService.isConnected()) {
-                        if (labelEl) labelEl.textContent = 'Connexion…';
+                        setCheckingState('Connexion…');
                         const connected = await ensureConnected(SyncService);
                         if (!connected) {
-                            if (labelEl) labelEl.textContent = originalLabel;
+                            resetState();
                             return;
                         }
                     }
 
-                    if (labelEl) labelEl.textContent = 'Vérification…';
-                    await SyncService.refreshStatus();
+                    setCheckingState('Vérification…');
+                    const summary = await SyncService.getRemoteBackupSummary();
 
                     closeMenu();
-                    if (labelEl) labelEl.textContent = originalLabel;
+                    resetState();
+
+                    if (!summary || !summary.success) {
+                        UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
+                        return;
+                    }
+
+                    const { userSettings } = await import('../../state/State.js');
+                    const localStudentCount = runtimeState.data.generatedResults?.length || 0;
+                    const localClassCount = userSettings.academic.classes?.length || 0;
+
+                    const confirmed = await UI.showRestoreConfirmationModal({
+                        remoteDate: summary.timestamp,
+                        remoteStudentCount: summary.studentCount,
+                        remoteClassCount: summary.classCount,
+                        localStudentCount,
+                        localClassCount,
+                        providerName: SyncService.currentProviderName || 'google'
+                    });
+
+                    if (!confirmed) return;
 
                     let restoreProgressToast = null;
                     const mainWrapper = document.querySelector('.main-content-wrapper');
@@ -527,39 +583,26 @@ export const GeneralListeners = {
                         const { StorageManager } = await import('../../managers/StorageManager.js');
                         await StorageManager.savePreRestoreSnapshot();
 
-                        const result = await SyncService.loadFromCloud();
+                        const result = await SyncService.loadFromCloud(summary.remoteData);
+                        restoreProgressToast?.dismiss?.();
+
                         if (result.success) {
                             localStorage.removeItem('bulletin_restore_pending');
-                            restoreProgressToast?.dismiss?.();
-                            const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
+                            const count = result.count ?? summary.studentCount;
                             const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
                             await RestoreTransitionManager.rehydrateAndTransition();
 
-                            if (UI?.showUndoNotification) {
-                                UI.showUndoNotification(
-                                    `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis le Cloud`,
-                                    async () => {
-                                        const restored = await StorageManager.restorePreRestoreSnapshot();
-                                        if (restored) {
-                                            await RestoreTransitionManager.rehydrateAndTransition();
-                                            UI?.showNotification('État précédent restauré.', 'success');
-                                        }
-                                    },
-                                    {
-                                        title: 'Restauration réussie',
-                                        duration: 7000,
-                                        type: 'success'
-                                    }
-                                );
-                            } else {
-                                UI.showNotification(`Données restaurées avec succès (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
-                            }
+                            const providerLabel = summary.providerLabel || 'le Cloud';
+                            UI.showNotification(
+                                `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis ${providerLabel}.`,
+                                'success',
+                                5000,
+                                { title: 'Restauration réussie' }
+                            );
                         } else {
-                            restoreProgressToast?.dismiss?.();
-                            UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
+                            UI.showNotification('Impossible de charger les données distantes.', 'error');
                         }
                     } catch (error) {
-                        console.error('[GeneralListeners] Restore error:', error);
                         restoreProgressToast?.dismiss?.();
                         const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
                         UI.showNotification('Erreur de restauration : ' + errorMsg, 'error');
@@ -568,10 +611,12 @@ export const GeneralListeners = {
                         document.body.classList.remove('is-cloud-syncing');
                         mainWrapper?.classList.remove('is-cloud-syncing');
                         cloudLoadBtn.classList.remove('saving');
-                        if (labelEl) labelEl.textContent = originalLabel;
+                        resetState();
                     }
                 } catch (error) {
-                    console.error('Cloud load setup error:', error);
+                    resetState();
+                    const errorMsg = error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
                 }
             });
         }

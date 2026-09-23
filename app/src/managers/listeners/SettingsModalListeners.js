@@ -1186,10 +1186,10 @@ export const SettingsModalListeners = {
                         if (s.addedStudents > 0) parts.push(`+${s.addedStudents} élève${s.addedStudents > 1 ? 's' : ''}`);
                         if (s.addedJournalEntries > 0) parts.push(`+${s.addedJournalEntries} note${s.addedJournalEntries > 1 ? 's' : ''} journal`);
                         if (s.addedClasses > 0) parts.push(`+${s.addedClasses} classe${s.addedClasses > 1 ? 's' : ''}`);
-                        const detailStr = parts.length > 0 ? ` (${parts.join(', ')})` : '';
-                        UI.showNotification(`Données fusionnées et sauvegardées sur le Cloud !${detailStr}`, 'success');
+                        const detailStr = parts.length > 0 ? parts.join(' · ') : 'Données synchronisées';
+                        UI.showNotification(detailStr, 'success', 4000, { title: 'Sauvegarde réussie' });
                     } else {
-                        UI.showNotification('Données sauvegardées sur le Cloud !', 'success');
+                        UI.showNotification('Vos données sont à jour sur le Cloud.', 'success', 4000, { title: 'Sauvegarde réussie' });
                     }
                 } catch (error) {
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
@@ -1207,64 +1207,85 @@ export const SettingsModalListeners = {
         if (cloudLoadBtn) {
             cloudLoadBtn.addEventListener('click', async () => {
                 const { SyncService } = await import('../../services/SyncService.js');
-                const { runtimeState } = await import('../../state/State.js');
+                const { runtimeState, userSettings } = await import('../../state/State.js');
                 const providerName = SyncService.currentProviderName || 'google';
                 const providerLabel = providerName === 'dropbox' ? 'Dropbox' : 'Google Drive';
 
-                let restoreProgressToast = null;
                 try {
-                    cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Restauration...';
+                    cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Vérification...';
                     cloudLoadBtn.disabled = true;
-                    document.body.classList.add('is-cloud-syncing');
-                    DOM.headerMenuBtn?.classList.add('cloud-syncing');
 
-                    restoreProgressToast = UI.showNotification(`Restauration depuis ${providerLabel}…`, 'loading', 0);
+                    const summary = await SyncService.getRemoteBackupSummary();
 
-                    const { StorageManager } = await import('../../managers/StorageManager.js');
-                    await StorageManager.savePreRestoreSnapshot();
-
-                    const result = await SyncService.loadFromCloud();
-
-                    if (result.success) {
-                        restoreProgressToast?.dismiss?.();
-                        localStorage.removeItem('bulletin_restore_pending');
-                        const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
-                        const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
-                        await RestoreTransitionManager.rehydrateAndTransition();
-
-                        if (UI?.showUndoNotification) {
-                            UI.showUndoNotification(
-                                `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis ${providerLabel}`,
-                                async () => {
-                                    const restored = await StorageManager.restorePreRestoreSnapshot();
-                                    if (restored) {
-                                        await RestoreTransitionManager.rehydrateAndTransition();
-                                        UI?.showNotification('État précédent restauré.', 'success');
-                                    }
-                                },
-                                {
-                                    title: 'Restauration réussie',
-                                    duration: 7000,
-                                    type: 'success'
-                                }
-                            );
-                        } else {
-                            UI.showNotification(`Données restaurées depuis ${providerLabel} (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
-                        }
-                    } else {
-                        restoreProgressToast?.dismiss?.();
-                        UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
-                    }
-                } catch (error) {
-                    restoreProgressToast?.dismiss?.();
-                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
-                    UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
-                } finally {
-                    restoreProgressToast?.dismiss?.();
-                    document.body.classList.remove('is-cloud-syncing');
-                    DOM.headerMenuBtn?.classList.remove('cloud-syncing');
                     cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
                     cloudLoadBtn.disabled = false;
+
+                    if (!summary || !summary.success) {
+                        UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
+                        return;
+                    }
+
+                    const localStudentCount = runtimeState.data.generatedResults?.length || 0;
+                    const localClassCount = userSettings.academic.classes?.length || 0;
+
+                    const confirmed = await UI.showRestoreConfirmationModal({
+                        remoteDate: summary.timestamp,
+                        remoteStudentCount: summary.studentCount,
+                        remoteClassCount: summary.classCount,
+                        localStudentCount,
+                        localClassCount,
+                        providerName
+                    });
+
+                    if (!confirmed) return;
+
+                    let restoreProgressToast = null;
+                    try {
+                        cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Restauration...';
+                        cloudLoadBtn.disabled = true;
+                        document.body.classList.add('is-cloud-syncing');
+                        DOM.headerMenuBtn?.classList.add('cloud-syncing');
+
+                        restoreProgressToast = UI.showNotification(`Restauration depuis ${providerLabel}…`, 'loading', 0);
+
+                        const { StorageManager } = await import('../../managers/StorageManager.js');
+                        await StorageManager.savePreRestoreSnapshot();
+
+                        const result = await SyncService.loadFromCloud(summary.remoteData);
+                        restoreProgressToast?.dismiss?.();
+
+                        if (result.success) {
+                            localStorage.removeItem('bulletin_restore_pending');
+                            const count = result.count ?? summary.studentCount;
+                            const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
+                            await RestoreTransitionManager.rehydrateAndTransition();
+
+                            UI.showNotification(
+                                `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis ${providerLabel}.`,
+                                'success',
+                                5000,
+                                { title: 'Restauration réussie' }
+                            );
+                            updatePreRestoreCard();
+                        } else {
+                            UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
+                        }
+                    } catch (error) {
+                        restoreProgressToast?.dismiss?.();
+                        const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                        UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
+                    } finally {
+                        restoreProgressToast?.dismiss?.();
+                        document.body.classList.remove('is-cloud-syncing');
+                        DOM.headerMenuBtn?.classList.remove('cloud-syncing');
+                        cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
+                        cloudLoadBtn.disabled = false;
+                    }
+                } catch (error) {
+                    cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
+                    cloudLoadBtn.disabled = false;
+                    const errorMsg = error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur : ' + errorMsg, 'error');
                 }
             });
         }

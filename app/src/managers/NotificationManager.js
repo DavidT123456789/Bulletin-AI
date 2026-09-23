@@ -156,10 +156,13 @@ export const NotificationCoalescer = {
             : `${lines.slice(0, 2).join('<br>')}<br><em>+${lines.length - 2} autre(s)</em>`;
 
         window.UI?.showNotification(
-            `📋 <strong>${queueLength} notification${queueLength > 1 ? 's' : ''}</strong> pendant votre absence<br>${summaryMessage}`,
+            summaryMessage,
             'info',
             6000,
-            { bypassCoalescing: true }
+            {
+                bypassCoalescing: true,
+                title: `${queueLength} notification${queueLength > 1 ? 's' : ''} en absence`
+            }
         );
     },
 

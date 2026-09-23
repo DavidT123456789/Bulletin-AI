@@ -772,13 +772,51 @@ export const SyncService = {
     },
 
     /**
-     * Load data from cloud to local (explicit user action).
-     * @returns {Promise<{success: boolean, count?: number}>}
+     * Récupère un résumé de la sauvegarde Cloud distante sans l'appliquer.
+     * Permet à l'interface d'afficher un comparatif avant confirmation.
+     * @returns {Promise<{success: boolean, remoteData?: Object, studentCount?: number, classCount?: number, timestamp?: number|null, providerLabel?: string}>}
      */
-    async loadFromCloud() {
+    async getRemoteBackupSummary() {
         if (!this._provider) throw new Error('Aucun provider connecté');
 
         const remoteData = await this._provider.read();
+        if (!remoteData || (!remoteData.generatedResults && !remoteData.classes && !remoteData.settings)) {
+            return { success: false };
+        }
+
+        const studentCount = Array.isArray(remoteData.generatedResults) ? remoteData.generatedResults.length : 0;
+        const classCount = Array.isArray(remoteData.classes) ? remoteData.classes.length : 0;
+
+        let timestamp = null;
+        if (remoteData._meta?.exportedAt) {
+            timestamp = new Date(remoteData._meta.exportedAt).getTime();
+        } else if (remoteData._meta?.lastSyncTimestamp) {
+            timestamp = Number(remoteData._meta.lastSyncTimestamp);
+        } else if (this.remoteSyncTime) {
+            timestamp = this.remoteSyncTime;
+        }
+
+        const providerLabel = this.currentProviderName === 'dropbox' ? 'Dropbox' : 'Google Drive';
+
+        return {
+            success: true,
+            remoteData,
+            studentCount,
+            classCount,
+            timestamp,
+            providerLabel
+        };
+    },
+
+    /**
+     * Load data from cloud to local (explicit user action).
+     * @param {Object} [prefetchedRemoteData=null] - Données distantes déjà pré-chargées
+     * @returns {Promise<{success: boolean, count?: number}>}
+     */
+    async loadFromCloud(prefetchedRemoteData = null) {
+        if (!this._provider) throw new Error('Aucun provider connecté');
+
+        const remoteData = prefetchedRemoteData || await this._provider.read();
         if (!remoteData || (!remoteData.generatedResults && !remoteData.classes && !remoteData.settings)) {
             return { success: false };
         }

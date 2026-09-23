@@ -167,4 +167,50 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(localStorage.getItem('bulletin_google_user')).toBeNull();
         });
     });
+
+    describe('SyncService.getRemoteBackupSummary() and loadFromCloud()', () => {
+        it('should return backup summary without applying it', async () => {
+            const mockRemote = {
+                _meta: { exportedAt: '2026-09-23T14:30:00.000Z' },
+                generatedResults: [{ id: 1 }, { id: 2 }],
+                classes: [{ id: 'c1' }]
+            };
+            SyncService.currentProviderName = 'google';
+            SyncService._provider = {
+                read: vi.fn().mockResolvedValue(mockRemote)
+            };
+
+            const summary = await SyncService.getRemoteBackupSummary();
+            expect(summary.success).toBe(true);
+            expect(summary.studentCount).toBe(2);
+            expect(summary.classCount).toBe(1);
+            expect(summary.providerLabel).toBe('Google Drive');
+            expect(summary.remoteData).toBe(mockRemote);
+        });
+
+        it('should return success false if remote has no valid data', async () => {
+            SyncService.currentProviderName = 'google';
+            SyncService._provider = {
+                read: vi.fn().mockResolvedValue(null)
+            };
+
+            const summary = await SyncService.getRemoteBackupSummary();
+            expect(summary.success).toBe(false);
+        });
+
+        it('loadFromCloud should use prefetchedRemoteData without calling read()', async () => {
+            const prefetched = {
+                generatedResults: [{ id: 1 }],
+                classes: []
+            };
+            const readSpy = vi.fn();
+            SyncService._provider = { read: readSpy };
+            vi.spyOn(SyncService, 'forceDownload').mockResolvedValue({ count: 1 });
+
+            const res = await SyncService.loadFromCloud(prefetched);
+            expect(readSpy).not.toHaveBeenCalled();
+            expect(SyncService.forceDownload).toHaveBeenCalledWith(prefetched);
+            expect(res.success).toBe(true);
+        });
+    });
 });

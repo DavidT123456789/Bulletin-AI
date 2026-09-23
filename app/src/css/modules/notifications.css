@@ -80,13 +80,42 @@
 }
 
 /* Strong formatting within notification text */
-.notification span {
+.notification > span:not(.notification-spinner):not(.notification-coalesce-badge),
+.notification .notification-message {
     line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .notification span strong {
     color: var(--text-primary);
     font-weight: 700;
+}
+
+/* Hierarchical notification content (Title + Subtitle) */
+.notification-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.notification-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.25;
+}
+
+.notification-subtitle {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.35;
 }
 
 /* Coalescing Badge (×N counter) */
@@ -100,7 +129,7 @@
     letter-spacing: 0.5px;
     background: var(--bg-secondary);
     color: var(--text-secondary);
-    flex-shrink: 0;
+    flex: 0 0 auto !important;
     line-height: 1.4;
     transition: all var(--transition-fast);
 }
@@ -199,6 +228,9 @@
     height: 20px;
     min-width: 20px;
     min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    aspect-ratio: 1;
     margin: 4px;
     border-radius: 50%;
     border: 2.5px solid rgba(var(--primary-color-rgb), 0.18);
@@ -206,8 +238,9 @@
     animation: notificationSpin 0.75s linear infinite;
     background: transparent !important;
     box-sizing: border-box;
-    flex-shrink: 0;
+    flex: 0 0 20px !important;
     display: inline-block;
+    will-change: transform;
 }
 
 [data-theme="dark"] .notification-spinner {
@@ -233,8 +266,17 @@
     color: var(--primary-color);
     width: 20px;
     height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    aspect-ratio: 1;
     margin: 4px;
     font-size: 20px;
+    animation: notificationSpin 0.75s linear infinite;
+    box-sizing: border-box;
+    flex: 0 0 20px !important;
+    will-change: transform;
 }
 
 [data-theme="dark"] .notification.loading > iconify-icon:first-child,
