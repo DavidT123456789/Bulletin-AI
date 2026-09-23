@@ -13,8 +13,8 @@
     gap: 12px;
     z-index: var(--z-toast);
     pointer-events: none;
-    width: 340px;
-    max-width: calc(100% - 48px);
+    width: 390px;
+    max-width: calc(100vw - 32px);
 }
 
 /* Base Notification - Premium Solid Design */
@@ -193,6 +193,55 @@
     color: var(--purple-color);
 }
 
+/* Loading - Modern iOS/Google Minimalist Ring Spinner (Zero square background) */
+.notification-spinner {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    margin: 4px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(var(--primary-color-rgb), 0.18);
+    border-top-color: var(--primary-color);
+    animation: notificationSpin 0.75s linear infinite;
+    background: transparent !important;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+[data-theme="dark"] .notification-spinner {
+    border-color: rgba(125, 211, 252, 0.2);
+    border-top-color: var(--color-sky-bright, #7dd3fc);
+}
+
+@keyframes notificationSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.notification.loading > iconify-icon:first-child,
+.notification.loading > i:first-child {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: var(--primary-color);
+    width: 20px;
+    height: 20px;
+    margin: 4px;
+    font-size: 20px;
+}
+
+[data-theme="dark"] .notification.loading > iconify-icon:first-child,
+[data-theme="dark"] .notification.loading > i:first-child {
+    color: var(--color-sky-bright, #7dd3fc);
+}
+
 /* Actionable (clickable) notifications */
 .notification.actionable {
     cursor: pointer;
@@ -204,84 +253,156 @@
 
 /* Undo Notification - Action toast with countdown progress */
 .notification.notification-undo {
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    padding-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
     min-width: 320px;
     cursor: pointer;
-    max-height: 200px;
+    max-height: 160px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
 }
 
-.notification-undo-message {
-    flex: 1;
-    min-width: 0;
+.notification.notification-undo > iconify-icon:first-child,
+.notification.notification-undo > i:first-child {
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     align-self: center;
 }
 
-.notification-undo-btn {
-    background: none;
-    border: 1px solid var(--warning-color);
-    color: var(--warning-color);
+.notification.notification-undo.success > iconify-icon:first-child,
+.notification.notification-undo.success > i:first-child {
+    background: rgba(var(--success-rgb), 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(var(--success-rgb), 0.16);
+}
+
+.notification-undo-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    justify-content: center;
+}
+
+.notification-undo-title {
+    font-size: 13.5px;
     font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.notification-undo-message {
+    font-size: 12.5px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    word-break: break-word;
+}
+
+/* Action button (Annuler) — Matches app secondary button standards */
+.notification-undo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 500;
     font-size: 13px;
-    padding: 5px 14px;
-    border-radius: var(--radius-sm);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
     flex-shrink: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin-left: auto;
+    text-transform: none;
+    line-height: 1.2;
+}
+
+[data-theme="dark"] .notification-undo-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.notification-undo-btn iconify-icon {
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
 .notification-undo-btn:hover {
-    background: rgba(var(--warning-rgb), 0.1);
-    transform: scale(1.05);
+    background: var(--bg-tertiary);
+    border-color: var(--text-quaternary);
+}
+
+[data-theme="dark"] .notification-undo-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .notification-undo-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.97);
 }
 
-.notification-undo-close-btn {
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    font-size: 1.2rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: color var(--transition-fast), transform var(--transition-fast);
-    flex-shrink: 0;
-    line-height: 1;
+/* Warning undo button */
+.notification.warning .notification-undo-btn {
+    background: rgba(var(--warning-rgb), 0.08);
+    border: 1px solid var(--warning-color);
+    color: var(--warning-color);
 }
 
-.notification-undo-close-btn:hover {
-    color: var(--text-primary);
-    transform: scale(1.1);
+.notification.warning .notification-undo-btn:hover {
+    background: rgba(var(--warning-rgb), 0.16);
+    color: var(--warning-color);
+    border-color: var(--warning-color);
 }
 
+/* Edge-to-edge docked progress bar */
 .notification-undo-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
     height: 3px;
     background: var(--bg-secondary);
-    border-radius: 2px;
     overflow: hidden;
-    order: 99;
+    margin: 0;
 }
 
 [data-theme="dark"] .notification-undo-progress {
-    background: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .notification-undo-progress-fill {
     height: 100%;
     width: 100%;
     background: var(--warning-color);
-    border-radius: 2px;
-    opacity: 0.8;
+    opacity: 0.95;
+}
+
+.notification.success .notification-undo-progress-fill {
+    background: var(--success-color);
+}
+
+.notification.info .notification-undo-progress-fill {
+    background: var(--primary-color);
+}
+
+.notification.error .notification-undo-progress-fill {
+    background: var(--error-color);
 }
 
 #mass-import-progress-output-area {

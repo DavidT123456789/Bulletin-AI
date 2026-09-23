@@ -201,6 +201,8 @@ export const BackupImportManager = {
                     categories: selectedCategories,
                     silent: true
                 });
+                const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
+                await RestoreTransitionManager.rehydrateAndTransition();
                 closeModal();
                 this._showRichFeedback(result.stats, selectedCategories, isMerge, categories);
             } catch (error) {

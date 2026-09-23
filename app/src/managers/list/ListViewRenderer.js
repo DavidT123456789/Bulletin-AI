@@ -263,6 +263,8 @@ export const ListViewRenderer = {
      * @private
      */
     renderFresh(container, results, periods, currentPeriodIndex, options = {}) {
+        if (!container) return;
+
         // Read view preference
         const isExpanded = appState.isAppreciationFullView;
         const tableClass = isExpanded ? 'student-list-table appreciation-full-view' : 'student-list-table';
@@ -429,7 +431,7 @@ export const ListViewRenderer = {
             }
         });
 
-        const existingView = container.querySelector('.student-list-view');
+        const existingView = container?.querySelector?.('.student-list-view');
         const existingTable = existingView ? existingView.querySelector('.student-list-table') : null;
 
         if (isPeriodSwitch && existingView && existingTable) {

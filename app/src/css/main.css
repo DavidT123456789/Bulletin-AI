@@ -26,6 +26,7 @@
 @import './modules/generation-status.css';
 @import './modules/gen-dashboard.css';
 @import './modules/animations.css';
+@import './modules/restore-transition.css';
 @import './modules/refinement.css';
 @import './modules/student-details.css';
 @import './modules/student-avatar.css';

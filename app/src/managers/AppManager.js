@@ -29,6 +29,8 @@ import { HistoryManager } from './HistoryManager.js';
 import { ImportWizardManager } from './ImportWizardManager.js';
 import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
+import { ClassDashboardManager } from './ClassDashboardManager.js';
+import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -112,11 +114,42 @@ export const App = {
         // Seating Chart: Initialize
         SeatingChartManager.init();
 
+        // Class Dashboard: Initialize
+        ClassDashboardManager.init();
+
         // Restore last active view (plan or list) and update toggle visibility
         SeatingChartManager.restoreActiveView();
+
+        // Check if an iOS restore transition needs to conclude after reload
+        RestoreTransitionManager.checkPendingReloadTransition();
     },
 
     // --- Initialisation et Setup ---
+
+    /**
+     * Rehydrates all app state in-memory without tearing down the browser DOM.
+     * Prevents screen flash and reloads all views gracefully.
+     */
+    async rehydrateAll() {
+        await StorageManager.loadAppState({ checkPendingRestore: false });
+        this.updateUIOnLoad();
+        ClassUIManager.updateHeaderDisplay();
+        if (SeatingChartManager) {
+            const hasResults = !!(appState?.data?.filteredResults?.length || appState?.data?.generatedResults?.length);
+            SeatingChartManager.onClassChange?.(hasResults);
+            SeatingChartManager.restoreActiveView?.();
+        }
+        if (FocusPanelManager?.closePanel) {
+            FocusPanelManager.closePanel();
+        }
+        if (ClassDashboardManager?.restoreOrResetAISection) {
+            try {
+                ClassDashboardManager.restoreOrResetAISection();
+            } catch {
+                // Ignore silent error
+            }
+        }
+    },
 
     updateUIOnLoad() {
         UI.applyTheme();

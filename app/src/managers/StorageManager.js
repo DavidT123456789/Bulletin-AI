@@ -88,7 +88,7 @@ export const StorageManager = {
         return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
     },
 
-    async loadAppState() {
+    async loadAppState({ checkPendingRestore = true } = {}) {
         try {
             try {
                 const lastSyncHash = localStorage.getItem('bulletin_last_sync_hash');
@@ -252,7 +252,9 @@ export const StorageManager = {
         await this.saveAppState();
 
         this._requestPersistentStorage();
-        this._checkPendingRestore();
+        if (checkPendingRestore) {
+            this._checkPendingRestore();
+        }
     },
 
     async _requestPersistentStorage() {
@@ -338,15 +340,25 @@ export const StorageManager = {
             setTimeout(() => {
                 if (UI?.showUndoNotification) {
                     UI.showUndoNotification(
-                        `Données restaurées depuis le Cloud (${count} élève${count > 1 ? 's' : ''})`,
+                        `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis le Cloud`,
                         async () => {
                             const restored = await this.restorePreRestoreSnapshot();
                             if (restored) {
                                 UI?.showNotification('État précédent restauré.', 'success');
-                                setTimeout(() => window.location.reload(), 800);
+                                const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
+                                RestoreTransitionManager.rehydrateAndTransition({
+                                    title: 'Restauration de la copie',
+                                    successTitle: 'État précédent restauré.',
+                                    subtitle: 'Restauration de votre état antérieur...',
+                                    count
+                                }).catch(() => {});
                             }
                         },
-                        { duration: 7000, type: 'info' }
+                        {
+                            title: 'Restauration réussie',
+                            duration: 7000,
+                            type: 'success'
+                        }
                     );
                 }
             }, 800);
@@ -942,9 +954,11 @@ export const StorageManager = {
 
             UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
 
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            const { RestoreTransitionManager } = await import('./RestoreTransitionManager.js');
+            await RestoreTransitionManager.performReloadTransition({
+                title: 'Réinitialisation',
+                subtitle: 'Remise à zéro de l\'application...'
+            });
 
         } catch (error) {
             UI.showNotification('Erreur lors de la réinitialisation: ' + error.message, 'error');

@@ -47,11 +47,31 @@ export const ClassDashboardManager = {
     /** @type {string|null} Original AI synthesis HTML before any refinement */
     originalSynthesisHTML: null,
 
+    /** @type {boolean} Track if listeners were bound to avoid duplicate binding */
+    _listenersBound: false,
+
+    /**
+     * Ensure modal reference is present and listeners bound if modal exists.
+     * @private
+     * @returns {HTMLElement|null}
+     */
+    _ensureModal() {
+        if (!this.modal) {
+            this.modal = document.getElementById('classDashboardModal');
+        }
+        if (this.modal && !this._listenersBound) {
+            this.init();
+        }
+        return this.modal;
+    },
+
     /**
      * Initialize the dashboard modal reference
      */
     init() {
         this.modal = document.getElementById('classDashboardModal');
+        if (!this.modal || this._listenersBound) return;
+        this._listenersBound = true;
 
         // Attach Context Menu listener for Prompt Preview (Right Click)
         const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
@@ -111,7 +131,7 @@ export const ClassDashboardManager = {
      * Calculates all statistics and renders the dashboard
      */
     async openDashboard() {
-        if (!this.modal) this.init();
+        if (!this._ensureModal()) return;
 
         const students = this.getStudentsData();
         if (students.length === 0) {
@@ -344,13 +364,13 @@ export const ClassDashboardManager = {
      * @param {Array} students 
      */
     renderDashboard(stats, students) {
-        if (!stats) return;
+        if (!stats || !this._ensureModal()) return;
 
         // Update header info using new context line
-        const periodBadge = this.modal.querySelector('#dashboardPeriodBadge');
-        const studentCount = this.modal.querySelector('#dashboardStudentCount');
-        const classBadge = this.modal.querySelector('#dashboardClassBadge');
-        const classDot = this.modal.querySelector('#dashboardClassDot');
+        const periodBadge = this.modal?.querySelector('#dashboardPeriodBadge');
+        const studentCount = this.modal?.querySelector('#dashboardStudentCount');
+        const classBadge = this.modal?.querySelector('#dashboardClassBadge');
+        const classDot = this.modal?.querySelector('#dashboardClassDot');
 
         if (periodBadge) {
             const periodLabels = { T1: 'Trimestre 1', T2: 'Trimestre 2', T3: 'Trimestre 3', S1: 'Semestre 1', S2: 'Semestre 2' };
@@ -373,8 +393,8 @@ export const ClassDashboardManager = {
         }
 
         // Retrieve and display active subject (discipline)
-        const subjectBadge = this.modal.querySelector('#dashboardSubjectBadge');
-        const subjectDot = this.modal.querySelector('#dashboardSubjectDot');
+        const subjectBadge = this.modal?.querySelector('#dashboardSubjectBadge');
+        const subjectDot = this.modal?.querySelector('#dashboardSubjectDot');
         
         const customStyle = appState.subjects?.['MonStyle']?.iaConfig;
         const genericStyle = appState.subjects?.['Générique']?.iaConfig;
@@ -391,9 +411,9 @@ export const ClassDashboardManager = {
         }
 
         // Display Class Stats (Moyenne, Min, Max) in Cohort Stats Bar
-        const statAverage = this.modal.querySelector('#cohortStatAverage');
-        const statMin = this.modal.querySelector('#cohortStatMin');
-        const statMax = this.modal.querySelector('#cohortStatMax');
+        const statAverage = this.modal?.querySelector('#cohortStatAverage');
+        const statMin = this.modal?.querySelector('#cohortStatMin');
+        const statMax = this.modal?.querySelector('#cohortStatMax');
 
         if (stats) {
             const moy = stats.average.toFixed(1).replace('.', ',');
@@ -424,7 +444,7 @@ export const ClassDashboardManager = {
         }
 
         // Update cohort header micro-metric (success rate)
-        const cohortHeaderMetric = this.modal.querySelector('#cohortHeaderMetric');
+        const cohortHeaderMetric = this.modal?.querySelector('#cohortHeaderMetric');
         if (cohortHeaderMetric) {
             cohortHeaderMetric.innerHTML = `<iconify-icon icon="solar:shield-check-linear"></iconify-icon> <strong>${stats.successRate.toFixed(0)}%</strong> de réussite`;
         }
@@ -449,8 +469,9 @@ export const ClassDashboardManager = {
      * @param {Object} stats 
      */
     updateHighlights(stats) {
+        if (!stats || !this._ensureModal()) return;
         // Top Progressions
-        const progressList = this.modal.querySelector('#highlightProgressList');
+        const progressList = this.modal?.querySelector('#highlightProgressList');
         if (progressList) {
             TooltipsUI.cleanupTooltipsIn(progressList);
             if (stats.topProgressions.length > 0) {
@@ -474,7 +495,7 @@ export const ClassDashboardManager = {
         }
 
         // At Risk / Regressions
-        const riskList = this.modal.querySelector('#highlightRiskList');
+        const riskList = this.modal?.querySelector('#highlightRiskList');
         if (riskList) {
             TooltipsUI.cleanupTooltipsIn(riskList);
             // Combine regressions and low grades
@@ -517,9 +538,10 @@ export const ClassDashboardManager = {
      * Reset AI section to placeholder state
      */
     resetAISection() {
-        const content = this.modal.querySelector('#aiSynthesisContent');
-        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
-        const toolbar = this.modal.querySelector('#aiRefinementToolbar');
+        if (!this._ensureModal()) return;
+        const content = this.modal?.querySelector('#aiSynthesisContent');
+        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
+        const toolbar = this.modal?.querySelector('#aiRefinementToolbar');
 
         if (content) {
             content.innerHTML = `
@@ -551,7 +573,7 @@ export const ClassDashboardManager = {
         }
 
         // Hide copy button
-        const copyBtn = this.modal.querySelector('#copyDashboardSynthesisBtn');
+        const copyBtn = this.modal?.querySelector('#copyDashboardSynthesisBtn');
         if (copyBtn) copyBtn.style.display = 'none';
 
         // Hide refinement toolbar
@@ -568,6 +590,7 @@ export const ClassDashboardManager = {
      * This persists the synthesis between modal open/close operations and sessions (via persistent storage)
      */
     restoreOrResetAISection() {
+        if (!this._ensureModal()) return;
         const currentClassId = appState.currentClassId;
         const currentPeriod = appState.currentPeriod;
 
@@ -622,7 +645,8 @@ export const ClassDashboardManager = {
      * @private
      */
     _checkStaleData() {
-        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+        if (!this._ensureModal()) return;
+        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
         if (!generateBtn || !this.cachedStats || !this.cachedSynthesisDataHash) return;
 
         const dataChanged = this.cachedStats.dataHash !== this.cachedSynthesisDataHash;
@@ -656,7 +680,8 @@ export const ClassDashboardManager = {
      * @private
      */
     _updateRevertButtonState() {
-        const revertBtn = this.modal.querySelector('#revertSynthesisBtn');
+        if (!this._ensureModal()) return;
+        const revertBtn = this.modal?.querySelector('#revertSynthesisBtn');
         if (!revertBtn) return;
 
         if (this.originalSynthesisHTML && this.cachedSynthesisHTML && this.originalSynthesisHTML !== this.cachedSynthesisHTML) {
@@ -668,18 +693,15 @@ export const ClassDashboardManager = {
 
     /**
      * Apply synthesis HTML to the UI and update button state
-     * @private
-     */
-    /**
-     * Apply synthesis HTML to the UI and update button state
      * @param {string} htmlContent - HTML to render
      * @param {boolean} [animate=false] - Whether to animate the reveal
      * @private
      */
     async _applySynthesisToUI(htmlContent, animate = false) {
-        const content = this.modal.querySelector('#aiSynthesisContent');
-        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
-        const toolbar = this.modal.querySelector('#aiRefinementToolbar');
+        if (!this._ensureModal()) return;
+        const content = this.modal?.querySelector('#aiSynthesisContent');
+        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
+        const toolbar = this.modal?.querySelector('#aiRefinementToolbar');
 
         if (content) {
             if (animate) {
@@ -695,7 +717,7 @@ export const ClassDashboardManager = {
         }
 
         // Toggle copy button display next to generate button
-        const copyBtn = this.modal.querySelector('#copyDashboardSynthesisBtn');
+        const copyBtn = this.modal?.querySelector('#copyDashboardSynthesisBtn');
         if (copyBtn) {
             copyBtn.style.display = 'inline-flex';
         }
@@ -713,10 +735,10 @@ export const ClassDashboardManager = {
      * Generate AI synthesis based on calculated statistics
      */
     async generateAISynthesis() {
-        if (!UI.checkAPIKeyPresence()) return;
+        if (!UI.checkAPIKeyPresence() || !this._ensureModal()) return;
 
-        const content = this.modal.querySelector('#aiSynthesisContent');
-        const generateBtn = this.modal.querySelector('#generateSynthesisBtn');
+        const content = this.modal?.querySelector('#aiSynthesisContent');
+        const generateBtn = this.modal?.querySelector('#generateSynthesisBtn');
 
         if (!content || !this.cachedStats) return;
 
@@ -926,9 +948,9 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
      * @param {HTMLButtonElement} button - The clicked button with data-refine-type
      */
     async handleClassAnalysisActions(button) {
-        if (!UI.checkAPIKeyPresence()) return;
+        if (!UI.checkAPIKeyPresence() || !this._ensureModal()) return;
         const type = button.dataset.refineType;
-        const contentDiv = this.modal.querySelector('#aiSynthesisContent');
+        const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
 
         // Find the text of current synthesis (either original or previous refinement)
         const currentTextElement = contentDiv?.querySelector('.ai-synthesis-text');
@@ -974,7 +996,8 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
      * Reverts the refined synthesis back to the original AI synthesis
      */
     async revertSynthesis() {
-        const contentDiv = this.modal.querySelector('#aiSynthesisContent');
+        if (!this._ensureModal()) return;
+        const contentDiv = this.modal?.querySelector('#aiSynthesisContent');
         if (!contentDiv || !this.originalSynthesisHTML) return;
 
         // Apply back original HTML
@@ -1010,7 +1033,8 @@ ${stats.appreciationsList.map(a => `• ${a.prenom} : ${a.text}`).join('\n')}`;
      * Copy synthesis to clipboard
      */
     copySynthesis() {
-        const content = this.modal.querySelector('#aiSynthesisContent .ai-synthesis-text');
+        if (!this._ensureModal()) return;
+        const content = this.modal?.querySelector('#aiSynthesisContent .ai-synthesis-text');
         if (!content) {
             UI.showNotification("Aucune synthèse à copier.", "warning");
             return;

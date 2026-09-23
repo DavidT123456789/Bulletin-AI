@@ -1208,69 +1208,64 @@ export const SettingsModalListeners = {
             cloudLoadBtn.addEventListener('click', async () => {
                 const { SyncService } = await import('../../services/SyncService.js');
                 const { runtimeState } = await import('../../state/State.js');
-                const studentCount = runtimeState.data.generatedResults?.length || 0;
-                const remoteDateStr = SyncService.remoteSyncTime
-                    ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                    : 'récente';
-
                 const providerName = SyncService.currentProviderName || 'google';
                 const providerLabel = providerName === 'dropbox' ? 'Dropbox' : 'Google Drive';
 
-                const syncState = SyncService._lastSyncState;
-                const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
-                const hintHtml = hasLocalChanges
-                    ? `<p class="modal-alert-hint-text">
-                           💡 <em>Pour combiner vos ajouts locaux avec le Cloud sans rien écraser, cliquez sur Annuler puis utilisez le bouton <strong>Sauvegarder</strong> (option Fusionner).</em>
-                       </p>`
-                    : '';
+                let restoreProgressToast = null;
+                try {
+                    cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Restauration...';
+                    cloudLoadBtn.disabled = true;
+                    document.body.classList.add('is-cloud-syncing');
+                    DOM.headerMenuBtn?.classList.add('cloud-syncing');
 
-                UI.showCustomConfirm(
-                    `Vous allez remplacer vos données locales (${studentCount} élève${studentCount > 1 ? 's' : ''}) par la sauvegarde ${providerLabel} du <strong>${remoteDateStr}</strong>.
-                     <div class="modal-alert-shield-box">
-                         <span class="modal-alert-shield-title">
-                             <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
-                         </span>
-                         Une copie de secours de vos données actuelles sera conservée dans <em>Paramètres > Données</em> et pourra être rétablie à tout moment.
-                     </div>
-                     ${hintHtml}`,
-                    async () => {
-                        try {
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon> Restauration...';
-                            cloudLoadBtn.disabled = true;
-                            document.body.classList.add('is-cloud-syncing');
-                            DOM.headerMenuBtn?.classList.add('cloud-syncing');
+                    restoreProgressToast = UI.showNotification(`Restauration depuis ${providerLabel}…`, 'loading', 0);
 
-                            const { StorageManager } = await import('../../managers/StorageManager.js');
-                            await StorageManager.savePreRestoreSnapshot();
+                    const { StorageManager } = await import('../../managers/StorageManager.js');
+                    await StorageManager.savePreRestoreSnapshot();
 
-                            const result = await SyncService.loadFromCloud();
+                    const result = await SyncService.loadFromCloud();
 
-                            if (result.success) {
-                                const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
-                                UI.showNotification(`Données chargées depuis ${providerLabel} (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
-                                setTimeout(() => window.location.reload(), 1000);
-                            } else {
-                                UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
-                            }
-                        } catch (error) {
-                            const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
-                            UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
-                        } finally {
-                            document.body.classList.remove('is-cloud-syncing');
-                            DOM.headerMenuBtn?.classList.remove('cloud-syncing');
-                            cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
-                            cloudLoadBtn.disabled = false;
+                    if (result.success) {
+                        restoreProgressToast?.dismiss?.();
+                        localStorage.removeItem('bulletin_restore_pending');
+                        const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
+                        const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
+                        await RestoreTransitionManager.rehydrateAndTransition();
+
+                        if (UI?.showUndoNotification) {
+                            UI.showUndoNotification(
+                                `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis ${providerLabel}`,
+                                async () => {
+                                    const restored = await StorageManager.restorePreRestoreSnapshot();
+                                    if (restored) {
+                                        await RestoreTransitionManager.rehydrateAndTransition();
+                                        UI?.showNotification('État précédent restauré.', 'success');
+                                    }
+                                },
+                                {
+                                    title: 'Restauration réussie',
+                                    duration: 7000,
+                                    type: 'success'
+                                }
+                            );
+                        } else {
+                            UI.showNotification(`Données restaurées depuis ${providerLabel} (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
                         }
-                    },
-                    null,
-                    {
-                        title: `Restaurer depuis ${providerLabel} ?`,
-                        confirmText: 'Restaurer',
-                        cancelText: 'Annuler',
-                        isDanger: false,
-                        focusCancel: true
+                    } else {
+                        restoreProgressToast?.dismiss?.();
+                        UI.showNotification(`Aucune donnée trouvée sur ${providerLabel}.`, 'warning');
                     }
-                );
+                } catch (error) {
+                    restoreProgressToast?.dismiss?.();
+                    const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                    UI.showNotification('Erreur de chargement : ' + errorMsg, 'error');
+                } finally {
+                    restoreProgressToast?.dismiss?.();
+                    document.body.classList.remove('is-cloud-syncing');
+                    DOM.headerMenuBtn?.classList.remove('cloud-syncing');
+                    cloudLoadBtn.innerHTML = '<iconify-icon icon="solar:cloud-download-bold"></iconify-icon> Restaurer';
+                    cloudLoadBtn.disabled = false;
+                }
             });
         }
 
@@ -1338,8 +1333,9 @@ export const SettingsModalListeners = {
                 );
                 if (confirmed) {
                     await StorageManager.restorePreRestoreSnapshot();
+                    const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
+                    await RestoreTransitionManager.rehydrateAndTransition();
                     UI.showNotification('État précédent restauré !', 'success');
-                    setTimeout(() => window.location.reload(), 800);
                 }
             });
         }

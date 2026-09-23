@@ -528,7 +528,7 @@ describe('StorageManager', () => {
             expect(UI.showUndoNotification).toHaveBeenCalledWith(
                 expect.stringContaining('2 élèves'),
                 expect.any(Function),
-                expect.objectContaining({ duration: 7000, type: 'info' })
+                expect.objectContaining({ duration: 7000, type: 'success', title: 'Restauration réussie' })
             );
 
             // Execute undo callback

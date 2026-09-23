@@ -512,81 +512,64 @@ export const GeneralListeners = {
                     closeMenu();
                     if (labelEl) labelEl.textContent = originalLabel;
 
-                    const syncState = SyncService._lastSyncState;
-                    const hasLocalChanges = syncState === 'local-changes' || syncState === 'conflict';
-                    const studentCount = runtimeState.data.generatedResults?.length || 0;
-                    const remoteDateStr = SyncService.remoteSyncTime
-                        ? new Date(SyncService.remoteSyncTime).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
-                        : 'récente';
+                    let restoreProgressToast = null;
+                    const mainWrapper = document.querySelector('.main-content-wrapper');
 
-                    const confirmMessage = hasLocalChanges
-                        ? `Vous allez remplacer vos données locales (<strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong>) par la version Cloud du <strong>${remoteDateStr}</strong>.
-                           <div class="modal-alert-shield-box">
-                               <span class="modal-alert-shield-title">
-                                   <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
-                               </span>
-                               Vos données locales actuelles seront archivées avant la restauration. Vous pourrez annuler immédiatement ou rétablir cet état dans les 24h (<em>Paramètres > Données</em>).
-                           </div>
-                           <p class="modal-alert-hint-text">
-                               💡 <em>Pour combiner vos ajouts locaux avec le Cloud sans rien écraser, cliquez sur Annuler puis utilisez le bouton <strong>Sauvegarder</strong> (option Fusionner).</em>
-                           </p>`
-                        : `Vous allez recharger la version Cloud du <strong>${remoteDateStr}</strong> (${studentCount} élève${studentCount > 1 ? 's' : ''} en local).
-                           <div class="modal-alert-shield-box">
-                               <span class="modal-alert-shield-title">
-                                   <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Sauvegarde de sécurité automatique
-                               </span>
-                               Une copie de votre état actuel sera conservée dans <em>Paramètres > Données</em> et pourra être rétablie à tout moment.
-                           </div>`;
+                    try {
+                        DOM.headerMenuBtn?.classList.add('cloud-syncing');
+                        document.body.classList.add('is-cloud-syncing');
+                        mainWrapper?.classList.add('is-cloud-syncing');
+                        cloudLoadBtn.classList.add('saving');
+                        if (labelEl) labelEl.textContent = 'Restauration…';
 
-                    UI.showCustomConfirm(
-                        confirmMessage,
-                        async () => {
-                            let restoreProgressToast = null;
-                            const mainWrapper = document.querySelector('.main-content-wrapper');
+                        restoreProgressToast = UI.showNotification('Restauration de vos données depuis le Cloud…', 'loading', 0);
 
-                            try {
-                                DOM.headerMenuBtn?.classList.add('cloud-syncing');
-                                document.body.classList.add('is-cloud-syncing');
-                                mainWrapper?.classList.add('is-cloud-syncing');
-                                cloudLoadBtn.classList.add('saving');
-                                if (labelEl) labelEl.textContent = 'Restauration';
+                        const { StorageManager } = await import('../../managers/StorageManager.js');
+                        await StorageManager.savePreRestoreSnapshot();
 
-                                restoreProgressToast = UI.showNotification('Restauration de vos données depuis le Cloud…', 'info', 0);
+                        const result = await SyncService.loadFromCloud();
+                        if (result.success) {
+                            localStorage.removeItem('bulletin_restore_pending');
+                            restoreProgressToast?.dismiss?.();
+                            const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
+                            const { RestoreTransitionManager } = await import('../RestoreTransitionManager.js');
+                            await RestoreTransitionManager.rehydrateAndTransition();
 
-                                const { StorageManager } = await import('../../managers/StorageManager.js');
-                                await StorageManager.savePreRestoreSnapshot();
-
-                                const result = await SyncService.loadFromCloud();
-                                if (result.success) {
-                                    restoreProgressToast?.dismiss?.();
-                                    const count = result.count ?? (runtimeState.data.generatedResults?.length || 0);
-                                    UI.showNotification(`Données restaurées avec succès (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
-                                    setTimeout(() => window.location.reload(), 1000);
-                                } else {
-                                    restoreProgressToast?.dismiss?.();
-                                    UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
-                                }
-                            } catch (error) {
-                                restoreProgressToast?.dismiss?.();
-                                const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
-                                UI.showNotification('Erreur de restauration : ' + errorMsg, 'error');
-                            } finally {
-                                DOM.headerMenuBtn?.classList.remove('cloud-syncing');
-                                document.body.classList.remove('is-cloud-syncing');
-                                mainWrapper?.classList.remove('is-cloud-syncing');
-                                cloudLoadBtn.classList.remove('saving');
-                                if (labelEl) labelEl.textContent = originalLabel;
+                            if (UI?.showUndoNotification) {
+                                UI.showUndoNotification(
+                                    `${count} élève${count > 1 ? 's' : ''} synchronisé${count > 1 ? 's' : ''} depuis le Cloud`,
+                                    async () => {
+                                        const restored = await StorageManager.restorePreRestoreSnapshot();
+                                        if (restored) {
+                                            await RestoreTransitionManager.rehydrateAndTransition();
+                                            UI?.showNotification('État précédent restauré.', 'success');
+                                        }
+                                    },
+                                    {
+                                        title: 'Restauration réussie',
+                                        duration: 7000,
+                                        type: 'success'
+                                    }
+                                );
+                            } else {
+                                UI.showNotification(`Données restaurées avec succès (${count} élève${count > 1 ? 's' : ''}) !`, 'success');
                             }
-                        },
-                        null,
-                        {
-                            title: 'Restaurer depuis le Cloud ?',
-                            confirmText: 'Restaurer',
-                            cancelText: 'Annuler',
-                            isDanger: false,
-                            focusCancel: true
+                        } else {
+                            restoreProgressToast?.dismiss?.();
+                            UI.showNotification('Aucune sauvegarde valide trouvée sur le Cloud.', 'warning');
                         }
-                    );
+                    } catch (error) {
+                        console.error('[GeneralListeners] Restore error:', error);
+                        restoreProgressToast?.dismiss?.();
+                        const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';
+                        UI.showNotification('Erreur de restauration : ' + errorMsg, 'error');
+                    } finally {
+                        DOM.headerMenuBtn?.classList.remove('cloud-syncing');
+                        document.body.classList.remove('is-cloud-syncing');
+                        mainWrapper?.classList.remove('is-cloud-syncing');
+                        cloudLoadBtn.classList.remove('saving');
+                        if (labelEl) labelEl.textContent = originalLabel;
+                    }
                 } catch (error) {
                     console.error('Cloud load setup error:', error);
                 }

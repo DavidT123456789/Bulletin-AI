@@ -55,6 +55,17 @@
                     document.documentElement.style.backgroundColor = '#f7f7f8';
                 }
 
+                // Restore Transition Check (0ms pre-paint)
+                try {
+                    var restoreTransitionRaw = sessionStorage.getItem('bulletin_restore_transition');
+                    if (restoreTransitionRaw) {
+                        var restoreData = JSON.parse(restoreTransitionRaw);
+                        if (restoreData && restoreData.timestamp && (Date.now() - restoreData.timestamp) < 5000) {
+                            document.documentElement.classList.add('is-restoring-transition');
+                        }
+                    }
+                } catch (_) {}
+
                 // Accent Color Pre-calculation
                 var colors = {};
                 if (accentColor.startsWith('#')) {
@@ -148,17 +159,22 @@
                 document.documentElement.style.setProperty('--primary-color-rgb', colors.rgb);
                 document.documentElement.style.setProperty('--primary-hover', colors.hover);
             } catch (e) {
-                document.documentElement.dataset.theme = 'dark';
-                document.documentElement.style.backgroundColor = '#09090b';
+                document.documentElement.dataset.theme = 'light';
+                document.documentElement.style.backgroundColor = '#f7f7f8';
             }
         })();
     </script>
     <style>
         :root {
-            color-scheme: dark light;
+            color-scheme: light dark;
         }
         html {
-            background-color: #09090b;
+            background-color: #f7f7f8;
+        }
+        @media (prefers-color-scheme: dark) {
+            html:not([data-theme="light"]) {
+                background-color: #09090b;
+            }
         }
         html[data-theme="dark"] {
             background-color: #09090b !important;
@@ -3150,7 +3166,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 4558af8 · 23 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 9911716 · 23 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

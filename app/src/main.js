@@ -5,6 +5,7 @@ import { UI } from './managers/UIManager.js';
 import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { WelcomeManager } from './managers/WelcomeManager.js';
+import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.App = App;
         window.AppreciationsManager = AppreciationsManager;
         window.StorageManager = StorageManager;
+        window.RestoreTransitionManager = RestoreTransitionManager;
         window.appState = appState;
         window.DOM = DOM;
 

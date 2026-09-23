@@ -45,17 +45,18 @@ import { ClassManager } from './ClassManager.js';
  */
 
 /**
- * @typedef {'success'|'error'|'warning'|'info'|'prompt'} NotificationType
+ * @typedef {'success'|'error'|'warning'|'info'|'prompt'|'loading'} NotificationType
  */
 
 /** @type {import('./AppManager.js').App|null} */
 let App;
 
 const NOTIF_ICONS = {
-    success: '<iconify-icon icon="ph:check" aria-hidden="true"></iconify-icon>',
-    error: '<iconify-icon icon="solar:close-circle-linear" aria-hidden="true"></iconify-icon>',
-    warning: '<iconify-icon icon="solar:danger-circle-linear" aria-hidden="true"></iconify-icon>',
-    info: '<iconify-icon icon="solar:info-circle-linear" aria-hidden="true"></iconify-icon>',
+    success: '<iconify-icon icon="solar:check-circle-bold" aria-hidden="true"></iconify-icon>',
+    error: '<iconify-icon icon="solar:close-circle-bold" aria-hidden="true"></iconify-icon>',
+    warning: '<iconify-icon icon="solar:danger-circle-bold" aria-hidden="true"></iconify-icon>',
+    info: '<iconify-icon icon="solar:info-circle-bold" aria-hidden="true"></iconify-icon>',
+    loading: '<span class="notification-spinner" aria-hidden="true"></span>',
     prompt: '<iconify-icon icon="solar:magic-stick-3-bold-duotone" aria-hidden="true"></iconify-icon>'
 };
 
@@ -288,7 +289,7 @@ export const UI = {
      * @returns {{ cancel: Function }} Objet avec méthode cancel pour annuler programmatiquement
      */
     showUndoNotification(message, onUndo, options = {}) {
-        const { duration = 7000, type = 'warning' } = options;
+        const { duration = 7000, type = 'warning', title = null } = options;
 
         const container = document.getElementById('notification-container') || (() => {
             const c = document.createElement('div');
@@ -296,6 +297,9 @@ export const UI = {
             document.body.appendChild(c);
             return c;
         })();
+
+        // Ensure only one undo notification exists at a time
+        container.querySelectorAll('.notification-undo').forEach(el => el.remove());
 
         const notif = document.createElement('div');
         notif.className = `notification ${type} notification-undo`;
@@ -305,12 +309,17 @@ export const UI = {
         notif.setAttribute('role', 'alert');
         notif.setAttribute('aria-live', 'assertive');
 
+        const titleHtml = title ? `<div class="notification-undo-title">${title}</div>` : '';
+
         notif.innerHTML = `
             ${NOTIF_ICONS[type] || NOTIF_ICONS.warning}
-            <span class="notification-undo-message">${message}</span>
-            <button class="notification-undo-btn" title="Annuler cette action">Annuler</button>
-            <button class="notification-undo-close-btn" title="Masquer la notification" aria-label="Masquer">
-                <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+            <div class="notification-undo-content">
+                ${titleHtml}
+                <div class="notification-undo-message">${message}</div>
+            </div>
+            <button class="notification-undo-btn" title="Annuler cette action">
+                <iconify-icon icon="solar:undo-left-round-linear" aria-hidden="true"></iconify-icon>
+                <span>Annuler</span>
             </button>
             <div class="notification-undo-progress">
                 <div class="notification-undo-progress-fill"></div>
