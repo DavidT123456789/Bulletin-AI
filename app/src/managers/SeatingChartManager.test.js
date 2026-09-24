@@ -985,11 +985,13 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Cellule 0,1 (Béatrice - Nouveau)
             const cellNew = SeatingChartManager._createCell(0, 1);
             expect(cellNew.classList.contains('sc-cell-new')).toBe(true);
+            expect(cellNew.classList.contains('has-status-badge')).toBe(true);
             expect(cellNew.querySelector('.sc-cell-status-badge.sc-badge-new')?.textContent).toBe('Nouveau');
 
             // Cellule 0,2 (Claire - Départ)
             const cellDepart = SeatingChartManager._createCell(0, 2);
             expect(cellDepart.classList.contains('sc-cell-departed')).toBe(true);
+            expect(cellDepart.classList.contains('has-status-badge')).toBe(true);
             expect(cellDepart.querySelector('.sc-cell-status-badge.sc-badge-depart')?.textContent).toBe('Départ');
         });
 
@@ -999,11 +1001,30 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._renderSidebar();
 
             // Le succès "Tous les élèves sont placés !" s'affiche pour les élèves actifs
-            expect(listContainer.innerHTML).toContain('Tous les élèves sont placés !');
+            expect(listContainer.innerHTML).toContain('Tous les élèves sont placés');
 
             // L'élève parti apparaît dans sa sous-section dédiée
             expect(listContainer.querySelector('.sc-sidebar-departed-section')).not.toBeNull();
             expect(listContainer.querySelector('.sc-chip-badge-depart')?.textContent).toBe('Départ');
+        });
+
+        it('doit synchroniser en temps réel la cellule si un élève passe en statut Départ', () => {
+            // L'élève act1 (Dupont Alex) est placé en (0,0) et initialement actif
+            SeatingChartManager._gridState[0][0] = 'act1';
+            let cell = SeatingChartManager._createCell(0, 0);
+            expect(cell.classList.contains('sc-cell-departed')).toBe(false);
+
+            // Simulation d'une modification du statut dans le FocusPanel
+            const targetStudent = appState.generatedResults.find(r => r.id === 'act1');
+            targetStudent.studentData.statuses = ['Départ'];
+
+            // Déclenchement de l'événement de mise à jour
+            window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: 'act1' } }));
+
+            // Vérification que la cellule créée reflète immédiatement le statut Départ
+            cell = SeatingChartManager._createCell(0, 0);
+            expect(cell.classList.contains('sc-cell-departed')).toBe(true);
+            expect(cell.querySelector('.sc-cell-status-badge.sc-badge-depart')?.textContent).toBe('Départ');
         });
     });
 });

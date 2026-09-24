@@ -384,6 +384,16 @@ export const SeatingChartManager = {
                 }
             });
         }
+
+        window.addEventListener('student-updated', () => this.refreshStudents());
+        window.addEventListener('studentsUpdated', () => this.refreshStudents());
+    },
+
+    refreshStudents() {
+        if (!this._isActive) return;
+        this._students = this._getCurrentClassStudents();
+        this._studentMap = new Map(this._students.map(s => [s.id, s]));
+        this._render();
     },
 
     // ========================================================================
@@ -1589,6 +1599,7 @@ export const SeatingChartManager = {
             cell.classList.add('occupied');
             if (isDeparted) cell.classList.add('sc-cell-departed');
             if (isNew) cell.classList.add('sc-cell-new');
+            if (isDeparted || isNew) cell.classList.add('has-status-badge');
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
 
@@ -1827,7 +1838,7 @@ export const SeatingChartManager = {
         const activeListHtml = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
-                    ? `<div class="sc-empty-text"><strong>Bravo !</strong><br>Tous les élèves sont placés !</div>
+                    ? `<div class="sc-empty-text"><strong>Bravo&nbsp;!</strong><br>Tous les élèves sont placés&nbsp;!</div>
                        <iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>`
                     : 'Aucun résultat'}
                </div>`
@@ -1987,45 +1998,49 @@ export const SeatingChartManager = {
 
     _isStudentDeparted(studentResult, activePeriod = appState.currentPeriod || 'T1') {
         if (!studentResult) return false;
-        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
         const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+        if (Array.isArray(statuses) && statuses.length > 0) {
+            const departStatus = statuses.find(s => {
+                const lower = (s || '').toLowerCase();
+                return lower.includes('départ') || lower.includes('depart');
+            });
+            if (departStatus) {
+                const parts = departStatus.trim().split(/\s+/);
+                if (parts.length === 1) return true;
 
-        const departStatus = statuses.find(s => {
-            const lower = (s || '').toLowerCase();
-            return lower.includes('départ') || lower.includes('depart');
-        });
-        if (!departStatus) return false;
+                const departPeriodKey = parts[1];
+                const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+                const departPeriodIndex = periods.indexOf(departPeriodKey);
+                const activePeriodIndex = periods.indexOf(activePeriod);
 
-        const parts = departStatus.trim().split(/\s+/);
-        if (parts.length === 1) return true;
-
-        const departPeriodKey = parts[1];
-        const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
-        const departPeriodIndex = periods.indexOf(departPeriodKey);
-        const activePeriodIndex = periods.indexOf(activePeriod);
-
-        if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
-        return activePeriodIndex >= departPeriodIndex;
+                if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
+                return activePeriodIndex >= departPeriodIndex;
+            }
+            return false;
+        }
+        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
+        return false;
     },
 
     _isStudentNew(studentResult, activePeriod = appState.currentPeriod || 'T1') {
         if (!studentResult) return false;
-        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
         const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
-        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+        if (Array.isArray(statuses) && statuses.length > 0) {
+            const newStatus = statuses.find(s => {
+                const lower = (s || '').toLowerCase();
+                return lower.includes('nouveau');
+            });
+            if (newStatus) {
+                const parts = newStatus.trim().split(/\s+/);
+                if (parts.length === 1) return true;
 
-        const newStatus = statuses.find(s => {
-            const lower = (s || '').toLowerCase();
-            return lower.includes('nouveau');
-        });
-        if (!newStatus) return false;
-
-        const parts = newStatus.trim().split(/\s+/);
-        if (parts.length === 1) return true;
-
-        const newPeriodKey = parts[1];
-        return newPeriodKey === activePeriod;
+                const newPeriodKey = parts[1];
+                return newPeriodKey === activePeriod;
+            }
+            return false;
+        }
+        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
+        return false;
     },
 
     getClassSeatingStatus(cls) {
@@ -2641,6 +2656,9 @@ export const SeatingChartManager = {
 
         const clone = sourceEl.cloneNode(true);
         clone.className = 'sc-drag-clone';
+        if (sourceEl.classList.contains('has-status-badge')) {
+            clone.classList.add('has-status-badge');
+        }
         clone.classList.remove('sc-chip-selected');
         clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin').forEach(el => el.remove());
 

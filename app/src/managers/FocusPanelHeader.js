@@ -434,6 +434,7 @@ export const FocusPanelHeader = {
         }
 
         this.callbacks.onUpdateListRow(result);
+        window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
 
         if (!isCreationMode) {
             UI.showNotification('Modifications enregistrées', 'success');

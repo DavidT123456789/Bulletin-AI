@@ -1138,6 +1138,7 @@ export const FocusPanelManager = {
         }
 
         if (wasOpen) {
+            window.dispatchEvent(new CustomEvent('student-updated'));
             // Defer processing of row updates and stats updates until after the close transition
             setTimeout(() => {
                 this._isClosing = false;
