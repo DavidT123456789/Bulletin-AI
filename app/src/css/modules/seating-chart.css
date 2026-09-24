@@ -626,11 +626,12 @@
     align-items: safe center;
     justify-content: flex-start;
     gap: 16px;
-    padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) 24px;
+    padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) 28px;
     overflow: auto;
     min-width: 0;
     min-height: 0;
     background: transparent;
+    transition: margin-left 0.42s cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 /* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
@@ -659,12 +660,20 @@
     align-items: safe center;
     gap: 16px;
     position: relative;
-    translate: 130px 0;
-    transition: translate 0.5s cubic-bezier(0.25, 0.85, 0.3, 1),
-                box-shadow 0.2s ease,
+    transform-origin: top center;
+    zoom: var(--sc-scale, 1);
+    will-change: transform;
+    transition: box-shadow 0.2s ease,
                 border-color 0.2s ease,
                 background-color 0.2s ease;
     width: fit-content;
+}
+
+@supports not (zoom: 1) {
+    .sc-classroom-board {
+        transform: scale(var(--sc-scale, 1));
+        transform-origin: top center;
+    }
 }
 
 /* Classroom Board Orientation (Student / Video Projection View) */
@@ -761,6 +770,11 @@
     padding: 0;
     pointer-events: none;
     z-index: 100;
+}
+
+#seatingChartView[data-locked="false"] .sc-floating-status {
+    right: calc(var(--content-padding-x, 24px) + 38px + 8px);
+    transition: right 0.35s cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 /* ────────── STATUS PILL (TOP-LEFT, ACTIONABLE CAPSULE) ────────── */
@@ -1397,13 +1411,29 @@
                 visibility 0.42s;
 }
 
-/* Classroom Board: centered in screen in locked mode (120Hz GPU translate) */
-#seatingChartView[data-locked="true"] .sc-classroom-board {
-    translate: 0 0;
-    transition: translate 0.42s cubic-bezier(0.25, 1, 0.3, 1),
-                box-shadow 0.2s ease,
-                border-color 0.2s ease,
-                background-color 0.2s ease;
+#seatingChartView[data-locked="false"] .sc-grid-area {
+    margin-left: 260px;
+}
+
+#seatingChartView[data-locked="true"] .sc-grid-area {
+    margin-left: 0;
+    padding-top: calc(56px + 48px);
+}
+
+.sc-grid-area[data-fitted="true"] {
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
+    padding-top: calc(56px + 24px);
+    padding-bottom: 28px;
+}
+
+.sc-grid-area[data-fitted="false"] {
+    overflow: auto;
+    justify-content: flex-start;
+    align-items: safe center;
+    padding-top: calc(56px + 20px);
+    padding-bottom: 28px;
 }
 
 /* Progress bar: hidden in locked mode — it's an editing affordance */
@@ -2018,6 +2048,7 @@
     
     .sc-grid-area { 
         padding: 0 !important;
+        margin-left: 0 !important;
         justify-content: center; 
         align-items: center;
         overflow: visible !important;
@@ -2027,6 +2058,7 @@
 
     .sc-classroom-board {
         translate: 0 0 !important;
+        transform: none !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -2138,16 +2170,16 @@
 
 @media (max-width: 768px) {
 
-    /* ── Classroom Board: hidden visual frame on mobile to save space ── */
+    /* ── Classroom Board: unified responsive card on mobile/tablet ── */
     .sc-classroom-board {
-        padding: 0;
-        border-radius: 0;
-        border: none;
-        background: transparent;
-        box-shadow: none;
-        gap: 12px;
+        padding: 12px 14px;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow-sm);
+        gap: 10px;
         width: fit-content;
-        min-width: 100%;
+        min-width: auto;
         align-items: safe center;
     }
 
@@ -2355,6 +2387,32 @@
     .sc-grid-area {
         padding: 12px;
         padding-top: calc(56px + 12px); /* header + spacing */
+        margin-left: 0 !important;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-grid-area,
+    #seatingChartView[data-locked="true"] .sc-grid-area {
+        margin-left: 0 !important;
+    }
+
+    #seatingChartView[data-locked="true"] .sc-grid-area {
+        padding-top: calc(56px + 44px);
+    }
+
+    .sc-grid-area[data-fitted="true"] {
+        overflow: hidden;
+        justify-content: center;
+        align-items: center;
+        padding-top: calc(56px + 12px);
+        padding-bottom: 12px;
+    }
+
+    .sc-grid-area[data-fitted="false"] {
+        overflow: auto;
+        justify-content: flex-start;
+        align-items: safe center;
+        padding-top: calc(56px + 12px);
+        padding-bottom: 20px;
     }
 
     :root {
@@ -2393,6 +2451,10 @@
         top: calc(56px + 12px);
         right: 12px;
         left: auto;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-floating-status {
+        right: calc(12px + 36px + 6px);
     }
 
     .sc-floating-actions {
@@ -3025,8 +3087,8 @@
     text-align: right;
 }
 
-/* ---------- READING MODE FLOATING ACTIONS (COMPACT CAPSULE) ---------- */
-/* Orientation toggle and Print button when sidebar is hidden (Top-Right) */
+/* ---------- FLOATING ACTIONS CAPSULE (TOP-RIGHT) ---------- */
+/* Zoom, Orientation toggle, and Print action capsule */
 .sc-floating-actions {
     position: absolute;
     top: calc(56px + var(--content-padding-x, 24px));
@@ -3044,20 +3106,18 @@
     border: 1px solid var(--glass-surface-border);
     border-radius: var(--radius-pill);
     box-shadow: var(--shadow-sm);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.3s ease, visibility 0.3s;
-    transform: translateY(-8px);
-    z-index: 100;
-    visibility: hidden;
-}
-
-#seatingChartView[data-locked="true"] .sc-floating-actions {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
+    z-index: 100;
     visibility: visible;
-    transition: opacity 0.35s ease 0.05s, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1) 0.05s, visibility 0.42s;
+    transition: opacity 0.35s ease, transform 0.42s cubic-bezier(0.25, 1, 0.3, 1), background var(--transition-fast);
+}
+
+/* In Edit mode: hide orientation & print in floating capsule (already accessible in sidebar) */
+#seatingChartView[data-locked="false"] .sc-floating-actions .sc-orientation-btn,
+#seatingChartView[data-locked="false"] .sc-floating-actions .sc-print-btn {
+    display: none !important;
 }
 
 [data-theme="dark"] .sc-floating-actions {

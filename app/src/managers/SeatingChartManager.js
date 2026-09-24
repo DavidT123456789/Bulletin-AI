@@ -35,6 +35,10 @@ export const SeatingChartManager = {
     _lastSelectedSidebarIndex: null,
     _undoStack: [],
     _redoStack: [],
+    _isFitted: true,
+    _zoomScale: 1,
+    _fitScale: 1,
+    _resizeDebounceTimer: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -191,6 +195,9 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions Capsule (Read-Only Mode) -->
                 <div class="sc-floating-actions sc-floating-capsule sc-read-only-only" id="scFloatingActions">
+                    <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
+                        <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
+                    </button>
                     <button class="sc-action-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
@@ -250,6 +257,67 @@ export const SeatingChartManager = {
         document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
         document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
+        document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
+
+        const gridArea = document.getElementById('scGridArea');
+        gridArea?.addEventListener('dblclick', (e) => {
+            if (!e.target.closest('.sc-cell') && !e.target.closest('.sc-desk')) {
+                this._toggleZoom();
+            }
+        });
+
+        let initialPinchDist = 0;
+        let initialPinchScale = 1;
+        gridArea?.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDist = Math.hypot(dx, dy);
+                initialPinchScale = this._zoomScale || 1;
+            }
+        }, { passive: true });
+
+        gridArea?.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDist > 0) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.hypot(dx, dy);
+                const ratio = dist / initialPinchDist;
+                const newScale = Math.min(1.4, Math.max(0.35, Math.round(initialPinchScale * ratio * 100) / 100));
+                this._zoomScale = newScale;
+                this._isFitted = (newScale <= this._fitScale + 0.05);
+                const board = document.getElementById('scClassroomBoard');
+                if (board) {
+                    board.style.setProperty('--sc-scale', newScale.toString());
+                    board.style.zoom = newScale.toString();
+                }
+                gridArea.setAttribute('data-fitted', this._isFitted ? 'true' : 'false');
+                this._updateZoomButtonUI(this._isFitted, newScale);
+            }
+        }, { passive: true });
+
+        gridArea?.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2 && initialPinchDist > 0) {
+                initialPinchDist = 0;
+                if (Math.abs(this._zoomScale - this._fitScale) < 0.08) {
+                    const board = document.getElementById('scClassroomBoard');
+                    const rBefore = board?.getBoundingClientRect?.() || null;
+                    this._applySmartFit(true);
+                    if (rBefore && rBefore.width > 0) {
+                        this._animateFLIPTransition(rBefore);
+                    }
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('resize', () => {
+            clearTimeout(this._resizeDebounceTimer);
+            this._resizeDebounceTimer = setTimeout(() => {
+                if (this._isActive) {
+                    this._applySmartFit();
+                }
+            }, 100);
+        });
 
         const desk = document.getElementById('scDesk');
         desk?.addEventListener('click', () => this._toggleOrientation());
@@ -520,6 +588,9 @@ export const SeatingChartManager = {
             this._undoStack = [];
             this._redoStack = [];
             this._render();
+            if (this._isLocked) {
+                this._applySmartFit(true);
+            }
             if (!immediate) {
                 this._animateViewEnter(viewEl);
                 this._scrollToDesk();
@@ -891,6 +962,11 @@ export const SeatingChartManager = {
             floatingUnlockBtn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
         }
         this._updateCellsDraggability();
+        if (locked) {
+            setTimeout(() => this._applySmartFit(true), 60);
+        } else {
+            this._applySmartFit();
+        }
     },
 
     _toggleLock() {
@@ -947,14 +1023,20 @@ export const SeatingChartManager = {
             if (!this._isLocked) {
                 this._renderGrid();
                 this._updateSidebarLockState();
+                this._applySmartFit(true);
             } else {
                 this._updateCellsDraggability();
+                this._applySmartFit(true);
             }
             TooltipsUI?.initTooltips?.();
             window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
                 detail: { classId: currentClass?.id, locked: this._isLocked }
             }));
         }, 50);
+
+        setTimeout(() => {
+            this._applySmartFit(true);
+        }, 430);
     },
 
     _updateCellsDraggability() {
@@ -978,6 +1060,187 @@ export const SeatingChartManager = {
         if (!view) return;
         const allPlaced = this._getUnplacedStudents().length === 0;
         view.dataset.allPlaced = allPlaced;
+    },
+
+    // ========================================================================
+    // SMART-FIT & MINIMALIST ZOOM
+    // ========================================================================
+
+    _applySmartFit(forceFit = false) {
+        const view = document.getElementById('seatingChartView');
+        const gridArea = document.getElementById('scGridArea');
+        const board = document.getElementById('scClassroomBoard');
+        if (!view || !gridArea || !board) return;
+
+        if (forceFit) {
+            this._isFitted = true;
+        }
+
+        if (!this._isFitted) {
+            const zoomScale = this._zoomScale || (this._fitScale < 0.95 ? 1.0 : 1.25);
+            board.style.setProperty('--sc-scale', zoomScale.toString());
+            board.style.zoom = zoomScale.toString();
+            gridArea.setAttribute('data-fitted', 'false');
+            this._updateZoomButtonUI(false, zoomScale);
+            return;
+        }
+
+        // Reset scroll when in fitted view so board is never clipped or stuck off-screen
+        gridArea.style.scrollBehavior = 'auto';
+        gridArea.scrollLeft = 0;
+        gridArea.scrollTop = 0;
+        gridArea.style.removeProperty('scroll-behavior');
+
+        const areaWidth = gridArea.clientWidth || 0;
+        const areaHeight = gridArea.clientHeight || 0;
+        if (areaWidth <= 0 || areaHeight <= 0) return;
+
+        const isMobile = window.innerWidth <= 768;
+        const reservedTop = isMobile ? 56 : 64;
+        const reservedBottom = isMobile ? 20 : 28;
+        const reservedHoriz = isMobile ? 20 : 48;
+
+        const availW = Math.max(80, areaWidth - reservedHoriz);
+        const availH = Math.max(80, areaHeight - reservedTop - reservedBottom);
+
+        const rect = board.getBoundingClientRect?.();
+        const currentScale = parseFloat(board.style.getPropertyValue('--sc-scale')) || 1;
+        const boardW = (rect?.width ? rect.width / currentScale : board.offsetWidth) || board.scrollWidth;
+        const boardH = (rect?.height ? rect.height / currentScale : board.offsetHeight) || board.scrollHeight;
+
+        if (!boardW || !boardH) return;
+
+        const scaleW = availW / boardW;
+        const scaleH = availH / boardH;
+        let scale = Math.min(scaleW, scaleH);
+
+        scale = Math.min(1.0, Math.max(0.35, Math.round(scale * 100) / 100));
+
+        this._fitScale = scale;
+        this._zoomScale = scale;
+        this._isFitted = true;
+
+        board.style.setProperty('--sc-scale', scale.toString());
+        board.style.zoom = scale.toString();
+        gridArea.setAttribute('data-fitted', 'true');
+        this._updateZoomButtonUI(true, scale);
+    },
+
+    _toggleZoom() {
+        const gridArea = document.getElementById('scGridArea');
+        const board = document.getElementById('scClassroomBoard');
+        if (!gridArea || !board) return;
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        const rBefore = board.getBoundingClientRect?.() || null;
+
+        if (this._isFitted) {
+            // Zoom IN: 1.0 (100%) on mobile, 1.25 (125%) on PC/desktop
+            this._isFitted = false;
+            const targetScale = this._fitScale < 0.95 ? 1.0 : 1.25;
+            this._zoomScale = targetScale;
+            board.style.setProperty('--sc-scale', targetScale.toString());
+            board.style.zoom = targetScale.toString();
+            gridArea.setAttribute('data-fitted', 'false');
+            this._updateZoomButtonUI(false, targetScale);
+        } else {
+            // Return to FITTED VIEW (reset scroll immediately to avoid being stuck)
+            this._isFitted = true;
+            gridArea.style.scrollBehavior = 'auto';
+            gridArea.scrollLeft = 0;
+            gridArea.scrollTop = 0;
+            gridArea.style.removeProperty('scroll-behavior');
+            this._applySmartFit(true);
+        }
+
+        if (rBefore && rBefore.width > 0) {
+            this._animateFLIPTransition(rBefore);
+        }
+    },
+
+    _animateFLIPTransition(rBefore) {
+        const board = document.getElementById('scClassroomBoard');
+        if (!board || !rBefore || rBefore.width <= 0) return;
+
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        if (prefersReducedMotion) return;
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        const rAfter = board.getBoundingClientRect?.();
+        if (!rAfter || rAfter.width <= 0) return;
+
+        const supportsZoom = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom', '1'));
+        const zAfter = supportsZoom ? (parseFloat(board.style.getPropertyValue('--sc-scale')) || parseFloat(board.style.zoom) || 1) : 1;
+        if (zAfter <= 0) return;
+
+        const deltaX = Math.round((rBefore.left - rAfter.left) * 100) / 100;
+        const deltaY = Math.round((rBefore.top - rAfter.top) * 100) / 100;
+        const scaleX = Math.round((rBefore.width / rAfter.width) * 1000) / 1000;
+        const scaleY = Math.round((rBefore.height / rAfter.height) * 1000) / 1000;
+
+        if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1 && Math.abs(scaleX - 1) < 0.01) {
+            return;
+        }
+
+        const tx = Math.round((deltaX / zAfter) * 100) / 100;
+        const ty = Math.round((deltaY / zAfter) * 100) / 100;
+
+        board.style.transformOrigin = '0 0';
+        board.style.transition = 'none';
+        board.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleX}, ${scaleY})`;
+
+        void board.offsetWidth;
+
+        requestAnimationFrame(() => {
+            board.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+
+            let timer = null;
+            let cleaned = false;
+            const cleanup = () => {
+                if (cleaned) return;
+                cleaned = true;
+                if (timer) clearTimeout(timer);
+                board.style.removeProperty('transform');
+                board.style.removeProperty('transform-origin');
+                board.style.removeProperty('transition');
+                this._zoomAnimCleanup = null;
+            };
+            this._zoomAnimCleanup = cleanup;
+
+            timer = setTimeout(cleanup, 400);
+            board.addEventListener('transitionend', (e) => {
+                if (e.target === board && e.propertyName === 'transform') {
+                    cleanup();
+                }
+            }, { once: true });
+        });
+    },
+
+    _updateZoomButtonUI(isFitted, scale) {
+        const zoomBtn = document.getElementById('scFloatingZoomBtn');
+        if (!zoomBtn) return;
+        const icon = zoomBtn.querySelector('iconify-icon');
+
+        if (isFitted) {
+            const nextLabel = (this._fitScale < 0.95) ? 'Agrandir (100%)' : 'Agrandir (125%)';
+            if (icon) icon.setAttribute('icon', 'solar:magnifer-zoom-in-linear');
+            zoomBtn.setAttribute('aria-label', nextLabel);
+            zoomBtn.setAttribute('data-tooltip', nextLabel);
+        } else {
+            if (icon) icon.setAttribute('icon', 'solar:minimize-square-linear');
+            zoomBtn.setAttribute('aria-label', 'Ajuster à l’écran');
+            zoomBtn.setAttribute('data-tooltip', 'Ajuster à l’écran');
+        }
+        TooltipsUI?.initTooltips?.();
     },
 
     // ========================================================================
@@ -1045,6 +1308,10 @@ export const SeatingChartManager = {
             this._staggerCellEntrance(140);
         } else {
             this._renderGrid();
+        }
+
+        if (this._isFitted) {
+            setTimeout(() => this._applySmartFit(), animate ? 560 : 0);
         }
 
         this._scrollToDesk();
@@ -2826,21 +3093,19 @@ export const SeatingChartManager = {
     },
 
     _scrollToDesk() {
+        if (this._isLocked && this._isFitted) return;
         requestAnimationFrame(() => {
             setTimeout(() => {
                 const gridArea = document.getElementById('scGridArea');
                 if (gridArea) {
-                    if (this._orientation === 'student') {
+                    const topTarget = this._orientation === 'student' ? 0 : (gridArea.scrollHeight || 0) + 500;
+                    if (typeof gridArea.scrollTo === 'function') {
                         gridArea.scrollTo({
-                            top: 0,
+                            top: topTarget,
                             behavior: 'smooth'
                         });
                     } else {
-                        // Force absolute bottom scroll, bypassing element boundaries to ensure padding is visible
-                        gridArea.scrollTo({
-                            top: gridArea.scrollHeight + 500,
-                            behavior: 'smooth'
-                        });
+                        gridArea.scrollTop = topTarget;
                     }
                 }
             }, 100); // Slight delay to ensure DOM layout and animations have updated height

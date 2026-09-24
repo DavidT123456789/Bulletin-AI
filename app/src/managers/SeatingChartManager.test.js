@@ -1027,6 +1027,148 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell.querySelector('.sc-cell-status-badge.sc-badge-depart')?.textContent).toBe('Départ');
         });
     });
+
+    describe('SeatingChartManager - Smart-Fit & Minimalist Zoom', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div class="main-content">
+                    <div class="output-section"></div>
+                </div>
+            `;
+            SeatingChartManager.init();
+        });
+
+        it('devrait calculer une échelle adaptée et positionner data-fitted en mode verrouillé', () => {
+            SeatingChartManager._isLocked = true;
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            // Simuler des dimensions d'écran mobile (largeur 390px, hauteur 800px)
+            Object.defineProperty(gridArea, 'clientWidth', { value: 390, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 700, configurable: true });
+
+            // Simuler une carte mère de classe (largeur 600px, hauteur 500px)
+            Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(board.style.getPropertyValue('--sc-scale')).toBeTruthy();
+            const scale = parseFloat(board.style.getPropertyValue('--sc-scale'));
+            expect(scale).toBeLessThan(1.0);
+            expect(scale).toBeGreaterThan(0.35);
+            expect(gridArea.getAttribute('data-fitted')).toBe('true');
+        });
+
+        it('devrait basculer entre la vue ajustée et le zoom 100% via _toggleZoom sur mobile et réinitialiser le scroll', () => {
+            SeatingChartManager._isLocked = true;
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(SeatingChartManager._fitScale).toBeLessThan(0.95);
+
+            // Bascule vers 100%
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(false);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1');
+            expect(gridArea.getAttribute('data-fitted')).toBe('false');
+
+            // Simuler un défilement horizontal par l'utilisateur
+            gridArea.scrollLeft = 250;
+            gridArea.scrollTop = 100;
+
+            // Bascule de retour vers Fit : le scroll doit impérativement être remis à 0
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(gridArea.scrollLeft).toBe(0);
+            expect(gridArea.scrollTop).toBe(0);
+            expect(gridArea.getAttribute('data-fitted')).toBe('true');
+        });
+
+        it('devrait permettre d’agrandir à 125% sur PC où la vue est déjà ajustée à 100%', () => {
+            SeatingChartManager._isLocked = true;
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            // Dimensions larges PC
+            Object.defineProperty(gridArea, 'clientWidth', { value: 1400, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 800, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(SeatingChartManager._fitScale).toBe(1.0);
+
+            // Sur PC, le premier clic doit zoomer à 1.25 (125%)
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(false);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1.25');
+
+            // Le deuxième clic revient à 1.0 (ajusté)
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1');
+        });
+
+        it('devrait appliquer le smart-fit et permettre le zoom également en mode édition (déverrouillé)', () => {
+            SeatingChartManager._isLocked = false;
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetWidth', { value: 600, configurable: true });
+            Object.defineProperty(board, 'offsetHeight', { value: 500, configurable: true });
+
+            SeatingChartManager._applySmartFit(true);
+
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(gridArea.getAttribute('data-fitted')).toBe('true');
+            expect(parseFloat(board.style.getPropertyValue('--sc-scale'))).toBeLessThan(1.0);
+
+            // Toggle zoom en mode édition
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(false);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1');
+            expect(gridArea.getAttribute('data-fitted')).toBe('false');
+
+            // Retour au fit
+            SeatingChartManager._toggleZoom();
+            expect(SeatingChartManager._isFitted).toBe(true);
+            expect(gridArea.getAttribute('data-fitted')).toBe('true');
+        });
+
+        it('devrait mettre à jour l’icône et le tooltip du bouton zoom flottant selon l’appareil', () => {
+            const zoomBtn = document.getElementById('scFloatingZoomBtn');
+            expect(zoomBtn).not.toBeNull();
+
+            // Mobile (fitScale < 0.95) -> "Agrandir (100%)"
+            SeatingChartManager._fitScale = 0.65;
+            SeatingChartManager._updateZoomButtonUI(true, 0.65);
+            expect(zoomBtn.getAttribute('aria-label')).toBe('Agrandir (100%)');
+            expect(zoomBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:magnifer-zoom-in-linear');
+
+            // PC (fitScale >= 0.95) -> "Agrandir (125%)"
+            SeatingChartManager._fitScale = 1.0;
+            SeatingChartManager._updateZoomButtonUI(true, 1.0);
+            expect(zoomBtn.getAttribute('aria-label')).toBe('Agrandir (125%)');
+            expect(zoomBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:magnifer-zoom-in-linear');
+
+            // État déjà zoomé -> "Ajuster à l’écran"
+            SeatingChartManager._updateZoomButtonUI(false, 1.25);
+            expect(zoomBtn.getAttribute('aria-label')).toBe('Ajuster à l’écran');
+            expect(zoomBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:minimize-square-linear');
+        });
+    });
 });
 
 
