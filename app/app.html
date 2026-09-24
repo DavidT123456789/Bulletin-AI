@@ -225,7 +225,7 @@
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" integrity="sha384-ZBvlAMcOinSpqbKp+h0PpJxrDWCO8veRjvEhIc+Wg2Um8ZUKrbyNtJChA7FhNtCF" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
     <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js" integrity="sha384-AiTRpehQ7zqeua0Ypfa6Q4ki/ddhczZxrKtiQbTQUlJIhBkTeyoZP9/W/5ulFt29" crossorigin="anonymous" defer></script>
-    <link rel="stylesheet" href="src/css/main.css?v=20260917-pill-v3">
+    <link rel="stylesheet" href="src/css/main.css?v=20260924-fixed">
 </head>
 
 <body style="background-color: inherit;">
@@ -730,7 +730,7 @@
                                     <!-- Populated by JS: T1: 12, T2: 14 -->
                                 </div>
                                 <div class="context-grade-group">
-                                    <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">T1</label>
+                                    <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
                                     <input type="text" id="focusCurrentGradeInput" class="context-grade-input grade-value"
                                         placeholder="--" maxlength="4">
                                 </div>
@@ -801,26 +801,28 @@
                         <div class="focus-appreciation-header">
                             <div class="focus-appreciation-label">
                                 <iconify-icon icon="solar:chat-line-linear"></iconify-icon>
-                                Appréciation
-                                <!-- Voice Dictation Button for Appreciation -->
-                                <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
-                                    data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
-                                        stroke-linejoin="round" width="1em" height="1em">
-                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                        <line x1="12" y1="19" x2="12" y2="22"></line>
-                                    </svg>
-                                </button>
-                                <!-- Speech Synthesis (Speak) Button for Appreciation -->
-                                <button type="button" id="focusAppreciationSpeakBtn" class="focus-speaker-btn tooltip"
-                                    data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                    </svg>
-                                </button>
+                                <span id="focusAppreciationTitle">Appréciation</span>
+                                <!-- Voice Dictation & Audio Synthesis Group -->
+                                <div class="focus-audio-group">
+                                    <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
+                                        data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                            stroke-linejoin="round" width="1em" height="1em">
+                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                                        </svg>
+                                    </button>
+                                    <!-- Speech Synthesis (Speak) Button for Appreciation -->
+                                    <button type="button" id="focusAppreciationSpeakBtn" class="focus-speaker-btn tooltip"
+                                        data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <!-- History Navigation Group (Segmented) -->
                                 <div class="history-navigation-group" id="historyNavigationGroup"
                                     style="display: none;">
@@ -889,8 +891,7 @@
                             </button>
                             <button id="focusGenerateBtn" class="btn btn-ai tooltip"
                                 data-tooltip="Générer l'appréciation (Ctrl + Entrée)<br><i style='opacity:0.7'>Clic droit : prévisualiser le prompt</i>">
-                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span
-                                    id="focusGeneratePeriod">T2</span>
+                                <iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer
                             </button>
                         </div>
                     </div>
@@ -3166,7 +3167,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 1bbe55a · 23 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 40fc2bc · 24 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

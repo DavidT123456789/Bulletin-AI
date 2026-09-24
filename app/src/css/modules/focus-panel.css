@@ -944,6 +944,20 @@
     background: var(--item-hover-bg);
 }
 
+/* === Voice Dictation & Audio Synthesis Group === */
+.focus-audio-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.focus-audio-group .focus-mic-btn,
+.focus-audio-group .focus-speaker-btn {
+    margin: 0;
+}
+
 /* === Speech Synthesis Button (Speaker) === */
 .focus-speaker-btn {
     width: 28px;
@@ -1278,51 +1292,120 @@
 
 /* === NEW: Grades display (S1 vs S2) === */
 .grades-wrapper {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-}
-
-/* Scoped sizing to make focus panel context grades slightly more compact than table grades */
-.grades-wrapper .grade-value {
-    min-width: 44px;
-    width: 44px !important;
-    max-width: 44px;
-    height: 24px !important;
-    font-size: 12px !important;
+    gap: 6px;
 }
 
 .previous-grades-inline {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.previous-grade-chip {
-    font-size: 12px;
-    color: var(--text-secondary);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: transparent;
-    white-space: nowrap;
 }
 
-.previous-grade-chip .prev-grade-value.grade-value:not([class*="grade-range-"]) {
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
+.previous-grades-inline:empty {
+    display: none;
 }
 
+/* Twin Micro-Capsules: Past Grade & Current Grade */
+.previous-grade-chip,
 .context-grade-group {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: transparent;
+    gap: 5px;
+    height: 26px;
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px 2px 7px;
+    box-sizing: border-box;
     white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.previous-grade-chip:hover {
+    background: var(--item-hover-bg);
+    border-color: var(--border-hover-color, var(--border-color));
+}
+
+.context-grade-group:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    background: var(--item-hover-bg);
+}
+
+.previous-grade-chip .period-prefix,
+.previous-grade-chip .grade-period-tag,
+.context-grade-group label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    user-select: none;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    cursor: default;
 }
 
 .context-grade-group label {
-    display: none !important;
+    cursor: pointer;
+}
+
+[data-theme="dark"] .previous-grade-chip .period-prefix,
+[data-theme="dark"] .previous-grade-chip .grade-period-tag,
+[data-theme="dark"] .context-grade-group label {
+    color: var(--text-secondary);
+}
+
+.previous-grade-chip .prev-grade-value {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    min-width: unset !important;
+    width: auto !important;
+    max-width: unset !important;
+    height: auto !important;
+    font-size: 12px !important;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: none !important;
+}
+
+.previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {
+    color: var(--text-tertiary);
+    opacity: 0.7;
+}
+
+.context-grade-input {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 12px !important;
+    width: 30px !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    height: auto !important;
+    text-align: center;
+    padding: 0 !important;
+    margin: 0;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: color var(--transition-fast);
+}
+
+.context-grade-input:not([class*="grade-range-"]) {
+    color: var(--text-primary);
+}
+
+.context-grade-input::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.6;
 }
 
 /* Inline evolution arrows inside focus panel context card */
@@ -1352,39 +1435,11 @@
     opacity: 0.6;
 }
 
-.context-grade-input {
-    border: 0.75px solid transparent;
-    outline: none !important;
-    text-align: center;
-    background: var(--bg-secondary);
+.previous-grades-inline .grade-evolution.neutral {
     color: var(--text-tertiary);
-    padding: 0 !important;
-    margin: 0;
-    font-family: inherit;
-    touch-action: manipulation;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    box-shadow: none;
-    box-sizing: border-box;
-    overflow: hidden;
-    line-height: 1 !important;
-    transition: all var(--transition-fast);
-}
-
-.context-grade-input:focus {
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2) !important;
-}
-
-.context-grade-input:not([class*="grade-range-"]) {
-    background: var(--bg-secondary);
-    color: var(--text-tertiary);
-    border-color: transparent;
-}
-
-.context-grade-input::placeholder {
-    color: inherit;
-    opacity: 0.5;
+    opacity: 0.35;
+    font-size: 13px;
+    user-select: none;
 }
 
 /* ============================
@@ -2157,21 +2212,24 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     /* Style épuré - icône seule sans fond */
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 50%;
     /* Harmonized with #focusWordCount font-size */
-    font-size: 12px;
+    font-size: 13px;
     cursor: help;
     transition: all var(--transition-fast);
     color: rgba(251, 191, 36, 0.8);
+    flex-shrink: 0;
 }
 
 .ai-indicator:hover {
     background: rgba(251, 191, 36, 0.1);
-    transform: scale(1.15);
+    transform: scale(1.12);
     color: rgb(251, 191, 36);
 }
 
@@ -2190,8 +2248,9 @@
 }
 
 .ai-indicator.source-manual:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    transform: scale(1.12);
 }
 
 [data-theme="dark"] .ai-indicator.source-manual {
@@ -2200,13 +2259,14 @@
 }
 
 [data-theme="dark"] .ai-indicator.source-manual:hover {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
+.ai-indicator.source-manual iconify-icon,
 .ai-indicator.source-manual i {
-    /* Harmonized with #focusWordCount font-size */
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1;
 }
 
 /* Source Indicator - Imported from file (Download icon) */
@@ -2217,7 +2277,7 @@
 .ai-indicator.source-imported:hover {
     background: rgba(6, 182, 212, 0.12);
     color: var(--color-cyan);
-    transform: scale(1.15);
+    transform: scale(1.12);
 }
 
 [data-theme="dark"] .ai-indicator.source-imported {
@@ -2305,7 +2365,7 @@
     gap: 6px;
     justify-content: space-between;
     margin-top: 0;
-    padding: 6px 16px 12px 16px;
+    padding: 4px 16px 6px 16px;
 }
 
 /* ============================
@@ -2316,7 +2376,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px 14px 16px;
+    padding: 4px 16px 14px 16px;
 }
 
 /* Copy button — icon-only, flat Material You tonal style */
@@ -2715,40 +2775,6 @@
     gap: 8px;
     transition: transform 0.4s var(--ease-bounce), box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
     letter-spacing: 0.3px;
-}
-
-/* Period badge — frosted pill inside the Generate button */
-#focusGeneratePeriod {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 2px 10px;
-    border-radius: var(--radius-pill);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-left: 2px;
-    backdrop-filter: blur(4px);
-    display: inline-flex;
-    align-items: center;
-}
-
-#focusGenerateBtn.btn-ai-outline #focusGeneratePeriod {
-    background: rgba(var(--primary-color-rgb), 0.12);
-    color: var(--primary-color);
-}
-
-#focusGenerateBtn.btn-neutral #focusGeneratePeriod {
-    background: rgba(0, 0, 0, 0.06);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] #focusGenerateBtn.btn-neutral #focusGeneratePeriod {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
-}
-
-#focusGenerateBtn.btn-warning #focusGeneratePeriod {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
-    color: var(--warning-color);
 }
 
 #focusGenerateBtn:hover {
@@ -4199,21 +4225,6 @@
     overflow: hidden;
     font-style: italic;
 }
-
-/* New Previous Grades Inline (Context Card) */
-.grades-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.previous-grades-inline {
-    display: flex;
-    gap: 8px;
-}
-
-/* Redundant overrides removed, unified under top grade declarations */
-
 
 [data-theme="dark"] .read-prev-data-container {
     background: var(--item-idle-bg);

@@ -463,7 +463,8 @@ export const ResultsUIManager = {
 
             if (pendingCount > 0) {
                 if (badge) badge.textContent = pendingCount;
-                generateBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente`;
+                const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
+                generateBtn.dataset.tooltip = `Générer ${pendingCount} appréciation${pendingCount > 1 ? 's' : ''} en attente (${periodLabel})`;
 
                 if (wasHidden) {
                     generateBtn.classList.add('animate-in');
@@ -494,13 +495,14 @@ export const ResultsUIManager = {
             if (needsUpdateCount > 0) {
                 if (badge) badge.textContent = needsUpdateCount;
 
+                const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
                 let tooltipText = '';
                 if (errorUpdateCount > 0 && dirtyUpdateCount > 0) {
-                    tooltipText = `Actualiser ${dirtyUpdateCount} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur`;
+                    tooltipText = `Actualiser ${dirtyUpdateCount} modifiée${dirtyUpdateCount > 1 ? 's' : ''} et ${errorUpdateCount} en erreur (${periodLabel})`;
                 } else if (errorUpdateCount > 0) {
-                    tooltipText = `Régénérer ${errorUpdateCount} appréciation${errorUpdateCount > 1 ? 's' : ''} en erreur`;
+                    tooltipText = `Régénérer ${errorUpdateCount} appréciation${errorUpdateCount > 1 ? 's' : ''} en erreur (${periodLabel})`;
                 } else {
-                    tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''}`;
+                    tooltipText = `Actualiser ${dirtyUpdateCount} appréciation${dirtyUpdateCount > 1 ? 's' : ''} modifiée${dirtyUpdateCount > 1 ? 's' : ''} (${periodLabel})`;
                 }
                 updateBtn.dataset.tooltip = tooltipText;
 

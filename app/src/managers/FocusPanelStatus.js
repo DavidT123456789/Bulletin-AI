@@ -606,7 +606,7 @@ export const FocusPanelStatus = {
                 sourceIndicator.innerHTML = '<iconify-icon icon="solar:pen-linear"></iconify-icon>';
                 sourceIndicator.style.display = 'inline-flex';
                 sourceIndicator.classList.add('source-manual');
-                sourceIndicator.setAttribute('data-tooltip', 'Édité manuellement');
+                sourceIndicator.setAttribute('data-tooltip', 'Rédigé manuellement');
                 break;
             case 'none':
             default:

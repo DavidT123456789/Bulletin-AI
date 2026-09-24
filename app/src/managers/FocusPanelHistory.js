@@ -258,7 +258,7 @@ export const FocusPanelHistory = {
                 sourceTooltip = `Généré par IA${modelName}`;
                 sourceIconHtml = `<span class="history-source-icon source-ai" title="${sourceTooltip}">✨</span>`;
             } else if (versionSourceType === 'manual') {
-                sourceTooltip = 'Édité manuellement';
+                sourceTooltip = 'Rédigé manuellement';
                 sourceIconHtml = `<span class="history-source-icon source-manual" title="${sourceTooltip}"><iconify-icon icon="solar:pen-linear"></iconify-icon></span>`;
             } else if (versionSourceType === 'imported') {
                 sourceTooltip = 'Importé depuis un fichier';

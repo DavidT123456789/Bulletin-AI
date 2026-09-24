@@ -1774,7 +1774,7 @@ export const FocusPanelManager = {
         if (!hasAppreciation) {
             // STATE 1: No appreciation yet → Bold primary style (action needed)
             generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer`;
             tooltipAction = "Générer";
         } else if (isDirty) {
             // STATE 2: Data modified since generation → Warning style (action recommended)
@@ -1912,11 +1912,13 @@ export const FocusPanelManager = {
         const getEvolutionHtml = (gradeA, gradeB) => {
             if (gradeA === null || gradeA === undefined || gradeA === '' ||
                 gradeB === null || gradeB === undefined || gradeB === '') {
-                return '';
+                return '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
             }
             const valA = parseFloat(gradeA);
             const valB = parseFloat(gradeB);
-            if (isNaN(valA) || isNaN(valB)) return '';
+            if (isNaN(valA) || isNaN(valB)) {
+                return '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
+            }
 
             const diff = valB - valA;
             const diffText = diff >= 0 ? `+${diff.toFixed(1).replace('.', ',')}` : diff.toFixed(1).replace('.', ',');
@@ -1975,7 +1977,8 @@ export const FocusPanelManager = {
                 chip.classList.add('tooltip');
                 chip.setAttribute('data-tooltip', tooltipText);
 
-                chip.innerHTML = `<span class="prev-grade-value grade-value ${gradeClass}">${displayGrade}</span>`;
+                const shortPeriod = Utils.getPeriodLabel(period, false);
+                chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value ${gradeClass}">${displayGrade}</span>`;
                 prevGradesEl.appendChild(chip);
 
                 // Add evolution arrow between this past grade and the next grade (or current input)
@@ -2011,7 +2014,7 @@ export const FocusPanelManager = {
         // === 5. CONTEXT CARD: Current Grade Input ===
         const gradeLabel = document.getElementById('focusCurrentGradeLabel');
         if (gradeLabel) {
-            gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false) + ' :';
+            gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
         }
 
         const gradeInput = document.getElementById('focusCurrentGradeInput');
@@ -2097,7 +2100,12 @@ export const FocusPanelManager = {
             this._autoResizeTextarea(contextInput);
         }
 
-        // === 7. APPRECIATION CARD: Text Content ===
+        // === 7. APPRECIATION CARD: Title & Text Content ===
+        const appreciationTitle = document.getElementById('focusAppreciationTitle');
+        if (appreciationTitle) {
+            const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
+            appreciationTitle.textContent = `Appréciation ${periodLabel}`;
+        }
         this._renderAppreciationText(result);
 
         // === 8. FOOTER: Generate Button State (Générer vs Régénérer) ===

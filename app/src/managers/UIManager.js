@@ -515,7 +515,12 @@ export const UI = {
 
                 const gradeLabel = document.getElementById('focusCurrentGradeLabel');
                 if (gradeLabel) {
-                    gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false) + ' :';
+                    gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false);
+                }
+
+                const appreciationTitle = document.getElementById('focusAppreciationTitle');
+                if (appreciationTitle) {
+                    appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(appState.currentPeriod, false)}`;
                 }
 
                 const gradeInput = document.getElementById('focusCurrentGradeInput');
@@ -526,8 +531,7 @@ export const UI = {
 
                 const generateBtn = document.getElementById('focusGenerateBtn');
                 if (generateBtn) {
-                    const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, false);
-                    generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer <span id="focusGeneratePeriod">${periodLabel}</span>`;
+                    generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
                 }
 
                 const prevGradesEl = document.getElementById('focusPreviousGrades');
@@ -543,7 +547,8 @@ export const UI = {
                         chip.className = 'previous-grade-chip tooltip';
                         const periodLabel = Utils.getPeriodLabel(p, true);
                         chip.setAttribute('data-tooltip', `${periodLabel} : --`);
-                        chip.innerHTML = `<span class="prev-grade-value grade-value">--</span>`;
+                        const shortPeriod = Utils.getPeriodLabel(p, false);
+                        chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">--</span>`;
                         prevGradesEl.appendChild(chip);
 
                         const nextPeriod = periods[idx + 1];
@@ -553,6 +558,7 @@ export const UI = {
                             if (nextPeriod === appState.currentPeriod) {
                                 evoEl.id = 'focusCurrentEvolutionArrow';
                             }
+                            evoEl.innerHTML = '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
                             prevGradesEl.appendChild(evoEl);
                         }
                     });

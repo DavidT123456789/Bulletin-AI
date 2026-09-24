@@ -288,6 +288,9 @@ export const ListViewRenderer = {
             headerPeriodCount
         };
 
+        const activePeriodKey = (periods && periods[currentPeriodIndex]) || appState.currentPeriod || 'S1';
+        const activePeriodLabel = Utils.getPeriodLabel(activePeriodKey, false) || activePeriodKey;
+
         const theadContent = `
             <tr>
                 <th class="name-header-with-search sortable-header" data-sort-field="name">
@@ -321,17 +324,17 @@ export const ListViewRenderer = {
                     <span id="avgWordsChip" class="detail-chip header-action-trigger" data-tooltip="Nombre moyen de mots" style="display:none; pointer-events: auto;"></span>
                     <div class="header-content-wrapper" style="pointer-events: none; position: relative; z-index: 2;">
                         <span style="display: inline-flex; align-items: center;">
-                            Appréciation
+                            Appréciation ${activePeriodLabel}
                         </span>
                         <div class="appreciation-header-actions" id="appreciationHeaderActions" style="pointer-events: auto;">
                             <button type="button" class="btn-mobile-compact-toggle header-action-trigger tooltip" id="mobileCompactToggleBtn" style="display: none;" aria-label="Mode compact" data-tooltip="${title}">
                                 <iconify-icon icon="${iconClass.split(' ')[0]}"></iconify-icon>
                             </button>
-                            <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente">
+                            <button type="button" class="btn-smart-action-inline mode-generate tooltip" id="generateBtnInline" style="display: none;" data-tooltip="Générer les appréciations en attente (${activePeriodLabel})">
                                 <iconify-icon icon="solar:magic-stick-3-linear" class="smart-action-icon"></iconify-icon>
                                 <span class="smart-action-badge" id="generateBadgeInline">0</span>
                             </button>
-                            <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées">
+                            <button type="button" class="btn-smart-action-inline mode-update tooltip" id="updateBtnInline" style="display: none;" data-tooltip="Actualiser les appréciations modifiées (${activePeriodLabel})">
                                 <iconify-icon icon="solar:refresh-linear" class="smart-action-icon"></iconify-icon>
                                 <span class="smart-action-badge" id="updateBadgeInline">0</span>
                             </button>
