@@ -132,11 +132,19 @@ export const App = {
      */
     async rehydrateAll() {
         await StorageManager.loadAppState({ checkPendingRestore: false });
+
+        const allClasses = ClassManager?.getAllClasses?.() || [];
+        const currentClassId = appState.currentClassId;
+        const currentClassExists = allClasses.some(c => c.id === currentClassId);
+        if ((!currentClassId || !currentClassExists) && allClasses.length > 0) {
+            await ClassManager.switchClass(allClasses[0].id);
+        } else if (currentClassId) {
+            await ClassManager._filterResultsByClass(currentClassId);
+        }
+
         this.updateUIOnLoad();
         ClassUIManager.updateHeaderDisplay();
         if (SeatingChartManager) {
-            const hasResults = !!(appState?.data?.filteredResults?.length || appState?.data?.generatedResults?.length);
-            SeatingChartManager.onClassChange?.(hasResults);
             SeatingChartManager.restoreActiveView?.();
         }
         if (FocusPanelManager?.closePanel) {

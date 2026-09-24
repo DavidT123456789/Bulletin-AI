@@ -448,11 +448,17 @@ export const SeatingChartManager = {
         const fab = document.getElementById('addStudentFab');
         if (!wrapper || !viewEl) return;
 
+        if (this._viewExitTimeout) {
+            clearTimeout(this._viewExitTimeout);
+            this._viewExitTimeout = null;
+        }
+
         const isList = view === 'list';
 
         if (isList) {
             const finishList = () => {
                 const wasActive = this._isActive;
+                viewEl.classList.remove('sc-exiting', 'sc-entering');
                 wrapper.dataset.view = 'list';
                 viewEl.style.display = 'none';
                 if (fab) fab.style.display = '';
@@ -509,6 +515,7 @@ export const SeatingChartManager = {
                 this._scrollToDesk();
                 this._maybeShowOnboardingHint();
             } else {
+                viewEl.classList.remove('sc-exiting', 'sc-entering');
                 this._scrollToDesk();
             }
         }
@@ -543,16 +550,13 @@ export const SeatingChartManager = {
             if (targetView === 'plan' && !hasResults) {
                 appState.activeView = 'list';
             }
-            const wrapper = document.querySelector('.main-content-wrapper');
-            if (wrapper) wrapper.dataset.view = 'list';
-            const viewEl = document.getElementById('seatingChartView');
-            if (viewEl) viewEl.style.display = 'none';
-            this._isActive = false;
+            this.switchToView('list', { silent: true, immediate: true });
         }
     },
 
     /** Called when class changes — reload data or revert to list */
-    onClassChange(hasResults) {
+    onClassChange(hasResults, options = {}) {
+        const { immediate = false } = typeof options === 'boolean' ? { immediate: options } : options;
         this.updateToggleVisibility(hasResults);
         if (!this._isActive) return;
 
@@ -560,7 +564,7 @@ export const SeatingChartManager = {
         this._closePlacementPopover();
 
         if (!hasResults) {
-            this.switchToView('list');
+            this.switchToView('list', { immediate });
             return;
         }
 
@@ -597,7 +601,13 @@ export const SeatingChartManager = {
 
     updateToggleVisibility(hasResults) {
         const toggle = document.getElementById('viewToggle');
-        if (toggle) toggle.classList.toggle('visible', hasResults);
+        if (toggle) {
+            const wasVisible = toggle.classList.contains('visible');
+            toggle.classList.toggle('visible', hasResults);
+            if (!wasVisible && hasResults && window.UI && typeof window.UI.updateGlider === 'function') {
+                requestAnimationFrame(() => window.UI.updateGlider(toggle, true));
+            }
+        }
     },
 
     // ========================================================================
@@ -623,6 +633,10 @@ export const SeatingChartManager = {
 
     /** View exit — dissolve then callback */
     _animateViewExit(viewEl, onComplete) {
+        if (this._viewExitTimeout) {
+            clearTimeout(this._viewExitTimeout);
+            this._viewExitTimeout = null;
+        }
         viewEl.classList.remove('sc-entering');
         viewEl.classList.add('sc-exiting');
 
@@ -630,11 +644,12 @@ export const SeatingChartManager = {
         const done = () => {
             if (called) return;
             called = true;
+            this._viewExitTimeout = null;
             viewEl.classList.remove('sc-exiting');
             onComplete();
         };
         viewEl.addEventListener('animationend', done, { once: true });
-        setTimeout(done, 350);
+        this._viewExitTimeout = setTimeout(done, 350);
     },
 
     /** Stagger cell entrance (used after render) */

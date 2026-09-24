@@ -814,6 +814,21 @@ describe('SeatingChartManager - Mémorisation de la vue et restauration au déma
         expect(appState.activeView).toBe('list');
         expect(document.querySelector('.main-content-wrapper').dataset.view).toBe('list');
     });
+
+    it('devrait synchroniser les boutons du toggle et le glider en vue liste lors de restoreActiveView', () => {
+        appState.currentClassId = classA.id;
+        appState.activeView = 'list';
+        const updateGliderSpy = vi.fn();
+        window.UI = { ...window.UI, updateGlider: updateGliderSpy };
+
+        SeatingChartManager.restoreActiveView();
+
+        const listBtn = document.querySelector('.view-toggle-btn[data-view="list"]');
+        const planBtn = document.querySelector('.view-toggle-btn[data-view="plan"]');
+        expect(listBtn.classList.contains('active')).toBe(true);
+        expect(planBtn.classList.contains('active')).toBe(false);
+        expect(updateGliderSpy).toHaveBeenCalledWith(document.getElementById('viewToggle'), true);
+    });
 });
 
 describe('SeatingChartManager - Classes reconstituées et empilement des élèves', () => {

@@ -74,50 +74,57 @@ export const GliderManager = {
     },
 
     /**
+     * Résout l'élément actif au sein d'un conteneur segmenté (radio ou boutons à classe .active).
+     * @private
+     * @param {HTMLElement} container
+     * @returns {HTMLElement|null}
+     */
+    _getActiveElement(container) {
+        const isRadio = container.querySelector('input[type="radio"]') !== null;
+        if (isRadio) {
+            const checked = container.querySelector('input:checked');
+            if (checked) {
+                return (checked.id ? container.querySelector(`label[for="${checked.id}"]`) : null)
+                    ?? checked.nextElementSibling;
+            }
+            return null;
+        }
+        return container.querySelector('.active');
+    },
+
+    /**
      * Met à jour la position du Glider pour un conteneur donné.
      * @param {HTMLElement} container - Le conteneur du sélecteur
      * @param {boolean} immediate - Si true, désactive la transition pour un déplacement instantané
+     * @param {boolean} [isRetry=false] - Indique si cet appel est une tentative de rattrapage
      */
-    update(container, immediate = false) {
-        if (!container || typeof container.querySelector !== 'function') return;
+    update(container, immediate = false, isRetry = false) {
+        if (!container?.querySelector) return;
         const glider = container.querySelector('.ui-glider');
         if (!glider) return;
 
-        let activeEl;
-        const isRadioSelector = container.querySelector('input[type="radio"]') !== null;
-        if (isRadioSelector) {
-            const checked = container.querySelector('input:checked');
-            if (checked) {
-                activeEl = container.querySelector(`label[for="${checked.id}"]`);
-                if (!activeEl) {
-                    activeEl = checked.nextElementSibling;
-                }
-            }
-        } else {
-            activeEl = container.querySelector('.active');
-        }
+        const activeEl = this._getActiveElement(container);
 
         if (activeEl) {
             const width = activeEl.offsetWidth;
             const left = activeEl.offsetLeft;
 
             if (width > 0) {
-                if (immediate) {
-                    glider.style.transition = 'none';
-                } else {
-                    glider.style.transition = GLIDER_TRANSITION;
-                }
-
+                glider.style.transition = immediate ? 'none' : GLIDER_TRANSITION;
                 glider.style.width = `${width}px`;
                 glider.style.left = `${left}px`;
-                glider.offsetHeight;
-                requestAnimationFrame(() => {
-                    glider.style.transition = GLIDER_TRANSITION;
-                });
+                if (immediate) {
+                    requestAnimationFrame(() => {
+                        glider.style.transition = GLIDER_TRANSITION;
+                    });
+                }
             } else {
                 glider.style.transition = GLIDER_TRANSITION;
-                glider.style.width = `${width}px`;
+                glider.style.width = '0px';
                 glider.style.left = `${left}px`;
+                if (!isRetry && (container.offsetWidth > 0 || container.classList.contains('visible'))) {
+                    requestAnimationFrame(() => this.update(container, immediate, true));
+                }
             }
         } else {
             glider.style.width = '0';

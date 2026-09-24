@@ -693,7 +693,6 @@ export const StorageManager = {
             'currentSubject',
             'currentInputMode',
             'activeStatFilter',
-            'activeView',
             'refinementEdits'
         ];
         keysToRemove.forEach(k => delete settings[k]);
@@ -1082,7 +1081,8 @@ export const StorageManager = {
                     refinementEdits: settings.refinementEdits || {},
                     privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                     seatingGrid: settings.seatingGrid || appState.seatingGrid,
-                    journalThreshold: settings.journalThreshold ?? appState.journalThreshold
+                    journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
+                    activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                 });
                 stats.settingsImported = true;
             }
@@ -1108,6 +1108,16 @@ export const StorageManager = {
                 } else {
                     userSettings.academic.classes = backup.classes;
                     stats.classesAdded = backup.classes.length;
+                }
+
+                const targetClassId = backup.currentClassId || userSettings.academic.currentClassId;
+                const classExists = (userSettings.academic.classes || []).some(c => c.id === targetClassId);
+                if (classExists) {
+                    userSettings.academic.currentClassId = targetClassId;
+                    appState.currentClassId = targetClassId;
+                } else if (userSettings.academic.classes.length > 0) {
+                    userSettings.academic.currentClassId = userSettings.academic.classes[0].id;
+                    appState.currentClassId = userSettings.academic.classes[0].id;
                 }
             }
 

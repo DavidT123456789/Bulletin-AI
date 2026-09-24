@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StorageManager } from './StorageManager.js';
-import { userSettings, runtimeState } from '../state/State.js';
+import { appState, userSettings, runtimeState } from '../state/State.js';
 
 // Mock DBService
 vi.mock('../services/DBService.js', () => ({
@@ -85,7 +85,9 @@ vi.mock('../state/State.js', () => ({
         generatedResults: [],
         refinementEdits: {},
         activeStatFilter: null,
-        currentInputMode: 'single'
+        currentInputMode: 'single',
+        activeView: 'list',
+        currentClassId: null
     }
 }));
 
@@ -100,7 +102,8 @@ vi.mock('../config/Config.js', () => ({
         'Générique': { iaConfig: { length: 50, tone: 2, voice: 'il' } }
     },
     DEFAULT_IA_CONFIG: { length: 50, tone: 2, voice: 'il', styleInstructions: '' },
-    DEFAULT_EVOLUTION_THRESHOLDS: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 }
+    DEFAULT_EVOLUTION_THRESHOLDS: { positive: 1, veryPositive: 2, negative: -1, veryNegative: -2 },
+    DEFAULT_PRIVACY_SETTINGS: { anonymizeData: false }
 }));
 
 // Mock UIManager
@@ -539,6 +542,42 @@ describe('StorageManager', () => {
             expect(UI.showNotification).toHaveBeenCalledWith('État précédent restauré.', 'success');
 
             vi.useRealTimers();
+        });
+    });
+
+    describe('importBackup & getExportableSettings', () => {
+        it('should include activeView in getExportableSettings', () => {
+            userSettings.ui.activeView = 'plan';
+            const settings = StorageManager.getExportableSettings();
+            expect(settings.activeView).toBe('plan');
+        });
+
+        it('should restore activeView from backup when importing', async () => {
+            const backupContent = JSON.stringify({
+                appVersion: '4.3.0',
+                settings: {
+                    subjects: { Français: {} },
+                    activeView: 'plan'
+                }
+            });
+
+            await StorageManager.importBackup(backupContent, { mergeData: true, silent: true });
+            expect(appState.activeView).toBe('plan');
+        });
+
+        it('should align currentClassId with restored classes when importing', async () => {
+            const backupContent = JSON.stringify({
+                appVersion: '4.3.0',
+                classes: [
+                    { id: 'c1', name: '3A' },
+                    { id: 'c2', name: '3B' }
+                ],
+                currentClassId: 'c2'
+            });
+
+            await StorageManager.importBackup(backupContent, { mergeData: false, silent: true });
+            expect(userSettings.academic.currentClassId).toBe('c2');
+            expect(appState.currentClassId).toBe('c2');
         });
     });
 });
