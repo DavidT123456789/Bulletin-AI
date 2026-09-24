@@ -863,6 +863,134 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
         expect(cell.textContent).toContain('Alice');
         expect(cell.textContent).toContain('Bob');
     });
+
+    describe('Gestion des statuts Départ et Nouveau (Audit et alerte non placé)', () => {
+        let testClass;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div id="seatingChartView" data-locked="false">
+                    <div class="sc-floating-status">
+                        <div class="sc-status-pill" id="scStatusPill"></div>
+                        <div class="sc-toolbar-info" id="scFooterInfo"></div>
+                    </div>
+                    <div id="scLockBtn" class="sc-toggle-switch"></div>
+                    <button id="scUnlockFloatingBtn"></button>
+                    <div id="scGridContainer"></div>
+                    <div id="scSidebarTitle"></div>
+                    <div id="scStudentList"></div>
+                </div>
+                <div id="viewToggle"></div>
+            `;
+
+            testClass = ClassManager.createClass('4°1');
+            appState.currentClassId = testClass.id;
+            userSettings.academic.currentClassId = testClass.id;
+            appState.currentPeriod = 'S1';
+            SeatingChartManager._isActive = true;
+            SeatingChartManager._isLocked = false;
+
+            // 3 élèves : 2 élèves actifs placés, 1 élève avec badge Départ non placé
+            appState.generatedResults = [
+                {
+                    id: 'act1',
+                    classId: testClass.id,
+                    nom: 'Dupont',
+                    prenom: 'Alex',
+                    studentData: { statuses: [] },
+                    seatingPosition: { row: 0, col: 0 }
+                },
+                {
+                    id: 'act2',
+                    classId: testClass.id,
+                    nom: 'Durand',
+                    prenom: 'Béatrice',
+                    studentData: { statuses: ['Nouveau S1'] },
+                    seatingPosition: { row: 0, col: 1 }
+                },
+                {
+                    id: 'dep1',
+                    classId: testClass.id,
+                    nom: 'Moreau',
+                    prenom: 'Claire',
+                    studentData: { statuses: ['Départ S1'] },
+                    seatingPosition: null
+                }
+            ];
+
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._initGrid(5, 6);
+            SeatingChartManager._loadPositionsFromState();
+        });
+
+        it('ne doit pas compter un élève avec badge Départ non placé comme "non placé" dans le statut', () => {
+            testClass.seatingLocked = true;
+            const status = SeatingChartManager.getClassSeatingStatus(testClass);
+
+            // Total des actifs attendus = 2, placés = 2, unplaced = 0 !
+            expect(status.total).toBe(2);
+            expect(status.placed).toBe(2);
+            expect(status.unplaced).toBe(0);
+            expect(status.status).toBe('locked');
+            expect(status.shortLabel).toBe('Validé');
+        });
+
+        it('doit afficher "Validé" sans avertissement "non placé" dans scStatusPill quand verrouillé', () => {
+            testClass.seatingLocked = true;
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._updateStatusPill();
+
+            const pill = document.getElementById('scStatusPill');
+            expect(pill.textContent).toContain('Validé');
+            expect(pill.textContent).not.toContain('non placé');
+            expect(pill.querySelector('.sc-status-pill-unplaced')).toBeNull();
+        });
+
+        it('ne doit pas placer un élève marqué Départ lors de l\'agencement automatique', () => {
+            // Vider la grille
+            SeatingChartManager._gridState = Array.from({ length: 5 }, () => Array(6).fill(null));
+            appState.generatedResults.forEach(r => { r.seatingPosition = null; });
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+
+            SeatingChartManager._autoPlace('alpha-asc');
+
+            const placedIds = SeatingChartManager._getPlacedIds();
+            // Alex et Béatrice (les actifs) sont placés
+            expect(placedIds.has('act1')).toBe(true);
+            expect(placedIds.has('act2')).toBe(true);
+            // Claire (Départ) n'est PAS placée automatiquement sur la grille
+            expect(placedIds.has('dep1')).toBe(false);
+        });
+
+        it('doit afficher les badges Nouveau et Départ sur les cellules appropriées', () => {
+            // Placer l'élève Départ pour vérifier le rendu de sa cellule
+            SeatingChartManager._gridState[0][2] = 'dep1';
+            SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+
+            // Cellule 0,1 (Béatrice - Nouveau)
+            const cellNew = SeatingChartManager._createCell(0, 1);
+            expect(cellNew.classList.contains('sc-cell-new')).toBe(true);
+            expect(cellNew.querySelector('.sc-cell-status-badge.sc-badge-new')?.textContent).toBe('Nouveau');
+
+            // Cellule 0,2 (Claire - Départ)
+            const cellDepart = SeatingChartManager._createCell(0, 2);
+            expect(cellDepart.classList.contains('sc-cell-departed')).toBe(true);
+            expect(cellDepart.querySelector('.sc-cell-status-badge.sc-badge-depart')?.textContent).toBe('Départ');
+        });
+
+        it('doit isoler l\'élève Départ dans la section dédiée du volet latéral sans bloquer le succès', () => {
+            const listContainer = document.getElementById('scStudentList');
+
+            SeatingChartManager._renderSidebar();
+
+            // Le succès "Tous les élèves sont placés !" s'affiche pour les élèves actifs
+            expect(listContainer.innerHTML).toContain('Tous les élèves sont placés !');
+
+            // L'élève parti apparaît dans sa sous-section dédiée
+            expect(listContainer.querySelector('.sc-sidebar-departed-section')).not.toBeNull();
+            expect(listContainer.querySelector('.sc-chip-badge-depart')?.textContent).toBe('Départ');
+        });
+    });
 });
 
 

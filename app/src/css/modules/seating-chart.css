@@ -539,6 +539,83 @@
     margin-left: 2px;
 }
 
+/* Status badge on sidebar chips */
+.sc-chip-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2.5px 6px;
+    border-radius: var(--radius-full, 999px);
+    margin-left: auto;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+.sc-chip-badge-new {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .sc-chip-badge-new {
+    background: rgba(56, 189, 248, 0.16);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sc-chip-badge-depart {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .sc-chip-badge-depart {
+    background: rgba(248, 113, 113, 0.16);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+.sc-student-chip.sc-chip-departed {
+    opacity: 0.65;
+}
+
+.sc-student-chip.sc-chip-departed:hover {
+    opacity: 0.95;
+}
+
+/* Sidebar departed subsection */
+.sc-sidebar-departed-section {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sc-sidebar-departed-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0 4px;
+}
+
+.sc-sidebar-departed-header iconify-icon {
+    font-size: 0.9rem;
+    color: var(--error-color);
+}
+
+.sc-sidebar-departed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 /* ────────── GRID AREA ────────── */
 .sc-grid-area {
     flex: 1;
@@ -1233,6 +1310,57 @@
 .sc-evolution-dot.progress { background: var(--success-color); }
 .sc-evolution-dot.stable { background: var(--warning-color); }
 .sc-evolution-dot.regression { background: var(--error-color); }
+
+/* Cell status badges (Nouveau / Départ) */
+.sc-cell-status-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 1.5px 4.5px;
+    border-radius: var(--radius-full, 999px);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    letter-spacing: 0.02em;
+}
+
+.sc-cell-status-badge.sc-badge-new {
+    background: rgba(14, 165, 233, 0.14);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-new {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.sc-cell-status-badge.sc-badge-depart {
+    background: rgba(239, 68, 68, 0.14);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .sc-cell-status-badge.sc-badge-depart {
+    background: rgba(248, 113, 113, 0.18);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+/* Faded/dashed styling for a departed student still occupying a desk */
+.sc-cell.occupied.sc-cell-departed {
+    opacity: 0.7;
+    border-style: dashed !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.sc-cell.occupied.sc-cell-departed .sc-cell-name {
+    opacity: 0.8;
+}
 
 /* ────────── LOCKED STATE ────────── */
 

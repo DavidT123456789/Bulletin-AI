@@ -731,11 +731,12 @@ export const SeatingChartManager = {
     },
 
     _selectSidebarRange(idx1, idx2, filteredList) {
+        if (!Array.isArray(filteredList)) return;
         const min = Math.min(idx1, idx2);
         const max = Math.max(idx1, idx2);
         
         for (let i = min; i <= max; i++) {
-            const id = filteredList[i].id;
+            const id = filteredList[i]?.id;
             if (id && !this._selectedChipIds.includes(id)) {
                 this._selectedChipIds.push(id);
             }
@@ -1031,15 +1032,16 @@ export const SeatingChartManager = {
     _printChart() {
         const classData = appState.classes?.find(c => c.id === appState.currentClassId);
         const className = classData?.name || 'Plan de classe';
-        const studentCount = this._students?.length || 0;
+        const activeStudents = (this._students || []).filter(s => !this._isStudentDeparted(s));
+        const studentCount = activeStudents.length;
         const dateStr = new Date().toLocaleDateString('fr-FR');
 
         const originalTitle = document.title;
         const safeName = className.replace(/[^a-zA-Z0-9À-ÿ\-_ ]/g, '').trim().replace(/\s+/g, '-');
         document.title = `Plan-de-classe_${safeName}_${new Date().toISOString().slice(0, 10)}`;
 
-        const placed = this._getPlacedIds().size;
-        const unplaced = studentCount - placed;
+        const placed = activeStudents.filter(s => this._getPlacedIds().has(s.id)).length;
+        const unplaced = Math.max(0, studentCount - placed);
         const unplacedHtml = unplaced > 0
             ? `<div class="sc-print-warning">⚠ ${unplaced} élève${unplaced > 1 ? 's' : ''} non placé${unplaced > 1 ? 's' : ''}</div>`
             : '';
@@ -1348,9 +1350,9 @@ export const SeatingChartManager = {
         return ids;
     },
 
-    _getUnplacedStudents() {
+    _getUnplacedStudents(includeDeparted = false) {
         const placedIds = this._getPlacedIds();
-        return this._students.filter(s => !placedIds.has(s.id));
+        return this._students.filter(s => !placedIds.has(s.id) && (includeDeparted || !this._isStudentDeparted(s)));
     },
 
     // ========================================================================
@@ -1566,16 +1568,31 @@ export const SeatingChartManager = {
             const student = students[0];
             cell.dataset.resultId = student.id;
             const isPinned = student.seatingPosition?.pinned || false;
+            const isDeparted = this._isStudentDeparted(student);
+            const isNew = this._isStudentNew(student);
+
             cell.classList.add('occupied');
+            if (isDeparted) cell.classList.add('sc-cell-departed');
+            if (isNew) cell.classList.add('sc-cell-new');
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
+
+            let tooltipText = Utils.formatStudentName(student.nom, student.prenom);
+            if (isNew) tooltipText += ' • Nouveau';
+            if (isDeparted) tooltipText += ' • Départ';
+
             if (this._isLocked) {
-                cell.setAttribute('data-tooltip', Utils.formatStudentName(student.nom, student.prenom));
+                cell.setAttribute('data-tooltip', tooltipText);
             }
+
+            const statusBadgeHTML = isDeparted
+                ? `<span class="sc-cell-status-badge sc-badge-depart">Départ</span>`
+                : (isNew ? `<span class="sc-cell-status-badge sc-badge-new">Nouveau</span>` : '');
 
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
                 <span class="sc-cell-name">${student.prenom || ''} ${(student.nom || '')[0] || ''}.</span>
+                ${statusBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
@@ -1775,7 +1792,9 @@ export const SeatingChartManager = {
         const list = document.getElementById('scStudentList');
         if (!list) return;
 
-        const unplaced = this._getUnplacedStudents();
+        const unplaced = this._getUnplacedStudents(false);
+        const departedUnplaced = this._getUnplacedStudents(true).filter(s => this._isStudentDeparted(s));
+
         const sorted = [...unplaced].sort((a, b) =>
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
         );
@@ -1786,19 +1805,46 @@ export const SeatingChartManager = {
             ? sorted.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
             : sorted;
 
-        list.innerHTML = filtered.length === 0
+        const filteredDeparted = searchTerm
+            ? departedUnplaced.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
+            : departedUnplaced;
+
+        const activeListHtml = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
-                    ? `<div class="sc-empty-text"><strong>Bravo !</strong><br>Le plan est complet !</div>
+                    ? `<div class="sc-empty-text"><strong>Bravo !</strong><br>Tous les élèves sont placés !</div>
                        <iconify-icon icon="solar:check-circle-bold-duotone" class="sc-empty-success-icon"></iconify-icon>`
                     : 'Aucun résultat'}
                </div>`
             : filtered.map((s, index) => `
-                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
+                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="true" data-result-id="${s.id}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                    ${s.isNew ? '<span class="sc-chip-badge sc-chip-badge-new">Nouveau</span>' : ''}
                 </div>
             `).join('');
+
+        const departedHtml = filteredDeparted.length > 0
+            ? `<div class="sc-sidebar-departed-section">
+                <div class="sc-sidebar-departed-header">
+                    <iconify-icon icon="solar:user-cross-linear"></iconify-icon>
+                    <span>Élève${filteredDeparted.length > 1 ? 's' : ''} parti${filteredDeparted.length > 1 ? 's' : ''} (${filteredDeparted.length})</span>
+                </div>
+                <div class="sc-sidebar-departed-list">
+                    ${filteredDeparted.map(s => `
+                        <div class="sc-student-chip sc-chip-departed" draggable="true" data-result-id="${s.id}">
+                            ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                            <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
+                            <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`
+            : '';
+
+        list.innerHTML = activeListHtml + departedHtml;
+
+        const allVisible = [...filtered, ...filteredDeparted];
 
         // Attach listeners regardless of lock state — sidebar is pointer-events: none when locked anyway
         list.querySelectorAll('.sc-student-chip').forEach((chip, index) => {
@@ -1828,7 +1874,7 @@ export const SeatingChartManager = {
             chip.addEventListener('click', (e) => {
                 if (e.defaultPrevented) return;
                 if (e.shiftKey && this._lastSelectedSidebarIndex !== null) {
-                    this._selectSidebarRange(this._lastSelectedSidebarIndex, index, filtered);
+                    this._selectSidebarRange(this._lastSelectedSidebarIndex, index, allVisible);
                 } else {
                     this._toggleChipSelection(id);
                     this._lastSelectedSidebarIndex = index;
@@ -1844,8 +1890,10 @@ export const SeatingChartManager = {
     },
 
     _updateFooter() {
-        const total = this._students.length;
+        const activeStudents = this._students.filter(s => !this._isStudentDeparted(s));
+        const total = activeStudents.length;
         const placed = this._getPlacedIds().size;
+        const placedActive = activeStudents.filter(s => this._getPlacedIds().has(s.id)).length;
         const info = document.getElementById('scFooterInfo');
         if (!info) return;
 
@@ -1863,7 +1911,7 @@ export const SeatingChartManager = {
         const availableSeats = Math.max(0, (rows * cols) - specialSpotsCount - placed);
 
         const prev = this._prevPlacedCount;
-        const unplaced = total - placed;
+        const unplaced = Math.max(0, total - placedActive);
 
         // --- Sidebar Title Dynamic Progress ---
         const sidebarTitle = document.getElementById('scSidebarTitle');
@@ -1892,9 +1940,9 @@ export const SeatingChartManager = {
 
         const fill = document.getElementById('scProgressFill');
         if (fill) {
-            const ratio = total > 0 ? (placed / total) * 100 : 0;
+            const ratio = total > 0 ? Math.min(100, (placedActive / total) * 100) : 0;
             fill.style.width = `${ratio}%`;
-            const isFull = placed === total && total > 0;
+            const isFull = placedActive >= total && total > 0;
             fill.dataset.ratio = isFull ? 'full' : '';
             const track = fill.closest('.sc-progress-track');
             if (track) {
@@ -1922,21 +1970,66 @@ export const SeatingChartManager = {
         }
     },
 
+    _isStudentDeparted(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return false;
+        if (studentResult.isDeparted !== undefined) return Boolean(studentResult.isDeparted);
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+
+        const departStatus = statuses.find(s => {
+            const lower = (s || '').toLowerCase();
+            return lower.includes('départ') || lower.includes('depart');
+        });
+        if (!departStatus) return false;
+
+        const parts = departStatus.trim().split(/\s+/);
+        if (parts.length === 1) return true;
+
+        const departPeriodKey = parts[1];
+        const periods = typeof Utils.getPeriods === 'function' ? Utils.getPeriods() : ['T1', 'T2', 'T3'];
+        const departPeriodIndex = periods.indexOf(departPeriodKey);
+        const activePeriodIndex = periods.indexOf(activePeriod);
+
+        if (departPeriodIndex === -1 || activePeriodIndex === -1) return true;
+        return activePeriodIndex >= departPeriodIndex;
+    },
+
+    _isStudentNew(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult) return false;
+        if (studentResult.isNew !== undefined) return Boolean(studentResult.isNew);
+        const statuses = studentResult.studentData?.statuses || studentResult.statuses || [];
+        if (!Array.isArray(statuses) || statuses.length === 0) return false;
+
+        const newStatus = statuses.find(s => {
+            const lower = (s || '').toLowerCase();
+            return lower.includes('nouveau');
+        });
+        if (!newStatus) return false;
+
+        const parts = newStatus.trim().split(/\s+/);
+        if (parts.length === 1) return true;
+
+        const newPeriodKey = parts[1];
+        return newPeriodKey === activePeriod;
+    },
+
     getClassSeatingStatus(cls) {
         if (!cls) return { status: 'empty', label: 'À faire', shortLabel: 'À faire', icon: 'solar:map-point-linear', unplaced: 0, placed: 0, total: 0 };
 
         const classResults = ClassManager.getStudentsForClass(cls.id);
-        const total = classResults.length;
-        const placed = classResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
-        const unplaced = total - placed;
+        const activeResults = classResults.filter(r => !this._isStudentDeparted(r));
+        const total = activeResults.length;
+        const placedActive = activeResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
+        const totalPlaced = classResults.filter(r => r.seatingPosition?.row != null && r.seatingPosition?.col != null).length;
+        const unplaced = Math.max(0, total - placedActive);
 
-        if (total === 0 || placed === 0) {
+        if (total === 0 || totalPlaced === 0) {
             return {
                 status: 'empty',
                 label: 'À faire',
                 shortLabel: 'À faire',
                 icon: 'solar:map-point-linear',
-                placed,
+                placed: totalPlaced,
                 total,
                 unplaced
             };
@@ -1951,7 +2044,7 @@ export const SeatingChartManager = {
                 shortLabel: 'Validé',
                 dateStr,
                 icon: 'solar:lock-bold',
-                placed,
+                placed: totalPlaced,
                 total,
                 unplaced
             };
@@ -1965,7 +2058,7 @@ export const SeatingChartManager = {
             shortLabel: 'En test',
             dateStr,
             icon: 'solar:test-tube-linear',
-            placed,
+            placed: totalPlaced,
             total,
             unplaced
         };
@@ -2691,7 +2784,10 @@ export const SeatingChartManager = {
                 id: r.id, nom: r.nom, prenom: r.prenom,
                 studentPhoto: r.studentPhoto,
                 seatingPosition: r.seatingPosition,
-                evolution: r.evolution
+                evolution: r.evolution,
+                studentData: r.studentData,
+                isDeparted: this._isStudentDeparted(r),
+                isNew: this._isStudentNew(r)
             }))
             .sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`));
     },
