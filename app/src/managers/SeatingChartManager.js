@@ -1148,12 +1148,6 @@ export const SeatingChartManager = {
             gridArea.setAttribute('data-fitted', 'false');
             this._updateZoomButtonUI(false, targetScale);
         } else {
-            // Return to FITTED VIEW (reset scroll immediately to avoid being stuck)
-            this._isFitted = true;
-            gridArea.style.scrollBehavior = 'auto';
-            gridArea.scrollLeft = 0;
-            gridArea.scrollTop = 0;
-            gridArea.style.removeProperty('scroll-behavior');
             this._applySmartFit(true);
         }
 
