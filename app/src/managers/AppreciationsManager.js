@@ -222,12 +222,19 @@ export const AppreciationsManager = {
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, sw: null, ns: null };
 
-        if (!UI.checkAPIKeyPresence()) {
-            const model = appState.currentAIModel;
+        if (!UI.checkAPIKeyPresence(true)) {
+            const model = appState.currentAIModel || '';
             const isOllama = model.startsWith('ollama');
+            let providerName = '';
+            if (model.startsWith('mistral')) providerName = ' Mistral';
+            else if (model.startsWith('gemini') && !model.endsWith('-free')) providerName = ' Google';
+            else if (model.startsWith('openai')) providerName = ' OpenAI';
+            else if (model.startsWith('anthropic')) providerName = ' Anthropic';
+            else if (model.endsWith('-free') || !isOllama) providerName = ' OpenRouter';
+
             const errorMsg = isOllama
                 ? "Ollama non activé. Activez-le dans les paramètres."
-                : "Clé API manquante. Veuillez la configurer dans les paramètres.";
+                : `Clé API${providerName} manquante. Veuillez la configurer dans les paramètres.`;
             throw new Error(errorMsg);
         }
 

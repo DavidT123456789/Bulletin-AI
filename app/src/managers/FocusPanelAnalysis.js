@@ -155,7 +155,7 @@ export const FocusPanelAnalysis = {
             // Auto-trigger generation if appreciation exists and analysis not yet generated
             const currentPeriod = appState.currentPeriod;
             const periodAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation;
-            const hasApiKey = UI.checkAPIKeyPresence();
+            const hasApiKey = UI.checkAPIKeyPresence(true);
 
             if (periodAppreciation && periodAppreciation.trim() && hasApiKey) {
                 // Small delay to let the page slide animation start first
@@ -326,10 +326,7 @@ export const FocusPanelAnalysis = {
         if (!result) return;
 
         // Check API key
-        if (!UI.checkAPIKeyPresence()) {
-            UI.showNotification('Clé API requise pour l\'analyse IA', 'warning');
-            return;
-        }
+        if (!UI.checkAPIKeyPresence()) return;
 
         // Check that an appreciation exists for the current period
         const currentPeriod = appState.currentPeriod;

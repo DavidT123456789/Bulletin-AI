@@ -700,19 +700,8 @@ export const SettingsModalListeners = {
 
         // Vérifier qu'une clé API est configurée (ou Ollama activé)
         const currentModel = appState.currentAIModel || 'gemini-2.5-flash';
-        let hasApiKey = false;
-        let isOllama = currentModel.startsWith('ollama');
-
-        if (isOllama) {
-            // Ollama est local, pas de clé API mais doit être activé
-            hasApiKey = !!appState.ollamaEnabled;
-        } else if (currentModel.startsWith('gemini')) {
-            hasApiKey = !!appState.googleApiKey;
-        } else if (currentModel.startsWith('openai') || currentModel.startsWith('gpt')) {
-            hasApiKey = !!appState.openaiApiKey;
-        } else {
-            hasApiKey = !!appState.openrouterApiKey;
-        }
+        const isOllama = currentModel.startsWith('ollama');
+        const hasApiKey = UI.checkAPIKeyPresence(true);
 
         if (!hasApiKey) {
             if (previewResult) {
