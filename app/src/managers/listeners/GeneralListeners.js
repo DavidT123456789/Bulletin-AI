@@ -417,17 +417,17 @@ export const GeneralListeners = {
                         return;
                     }
                 } else {
-                    const confirmed = await UI.showCustomConfirm(
-                        `Vous allez envoyer <strong>${studentCount} élève${studentCount > 1 ? 's' : ''}</strong> dans <strong>${classCount} classe${classCount > 1 ? 's' : ''}</strong>.`,
-                        null, null,
-                        {
-                            title: 'Sauvegarder vers le Cloud ?',
-                            confirmText: 'Sauvegarder',
-                            cancelText: 'Annuler',
-                            isDanger: false,
-                            detailsHtml: '<p>Ceci mettra à jour votre sauvegarde Cloud avec vos données locales actuelles. Vos données seront accessibles depuis n\'importe quel appareil connecté.</p>'
-                        }
-                    );
+                    const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+                    const lastSyncTime = SyncService.lastSyncTime || SyncService.remoteSyncTime || parseInt(localStorage.getItem('bulletin_last_sync') || '0', 10) || null;
+                    const remoteStudentCount = SyncService.getLastSyncStudentCount?.() ?? (parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10) || null);
+
+                    const confirmed = await UI.showSaveConfirmationModal({
+                        localStudentCount: studentCount,
+                        localClassCount: classCount,
+                        remoteStudentCount,
+                        lastSyncTime,
+                        providerName
+                    });
                     if (!confirmed) return;
                 }
 

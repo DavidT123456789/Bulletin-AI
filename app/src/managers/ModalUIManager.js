@@ -686,6 +686,52 @@ export const ModalUI = {
     },
 
     /**
+     * Résout le libellé et l'icône d'un provider Cloud.
+     * @param {string} [providerName='google']
+     * @returns {{ label: string, icon: string }}
+     * @private
+     */
+    _getProviderMeta(providerName = 'google') {
+        const meta = {
+            google: { label: 'Google Drive', icon: 'logos:google-drive' },
+            dropbox: { label: 'Dropbox', icon: 'logos:dropbox' }
+        };
+        return meta[providerName] ?? { label: 'Cloud', icon: 'solar:cloud-upload-linear' };
+    },
+
+    /**
+     * Formate un timestamp sous forme relative + absolue (ex: "Il y a 1h (24 sept., 16:33)").
+     * @param {number|string|Date} timestamp
+     * @returns {string|null}
+     * @private
+     */
+    _formatRelativeDate(timestamp) {
+        if (!timestamp) return null;
+        const d = new Date(timestamp);
+        if (isNaN(d.getTime())) return null;
+
+        const dateStr = d.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const diffMs = Date.now() - d.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMin / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        let rel = '';
+        if (diffMin < 2) rel = 'À l\'instant';
+        else if (diffMin < 60) rel = `Il y a ${diffMin} min`;
+        else if (diffHours < 24) rel = `Il y a ${diffHours}h`;
+        else if (diffDays === 1) rel = 'Hier';
+        else rel = `Il y a ${diffDays} jrs`;
+
+        return rel ? `${rel} (${dateStr})` : dateStr;
+    },
+
+    /**
      * Modale de confirmation comparative pré-restauration.
      * Affiche un comparatif clair (Cloud vs Local) et supprime l'action aveugle.
      * 
@@ -713,35 +759,8 @@ export const ModalUI = {
             let modal = document.getElementById(modalId);
             if (modal) modal.remove();
 
-            const providerLabel = providerName === 'dropbox' ? 'Dropbox' : 'Google Drive';
-            const providerIcon = providerName === 'dropbox' ? 'logos:dropbox' : 'logos:google-drive';
-
-            let remoteDateStr = 'Date inconnue';
-            let relativeTimeStr = '';
-            let formattedTitleDate = 'Date inconnue';
-            if (remoteDate) {
-                const d = new Date(remoteDate);
-                if (!isNaN(d.getTime())) {
-                    remoteDateStr = d.toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    const diffMs = Date.now() - d.getTime();
-                    const diffMin = Math.floor(diffMs / 60000);
-                    const diffHours = Math.floor(diffMin / 60);
-                    const diffDays = Math.floor(diffHours / 24);
-
-                    if (diffMin < 2) relativeTimeStr = 'À l\'instant';
-                    else if (diffMin < 60) relativeTimeStr = `Il y a ${diffMin} min`;
-                    else if (diffHours < 24) relativeTimeStr = `Il y a ${diffHours}h`;
-                    else if (diffDays === 1) relativeTimeStr = 'Hier';
-                    else relativeTimeStr = `Il y a ${diffDays} jrs`;
-
-                    formattedTitleDate = relativeTimeStr ? `${relativeTimeStr} (${remoteDateStr})` : remoteDateStr;
-                }
-            }
+            const { label: providerLabel, icon: providerIcon } = this._getProviderMeta(providerName);
+            const formattedTitleDate = this._formatRelativeDate(remoteDate) ?? 'Date inconnue';
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -820,6 +839,146 @@ export const ModalUI = {
 
             const okBtn = document.getElementById('restoreConfirmOkBtn');
             const cancelBtn = document.getElementById('restoreConfirmCancelBtn');
+
+            let keyHandler;
+
+            const cleanup = () => {
+                if (keyHandler) document.removeEventListener('keydown', keyHandler);
+            };
+
+            const finish = (confirmed) => {
+                cleanup();
+                resolve(confirmed);
+                this.closeModal(modal);
+            };
+
+            okBtn?.addEventListener('click', () => finish(true), { once: true });
+            cancelBtn?.addEventListener('click', () => finish(false), { once: true });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) finish(false);
+            });
+
+            keyHandler = (e) => {
+                if (this.activeModal !== modal) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    finish(false);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finish(true);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+
+            okBtn?.focus();
+        });
+    },
+
+    /**
+     * Modale de confirmation de sauvegarde vers le Cloud.
+     * Résumé épuré (élèves, classes, provider) sans bruit inutile.
+     * Détecte et alerte en cas de régression de données (data shrinkage).
+     * 
+     * @param {Object} options
+     * @param {number} [options.localStudentCount=0]
+     * @param {number} [options.localClassCount=0]
+     * @param {number|null} [options.remoteStudentCount=null]
+     * @param {number|string|null} [options.lastSyncTime=null]
+     * @param {string} [options.providerName='google']
+     * @param {string} [options.providerLabel='Google Drive']
+     * @param {string} [options.providerIcon='logos:google-drive']
+     * @returns {Promise<boolean>}
+     */
+    showSaveConfirmationModal(options = {}) {
+        return new Promise((resolve) => {
+            const {
+                localStudentCount = 0,
+                localClassCount = 0,
+                remoteStudentCount = null,
+                lastSyncTime = null,
+                providerName = 'google',
+                providerLabel = null,
+                providerIcon = null
+            } = options;
+
+            const modalId = 'saveConfirmationModal';
+            let modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+
+            const { label: defaultProviderLabel, icon: defaultProviderIcon } = this._getProviderMeta(providerName);
+            const resolvedProviderLabel = providerLabel ?? defaultProviderLabel;
+            const resolvedProviderIcon = providerIcon ?? defaultProviderIcon;
+
+            const formattedLastSync = this._formatRelativeDate(lastSyncTime);
+            const subtitleDetail = formattedLastSync ? `Dernière sauvegarde : ${formattedLastSync}` : 'Prêt à synchroniser';
+
+            const hasDataShrinkageWarning =
+                typeof remoteStudentCount === 'number' &&
+                remoteStudentCount > 0 &&
+                localStudentCount < remoteStudentCount;
+
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal';
+
+            modal.innerHTML = `
+            <div class="modal-content modal-content-confirm modal-content-save modal-alert-ios">
+                <div class="modal-alert-body">
+                    <h3 class="modal-alert-title" style="display: flex; align-items: center; gap: 12px;">
+                        <div class="modal-alert-header-icon cloud">
+                            <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                        </div>
+                        <span>Sauvegarder vers le Cloud</span>
+                    </h3>
+                    <div class="modal-alert-message">
+                        Vos données actuelles vont être sécurisées sur votre espace personnel.
+                    </div>
+
+                    <div class="save-summary-card">
+                        <div class="save-summary-header">
+                            <div class="restore-card-badge" style="background: var(--primary-color); color: white;">
+                                <iconify-icon icon="${providerIcon}" style="font-size: 0.9em;"></iconify-icon>
+                                <span>${providerLabel}</span>
+                            </div>
+                            <span class="save-card-destination">
+                                <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
+                                <span>Espace sécurisé</span>
+                            </span>
+                        </div>
+                        <div class="restore-card-main-stat">
+                            ${localStudentCount} élève${localStudentCount > 1 ? 's' : ''} · ${localClassCount} classe${localClassCount > 1 ? 's' : ''}
+                        </div>
+                        <div class="restore-card-date">
+                            <iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color, #10b981);"></iconify-icon>
+                            <span>${subtitleDetail}</span>
+                        </div>
+                    </div>
+
+                    ${hasDataShrinkageWarning ? `
+                    <div class="restore-safety-notice warning">
+                        <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
+                        <div>
+                            <strong>Attention (réduction de données) :</strong> Votre dernière sauvegarde Cloud contenait <strong>${remoteStudentCount} élèves</strong>. Cette action va la remplacer par votre session actuelle (${localStudentCount} élèves).
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="modal-alert-actions">
+                    <button type="button" class="btn btn-secondary" id="saveConfirmCancelBtn">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="saveConfirmOkBtn">
+                        <iconify-icon icon="solar:cloud-upload-bold"></iconify-icon>
+                        <span>Sauvegarder</span>
+                    </button>
+                </div>
+            </div>`;
+
+            document.body.appendChild(modal);
+            this.openModal(modal);
+
+            const okBtn = document.getElementById('saveConfirmOkBtn');
+            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
 
             let keyHandler;
 

@@ -1132,6 +1132,11 @@ export const SettingsModalListeners = {
                     const studentCount = runtimeState.data.generatedResults?.length || 0;
                     const classCount = userSettings.academic.classes?.length || 0;
 
+                    if (studentCount === 0) {
+                        UI.showNotification('Vos données locales sont vides (0 élève). Sauvegarde annulée pour protéger le Cloud.', 'warning');
+                        return;
+                    }
+
                     let conflictChoice = 'overwrite';
                     if (isCloudNewer) {
                         conflictChoice = await UI.showConflictResolutionModal({
@@ -1144,6 +1149,19 @@ export const SettingsModalListeners = {
                         if (conflictChoice === 'restore') {
                             cloudLoadBtn?.click();
                             return;
+                        }
+                    } else {
+                        const remoteStudentCount = SyncService.getLastSyncStudentCount?.() ?? (parseInt(localStorage.getItem('bulletin_last_sync_students') || '0', 10) || null);
+                        if (remoteStudentCount && studentCount < remoteStudentCount) {
+                            const providerName = SyncService.currentProviderName || localStorage.getItem('bulletin_sync_provider') || 'google';
+                            const confirmed = await UI.showSaveConfirmationModal({
+                                localStudentCount: studentCount,
+                                localClassCount: classCount,
+                                remoteStudentCount,
+                                lastSyncTime: SyncService.lastSyncTime || SyncService.remoteSyncTime,
+                                providerName
+                            });
+                            if (!confirmed) return;
                         }
                     }
 

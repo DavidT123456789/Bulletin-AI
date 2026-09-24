@@ -703,6 +703,8 @@ export const SyncService = {
         await this._provider.write(localData);
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+        const studentCount = Array.isArray(localData.generatedResults) ? localData.generatedResults.length : 0;
+        localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
 
         // Update remote time since we just wrote the file
         this.remoteSyncTime = this.lastSyncTime;
@@ -740,6 +742,8 @@ export const SyncService = {
 
         this.lastSyncTime = Date.now();
         localStorage.setItem('bulletin_last_sync', this.lastSyncTime.toString());
+        const downloadedStudents = Array.isArray(remoteData?.generatedResults) ? remoteData.generatedResults.length : importedCount;
+        localStorage.setItem('bulletin_last_sync_students', downloadedStudents.toString());
 
         // Update remote time to match since local is now strictly aligned with remote
         this.remoteSyncTime = this.lastSyncTime;
@@ -798,6 +802,10 @@ export const SyncService = {
 
         const providerLabel = this.currentProviderName === 'dropbox' ? 'Dropbox' : 'Google Drive';
 
+        if (typeof studentCount === 'number' && studentCount > 0) {
+            localStorage.setItem('bulletin_last_sync_students', studentCount.toString());
+        }
+
         return {
             success: true,
             remoteData,
@@ -806,6 +814,15 @@ export const SyncService = {
             timestamp,
             providerLabel
         };
+    },
+
+    /**
+     * Retourne le nombre d'élèves connu lors de la dernière synchronisation Cloud.
+     * @returns {number|null}
+     */
+    getLastSyncStudentCount() {
+        const val = localStorage.getItem('bulletin_last_sync_students');
+        return val ? parseInt(val, 10) : null;
     },
 
     /**

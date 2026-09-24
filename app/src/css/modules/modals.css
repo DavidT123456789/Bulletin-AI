@@ -2269,10 +2269,11 @@
    PRE-RESTORE SNAPSHOT SAFETY ROW (Settings > Data > Local Backup)
    ==================================================================== */
 /* ====================================================================
-   RESTORE CONFIRMATION MODAL (Pre-Restore Comparison Sheet)
+   RESTORE & SAVE CONFIRMATION MODALS (Cloud Data Safety)
    ==================================================================== */
-.modal-content-restore {
-    max-width: 520px;
+.modal-content-restore,
+.modal-content-save {
+    max-width: 500px;
 }
 
 .modal-alert-header-icon {
@@ -2411,6 +2412,57 @@
 
 .restore-safety-notice strong {
     color: var(--text-primary);
+}
+
+.restore-safety-notice.warning {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+[data-theme="dark"] .restore-safety-notice.warning {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.restore-safety-notice.warning iconify-icon {
+    color: var(--warning-color, #f59e0b);
+}
+
+.save-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px;
+    border-radius: var(--radius-md, 14px);
+    border: 1.5px solid rgba(var(--primary-color-rgb, 59, 130, 246), 0.35);
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.04);
+    margin: 16px 0 14px;
+    transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .save-summary-card {
+    border-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.45);
+    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.08);
+}
+
+.save-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.save-card-destination {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.save-card-destination iconify-icon {
+    font-size: 0.95rem;
+    color: var(--primary-color);
 }
 
 .pre-restore-snapshot-row {

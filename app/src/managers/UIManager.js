@@ -444,6 +444,10 @@ export const UI = {
         return ModalUI.showRestoreConfirmationModal(options);
     },
 
+    showSaveConfirmationModal(options = {}) {
+        return ModalUI.showSaveConfirmationModal(options);
+    },
+
     // ====================================================================
     //  THÈME ET DARK MODE
     // ====================================================================

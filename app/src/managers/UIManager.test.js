@@ -673,6 +673,18 @@ describe('UIManager', () => {
         });
     });
 
+    describe('showSaveConfirmationModal', () => {
+        it('should delegate to ModalUI.showSaveConfirmationModal', async () => {
+            const { ModalUI } = await import('./ModalUIManager.js');
+            const spy = vi.spyOn(ModalUI, 'showSaveConfirmationModal').mockResolvedValue(true);
+
+            const res = await UI.showSaveConfirmationModal({ localStudentCount: 305 });
+
+            expect(spy).toHaveBeenCalledWith({ localStudentCount: 305 });
+            expect(res).toBe(true);
+        });
+    });
+
     describe('showNotification', () => {
         beforeEach(() => {
             const container = document.getElementById('notification-container');

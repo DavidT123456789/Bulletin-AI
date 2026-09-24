@@ -384,4 +384,85 @@ describe('ModalUIManager', () => {
             expect(result).toBe(true);
         });
     });
+
+    describe('showSaveConfirmationModal', () => {
+        it('should render save summary details and resolve true on confirm', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 305,
+                localClassCount: 13,
+                providerName: 'google',
+                providerLabel: 'Google Drive',
+                lastSyncTime: Date.now() - 3600000 // 1 hour ago
+            });
+
+            const modal = document.getElementById('saveConfirmationModal');
+            expect(modal).not.toBeNull();
+            expect(modal.textContent).toContain('Sauvegarder vers le Cloud');
+            expect(modal.textContent).toContain('305 élèves');
+            expect(modal.textContent).toContain('13 classes');
+            expect(modal.textContent).toContain('Google Drive');
+            expect(modal.textContent).toContain('Espace sécurisé');
+            expect(modal.querySelector('.restore-safety-notice.warning')).toBeNull();
+
+            const okBtn = document.getElementById('saveConfirmOkBtn');
+            expect(okBtn).not.toBeNull();
+            okBtn.click();
+
+            const result = await promise;
+            expect(result).toBe(true);
+        });
+
+        it('should resolve false when cancel button is clicked', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 50,
+                localClassCount: 2
+            });
+
+            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
+            expect(cancelBtn).not.toBeNull();
+            cancelBtn.click();
+
+            const result = await promise;
+            expect(result).toBe(false);
+        });
+
+        it('should resolve false on Escape key', async () => {
+            const promise = ModalUI.showSaveConfirmationModal();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            const result = await promise;
+            expect(result).toBe(false);
+        });
+
+        it('should resolve true on Enter key', async () => {
+            const promise = ModalUI.showSaveConfirmationModal();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+            const result = await promise;
+            expect(result).toBe(true);
+        });
+
+        it('should display data shrinkage warning when remote count exceeds local count', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: 20,
+                localClassCount: 1,
+                remoteStudentCount: 305
+            });
+
+            const modal = document.getElementById('saveConfirmationModal');
+            expect(modal).not.toBeNull();
+            const warningEl = modal.querySelector('.restore-safety-notice.warning');
+            expect(warningEl).not.toBeNull();
+            expect(warningEl.textContent).toContain('Attention (réduction de données)');
+            expect(warningEl.textContent).toContain('305 élèves');
+            expect(warningEl.textContent).toContain('20 élèves');
+
+            const okBtn = document.getElementById('saveConfirmOkBtn');
+            okBtn.click();
+            await promise;
+        });
+    });
 });
+
