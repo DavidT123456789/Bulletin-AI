@@ -245,47 +245,61 @@
                 <!-- App Logo removed for cleaner UI -->
                 <div class="header-logo" style="display: none;"></div>
 
-                <!-- Class Selector - À gauche pour hiérarchie: Classe > Trimestre > Modèle -->
-                <div class="class-selector-wrapper">
-                    <div id="headerClassChip" class="header-context-chip class-chip" role="button" tabindex="0"
-                        aria-label="Changer de classe">
-                        <span class="icon" id="headerClassIcon" style="display: none;"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
-                        <span id="headerClassName">Ma Classe</span>
-                        <span id="headerClassTag" class="class-demo-tag" style="display: none;">Démo</span>
-                        <span id="headerVirtualClassTag" class="class-virtual-tag" style="display: none;">Reconstituée</span>
-                        <span class="student-count-badge" aria-label="0 élève">
-                            <iconify-icon icon="solar:users-group-rounded-linear" class="student-count-icon"></iconify-icon>
-                            <span id="headerStudentCount">0</span>
-                        </span>
-                        <iconify-icon icon="solar:alt-arrow-down-linear" class="class-chevron"></iconify-icon>
-                    </div>
-                    <div id="classDropdown" class="class-dropdown" style="display: none;">
-                        <div class="class-dropdown-header">
-                            <div class="class-dropdown-title-group">
-                                <span class="class-dropdown-title tooltip" id="classDropdownTitle">Mes classes</span>
-                                <button type="button" class="class-virtual-filter-btn tooltip" id="toggleVirtualClassesBtn" style="display: none;" aria-label="Classes reconstituées" aria-pressed="false">
-                                    <iconify-icon icon="solar:diploma-linear"></iconify-icon>
-                                    <span class="filter-count">0</span>
-                                </button>
+                <!-- 1. ZONE GAUCHE : CONTEXTE & SCOPE DES DONNÉES (Classe + Période) -->
+                <div class="header-left">
+                    <div class="class-selector-wrapper">
+                        <div id="headerClassChip" class="header-context-chip class-chip" role="button" tabindex="0"
+                            aria-label="Changer de classe">
+                            <span class="icon" id="headerClassIcon" style="display: none;"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon></span>
+                            <span id="headerClassName">Ma Classe</span>
+                            <span id="headerClassTag" class="class-demo-tag" style="display: none;">Démo</span>
+                            <span id="headerVirtualClassTag" class="class-virtual-tag" style="display: none;">Reconstituée</span>
+                            <span class="student-count-badge" aria-label="0 élève">
+                                <iconify-icon icon="solar:users-group-rounded-linear" class="student-count-icon"></iconify-icon>
+                                <span id="headerStudentCount">0</span>
+                            </span>
+                            <iconify-icon icon="solar:alt-arrow-down-linear" class="class-chevron"></iconify-icon>
+                        </div>
+                        <div id="classDropdown" class="class-dropdown" style="display: none;">
+                            <div class="class-dropdown-header">
+                                <div class="class-dropdown-title-group">
+                                    <span class="class-dropdown-title tooltip" id="classDropdownTitle">Mes classes</span>
+                                    <button type="button" class="class-virtual-filter-btn tooltip" id="toggleVirtualClassesBtn" style="display: none;" aria-label="Classes reconstituées" aria-pressed="false">
+                                        <iconify-icon icon="solar:diploma-linear"></iconify-icon>
+                                        <span class="filter-count">0</span>
+                                    </button>
+                                </div>
+                                <div class="class-dropdown-header-actions">
+                                    <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
+                                        <iconify-icon icon="solar:add-linear"></iconify-icon>
+                                    </button>
+                                    <button id="manageClassesBtn" class="btn-icon-small tooltip" data-tooltip="Gérer les classes" aria-label="Gérer les classes">
+                                        <iconify-icon icon="solar:settings-linear"></iconify-icon>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="class-dropdown-header-actions">
-                                <button id="addNewClassBtn" class="btn-icon-small tooltip" data-tooltip="Nouvelle classe" aria-label="Nouvelle classe">
-                                    <iconify-icon icon="solar:add-linear"></iconify-icon>
-                                </button>
-                                <button id="manageClassesBtn" class="btn-icon-small tooltip" data-tooltip="Gérer les classes" aria-label="Gérer les classes">
-                                    <iconify-icon icon="solar:settings-linear"></iconify-icon>
-                                </button>
+                            <div id="classDropdownVirtualSubbar" class="class-dropdown-subbar" style="display: none;"></div>
+                            <div id="classDropdownList" class="class-dropdown-list">
+                                <!-- Classes will be rendered here dynamically -->
                             </div>
                         </div>
-                        <div id="classDropdownVirtualSubbar" class="class-dropdown-subbar" style="display: none;"></div>
-                        <div id="classDropdownList" class="class-dropdown-list">
-                            <!-- Classes will be rendered here dynamically -->
-                        </div>
                     </div>
+
+                    <div class="ui-segmented-control header-style" id="mainPeriodSelector"></div>
                 </div>
 
+                <!-- 2. ZONE CENTRALE : PERSPECTIVE / MODE DE VISUALISATION (Liste ↔ Plan) -->
                 <div class="header-center">
-                    <div class="ui-segmented-control header-style" id="mainPeriodSelector"></div>
+                    <div class="ui-segmented-control header-style view-toggle" id="viewToggle">
+                        <button class="ui-segment view-toggle-btn active" data-view="list" aria-label="Vue liste">
+                            <iconify-icon icon="solar:list-linear"></iconify-icon>
+                            <span>Liste</span>
+                        </button>
+                        <button class="ui-segment view-toggle-btn" data-view="plan" aria-label="Vue plan de classe">
+                            <iconify-icon icon="solar:streets-map-point-linear"></iconify-icon>
+                            <span>Plan</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="header-actions">
@@ -3167,7 +3181,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 40fc2bc · 24 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build cdc4d55 · 24 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

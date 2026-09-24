@@ -51,11 +51,13 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _injectViewToggle() {
-        const headerActions = document.querySelector('.header-actions');
-        if (!headerActions || document.getElementById('viewToggle')) return;
+        if (document.getElementById('viewToggle')) return;
+
+        const target = document.querySelector('.header-center') || document.querySelector('.header-actions');
+        if (!target) return;
 
         const toggle = document.createElement('div');
-        toggle.className = 'ui-segmented-control view-toggle';
+        toggle.className = 'ui-segmented-control header-style view-toggle';
         toggle.id = 'viewToggle';
         const activeView = appState.activeView || 'list';
         toggle.innerHTML = `
@@ -69,7 +71,7 @@ export const SeatingChartManager = {
             </button>
         `;
 
-        headerActions.prepend(toggle);
+        target.appendChild(toggle);
         if (window.UI && typeof window.UI.initGliders === 'function') {
             window.UI.initGliders();
         }

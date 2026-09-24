@@ -180,15 +180,29 @@
 
 /* Header en mode sombre - Géré automatiquement via var(--surface-color-rgb) */
 
+/* --- Zone Gauche : Contexte & Scope des données (Classe + Période) --- */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+/* --- Zone Centrale : Perspective / Mode de visualisation (Liste ↔ Plan) --- */
 .header-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-grow: 1;
-    gap: 12px;
-    /* pour centrer le sélecteur de période */
+    z-index: 2;
+    pointer-events: auto;
 }
 
+/* --- Zone Droite : Services IA, Outils & Menu Système --- */
 .header-actions {
     display: flex;
     align-items: center;
@@ -1632,6 +1646,7 @@ button > .icon-spin-wrapper {
     }
 
     /* All header elements keep fixed size - header is scrollable */
+    .header-left,
     .header-center,
     .class-selector-wrapper,
     .header-context-chip,
@@ -1642,7 +1657,13 @@ button > .icon-spin-wrapper {
         min-width: max-content;
     }
 
+    .header-left {
+        gap: 6px;
+    }
+
     .header-center {
+        position: static;
+        transform: none;
         gap: 4px;
     }
 
@@ -1690,6 +1711,7 @@ button > .icon-spin-wrapper {
     }
 
     /* All header elements keep fixed size - header scrolls */
+    .header-left,
     .class-selector-wrapper,
     .header-context-chip,
     .header-actions,
@@ -1697,6 +1719,10 @@ button > .icon-spin-wrapper {
     .header-actions-pill {
         flex-shrink: 0;
         min-width: max-content;
+    }
+
+    .header-left {
+        gap: 4px;
     }
 
     .header-context-chip {
@@ -1709,6 +1735,8 @@ button > .icon-spin-wrapper {
     }
 
     .header-center {
+        position: static;
+        transform: none;
         gap: 2px;
     }
 

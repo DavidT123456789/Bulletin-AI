@@ -13,10 +13,17 @@
     display: none;
     width: 150px;
     flex-shrink: 0;
+    transition: opacity var(--transition-base), transform var(--transition-base);
 }
 
 .view-toggle.visible {
     display: flex;
+}
+
+@media (max-width: 768px) {
+    .view-toggle {
+        width: auto;
+    }
 }
 
 /* ────────── VIEW SWITCHING (CSS-driven hide/show) ────────── */
