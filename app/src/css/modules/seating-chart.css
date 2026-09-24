@@ -402,25 +402,51 @@
 
 .sc-search-box {
     position: relative;
+    display: flex;
+    align-items: center;
     width: 100%;
+    height: 36px;
+    box-sizing: border-box;
+    background: var(--bg-secondary);
+    border: var(--input-border-width, 1px) solid var(--border-color);
+    border-radius: var(--radius-pill);
+    padding: 0 32px 0 14px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
 }
 
-.sc-search-box input {
+.sc-search-box:focus-within { 
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2.5px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2) !important;
+}
+
+.sc-search-box input,
+.sc-search-box input:focus,
+.sc-search-box input:focus-visible,
+.sc-search-box input:active {
+    flex: 1;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
-    padding: 8px 34px 8px 14px;
-    border: var(--input-border-width) solid var(--border-color);
-    border-radius: var(--radius-pill);
-    background: var(--bg-secondary);
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
     color: var(--text-primary);
     font-size: 0.82rem;
-    outline: none;
-    transition: all 0.2s var(--ease-spring);
+    font-family: inherit;
+    line-height: normal;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
-.sc-search-box input:focus { 
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+.sc-search-box input::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal !important;
+    font-size: 0.82rem;
+    line-height: normal;
+    opacity: 0.85;
 }
 
 .sc-search-box input::-ms-clear,
@@ -498,6 +524,7 @@
                 box-shadow var(--transition-fast), opacity var(--transition-fast);
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
 }
 
 @media (hover: hover) {
@@ -1082,6 +1109,7 @@
     background: var(--surface-color);
     cursor: grab;
     box-shadow: var(--shadow-sm);
+    touch-action: none;
 }
 
 @media (hover: hover) {
@@ -1098,10 +1126,11 @@
 }
 
 .sc-cell.sc-chip-selected {
-    border-color: var(--primary-color);
-    background-color: rgba(var(--primary-color-rgb, 79, 70, 229), 0.08);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2), var(--shadow-sm);
-    transform: translateY(-2px);
+    border-color: var(--primary-color) !important;
+    background-color: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 79, 70, 229), 0.35), var(--shadow-md) !important;
+    transform: scale(1.05) translateY(-2px) !important;
+    z-index: 30 !important;
 }
 
 .sc-cell.sc-chip-selected .sc-cell-name {
@@ -1173,27 +1202,27 @@
     position: fixed;
     width: calc(var(--sc-cell-w, 88px) - 8px);
     height: calc(var(--sc-cell-h, 96px) - 10px);
-    opacity: 0.85;
+    opacity: 0.92;
     pointer-events: none;
     z-index: 9999;
     border-radius: var(--radius-md);
     background: var(--surface-color);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transform: scale(1.1);
-    transition: transform 0.15s;
+    transform: translate(-50%, -85%) scale(1.05);
+    transition: transform 0.1s ease-out;
     border: 1.5px solid var(--primary-color);
 }
 
 .sc-cell .student-avatar,
 .sc-drag-clone .student-avatar,
 .sc-touch-ghost .student-avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 0.95rem;
+    width: 54px;
+    height: 54px;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
@@ -1204,9 +1233,10 @@
     border-radius: 50%;
 }
 
-
 .sc-cell-name,
+.sc-drag-clone .sc-cell-name,
 .sc-drag-clone .sc-student-chip-name,
+.sc-touch-ghost .sc-cell-name,
 .sc-touch-ghost .sc-student-chip-name {
     font-size: 0.68rem;
     font-weight: 500;
@@ -1216,7 +1246,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    margin-top: 5px;
+    margin-top: 4px;
     line-height: 1.2;
 }
 
@@ -1286,18 +1316,21 @@
     }
 }
 
-/* Touch devices: always show remove/pin buttons in edit mode */
-@media (hover: none) {
-    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove,
-    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-pin {
-        opacity: 0.8;
-        transform: scale(0.85);
+/* Touch & Mobile devices: hide permanent remove and unpinned buttons to prevent accidental clicks and declutter UI */
+@media (hover: none), (max-width: 768px) {
+    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove {
+        display: none !important;
     }
 
-    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-remove:active,
-    #seatingChartView[data-locked="false"] .sc-cell.occupied .sc-cell-pin:active {
+    #seatingChartView[data-locked="false"] .sc-cell.occupied:not(.pinned) .sc-cell-pin {
+        display: none !important;
+    }
+
+    /* Pinned badge remains visible as an elegant indicator */
+    #seatingChartView[data-locked="false"] .sc-cell.pinned .sc-cell-pin {
+        display: flex !important;
         opacity: 1;
-        transform: scale(1);
+        pointer-events: none;
     }
 }
 
@@ -2292,16 +2325,18 @@
         flex: 1 1 auto;
         min-width: 0;
         height: 32px;
+        padding: 0 28px 0 12px;
         border-radius: var(--radius-pill);
         background: var(--bg-secondary);
-        overflow: hidden;
+        border: 1px solid var(--border-color);
     }
 
     .sc-search-box input {
-        padding: 5px 28px 5px 12px;
         font-size: 0.78rem;
-        border: 1px solid var(--border-color);
-        background: var(--bg-secondary);
+    }
+
+    .sc-search-box input::placeholder {
+        font-size: 0.78rem;
     }
 
     /* ── Student List: horizontal scrollable strip ── */
@@ -2323,32 +2358,50 @@
         display: none; /* Chrome/Safari */
     }
 
-    /* Chips: compact vertical avatar + name */
+    /* Chips: modern pill style with full readable name */
     .sc-student-chip {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: center;
         flex-shrink: 0;
-        gap: 3px;
-        padding: 6px 4px;
-        min-width: 52px;
-        max-width: 56px;
-        text-align: center;
-        border-radius: var(--radius-md);
+        gap: 6px;
+        padding: 4px 10px 4px 5px;
+        min-width: auto;
+        max-width: none;
+        text-align: left;
+        border-radius: var(--radius-pill);
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
         scroll-snap-align: start;
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease,
+                    background 0.15s ease;
     }
 
     .sc-student-chip .student-avatar {
-        width: 34px;
-        height: 34px;
+        width: 28px;
+        height: 28px;
         flex-shrink: 0;
+        font-size: 0.65rem;
     }
 
     .sc-student-chip-name {
-        font-size: 0.6rem;
-        line-height: 1.15;
+        font-size: 0.72rem;
+        font-weight: 500;
+        line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 52px;
+        max-width: 120px;
+        color: var(--text-primary);
+    }
+
+    .sc-student-chip.sc-chip-selected {
+        border-color: var(--primary-color);
+        background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12);
+        box-shadow: 0 0 0 2px var(--primary-color);
+        transform: translateY(-2px);
     }
 
     /* Empty sidebar message adapts to horizontal layout */
@@ -2386,10 +2439,10 @@
         height: auto;
     }
 
-    /* ── Grid Area ── */
+    /* ── Grid Area: safe top spacing so status pills never overlap desks ── */
     .sc-grid-area {
         padding: 12px;
-        padding-top: calc(56px + 12px); /* header + spacing */
+        padding-top: calc(56px + 48px);
         margin-left: 0 !important;
         width: 100% !important;
     }
@@ -2398,17 +2451,14 @@
     #seatingChartView[data-locked="true"] .sc-grid-area {
         margin-left: 0 !important;
         width: 100% !important;
-    }
-
-    #seatingChartView[data-locked="true"] .sc-grid-area {
-        padding-top: calc(56px + 44px);
+        padding-top: calc(56px + 48px);
     }
 
     .sc-grid-area[data-fitted="true"] {
         overflow: hidden;
         justify-content: center;
         align-items: center;
-        padding-top: calc(56px + 12px);
+        padding-top: calc(56px + 48px);
         padding-bottom: 12px;
     }
 
@@ -2416,7 +2466,7 @@
         overflow: auto;
         justify-content: flex-start;
         align-items: safe center;
-        padding-top: calc(56px + 12px);
+        padding-top: calc(56px + 48px);
         padding-bottom: 20px;
     }
 
@@ -2429,9 +2479,9 @@
         gap: 6px;
     }
 
-    .sc-cell .student-avatar { width: 32px; height: 32px; font-size: 0.65rem; }
+    .sc-cell .student-avatar { width: 36px; height: 36px; font-size: 0.72rem; }
 
-    .sc-cell-name { font-size: 0.55rem; max-width: 54px; margin-top: 4px; }
+    .sc-cell-name { font-size: 0.55rem; max-width: 56px; margin-top: 3px; }
 
     .sc-toolbar {
         flex-wrap: wrap;
@@ -2442,37 +2492,55 @@
     .view-toggle-btn span { display: none; }
     .sc-toolbar-btn span { display: none; }
 
-    /* ── Floating elements adjust for bottom tray ── */
+    /* ── Floating elements: aligned on mobile, never overlapping ── */
     .sc-status-pill {
-        top: calc(56px + 12px);
-        left: 12px;
-        right: auto;
-        font-size: 0.7rem;
-        height: 32px;
-        padding: 0 10px;
+        top: calc(56px + 10px) !important;
+        left: 12px !important;
+        right: auto !important;
+        transform: none !important;
+        font-size: 0.72rem;
+        height: 34px !important;
+        padding: 0 12px;
+        white-space: nowrap !important;
+        max-width: calc(100vw - 128px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
     }
 
     .sc-floating-status {
-        top: calc(56px + 12px);
-        right: 12px;
-        left: auto;
+        top: calc(56px + 10px) !important;
+        left: 12px !important;
+        right: auto !important;
+        transform: none !important;
+        height: 34px !important;
+        max-width: calc(100vw - 64px) !important;
+        pointer-events: none;
+        display: inline-flex !important;
+        align-items: center !important;
     }
 
     #seatingChartView[data-locked="false"] .sc-floating-status {
-        right: calc(12px + 36px + 6px);
+        left: 12px !important;
+        right: auto !important;
+        transform: none !important;
     }
 
     .sc-floating-actions {
-        top: calc(56px + 12px);
-        right: 12px;
-        left: auto;
-        padding: 2px 3px;
+        top: calc(56px + 10px) !important;
+        right: 12px !important;
+        left: auto !important;
+        height: 34px !important;
+        padding: 2px !important;
         gap: 2px;
+        display: inline-flex !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn {
         width: 30px !important;
         height: 30px !important;
+        flex-shrink: 0;
     }
 
     #seatingChartView .sc-floating-actions .sc-action-btn iconify-icon {
@@ -2480,9 +2548,68 @@
     }
 
     .sc-floating-status .sc-toolbar-info {
-        font-size: 0.7rem;
-        height: 32px;
-        padding: 0 10px;
+        font-size: 0.72rem;
+        height: 34px !important;
+        padding: 0 12px;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px;
+    }
+
+    .sc-floating-status .sc-toolbar-info .sc-footer-all-placed,
+    .sc-floating-status .sc-toolbar-info .sc-unplaced-hint,
+    .sc-floating-status .sc-toolbar-info .sc-footer-seats {
+        white-space: nowrap !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ── Mobile Touch Ghost (harmonized with cell proportions & offset above finger) ── */
+    .sc-touch-ghost {
+        width: 60px !important;
+        height: 68px !important;
+        padding: 4px 2px !important;
+        border-radius: var(--radius-md) !important;
+        transform: translate(-50%, -85%) scale(1.05) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+        border: 1.5px solid var(--primary-color) !important;
+        background: var(--surface-color) !important;
+        opacity: 0.92 !important;
+        pointer-events: none !important;
+        z-index: 9999 !important;
+    }
+
+    .sc-touch-ghost .student-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.72rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .sc-touch-ghost .sc-cell-name,
+    .sc-touch-ghost .sc-student-chip-name {
+        font-size: 0.55rem !important;
+        max-width: 56px !important;
+        margin-top: 3px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        text-align: center !important;
+        line-height: 1.1 !important;
+        color: var(--text-secondary) !important;
+    }
+
+    /* ── Mobile Drag-Over Desk Pop: Magnify target cell under touch so user clearly sees destination ── */
+    .sc-cell.drag-over {
+        transform: scale(1.18) !important;
+        z-index: 60 !important;
+        border-color: var(--primary-color) !important;
+        border-style: solid !important;
+        border-width: 2px !important;
+        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25), 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
     }
 
     /* ── Teacher desk: less margin when sidebar is below ── */
@@ -2490,12 +2617,16 @@
         margin-top: 4px;
     }
 
-    /* ── Config Popover mobile alignment ── */
+    /* ── Config Popover mobile alignment (opens upwards into board area) ── */
     #seatingChartView .sc-config-popover {
+        top: auto;
+        bottom: calc(100% + 10px);
         left: auto;
         right: -15px;
-        transform-origin: top right;
-        transform: translateY(-6px) scale(0.95);
+        transform-origin: bottom right;
+        transform: translateY(8px) scale(0.95);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+        z-index: 300;
     }
 
     #seatingChartView .sc-config-popover.open {
@@ -2503,8 +2634,50 @@
     }
 
     #seatingChartView .sc-config-popover::before {
+        top: auto;
+        bottom: -5px;
         left: auto;
         right: 28px;
+        border-top: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+    }
+
+    /* ── Placement Popover mobile alignment (opens upwards into board area) ── */
+    #seatingChartView .sc-placement-popover {
+        top: auto;
+        bottom: calc(100% + 10px);
+        left: 0;
+        transform-origin: bottom left;
+        transform: translateY(8px) scale(0.95);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
+        z-index: 300;
+    }
+
+    #seatingChartView .sc-placement-popover.open {
+        transform: translateY(0) scale(1);
+    }
+
+    #seatingChartView .sc-placement-popover::before {
+        top: auto;
+        bottom: -5px;
+        left: 13px;
+        border-top: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+    }
+
+    #seatingChartView .sc-popover-item {
+        padding: 9px 12px;
+        min-height: 40px;
+        font-size: 0.84rem;
+    }
+
+    #seatingChartView .sc-popover-item:active {
+        background-color: var(--item-hover-bg);
+        transform: scale(0.98);
     }
 }
 
@@ -2539,7 +2712,8 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .sc-config-popover {
+[data-theme="dark"] .sc-config-popover,
+[data-theme="dark"] .sc-config-popover::before {
     background: var(--bg-secondary);
     border-color: var(--border-color);
 }
@@ -3324,4 +3498,401 @@
     background: var(--item-hover-bg);
     color: var(--primary-color);
 }
+
+/* ==========================================================================
+   MOBILE ACTION SHEET (iOS / Material 3 - 2026 Gold Standard)
+   ========================================================================== */
+.sc-mobile-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sc-mobile-sheet-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.sc-mobile-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82vh;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
+    z-index: 1201;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 8px);
+}
+
+.sc-mobile-sheet.active {
+    transform: translateY(0);
+}
+
+.sc-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--text-quaternary, rgba(150, 150, 150, 0.4));
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+}
+
+.sc-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 12px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.sc-sheet-entity-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-desk-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary-light, #e0e7ff);
+    border: 1px solid rgba(var(--primary-color-rgb, 79, 70, 229), 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: var(--primary-color, #4338ca);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .sc-sheet-desk-icon {
+    background: rgba(129, 140, 248, 0.18);
+    border-color: rgba(129, 140, 248, 0.28);
+    color: #818cf8;
+}
+
+.sc-sheet-entity-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-entity-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+.sc-sheet-entity-meta {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sc-sheet-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-sheet-close-btn:active {
+    transform: scale(0.92);
+}
+
+.sc-sheet-content {
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sc-sheet-section-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin: 10px 4px 4px;
+}
+
+.sc-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sc-sheet-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    min-height: 52px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.sc-sheet-action-btn:active {
+    background: var(--item-hover-bg);
+    transform: scale(0.985);
+}
+
+.sc-sheet-action-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.sc-sheet-action-icon.sc-icon-primary {
+    background: var(--primary-light, #e0e7ff);
+    color: var(--primary-color, #4338ca);
+}
+
+.sc-sheet-action-icon.sc-icon-secondary {
+    background: var(--bg-tertiary, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
+}
+
+.sc-sheet-action-icon.sc-icon-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.sc-sheet-action-icon.sc-icon-danger {
+    background: #fee2e2;
+    color: var(--error-color, #dc2626);
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-primary {
+    background: rgba(129, 140, 248, 0.22);
+    color: #818cf8;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e4e4e7;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-warning {
+    background: rgba(251, 191, 36, 0.22);
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .sc-sheet-action-icon.sc-icon-danger {
+    background: rgba(248, 113, 113, 0.22);
+    color: #f87171;
+}
+
+.sc-sheet-action-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.sc-sheet-action-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.sc-sheet-action-hint {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
+.sc-sheet-action-btn.sc-action-danger .sc-sheet-action-label {
+    color: var(--error-color);
+}
+
+/* Unplaced Student Picker inside Sheet */
+.sc-sheet-search-wrap {
+    margin-bottom: 6px;
+}
+
+.sc-sheet-search {
+    width: 100%;
+    height: 40px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    box-sizing: border-box;
+}
+
+.sc-sheet-search:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2);
+}
+
+.sc-sheet-search::placeholder {
+    color: var(--text-tertiary);
+    font-style: normal !important;
+}
+
+.sc-sheet-picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
+}
+
+.sc-sheet-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 100%;
+    min-height: 44px;
+    text-align: left;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sc-sheet-picker-item:active {
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.1);
+    border-color: var(--primary-color);
+}
+
+.sc-sheet-picker-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sc-sheet-picker-name {
+    font-size: 0.86rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sc-sheet-picker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--primary-color, #4f46e5);
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25);
+    transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+[data-theme="dark"] .sc-sheet-picker-badge {
+    background: #6366f1;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.sc-sheet-picker-item:active .sc-sheet-picker-badge {
+    transform: scale(0.95);
+    filter: brightness(0.92);
+}
+
+.sc-sheet-empty-unplaced {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    color: #059669;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .sc-sheet-empty-unplaced {
+    color: #34d399;
+}
+
+/* Pulsing Empty Cells when in Move / Placement mode */
+#seatingChartView[data-has-selection="true"] .sc-cell.empty:not([class*="sc-cell-special-"]) {
+    border-color: var(--primary-color);
+    border-style: dashed;
+    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.08);
+    animation: scCellPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes scCellPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb, 79, 70, 229), 0.3);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 10px 2px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25);
+    }
+}
+
 

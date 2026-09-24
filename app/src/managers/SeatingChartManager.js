@@ -39,6 +39,7 @@ export const SeatingChartManager = {
     _zoomScale: 1,
     _fitScale: 1,
     _resizeDebounceTimer: null,
+    _activeMobileSheet: null,
 
     // ========================================================================
     // INITIALIZATION
@@ -416,13 +417,18 @@ export const SeatingChartManager = {
             if (this._placementPopoverOpen && !e.target.closest('.sc-placement-wrapper')) {
                 this._closePlacementPopover();
             }
-            if (this._selectedChipIds.length > 0 && !e.target.closest('.sc-student-chip') && !e.target.closest('.sc-cell')) {
+            if (this._selectedChipIds.length > 0 && 
+                !e.target.closest('.sc-student-chip') && 
+                !e.target.closest('.sc-cell') && 
+                !e.target.closest('.sc-mobile-sheet') && 
+                !e.target.closest('.sc-mobile-sheet-backdrop')) {
                 this._clearSelection();
             }
         });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                if (this._activeMobileSheet) this._closeMobileSheet();
                 if (this._placementPopoverOpen) this._closePlacementPopover();
                 if (this._configPopoverOpen) this._closeConfigPopover();
                 if (this._selectedChipIds.length > 0) this._clearSelection();
@@ -513,6 +519,381 @@ export const SeatingChartManager = {
         popover.classList.remove('open');
         document.getElementById('scConfigBtn')?.classList.remove('active');
         this._configPopoverOpen = false;
+    },
+
+    // ========================================================================
+    // MOBILE ACTION SHEETS & TAP-TO-PLACE (iOS / Material 2026 Gold Standard)
+    // ========================================================================
+
+    _isMobileView() {
+        return Boolean(window.innerWidth <= 768 || window.matchMedia?.('(pointer: coarse)')?.matches);
+    },
+
+    _findStudentGridPos(studentId) {
+        if (!studentId || !Array.isArray(this._gridState)) return null;
+        for (let r = 0; r < this._gridState.length; r++) {
+            const row = this._gridState[r];
+            if (!Array.isArray(row)) continue;
+            for (let c = 0; c < row.length; c++) {
+                if (row[c] === studentId) return { row: r, col: c };
+            }
+        }
+        return null;
+    },
+
+    _swapGridPositions(r1, c1, r2, c2) {
+        if (this._isLocked) return;
+        this._snapshotGrid();
+        const id1 = this._gridState[r1]?.[c1];
+        const id2 = this._gridState[r2]?.[c2];
+        if (!id1 || !id2) return;
+
+        this._gridState[r1][c1] = id2;
+        this._gridState[r2][c2] = id1;
+        this._dismissOnboardingHint();
+        this._savePositionsToState();
+        this._render();
+        this._animateCellSwap(r1, c1, r2, c2);
+
+        const s1 = this._studentMap?.get(id1) || this._students.find(s => s.id === id1);
+        const s2 = this._studentMap?.get(id2) || this._students.find(s => s.id === id2);
+        if (s1 && s2) {
+            UI?.showNotification?.(`Échange : ${s1.prenom || s1.nom} ↔ ${s2.prenom || s2.nom}`, 'success');
+        }
+    },
+
+    _replaceOccupantWithUnplaced(row, col, unplacedId) {
+        if (this._isLocked) return;
+        this._snapshotGrid();
+        const prevOccupantId = this._gridState[row]?.[col];
+        this._gridState[row][col] = unplacedId;
+        this._dismissOnboardingHint();
+        this._savePositionsToState();
+        this._render();
+        this._animateCellPlaced(row, col);
+
+        const sNew = this._studentMap?.get(unplacedId) || this._students.find(s => s.id === unplacedId);
+        const sOld = this._studentMap?.get(prevOccupantId) || this._students.find(s => s.id === prevOccupantId);
+        if (sNew) {
+            const msg = sOld 
+                ? `${sNew.prenom || sNew.nom} remplace ${sOld.prenom || sOld.nom}` 
+                : `${sNew.prenom || sNew.nom} placé à cette table`;
+            UI?.showNotification?.(msg, 'success');
+        }
+    },
+
+    _openOccupiedCellSheet(row, col, student) {
+        this._closeMobileSheet(true);
+        const isPinned = !!student?.seatingPosition?.pinned;
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sc-mobile-sheet-backdrop';
+        backdrop.id = 'scMobileSheetBackdrop';
+
+        const sheet = document.createElement('div');
+        sheet.className = 'sc-mobile-sheet';
+        sheet.id = 'scMobileSheet';
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+
+        sheet.innerHTML = `
+            <div class="sc-sheet-handle"></div>
+            <div class="sc-sheet-header">
+                <div class="sc-sheet-entity-info">
+                    ${StudentPhotoManager.getAvatarHTML(student, 'md')}
+                    <div class="sc-sheet-entity-text">
+                        <h3 class="sc-sheet-entity-name">${student.prenom || ''} ${student.nom || ''}</h3>
+                        <p class="sc-sheet-entity-meta">Rangée ${row + 1} • Table ${col + 1}${isPinned ? ' • 📌 Place fixée' : ''}</p>
+                    </div>
+                </div>
+                <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
+                    <iconify-icon icon="ph:x"></iconify-icon>
+                </button>
+            </div>
+            <div class="sc-sheet-content">
+                <div class="sc-sheet-actions">
+                    <button class="sc-sheet-action-btn" data-action="move" type="button">
+                        <div class="sc-sheet-action-icon sc-icon-primary">
+                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                        </div>
+                        <div class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">Déplacer ou permuter</span>
+                            <span class="sc-sheet-action-hint">Touchez ensuite la table de destination</span>
+                        </div>
+                    </button>
+                    <button class="sc-sheet-action-btn" data-action="pin" type="button">
+                        <div class="sc-sheet-action-icon ${isPinned ? 'sc-icon-warning' : 'sc-icon-secondary'}">
+                            <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
+                        </div>
+                        <div class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">${isPinned ? 'Détacher la place' : 'Épingler à cette place'}</span>
+                            <span class="sc-sheet-action-hint">${isPinned ? 'La place redeviendra mobile' : 'Fige la place lors des réagencements'}</span>
+                        </div>
+                    </button>
+                    <button class="sc-sheet-action-btn sc-action-danger" data-action="remove" type="button">
+                        <div class="sc-sheet-action-icon sc-icon-danger">
+                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                        </div>
+                        <div class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">Retirer du plan</span>
+                            <span class="sc-sheet-action-hint">Renvoie l'élève dans les non placés</span>
+                        </div>
+                    </button>
+                    <button class="sc-sheet-action-btn" data-action="profile" type="button">
+                        <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                        </div>
+                        <div class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">Voir la fiche élève</span>
+                            <span class="sc-sheet-action-hint">Notes, observations et historique</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(backdrop);
+        document.body.appendChild(sheet);
+        this._activeMobileSheet = { backdrop, sheet };
+
+        requestAnimationFrame(() => {
+            backdrop.classList.add('active');
+            sheet.classList.add('active');
+        });
+
+        const close = () => this._closeMobileSheet();
+        backdrop.addEventListener('click', close);
+        sheet.querySelector('#scSheetCloseBtn')?.addEventListener('click', close);
+
+        sheet.querySelector('[data-action="move"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._closeMobileSheet(true);
+            this._clearSelection();
+            this._toggleChipSelection(student.id);
+            this._lastSelectedGridPos = { row, col };
+            UI?.showNotification?.(`Touchez une table libre pour déplacer ${student.prenom || 'l’élève'}, ou occupée pour permuter.`, 'info');
+        });
+
+        sheet.querySelector('[data-action="pin"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            this._togglePin(student.id);
+        });
+
+        sheet.querySelector('[data-action="remove"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            this._removeFromCell(row, col);
+        });
+
+        sheet.querySelector('[data-action="profile"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            close();
+            FocusPanelManager.open(student.id);
+        });
+    },
+
+    _openEmptyCellSheet(row, col, special) {
+        this._closeMobileSheet(true);
+        const unplaced = this._getUnplacedStudents();
+        const isClassScope = special?.scope === 'class';
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sc-mobile-sheet-backdrop';
+        backdrop.id = 'scMobileSheetBackdrop';
+
+        const sheet = document.createElement('div');
+        sheet.className = 'sc-mobile-sheet';
+        sheet.id = 'scMobileSheet';
+        sheet.setAttribute('role', 'dialog');
+        sheet.setAttribute('aria-modal', 'true');
+
+        let statusLabel = 'Place libre';
+        let deskIcon = 'solar:chair-linear';
+        if (special?.type === 'aisle') {
+            statusLabel = 'Allée (Espace vide)';
+            deskIcon = 'solar:ghost-linear';
+        } else if (special?.type === 'aesh') {
+            statusLabel = 'Place réservée AESH';
+            deskIcon = 'solar:user-speak-rounded-linear';
+        } else if (special?.type === 'blocked') {
+            statusLabel = 'Table condamnée';
+            deskIcon = 'solar:forbidden-circle-linear';
+        }
+
+        sheet.innerHTML = `
+            <div class="sc-sheet-handle"></div>
+            <div class="sc-sheet-header">
+                <div class="sc-sheet-entity-info">
+                    <div class="sc-sheet-desk-icon">
+                        <iconify-icon icon="${deskIcon}"></iconify-icon>
+                    </div>
+                    <div class="sc-sheet-entity-text">
+                        <h3 class="sc-sheet-entity-name">Rangée ${row + 1} • Table ${col + 1}</h3>
+                        <p class="sc-sheet-entity-meta">${statusLabel}</p>
+                    </div>
+                </div>
+                <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
+                    <iconify-icon icon="ph:x"></iconify-icon>
+                </button>
+            </div>
+            <div class="sc-sheet-content">
+                ${unplaced.length > 0 && !special ? `
+                    <div class="sc-sheet-section-title">Attribuer à un élève non placé (${unplaced.length})</div>
+                    <div class="sc-sheet-search-wrap">
+                        <input type="text" class="sc-sheet-search" id="scSheetSearchInput" placeholder="Rechercher un élève..." autocomplete="off">
+                    </div>
+                    <div class="sc-sheet-picker-list" id="scSheetPickerList">
+                        ${unplaced.map(s => `
+                            <button class="sc-sheet-picker-item" data-student-id="${s.id}" type="button">
+                                <div class="sc-sheet-picker-user">
+                                    ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                                    <span class="sc-sheet-picker-name">${s.prenom || ''} ${s.nom || ''}</span>
+                                </div>
+                                <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Placer</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : (unplaced.length === 0 && !special ? `
+                    <div class="sc-sheet-empty-unplaced">
+                        <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                        <span>Tous les élèves sont déjà placés</span>
+                    </div>
+                ` : '')}
+                <div class="sc-sheet-section-title">Configuration de la table</div>
+                <div class="sc-sheet-actions">
+                    ${!special ? `
+                        <button class="sc-sheet-action-btn" data-special-type="aisle" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <iconify-icon icon="solar:ghost-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Transformer en allée</span>
+                                <span class="sc-sheet-action-hint">Espace de passage (aucune table)</span>
+                            </div>
+                        </button>
+                        <button class="sc-sheet-action-btn" data-special-type="aesh" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Place AESH</span>
+                                <span class="sc-sheet-action-hint">Réservée pour accompagnant</span>
+                            </div>
+                        </button>
+                        <button class="sc-sheet-action-btn" data-special-type="blocked" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Condamner la table</span>
+                                <span class="sc-sheet-action-hint">Table hors service ou indisponible</span>
+                            </div>
+                        </button>
+                    ` : `
+                        <button class="sc-sheet-action-btn" data-special-type="normal" type="button">
+                            <div class="sc-sheet-action-icon sc-icon-primary">
+                                <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                            </div>
+                            <div class="sc-sheet-action-text">
+                                <span class="sc-sheet-action-label">Rétablir en table normale</span>
+                                <span class="sc-sheet-action-hint">Permet d'asseoir à nouveau un élève</span>
+                            </div>
+                        </button>
+                        ${special.type === 'blocked' ? `
+                            <button class="sc-sheet-action-btn" data-special-type="toggle-scope" type="button">
+                                <div class="sc-sheet-action-icon sc-icon-secondary">
+                                    <iconify-icon icon="${isClassScope ? 'solar:buildings-linear' : 'solar:users-group-two-rounded-linear'}"></iconify-icon>
+                                </div>
+                                <div class="sc-sheet-action-text">
+                                    <span class="sc-sheet-action-label">${isClassScope ? 'Appliquer à toute la salle' : 'Restreindre à cette classe'}</span>
+                                    <span class="sc-sheet-action-hint">Portée : ${isClassScope ? 'Cette classe uniquement' : 'Toutes les classes'}</span>
+                                </div>
+                            </button>
+                        ` : ''}
+                    `}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(backdrop);
+        document.body.appendChild(sheet);
+        this._activeMobileSheet = { backdrop, sheet };
+
+        requestAnimationFrame(() => {
+            backdrop.classList.add('active');
+            sheet.classList.add('active');
+        });
+
+        const close = () => this._closeMobileSheet();
+        backdrop.addEventListener('click', close);
+        sheet.querySelector('#scSheetCloseBtn')?.addEventListener('click', close);
+
+        // Unplaced student search filter
+        const searchInput = sheet.querySelector('#scSheetSearchInput');
+        const pickerList = sheet.querySelector('#scSheetPickerList');
+        if (searchInput && pickerList) {
+            searchInput.addEventListener('input', (e) => {
+                const q = (e.target.value || '').trim().toLowerCase();
+                pickerList.querySelectorAll('.sc-sheet-picker-item').forEach(item => {
+                    const name = item.querySelector('.sc-sheet-picker-name')?.textContent?.toLowerCase() || '';
+                    item.style.display = name.includes(q) ? 'flex' : 'none';
+                });
+            });
+        }
+
+        // Unplaced student placement click
+        pickerList?.querySelectorAll('.sc-sheet-picker-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const studentId = item.dataset.studentId;
+                if (!studentId) return;
+                close();
+                this._snapshotGrid();
+                this._gridState[row][col] = studentId;
+                this._dismissOnboardingHint();
+                this._savePositionsToState();
+                this._render();
+                this._animateCellPlaced(row, col);
+                const s = this._studentMap?.get(studentId) || this._students.find(st => st.id === studentId);
+                if (s) UI?.showNotification?.(`${s.prenom || s.nom} placé à la table (${row + 1}, ${col + 1})`, 'success');
+            });
+        });
+
+        // Special type actions
+        sheet.querySelectorAll('[data-special-type]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = btn.dataset.specialType;
+                close();
+                if (type === 'toggle-scope') {
+                    this._toggleBlockedScope(row, col);
+                } else {
+                    this._setCellSpecialType(row, col, type === 'normal' ? null : type);
+                }
+            });
+        });
+    },
+
+    _closeMobileSheet(immediate = false) {
+        const existingSheets = document.querySelectorAll('.sc-mobile-sheet, .sc-mobile-sheet-backdrop');
+        if (immediate) {
+            existingSheets.forEach(el => el.remove());
+            this._activeMobileSheet = null;
+            return;
+        }
+        if (!this._activeMobileSheet) {
+            existingSheets.forEach(el => el.remove());
+            return;
+        }
+        const { backdrop, sheet } = this._activeMobileSheet;
+        this._activeMobileSheet = null;
+        if (backdrop) backdrop.style.pointerEvents = 'none';
+        if (sheet) sheet.style.pointerEvents = 'none';
+        backdrop?.classList.remove('active');
+        sheet?.classList.remove('active');
+        setTimeout(() => {
+            backdrop?.remove();
+            sheet?.remove();
+        }, 300);
     },
 
     // ========================================================================
@@ -988,6 +1369,7 @@ export const SeatingChartManager = {
         }
 
         this._clearSelection();
+        this._closeMobileSheet();
         if (this._isLocked) {
             this._closeConfigPopover();
             this._dismissOnboardingHint();
@@ -1005,12 +1387,10 @@ export const SeatingChartManager = {
                     UI?.showNotification?.('Plan de classe validé et figé', 'success');
                 } else {
                     currentClass.seatingLocked = false;
-                    UI?.showNotification?.('Mode Consultation', 'info');
                 }
             } else {
                 currentClass.seatingLocked = false;
                 currentClass.seatingUpdatedAt = Date.now();
-                UI?.showNotification?.('Mode Édition actif', 'info');
             }
         }
 
@@ -1893,6 +2273,21 @@ export const SeatingChartManager = {
                 if (e.target.closest('.sc-cell-remove') || e.target.closest('.sc-cell-pin')) return;
                 if (this._isLocked) {
                     FocusPanelManager.open(student.id);
+                } else if (this._selectedChipIds.length === 1 && this._selectedChipIds[0] !== student.id) {
+                    // Tap-to-Place / Swap: 1 student was selected, user tapped another desk -> Swap or Replace!
+                    const selectedId = this._selectedChipIds[0];
+                    const srcPos = this._findStudentGridPos(selectedId);
+                    if (srcPos) {
+                        this._swapGridPositions(srcPos.row, srcPos.col, row, col);
+                    } else {
+                        this._replaceOccupantWithUnplaced(row, col, selectedId);
+                    }
+                    this._clearSelection();
+                } else if (this._selectedChipIds.length === 1 && this._selectedChipIds[0] === student.id) {
+                    this._clearSelection();
+                } else if (this._isMobileView() && this._selectedChipIds.length === 0) {
+                    // Mobile: Tap on occupied desk opens modern bottom action sheet
+                    this._openOccupiedCellSheet(row, col, student);
                 } else if (!isPinned) {
                     if (e.shiftKey && this._lastSelectedGridPos) {
                         this._selectGridRange(this._lastSelectedGridPos.row, this._lastSelectedGridPos.col, row, col);
@@ -1900,6 +2295,8 @@ export const SeatingChartManager = {
                         this._toggleChipSelection(student.id);
                         this._lastSelectedGridPos = { row, col };
                     }
+                } else if (isPinned && this._isMobileView()) {
+                    this._openOccupiedCellSheet(row, col, student);
                 }
             });
 
@@ -2038,8 +2435,28 @@ export const SeatingChartManager = {
             });
 
             cell.addEventListener('click', () => {
-                if (this._isLocked || this._selectedChipIds.length === 0 || special) return;
-                this._placeSelectedAt(row, col);
+                if (this._isLocked) return;
+                if (this._selectedChipIds.length > 0 && !special) {
+                    const selectedId = this._selectedChipIds[0];
+                    const srcPos = this._selectedChipIds.length === 1 ? this._findStudentGridPos(selectedId) : null;
+                    if (srcPos) {
+                        this._snapshotGrid();
+                        this._gridState[srcPos.row][srcPos.col] = null;
+                        this._gridState[row][col] = selectedId;
+                        this._clearSelection();
+                        this._savePositionsToState();
+                        this._render();
+                        this._animateCellPlaced(row, col);
+                        const s = this._studentMap?.get(selectedId) || this._students.find(st => st.id === selectedId);
+                        if (s) UI?.showNotification?.(`${s.prenom || s.nom} déplacé`, 'info');
+                    } else {
+                        this._placeSelectedAt(row, col);
+                    }
+                } else if (this._selectedChipIds.length === 0) {
+                    if (this._isMobileView()) {
+                        this._openEmptyCellSheet(row, col, special);
+                    }
+                }
             });
         }
 
@@ -2525,8 +2942,6 @@ export const SeatingChartManager = {
             let activeSourceInfo = { ...sourceInfo };
             if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
-            } else if (sourceInfo.resultId) {
-                this._clearSelection();
             }
             this._touchSourceInfo = activeSourceInfo;
         }, { passive: true });
@@ -2537,13 +2952,16 @@ export const SeatingChartManager = {
 
             if (!hasMoved && (Math.abs(touch.clientX - startX) > 8 || Math.abs(touch.clientY - startY) > 8)) {
                 hasMoved = true;
+                if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                    this._clearSelection();
+                }
                 this._createTouchGhost(element, touch);
             }
 
             if (hasMoved && this._touchDragEl) {
-                e.preventDefault();
-                this._touchDragEl.style.left = `${touch.clientX - 30}px`;
-                this._touchDragEl.style.top = `${touch.clientY - 30}px`;
+                if (e.cancelable) e.preventDefault();
+                this._touchDragEl.style.left = `${touch.clientX}px`;
+                this._touchDragEl.style.top = `${touch.clientY}px`;
                 this._highlightCellUnderTouch(touch.clientX, touch.clientY);
             }
         }, { passive: false });
@@ -2573,6 +2991,10 @@ export const SeatingChartManager = {
             }
             this._cleanupTouch();
         });
+
+        element.addEventListener('touchcancel', () => {
+            this._cleanupTouch();
+        });
     },
 
     _createTouchGhost(element, touch) {
@@ -2590,8 +3012,8 @@ export const SeatingChartManager = {
             ghost.classList.add('sc-drag-multi');
         }
 
-        ghost.style.left = `${touch.clientX - 30}px`;
-        ghost.style.top = `${touch.clientY - 30}px`;
+        ghost.style.left = `${touch.clientX}px`;
+        ghost.style.top = `${touch.clientY}px`;
         document.body.appendChild(ghost);
         this._touchDragEl = ghost;
     },

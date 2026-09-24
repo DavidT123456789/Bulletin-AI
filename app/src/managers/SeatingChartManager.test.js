@@ -1169,7 +1169,132 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(zoomBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:minimize-square-linear');
         });
     });
+
+    describe('SeatingChartManager - Mode Édition Mobile & Tap-to-Place (2026 Gold Standard)', () => {
+        beforeEach(() => {
+            SeatingChartManager._gridState = [
+                ['s1', 's2', null],
+                [null, 's3', null]
+            ];
+            SeatingChartManager._students = [
+                { id: 's1', prenom: 'Lucas', nom: 'Martin' },
+                { id: 's2', prenom: 'Emma', nom: 'Bernard' },
+                { id: 's3', prenom: 'Noah', nom: 'Dubois' },
+                { id: 's4', prenom: 'Chloe', nom: 'Thomas' }
+            ];
+            SeatingChartManager._studentMap = new Map(SeatingChartManager._students.map(s => [s.id, s]));
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._selectedChipIds = [];
+            SeatingChartManager._closeMobileSheet();
+        });
+
+        it('devrait détecter la vue mobile selon la largeur d’écran', () => {
+            const originalWidth = window.innerWidth;
+            window.innerWidth = 390;
+            expect(SeatingChartManager._isMobileView()).toBe(true);
+
+            window.innerWidth = 1200;
+            expect(SeatingChartManager._isMobileView()).toBe(false);
+            window.innerWidth = originalWidth;
+        });
+
+        it('devrait trouver la position exacte d’un élève sur la grille', () => {
+            expect(SeatingChartManager._findStudentGridPos('s1')).toEqual({ row: 0, col: 0 });
+            expect(SeatingChartManager._findStudentGridPos('s2')).toEqual({ row: 0, col: 1 });
+            expect(SeatingChartManager._findStudentGridPos('s3')).toEqual({ row: 1, col: 1 });
+            expect(SeatingChartManager._findStudentGridPos('s4')).toBeNull();
+        });
+
+        it('devrait permuter (swap) deux élèves placés avec notification et sauvegarde', () => {
+            SeatingChartManager._swapGridPositions(0, 0, 0, 1);
+            expect(SeatingChartManager._gridState[0][0]).toBe('s2');
+            expect(SeatingChartManager._gridState[0][1]).toBe('s1');
+        });
+
+        it('devrait remplacer un élève par un élève non placé', () => {
+            SeatingChartManager._replaceOccupantWithUnplaced(0, 0, 's4');
+            expect(SeatingChartManager._gridState[0][0]).toBe('s4');
+        });
+
+        it('devrait ouvrir et fermer le Mobile Action Sheet pour un élève placé', () => {
+            const student = SeatingChartManager._students[0];
+            SeatingChartManager._openOccupiedCellSheet(0, 0, student);
+
+            const sheet = document.getElementById('scMobileSheet');
+            const backdrop = document.getElementById('scMobileSheetBackdrop');
+            expect(sheet).not.toBeNull();
+            expect(backdrop).not.toBeNull();
+            expect(sheet.textContent).toContain('Lucas Martin');
+            expect(sheet.querySelector('[data-action="move"]')).not.toBeNull();
+            expect(sheet.querySelector('[data-action="remove"]')).not.toBeNull();
+            expect(sheet.querySelector('[data-action="pin"]')).not.toBeNull();
+
+            SeatingChartManager._closeMobileSheet();
+            expect(SeatingChartManager._activeMobileSheet).toBeNull();
+        });
+
+        it('devrait ouvrir le Mobile Sheet pour une table vide avec sélecteur d’élèves', () => {
+            SeatingChartManager._openEmptyCellSheet(0, 2, null);
+
+            const sheet = document.getElementById('scMobileSheet');
+            expect(sheet).not.toBeNull();
+            expect(sheet.textContent).toContain('Rangée 1 • Table 3');
+            expect(sheet.textContent).toContain('Attribuer à un élève non placé');
+            expect(sheet.querySelector('[data-special-type="aisle"]')).not.toBeNull();
+
+            SeatingChartManager._closeMobileSheet();
+            expect(SeatingChartManager._activeMobileSheet).toBeNull();
+        });
+
+        it('devrait sélectionner l’élève lors du clic sur Déplacer et fermer la feuille', () => {
+            const student = SeatingChartManager._students[0];
+            SeatingChartManager._openOccupiedCellSheet(0, 0, student);
+
+            const moveBtn = document.querySelector('[data-action="move"]');
+            expect(moveBtn).not.toBeNull();
+            moveBtn.click();
+
+            // La feuille doit être fermée
+            expect(document.getElementById('scMobileSheet')).toBeNull();
+            // L'élève doit être sélectionné pour le déplacement
+            expect(SeatingChartManager._selectedChipIds).toEqual([student.id]);
+            expect(SeatingChartManager._lastSelectedGridPos).toEqual({ row: 0, col: 0 });
+        });
+
+        it('devrait déplacer l’élève vers une case vide après sélection via Déplacer', () => {
+            const student = SeatingChartManager._students[0];
+            SeatingChartManager._openOccupiedCellSheet(0, 0, student);
+            document.querySelector('[data-action="move"]').click();
+
+            // Clic sur table vide (0, 2)
+            const emptyCell = document.querySelector('.sc-cell[data-row="0"][data-col="2"]');
+            expect(emptyCell).not.toBeNull();
+            emptyCell.click();
+
+            // L'élève s1 doit être à (0, 2) et (0, 0) doit être vide
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[0][2]).toBe('s1');
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+        });
+
+        it('devrait permuter deux élèves après sélection via Déplacer', () => {
+            const student = SeatingChartManager._students[0];
+            SeatingChartManager._openOccupiedCellSheet(0, 0, student);
+            document.querySelector('[data-action="move"]').click();
+
+            // Clic sur table occupée (0, 1) où se trouve s2
+            const occupiedCell = document.querySelector('.sc-cell[data-row="0"][data-col="1"]');
+            expect(occupiedCell).not.toBeNull();
+            occupiedCell.click();
+
+            // s1 et s2 doivent être permutés
+            expect(SeatingChartManager._gridState[0][0]).toBe('s2');
+            expect(SeatingChartManager._gridState[0][1]).toBe('s1');
+            expect(SeatingChartManager._selectedChipIds).toEqual([]);
+        });
+    });
 });
+
 
 
 
