@@ -631,7 +631,8 @@
     min-width: 0;
     min-height: 0;
     background: transparent;
-    transition: margin-left 0.42s cubic-bezier(0.25, 1, 0.3, 1);
+    transition: margin-left 0.42s cubic-bezier(0.25, 1, 0.3, 1),
+                width 0.42s cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 /* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
@@ -1413,10 +1414,12 @@
 
 #seatingChartView[data-locked="false"] .sc-grid-area {
     margin-left: 260px;
+    width: calc(100% - 260px);
 }
 
 #seatingChartView[data-locked="true"] .sc-grid-area {
     margin-left: 0;
+    width: 100%;
     padding-top: calc(56px + 48px);
 }
 
@@ -2388,11 +2391,13 @@
         padding: 12px;
         padding-top: calc(56px + 12px); /* header + spacing */
         margin-left: 0 !important;
+        width: 100% !important;
     }
 
     #seatingChartView[data-locked="false"] .sc-grid-area,
     #seatingChartView[data-locked="true"] .sc-grid-area {
         margin-left: 0 !important;
+        width: 100% !important;
     }
 
     #seatingChartView[data-locked="true"] .sc-grid-area {
