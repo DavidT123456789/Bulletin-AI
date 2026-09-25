@@ -503,7 +503,7 @@ export const JournalManager = {
                         <span class="journal-draft-title-text">${labelText}</span>
                         <span class="journal-draft-date-badge">${formattedDate}</span>
                     </div>
-                    <button type="button" class="journal-header-btn icon-only journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
+                    <button type="button" class="close-btn journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>

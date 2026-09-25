@@ -170,12 +170,6 @@
     box-shadow: none;
 }
 
-/* Draft close button at top-right */
-.journal-draft-close-btn:hover {
-    background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-color);
-}
-
 /* Value text in header buttons - bold for emphasis (harmonized) */
 .journal-header-btn span:not(.tooltip-text) {
     font-weight: 600;
@@ -302,10 +296,11 @@
     flex-direction: column;
     gap: 0;
     margin-bottom: 12px;
-    padding: 12px;
-    background: color-mix(in srgb, var(--primary-color) 4%, var(--surface-color));
-    border: 1px dashed color-mix(in srgb, var(--primary-color) 30%, transparent);
-    border-radius: var(--radius-md);
+    padding: 14px;
+    background: color-mix(in srgb, var(--surface-color) 60%, var(--bg-tertiary));
+    border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color));
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
     position: relative;
     overflow: visible;
 }
@@ -340,10 +335,10 @@
     0% {
         opacity: 1;
         transform: translateY(0);
-        max-height: 300px;
+        max-height: 500px;
         margin-bottom: 12px;
-        padding: 12px;
-        border: 1px dashed color-mix(in srgb, var(--primary-color) 30%, transparent);
+        padding: 14px;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color));
     }
 
     100% {
@@ -353,7 +348,7 @@
         margin-bottom: 0;
         padding-top: 0;
         padding-bottom: 0;
-        border: 0px dashed transparent;
+        border: 0px solid transparent;
     }
 }
 
@@ -443,15 +438,16 @@
     color: var(--text-primary);
 }
 
-/* === Pills Row (2x2 Grid) === */
+/* === Pills Row === */
 .journal-draft-pills-row {
     width: 100%;
     margin-bottom: 10px;
 }
 
 .journal-draft-pills {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     width: 100%;
 }
@@ -459,24 +455,23 @@
 /* Pill Dropdown Container */
 .journal-pill-dropdown {
     position: relative;
-    width: 100%;
-    display: flex;
+    display: inline-flex;
 }
 
-/* Pill Button Base — semantic color tint at rest */
+/* Pill Button Base — Desktop: compact, natural width, elegant */
 .journal-pill-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    width: 100%;
-    min-height: 40px;
+    width: auto;
+    min-height: 30px;
     padding: 0 10px;
     border-radius: var(--radius-pill);
     border: 1px solid color-mix(in srgb, var(--pill-color) 28%, var(--border-color));
     background: color-mix(in srgb, var(--pill-color) 6%, var(--surface-color));
     color: var(--pill-color);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
@@ -682,10 +677,10 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 38px;
-    padding: 0 16px;
+    height: 34px;
+    padding: 0 14px;
     border-radius: var(--radius-md);
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
@@ -716,10 +711,11 @@
 
 /* Save / Validate Button */
 .journal-save-btn {
-    background: var(--primary-color);
+    background-color: var(--primary-color);
     border: 1px solid transparent;
     color: #ffffff !important;
     box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .journal-save-btn iconify-icon {
@@ -727,13 +723,17 @@
 }
 
 .journal-save-btn:hover:not(:disabled) {
-    background: var(--primary-hover);
+    background-color: var(--primary-color);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14));
+    border-color: rgba(255, 255, 255, 0.18);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.45);
+    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.45);
 }
 
 .journal-save-btn:active:not(:disabled) {
     transform: scale(0.97);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1));
+    box-shadow: 0 1px 4px rgba(var(--primary-color-rgb), 0.25);
 }
 
 .journal-save-btn:disabled {
@@ -765,9 +765,16 @@
     overflow: hidden;
 }
 
-/* Moderate expansion when draft is open - just enough for the draft */
+/* Full expansion when draft is open — no nested scrollbar */
 .journal-content:has(.journal-draft-preview.visible) {
-    max-height: 280px;
+    max-height: none;
+    overflow-y: visible;
+}
+
+/* Hide empty state message while actively editing/drafting */
+.journal-content:has(.journal-draft-preview.visible) .journal-empty,
+.journal-section.editing .journal-empty {
+    display: none;
 }
 
 /* FIX: Handle collapsed state appearance */
@@ -1404,8 +1411,8 @@
     }
 }
 
-/* Touch-friendly: Larger tap targets */
-@media (pointer: coarse) {
+/* Touch-friendly: Larger tap targets on mobile touch devices */
+@media (pointer: coarse) and (max-width: 768px) {
     .journal-add-btn {
         width: 36px;
         height: 36px;
