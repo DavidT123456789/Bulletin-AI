@@ -507,19 +507,25 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Update active visual state for direct pill buttons (Difficulté, Remarque)
+     * Update active visual state for direct pill buttons (Difficulté, Remarque) and dropdown triggers
      * @private
      */
     _updatePillDirectStates() {
         const pillsContainer = document.getElementById('journalDraftPills');
         if (!pillsContainer) return;
+
+        // Direct pill buttons (Difficulté, Remarque)
         pillsContainer.querySelectorAll('.journal-pill-direct').forEach(btn => {
             const tagId = btn.dataset.tagId;
-            if (this._selectedJournalTags.includes(tagId)) {
-                btn.classList.add('selected');
-            } else {
-                btn.classList.remove('selected');
-            }
+            btn.classList.toggle('selected', this._selectedJournalTags.includes(tagId));
+        });
+
+        // Dropdown triggers (Positif, Négatif)
+        pillsContainer.querySelectorAll('.journal-pill-dropdown').forEach(dd => {
+            const category = dd.dataset.category;
+            const categoryTags = JournalManager.tags.filter(t => t.category === category).map(t => t.id);
+            const hasSelected = this._selectedJournalTags.some(t => categoryTags.includes(t));
+            dd.classList.toggle('has-selected', hasSelected);
         });
     },
 
