@@ -473,8 +473,7 @@ export const GeneralListeners = {
                         }
                     }
 
-                    DOM.headerMenuBtn?.classList.remove('has-cloud-reminder');
-                    DOM.headerMenuBtn?.classList.remove('has-cloud-conflict');
+                    DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
                     saveProgressToast?.dismiss?.();
 
                     if (isMerge && syncResult?.stats) {
@@ -666,7 +665,10 @@ export const GeneralListeners = {
      * @private
      */
     async _updateCloudReminder(syncService) {
-        if (!localStorage.getItem('bulletin_sync_provider')) return;
+        if (!localStorage.getItem('bulletin_sync_provider')) {
+            DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict', 'has-cloud-warning');
+            return;
+        }
 
         let service = syncService;
         if (!service) {
@@ -676,10 +678,18 @@ export const GeneralListeners = {
             } catch { /* Ignore */ }
         }
 
+        const isWarning = service ? (!service.isConnected() || service._lastSyncState === 'expired' || service._provider?.needsReconnect?.()) : false;
         const needsAction = this._hasUnsyncedChanges(service);
         const isConflict = service?._lastSyncState === 'conflict';
-        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
-        DOM.headerMenuBtn?.classList.toggle('has-cloud-conflict', isConflict);
+
+        if (isWarning) {
+            DOM.headerMenuBtn?.classList.add('has-cloud-warning');
+            DOM.headerMenuBtn?.classList.remove('has-cloud-reminder', 'has-cloud-conflict');
+        } else {
+            DOM.headerMenuBtn?.classList.remove('has-cloud-warning');
+            DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
+            DOM.headerMenuBtn?.classList.toggle('has-cloud-conflict', isConflict);
+        }
     },
 
     /**
@@ -729,9 +739,7 @@ export const GeneralListeners = {
      */
     initCloudReminder() {
         if (!localStorage.getItem('bulletin_sync_provider')) return;
-
-        const needsAction = this._hasUnsyncedChanges();
-        DOM.headerMenuBtn?.classList.toggle('has-cloud-reminder', needsAction);
+        this._updateCloudReminder();
     }
 };
 

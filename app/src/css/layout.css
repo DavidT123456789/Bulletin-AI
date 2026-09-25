@@ -777,6 +777,8 @@
 /* Indicator active: Organic animation of the 3 dots (Pure CSS) */
 .menu-btn.has-update,
 .menu-btn.has-cloud-reminder,
+.menu-btn.has-cloud-warning,
+.menu-btn.has-cloud-conflict,
 .menu-btn.cloud-syncing {
     /* Switch to row layout to align with horizontal icon style */
     flex-direction: row;
@@ -808,12 +810,14 @@
     --dot-target-bg: var(--color-sky-bright);
 }
 
-/* Specific styling for version conflict (warning color) */
-.menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing) {
+/* Specific styling for version conflict and session warning (warning color) */
+.menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing),
+.menu-btn.has-cloud-warning:not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-color);
 }
 
-[data-theme="dark"] .menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing) {
+[data-theme="dark"] .menu-btn.has-cloud-conflict:not(.has-update):not(.cloud-syncing),
+[data-theme="dark"] .menu-btn.has-cloud-warning:not(.has-update):not(.cloud-syncing) {
     --dot-target-bg: var(--warning-bright);
 }
 
@@ -825,6 +829,14 @@
 .menu-btn.has-cloud-reminder::after,
 .menu-btn.has-cloud-reminder i,
 .menu-btn.has-cloud-reminder iconify-icon,
+.menu-btn.has-cloud-warning::before,
+.menu-btn.has-cloud-warning::after,
+.menu-btn.has-cloud-warning i,
+.menu-btn.has-cloud-warning iconify-icon,
+.menu-btn.has-cloud-conflict::before,
+.menu-btn.has-cloud-conflict::after,
+.menu-btn.has-cloud-conflict i,
+.menu-btn.has-cloud-conflict iconify-icon,
 .menu-btn.cloud-syncing::before,
 .menu-btn.cloud-syncing::after,
 .menu-btn.cloud-syncing i,
@@ -853,6 +865,10 @@
 .menu-btn.has-update iconify-icon::part(svg),
 .menu-btn.has-cloud-reminder i::before,
 .menu-btn.has-cloud-reminder iconify-icon::part(svg),
+.menu-btn.has-cloud-warning i::before,
+.menu-btn.has-cloud-warning iconify-icon::part(svg),
+.menu-btn.has-cloud-conflict i::before,
+.menu-btn.has-cloud-conflict iconify-icon::part(svg),
 .menu-btn.cloud-syncing i::before,
 .menu-btn.cloud-syncing iconify-icon::part(svg) {
     display: none !important;
@@ -861,6 +877,8 @@
 /* For iconify-icon, we might need to hide the content differently since it uses Shadow DOM or direct SVG */
 .menu-btn.has-update iconify-icon,
 .menu-btn.has-cloud-reminder iconify-icon,
+.menu-btn.has-cloud-warning iconify-icon,
+.menu-btn.has-cloud-conflict iconify-icon,
 .menu-btn.cloud-syncing iconify-icon {
     /* When active, we actually want to turn the ELEMENT ITSELF into a dot, ignoring its SVG content */
     background: transparent;
@@ -869,19 +887,27 @@
 
 /* Stagger delay for wave effect (Left -> Right) */
 .menu-btn.has-update::before,
-.menu-btn.has-cloud-reminder::before {
+.menu-btn.has-cloud-reminder::before,
+.menu-btn.has-cloud-warning::before,
+.menu-btn.has-cloud-conflict::before {
     animation-delay: 0s;
 }
 
 .menu-btn.has-update i,
 .menu-btn.has-update iconify-icon,
 .menu-btn.has-cloud-reminder i,
-.menu-btn.has-cloud-reminder iconify-icon {
+.menu-btn.has-cloud-reminder iconify-icon,
+.menu-btn.has-cloud-warning i,
+.menu-btn.has-cloud-warning iconify-icon,
+.menu-btn.has-cloud-conflict i,
+.menu-btn.has-cloud-conflict iconify-icon {
     animation-delay: 0.15s;
 }
 
 .menu-btn.has-update::after,
-.menu-btn.has-cloud-reminder::after {
+.menu-btn.has-cloud-reminder::after,
+.menu-btn.has-cloud-warning::after,
+.menu-btn.has-cloud-conflict::after {
     animation-delay: 0.3s;
 }
 

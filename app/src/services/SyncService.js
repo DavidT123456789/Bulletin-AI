@@ -284,6 +284,8 @@ export const SyncService = {
             if (reconnectBtn) reconnectBtn.style.display = 'none';
             if (separator) separator.style.display = 'block';
             if (connectBtn) connectBtn.style.display = 'flex';
+            const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
+            menuBtn?.classList.remove('has-cloud-warning', 'has-cloud-reminder', 'has-cloud-conflict');
             return;
         }
 
@@ -350,10 +352,13 @@ export const SyncService = {
         // Update menu reminder dot based on syncState
         const menuBtn = document.getElementById('headerMenuBtn') || window.DOM?.headerMenuBtn;
         if (menuBtn) {
+            const isWarning = state === 'expired' || (state === 'local' && this._wasConfigured);
             const needsReminder = state === 'connected' &&
                 (this._lastSyncState === 'local-changes' || this._lastSyncState === 'cloud-changes' || this._lastSyncState === 'conflict');
             const isConflict = state === 'connected' && this._lastSyncState === 'conflict';
-            menuBtn.classList.toggle('has-cloud-reminder', !!needsReminder);
+
+            menuBtn.classList.toggle('has-cloud-warning', isWarning);
+            menuBtn.classList.toggle('has-cloud-reminder', !isWarning && !!needsReminder);
             menuBtn.classList.toggle('has-cloud-conflict', isConflict);
         }
     },

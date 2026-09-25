@@ -7,13 +7,14 @@ vi.mock('../managers/StorageManager.js', () => ({
         savePreRestoreSnapshot: vi.fn(),
         mergeRemoteData: vi.fn(() => Promise.resolve({ success: true, stats: { addedStudents: 1 } })),
         getPreRestoreSnapshot: vi.fn(),
-        clearPreRestoreSnapshot: vi.fn()
+        clearPreRestoreSnapshot: vi.fn(),
+        computeCurrentDataHash: vi.fn(() => 'mock-hash')
     }
 }));
 
 describe('SyncService & GoogleDriveProvider Authentication & Connection State', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
         localStorage.clear();
         SyncService._provider = null;
         SyncService.currentProviderName = null;
@@ -211,6 +212,58 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(readSpy).not.toHaveBeenCalled();
             expect(SyncService.forceDownload).toHaveBeenCalledWith(prefetched);
             expect(res.success).toBe(true);
+        });
+    });
+
+    describe('SyncService._updateCloudIndicator() & Header Menu Button State', () => {
+        let menuBtn, saveBtn, reconnectBtn;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <button id="headerMenuBtn"></button>
+                <button id="cloudSaveMenuBtn"><iconify-icon></iconify-icon><span class="cloud-save-label"></span></button>
+                <button id="cloudLoadMenuBtn"></button>
+                <button id="cloudReconnectBtn"><span></span></button>
+                <button id="cloudConnectBtn"></button>
+                <div id="cloudSeparator"></div>
+            `;
+            menuBtn = document.getElementById('headerMenuBtn');
+            saveBtn = document.getElementById('cloudSaveMenuBtn');
+            reconnectBtn = document.getElementById('cloudReconnectBtn');
+        });
+
+        it('should apply has-cloud-warning when session is expired', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+
+            SyncService._updateCloudIndicator('expired');
+
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(true);
+            expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
+            expect(reconnectBtn.style.display).toBe('flex');
+        });
+
+        it('should remove has-cloud-warning and apply has-cloud-reminder when connected with local changes', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 1000;
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '2000');
+
+            SyncService._updateCloudIndicator('connected');
+
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+            expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(true);
+        });
+
+        it('should clear all cloud indicators on disconnected or unconfigured local', () => {
+            SyncService._wasConfigured = false;
+            menuBtn.classList.add('has-cloud-warning', 'has-cloud-reminder');
+
+            SyncService._updateCloudIndicator('local');
+
+            expect(menuBtn.classList.contains('has-cloud-warning')).toBe(false);
+            expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(false);
         });
     });
 });
