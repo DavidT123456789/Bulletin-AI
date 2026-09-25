@@ -337,7 +337,6 @@ export const FocusPanelJournal = {
                 chip?.remove();
                 this._updatePillDirectStates();
                 this._updateSaveButton();
-                this._updateDraftPreviewVisibility();
             });
         });
     },
@@ -459,7 +458,6 @@ export const FocusPanelJournal = {
                 existingChip?.remove();
                 this._updatePillDirectStates();
                 this._updateSaveButton();
-                this._updateDraftPreviewVisibility();
                 return;
             }
             originElement?.closest('.journal-pill-dropdown')?.classList.remove('open');
@@ -492,7 +490,6 @@ export const FocusPanelJournal = {
                 chip.remove();
                 this._updatePillDirectStates();
                 this._updateSaveButton();
-                this._updateDraftPreviewVisibility();
             });
 
             chipsContainer.appendChild(chip);
@@ -698,17 +695,18 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Show/hide draft preview based on selected tags
+     * Ensure draft preview is visible when tags are selected
      * @private
      */
     _updateDraftPreviewVisibility() {
         const draftPreview = document.getElementById('journalDraftPreview');
         if (!draftPreview) return;
 
+        // If tags are selected, ensure draft preview is visible.
+        // Never auto-hide when tags become empty: the user is in editing mode
+        // and may write a note or pick another tag.
         if (this._selectedJournalTags.length > 0) {
             draftPreview.classList.add('visible');
-        } else {
-            draftPreview.classList.remove('visible');
         }
     },
 
@@ -780,7 +778,7 @@ export const FocusPanelJournal = {
             });
         });
 
-        // Handle direct Remarque button
+        // Handle direct pill buttons (Difficulté, Remarque)
         pillsContainer.querySelectorAll('.journal-pill-direct').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
