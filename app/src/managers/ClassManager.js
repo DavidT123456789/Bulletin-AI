@@ -7,7 +7,7 @@
 
 import { appState, userSettings } from '../state/State.js';
 import { DBService } from '../services/DBService.js';
-import { detectLevelFromName } from '../utils/LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically } from '../utils/LevelDetector.js';
 import { Utils } from '../utils/Utils.js';
 
 let UI;
@@ -50,38 +50,8 @@ export const ClassManager = {
      */
     _findInsertionIndex(classes, newName) {
         if (!classes || classes.length === 0) return 0;
-
-        const normalize = str => str.charAt(0).toLowerCase();
-        const pivot = normalize(newName);
-
-        // 1. Identifier les "Pairs" (classes commençant par le même caractère)
-        const peerIndices = classes
-            .map((c, i) => ({ name: c.name, index: i, isPeer: normalize(c.name) === pivot }))
-            .filter(item => item.isPeer);
-
-        // Si des pairs existent, on s'insère RELATIVEMENT à eux
-        if (peerIndices.length > 0) {
-            // Chercher le premier pair qui est "plus grand" alphabétiquement
-            const successorPeer = peerIndices.find(peer =>
-                peer.name.localeCompare(newName, undefined, { numeric: true, sensitivity: 'base' }) > 0
-            );
-
-            if (successorPeer) {
-                // Insérer AVANT ce pair
-                return successorPeer.index;
-            } else {
-                // On est plus grand que tous les pairs, insérer APRÈS le dernier pair
-                return peerIndices[peerIndices.length - 1].index + 1;
-            }
-        }
-
-        // 2. Pas de pairs : fallback sur tri alphabétique global
-        // Note: Cela place "4ème" avant "6ème" (ordre alphabétique standard)
-        const globalIndex = classes.findIndex(c =>
-            c.name.localeCompare(newName, undefined, { numeric: true, sensitivity: 'base' }) > 0
-        );
-
-        return globalIndex === -1 ? classes.length : globalIndex;
+        const index = classes.findIndex(c => compareClassesPedagogically(c.name, newName) > 0);
+        return index === -1 ? classes.length : index;
     },
 
     /**
@@ -359,7 +329,7 @@ export const ClassManager = {
                     sourceGroupNames
                 };
             })
-            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+            .sort((a, b) => compareClassesPedagogically(a.name, b.name));
     },
 
     /**
@@ -407,7 +377,7 @@ export const ClassManager = {
     },
 
     /**
-     * Réordonne les classes selon un nouvel ordre
+     * Réordonne les classes selon un nouvel ordre personnalisé (ex: drag & drop)
      * @param {string[]} orderedIds - IDs des classes dans le nouvel ordre
      */
     reorderClasses(orderedIds) {
@@ -419,6 +389,20 @@ export const ClassManager = {
         // Préserver les classes non incluses (edge case safety)
         const remaining = classes.filter(c => !orderedIds.includes(c.id));
         userSettings.academic.classes = [...reordered, ...remaining];
+        userSettings.academic.classesCustomOrder = true;
+
+        StorageManager?.saveAppState();
+        this._triggerCloudSync();
+    },
+
+    /**
+     * Rétablit l'ordre officiel pédagogique (6e -> 5e -> 4e -> 3e -> Lycée)
+     */
+    sortByPedagogicalOrder() {
+        const classes = [...(userSettings.academic.classes || [])];
+        classes.sort((a, b) => compareClassesPedagogically(a.name, b.name));
+        userSettings.academic.classes = classes;
+        userSettings.academic.classesCustomOrder = false;
 
         StorageManager?.saveAppState();
         this._triggerCloudSync();

@@ -86,7 +86,7 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         switchSpy.mockRestore();
     });
 
-    it('devrait trier naturellement les classes réelles et reconstituées par ordre alphabétique', () => {
+        it('devrait trier selon le cycle pédagogique officiel (4ᵉ avant 3ᵉ) avec les classes reconstituées', () => {
         // Groupes en 3e et classe en 4e
         const group1 = ClassManager.createClass('3 TECHNOLOGIE G1');
         const group2 = ClassManager.createClass('3 TECHNOLOGIE G2');
@@ -102,12 +102,12 @@ describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
         const itemNames = Array.from(DOM.classDropdownList.querySelectorAll('.class-name'))
             .map(el => el.textContent.trim());
 
-        // Doit avoir 3ᵉ1 (reconstituée), 3ᵉG1, 3ᵉG2, 4ᵉ1 dans l'ordre naturel
-        expect(itemNames[0]).toContain('3ᵉ1');
-        expect(itemNames[0]).toContain('Reconstituée');
-        expect(itemNames[1]).toContain('3ᵉG1');
-        expect(itemNames[2]).toContain('3ᵉG2');
-        expect(itemNames[3]).toContain('4ᵉ1');
+        // Ordre pédagogique officiel : 4ᵉ1 avant le niveau 3ᵉ
+        expect(itemNames[0]).toContain('4ᵉ1');
+        expect(itemNames[1]).toContain('3ᵉ1');
+        expect(itemNames[1]).toContain('Reconstituée');
+        expect(itemNames[2]).toContain('3ᵉG1');
+        expect(itemNames[3]).toContain('3ᵉG2');
     });
 
     it('devrait masquer les classes reconstituées si le filtre est désactivé', () => {

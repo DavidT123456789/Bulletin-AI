@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectLevelFromName } from './LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically } from './LevelDetector.js';
 
 describe('LevelDetector - detectLevelFromName', () => {
     describe('Collège (6ème, 5ème, 4ème)', () => {
@@ -150,6 +150,34 @@ describe('LevelDetector - detectLevelFromName', () => {
             expect(detectLevelFromName(null)).toBe('generique');
             expect(detectLevelFromName('  ')).toBe('generique');
             expect(detectLevelFromName('Groupe de projet')).toBe('generique');
+        });
+    });
+
+    describe('Ordre pédagogique - getClassSortRank et compareClassesPedagogically', () => {
+        it('devrait ordonner les niveaux dans le sens du cycle de l\'élève (6e -> 5e -> 4e -> 3e)', () => {
+            const classes = ['3ᵉG1', '5ᵉ2', '6ᵉ1', '4ᵉ3', '3ᵉG2', '6ᵉ2'];
+            classes.sort(compareClassesPedagogically);
+            expect(classes).toEqual(['6ᵉ1', '6ᵉ2', '5ᵉ2', '4ᵉ3', '3ᵉG1', '3ᵉG2']);
+        });
+
+        it('devrait ordonner du primaire au supérieur en respectant le parcours scolaire', () => {
+            const classes = ['Terminale 1', '6ᵉ1', 'CP B', '2nde 2', 'CM2 A', '1ère STI', 'BTS SIO'];
+            classes.sort(compareClassesPedagogically);
+            expect(classes).toEqual([
+                'CP B',
+                'CM2 A',
+                '6ᵉ1',
+                '2nde 2',
+                '1ère STI',
+                'Terminale 1',
+                'BTS SIO'
+            ]);
+        });
+
+        it('devrait placer les classes entières avant les groupes pour un même niveau', () => {
+            const classes = ['3ᵉG2', '3ᵉ1', '3ᵉG1', '3ᵉ2'];
+            classes.sort(compareClassesPedagogically);
+            expect(classes).toEqual(['3ᵉ1', '3ᵉ2', '3ᵉG1', '3ᵉG2']);
         });
     });
 });

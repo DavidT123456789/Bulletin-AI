@@ -10,7 +10,7 @@ import { CONFIG } from '../config/Config.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
-import { detectLevelFromName } from '../utils/LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically } from '../utils/LevelDetector.js';
 import { HistoryManager } from './HistoryManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
@@ -421,7 +421,7 @@ export const ClassUIManager = {
             </button>
         ` : '';
 
-        // Fusion des classes et des classes reconstituées dans l'ordre alphabétique naturel
+        // Préparation des classes réelles et reconstituées
         const regularItems = classes.map(cls => ({
             ...cls,
             displayName: Utils.formatClassDisplayName(cls.name),
@@ -436,9 +436,33 @@ export const ClassUIManager = {
             }))
             : [];
 
-        const allItems = [...regularItems, ...virtualItems].sort((a, b) =>
-            a.displayName.localeCompare(b.displayName, undefined, { numeric: true, sensitivity: 'base' })
-        );
+        let allItems;
+        if (userSettings.academic?.classesCustomOrder) {
+            // Respecter l'ordre personnalisé défini par l'enseignant (Drag & Drop)
+            allItems = [...regularItems];
+            if (virtualItems.length > 0) {
+                // Insérer les classes reconstituées juste après leur groupe source ou en fin de liste
+                virtualItems.forEach(vItem => {
+                    const firstSourceIndex = allItems.findIndex(item =>
+                        vItem.sourceGroupIds?.includes(item.id)
+                    );
+                    if (firstSourceIndex !== -1) {
+                        let insertAt = firstSourceIndex + 1;
+                        while (insertAt < allItems.length && vItem.sourceGroupIds?.includes(allItems[insertAt].id)) {
+                            insertAt++;
+                        }
+                        allItems.splice(insertAt, 0, vItem);
+                    } else {
+                        allItems.push(vItem);
+                    }
+                });
+            }
+        } else {
+            // Ordre pédagogique officiel par défaut (6e -> 5e -> 4e -> 3e -> 2nde -> 1ere -> Terminale)
+            allItems = [...regularItems, ...virtualItems].sort((a, b) =>
+                compareClassesPedagogically(a, b)
+            );
+        }
 
         const classItemsHtml = allItems.map(item => {
             if (item.isVirtual) {
@@ -1558,7 +1582,10 @@ export const ClassUIManager = {
 
         // Render function to dynamically update the list
         const refreshList = (highlightClassId = null) => {
-            const currentClasses = ClassManager.getAllClasses();
+            const currentClasses = [...ClassManager.getAllClasses()];
+            if (!userSettings.academic?.classesCustomOrder) {
+                currentClasses.sort((a, b) => compareClassesPedagogically(a.name, b.name));
+            }
 
             const subtitle = modalEl.querySelector('.modal-subtitle');
             if (subtitle) {
@@ -1578,6 +1605,15 @@ export const ClassUIManager = {
                 }
 
                 let menuHtml = '';
+                if (currentClasses.length > 1) {
+                    menuHtml += `
+                        <button type="button" class="action-dropdown-item" id="sortClassesPedagogicalBtn">
+                            <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                            <span>Trier par niveau (6ᵉ → 3ᵉ)</span>
+                        </button>
+                    `;
+                }
+
                 if (emptyClasses.length > 0) {
                     menuHtml += `
                         <button type="button" class="action-dropdown-item" id="cleanEmptyClassesBtn">
@@ -1597,6 +1633,16 @@ export const ClassUIManager = {
                 }
 
                 moreMenu.innerHTML = menuHtml;
+
+                moreMenu.querySelector('#sortClassesPedagogicalBtn')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    moreMenu.classList.remove('open');
+                    ClassManager.sortByPedagogicalOrder();
+                    this.renderClassList();
+                    this.updateHeaderDisplay();
+                    refreshList();
+                    UI?.showNotification?.('Classes réordonnées selon le cycle pédagogique officiel (6ᵉ → 3ᵉ)', 'success');
+                });
 
                 moreMenu.querySelector('#cleanEmptyClassesBtn')?.addEventListener('click', async (e) => {
                     e.stopPropagation();
