@@ -95,9 +95,17 @@ export const JournalManager = {
      * @param {string} [entryData.note] - Optional note text
      * @returns {JournalEntry|null} Created entry or null if failed
      */
-    addEntry(studentId, { tags, note = '' }) {
-        if (!studentId || !tags || tags.length === 0) {
-            console.warn('[JournalManager] Invalid entry data');
+    addEntry(studentId, { tags = [], note = '' }) {
+        const trimmedNote = (note || '').trim().slice(0, 280);
+        let finalTags = Array.isArray(tags) ? [...tags] : [];
+
+        // If no tags specified but note is provided, automatically categorize as 'remarque'
+        if (finalTags.length === 0 && trimmedNote.length > 0) {
+            finalTags = ['remarque'];
+        }
+
+        if (!studentId || (finalTags.length === 0 && trimmedNote.length === 0)) {
+            console.warn('[JournalManager] Invalid entry data: studentId, tags or note required');
             return null;
         }
 
@@ -112,8 +120,8 @@ export const JournalManager = {
         const entry = {
             id: this._generateId(),
             date: new Date().toISOString(),
-            tags: tags,
-            note: note.trim().slice(0, 280), // Max 280 chars
+            tags: finalTags,
+            note: trimmedNote,
             period: appState.currentPeriod || 'T1',
             _lastModified: now // For sync conflict resolution
         };
@@ -189,8 +197,16 @@ export const JournalManager = {
         if (!entry) return null;
 
         // Apply updates
-        if (tags) entry.tags = tags;
-        if (note !== undefined) entry.note = note.trim().slice(0, 280);
+        let finalTags = tags !== undefined ? (Array.isArray(tags) ? [...tags] : []) : entry.tags;
+        const trimmedNote = note !== undefined ? note.trim().slice(0, 280) : entry.note;
+
+        // If all tags removed but note remains, default to 'remarque'
+        if (finalTags.length === 0 && trimmedNote.length > 0) {
+            finalTags = ['remarque'];
+        }
+
+        entry.tags = finalTags;
+        entry.note = trimmedNote;
         entry._lastModified = Date.now(); // Update timestamp for sync
 
         StorageManager.saveAppState();
@@ -450,13 +466,13 @@ export const JournalManager = {
     renderDraftPreview(entry = null) {
         // Mode detection
         const isEdit = !!entry;
-        const noteValue = isEdit ? entry.note : '';
+        const noteValue = isEdit ? (entry.note || '') : '';
         const dateStr = isEdit ? entry.date : new Date().toISOString();
         const formattedDate = this.formatDate(dateStr);
 
         // Header Label
         const labelIcon = isEdit ? 'solar:pen-new-square-linear' : 'solar:pen-linear';
-        const labelText = isEdit ? 'Modifier' : 'Brouillon';
+        const labelText = isEdit ? 'Modifier l\'observation' : 'Nouvelle observation';
 
         // Pre-render selected tags if editing
         let chipsHTML = '';
@@ -464,13 +480,11 @@ export const JournalManager = {
             chipsHTML = entry.tags.map(tagId => {
                 const tag = this.getTag(tagId);
                 if (!tag) return '';
-                // Note: The click handlers for 'remove' are attached dynamically in FocusPanelManager
-                // We just render the structure here to avoid layout shifts
                 return `
                     <span class="journal-selected-chip" style="--tag-color: ${tag.color}" data-tag-id="${tagId}">
-            <iconify-icon icon="${tag.icon}"></iconify-icon>
+                        <iconify-icon icon="${tag.icon}"></iconify-icon>
                         <span>${tag.label}</span>
-                        <button class="journal-chip-remove" aria-label="Retirer">
+                        <button type="button" class="journal-chip-remove" aria-label="Retirer ${tag.label}">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </span>
@@ -478,34 +492,51 @@ export const JournalManager = {
             }).join('');
         }
 
-        // Render pill buttons for tag selection (in header)
+        // Render pill buttons for tag selection
         const pillButtonsHTML = this.renderTagPillButtons();
 
         return `
-            <div class="journal-draft-preview ${isEdit ? 'visible' : ''}" id="journalDraftPreview" style="${isEdit ? 'margin-bottom: 8px;' : ''}">
+            <div class="journal-draft-preview ${isEdit ? 'visible is-editing' : ''}" id="journalDraftPreview">
                 <div class="journal-draft-header">
+                    <div class="journal-draft-title">
+                        <iconify-icon icon="${labelIcon}"></iconify-icon>
+                        <span class="journal-draft-title-text">${labelText}</span>
+                        <span class="journal-draft-date-badge">${formattedDate}</span>
+                    </div>
+                    <button type="button" class="journal-header-btn icon-only journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
+                        <iconify-icon icon="ph:x"></iconify-icon>
+                    </button>
+                </div>
+
+                <div class="journal-draft-pills-row">
                     <div class="journal-draft-pills" id="journalDraftPills">
                         ${pillButtonsHTML}
                     </div>
-                    <div class="journal-draft-actions header-actions">
-                        <button class="journal-header-btn icon-only" id="journalDraftCancelBtn" aria-label="Annuler">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
-                        <button class="journal-header-btn icon-only" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'} aria-label="Enregistrer">
-                            <iconify-icon icon="ph:check"></iconify-icon>
-                        </button>
+                </div>
+
+                <div class="journal-draft-chips-row" id="journalSelectedTagsRow">
+                    <div class="journal-selected-tags" id="journalSelectedTags">
+                        ${chipsHTML}
                     </div>
                 </div>
-                <div class="journal-draft-entry">
-                    <div class="journal-draft-entry-row">
-                        <div class="journal-entry-date">${formattedDate}</div>
-                        <div class="journal-entry-tags" id="journalSelectedTags">
-                            ${chipsHTML}
-                        </div>
-                    </div>
+
+                <div class="journal-draft-input-wrap">
                     <textarea class="journal-note-input" id="journalNoteInput" 
-                        placeholder="Précision (optionnel)" 
+                        placeholder="Précision ou contexte (optionnel)..." 
                         rows="2" maxlength="280">${noteValue}</textarea>
+                    <div class="journal-input-footer">
+                        <span class="journal-char-count"><span id="journalCharCount">${noteValue.length}</span>/280</span>
+                    </div>
+                </div>
+
+                <div class="journal-draft-actions-footer">
+                    <button type="button" class="journal-footer-btn journal-cancel-btn" id="journalDraftCancelFooterBtn">
+                        Annuler
+                    </button>
+                    <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'}>
+                        <iconify-icon icon="ph:check-bold"></iconify-icon>
+                        <span>${isEdit ? 'Mettre à jour' : 'Enregistrer'}</span>
+                    </button>
                 </div>
             </div>
         `;
@@ -557,39 +588,5 @@ export const JournalManager = {
         `;
     },
 
-    /**
-     * Render just the dropdown buttons for the header
-     * @returns {string} HTML string
-     */
-    renderTagDropdowns() {
-        const positiveTags = this.tags.filter(t => t.category === 'positive');
-        const negativeTags = this.tags.filter(t => t.category === 'negative');
 
-        const renderDropdown = (category, label, icon, tags, color) => {
-            const optionsHTML = tags.map(tag => `
-                <button class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
-                    <iconify-icon icon="${tag.icon}"></iconify-icon>
-                    <span>${tag.label}</span>
-                </button>
-            `).join('');
-
-            return `
-                <div class="journal-tag-dropdown" data-category="${category}">
-                    <button class="journal-dropdown-trigger" style="--dropdown-color: ${color}">
-                        <iconify-icon icon="${icon}"></iconify-icon>
-                        <span>${label}</span>
-                        <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-dropdown-arrow"></iconify-icon>
-                    </button>
-                    <div class="journal-dropdown-menu">
-                        ${optionsHTML}
-                    </div>
-                </div>
-            `;
-        };
-
-        return `
-            ${renderDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)')}
-            ${renderDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)')}
-        `;
-    }
 };

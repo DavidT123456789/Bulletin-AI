@@ -170,23 +170,9 @@
     box-shadow: none;
 }
 
-/* Draft action buttons — semantic colors */
-#journalDraftSaveBtn {
-    color: var(--primary-color);
-}
-
-#journalDraftSaveBtn:hover:not(:disabled) {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-#journalDraftSaveBtn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-#journalDraftCancelBtn:hover {
-    background: rgba(var(--error-rgb), 0.08);
+/* Draft close button at top-right */
+.journal-draft-close-btn:hover {
+    background: rgba(var(--error-rgb), 0.1);
     color: var(--error-color);
 }
 
@@ -393,61 +379,226 @@
     }
 }
 
+/* === Draft Header === */
 .journal-draft-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+}
+
+.journal-draft-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.journal-draft-title iconify-icon {
+    font-size: 16px;
     color: var(--primary-color);
-    font-size: 11px;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .journal-draft-title iconify-icon {
+    color: var(--primary-bright, var(--primary-color));
+}
+
+.journal-draft-title-text {
+    color: var(--text-primary);
     font-weight: 600;
 }
 
-/* Draft entry row: date + tags inline */
-.journal-draft-entry-row {
-    display: flex;
+.journal-draft-date-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    letter-spacing: 0.01em;
+}
+
+.journal-draft-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.journal-draft-close-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+/* === Pills Row === */
+.journal-draft-pills-row {
+    width: 100%;
     margin-bottom: 10px;
 }
 
-/* Draft entry container */
-.journal-draft-entry {
+.journal-draft-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+}
+
+/* === Selected Chips Row === */
+.journal-draft-chips-row {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.journal-draft-chips-row:has(.journal-selected-tags:empty) {
+    display: none;
+}
+
+/* === Input Container === */
+.journal-draft-input-wrap {
     display: flex;
     flex-direction: column;
-    padding: 0;
-    gap: 4px;
+    width: 100%;
+    margin-bottom: 10px;
+    position: relative;
 }
 
-/* Placeholder text when no tags selected */
-.journal-draft-entry-row .journal-entry-tags:empty::after {
-    content: "Sélectionnez un tag ci-dessus";
+.journal-note-input {
+    width: 100%;
+    min-height: 56px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.journal-note-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--surface-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.journal-note-input::placeholder {
     color: var(--text-tertiary);
-    font-size: 12px;
-    font-style: italic;
     opacity: 0.7;
+    font-style: italic;
 }
 
-.journal-draft-label {
+.journal-input-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 4px;
+    padding-right: 2px;
+}
+
+.journal-char-count {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* === Actions Footer === */
+.journal-draft-actions-footer {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+}
+
+.journal-footer-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    box-sizing: border-box;
+    text-decoration: none;
 }
 
-/* Unsaved label removed */
-
-/* Actions Footer (Inside Draft) */
-/* Actions (Header Integration) */
-.journal-draft-actions.header-actions {
-    display: flex;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    border: none;
+.journal-footer-btn iconify-icon {
+    font-size: 14px;
 }
 
-/* Draft action buttons: styled via .journal-header-btn.icon-only + semantic overrides above */
+/* Cancel Button */
+.journal-cancel-btn {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.journal-cancel-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.journal-cancel-btn:active {
+    transform: scale(0.98);
+}
+
+/* Save / Validate Button */
+.journal-save-btn {
+    background: var(--primary-color);
+    border: 1px solid transparent;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
+}
+
+.journal-save-btn iconify-icon {
+    color: #ffffff !important;
+}
+
+.journal-save-btn:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.45);
+}
+
+.journal-save-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.journal-save-btn:disabled {
+    background: color-mix(in srgb, var(--primary-color) 25%, transparent);
+    color: rgba(255, 255, 255, 0.4) !important;
+    border-color: transparent;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.journal-save-btn:disabled iconify-icon {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
 
 /* === Journal Content === */
 .journal-content {
@@ -1022,9 +1173,14 @@
         font-size: 14px;
     }
 
+    /* Elimination of nested scrollbar on mobile */
     .journal-content {
         padding: 10px 12px;
-        max-height: 200px;
+        max-height: 480px;
+    }
+
+    .journal-content:has(.journal-draft-preview.visible) {
+        max-height: none;
     }
 
     .journal-entry {
@@ -1046,22 +1202,60 @@
         font-size: 12px;
     }
 
-    .journal-tag-buttons {
-        /* Keep grid on mobile but allow smaller buttons */
+    /* 2x2 grid for mobile pills */
+    .journal-draft-pills {
+        display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 4px;
-        padding-bottom: 4px;
+        gap: 8px;
+        width: 100%;
     }
 
-    .journal-tag-btn {
-        flex-shrink: 0;
-        padding: 8px 14px;
+    .journal-pill-dropdown {
+        width: 100%;
+    }
+
+    .journal-pill-btn {
+        width: 100%;
+        height: 42px;
+        justify-content: center;
+        font-size: 13px;
+        padding: 0 10px;
+    }
+
+    .journal-pill-arrow {
+        margin-left: auto;
+    }
+
+    /* Mobile Action Footer */
+    .journal-draft-actions-footer {
+        display: grid;
+        grid-template-columns: 1fr 1.6fr;
+        gap: 8px;
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .journal-footer-btn {
+        width: 100%;
+        height: 44px;
         font-size: 13px;
     }
 
-    .journal-note-input {
-        font-size: 14px;
-        padding: 12px;
+    .journal-draft-close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .journal-chip-remove {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .journal-selected-chip {
+        padding: 4px 10px;
+        font-size: 12px;
     }
 }
 
@@ -1078,10 +1272,24 @@
     }
 
     .journal-entry-delete {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         font-size: 14px;
-        opacity: 0.6;
+        opacity: 0.7;
+    }
+
+    .journal-chip-remove {
+        width: 28px;
+        height: 28px;
+        margin-left: 4px;
+    }
+
+    .journal-footer-btn {
+        min-height: 44px;
+    }
+
+    .journal-pill-btn {
+        min-height: 44px;
     }
 }
 
@@ -1207,3 +1415,12 @@
 .journal-pill-direct:hover {
     border-style: solid;
 }
+
+.journal-pill-direct.selected {
+    border-style: solid;
+    background: color-mix(in srgb, var(--pill-color) 18%, var(--surface-color));
+    border-color: var(--pill-color);
+    color: var(--pill-color);
+    font-weight: 600;
+    box-shadow: 0 0 0 1px var(--pill-color);
+}

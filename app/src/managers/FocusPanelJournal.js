@@ -192,12 +192,44 @@ export const FocusPanelJournal = {
 
             // Attach dynamic listeners for draft actions (Cancel/Save are same IDs)
             const draftCancel = document.getElementById('journalDraftCancelBtn');
+            const draftCancelFooter = document.getElementById('journalDraftCancelFooterBtn');
             const draftSave = document.getElementById('journalDraftSaveBtn');
             const draftInput = document.getElementById('journalNoteInput');
 
             if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false));
-            if (draftSave) draftSave.addEventListener('click', () => this._saveEntry());
-            if (draftInput) draftInput.addEventListener('input', () => this._updateSaveButton());
+            if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false));
+
+            if (draftSave) {
+                draftSave.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this._saveEntry();
+                });
+                // Prevent virtual keyboard blur from dropping click on mobile
+                draftSave.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                });
+            }
+
+            if (draftInput) {
+                draftInput.addEventListener('input', () => {
+                    const charCount = document.getElementById('journalCharCount');
+                    if (charCount) charCount.textContent = draftInput.value.length;
+                    this._updateSaveButton();
+                });
+                draftInput.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        const btn = document.getElementById('journalDraftSaveBtn');
+                        if (btn && !btn.disabled) this._saveEntry();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        this.toggleQuickAdd(false);
+                    }
+                });
+            }
+
+            // Sync pill states
+            this._updatePillDirectStates();
 
             // Attach pill button handlers (inside draft)
             this._setupDraftPillButtons(contentEl);
@@ -297,10 +329,13 @@ export const FocusPanelJournal = {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const chip = btn.closest('.journal-selected-chip');
-                const tagId = chip.dataset.tagId;
+                const tagId = chip?.dataset?.tagId;
 
-                this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
-                chip.remove();
+                if (tagId) {
+                    this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
+                }
+                chip?.remove();
+                this._updatePillDirectStates();
                 this._updateSaveButton();
                 this._updateDraftPreviewVisibility();
             });
@@ -415,9 +450,19 @@ export const FocusPanelJournal = {
 
         const tag = JournalManager.getTag(tagId);
 
-        // Don't add if already selected
+        // If already selected: if it's a direct pill, toggle it off!
         if (this._selectedJournalTags.includes(tagId)) {
-            // Close dropdown
+            if (originElement?.classList?.contains('journal-pill-direct')) {
+                this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
+                const chipsContainer = document.getElementById('journalSelectedTags');
+                const existingChip = chipsContainer?.querySelector(`[data-tag-id="${tagId}"]`);
+                existingChip?.remove();
+                this._updatePillDirectStates();
+                this._updateSaveButton();
+                this._updateDraftPreviewVisibility();
+                return;
+            }
+            originElement?.closest('.journal-pill-dropdown')?.classList.remove('open');
             originElement?.closest('.journal-tag-dropdown')?.classList.remove('open');
             return;
         }
@@ -435,7 +480,7 @@ export const FocusPanelJournal = {
             chip.innerHTML = `
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
-                <button class="journal-chip-remove" aria-label="Retirer">
+                <button type="button" class="journal-chip-remove" aria-label="Retirer ${tag.label}">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
             `;
@@ -445,6 +490,7 @@ export const FocusPanelJournal = {
                 ev.stopPropagation();
                 this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
                 chip.remove();
+                this._updatePillDirectStates();
                 this._updateSaveButton();
                 this._updateDraftPreviewVisibility();
             });
@@ -453,9 +499,28 @@ export const FocusPanelJournal = {
         }
 
         // Close dropdown
+        originElement?.closest('.journal-pill-dropdown')?.classList.remove('open');
         originElement?.closest('.journal-tag-dropdown')?.classList.remove('open');
+        this._updatePillDirectStates();
         this._updateSaveButton();
         this._updateDraftPreviewVisibility();
+    },
+
+    /**
+     * Update active visual state for direct pill buttons (Difficulté, Remarque)
+     * @private
+     */
+    _updatePillDirectStates() {
+        const pillsContainer = document.getElementById('journalDraftPills');
+        if (!pillsContainer) return;
+        pillsContainer.querySelectorAll('.journal-pill-direct').forEach(btn => {
+            const tagId = btn.dataset.tagId;
+            if (this._selectedJournalTags.includes(tagId)) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
     },
 
     /**
@@ -589,17 +654,29 @@ export const FocusPanelJournal = {
                 this._editingJournalEntryId = null;
 
                 // Reset header title
-                const headerLabel = document.querySelector('.journal-draft-label');
-                if (headerLabel) {
-                    headerLabel.innerHTML = `<iconify-icon icon="solar:pen-linear"></iconify-icon> Brouillon`;
+                const headerTitleText = document.querySelector('.journal-draft-title-text');
+                if (headerTitleText) {
+                    headerTitleText.textContent = 'Nouvelle observation';
                 }
+                const headerIcon = document.querySelector('.journal-draft-title iconify-icon');
+                if (headerIcon) {
+                    headerIcon.setAttribute('icon', 'solar:pen-linear');
+                }
+                const charCount = document.getElementById('journalCharCount');
+                if (charCount) charCount.textContent = '0';
 
                 if (noteInput) noteInput.value = '';
-                if (saveBtn) saveBtn.disabled = true;
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    const saveBtnSpan = saveBtn.querySelector('span');
+                    if (saveBtnSpan) saveBtnSpan.textContent = 'Enregistrer';
+                }
 
                 // Clear selected chips
                 const chipsContainer = document.getElementById('journalSelectedTags');
                 if (chipsContainer) chipsContainer.innerHTML = '';
+
+                this._updatePillDirectStates();
             }
 
             // Show the draft preview when opening
@@ -753,7 +830,16 @@ export const FocusPanelJournal = {
         const note = noteInput?.value?.trim() || '';
         const studentId = this._getCurrentStudentId();
 
-        if (!studentId || (this._selectedJournalTags.length === 0 && !note)) return;
+        if (!studentId) return;
+
+        // If no tags selected but note is provided, automatically default to 'remarque'
+        if (this._selectedJournalTags.length === 0) {
+            if (note.length > 0) {
+                this._selectedJournalTags = ['remarque'];
+            } else {
+                return; // Nothing to save
+            }
+        }
 
         // Disable button immediately
         const saveBtn = document.getElementById('journalDraftSaveBtn');
@@ -763,13 +849,15 @@ export const FocusPanelJournal = {
         const draftPreview = document.getElementById('journalDraftPreview');
         if (draftPreview) draftPreview.classList.add('closing');
 
+        const wasEditingId = this._editingJournalEntryId;
+
         // Execute save after animation
         setTimeout(() => {
             let entry;
 
-            if (this._editingJournalEntryId) {
+            if (wasEditingId) {
                 // Update existing
-                entry = JournalManager.updateEntry(studentId, this._editingJournalEntryId, {
+                entry = JournalManager.updateEntry(studentId, wasEditingId, {
                     tags: [...this._selectedJournalTags],
                     note: note
                 });
@@ -795,7 +883,7 @@ export const FocusPanelJournal = {
                 const result = appState.generatedResults.find(r => r.id === studentId);
                 if (result) {
                     // If new entry, highlight it
-                    const highlightId = this._editingJournalEntryId ? null : entry.id;
+                    const highlightId = wasEditingId ? null : entry.id;
                     this.render(result, highlightId);
                 }
 
