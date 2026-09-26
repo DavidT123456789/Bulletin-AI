@@ -107,8 +107,8 @@
 .focus-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px 8px 6px;
+    gap: 6px;
+    padding: 8px 6px;
     margin: 8px 16px 12px 16px;
     background: transparent;
     border-radius: var(--radius-lg);
@@ -130,7 +130,7 @@
 .focus-header:not(.editing) {
     --p: var(--scroll-p, 0);
     border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
-    padding: calc(8px - 6px * var(--p)) 12px calc(8px - 6px * var(--p)) calc(6px - 4px * var(--p));
+    padding: calc(8px - 6px * var(--p)) calc(6px - 4px * var(--p));
     margin: calc(8px - 2px * var(--p)) 16px calc(12px - 4px * var(--p)) 16px;
     transform: translateY(calc(-2px * var(--p)));
     background: rgba(255, 255, 255, calc(0.85 * var(--p)));
@@ -622,9 +622,8 @@
     /* Push itself and siblings to the right */
 }
 
-/* Add margin-right only to close button */
 .focus-nav-btn.focus-close-btn {
-    margin-right: 4px;
+    margin-right: 0;
 }
 
 [data-theme="dark"] .focus-nav-btn.focus-close-btn,
@@ -642,7 +641,7 @@
     width: 0;
     padding: 0;
     margin: 0;
-    margin-right: -8px;
+    margin-right: -6px;
     /* Counters the flex gap when hidden */
     overflow: hidden;
     pointer-events: none;
@@ -4313,12 +4312,12 @@
 
     /* Simplify header layout */
     .focus-header {
-        padding: 4px 16px 4px 4px;
-        gap: 8px;
+        padding: 4px;
+        gap: 6px;
     }
 
     .focus-header:not(.editing) .focus-save-btn {
-        margin-right: -8px;
+        margin-right: -6px;
     }
 
 
