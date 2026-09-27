@@ -571,6 +571,7 @@ export const SeatingChartManager = {
         this._savePositionsToState();
         this._render();
         this._animateCellSwap(r1, c1, r2, c2);
+        this._haptic([12, 40, 12]);
 
         const s1 = this._studentMap?.get(id1) || this._students.find(s => s.id === id1);
         const s2 = this._studentMap?.get(id2) || this._students.find(s => s.id === id2);
@@ -1340,6 +1341,7 @@ export const SeatingChartManager = {
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
+        this._haptic(15);
         this._updateSelectionAttribute();
 
         requestAnimationFrame(() => {
@@ -2961,6 +2963,7 @@ export const SeatingChartManager = {
         this._dismissOnboardingHint();
         this._savePositionsToState();
         this._render();
+        this._haptic(isSwap ? [12, 40, 12] : 15);
 
         if (type === 'sidebar') {
             this._animateCellPlaced(targetRow, targetCol);
@@ -3002,6 +3005,7 @@ export const SeatingChartManager = {
             this._gridState[row][col] = null;
             this._savePositionsToState();
             this._renderGrid();
+            this._haptic(12);
             this._renderSidebar(removedId);
             this._updateFooter();
             this._updateSidebarLockState();
@@ -3051,6 +3055,13 @@ export const SeatingChartManager = {
 
         StorageManager.saveAppState();
         this._render();
+        this._haptic(10);
+    },
+
+    _haptic(pattern = 15) {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(pattern); } catch (_) {}
+        }
     },
 
     // ========================================================================
@@ -3059,6 +3070,8 @@ export const SeatingChartManager = {
 
     _addTouchDrag(element, sourceInfo) {
         let startX, startY, hasMoved = false;
+        let isScrolling = false;
+        let longPressTimer = null;
 
         element.addEventListener('touchstart', (e) => {
             if (e.touches.length !== 1 || this._isLocked) return;
@@ -3067,19 +3080,69 @@ export const SeatingChartManager = {
             startX = touch.clientX;
             startY = touch.clientY;
             hasMoved = false;
+            isScrolling = false;
             
             let activeSourceInfo = { ...sourceInfo };
             if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
             }
             this._touchSourceInfo = activeSourceInfo;
+
+            // Long-press affordance on mobile (280ms hold triggers drag in any direction with subtle haptic):
+            // - Sidebar chips: hold unlocks free omnidirectional drag
+            // - Board cells: hold lifts the desk to drag, leaving quick swipes to pan/scroll the board!
+            if (this._isMobileView()) {
+                clearTimeout(longPressTimer);
+                longPressTimer = setTimeout(() => {
+                    if (!hasMoved && !isScrolling && this._touchSourceInfo) {
+                        hasMoved = true;
+                        this._haptic(18);
+                        if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                            this._clearSelection();
+                        }
+                        this._createTouchGhost(element, touch);
+                    }
+                }, 280);
+            }
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
-            if (!this._touchSourceInfo || this._isLocked) return;
+            if (!this._touchSourceInfo || this._isLocked || isScrolling) return;
             const touch = e.touches[0];
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
 
-            if (!hasMoved && (Math.abs(touch.clientX - startX) > 8 || Math.abs(touch.clientY - startY) > 8)) {
+            // Mobile gestures disambiguation
+            if (!hasMoved && this._isMobileView()) {
+                if (sourceInfo.type === 'sidebar') {
+                    // Horizontal motion in bottom tray: prioritize native horizontal list scrolling
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+                        isScrolling = true;
+                        clearTimeout(longPressTimer);
+                        this._touchSourceInfo = null;
+                        return;
+                    }
+
+                    // Vertical motion pulling upward toward the board: engage drag immediately
+                    if (dy < -12 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                        clearTimeout(longPressTimer);
+                        hasMoved = true;
+                        if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
+                            this._clearSelection();
+                        }
+                        this._createTouchGhost(element, touch);
+                    }
+                } else if (sourceInfo.type === 'cell' || sourceInfo.type === 'multi-cell') {
+                    // On board: any quick motion before long-press is board panning/scrolling
+                    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+                        isScrolling = true;
+                        clearTimeout(longPressTimer);
+                        this._touchSourceInfo = null;
+                        return;
+                    }
+                }
+            } else if (!hasMoved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+                clearTimeout(longPressTimer);
                 hasMoved = true;
                 if (sourceInfo.resultId && !this._selectedChipIds.includes(sourceInfo.resultId)) {
                     this._clearSelection();
@@ -3096,6 +3159,7 @@ export const SeatingChartManager = {
         }, { passive: false });
 
         element.addEventListener('touchend', (e) => {
+            clearTimeout(longPressTimer);
             if (!hasMoved || !this._touchSourceInfo) {
                 this._cleanupTouch();
                 return;
@@ -3122,6 +3186,7 @@ export const SeatingChartManager = {
         });
 
         element.addEventListener('touchcancel', () => {
+            clearTimeout(longPressTimer);
             this._cleanupTouch();
         });
     },

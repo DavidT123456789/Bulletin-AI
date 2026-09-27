@@ -1112,6 +1112,11 @@
     touch-action: none;
 }
 
+#seatingChartView[data-locked="true"] .sc-cell.occupied {
+    touch-action: pan-x pan-y;
+    cursor: pointer;
+}
+
 @media (hover: hover) {
     .sc-cell.occupied:hover {
         box-shadow: var(--shadow-md);
@@ -2354,11 +2359,13 @@
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        padding: 6px 12px 10px;
+        padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px));
         gap: 6px;
         min-height: 0;
         scroll-snap-type: x proximity;
         scrollbar-width: none; /* Firefox */
+        mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
     }
 
     .sc-student-list::-webkit-scrollbar {
@@ -2380,6 +2387,7 @@
         border: 1px solid var(--border-color);
         box-shadow: var(--shadow-sm);
         scroll-snap-align: start;
+        touch-action: pan-x;
         transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
                     border-color 0.15s ease,
                     box-shadow 0.15s ease,
@@ -2489,6 +2497,7 @@
     .sc-cell .student-avatar { width: 36px; height: 36px; font-size: 0.72rem; }
 
     .sc-cell-name { font-size: 0.55rem; max-width: 56px; margin-top: 3px; }
+    .sc-cell.occupied { touch-action: pan-x pan-y; }
 
     .sc-toolbar {
         flex-wrap: wrap;
