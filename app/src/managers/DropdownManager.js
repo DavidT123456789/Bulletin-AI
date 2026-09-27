@@ -7,6 +7,7 @@
 import { DOM } from '../utils/DOM.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
 import { TooltipsUI } from './TooltipsManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /**
  * Module de gestion des dropdowns custom.
@@ -294,6 +295,9 @@ export const DropdownManager = {
             if (parentCard) {
                 parentCard.classList.add('has-open-dropdown');
             }
+
+            // [UX Mobile] History integration
+            HistoryManager.pushState('customDropdown', () => this.closeAll());
         }
     },
 
@@ -301,7 +305,9 @@ export const DropdownManager = {
      * Ferme tous les dropdowns.
      */
     closeAll() {
+        let hadOpen = false;
         document.querySelectorAll('.custom-dropdown.open').forEach(dd => {
+            hadOpen = true;
             dd.classList.remove('open');
             const trigger = dd.querySelector('.custom-dropdown-trigger');
             if (trigger) {
@@ -319,6 +325,10 @@ export const DropdownManager = {
                 parentCard.classList.remove('has-open-dropdown');
             }
         });
+
+        if (hadOpen && HistoryManager.isOpen('customDropdown')) {
+            HistoryManager.handleManualClose('customDropdown');
+        }
     },
 
     /**

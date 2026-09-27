@@ -258,22 +258,6 @@ export const FocusPanelManager = {
             setTimeout(() => analysisNextBtn.blur(), 50);
         });
 
-        // [UX Mobile] Back Button Trap
-        // Intercept browser back button to close panel instead of navigating away/closing app
-        window.addEventListener('popstate', (e) => {
-            // [FIX] Don't close FocusPanel if a Modal is active on top of it
-            // The Modal will handle the back button event
-            if (ModalUI.activeModal) return;
-
-            if (this.isOpen()) {
-                // Set isClosing flag immediately on popstate to ensure any blur events
-                // triggered by keyboard closing are deferred
-                this._isClosing = true;
-                // Close panel without triggering another history.back()
-                this.close({ causedByHistory: true });
-            }
-        });
-
         // Generate
         if (generateBtn) {
             generateBtn.addEventListener('click', () => {
@@ -1032,13 +1016,11 @@ export const FocusPanelManager = {
 
         // [UX Mobile] Manage History State
         // Allows using system Back button to close panel
-        const state = { focusPanel: true, studentId: studentId };
-        if (this.isOpen() && history.state?.focusPanel) {
-            // Already open, switching student -> Replace state to keep history clean (prevent needing 50 back clicks)
-            HistoryManager.replaceCurrentState(state);
-        } else {
-            // Opening from closed -> Push state
-            HistoryManager.pushCustomState(state);
+        if (!this.isOpen()) {
+            HistoryManager.pushState('focusPanel', () => {
+                this._isClosing = true;
+                this.close({ causedByHistory: true });
+            });
         }
 
         this.currentStudentId = studentId;
@@ -1112,7 +1094,12 @@ export const FocusPanelManager = {
         const currentPeriod = appState.currentPeriod;
 
         // [UX Mobile] Push history state for creation mode
-        HistoryManager.pushCustomState({ focusPanel: true, mode: 'creation' });
+        if (!this.isOpen()) {
+            HistoryManager.pushState('focusPanel', () => {
+                this._isClosing = true;
+                this.close({ causedByHistory: true });
+            });
+        }
 
         // Create a dummy result for the new student
         const dummyResult = {
@@ -1229,10 +1216,8 @@ export const FocusPanelManager = {
         // _originalHeaderValues managed by FocusPanelHeader
 
         // [UX Mobile] History Cleanup
-        // CRITICAL: Do NOT call history.back() here! It can navigate to landing page.
-        // Instead, replace the current state to "neutralize" it.
-        if (wasOpen && !options.causedByHistory && history.state?.focusPanel) {
-            HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
+        if (wasOpen && !options.causedByHistory) {
+            HistoryManager.handleManualClose('focusPanel');
         }
 
         if (wasOpen) {

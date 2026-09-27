@@ -1,144 +1,229 @@
 /**
  * @fileoverview Gestionnaire centralisé de l'historique de navigation pour l'UI.
- * Permet de gérer le bouton "Retour" (Back) sur mobile pour fermer les modales, menus et dropdowns.
- * Supporte les états empilés (ex: Modale Aide par dessus Modale Paramètres).
- * 
- * PROTECTION CRITIQUE: Ce module empêche la navigation vers la landing page quand
- * l'utilisateur ferme des modales ou utilise le bouton retour. Il remplace l'entrée
- * d'historique initiale par un état "appBase" et surveille tous les événements popstate.
+ * Permet de gérer le bouton "Retour" (Back gesture / hardware button) sur mobile
+ * pour fermer les modales, tiroirs, bottom sheets, menus et modes contextuels (LIFO stack).
+ * Intègre une protection racine "Double Back to Exit" pour éviter de quitter l'app accidentellement.
  * 
  * @module managers/HistoryManager
  */
 
 export const HistoryManager = {
-    /** @type {Array<{id: string, closeCallback: Function}>} Pile des éléments UI ouverts */
+    /** @type {Array<{id: string, closeCallback: Function}>} Pile des éléments UI ouverts (LIFO) */
     _stack: [],
 
     /** @type {boolean} Listener déjà attaché */
     _listenerAttached: false,
 
+    /** @type {Function|null} Écouteur popstate stocké pour nettoyage */
+    _popstateHandler: null,
+
     /** @type {boolean} État de base initialisé */
     _baseStateInitialized: false,
 
-    /** @type {number} Compteur d'états poussés */
-    _pushedStatesCount: 0,
+    /** @type {number} Compteur de retours programmatiques pour ignorer les popstates correspondants */
+    _programmaticBackCount: 0,
+
+    /** @type {number} Timestamp du dernier appui retour à la racine */
+    _lastRootBackTime: 0,
 
     /**
      * Initialise l'écouteur d'événements popstate (une seule fois).
-     * Crée également un état de base pour éviter de retourner à la landing page.
-     * 
-     * DOIT être appelé tôt dans l'initialisation de l'app (avant toute interaction UI).
+     * Crée également un état de base pour éviter de quitter l'application intempestivement.
      */
     init() {
         if (this._listenerAttached) return;
 
         // Remplacer l'entrée d'historique actuelle par notre état de base
-        // Cela empêche le bouton retour du navigateur de retourner à la landing page
-        if (!this._baseStateInitialized) {
-            history.replaceState({ appBase: true, timestamp: Date.now() }, '', '');
+        if (!this._baseStateInitialized && typeof history !== 'undefined' && history.replaceState) {
+            try {
+                history.replaceState({ appBase: true, timestamp: Date.now() }, '', '');
+            } catch (_) {}
             this._baseStateInitialized = true;
         }
 
-        window.addEventListener('popstate', (event) => {
-            // PROTECTION CRITIQUE: Vérifier si on quitte l'app
-            // Si l'état n'a pas nos marqueurs, on a navigué vers une page externe
-            const isOurState = event.state?.appBase || event.state?.uiOpen ||
-                event.state?.focusPanel || event.state?.inlineSearch;
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            this._popstateHandler = (event) => {
+                // 1. Si ce popstate résulte d'une fermeture manuelle interne (handleManualClose) -> ignorer
+                if (this._programmaticBackCount > 0) {
+                    this._programmaticBackCount--;
+                    return;
+                }
 
-            if (!isOurState) {
-                // URGENCE: On a quitté l'historique de l'app!
-                // Pousser un nouvel état immédiatement pour revenir dans l'app
-                history.pushState({ appBase: true, recovered: true, timestamp: Date.now() }, '', '');
+                // 2. Si un élément UI est dans la pile -> dépiler et fermer le plus récent (LIFO)
+                if (this._stack.length > 0) {
+                    const top = this._stack.pop();
+                    try {
+                        top?.closeCallback?.({ causedByHistory: true });
+                    } catch (err) {
+                        console.error('[HistoryManager] Erreur lors de la fermeture UI:', err);
+                    }
+                    return;
+                }
 
-                // Réinitialiser le compteur et la pile
-                this._pushedStatesCount = 0;
-                this._stack = [];
-                return;
-            }
+                // 3. Pile vide : l'utilisateur est à la racine de l'application
+                // Double tap pour quitter sur mobile (délai de 2.5 secondes)
+                const now = Date.now();
+                if (now - this._lastRootBackTime < 2500) {
+                    // Deuxième appui rapide -> autoriser la sortie naturelle
+                    this._lastRootBackTime = 0;
+                    return;
+                }
 
-            // Décrémenter le compteur d'états poussés
-            if (this._pushedStatesCount > 0) {
-                this._pushedStatesCount--;
-            }
+                // Premier appui à la racine -> piéger et informer avec un toast non intrusif
+                this._lastRootBackTime = now;
+                try {
+                    if (typeof history !== 'undefined' && history.pushState) {
+                        history.pushState({ appBase: true, timestamp: now }, '', '');
+                    }
+                } catch (_) {}
 
-            // Fermer l'élément UI au sommet de la pile
-            if (this._stack.length > 0) {
-                const top = this._stack.pop();
-                top?.closeCallback?.({ causedByHistory: true });
-            }
-        });
+                if (window.UI?.showNotification) {
+                    window.UI.showNotification("Appuyez à nouveau pour quitter l'application", 'info', 2500, {
+                        group: 'app-exit-warning',
+                        bypassCoalescing: true
+                    });
+                }
+            };
 
-        this._listenerAttached = true;
+            window.addEventListener('popstate', this._popstateHandler);
+            this._listenerAttached = true;
+        }
     },
 
     /**
      * Enregistre un élément UI dans l'historique (pousse un état).
-     * À appeler LORS de l'ouverture de l'élément.
+     * À appeler lors de l'ouverture d'un panneau, modal, popover ou mode.
      * 
-     * @param {string} id - Identifiant unique de l'élément (ex: 'headerMenu', 'myModal')
+     * @param {string} id - Identifiant unique de l'élément (ex: 'seatingChartEdit', 'focusPanel')
      * @param {Function} closeCallback - Fonction à exécuter pour fermer l'élément
      */
     pushState(id, closeCallback) {
         this.init();
-        history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
-        this._pushedStatesCount++;
+        if (!id) return;
+
+        // Éviter de pousser deux fois de suite le même ID au sommet
+        if (this._stack.length > 0 && this._stack[this._stack.length - 1].id === id) {
+            return;
+        }
+
+        try {
+            if (typeof history !== 'undefined' && history.pushState) {
+                history.pushState({ uiOpen: true, uiId: id, timestamp: Date.now() }, '', '');
+            }
+        } catch (_) {}
+
         this._stack.push({ id, closeCallback });
     },
 
     /**
-     * Signale la fermeture manuelle d'un élément (bouton X, backdrop click).
-     * 
-     * NOTE: On n'appelle PAS history.back() ici pour éviter de naviguer vers
-     * la landing page. On utilise replaceState pour "neutraliser" l'entrée
-     * d'historique actuelle sans naviguer.
+     * Signale la fermeture manuelle d'un élément (bouton X, backdrop click, validation).
+     * Synchronise physiquement l'historique du navigateur sans déclencher le closeCallback.
      * 
      * @param {string} id - Identifiant de l'élément qui se ferme
      */
     handleManualClose(id) {
-        if (this._stack.length === 0) return;
+        if (!id || this._stack.length === 0) return;
 
-        const top = this._stack[this._stack.length - 1];
+        const topIndex = this._stack.length - 1;
+        const top = this._stack[topIndex];
 
         if (top.id === id) {
             this._stack.pop();
-
-            if (this._pushedStatesCount > 0) {
-                this._pushedStatesCount--;
-            }
-
-            // Remplacer l'état actuel au lieu de naviguer en arrière
-            history.replaceState({ appBase: true, consumed: true, timestamp: Date.now() }, '', '');
+            this._triggerProgrammaticBack();
         } else {
-            // Fermeture désordonnée: nettoyer la pile sans toucher à l'historique
+            // Fermeture désordonnée (ex: parent fermé emportant un enfant)
             const index = this._stack.findIndex(item => item.id === id);
             if (index !== -1) {
                 this._stack.splice(index, 1);
-                if (this._pushedStatesCount > 0) {
-                    this._pushedStatesCount--;
-                }
+                this._triggerProgrammaticBack();
             }
         }
     },
 
     /**
-     * Pousse un état personnalisé (pour les composants qui gèrent leur propre historique).
-     * 
-     * @param {Object} state - L'objet état à pousser
+     * Déclenche un history.back() protégé par compteur pour nettoyer l'historique physique
+     * @private
      */
-    pushCustomState(state) {
-        this.init();
-        history.pushState({ ...state, timestamp: Date.now() }, '', '');
-        this._pushedStatesCount++;
+    _triggerProgrammaticBack() {
+        this._programmaticBackCount++;
+        try {
+            if (typeof history !== 'undefined' && history.back) {
+                history.back();
+            }
+        } catch (_) {
+            this._programmaticBackCount = Math.max(0, this._programmaticBackCount - 1);
+        }
+
+        // Sécurité en cas d'environnement sans dispatch popstate (tests ou browsers anciens)
+        setTimeout(() => {
+            if (this._programmaticBackCount > 0) {
+                this._programmaticBackCount--;
+            }
+        }, 500);
     },
 
     /**
-     * Remplace l'état actuel (pour les composants qui veulent mettre à jour sans ajouter d'historique).
-     * 
-     * @param {Object} state - L'objet état à définir
+     * Vérifie si un identifiant est actuellement présent dans la pile d'historique
+     * @param {string} id
+     * @returns {boolean}
+     */
+    isOpen(id) {
+        return this._stack.some(item => item.id === id);
+    },
+
+    /**
+     * Récupère une copie de la pile actuelle
+     * @returns {Array<{id: string, closeCallback: Function}>}
+     */
+    getStack() {
+        return [...this._stack];
+    },
+
+    /**
+     * Réinitialise la pile (utile pour les tests unitaires)
+     */
+    clearStack() {
+        this._stack = [];
+        this._programmaticBackCount = 0;
+        this._lastRootBackTime = 0;
+    },
+
+    /**
+     * Détache l'écouteur et réinitialise (pour tests unitaires)
+     */
+    destroy() {
+        if (this._listenerAttached && this._popstateHandler && typeof window !== 'undefined') {
+            window.removeEventListener('popstate', this._popstateHandler);
+            this._listenerAttached = false;
+            this._popstateHandler = null;
+        }
+        this.clearStack();
+        this._baseStateInitialized = false;
+    },
+
+    /**
+     * Pousse un état personnalisé (compatibilité)
+     * @param {Object} state
+     */
+    pushCustomState(state) {
+        this.init();
+        try {
+            if (typeof history !== 'undefined' && history.pushState) {
+                history.pushState({ ...state, timestamp: Date.now() }, '', '');
+            }
+        } catch (_) {}
+    },
+
+    /**
+     * Remplace l'état actuel (compatibilité)
+     * @param {Object} state
      */
     replaceCurrentState(state) {
         this.init();
-        history.replaceState({ ...state, timestamp: Date.now() }, '', '');
+        try {
+            if (typeof history !== 'undefined' && history.replaceState) {
+                history.replaceState({ ...state, timestamp: Date.now() }, '', '');
+            }
+        } catch (_) {}
     }
 };
-

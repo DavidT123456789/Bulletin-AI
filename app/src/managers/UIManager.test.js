@@ -205,6 +205,24 @@ describe('UIManager', () => {
             expect(container).not.toBeNull();
             expect(container.querySelector('.notification')).not.toBeNull();
         });
+
+        it('should render and handle an action button if provided', () => {
+            document.body.innerHTML = '';
+            const actionClick = vi.fn();
+            UI.showNotification('Élève déplacé', 'info', 4000, {
+                action: {
+                    label: 'Annuler',
+                    onClick: actionClick
+                }
+            });
+
+            const actionBtn = document.querySelector('.notification-action-btn');
+            expect(actionBtn).not.toBeNull();
+            expect(actionBtn.textContent).toBe('Annuler');
+
+            actionBtn.click();
+            expect(actionClick).toHaveBeenCalled();
+        });
     });
 
     describe('showCustomConfirm', () => {

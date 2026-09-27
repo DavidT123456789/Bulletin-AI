@@ -13,6 +13,7 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 import { ClassManager } from './ClassManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -485,6 +486,10 @@ export const SeatingChartManager = {
         popover.classList.add('open');
         document.getElementById('scAutoPlaceBtn')?.classList.add('active');
         this._placementPopoverOpen = true;
+
+        if (!HistoryManager.isOpen('scPlacementPopover')) {
+            HistoryManager.pushState('scPlacementPopover', () => this._closePlacementPopover());
+        }
     },
 
     _closePlacementPopover() {
@@ -493,6 +498,10 @@ export const SeatingChartManager = {
         popover.classList.remove('open');
         document.getElementById('scAutoPlaceBtn')?.classList.remove('active');
         this._placementPopoverOpen = false;
+
+        if (HistoryManager.isOpen('scPlacementPopover')) {
+            HistoryManager.handleManualClose('scPlacementPopover');
+        }
     },
 
 
@@ -511,6 +520,10 @@ export const SeatingChartManager = {
         popover.classList.add('open');
         document.getElementById('scConfigBtn')?.classList.add('active');
         this._configPopoverOpen = true;
+
+        if (!HistoryManager.isOpen('scConfigPopover')) {
+            HistoryManager.pushState('scConfigPopover', () => this._closeConfigPopover());
+        }
     },
 
     _closeConfigPopover() {
@@ -519,6 +532,10 @@ export const SeatingChartManager = {
         popover.classList.remove('open');
         document.getElementById('scConfigBtn')?.classList.remove('active');
         this._configPopoverOpen = false;
+
+        if (HistoryManager.isOpen('scConfigPopover')) {
+            HistoryManager.handleManualClose('scConfigPopover');
+        }
     },
 
     // ========================================================================
@@ -558,7 +575,12 @@ export const SeatingChartManager = {
         const s1 = this._studentMap?.get(id1) || this._students.find(s => s.id === id1);
         const s2 = this._studentMap?.get(id2) || this._students.find(s => s.id === id2);
         if (s1 && s2) {
-            UI?.showNotification?.(`Échange : ${s1.prenom || s1.nom} ↔ ${s2.prenom || s2.nom}`, 'success');
+            UI?.showNotification?.(`Échange : ${s1.prenom || s1.nom} ↔ ${s2.prenom || s2.nom}`, 'success', 4000, {
+                action: {
+                    label: 'Annuler',
+                    onClick: () => this._undo()
+                }
+            });
         }
     },
 
@@ -578,12 +600,20 @@ export const SeatingChartManager = {
             const msg = sOld 
                 ? `${sNew.prenom || sNew.nom} remplace ${sOld.prenom || sOld.nom}` 
                 : `${sNew.prenom || sNew.nom} placé à cette table`;
-            UI?.showNotification?.(msg, 'success');
+            UI?.showNotification?.(msg, 'success', 4000, {
+                action: {
+                    label: 'Annuler',
+                    onClick: () => this._undo()
+                }
+            });
         }
     },
 
     _openOccupiedCellSheet(row, col, student) {
         this._closeMobileSheet(true);
+        if (!HistoryManager.isOpen('scMobileSheet')) {
+            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
+        }
         const isPinned = !!student?.seatingPosition?.pinned;
         const backdrop = document.createElement('div');
         backdrop.className = 'sc-mobile-sheet-backdrop';
@@ -694,6 +724,9 @@ export const SeatingChartManager = {
 
     _openEmptyCellSheet(row, col, special) {
         this._closeMobileSheet(true);
+        if (!HistoryManager.isOpen('scMobileSheet')) {
+            HistoryManager.pushState('scMobileSheet', () => this._closeMobileSheet(true));
+        }
         const unplaced = this._getUnplacedStudents();
         const isClassScope = special?.scope === 'class';
         const backdrop = document.createElement('div');
@@ -854,7 +887,14 @@ export const SeatingChartManager = {
                 this._render();
                 this._animateCellPlaced(row, col);
                 const s = this._studentMap?.get(studentId) || this._students.find(st => st.id === studentId);
-                if (s) UI?.showNotification?.(`${s.prenom || s.nom} placé à la table (${row + 1}, ${col + 1})`, 'success');
+                if (s) {
+                    UI?.showNotification?.(`${s.prenom || s.nom} placé à la table (${row + 1}, ${col + 1})`, 'success', 4000, {
+                        action: {
+                            label: 'Annuler',
+                            onClick: () => this._undo()
+                        }
+                    });
+                }
             });
         });
 
@@ -874,6 +914,10 @@ export const SeatingChartManager = {
     },
 
     _closeMobileSheet(immediate = false) {
+        if (HistoryManager.isOpen('scMobileSheet')) {
+            HistoryManager.handleManualClose('scMobileSheet');
+        }
+
         const existingSheets = document.querySelectorAll('.sc-mobile-sheet, .sc-mobile-sheet-backdrop');
         if (immediate) {
             existingSheets.forEach(el => el.remove());
@@ -915,6 +959,13 @@ export const SeatingChartManager = {
         const isList = view === 'list';
 
         if (isList) {
+            // [UX Mobile] History state cleanup for plan view and sub-modes
+            if (HistoryManager.isOpen('viewPlan')) HistoryManager.handleManualClose('viewPlan');
+            if (HistoryManager.isOpen('seatingChartEdit')) HistoryManager.handleManualClose('seatingChartEdit');
+            if (HistoryManager.isOpen('scMobileSheet')) HistoryManager.handleManualClose('scMobileSheet');
+            if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
+            if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
+
             const finishList = () => {
                 const wasActive = this._isActive;
                 viewEl.classList.remove('sc-exiting', 'sc-entering');
@@ -955,6 +1006,12 @@ export const SeatingChartManager = {
                 return;
             }
             wrapper.dataset.view = 'plan';
+            // [UX Mobile] History integration for plan view (Back returns to list)
+            if (!HistoryManager.isOpen('viewPlan')) {
+                HistoryManager.pushState('viewPlan', () => {
+                    this.switchToView('list');
+                });
+            }
             viewEl.style.display = '';
             if (fab) fab.style.display = 'none';
             this._isActive = true;
@@ -1348,6 +1405,21 @@ export const SeatingChartManager = {
         } else {
             this._applySmartFit();
         }
+
+        // [UX Mobile] History integration for Edit Mode
+        if (!locked) {
+            if (!HistoryManager.isOpen('seatingChartEdit')) {
+                HistoryManager.pushState('seatingChartEdit', () => {
+                    if (!this._isLocked) {
+                        this._toggleLock();
+                    }
+                });
+            }
+        } else {
+            if (HistoryManager.isOpen('seatingChartEdit')) {
+                HistoryManager.handleManualClose('seatingChartEdit');
+            }
+        }
     },
 
     _toggleLock() {
@@ -1355,6 +1427,21 @@ export const SeatingChartManager = {
         const view = document.getElementById('seatingChartView');
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
+
+        // [UX Mobile] History integration for Edit Mode
+        if (!this._isLocked) {
+            if (!HistoryManager.isOpen('seatingChartEdit')) {
+                HistoryManager.pushState('seatingChartEdit', () => {
+                    if (!this._isLocked) {
+                        this._toggleLock();
+                    }
+                });
+            }
+        } else {
+            if (HistoryManager.isOpen('seatingChartEdit')) {
+                HistoryManager.handleManualClose('seatingChartEdit');
+            }
+        }
 
         btn.classList.toggle('locked', this._isLocked);
         btn.setAttribute('aria-checked', (!this._isLocked).toString());
@@ -2879,6 +2966,27 @@ export const SeatingChartManager = {
         } else {
             this._animateCellPlaced(targetRow, targetCol);
         }
+
+        if (this._isMobileView() && window.UI?.showNotification) {
+            const student = this._studentMap?.get(resultId);
+            const sName = student ? `${student.prenom || ''} ${student.nom || ''}`.trim() : 'Élève';
+            const actionMsg = isSwap ? 'Places permutées' : `${sName} placé`;
+            window.UI.showNotification(actionMsg, 'info', 4000, {
+                group: 'sc-undo-toast',
+                replaceExisting: true,
+                bypassCoalescing: true,
+                icon: 'solar:undo-left-round-linear',
+                action: {
+                    label: 'Annuler',
+                    onClick: () => {
+                        this._undo();
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try { navigator.vibrate(15); } catch (_) {}
+                        }
+                    }
+                }
+            });
+        }
     },
 
     _removeFromCell(row, col) {
@@ -2895,6 +3003,24 @@ export const SeatingChartManager = {
             this._updateFooter();
             this._updateSidebarLockState();
             this._onRemovalComplete();
+
+            if (this._isMobileView() && window.UI?.showNotification) {
+                window.UI.showNotification('Élève retiré du plan', 'info', 4000, {
+                    group: 'sc-undo-toast',
+                    replaceExisting: true,
+                    bypassCoalescing: true,
+                    icon: 'solar:undo-left-round-linear',
+                    action: {
+                        label: 'Annuler',
+                        onClick: () => {
+                            this._undo();
+                            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                                try { navigator.vibrate(15); } catch (_) {}
+                            }
+                        }
+                    }
+                });
+            }
         });
     },
 

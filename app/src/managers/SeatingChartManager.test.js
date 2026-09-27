@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SeatingChartManager } from './SeatingChartManager';
 import { appState, userSettings } from '../state/State';
 import { ClassManager } from './ClassManager';
+import { HistoryManager } from './HistoryManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -1291,6 +1292,67 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._gridState[0][0]).toBe('s2');
             expect(SeatingChartManager._gridState[0][1]).toBe('s1');
             expect(SeatingChartManager._selectedChipIds).toEqual([]);
+        });
+    });
+
+    describe('SeatingChartManager - Navigation Mobile & Touche Retour (HistoryManager)', () => {
+        beforeEach(() => {
+            HistoryManager.destroy();
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="plan">
+                    <div class="ui-segmented-control view-toggle" id="viewToggle">
+                        <button class="ui-segment view-toggle-btn" data-view="list"></button>
+                        <button class="ui-segment view-toggle-btn active" data-view="plan"></button>
+                    </div>
+                    <div id="seatingChartView" data-locked="true">
+                        <div id="scLockBtn" class="locked"></div>
+                        <div id="scPlacementPopover"></div>
+                        <div id="scConfigPopover"></div>
+                    </div>
+                </div>
+            `;
+            SeatingChartManager._isLocked = true;
+        });
+
+        afterEach(() => {
+            HistoryManager.destroy();
+        });
+
+        it('devrait empiler seatingChartEdit dans HistoryManager lors du passage en mode édition', () => {
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(HistoryManager.isOpen('seatingChartEdit')).toBe(true);
+        });
+
+        it('devrait quitter le mode édition et verrouiller le plan lors du popstate / retour', () => {
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(false);
+
+            // Simuler la touche retour du mobile
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+
+            expect(SeatingChartManager._isLocked).toBe(true);
+            expect(HistoryManager.isOpen('seatingChartEdit')).toBe(false);
+        });
+
+        it('devrait empiler scMobileSheet dans HistoryManager lors de l’ouverture d’une feuille mobile', () => {
+            SeatingChartManager._openEmptyCellSheet(0, 0, null);
+            expect(HistoryManager.isOpen('scMobileSheet')).toBe(true);
+
+            // Retour ferme le sheet
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(HistoryManager.isOpen('scMobileSheet')).toBe(false);
+            expect(document.querySelector('.sc-mobile-sheet')).toBeNull();
+        });
+
+        it('devrait empiler les popovers de config et d’agencement', () => {
+            SeatingChartManager._openConfigPopover();
+            expect(HistoryManager.isOpen('scConfigPopover')).toBe(true);
+
+            // Retour ferme le popover
+            window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+            expect(HistoryManager.isOpen('scConfigPopover')).toBe(false);
+            expect(SeatingChartManager._configPopoverOpen).toBe(false);
         });
     });
 });

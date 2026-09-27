@@ -683,3 +683,31 @@
         opacity: 0 !important;
     }
 }
+
+/* ── Notification Action Button (Gold Standard Mobile Undo) ── */
+.notification-action-btn {
+    margin-left: auto;
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, transform 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.notification-action-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.notification-action-btn:active {
+    transform: scale(0.96);
+}

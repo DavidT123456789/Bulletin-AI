@@ -156,6 +156,25 @@ export const UI = {
                 }
                 const badge = el.querySelector('.notification-coalesce-badge');
                 if (badge) badge.remove();
+
+                const existingBtn = el.querySelector('.notification-action-btn');
+                if (existingBtn) existingBtn.remove();
+                if (coalescingOptions?.action?.label) {
+                    const actionBtn = document.createElement('button');
+                    actionBtn.className = 'notification-action-btn';
+                    actionBtn.type = 'button';
+                    actionBtn.textContent = coalescingOptions.action.label;
+                    actionBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        try {
+                            coalescingOptions.action.onClick?.();
+                        } catch (err) {
+                            console.error('[Notification] Action error:', err);
+                        }
+                        removeExisting();
+                    };
+                    el.appendChild(actionBtn);
+                }
             } else {
                 NotificationCoalescer.updateBadge(el, evaluation.count);
             }
@@ -211,7 +230,26 @@ export const UI = {
             ? `<div class="notification-content"><div class="notification-title">${title}</div><div class="notification-subtitle">${subtitle}</div></div>`
             : `<span class="notification-message">${message}</span>`;
 
-        notif.innerHTML = `${iconHtml} ${bodyHtml}`;
+        const actionBtnHtml = coalescingOptions?.action?.label
+            ? `<button class="notification-action-btn" type="button">${coalescingOptions.action.label}</button>`
+            : '';
+
+        notif.innerHTML = `${iconHtml} ${bodyHtml} ${actionBtnHtml}`;
+
+        if (coalescingOptions?.action?.onClick) {
+            const actionBtn = notif.querySelector('.notification-action-btn');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    try {
+                        coalescingOptions.action.onClick();
+                    } catch (err) {
+                        console.error('[Notification] Action error:', err);
+                    }
+                    removeNotification();
+                });
+            }
+        }
 
         // Interaction: Click to dismiss
         notif.style.cursor = 'pointer';

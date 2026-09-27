@@ -14,6 +14,7 @@ import { StudentDataManager } from '../StudentDataManager.js';
 import { ExportManager } from '../ExportManager.js';
 import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
+import { HistoryManager } from '../HistoryManager.js';
 
 export const ListSelectionManager = {
     selectedIds: new Set(),
@@ -220,18 +221,29 @@ export const ListSelectionManager = {
                 const totalVisible = document.querySelectorAll('.student-row').length;
                 selectAllLink.style.display = count >= totalVisible ? 'none' : '';
             }
-        } else if (toolbar) {
-            if (this._removeTimeout) {
-                clearTimeout(this._removeTimeout);
+
+            // [UX Mobile] History integration
+            if (!HistoryManager.isOpen('listSelection')) {
+                HistoryManager.pushState('listSelection', () => this.clearSelections());
             }
-            toolbar.classList.remove('active');
-            this._removeTimeout = setTimeout(() => {
-                const currentToolbar = document.getElementById('selectionToolbar');
-                if (currentToolbar && this.selectedIds.size === 0) {
-                    currentToolbar.remove();
+        } else {
+            if (HistoryManager.isOpen('listSelection')) {
+                HistoryManager.handleManualClose('listSelection');
+            }
+
+            if (toolbar) {
+                if (this._removeTimeout) {
+                    clearTimeout(this._removeTimeout);
                 }
-                this._removeTimeout = null;
-            }, 400);
+                toolbar.classList.remove('active');
+                this._removeTimeout = setTimeout(() => {
+                    const currentToolbar = document.getElementById('selectionToolbar');
+                    if (currentToolbar && this.selectedIds.size === 0) {
+                        currentToolbar.remove();
+                    }
+                    this._removeTimeout = null;
+                }, 400);
+            }
         }
     },
 

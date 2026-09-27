@@ -19,8 +19,7 @@ export const ListViewEvents = {
 
     state: {
         activeDocClickListener: null,
-        activeKeydownListener: null,
-        activePopstateListener: null
+        activeKeydownListener: null
     },
 
     callbacks: {
@@ -507,12 +506,6 @@ export const ListViewEvents = {
      * @private
      */
     attachInlineSearchListeners(listContainer, signal) {
-        // CLEANUP: Remove previous popstate listener to avoid accumulation
-        if (this.state.activePopstateListener) {
-            window.removeEventListener('popstate', this.state.activePopstateListener);
-            this.state.activePopstateListener = null;
-        }
-
         const nameHeader = listContainer.querySelector('.name-header-with-search');
         const headerContent = listContainer.querySelector('#nameHeaderContent');
         const searchContainer = listContainer.querySelector('#inlineSearchContainer');
@@ -579,35 +572,16 @@ export const ListViewEvents = {
             _performActivateUI();
 
             // HISTORY PUSH: Use HistoryManager for safe navigation
-            // Permet de fermer la recherche avec le bouton retour du mobile
-            HistoryManager.pushCustomState({ inlineSearch: true });
+            HistoryManager.pushState('inlineSearch', () => {
+                _performDeactivateUI();
+            });
         };
 
         // Helper to deactivate search mode (With History Check)
         const deactivateSearch = () => {
             _performDeactivateUI();
-
-            // CRITICAL: Do NOT call history.back() here! It can navigate to landing page.
-            // Instead, replace the current state to "neutralize" it.
-            if (history.state && history.state.inlineSearch) {
-                HistoryManager.replaceCurrentState({ appBase: true, consumed: true });
-            }
+            HistoryManager.handleManualClose('inlineSearch');
         };
-
-        // EVENT: Popstate (Back Button) [NEW]
-        this.state.activePopstateListener = (e) => {
-            const isSearchState = e.state && e.state.inlineSearch;
-            const isVisible = searchContainer.classList.contains('active');
-
-            if (!isSearchState && isVisible) {
-                // On est revenu en arrière (plus d'état local) -> on ferme
-                _performDeactivateUI();
-            } else if (isSearchState && !isVisible) {
-                // On est revenu en avant (ou refresh) -> on rouvre
-                _performActivateUI();
-            }
-        };
-        window.addEventListener('popstate', this.state.activePopstateListener, { signal });
 
         // Click / mousedown on search trigger button to activate search
         const searchTrigger = listContainer.querySelector('#inlineSearchTrigger');
