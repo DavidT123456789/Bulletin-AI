@@ -36,6 +36,7 @@ describe('JournalManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         appState.currentPeriod = 'T1';
+        appState.periodSystem = 'trimestres';
         appState.journalThreshold = 2;
         appState.generatedResults = [
             {
@@ -181,7 +182,7 @@ describe('JournalManager', () => {
 
             expect(html).toContain('journal-empty-interactive');
             expect(html).toContain('role="button"');
-            expect(html).toContain('Aucune observation pour cette période');
+            expect(html).toContain('Aucune observation pour le T1');
             expect(html).toContain('Ajouter');
         });
 

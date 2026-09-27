@@ -7,6 +7,7 @@
 import { appState, userSettings } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
+import { Utils } from '../utils/Utils.js';
 
 /**
  * Predefined tags for quick observation categorization
@@ -381,18 +382,23 @@ export const JournalManager = {
      * @returns {string} HTML string
      */
     renderTimeline(studentId, period = null, highlightEntryId = null, editingEntryId = null) {
-        const entries = period
-            ? this.getEntriesForPeriod(studentId, period)
+        const targetPeriod = period || appState.currentPeriod;
+        const entries = targetPeriod
+            ? this.getEntriesForPeriod(studentId, targetPeriod)
             : this.getEntries(studentId);
 
         if (entries.length === 0) {
+            const periodLabel = targetPeriod ? Utils.getPeriodLabel(targetPeriod, false) : '';
+            const emptyTitle = periodLabel
+                ? `Aucune observation pour le ${periodLabel}`
+                : 'Aucune observation pour cette période';
             return `
                 <div class="journal-empty journal-empty-interactive" role="button" tabindex="0" aria-label="Ajouter une observation">
                     <div class="journal-empty-icon-wrap">
                         <iconify-icon icon="solar:notebook-linear"></iconify-icon>
                     </div>
                     <div class="journal-empty-content">
-                        <span class="journal-empty-title">Aucune observation pour cette période</span>
+                        <span class="journal-empty-title">${emptyTitle}</span>
                         <span class="journal-empty-subtitle">Consignez des faits marquants pour guider l'IA</span>
                     </div>
                     <span class="journal-empty-cta-badge">
