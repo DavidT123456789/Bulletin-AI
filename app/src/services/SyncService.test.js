@@ -256,6 +256,19 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(menuBtn.classList.contains('has-cloud-reminder')).toBe(true);
         });
 
+        it('should detect local changes when data hash differs from sync hash even if lMod <= lSync', () => {
+            SyncService._wasConfigured = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.lastSyncTime = 2000;
+            localStorage.setItem('bulletin_last_sync', '2000');
+            localStorage.setItem('bulletin_last_modified', '2000'); // same as sync time
+            localStorage.setItem('bulletin_last_sync_hash', 'old-synced-hash');
+
+            // StorageManager.computeCurrentDataHash returns 'mock-hash' (different from 'old-synced-hash')
+            const state = SyncService._computeSyncState();
+            expect(state).toBe('local-changes');
+        });
+
         it('should clear all cloud indicators on disconnected or unconfigured local', () => {
             SyncService._wasConfigured = false;
             menuBtn.classList.add('has-cloud-warning', 'has-cloud-reminder');

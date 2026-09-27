@@ -395,7 +395,8 @@ export const SyncService = {
             localStorage.setItem('bulletin_last_sync_hash', currentHash);
         }
 
-        const hasLocalChanges = lMod > lSync;
+        const isHashChanged = Boolean(syncHash) && currentHash !== syncHash;
+        const hasLocalChanges = isHashChanged || (lMod > lSync);
         const hasCloudChanges = rMod > 0 && rMod > (lSync + this._DRIFT_TOLERANCE_MS);
 
         if (hasLocalChanges && hasCloudChanges) return 'conflict';

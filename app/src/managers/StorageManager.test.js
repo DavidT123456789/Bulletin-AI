@@ -580,5 +580,35 @@ describe('StorageManager', () => {
             expect(appState.currentClassId).toBe('c2');
         });
     });
+
+    describe('mergeRemoteData - seating chart synchronization', () => {
+        it('should merge remote seatingPosition when remote class seating is newer', async () => {
+            const classId = 'class-1';
+            userSettings.academic.classes = [
+                { id: classId, name: '3A', seatingUpdatedAt: 1000 }
+            ];
+            runtimeState.data.generatedResults = [
+                { id: 'student-1', nom: 'DUPONT', prenom: 'Jean', classId, seatingPosition: { row: 0, col: 0, pinned: false } }
+            ];
+
+            const remoteData = {
+                classes: [
+                    { id: classId, name: '3A', seatingUpdatedAt: 2000, seatingLocked: true }
+                ],
+                generatedResults: [
+                    { id: 'student-1', nom: 'DUPONT', prenom: 'Jean', classId, seatingPosition: { row: 1, col: 2, pinned: true } }
+                ]
+            };
+
+            await StorageManager.mergeRemoteData(remoteData);
+
+            const updatedStudent = runtimeState.data.generatedResults.find(r => r.id === 'student-1');
+            expect(updatedStudent.seatingPosition).toEqual({ row: 1, col: 2, pinned: true });
+            const updatedClass = userSettings.academic.classes.find(c => c.id === classId);
+            expect(updatedClass.seatingUpdatedAt).toBe(2000);
+            expect(updatedClass.seatingLocked).toBe(true);
+        });
+    });
 });
+
 

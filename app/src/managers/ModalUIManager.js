@@ -752,14 +752,24 @@ export const ModalUI = {
                 remoteClassCount = 0,
                 localStudentCount = 0,
                 localClassCount = 0,
-                providerName = 'google'
+                providerName = 'google',
+                providerLabel = null,
+                providerIcon = null
             } = options;
 
             const modalId = 'restoreConfirmationModal';
             let modal = document.getElementById(modalId);
             if (modal) modal.remove();
 
-            const { label: providerLabel, icon: providerIcon } = this._getProviderMeta(providerName);
+            const { label: defaultProviderLabel, icon: defaultProviderIcon } = this._getProviderMeta(providerName);
+            const resolvedProviderLabel = providerLabel ?? defaultProviderLabel;
+            const resolvedProviderIcon = providerIcon ?? defaultProviderIcon;
+
+            const rStudentCount = Number.isFinite(remoteStudentCount) ? remoteStudentCount : (parseInt(remoteStudentCount, 10) || 0);
+            const rClassCount = Number.isFinite(remoteClassCount) ? remoteClassCount : (parseInt(remoteClassCount, 10) || 0);
+            const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
+            const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+
             const formattedTitleDate = this._formatRelativeDate(remoteDate) ?? 'Date inconnue';
 
             modal = document.createElement('div');
@@ -783,14 +793,14 @@ export const ModalUI = {
                         <!-- Carte Cloud -->
                         <div class="restore-comparison-card cloud">
                             <div class="restore-card-badge">
-                                <iconify-icon icon="${providerIcon}" style="font-size: 0.9em;"></iconify-icon>
-                                <span>${providerLabel}</span>
+                                <iconify-icon icon="${resolvedProviderIcon}" style="font-size: 0.9em;"></iconify-icon>
+                                <span>${resolvedProviderLabel}</span>
                             </div>
                             <div class="restore-card-main-stat">
                                 ${formattedTitleDate}
                             </div>
                             <div class="restore-card-sub-stat">
-                                ${remoteStudentCount} élève${remoteStudentCount > 1 ? 's' : ''} · ${remoteClassCount} classe${remoteClassCount > 1 ? 's' : ''}
+                                ${rStudentCount} élève${rStudentCount > 1 ? 's' : ''} · ${rClassCount} classe${rClassCount > 1 ? 's' : ''}
                             </div>
                             <div class="restore-card-date">
                                 <iconify-icon icon="solar:check-read-linear"></iconify-icon>
@@ -808,7 +818,7 @@ export const ModalUI = {
                                 Session actuelle
                             </div>
                             <div class="restore-card-sub-stat">
-                                ${localStudentCount} élève${localStudentCount > 1 ? 's' : ''} · ${localClassCount} classe${localClassCount > 1 ? 's' : ''}
+                                ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
                             </div>
                             <div class="restore-card-date">
                                 <iconify-icon icon="solar:laptop-minimalistic-linear"></iconify-icon>
@@ -910,13 +920,16 @@ export const ModalUI = {
             const resolvedProviderLabel = providerLabel ?? defaultProviderLabel;
             const resolvedProviderIcon = providerIcon ?? defaultProviderIcon;
 
+            const lStudentCount = Number.isFinite(localStudentCount) ? localStudentCount : (parseInt(localStudentCount, 10) || 0);
+            const lClassCount = Number.isFinite(localClassCount) ? localClassCount : (parseInt(localClassCount, 10) || 0);
+
             const formattedLastSync = this._formatRelativeDate(lastSyncTime);
             const subtitleDetail = formattedLastSync ? `Dernière sauvegarde : ${formattedLastSync}` : 'Prêt à synchroniser';
 
             const hasDataShrinkageWarning =
                 typeof remoteStudentCount === 'number' &&
                 remoteStudentCount > 0 &&
-                localStudentCount < remoteStudentCount;
+                lStudentCount < remoteStudentCount;
 
             modal = document.createElement('div');
             modal.id = modalId;
@@ -938,8 +951,8 @@ export const ModalUI = {
                     <div class="save-summary-card">
                         <div class="save-summary-header">
                             <div class="restore-card-badge" style="background: var(--primary-color); color: white;">
-                                <iconify-icon icon="${providerIcon}" style="font-size: 0.9em;"></iconify-icon>
-                                <span>${providerLabel}</span>
+                                <iconify-icon icon="${resolvedProviderIcon}" style="font-size: 0.9em;"></iconify-icon>
+                                <span>${resolvedProviderLabel}</span>
                             </div>
                             <span class="save-card-destination">
                                 <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
@@ -947,7 +960,7 @@ export const ModalUI = {
                             </span>
                         </div>
                         <div class="restore-card-main-stat">
-                            ${localStudentCount} élève${localStudentCount > 1 ? 's' : ''} · ${localClassCount} classe${localClassCount > 1 ? 's' : ''}
+                            ${lStudentCount} élève${lStudentCount > 1 ? 's' : ''} · ${lClassCount} classe${lClassCount > 1 ? 's' : ''}
                         </div>
                         <div class="restore-card-date">
                             <iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color, #10b981);"></iconify-icon>

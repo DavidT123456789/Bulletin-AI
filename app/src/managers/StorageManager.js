@@ -1239,8 +1239,9 @@ export const StorageManager = {
                 } else {
                     const localC = localClasses.find(c => c.id === rClass.id);
                     if (localC && rClass.seatingUpdatedAt && (!localC.seatingUpdatedAt || rClass.seatingUpdatedAt > localC.seatingUpdatedAt)) {
-                        localC.seatingChart = rClass.seatingChart;
                         localC.seatingUpdatedAt = rClass.seatingUpdatedAt;
+                        if (rClass.seatingLocked !== undefined) localC.seatingLocked = rClass.seatingLocked;
+                        if (rClass.seatingSpecialLayout !== undefined) localC.seatingSpecialLayout = rClass.seatingSpecialLayout;
                     }
                 }
             });
@@ -1390,6 +1391,22 @@ export const StorageManager = {
                         if (!localStudent.studentData) localStudent.studentData = {};
                         localStudent.studentData.statuses = combined;
                         hasStudentUpdates = true;
+                    }
+                }
+
+                // E. Fusion du placement du plan de classe (seatingPosition)
+                if (remoteStudent.seatingPosition) {
+                    const localClasses = userSettings.academic.classes || [];
+                    const rClass = Array.isArray(remoteData.classes) ? remoteData.classes.find(c => c.id === remoteStudent.classId) : null;
+                    const lClass = localClasses.find(c => c.id === localStudent.classId);
+                    const isRemoteSeatingNewer = rClass?.seatingUpdatedAt && (!lClass?.seatingUpdatedAt || rClass.seatingUpdatedAt >= lClass.seatingUpdatedAt);
+                    if (!localStudent.seatingPosition || isRemoteSeatingNewer) {
+                        const lPos = localStudent.seatingPosition;
+                        const rPos = remoteStudent.seatingPosition;
+                        if (!lPos || lPos.row !== rPos.row || lPos.col !== rPos.col || (lPos.pinned || false) !== (rPos.pinned || false)) {
+                            localStudent.seatingPosition = { ...rPos };
+                            hasStudentUpdates = true;
+                        }
                     }
                 }
 

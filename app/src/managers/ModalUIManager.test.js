@@ -412,11 +412,18 @@ describe('ModalUIManager', () => {
             expect(result).toBe(true);
         });
 
-        it('should resolve false when cancel button is clicked', async () => {
+        it('should resolve false when cancel button is clicked and fallback to provider metadata without printing null', async () => {
             const promise = ModalUI.showSaveConfirmationModal({
                 localStudentCount: 50,
-                localClassCount: 2
+                localClassCount: 2,
+                providerName: 'google'
             });
+
+            const modal = document.getElementById('saveConfirmationModal');
+            expect(modal).not.toBeNull();
+            expect(modal.textContent).toContain('Google Drive');
+            expect(modal.querySelector('.restore-card-badge span').textContent).toBe('Google Drive');
+            expect(modal.textContent).not.toContain('null');
 
             const cancelBtn = document.getElementById('saveConfirmCancelBtn');
             expect(cancelBtn).not.toBeNull();
@@ -424,6 +431,21 @@ describe('ModalUIManager', () => {
 
             const result = await promise;
             expect(result).toBe(false);
+        });
+
+        it('should safely coerce null counts without printing null élève', async () => {
+            const promise = ModalUI.showSaveConfirmationModal({
+                localStudentCount: null,
+                localClassCount: null
+            });
+
+            const modal = document.getElementById('saveConfirmationModal');
+            expect(modal.textContent).toContain('0 élève · 0 classe');
+            expect(modal.textContent).not.toContain('null élève');
+
+            const cancelBtn = document.getElementById('saveConfirmCancelBtn');
+            cancelBtn.click();
+            await promise;
         });
 
         it('should resolve false on Escape key', async () => {
