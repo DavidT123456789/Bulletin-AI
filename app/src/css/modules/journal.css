@@ -69,27 +69,26 @@
 }
 
 [data-theme="dark"] .journal-title-group>iconify-icon:first-child {
-    background: rgba(52, 211, 153, 0.12);
+    background: rgba(var(--success-rgb), 0.12);
     color: var(--color-emerald-bright);
 }
 
 .journal-count-badge {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
 }
 
-.journal-info-icon {
-    opacity: 0.5;
-    transition: opacity 0.2s ease, color 0.2s ease;
+.journal-count-badge.is-hidden {
+    display: none !important;
 }
 
-.journal-info-icon:hover {
-    opacity: 1;
-    color: var(--primary-color) !important;
+.journal-count-tag {
+    margin-right: 0;
+    cursor: help;
 }
 
 /* === Threshold Quick Control === */
@@ -108,15 +107,13 @@
     padding: 0 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    /* Standard button shape */
-    /* Pill shape removed */
     background: var(--surface-color);
-    /* Clean surface */
     color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: none;
+    transition: all var(--transition-fast);
 }
 
 .journal-header-btn i,
@@ -130,44 +127,50 @@
     background: var(--item-hover-bg);
     border-color: rgba(var(--primary-color-rgb), 0.35);
     color: var(--text-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
 }
 
 .journal-header-btn:hover i,
 .journal-header-btn:hover iconify-icon {
-    color: var(--primary-bright, var(--text-primary));
+    color: var(--text-primary);
 }
 
-.journal-header-btn:active {
-    transform: translateY(0);
-}
-
-/* Icon-only variant (Minimalist: harmonized with focus-mic-btn & focus-nav-btn) */
+/* Icon-only variant (Harmonized with threshold capsule: same 28px height, subtle border) */
 .journal-header-btn.icon-only {
     width: 28px;
+    height: 28px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-pill);
     background: transparent;
-    border: none;
+    border: 1px solid var(--border-color);
     box-shadow: none;
-    color: var(--icon-btn-color);
-    /* Correctly inherits Zinc-400 */
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
 }
 
 .journal-header-btn.icon-only iconify-icon,
 .journal-header-btn.icon-only svg {
     font-size: 14px;
-    /* Harmonisé avec l'icône de titre */
     stroke-width: var(--icon-stroke-width) !important;
 }
 
 .journal-header-btn.icon-only:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
-    transform: none;
-    border-color: transparent;
+    border-color: rgba(var(--primary-color-rgb), 0.35);
     box-shadow: none;
+}
+
+.journal-section.editing #focusJournalNoteBtn,
+.journal-section:has(.journal-draft-preview.visible) #focusJournalNoteBtn {
+    background: var(--item-active-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+    opacity: 0.8;
+    pointer-events: none;
 }
 
 /* Value text in header buttons - bold for emphasis (harmonized) */
@@ -175,12 +178,29 @@
     font-weight: 600;
 }
 
-/* Specific state for Threshold button when popover is open */
-/* Note: .journal-threshold-btn inherits from .journal-header-btn (via HTML class) */
-/* Following the single source of truth: icon muted at rest, colored on hover */
+/* Threshold button - Transparent seamless capsule (same 28px height as icon button) */
+.journal-threshold-btn {
+    background: transparent !important;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    padding: 0 10px;
+    height: 28px;
+    font-size: 11.5px;
+    box-shadow: none !important;
+    transition: all var(--transition-fast);
+}
+
+.journal-threshold-btn:hover {
+    background: var(--item-hover-bg) !important;
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    color: var(--text-primary);
+    box-shadow: none !important;
+}
+
 .journal-threshold-control.open .journal-threshold-btn {
-    background: var(--item-hover-bg);
-    border-color: rgba(var(--primary-color-rgb), 0.45);
+    background: var(--item-active-bg) !important;
+    border-color: var(--primary-color);
     color: var(--text-primary);
 }
 
@@ -253,7 +273,12 @@
 .threshold-adjust-btn:hover {
     border-color: var(--primary-color);
     background: var(--item-hover-bg);
-    color: var(--icon-btn-hover);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .threshold-adjust-btn:hover {
+    border-color: var(--primary-bright);
+    color: var(--text-primary);
 }
 
 .threshold-adjust-btn:active {
@@ -261,11 +286,12 @@
 }
 
 .threshold-current {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--text-primary);
     min-width: 40px;
     text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
 .threshold-popover-hint {
@@ -276,17 +302,7 @@
 
 
 
-.journal-inline-tags {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
 
-/* Compact inline dropdowns */
-.journal-inline-tags .journal-dropdown-trigger {
-    padding: 6px 10px;
-    font-size: 12px;
-}
 
 
 
@@ -611,6 +627,71 @@
     display: none;
 }
 
+/* Selected Tags (Chips) */
+.journal-selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-height: 32px;
+    align-items: center;
+}
+
+.journal-selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 400;
+    background: color-mix(in srgb, var(--tag-color) 15%, transparent);
+    color: var(--tag-color);
+    animation: chip-appear 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes chip-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.journal-selected-chip i {
+    font-size: 10px;
+}
+
+.journal-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-left: 2px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 8px;
+    transition: all 0.15s ease;
+}
+
+.journal-chip-remove:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .journal-chip-remove:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* === Input Container === */
 .journal-draft-input-wrap {
     display: flex;
@@ -677,11 +758,11 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 34px;
-    padding: 0 14px;
-    border-radius: var(--radius-md);
+    height: 32px;
+    padding: 0 16px;
+    border-radius: var(--radius-pill);
     font-size: 12.5px;
-    font-weight: 600;
+    font-weight: 550;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
     box-sizing: border-box;
@@ -692,9 +773,9 @@
     font-size: 14px;
 }
 
-/* Cancel Button */
+/* Cancel Button - Ghost Secondary */
 .journal-cancel-btn {
-    background: var(--surface-color);
+    background: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
 }
@@ -702,51 +783,46 @@
 .journal-cancel-btn:hover {
     background: var(--item-hover-bg);
     color: var(--text-primary);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
+    border-color: rgba(var(--text-secondary-rgb, 120, 120, 120), 0.3);
 }
 
 .journal-cancel-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 /* Save / Validate Button */
 .journal-save-btn {
-    background-color: var(--primary-color);
-    border: 1px solid transparent;
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.35);
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.journal-save-btn iconify-icon {
-    color: #ffffff !important;
+    background: var(--primary-color);
+    border: none;
+    color: var(--text-on-primary, #fff) !important;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.18);
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .journal-save-btn:hover:not(:disabled) {
-    background-color: var(--primary-color);
-    background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14));
-    border-color: rgba(255, 255, 255, 0.18);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.45);
+    background: var(--primary-hover, #2563eb);
+    box-shadow: 0 3px 10px rgba(var(--primary-color-rgb), 0.28);
 }
 
 .journal-save-btn:active:not(:disabled) {
     transform: scale(0.97);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1));
-    box-shadow: 0 1px 4px rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .journal-save-btn:disabled {
-    background: color-mix(in srgb, var(--primary-color) 25%, transparent);
-    color: rgba(255, 255, 255, 0.4) !important;
-    border-color: transparent;
-    box-shadow: none;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
     cursor: not-allowed;
-    opacity: 0.65;
+    opacity: 0.45;
+    transform: none !important;
+    pointer-events: none;
 }
 
-.journal-save-btn:disabled iconify-icon {
-    color: rgba(255, 255, 255, 0.4) !important;
+[data-theme="dark"] .journal-save-btn:disabled {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* === Journal Content === */
@@ -788,22 +864,210 @@
 /* === Empty State === */
 .journal-empty {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    gap: 12px;
     padding: 16px;
+    min-height: 84px;
+    box-sizing: border-box;
     color: var(--text-tertiary);
     font-size: 13px;
     opacity: 0.55;
-    transition: opacity var(--transition-base);
+    transition: opacity var(--transition-base), transform var(--transition-base), background var(--transition-base);
 }
 
 .journal-empty iconify-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
     font-size: 28px;
     opacity: 0.4;
     color: var(--text-tertiary);
     margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+/* Interactive Empty State (clickable) */
+.journal-empty-interactive {
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background var(--transition-base), opacity var(--transition-base);
+}
+
+.journal-empty-interactive:hover {
+    opacity: 1;
+    background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.journal-empty-interactive:active {
+    transform: scale(0.99);
+}
+
+[data-theme="dark"] .journal-empty-interactive:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.journal-empty-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: rgba(var(--success-rgb), 0.08);
+    flex-shrink: 0;
+}
+
+.journal-empty-icon-wrap iconify-icon {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    font-size: 20px;
+    opacity: 0.8;
+    color: var(--success-color);
+}
+
+[data-theme="dark"] .journal-empty-icon-wrap {
+    background: rgba(var(--success-rgb), 0.1);
+}
+
+[data-theme="dark"] .journal-empty-icon-wrap iconify-icon {
+    color: var(--color-emerald-bright);
+}
+
+.journal-empty-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.journal-empty-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+.journal-empty-subtitle {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    line-height: 1.3;
+}
+
+.journal-empty-interactive:hover .journal-empty-title {
+    color: var(--text-primary);
+}
+
+.journal-empty-cta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 550;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.journal-empty .journal-empty-cta-badge iconify-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    font-size: 14px;
+    color: var(--primary-color) !important;
+    opacity: 1 !important;
+    flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+[data-theme="dark"] .journal-empty .journal-empty-cta-badge iconify-icon {
+    color: var(--primary-bright, var(--primary-color)) !important;
+}
+
+.journal-empty-interactive:hover .journal-empty-cta-badge,
+.journal-empty-cta-badge:hover {
+    background: var(--item-hover-bg);
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.journal-empty-interactive:hover .journal-empty-cta-badge iconify-icon,
+.journal-empty-cta-badge:hover iconify-icon {
+    transform: scale(1.1);
+    color: var(--text-primary) !important;
+}
+
+.journal-empty-interactive:active .journal-empty-cta-badge,
+.journal-empty-cta-badge:active {
+    transform: scale(0.96);
+    box-shadow: none;
+}
+
+[data-theme="dark"] .journal-empty-cta-badge {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .journal-empty-interactive:hover .journal-empty-cta-badge,
+[data-theme="dark"] .journal-empty-cta-badge:hover {
+    background: var(--item-hover-bg);
+    border-color: rgba(var(--primary-color-rgb), 0.35);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* === Timeline Container & Smooth Transitions === */
+.journal-timeline-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+@keyframes journal-timeline-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes journal-empty-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.journal-timeline.fade-in {
+    animation: journal-timeline-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.journal-empty.fade-in {
+    animation: journal-empty-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* === Timeline === */
@@ -903,60 +1167,79 @@
     margin-top: 8px;
 }
 
-/* Info Icon for Isolated Entries */
+/* Info Icon for Isolated Entries (inline badge with tags) */
 .journal-entry-info {
-    position: absolute;
-    top: 50%;
-    right: 40px;
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
     color: var(--text-tertiary);
     font-size: 12px;
-    opacity: 0;
+    opacity: 0.6;
     transition: all var(--transition-fast);
     cursor: help;
-    z-index: 5;
-}
-
-.journal-entry:hover .journal-entry-info {
-    opacity: 0.6;
+    flex-shrink: 0;
+    margin-left: 2px;
 }
 
 .journal-entry-info:hover {
-    opacity: 1 !important;
-    color: var(--primary-color);
+    opacity: 1;
+    color: var(--text-primary);
+    background: var(--item-hover-bg);
 }
 
-.journal-entry-delete {
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
+/* === Entry Actions Group === */
+.journal-entry-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.journal-entry:hover .journal-entry-actions,
+.journal-entry-actions.has-confirm-delete,
+.journal-entry-actions:has(.confirm-delete) {
+    opacity: 1;
+}
+
+/* Hide edit button when confirming deletion so it doesn't collide */
+.journal-entry-actions.has-confirm-delete .journal-entry-edit,
+.journal-entry-actions:has(.confirm-delete) .journal-entry-edit {
+    display: none !important;
+}
+
+.journal-entry-action-btn {
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border: none;
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    opacity: 0;
+    font-size: 13px;
     transition: all var(--transition-fast);
-    z-index: 5;
+    padding: 0;
+    flex-shrink: 0;
 }
 
-.journal-entry:hover .journal-entry-delete {
-    opacity: 1;
+.journal-entry-action-btn:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
-.journal-entry-delete:hover {
+.journal-entry-action-btn:active {
+    transform: scale(0.92);
+}
+
+.journal-entry-delete:not(.confirm-delete):hover {
     background: rgba(var(--error-rgb), 0.1);
     color: var(--error-color);
 }
@@ -964,13 +1247,14 @@
 /* 2-step Delete Confirmation State */
 .journal-entry-delete.confirm-delete {
     opacity: 1 !important;
-    background: var(--error-color);
-    color: white;
+    background: rgba(var(--error-rgb), 0.12);
+    color: var(--error-color);
+    border: 1px solid rgba(var(--error-rgb), 0.28);
     width: auto;
+    height: 24px;
     padding: 0 10px;
-    border-radius: 14px;
-    transform: translateY(-50%) scale(1);
-    aspect-ratio: auto;
+    border-radius: var(--radius-pill);
+    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .journal-entry-delete.confirm-delete::after {
@@ -981,8 +1265,22 @@
     white-space: nowrap;
 }
 
-.journal-entry-delete.confirm-delete i {
+.journal-entry-delete.confirm-delete iconify-icon,
+.journal-entry-delete.confirm-delete i,
+.journal-entry-delete.confirm-delete svg {
     font-size: 11px;
+    color: inherit;
+}
+
+.journal-entry-delete.confirm-delete:hover {
+    background: var(--error-color) !important;
+    color: var(--text-on-primary, #fff) !important;
+    border-color: var(--error-color) !important;
+    box-shadow: 0 2px 8px rgba(var(--error-rgb), 0.35);
+}
+
+.journal-entry-delete.confirm-delete:active {
+    transform: scale(0.96);
 }
 
 /* === Isolated Entry (below threshold) === */
@@ -1047,273 +1345,6 @@
     /* Same timing as entry animation for perfect symmetry */
     transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
-
-/* === Quick Add Panel === */
-.journal-quick-add {
-    padding: 12px 16px;
-    border-top: 1px solid var(--border-color);
-    background: rgba(0, 0, 0, 0.02);
-    /* FIX: Match parent border radius */
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
-    display: none;
-}
-
-.journal-quick-add.open {
-    display: block;
-    animation: journal-slide-down 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@keyframes journal-slide-down {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-[data-theme="dark"] .journal-quick-add {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-/* === Compact Dropdown Layout === */
-.journal-tag-buttons {
-    display: block;
-    margin-bottom: 12px;
-}
-
-.journal-compact-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px;
-}
-
-/* Dropdown Container */
-.journal-tag-dropdown {
-    position: relative;
-}
-
-/* Dropdown Trigger Button */
-.journal-dropdown-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 400;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.journal-dropdown-trigger:hover {
-    border-color: var(--dropdown-color);
-    color: var(--dropdown-color);
-    background: color-mix(in srgb, var(--dropdown-color) 8%, transparent);
-}
-
-.journal-dropdown-trigger i:first-child {
-    color: var(--dropdown-color);
-}
-
-.journal-dropdown-arrow {
-    font-size: 10px;
-    opacity: 0.5;
-    transition: transform 0.2s ease;
-}
-
-.journal-tag-dropdown.open .journal-dropdown-arrow {
-    transform: rotate(180deg);
-}
-
-/* Dropdown Menu */
-.journal-dropdown-menu {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    min-width: 160px;
-    background: var(--dropdown-bg);
-    border: var(--dropdown-border);
-    border-radius: var(--dropdown-radius-sm);
-    box-shadow: var(--dropdown-shadow-sm);
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.journal-tag-dropdown.open .journal-dropdown-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-/* Dropdown Options */
-.journal-dropdown-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 10px 12px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: left;
-}
-
-.journal-dropdown-option:hover {
-    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
-    color: var(--tag-color);
-}
-
-.journal-dropdown-option:first-child {
-    border-radius: var(--dropdown-radius-sm) var(--dropdown-radius-sm) 0 0;
-}
-
-.journal-dropdown-option:last-child {
-    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
-}
-
-.journal-dropdown-option i {
-    width: 16px;
-    text-align: center;
-    color: var(--tag-color);
-}
-
-/* Selected Tags (Chips) */
-.journal-selected-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
-    min-height: 32px;
-    align-items: center;
-}
-
-.journal-selected-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: var(--radius-pill);
-    font-size: 12px;
-    font-weight: 400;
-    background: color-mix(in srgb, var(--tag-color) 15%, transparent);
-    color: var(--tag-color);
-    animation: chip-appear 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@keyframes chip-appear {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.journal-selected-chip i {
-    font-size: 10px;
-}
-
-.journal-chip-remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    margin-left: 2px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    opacity: 0.6;
-    cursor: pointer;
-    border-radius: 50%;
-    font-size: 8px;
-    transition: all 0.15s ease;
-}
-
-.journal-chip-remove:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .journal-chip-remove:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.journal-tag-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 400;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.journal-tag-btn:hover {
-    border-color: var(--tag-color);
-    color: var(--tag-color);
-    background: color-mix(in srgb, var(--tag-color) 8%, transparent);
-}
-
-.journal-tag-btn.selected {
-    border-color: var(--tag-color);
-    background: color-mix(in srgb, var(--tag-color) 15%, transparent);
-    color: var(--tag-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--tag-color) 20%, transparent);
-}
-
-.journal-tag-btn i {
-    font-size: 11px;
-}
-
-.journal-note-input {
-    width: 100%;
-    resize: none;
-}
-
-.journal-quick-add-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.journal-quick-add-actions .btn {
-    padding: 8px 16px;
-    font-size: 13px;
-}
-
-/* === Add Form Container === */
-.journal-add-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-
 
 /* === Mobile Responsive === */
 @media (max-width: 768px) {
@@ -1413,21 +1444,21 @@
 
 /* Touch-friendly: Larger tap targets on mobile touch devices */
 @media (pointer: coarse) and (max-width: 768px) {
-    .journal-add-btn {
-        width: 36px;
-        height: 36px;
+
+    .journal-entry-actions,
+    .journal-entry-info {
+        opacity: 0.75;
     }
 
-    .journal-tag-btn {
-        padding: 10px 16px;
-        min-height: 44px;
-    }
-
-    .journal-entry-delete {
-        width: 36px;
-        height: 36px;
+    .journal-entry-action-btn:not(.confirm-delete) {
+        width: 34px;
+        height: 34px;
         font-size: 14px;
-        opacity: 0.7;
+    }
+
+    .journal-entry-delete.confirm-delete {
+        min-height: 34px;
+        padding: 0 12px;
     }
 
     .journal-chip-remove {

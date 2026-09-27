@@ -133,14 +133,28 @@ export const SpeechRecognitionManager = {
         }
 
         // Attacher les événements click aux deux boutons
-        this._setupButton(contextMicBtn, 'context');
-        this._setupButton(appreciationMicBtn, 'appreciation');
+        this.setupButton(contextMicBtn, 'context');
+        this.setupButton(appreciationMicBtn, 'appreciation');
     },
 
     /**
      * Configure un bouton micro pour une cible spécifique
      * @param {HTMLElement|null} btn - Le bouton micro
-     * @param {'context'|'appreciation'} target - La cible
+     * @param {'context'|'appreciation'|'journal'} target - La cible
+     */
+    setupButton(btn, target) {
+        if (!btn) return;
+        if (!this._isSupported) {
+            btn.style.display = 'none';
+            return;
+        }
+        this._setupButton(btn, target);
+    },
+
+    /**
+     * Configure l'écouteur de clic pour un bouton micro
+     * @param {HTMLElement} btn - Le bouton micro
+     * @param {'context'|'appreciation'|'journal'} target - La cible
      * @private
      */
     _setupButton(btn, target) {
@@ -245,6 +259,19 @@ export const SpeechRecognitionManager = {
 
             // Feedback visuel subtil
             UI.showNotification('Texte dicté ajouté', 'success');
+
+        } else if (this._activeTarget === 'journal') {
+            // Cible : textarea de note du Journal de bord
+            const textarea = document.getElementById('journalNoteInput');
+            if (!textarea) return;
+
+            const currentVal = textarea.value;
+            const prefix = currentVal.length > 0 && !/\s$/.test(currentVal) ? ' ' : '';
+            textarea.value = (currentVal + prefix + transcript).slice(0, 280);
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            textarea.focus();
+
+            UI.showNotification('Note dictée ajoutée', 'success');
         }
     },
 

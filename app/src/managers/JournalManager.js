@@ -188,7 +188,7 @@ export const JournalManager = {
      */
     updateEntry(studentId, entryId, { tags, note }) {
         const studentIndex = appState.generatedResults?.findIndex(s => s.id === studentId);
-        if (studentIndex === -1) return null;
+        if (studentIndex === -1 || studentIndex === undefined) return null;
 
         const journal = appState.generatedResults[studentIndex].journal;
         if (!journal) return null;
@@ -266,13 +266,6 @@ export const JournalManager = {
         return aggregated.sort((a, b) => b.count - a.count);
     },
 
-    /**
-     * Check if an entry is "isolated" (all its tags are below threshold)
-     * Used for visual feedback - isolated entries won't influence AI
-     * @param {Object} entry - Journal entry object
-     * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
-     * @returns {boolean} True if ALL tags in entry are below threshold
-     */
     /**
      * Get the effective journal threshold for a student/class
      * @param {string} [classId] - Optional class ID
@@ -394,9 +387,18 @@ export const JournalManager = {
 
         if (entries.length === 0) {
             return `
-                <div class="journal-empty">
-                    <iconify-icon icon="solar:book-2-linear"></iconify-icon>
-                    <span>Aucune observation</span>
+                <div class="journal-empty journal-empty-interactive" role="button" tabindex="0" aria-label="Ajouter une observation">
+                    <div class="journal-empty-icon-wrap">
+                        <iconify-icon icon="solar:notebook-linear"></iconify-icon>
+                    </div>
+                    <div class="journal-empty-content">
+                        <span class="journal-empty-title">Aucune observation pour cette période</span>
+                        <span class="journal-empty-subtitle">Consignez des faits marquants pour guider l'IA</span>
+                    </div>
+                    <span class="journal-empty-cta-badge">
+                        <iconify-icon icon="solar:add-circle-linear"></iconify-icon>
+                        <span>Ajouter</span>
+                    </span>
                 </div>
             `;
         }
@@ -422,10 +424,6 @@ export const JournalManager = {
             const tagsHTML = entry.tags.map(tagId => {
                 const tag = this.getTag(tagId);
                 if (!tag) return '';
-                const count = tagCounts[tagId] || 0;
-                // Show count badge if significant (≥ threshold)
-                // MODIFIED: Badge removed as per new design (detailed header)
-                // const countBadge = count >= threshold ? ` <small style="opacity:0.7">×${count}</small>` : '';
                 return `<span class="journal-tag" style="--tag-color: ${tag.color}">
                     <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
                 </span>`;
@@ -437,20 +435,27 @@ export const JournalManager = {
 
             // New design: Tooltip is only on the small 'i' icon, not the whole row
             const infoIcon = isIsolated
-                ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></div>`
+                ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
                 : '';
 
             return `
                 <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${entry.id}">
                     <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
                     <div class="journal-entry-content">
-                        <div class="journal-entry-tags">${tagsHTML}</div>
+                        <div class="journal-entry-tags">
+                            ${tagsHTML}
+                            ${infoIcon}
+                        </div>
                         ${entry.note ? `<div class="journal-entry-note">${entry.note}</div>` : ''}
                     </div>
-                    ${infoIcon}
-                    <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                    </button>
+                    <div class="journal-entry-actions">
+                        <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${entry.id}" aria-label="Modifier l'observation" data-tooltip="Modifier">
+                            <iconify-icon icon="solar:pen-linear"></iconify-icon>
+                        </button>
+                        <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${entry.id}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
+                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                        </button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -471,7 +476,7 @@ export const JournalManager = {
         const formattedDate = this.formatDate(dateStr);
 
         // Header Label
-        const labelIcon = isEdit ? 'solar:pen-new-square-linear' : 'solar:pen-linear';
+        const labelIcon = isEdit ? 'solar:pen-new-square-linear' : 'solar:add-circle-linear';
         const labelText = isEdit ? 'Modifier l\'observation' : 'Nouvelle observation';
 
         // Pre-render selected tags if editing
@@ -502,6 +507,16 @@ export const JournalManager = {
                         <iconify-icon icon="${labelIcon}"></iconify-icon>
                         <span class="journal-draft-title-text">${labelText}</span>
                         <span class="journal-draft-date-badge">${formattedDate}</span>
+                        <button type="button" id="journalNoteMicBtn" class="focus-mic-btn tooltip"
+                            data-tooltip="Dictée vocale" aria-label="Dicter la note">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                stroke-linejoin="round" width="1em" height="1em">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                            </svg>
+                        </button>
                     </div>
                     <button type="button" class="close-btn journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
                         <iconify-icon icon="ph:x"></iconify-icon>
@@ -534,7 +549,6 @@ export const JournalManager = {
                         Annuler
                     </button>
                     <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'}>
-                        <iconify-icon icon="ph:check-bold"></iconify-icon>
                         <span>${isEdit ? 'Mettre à jour' : 'Enregistrer'}</span>
                     </button>
                 </div>

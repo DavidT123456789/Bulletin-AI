@@ -918,6 +918,98 @@ export const FocusPanelManager = {
 
 
     /**
+     * Rafraîchit les données du Focus Panel pour la période actuelle sans réinitialiser le panneau ni le scroll
+     */
+    refreshPeriod() {
+        if (!this.isOpen()) return;
+
+        const currentPeriod = appState.currentPeriod;
+
+        if (this.isCreationMode) {
+            this._renderStudentDetailsTimeline(null, true);
+
+            const gradeLabel = document.getElementById('focusCurrentGradeLabel');
+            if (gradeLabel) gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
+
+            const appreciationTitle = document.getElementById('focusAppreciationTitle');
+            if (appreciationTitle) appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(currentPeriod, false)}`;
+
+            const gradeInput = document.getElementById('focusCurrentGradeInput');
+            if (gradeInput) gradeInput.value = '';
+
+            const contextInput = document.getElementById('focusContextInput');
+            if (contextInput) contextInput.value = '';
+
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            if (generateBtn) {
+                generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
+            }
+
+            const prevGradesEl = document.getElementById('focusPreviousGrades');
+            if (prevGradesEl) {
+                prevGradesEl.innerHTML = '';
+                const periods = Utils.getPeriods();
+                const currentIdx = periods.indexOf(currentPeriod);
+
+                periods.forEach((p, idx) => {
+                    if (idx >= currentIdx) return;
+
+                    const chip = document.createElement('span');
+                    chip.className = 'previous-grade-chip tooltip';
+                    const periodLabel = Utils.getPeriodLabel(p, true);
+                    chip.setAttribute('data-tooltip', `${periodLabel} : --`);
+                    const shortPeriod = Utils.getPeriodLabel(p, false);
+                    chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">--</span>`;
+                    prevGradesEl.appendChild(chip);
+
+                    const nextPeriod = periods[idx + 1];
+                    if (nextPeriod) {
+                        const evoEl = document.createElement('span');
+                        evoEl.className = 'evolution-container-inline';
+                        if (nextPeriod === currentPeriod) {
+                            evoEl.id = 'focusCurrentEvolutionArrow';
+                        }
+                        evoEl.innerHTML = '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
+                        prevGradesEl.appendChild(evoEl);
+                    }
+                });
+            }
+            return;
+        }
+
+        if (!this.currentStudentId) return;
+
+        const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
+        if (!result) return;
+
+        SpeechSynthesisManager.cancel();
+
+        // 1. Context card: Previous grades, current grade, and context input
+        this._renderGradesAndContext(result, currentPeriod);
+
+        // 2. Appreciation card
+        const appreciationTitle = document.getElementById('focusAppreciationTitle');
+        if (appreciationTitle) {
+            const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
+            appreciationTitle.textContent = `Appréciation ${periodLabel}`;
+        }
+        this._renderAppreciationText(result);
+
+        // 3. Generate button
+        this._updateGenerateButton(result);
+
+        // 4. AI indicator & Status badge
+        FocusPanelStatus.updateSourceIndicator(result);
+        FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+
+        // 5. Journal de bord
+        FocusPanelJournal.render(result);
+
+        // 6. Navigation controls
+        FocusPanelNavigation.updateControls();
+    },
+
+    /**
      * Ouvre le Focus Panel pour un élève
      * @param {string} studentId - ID de l'élève
      */
@@ -925,6 +1017,12 @@ export const FocusPanelManager = {
         this.isCreationMode = false;
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
+
+        // If panel is already open for THIS exact student (e.g. period change)
+        if (this.isOpen() && this.currentStudentId === studentId) {
+            this.refreshPeriod();
+            return;
+        }
 
         // CRITICAL FIX: Save context of PREVIOUS student BEFORE changing currentStudentId
         // This prevents race conditions where user switches during generation
@@ -1851,64 +1949,12 @@ export const FocusPanelManager = {
 
 
     /**
-     * Rend le contenu du Focus Panel - "Ultima" Redesign
-     * Popule les éléments HTML existants au lieu de les remplacer
+     * Rend les notes (historiques et courante) et le contexte pour la période spécifiée
      * @param {Object} result - Données de l'élève
+     * @param {string} currentPeriod - Période active
      * @private
      */
-    _renderContent(result) {
-        // Cancel speech synthesis when switching students
-        SpeechSynthesisManager.cancel();
-
-        // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) {
-            if (copyBtn.dataset.copyTimeout) {
-                clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
-                delete copyBtn.dataset.copyTimeout;
-            }
-            copyBtn.classList.remove('copied');
-            const icon = copyBtn.querySelector('iconify-icon');
-            if (icon) {
-                icon.setAttribute('icon', 'solar:copy-linear');
-            }
-        }
-
-        // Reset Refinement Buttons loading states to prevent bleed when switching students
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
-                btn.classList.remove('is-generating');
-            });
-        }
-
-        const currentPeriod = appState.currentPeriod;
-
-        // Exit creation mode when viewing existing student
-        // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
-
-        // === 0. HEADER: Avatar ===
-        // Avatar is now ONLY editable in edit mode (toggled by FocusPanelHeader)
-        // In read mode, avatar is display-only
-        const avatarContainer = document.getElementById('focusAvatarContainer');
-        if (avatarContainer) {
-            avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
-            avatarContainer.classList.add('focus-panel-avatar-container');
-
-            // Store result ID for later reference by edit mode
-            avatarContainer.dataset.studentId = result.id || '';
-
-            // Avatar is NOT editable in read mode - just display
-            // Edit mode will enable interactivity via FocusPanelHeader.toggleEditMode()
-        }
-
-        // === 1. HEADER: Student Name & Badges ===
-        FocusPanelHeader.updateHeaderName(result);
-
-        // === 2. HEADER: Status Badges ===
-        FocusPanelHeader.renderStatusBadges(result.studentData.statuses || []);
-
-        // === 3. CONTEXT CARD: Previous Grades ===
+    _renderGradesAndContext(result, currentPeriod) {
         const prevGradesEl = document.getElementById('focusPreviousGrades');
         const getEvolutionHtml = (gradeA, gradeB) => {
             if (gradeA === null || gradeA === undefined || gradeA === '' ||
@@ -2012,7 +2058,7 @@ export const FocusPanelManager = {
             });
         }
 
-        // === 5. CONTEXT CARD: Current Grade Input ===
+        // Current Grade Input
         const gradeLabel = document.getElementById('focusCurrentGradeLabel');
         if (gradeLabel) {
             gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
@@ -2033,7 +2079,6 @@ export const FocusPanelManager = {
                 : '';
             gradeInput.className = `context-grade-input grade-value ${initialGradeClass}`;
 
-            // Add tooltip showing current period details and evaluation count if available
             const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
             if (gradeWrapper) {
                 gradeWrapper.classList.add('tooltip');
@@ -2045,7 +2090,6 @@ export const FocusPanelManager = {
                 const val = gradeInput.value.replace(',', '.');
                 const grade = parseFloat(val);
                 
-                // Reset to default class
                 gradeInput.className = 'context-grade-input grade-value';
                 
                 let gradeToSave = null;
@@ -2066,7 +2110,6 @@ export const FocusPanelManager = {
                         r.studentData.periods[currentPeriod].grade = gradeToSave;
                         FocusPanelStatus.checkIfDataModified();
                         
-                        // Update current evolution arrow live
                         const arrowEl = document.getElementById('focusCurrentEvolutionArrow');
                         if (arrowEl) {
                             const periods = Utils.getPeriods();
@@ -2082,7 +2125,6 @@ export const FocusPanelManager = {
                             }
                         }
 
-                        // Update current period tooltip live
                         if (gradeWrapper) {
                             TooltipsUI.updateTooltip(gradeWrapper, getTooltipText(currentPeriod, gradeToSave, evalCount, true));
                         }
@@ -2091,15 +2133,75 @@ export const FocusPanelManager = {
             };
         }
 
-        // === 6. CONTEXT CARD: Context Textarea ===
+        // Context Textarea
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
-            // [FIX] Only show period-specific context, NOT legacy fallback
-            // Each period should have its own independent context
             const periodContext = result.studentData.periods?.[currentPeriod]?.context || '';
             contextInput.value = periodContext;
             this._autoResizeTextarea(contextInput);
         }
+    },
+
+    /**
+     * Rend le contenu du Focus Panel - "Ultima" Redesign
+     * Popule les éléments HTML existants au lieu de les remplacer
+     * @param {Object} result - Données de l'élève
+     * @private
+     */
+    _renderContent(result) {
+        // Cancel speech synthesis when switching students
+        SpeechSynthesisManager.cancel();
+
+        // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (copyBtn) {
+            if (copyBtn.dataset.copyTimeout) {
+                clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
+                delete copyBtn.dataset.copyTimeout;
+            }
+            copyBtn.classList.remove('copied');
+            const icon = copyBtn.querySelector('iconify-icon');
+            if (icon) {
+                icon.setAttribute('icon', 'solar:copy-linear');
+            }
+        }
+
+        // Reset Refinement Buttons loading states to prevent bleed when switching students
+        const refinementOptions = document.getElementById('focusRefinementOptions');
+        if (refinementOptions) {
+            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
+                btn.classList.remove('is-generating');
+            });
+        }
+
+        const currentPeriod = appState.currentPeriod;
+
+        // Exit creation mode when viewing existing student
+        // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
+
+        // === 0. HEADER: Avatar ===
+        // Avatar is now ONLY editable in edit mode (toggled by FocusPanelHeader)
+        // In read mode, avatar is display-only
+        const avatarContainer = document.getElementById('focusAvatarContainer');
+        if (avatarContainer) {
+            avatarContainer.innerHTML = StudentPhotoManager.getAvatarHTML(result, 'lg');
+            avatarContainer.classList.add('focus-panel-avatar-container');
+
+            // Store result ID for later reference by edit mode
+            avatarContainer.dataset.studentId = result.id || '';
+
+            // Avatar is NOT editable in read mode - just display
+            // Edit mode will enable interactivity via FocusPanelHeader.toggleEditMode()
+        }
+
+        // === 1. HEADER: Student Name & Badges ===
+        FocusPanelHeader.updateHeaderName(result);
+
+        // === 2. HEADER: Status Badges ===
+        FocusPanelHeader.renderStatusBadges(result.studentData.statuses || []);
+
+        // === 3-6. CONTEXT CARD: Grades & Context ===
+        this._renderGradesAndContext(result, currentPeriod);
 
         // === 7. APPRECIATION CARD: Title & Text Content ===
         const appreciationTitle = document.getElementById('focusAppreciationTitle');

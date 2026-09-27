@@ -153,6 +153,7 @@ describe('JournalManager', () => {
             expect(html).toContain('id="journalDraftCancelFooterBtn"');
             expect(html).toContain('id="journalDraftSaveBtn"');
             expect(html).toContain('Enregistrer');
+            expect(html).toContain('id="journalNoteMicBtn"');
         });
 
         it('should render edit mode with appropriate title and pre-filled data', () => {
@@ -170,6 +171,33 @@ describe('JournalManager', () => {
             expect(html).toContain('Note de test');
             expect(html).toContain('Mettre à jour');
             expect(html).toContain('is-editing');
+            expect(html).toContain('id="journalNoteMicBtn"');
+        });
+    });
+
+    describe('renderTimeline', () => {
+        it('should render interactive empty state when no entries exist', () => {
+            const html = JournalManager.renderTimeline('student-1', 'T1');
+
+            expect(html).toContain('journal-empty-interactive');
+            expect(html).toContain('role="button"');
+            expect(html).toContain('Aucune observation pour cette période');
+            expect(html).toContain('Ajouter');
+        });
+
+        it('should render entry with action buttons when entries exist', () => {
+            JournalManager.addEntry('student-1', {
+                tags: ['participation+'],
+                note: 'Élève actif'
+            });
+
+            const html = JournalManager.renderTimeline('student-1', 'T1');
+
+            expect(html).toContain('journal-timeline');
+            expect(html).toContain('journal-entry-actions');
+            expect(html).toContain('journal-entry-edit');
+            expect(html).toContain('journal-entry-delete');
+            expect(html).toContain('Élève actif');
         });
     });
 });

@@ -512,62 +512,7 @@ export const UI = {
 
         // Refresh Focus Panel if open to reflect new period
         if (FocusPanelManager?.isOpen()) {
-            if (FocusPanelManager.currentStudentId) {
-                FocusPanelManager.open(FocusPanelManager.currentStudentId);
-            } else {
-                FocusPanelManager._renderStudentDetailsTimeline(null, true);
-
-                const gradeLabel = document.getElementById('focusCurrentGradeLabel');
-                if (gradeLabel) {
-                    gradeLabel.textContent = Utils.getPeriodLabel(appState.currentPeriod, false);
-                }
-
-                const appreciationTitle = document.getElementById('focusAppreciationTitle');
-                if (appreciationTitle) {
-                    appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(appState.currentPeriod, false)}`;
-                }
-
-                const gradeInput = document.getElementById('focusCurrentGradeInput');
-                if (gradeInput) gradeInput.value = '';
-
-                const contextInput = document.getElementById('focusContextInput');
-                if (contextInput) contextInput.value = '';
-
-                const generateBtn = document.getElementById('focusGenerateBtn');
-                if (generateBtn) {
-                    generateBtn.innerHTML = '<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer';
-                }
-
-                const prevGradesEl = document.getElementById('focusPreviousGrades');
-                if (prevGradesEl) {
-                    prevGradesEl.innerHTML = '';
-                    const periods = Utils.getPeriods();
-                    const currentIdx = periods.indexOf(appState.currentPeriod);
-
-                    periods.forEach((p, idx) => {
-                        if (idx >= currentIdx) return;
-
-                        const chip = document.createElement('span');
-                        chip.className = 'previous-grade-chip tooltip';
-                        const periodLabel = Utils.getPeriodLabel(p, true);
-                        chip.setAttribute('data-tooltip', `${periodLabel} : --`);
-                        const shortPeriod = Utils.getPeriodLabel(p, false);
-                        chip.innerHTML = `<span class="period-prefix">${shortPeriod}</span><span class="prev-grade-value grade-value">--</span>`;
-                        prevGradesEl.appendChild(chip);
-
-                        const nextPeriod = periods[idx + 1];
-                        if (nextPeriod) {
-                            const evoEl = document.createElement('span');
-                            evoEl.className = 'evolution-container-inline';
-                            if (nextPeriod === appState.currentPeriod) {
-                                evoEl.id = 'focusCurrentEvolutionArrow';
-                            }
-                            evoEl.innerHTML = '<span class="grade-evolution neutral" style="opacity: 0.35;"><iconify-icon icon="solar:arrow-right-linear"></iconify-icon></span>';
-                            prevGradesEl.appendChild(evoEl);
-                        }
-                    });
-                }
-            }
+            FocusPanelManager.refreshPeriod();
         }
 
         StorageManager?.saveAppState();

@@ -40,6 +40,9 @@ describe('SpeechRecognitionManager', () => {
         delete window.SpeechRecognition;
         delete window.webkitSpeechRecognition;
         document.body.innerHTML = '';
+        SpeechRecognitionManager._recognition = null;
+        SpeechRecognitionManager._isRecording = false;
+        SpeechRecognitionManager._isSupported = false;
     });
 
     it('should initialize correctly when supported', () => {
@@ -70,6 +73,37 @@ describe('SpeechRecognitionManager', () => {
         SpeechRecognitionManager.init();
 
         expect(focusMicBtn.style.display).toBe('none');
+    });
+
+    it('should support dynamic setupButton for journal note dictation', () => {
+        document.body.innerHTML = `
+            <button id="journalMicBtn"></button>
+            <textarea id="journalNoteInput"></textarea>
+        `;
+        const journalMicBtn = document.getElementById('journalMicBtn');
+        const journalNoteInput = document.getElementById('journalNoteInput');
+
+        SpeechRecognitionManager.init();
+        SpeechRecognitionManager.setupButton(journalMicBtn, 'journal');
+
+        // Click to start recording
+        journalMicBtn.click();
+        expect(mockRecognition.start).toHaveBeenCalled();
+
+        // Simulate voice result
+        mockRecognition.onstart();
+        mockRecognition.onresult({
+            resultIndex: 0,
+            results: [[{ transcript: 'Élève très motivé' }]]
+        });
+        mockRecognition.results = [[{ transcript: 'Élève très motivé' }]];
+        // Call result directly with isFinal
+        mockRecognition.onresult({
+            resultIndex: 0,
+            results: [{ 0: { transcript: 'Élève très motivé' }, isFinal: true }]
+        });
+
+        expect(journalNoteInput.value).toBe('Élève très motivé');
     });
 });
 

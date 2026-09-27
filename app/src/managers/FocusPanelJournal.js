@@ -5,12 +5,13 @@
  * @module managers/FocusPanelJournal
  */
 
-import { appState, userSettings } from '../state/State.js';
+import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { JournalManager } from './JournalManager.js';
 import { ClassManager } from './ClassManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { UI } from './UIManager.js';
+import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 
 /**
  * Journal system for student observation notes
@@ -49,7 +50,7 @@ export const FocusPanelJournal = {
      * @private
      */
     _getCurrentStudentId() {
-        return this._callbacks.getCurrentStudentId ? this._callbacks.getCurrentStudentId() : null;
+        return this._callbacks.getCurrentStudentId?.() ?? null;
     },
 
     /**
@@ -57,9 +58,7 @@ export const FocusPanelJournal = {
      * @private
      */
     _refreshStatus() {
-        if (this._callbacks.onStatusRefresh) {
-            this._callbacks.onStatusRefresh();
-        }
+        this._callbacks.onStatusRefresh?.();
     },
 
     /**
@@ -86,9 +85,14 @@ export const FocusPanelJournal = {
                 this._updateThresholdUI();
             });
 
-            // Close on outside click
+            // Close on outside click or Escape key
             document.addEventListener('click', (e) => {
                 if (!thresholdControl.contains(e.target)) {
+                    thresholdControl.classList.remove('open');
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && thresholdControl.classList.contains('open')) {
                     thresholdControl.classList.remove('open');
                 }
             });
@@ -130,20 +134,114 @@ export const FocusPanelJournal = {
             });
         }
 
+        // Note button in header (Ajouter une note)
+        const noteBtn = document.getElementById('focusJournalNoteBtn');
+        if (noteBtn) {
+            noteBtn.addEventListener('click', () => {
+                const draftPreview = document.getElementById('journalDraftPreview');
+                if (draftPreview) {
+                    draftPreview.classList.add('visible');
+                    const journalContent = document.getElementById('focusJournalContent');
+                    if (journalContent) {
+                        requestAnimationFrame(() => {
+                            journalContent.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
+                    }
+                }
+                this.toggleQuickAdd(true, true);
+            });
+        }
+
         // Journal Entry Click (Delegated Edit)
         const journalContent = document.getElementById('focusJournalContent');
         if (journalContent) {
             journalContent.addEventListener('click', (e) => {
-                const entryEl = e.target.closest('.journal-entry');
                 const deleteBtn = e.target.closest('.journal-entry-delete');
+                const infoIcon = e.target.closest('.journal-entry-info');
+                if (deleteBtn || infoIcon) return;
 
-                // If clicked on entry but NOT on delete button
-                if (entryEl && !deleteBtn) {
+                const editBtn = e.target.closest('.journal-entry-edit');
+                const entryEl = e.target.closest('.journal-entry');
+
+                if (editBtn) {
+                    e.stopPropagation();
+                    const entryId = editBtn.dataset.entryId;
+                    this._onEditEntry(entryId);
+                } else if (entryEl) {
                     const entryId = entryEl.dataset.entryId;
                     this._onEditEntry(entryId);
                 }
             });
         }
+    },
+
+    /**
+     * Initialize tooltips for a container
+     * @param {HTMLElement} container
+     * @private
+     */
+    _initTooltips(container) {
+        if (!container) return;
+        setTimeout(() => {
+            container.querySelectorAll('[data-tooltip]').forEach(el => {
+                const tooltipText = el.getAttribute('data-tooltip');
+                if (tooltipText) {
+                    TooltipsUI.updateTooltip(el, tooltipText);
+                }
+            });
+        }, 0);
+    },
+
+    /**
+     * Attach dynamic listeners for draft actions
+     * @param {HTMLElement} container
+     * @private
+     */
+    _setupDraftListeners(container) {
+        const draftCancel = container.querySelector('#journalDraftCancelBtn');
+        const draftCancelFooter = container.querySelector('#journalDraftCancelFooterBtn');
+        const draftSave = container.querySelector('#journalDraftSaveBtn');
+        const draftInput = container.querySelector('#journalNoteInput');
+
+        if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false));
+        if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false));
+
+        if (draftSave) {
+            draftSave.addEventListener('click', (e) => {
+                e.preventDefault();
+                this._saveEntry();
+            });
+            draftSave.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        if (draftInput) {
+            draftInput.addEventListener('input', () => {
+                const charCount = container.querySelector('#journalCharCount');
+                if (charCount) charCount.textContent = draftInput.value.length;
+                this._updateSaveButton();
+            });
+            draftInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    const btn = container.querySelector('#journalDraftSaveBtn');
+                    if (btn && !btn.disabled) this._saveEntry();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.toggleQuickAdd(false);
+                }
+            });
+        }
+
+        // Voice dictation mic button
+        const micBtn = container.querySelector('#journalNoteMicBtn');
+        if (micBtn) {
+            SpeechRecognitionManager.setupButton(micBtn, 'journal');
+        }
+
+        this._updatePillDirectStates();
+        this._setupDraftPillButtons(container);
     },
 
     /**
@@ -165,97 +263,113 @@ export const FocusPanelJournal = {
         // Update threshold UI (button label + popover value)
         this._updateThresholdUI();
 
-        // Render timeline combined with draft preview
         const contentEl = document.getElementById('focusJournalContent');
-        if (contentEl) {
-            // Logic: If editing an entry, the draft preview is rendered INLINE in the timeline
-            // If NOT editing, the draft preview is rendered at the top
+        if (!contentEl) return;
 
-            let html = '';
-
-            // Only render top draft preview if NOT editing an existing entry
-            if (!this._editingJournalEntryId) {
-                html += JournalManager.renderDraftPreview();
-            }
-
-            html += JournalManager.renderTimeline(
+        // If editing an entry inline, render the inline editor in full
+        if (this._editingJournalEntryId) {
+            TooltipsUI.cleanupTooltipsIn(contentEl);
+            contentEl.innerHTML = JournalManager.renderTimeline(
                 result.id,
                 appState.currentPeriod,
                 highlightEntryId,
                 this._editingJournalEntryId
             );
-
-            // Destroy existing tooltips in the container using centralized manager
-            TooltipsUI.cleanupTooltipsIn(contentEl);
-
-            contentEl.innerHTML = html;
-
-            // Attach dynamic listeners for draft actions (Cancel/Save are same IDs)
-            const draftCancel = document.getElementById('journalDraftCancelBtn');
-            const draftCancelFooter = document.getElementById('journalDraftCancelFooterBtn');
-            const draftSave = document.getElementById('journalDraftSaveBtn');
-            const draftInput = document.getElementById('journalNoteInput');
-
-            if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false));
-            if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false));
-
-            if (draftSave) {
-                draftSave.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this._saveEntry();
-                });
-                // Prevent virtual keyboard blur from dropping click on mobile
-                draftSave.addEventListener('pointerdown', (e) => {
-                    e.preventDefault();
-                });
-            }
-
-            if (draftInput) {
-                draftInput.addEventListener('input', () => {
-                    const charCount = document.getElementById('journalCharCount');
-                    if (charCount) charCount.textContent = draftInput.value.length;
-                    this._updateSaveButton();
-                });
-                draftInput.addEventListener('keydown', (e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                        e.preventDefault();
-                        const btn = document.getElementById('journalDraftSaveBtn');
-                        if (btn && !btn.disabled) this._saveEntry();
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        this.toggleQuickAdd(false);
-                    }
-                });
-            }
-
-            // Sync pill states
-            this._updatePillDirectStates();
-
-            // Attach pill button handlers (inside draft)
-            this._setupDraftPillButtons(contentEl);
-
-            // Add delete handlers
+            this._setupDraftListeners(contentEl);
             this._setupDeleteHandlers(contentEl, result);
-
-            // Re-attach listeners for populated chips (if inline editing or pre-filled)
             this._setupChipRemoveHandlers(contentEl);
-
-            // Initialize tooltips for the timeline entries
-            setTimeout(() => {
-                contentEl.querySelectorAll('[data-tooltip]').forEach(el => {
-                    const tooltipText = el.getAttribute('data-tooltip');
-                    if (tooltipText) {
-                        TooltipsUI.updateTooltip(el, tooltipText);
-                    }
-                });
-            }, 0);
+            this._initTooltips(contentEl);
+            this._updateCountBadge(result);
+            return;
         }
+
+        // Standard view: Ensure top draft preview exists
+        let draftPreview = contentEl.querySelector('#journalDraftPreview');
+        let timelineContainer = contentEl.querySelector('#journalTimelineContainer');
+
+        if (!draftPreview || !timelineContainer) {
+            TooltipsUI.cleanupTooltipsIn(contentEl);
+            contentEl.innerHTML = `
+                ${JournalManager.renderDraftPreview()}
+                <div class="journal-timeline-container" id="journalTimelineContainer"></div>
+            `;
+            draftPreview = contentEl.querySelector('#journalDraftPreview');
+            timelineContainer = contentEl.querySelector('#journalTimelineContainer');
+            this._setupDraftListeners(contentEl);
+        } else {
+            draftPreview.classList.remove('closing');
+            const section = document.getElementById('focusJournalSection');
+            if (!section?.classList.contains('editing')) {
+                draftPreview.classList.remove('visible', 'is-editing');
+            }
+        }
+
+        const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
+        const isNewEmpty = entries.length === 0;
+        const existingEmpty = timelineContainer.querySelector('.journal-empty');
+
+        if (isNewEmpty && existingEmpty) {
+            // Stable empty state: keep DOM node intact to eliminate disappearance flicker and layout shift
+        } else if (isNewEmpty) {
+            TooltipsUI.cleanupTooltipsIn(timelineContainer);
+            timelineContainer.innerHTML = JournalManager.renderTimeline(
+                result.id,
+                appState.currentPeriod,
+                null,
+                null
+            );
+            const emptyEl = timelineContainer.querySelector('.journal-empty');
+            emptyEl?.classList.add('fade-in');
+        } else {
+            TooltipsUI.cleanupTooltipsIn(timelineContainer);
+            timelineContainer.innerHTML = JournalManager.renderTimeline(
+                result.id,
+                appState.currentPeriod,
+                highlightEntryId,
+                null
+            );
+            const timelineEl = timelineContainer.querySelector('.journal-timeline');
+            timelineEl?.classList.add('fade-in');
+
+            this._setupDeleteHandlers(timelineContainer, result);
+            this._setupChipRemoveHandlers(timelineContainer);
+            this._initTooltips(timelineContainer);
+        }
+
+        // Interactive empty state: click to open draft
+        this._setupEmptyStateHandler(timelineContainer);
 
         // Update count badge
         this._updateCountBadge(result);
+    },
 
-        // Header + button: opens the draft
-        this._setupAddButton();
+    /**
+     * Setup click handler on the interactive empty state to open the draft editor
+     * @param {HTMLElement} container
+     * @private
+     */
+    _setupEmptyStateHandler(container) {
+        const emptyEl = container?.querySelector('.journal-empty-interactive');
+        if (!emptyEl || emptyEl._journalBound) return;
+
+        emptyEl._journalBound = true;
+
+        emptyEl.addEventListener('click', () => {
+            const draftPreview = document.getElementById('journalDraftPreview');
+            if (draftPreview) {
+                draftPreview.classList.add('visible');
+                const journalContent = document.getElementById('focusJournalContent');
+                journalContent?.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            this.toggleQuickAdd(true, true);
+        });
+
+        emptyEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                emptyEl.click();
+            }
+        });
     },
 
     /**
@@ -276,28 +390,40 @@ export const FocusPanelJournal = {
                 if (!btn.classList.contains('confirm-delete')) {
                     // Reset any other active buttons first
                     contentEl.querySelectorAll('.confirm-delete').forEach(b => b.classList.remove('confirm-delete'));
+                    contentEl.querySelectorAll('.has-confirm-delete').forEach(a => a.classList.remove('has-confirm-delete'));
 
                     btn.classList.add('confirm-delete');
+                    btn.closest('.journal-entry-actions')?.classList.add('has-confirm-delete');
+                    btn._tippy?.hide();
+
+                    const resetConfirm = () => {
+                        btn.classList.remove('confirm-delete');
+                        btn.closest('.journal-entry-actions')?.classList.remove('has-confirm-delete');
+                        clearTimeout(deleteTimeout);
+                        document.removeEventListener('click', outsideClickListener);
+                        document.removeEventListener('keydown', escapeListener);
+                    };
+
+                    const outsideClickListener = (ev) => {
+                        if (!btn.contains(ev.target)) resetConfirm();
+                    };
+
+                    const escapeListener = (ev) => {
+                        if (ev.key === 'Escape') resetConfirm();
+                    };
 
                     // Auto-reset after 3s
-                    deleteTimeout = setTimeout(() => {
-                        btn.classList.remove('confirm-delete');
-                    }, 3000);
+                    deleteTimeout = setTimeout(resetConfirm, 3000);
 
-                    // Handle outside click
-                    const outsideClickListener = (ev) => {
-                        if (!btn.contains(ev.target)) {
-                            btn.classList.remove('confirm-delete');
-                            clearTimeout(deleteTimeout);
-                            document.removeEventListener('click', outsideClickListener);
-                        }
-                    };
                     // Delay slightly to avoid catching current click
-                    setTimeout(() => document.addEventListener('click', outsideClickListener), 0);
+                    setTimeout(() => {
+                        document.addEventListener('click', outsideClickListener);
+                        document.addEventListener('keydown', escapeListener);
+                    }, 0);
                 }
                 // Second click: execute delete
                 else {
-                    clearTimeout(deleteTimeout);
+                    resetConfirm();
 
                     // Animate removal
                     const entryEl = btn.closest('.journal-entry');
@@ -359,23 +485,13 @@ export const FocusPanelJournal = {
                     const isBelow = item.count < threshold;
                     const belowClass = isBelow ? 'below-threshold' : '';
                     return `
-                    <span class="journal-tag ${belowClass}" style="--tag-color: ${item.color}; margin-right: 0; cursor: help;" data-tooltip="${item.label} : ${item.count}">
+                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}" data-tooltip="${item.label} : ${item.count}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
 
                 countBadge.innerHTML = html;
-
-                // Override default badge styles to act as a container
-                countBadge.style.display = 'inline-flex';
-                countBadge.style.gap = '6px';
-                countBadge.style.background = 'transparent';
-                countBadge.style.padding = '0';
-                countBadge.style.minWidth = 'auto';
-                countBadge.style.boxShadow = 'none';
-                countBadge.style.border = 'none';
-                countBadge.style.fontSize = 'inherit';
-                countBadge.style.height = 'auto';
+                countBadge.classList.remove('is-hidden');
 
                 // Initialize tooltips for the new elements manually since they are created dynamically
                 setTimeout(() => {
@@ -387,38 +503,9 @@ export const FocusPanelJournal = {
                     });
                 }, 50);
             } else {
-                countBadge.style.display = 'none';
+                countBadge.innerHTML = '';
+                countBadge.classList.add('is-hidden');
             }
-        }
-    },
-
-    /**
-     * Setup add button click handler
-     * @private
-     */
-    _setupAddButton() {
-        const addBtn = document.getElementById('focusJournalNoteBtn');
-        if (addBtn) {
-            // Remove old listeners by cloning
-            const newBtn = addBtn.cloneNode(true);
-            addBtn.parentNode.replaceChild(newBtn, addBtn);
-
-            newBtn.addEventListener('click', () => {
-                // Show draft preview
-                const draftPreview = document.getElementById('journalDraftPreview');
-                if (draftPreview) {
-                    draftPreview.classList.add('visible');
-                    // Auto-scroll journal content to top to show draft
-                    const journalContent = document.getElementById('focusJournalContent');
-                    if (journalContent) {
-                        requestAnimationFrame(() => {
-                            journalContent.scrollTo({ top: 0, behavior: 'smooth' });
-                        });
-                    }
-                }
-                // Open editing mode
-                this.toggleQuickAdd(true, true);
-            });
         }
     },
 
@@ -577,9 +664,24 @@ export const FocusPanelJournal = {
             const finishClose = () => {
                 this._editingJournalEntryId = null;
                 this._selectedJournalTags = [];
+                section?.classList.remove('editing');
+                const draft = document.getElementById('journalDraftPreview');
+                if (draft) {
+                    draft.classList.remove('visible', 'closing', 'is-editing');
+                    const noteInput = draft.querySelector('#journalNoteInput');
+                    if (noteInput) noteInput.value = '';
+                    const charCount = draft.querySelector('#journalCharCount');
+                    if (charCount) charCount.textContent = '0';
+                    const selectedTags = draft.querySelector('#journalSelectedTags');
+                    if (selectedTags) selectedTags.innerHTML = '';
+                    const saveBtn = draft.querySelector('#journalDraftSaveBtn');
+                    if (saveBtn) saveBtn.disabled = true;
+                }
+                this._updatePillDirectStates();
+                const contentEl = document.getElementById('focusJournalContent');
+                contentEl?.querySelectorAll('.journal-crossfade-wrapper').forEach(w => w.remove());
                 const result = getCurrentResult();
                 if (result) this.render(result);
-                section?.classList.remove('editing');
             };
 
             if (isVisible) {
@@ -589,7 +691,7 @@ export const FocusPanelJournal = {
                     if (entry) {
                         // Build the original entry HTML to inject
                         const tagCounts = JournalManager.countTags(studentId, appState.currentPeriod);
-                        const threshold = appState.journalThreshold ?? 2;
+                        const threshold = JournalManager.getThreshold();
                         const isIsolated = JournalManager.isEntryIsolated(entry, tagCounts);
 
                         const tagsHTML = entry.tags.map(tagId => {
@@ -601,20 +703,27 @@ export const FocusPanelJournal = {
                         }).join('');
 
                         const infoIcon = isIsolated
-                            ? `<div class="journal-entry-info" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></div>`
+                            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
                             : '';
 
                         const entryHTML = `
                             <div class="journal-entry crossfade-in ${isIsolated ? 'isolated' : ''}" data-entry-id="${entry.id}">
                                 <div class="journal-entry-date">${JournalManager.formatDate(entry.date)}</div>
                                 <div class="journal-entry-content">
-                                    <div class="journal-entry-tags">${tagsHTML}</div>
+                                    <div class="journal-entry-tags">
+                                        ${tagsHTML}
+                                        ${infoIcon}
+                                    </div>
                                     ${entry.note ? `<div class="journal-entry-note">${entry.note}</div>` : ''}
                                 </div>
-                                ${infoIcon}
-                                <button class="journal-entry-delete" data-entry-id="${entry.id}" aria-label="Supprimer">
-                                    <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                                </button>
+                                <div class="journal-entry-actions">
+                                    <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${entry.id}" aria-label="Modifier l'observation" data-tooltip="Modifier">
+                                        <iconify-icon icon="solar:pen-linear"></iconify-icon>
+                                    </button>
+                                    <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${entry.id}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
+                                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                                    </button>
+                                </div>
                             </div>
                         `;
 
@@ -622,7 +731,7 @@ export const FocusPanelJournal = {
                         const entryWrapper = document.createElement('div');
                         entryWrapper.className = 'journal-crossfade-wrapper';
                         entryWrapper.innerHTML = entryHTML;
-                        draftPreview.parentNode.insertBefore(entryWrapper, draftPreview.nextSibling);
+                        draftPreview.after(entryWrapper);
 
                         // Trigger crossfade animation
                         draftPreview.classList.add('closing');
@@ -663,7 +772,7 @@ export const FocusPanelJournal = {
                 }
                 const headerIcon = document.querySelector('.journal-draft-title iconify-icon');
                 if (headerIcon) {
-                    headerIcon.setAttribute('icon', 'solar:pen-linear');
+                    headerIcon.setAttribute('icon', 'solar:add-circle-linear');
                 }
                 const charCount = document.getElementById('journalCharCount');
                 if (charCount) charCount.textContent = '0';
@@ -882,6 +991,22 @@ export const FocusPanelJournal = {
                 // Reset editing state
                 this._editingJournalEntryId = null;
                 this._selectedJournalTags = [];
+                const section = document.getElementById('focusJournalSection');
+                section?.classList.remove('editing');
+
+                const draft = document.getElementById('journalDraftPreview');
+                if (draft) {
+                    draft.classList.remove('visible', 'closing', 'is-editing');
+                    const noteInput = draft.querySelector('#journalNoteInput');
+                    if (noteInput) noteInput.value = '';
+                    const charCount = draft.querySelector('#journalCharCount');
+                    if (charCount) charCount.textContent = '0';
+                    const selectedTags = draft.querySelector('#journalSelectedTags');
+                    if (selectedTags) selectedTags.innerHTML = '';
+                    const saveBtn = draft.querySelector('#journalDraftSaveBtn');
+                    if (saveBtn) saveBtn.disabled = true;
+                }
+                this._updatePillDirectStates();
 
                 // Re-render journal
                 const result = appState.generatedResults.find(r => r.id === studentId);
@@ -890,9 +1015,6 @@ export const FocusPanelJournal = {
                     const highlightId = wasEditingId ? null : entry.id;
                     this.render(result, highlightId);
                 }
-
-                const section = document.getElementById('focusJournalSection');
-                section?.classList.remove('editing');
             } else {
                 // If failed, re-enable button and remove closing class
                 if (saveBtn) saveBtn.disabled = false;
