@@ -1354,6 +1354,17 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(HistoryManager.isOpen('scConfigPopover')).toBe(false);
             expect(SeatingChartManager._configPopoverOpen).toBe(false);
         });
+
+        it('devrait formater le tooltip de l’élève en vue Plan sous la forme Prénom NOM', () => {
+            const student = { id: 's-tooltip-test', nom: 'Vervy', prenom: 'Paul' };
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._studentMap = new Map([['s-tooltip-test', student]]);
+            SeatingChartManager._gridState = [['s-tooltip-test']];
+
+            const cell = SeatingChartManager._createCell(0, 0);
+
+            expect(cell.getAttribute('data-tooltip')).toBe('Paul VERVY');
+        });
     });
 });
 

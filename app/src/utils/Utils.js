@@ -319,6 +319,37 @@ export const Utils = {
     },
 
     /**
+     * Formate le nom d'un élève en ordre pédagogique / oral (Prénom NOM en majuscules)
+     * Recommandé pour les tooltips en vue Plan pour une continuité cognitive avec l'étiquette "Prénom N."
+     * @param {string} nom - Nom de famille
+     * @param {string} prenom - Prénom
+     * @returns {string} Le nom formaté (ex: "Paul VERVY")
+     */
+    formatStudentFirstLastName(nom, prenom) {
+        const nomUpper = (nom || '').trim().toUpperCase();
+        const prenomClean = (prenom || '').trim();
+        return `${prenomClean} ${nomUpper}`.trim();
+    },
+
+    /**
+     * Formate l'étiquette courte d'un élève (Prénom + Initiale du nom) pour la vue Plan
+     * Permet une micro-hiérarchie visuelle raffinée (initiale stylisée via .sc-cell-initial)
+     * @param {string} nom - Nom de famille
+     * @param {string} prenom - Prénom
+     * @param {boolean} [html=false] - Si true, encapsule l'initiale dans un span .sc-cell-initial
+     * @returns {string} L'étiquette formatée (ex: "Paul V." ou "Paul <span class=\"sc-cell-initial\">V.</span>")
+     */
+    formatStudentInitialLabel(nom, prenom, html = false) {
+        const prenomClean = (prenom || '').trim();
+        const initialLetter = (nom || '').trim().charAt(0).toUpperCase();
+        if (!initialLetter) return prenomClean;
+        if (html) {
+            return `${prenomClean} <span class="sc-cell-initial">${initialLetter}.</span>`.trim();
+        }
+        return `${prenomClean} ${initialLetter}.`.trim();
+    },
+
+    /**
      * Formate un nom de classe selon les conventions typographiques françaises (ex: "3 1" -> "3ᵉ1", "5°2" -> "5ᵉ2")
      * @param {string} name - Nom brut de la classe
      * @returns {string} Nom de classe formaté de façon conventionnelle

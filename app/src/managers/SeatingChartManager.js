@@ -1513,7 +1513,10 @@ export const SeatingChartManager = {
             if (this._isLocked) {
                 const student = this._studentMap?.get(cell.dataset.resultId);
                 if (student) {
-                    cell.setAttribute('data-tooltip', Utils.formatStudentName(student.nom, student.prenom));
+                    let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
+                    if (student.isNew) tooltipText += ' • Nouveau';
+                    if (student.isDeparted) tooltipText += ' • Départ';
+                    cell.setAttribute('data-tooltip', tooltipText);
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
@@ -2331,7 +2334,7 @@ export const SeatingChartManager = {
             if (isPinned) cell.classList.add('pinned');
             cell.draggable = !this._isLocked && !isPinned;
 
-            let tooltipText = Utils.formatStudentName(student.nom, student.prenom);
+            let tooltipText = Utils.formatStudentFirstLastName(student.nom, student.prenom);
             if (isNew) tooltipText += ' • Nouveau';
             if (isDeparted) tooltipText += ' • Départ';
 
@@ -2345,7 +2348,7 @@ export const SeatingChartManager = {
 
             cell.innerHTML = `
                 ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
-                <span class="sc-cell-name">${student.prenom || ''} ${(student.nom || '')[0] || ''}.</span>
+                <span class="sc-cell-name">${Utils.formatStudentInitialLabel(student.nom, student.prenom, true)}</span>
                 ${statusBadgeHTML}
                 <button class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer" data-tooltip="Retirer">
                     <iconify-icon icon="ph:x"></iconify-icon>
@@ -2425,17 +2428,17 @@ export const SeatingChartManager = {
             cell.classList.add('occupied', 'sc-cell-stacked');
             cell.dataset.resultId = students[0].id;
 
-            const tooltipNames = students.map(s => Utils.formatStudentName(s.nom, s.prenom)).join(' • ');
+            const tooltipNames = students.map(s => Utils.formatStudentFirstLastName(s.nom, s.prenom)).join(' • ');
             cell.setAttribute('data-tooltip', tooltipNames);
 
             const avatarsHtml = students.map((s, idx) => `
-                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" title="${Utils.formatStudentName(s.nom, s.prenom)}">
+                <div class="sc-stacked-avatar" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" title="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                 </div>
             `).join('');
 
             const namesHtml = students.map(s => `
-                <span class="sc-stacked-name" data-result-id="${s.id}" title="${Utils.formatStudentName(s.nom, s.prenom)}">${s.prenom || ''} ${(s.nom || '')[0] || ''}.</span>
+                <span class="sc-stacked-name" data-result-id="${s.id}" title="${Utils.formatStudentFirstLastName(s.nom, s.prenom)}">${Utils.formatStudentInitialLabel(s.nom, s.prenom, true)}</span>
             `).join('');
 
             cell.innerHTML = `

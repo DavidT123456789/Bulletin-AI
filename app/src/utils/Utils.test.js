@@ -263,6 +263,38 @@ describe('Utils', () => {
         });
     });
 
+    describe('formatStudentFirstLastName', () => {
+        it('devrait formater le prénom suivi du NOM en majuscule', () => {
+            expect(Utils.formatStudentFirstLastName('VERVY', 'Paul')).toBe('Paul VERVY');
+            expect(Utils.formatStudentFirstLastName('vervy', 'paul')).toBe('paul VERVY');
+            expect(Utils.formatStudentFirstLastName('MARTIN', 'Lucas')).toBe('Lucas MARTIN');
+        });
+
+        it('devrait gérer les valeurs nulles ou manquantes gracieusement', () => {
+            expect(Utils.formatStudentFirstLastName('VERVY', null)).toBe('VERVY');
+            expect(Utils.formatStudentFirstLastName(null, 'Paul')).toBe('Paul');
+            expect(Utils.formatStudentFirstLastName('', '')).toBe('');
+        });
+    });
+
+    describe('formatStudentInitialLabel', () => {
+        it('devrait formater en texte brut (Prénom I.)', () => {
+            expect(Utils.formatStudentInitialLabel('Vervy', 'Paul')).toBe('Paul V.');
+            expect(Utils.formatStudentInitialLabel('martin', 'Lucas')).toBe('Lucas M.');
+        });
+
+        it('devrait formater en HTML avec le span pour l’initiale', () => {
+            expect(Utils.formatStudentInitialLabel('Vervy', 'Paul', true)).toBe('Paul <span class="sc-cell-initial">V.</span>');
+        });
+
+        it('devrait gérer l’absence de nom ou de prénom', () => {
+            expect(Utils.formatStudentInitialLabel('', 'Paul')).toBe('Paul');
+            expect(Utils.formatStudentInitialLabel('Vervy', '')).toBe('V.');
+            expect(Utils.formatStudentInitialLabel('Vervy', '', true)).toBe('<span class="sc-cell-initial">V.</span>');
+            expect(Utils.formatStudentInitialLabel('', '')).toBe('');
+        });
+    });
+
     describe('getOriginClass', () => {
         it('devrait retourner la classe d\'origine si différente de la classe courante', () => {
             const student = { nom: 'BOUKHARI', prenom: 'Sami', studentData: { classe: '3 1' } };

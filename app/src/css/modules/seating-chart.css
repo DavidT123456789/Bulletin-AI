@@ -1238,16 +1238,23 @@
 .sc-drag-clone .sc-student-chip-name,
 .sc-touch-ghost .sc-cell-name,
 .sc-touch-ghost .sc-student-chip-name {
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 550;
+    color: color-mix(in srgb, var(--text-primary) 65%, var(--text-secondary));
     max-width: 80px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    margin-top: 4px;
+    margin-top: 5px;
     line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.sc-cell-initial {
+    font-weight: 450;
+    color: var(--text-tertiary);
+    margin-left: 1px;
 }
 
 /* ────────── CELL ACTIONS (Remove / Pin) ────────── */
@@ -3482,9 +3489,9 @@
 
 .sc-stacked-name {
     font-size: 0.67rem;
-    font-weight: 600;
+    font-weight: 550;
     line-height: 1.15;
-    color: var(--text-primary);
+    color: color-mix(in srgb, var(--text-primary) 65%, var(--text-secondary));
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
