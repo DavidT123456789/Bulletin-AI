@@ -1337,10 +1337,10 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
         });
 
         it('devrait calculer un plafond de zoom généreux et adapté selon l’échelle d’ajustement', () => {
-            expect(SeatingChartManager._getMaxZoomScale(0.4)).toBe(1.6);
-            expect(SeatingChartManager._getMaxZoomScale(0.7)).toBe(1.75);
-            expect(SeatingChartManager._getMaxZoomScale(0.8)).toBe(2.0);
-            expect(SeatingChartManager._getMaxZoomScale(1.0)).toBe(2.2);
+            expect(SeatingChartManager._getMaxZoomScale(0.4)).toBe(1.8);
+            expect(SeatingChartManager._getMaxZoomScale(0.7)).toBe(1.96);
+            expect(SeatingChartManager._getMaxZoomScale(0.8)).toBe(2.24);
+            expect(SeatingChartManager._getMaxZoomScale(1.0)).toBe(2.5);
         });
 
         it('devrait déclencher un rebond élastique (overscroll bounce) sur les bords lors du scroll', () => {
