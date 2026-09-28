@@ -4054,12 +4054,15 @@
     flex: 1;
     min-width: 0;
     height: 100%;
-    padding: 0 !important;
+    padding: 0 4px 0 2px !important;
     margin: 0 !important;
     border: none !important;
     background: transparent !important;
     color: var(--text-primary);
+    caret-color: var(--text-primary);
     font-size: 0.82rem;
+    font-style: normal !important;
+    line-height: 1.2;
     font-family: inherit;
     outline: none !important;
     box-shadow: none !important;
@@ -4068,6 +4071,7 @@
 .sc-floating-search-input-box input::placeholder {
     color: var(--text-tertiary);
     font-size: 0.8rem;
+    font-style: normal !important;
     opacity: 0.85;
 }
 
