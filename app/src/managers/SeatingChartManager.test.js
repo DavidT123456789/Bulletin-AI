@@ -1217,7 +1217,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Fin de geste sous le plafond min -> doit rebondir vers minScale (0.6)
             SeatingChartManager._endPinch(pinchState, gridArea);
 
-            expect(hapticSpy).toHaveBeenCalledWith(14);
+            expect(hapticSpy).not.toHaveBeenCalled();
             expect(board.style.transition).toContain('transform');
 
             // Simuler transitionend
@@ -1251,7 +1251,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Fin de geste au dessus du plafond max -> rebond vers maxScale (1.5)
             SeatingChartManager._endPinch(pinchState, gridArea);
 
-            expect(hapticSpy).toHaveBeenCalledWith(14);
+            expect(hapticSpy).not.toHaveBeenCalled();
             expect(board.style.transition).toContain('transform');
 
             // Simuler transitionend
@@ -1360,7 +1360,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             gridArea.dispatchEvent(touchMove);
 
             expect(board.style.transform).toContain('translate3d');
-            expect(hapticSpy).toHaveBeenCalledWith(8);
+            expect(hapticSpy).not.toHaveBeenCalled();
 
             // Relâchement
             const touchEnd = new Event('touchend');
@@ -1393,7 +1393,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Appel de _releaseOverscrollBounce avec overscroll existant et vitesse positive (lancer)
             SeatingChartManager._releaseOverscrollBounce(20, 25, 0.8, 0.9);
 
-            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(hapticSpy).not.toHaveBeenCalled();
             expect(board.style.transition).toContain('0.09s');
             expect(board.style.transform).toContain('translate3d');
 
@@ -1463,7 +1463,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // Bord gauche (positif)
             SeatingChartManager._triggerEdgeImpactBounce(28, 0);
-            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(hapticSpy).not.toHaveBeenCalled();
             expect(board.style.transition).toContain('0.09s');
             expect(board.style.transform).toBe('translate3d(28px, 0px, 0)');
 
@@ -1483,7 +1483,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             // Appel de _releaseOverscrollBounce avec overscroll négatif et vitesse négative
             SeatingChartManager._releaseOverscrollBounce(-20, -25, -0.8, -0.9);
 
-            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(hapticSpy).not.toHaveBeenCalled();
             expect(board.style.transition).toContain('0.09s');
             expect(board.style.transform).toMatch(/translate3d\(-[0-9.]+px, -[0-9.]+px/);
 
@@ -1961,6 +1961,253 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             classSwitchSpy.mockRestore();
             focusSpy.mockRestore();
             highlightSpy.mockRestore();
+        });
+    });
+
+    describe('SeatingChartManager - Ergonomie avancée et raccourcis', () => {
+        it('devrait déclencher _undo sur Ctrl+Z et _redo sur Ctrl+Y / Ctrl+Shift+Z', () => {
+            const undoSpy = vi.spyOn(SeatingChartManager, '_undo').mockImplementation(() => {});
+            const redoSpy = vi.spyOn(SeatingChartManager, '_redo').mockImplementation(() => {});
+
+            SeatingChartManager._isActive = true;
+
+            // Ctrl+Z -> Undo
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+            expect(undoSpy).toHaveBeenCalledTimes(1);
+
+            // Cmd+Z (Mac) -> Undo
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true }));
+            expect(undoSpy).toHaveBeenCalledTimes(2);
+
+            // Ctrl+Shift+Z -> Redo
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true }));
+            expect(redoSpy).toHaveBeenCalledTimes(1);
+
+            // Ctrl+Y -> Redo
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }));
+            expect(redoSpy).toHaveBeenCalledTimes(2);
+
+            undoSpy.mockRestore();
+            redoSpy.mockRestore();
+        });
+
+        it('ne devrait pas intercepter Ctrl+Z lorsque l’utilisateur saisit du texte', () => {
+            const undoSpy = vi.spyOn(SeatingChartManager, '_undo').mockImplementation(() => {});
+
+            const input = document.createElement('input');
+            document.body.appendChild(input);
+            input.focus();
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+            expect(undoSpy).not.toHaveBeenCalled();
+
+            document.body.removeChild(input);
+            undoSpy.mockRestore();
+        });
+
+        it('devrait basculer le zoom lors d’un double-clic sur le fond de la grille', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const toggleSpy = vi.spyOn(SeatingChartManager, '_toggleZoom').mockImplementation(() => {});
+
+            // Double-clic sur l'espace vide
+            gridArea.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+            expect(toggleSpy).toHaveBeenCalledTimes(1);
+
+            // Double-clic sur une cellule élève -> ne doit pas zoomer
+            const cell = document.querySelector('.sc-cell');
+            if (cell) {
+                cell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+                expect(toggleSpy).toHaveBeenCalledTimes(1);
+            }
+
+            toggleSpy.mockRestore();
+        });
+
+        it('devrait déclencher un rebond élastique visuel d’impact aux bords sans vibration', () => {
+            const board = document.getElementById('scClassroomBoard');
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            SeatingChartManager._triggerEdgeImpactBounce(20, 0);
+
+            expect(board.style.transform).toBe('translate3d(20px, 0px, 0)');
+            expect(hapticSpy).not.toHaveBeenCalled();
+
+            hapticSpy.mockRestore();
+        });
+
+        it('devrait respecter strictement les plafonds de zoom et ne jamais permettre de dézoomer sous _fitScale', async () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            const initialFit = 0.75;
+            SeatingChartManager._fitScale = initialFit;
+            SeatingChartManager._zoomScale = initialFit;
+            SeatingChartManager._isFitted = true;
+            board.style.setProperty('--sc-scale', initialFit.toString());
+            board.style.zoom = initialFit.toString();
+
+            // Dézoom violent au trackpad (deltaY très positif)
+            const zoomOutEvent = new WheelEvent('wheel', {
+                deltaY: 500,
+                ctrlKey: true,
+                cancelable: true,
+                bubbles: true
+            });
+            gridArea.dispatchEvent(zoomOutEvent);
+
+            // Le zoom ne doit JAMAIS descendre en dessous du plafond minScale (0.75)
+            expect(SeatingChartManager._zoomScale).toBeGreaterThanOrEqual(initialFit);
+            expect(SeatingChartManager._fitScale).toBe(initialFit);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('0.75');
+            expect(SeatingChartManager._isFitted).toBe(true);
+
+            // Zoom avant maximal (deltaY négatif important)
+            const maxScale = SeatingChartManager._getMaxZoomScale(initialFit);
+            for (let i = 0; i < 10; i++) {
+                gridArea.dispatchEvent(new WheelEvent('wheel', {
+                    deltaY: -300,
+                    ctrlKey: true,
+                    cancelable: true,
+                    bubbles: true
+                }));
+            }
+
+            // Ne doit pas dépasser maxScale
+            expect(SeatingChartManager._zoomScale).toBeLessThanOrEqual(maxScale);
+
+            // Simuler la fin du geste de zoom (déclenchement du debounce timer)
+            await new Promise(r => setTimeout(r, 180));
+
+            // _fitScale doit toujours rester strictement invariant
+            expect(SeatingChartManager._fitScale).toBe(initialFit);
+        });
+
+        it('devrait arrêter net le zoom au trackpad sur les plafonds min et max sans dériver', async () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            const initialFit = 0.75;
+            SeatingChartManager._fitScale = initialFit;
+            SeatingChartManager._zoomScale = initialFit;
+            SeatingChartManager._isFitted = true;
+            board.style.setProperty('--sc-scale', initialFit.toString());
+            board.style.zoom = initialFit.toString();
+
+            const flipSpy = vi.spyOn(SeatingChartManager, '_animateFLIPTransition');
+
+            // Pincement vers le bas (dézoom au trackpad)
+            gridArea.dispatchEvent(new WheelEvent('wheel', {
+                deltaY: 150,
+                ctrlKey: true,
+                cancelable: true,
+                bubbles: true
+            }));
+
+            // Arrêt net sans dépasser minScale et sans oscillation différée
+            expect(SeatingChartManager._zoomScale).toBe(initialFit);
+            expect(SeatingChartManager._fitScale).toBe(initialFit);
+            expect(SeatingChartManager._isFitted).toBe(true);
+
+            // Attente du timer de debounce (120ms)
+            await new Promise(r => setTimeout(r, 160));
+
+            // Sur trackpad de bureau, aucun FLIP artificiel différé qui causerait un décalage
+            expect(flipSpy).not.toHaveBeenCalled();
+            expect(SeatingChartManager._fitScale).toBe(initialFit);
+            expect(SeatingChartManager._zoomScale).toBe(initialFit);
+
+            // Zoom avant maximal au trackpad
+            const maxScale = SeatingChartManager._getMaxZoomScale(initialFit);
+            for (let i = 0; i < 15; i++) {
+                gridArea.dispatchEvent(new WheelEvent('wheel', {
+                    deltaY: -150,
+                    ctrlKey: true,
+                    cancelable: true,
+                    bubbles: true
+                }));
+            }
+
+            expect(SeatingChartManager._zoomScale).toBe(maxScale);
+            await new Promise(r => setTimeout(r, 160));
+            expect(SeatingChartManager._zoomScale).toBe(maxScale);
+            expect(flipSpy).not.toHaveBeenCalled();
+
+            flipSpy.mockRestore();
+        });
+
+        it('devrait déclencher un rebond FLIP doux en tactile lors du relâchement au-delà des plafonds', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            const initialFit = 0.75;
+            SeatingChartManager._fitScale = initialFit;
+            SeatingChartManager._zoomScale = 1.0;
+            SeatingChartManager._isFitted = false;
+            board.style.setProperty('--sc-scale', '1');
+            board.style.zoom = '1';
+
+            const flipSpy = vi.spyOn(SeatingChartManager, '_animateFLIPTransition');
+            const maxScale = SeatingChartManager._getMaxZoomScale(initialFit);
+
+            // Simulation d'un geste tactile relâché au-delà du maxScale
+            SeatingChartManager._endPinch({
+                startScale: 1.0,
+                currentScale: maxScale * 1.15,
+                minScale: initialFit,
+                maxScale: maxScale,
+                currentMidX: 200,
+                currentMidY: 200,
+                initialMidX: 200,
+                initialMidY: 200,
+                boardRect: { left: 50, top: 50, width: 400, height: 300 }
+            }, gridArea);
+
+            // Doit revenir à maxScale avec transition FLIP douce
+            expect(SeatingChartManager._zoomScale).toBe(maxScale);
+            expect(flipSpy).toHaveBeenCalled();
+
+            flipSpy.mockRestore();
+        });
+
+        it('ne doit pas sauter en haut à gauche (0, 0) lors d\'un zoom tactile centré', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            const initialFit = 0.75;
+            SeatingChartManager._fitScale = initialFit;
+            SeatingChartManager._zoomScale = 1.0;
+            SeatingChartManager._isFitted = false;
+            board.style.setProperty('--sc-scale', '1');
+            board.style.zoom = '1';
+
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 1200, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 600, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 1000, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 500, configurable: true });
+
+            board.getBoundingClientRect = () => ({
+                left: 100,
+                top: 80,
+                width: 800,
+                height: 600
+            });
+
+            SeatingChartManager._endPinch({
+                startScale: 0.75,
+                currentScale: 1.0,
+                minScale: initialFit,
+                maxScale: 1.5,
+                currentMidX: 300,
+                currentMidY: 250,
+                initialMidX: 300,
+                initialMidY: 250,
+                originPercentX: 50,
+                originPercentY: 50,
+                boardRect: { left: 100, top: 80, width: 800, height: 600 }
+            }, gridArea);
+
+            expect(gridArea.scrollLeft).toBeGreaterThan(0);
+            expect(gridArea.scrollTop).toBeGreaterThan(0);
         });
     });
 });
