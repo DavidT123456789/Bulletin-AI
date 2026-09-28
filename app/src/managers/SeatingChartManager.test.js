@@ -3,6 +3,7 @@ import { SeatingChartManager } from './SeatingChartManager';
 import { appState, userSettings } from '../state/State';
 import { ClassManager } from './ClassManager';
 import { HistoryManager } from './HistoryManager';
+import { FocusPanelManager } from './FocusPanelManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -1447,6 +1448,154 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._handleDrop(0, 1);
             expect(SeatingChartManager._gridState[0][0]).toBeNull();
             expect(SeatingChartManager._gridState[0][1]).toBe('s-unlock-1');
+        });
+    });
+
+    describe('SeatingChartManager - Recherche Spatiale & Spotlight', () => {
+        let classTest, classOther;
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div class="main-content-wrapper" data-view="plan">
+                    <div class="main-content">
+                        <div class="output-section"></div>
+                    </div>
+                </div>
+            `;
+
+            userSettings.academic.classes = [];
+            userSettings.academic.currentClassId = null;
+            classTest = ClassManager.createClass('4ème C');
+            classOther = ClassManager.createClass('3ème A');
+
+            appState.currentClassId = classTest.id;
+            userSettings.academic.currentClassId = classTest.id;
+
+            appState.generatedResults = [
+                { id: 's1', classId: classTest.id, nom: 'DUPONT', prenom: 'Lucas', studentData: {} },
+                { id: 's2', classId: classTest.id, nom: 'MARTIN', prenom: 'Sophie', studentData: {} },
+                { id: 's3', classId: classTest.id, nom: 'BERNARD', prenom: 'Lucas', studentData: {} },
+                { id: 's-other', classId: classOther.id, nom: 'LAMBERT', prenom: 'Emma', studentData: {} }
+            ];
+
+            SeatingChartManager.init();
+            SeatingChartManager._students = appState.generatedResults.filter(r => r.classId === classTest.id);
+            SeatingChartManager._initGrid(2, 2);
+            SeatingChartManager._gridState[0][0] = 's1';
+            SeatingChartManager._gridState[0][1] = 's2';
+            SeatingChartManager._gridState[1][0] = 's3';
+            SeatingChartManager._renderGrid();
+        });
+
+        it('devrait ouvrir et fermer la capsule de recherche flottante', () => {
+            expect(SeatingChartManager._isSearchOpen()).toBe(false);
+
+            SeatingChartManager._openSearch();
+            expect(SeatingChartManager._isSearchOpen()).toBe(true);
+            expect(document.getElementById('scFloatingSearch').classList.contains('open')).toBe(true);
+
+            SeatingChartManager._closeSearch();
+            expect(SeatingChartManager._isSearchOpen()).toBe(false);
+            expect(document.getElementById('scFloatingSearch').classList.contains('open')).toBe(false);
+        });
+
+        it('devrait mettre en évidence (spotlight) l’élève unique et atténuer les autres', () => {
+            SeatingChartManager._applySearchHighlight('sophie');
+
+            const view = document.getElementById('seatingChartView');
+            expect(view.classList.contains('sc-search-active')).toBe(true);
+
+            const countBadge = document.getElementById('scFloatingSearchCount');
+            expect(countBadge.textContent).toBe('1');
+
+            const cellSophie = document.querySelector('.sc-cell[data-result-id="s2"]');
+            expect(cellSophie.classList.contains('sc-spotlight-match')).toBe(true);
+            expect(cellSophie.classList.contains('sc-spotlight-single')).toBe(true);
+
+            const cellDupont = document.querySelector('.sc-cell[data-result-id="s1"]');
+            expect(cellDupont.classList.contains('sc-spotlight-dimmed')).toBe(true);
+            expect(cellDupont.classList.contains('sc-spotlight-match')).toBe(false);
+        });
+
+        it('devrait gérer les correspondances multiples sans le pulse unique', () => {
+            SeatingChartManager._applySearchHighlight('lucas');
+
+            const countBadge = document.getElementById('scFloatingSearchCount');
+            expect(countBadge.textContent).toBe('2');
+
+            const cellS1 = document.querySelector('.sc-cell[data-result-id="s1"]');
+            const cellS3 = document.querySelector('.sc-cell[data-result-id="s3"]');
+            const cellS2 = document.querySelector('.sc-cell[data-result-id="s2"]');
+
+            expect(cellS1.classList.contains('sc-spotlight-match')).toBe(true);
+            expect(cellS1.classList.contains('sc-spotlight-single')).toBe(false);
+            expect(cellS3.classList.contains('sc-spotlight-match')).toBe(true);
+            expect(cellS3.classList.contains('sc-spotlight-single')).toBe(false);
+            expect(cellS2.classList.contains('sc-spotlight-dimmed')).toBe(true);
+        });
+
+        it('devrait réinitialiser la vue quand le terme est vide', () => {
+            SeatingChartManager._applySearchHighlight('sophie');
+            expect(document.getElementById('seatingChartView').classList.contains('sc-search-active')).toBe(true);
+
+            SeatingChartManager._applySearchHighlight('');
+            expect(document.getElementById('seatingChartView').classList.contains('sc-search-active')).toBe(false);
+
+            const cells = document.querySelectorAll('.sc-cell');
+            cells.forEach(cell => {
+                expect(cell.classList.contains('sc-spotlight-match')).toBe(false);
+                expect(cell.classList.contains('sc-spotlight-dimmed')).toBe(false);
+            });
+        });
+
+        it('devrait proposer une autre classe en cas d’absence dans la classe courante', () => {
+            SeatingChartManager._applySearchHighlight('lambert');
+
+            const countBadge = document.getElementById('scFloatingSearchCount');
+            expect(countBadge.textContent).toBe('0');
+            expect(countBadge.classList.contains('sc-count-zero')).toBe(true);
+
+            const suggestions = document.getElementById('scFloatingSearchSuggestions');
+            expect(suggestions.style.display).toBe('block');
+            expect(suggestions.innerHTML).toContain('3ème A');
+            expect(suggestions.innerHTML).toContain('Emma LAMBERT');
+        });
+
+        it('devrait ouvrir le FocusPanel sur Entrée en mode consultation (verrouillé)', () => {
+            const openSpy = vi.spyOn(FocusPanelManager, 'open').mockImplementation(() => {});
+            SeatingChartManager._isLocked = true;
+
+            SeatingChartManager._handleSearchEnter('sophie');
+            expect(openSpy).toHaveBeenCalledWith('s2');
+
+            openSpy.mockRestore();
+        });
+
+        it('devrait sélectionner la carte sur Entrée en mode édition (déverrouillé)', () => {
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._clearSelection();
+
+            SeatingChartManager._handleSearchEnter('sophie');
+            expect(SeatingChartManager._selectedChipIds).toContain('s2');
+        });
+
+        it('devrait cycler entre plusieurs correspondances lors d’appuis successifs sur Entrée', () => {
+            const openSpy = vi.spyOn(FocusPanelManager, 'open').mockImplementation(() => {});
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._searchMatchIndex = 0;
+
+            // 1er appui sur Entrée : premier match (s1 Lucas DUPONT)
+            SeatingChartManager._handleSearchEnter('lucas');
+            expect(openSpy).toHaveBeenCalledWith('s1');
+
+            // 2e appui sur Entrée : second match (s3 Lucas BERNARD)
+            SeatingChartManager._handleSearchEnter('lucas');
+            expect(openSpy).toHaveBeenCalledWith('s3');
+
+            const countBadge = document.getElementById('scFloatingSearchCount');
+            expect(countBadge.textContent).toBe('2/2');
+
+            openSpy.mockRestore();
         });
     });
 });

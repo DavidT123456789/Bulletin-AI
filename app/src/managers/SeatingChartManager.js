@@ -14,6 +14,7 @@ import { UI } from './UIManager.js';
 import { Utils } from '../utils/Utils.js';
 import { ClassManager } from './ClassManager.js';
 import { HistoryManager } from './HistoryManager.js';
+import { CrossClassSearchManager } from './CrossClassSearchManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -41,6 +42,8 @@ export const SeatingChartManager = {
     _fitScale: 1,
     _resizeDebounceTimer: null,
     _activeMobileSheet: null,
+    _activeSearchTerm: '',
+    _searchMatchIndex: 0,
 
     // ========================================================================
     // INITIALIZATION
@@ -195,8 +198,22 @@ export const SeatingChartManager = {
                     </div>
                 </div>
 
-                <!-- Floating Actions Capsule (Read-Only Mode) -->
-                <div class="sc-floating-actions sc-floating-capsule sc-read-only-only" id="scFloatingActions">
+                <!-- Floating Actions Capsule -->
+                <div class="sc-floating-actions sc-floating-capsule" id="scFloatingActions">
+                    <div class="sc-floating-search" id="scFloatingSearch">
+                        <button class="sc-action-btn sc-search-toggle-btn" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/) " data-tooltip="Rechercher (/)">
+                            <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        </button>
+                        <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
+                            <iconify-icon class="sc-search-field-icon" icon="solar:magnifer-linear"></iconify-icon>
+                            <input type="text" id="scFloatingSearchInput" placeholder="Rechercher un élève..." autocomplete="off" spellcheck="false" aria-label="Rechercher un élève">
+                            <span class="sc-floating-search-count" id="scFloatingSearchCount" style="display: none;"></span>
+                            <button class="sc-floating-search-clear" id="scFloatingSearchClear" aria-label="Effacer la recherche" type="button">
+                                <iconify-icon icon="ph:x"></iconify-icon>
+                            </button>
+                        </div>
+                        <div class="sc-floating-search-suggestions" id="scFloatingSearchSuggestions" style="display: none;"></div>
+                    </div>
                     <button class="sc-action-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
@@ -218,6 +235,32 @@ export const SeatingChartManager = {
     // ========================================================================
 
     _setupEventListeners() {
+        document.getElementById('scFloatingSearchBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._openSearch();
+        });
+
+        const floatingSearchInput = document.getElementById('scFloatingSearchInput');
+        floatingSearchInput?.addEventListener('input', (e) => {
+            this._applySearchHighlight(e.target.value);
+        });
+
+        floatingSearchInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._handleSearchEscape();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                this._handleSearchEnter(e.target.value);
+            }
+        });
+
+        document.getElementById('scFloatingSearchClear')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._handleSearchEscape();
+        });
+
         document.getElementById('scFloatingPrintBtn')?.addEventListener('click', () => this._printChart());
         document.getElementById('scClearBtn')?.addEventListener('click', () => this._clearAll());
         document.getElementById('scAutoPlaceBtn')?.addEventListener('click', (e) => {
@@ -380,6 +423,7 @@ export const SeatingChartManager = {
         document.getElementById('scSearchInput')?.addEventListener('input', (e) => {
             document.getElementById('scSearchClear')?.classList.toggle('visible', e.target.value.length > 0);
             this._renderSidebar();
+            this._applySearchHighlight(e.target.value);
         });
 
         document.getElementById('scSearchInput')?.addEventListener('keydown', (e) => {
@@ -389,6 +433,7 @@ export const SeatingChartManager = {
                 e.target.value = '';
                 document.getElementById('scSearchClear')?.classList.remove('visible');
                 this._renderSidebar();
+                this._applySearchHighlight('');
             }
         });
 
@@ -397,6 +442,7 @@ export const SeatingChartManager = {
             if (input) { input.value = ''; input.focus(); }
             document.getElementById('scSearchClear')?.classList.remove('visible');
             this._renderSidebar();
+            this._applySearchHighlight('');
         });
 
         document.querySelector('.sc-search-box')?.addEventListener('click', (e) => {
@@ -412,6 +458,18 @@ export const SeatingChartManager = {
         });
 
         document.addEventListener('click', (e) => {
+            if (this._isSearchOpen()) {
+                const searchWrap = document.getElementById('scFloatingSearch');
+                if (searchWrap && !searchWrap.contains(e.target)) {
+                    const input = document.getElementById('scFloatingSearchInput');
+                    if (!input || !input.value.trim()) {
+                        this._closeSearch();
+                    } else {
+                        const sug = document.getElementById('scFloatingSearchSuggestions');
+                        if (sug) sug.style.display = 'none';
+                    }
+                }
+            }
             if (this._configPopoverOpen && !e.target.closest('.sc-config-wrapper')) {
                 this._closeConfigPopover();
             }
@@ -428,7 +486,29 @@ export const SeatingChartManager = {
         });
 
         document.addEventListener('keydown', (e) => {
+            if (!this._isActive) return;
+
+            const activeEl = document.activeElement;
+            const isTyping = activeEl && (
+                activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable ||
+                activeEl.getAttribute('contenteditable') === 'true'
+            );
+
+            // Open search on '/' (when not already typing) or Ctrl+F / Cmd+F
+            if ((e.key === '/' && !isTyping) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) {
+                e.preventDefault();
+                this._openSearch();
+                return;
+            }
+
             if (e.key === 'Escape') {
+                if (this._isSearchOpen()) {
+                    e.preventDefault();
+                    this._handleSearchEscape();
+                    return;
+                }
                 if (this._activeMobileSheet) this._closeMobileSheet();
                 if (this._placementPopoverOpen) this._closePlacementPopover();
                 if (this._configPopoverOpen) this._closeConfigPopover();
@@ -975,6 +1055,7 @@ export const SeatingChartManager = {
                 if (fab) fab.style.display = '';
                 this._isActive = false;
                 this._clearSelection();
+                this._closeSearch();
                 if (wasActive) {
                     this._savePositionsToState(true);
                     this._saveGridConfig();
@@ -2335,6 +2416,10 @@ export const SeatingChartManager = {
         this._updateSidebarLockState();
         this._updateUndoRedoButtons();
         TooltipsUI.initTooltips();
+
+        if (this._activeSearchTerm) {
+            this._applySearchHighlight(this._activeSearchTerm);
+        }
 
         if (this._getPlacedIds().size > 0 || this._isLocked) {
             this._dismissOnboardingHint();
@@ -3830,5 +3915,214 @@ export const SeatingChartManager = {
         const cleanup = () => hint.remove();
         hint.addEventListener('animationend', cleanup, { once: true });
         setTimeout(cleanup, 400);
+    },
+
+    // ========================================================================
+    // SEARCH & SPOTLIGHT
+    // ========================================================================
+
+    _openSearch() {
+        const wrap = document.getElementById('scFloatingSearch');
+        const input = document.getElementById('scFloatingSearchInput');
+        if (!wrap || !input) return;
+        wrap.classList.add('open');
+        requestAnimationFrame(() => {
+            input.focus({ preventScroll: true });
+            input.select();
+        });
+    },
+
+    _closeSearch() {
+        const wrap = document.getElementById('scFloatingSearch');
+        const input = document.getElementById('scFloatingSearchInput');
+        if (!wrap) return;
+        wrap.classList.remove('open');
+        if (input) input.value = '';
+        this._applySearchHighlight('');
+        const sug = document.getElementById('scFloatingSearchSuggestions');
+        if (sug) {
+            sug.style.display = 'none';
+            sug.innerHTML = '';
+        }
+    },
+
+    _isSearchOpen() {
+        return document.getElementById('scFloatingSearch')?.classList.contains('open') || false;
+    },
+
+    _handleSearchEscape() {
+        const input = document.getElementById('scFloatingSearchInput');
+        if (input && input.value) {
+            input.value = '';
+            this._applySearchHighlight('');
+            input.focus();
+        } else {
+            this._closeSearch();
+        }
+    },
+
+    _handleSearchEnter(value) {
+        const cleaned = (value || '').trim();
+        if (!cleaned) return;
+
+        const matchedStudents = (this._students || []).filter(student =>
+            Utils.matchesSearch([student.nom || '', student.prenom || ''], cleaned)
+        );
+
+        if (matchedStudents.length > 0) {
+            const index = this._searchMatchIndex % matchedStudents.length;
+            const targetStudent = matchedStudents[index];
+            this._searchMatchIndex = (index + 1) % matchedStudents.length;
+
+            const targetCell = document.querySelector(`#scGridContainer .sc-cell[data-result-id="${targetStudent.id}"]`);
+            if (targetCell && typeof targetCell.scrollIntoView === 'function') {
+                targetCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }
+
+            const countBadge = document.getElementById('scFloatingSearchCount');
+            if (countBadge && matchedStudents.length > 1) {
+                countBadge.textContent = `${index + 1}/${matchedStudents.length}`;
+            }
+
+            if (this._isLocked) {
+                FocusPanelManager.open(targetStudent.id);
+            } else {
+                this._toggleChipSelection(targetStudent.id);
+            }
+        } else {
+            const crossData = CrossClassSearchManager.searchAcrossClasses(cleaned);
+            if (crossData.groups && crossData.groups.length > 0) {
+                const targetClassId = crossData.groups[0].classId;
+                this._closeSearch();
+                ClassManager.switchClass(targetClassId);
+            }
+        }
+    },
+
+    _applySearchHighlight(term) {
+        const cleaned = (term || '').trim();
+        this._activeSearchTerm = cleaned;
+        this._searchMatchIndex = 0;
+
+        const view = document.getElementById('seatingChartView');
+        const countBadge = document.getElementById('scFloatingSearchCount');
+        const clearBtn = document.getElementById('scFloatingSearchClear');
+        const suggestionsEl = document.getElementById('scFloatingSearchSuggestions');
+
+        if (clearBtn) {
+            clearBtn.classList.toggle('visible', cleaned.length > 0);
+        }
+
+        if (!cleaned) {
+            if (view) view.classList.remove('sc-search-active');
+            if (countBadge) {
+                countBadge.textContent = '';
+                countBadge.style.display = 'none';
+            }
+            if (suggestionsEl) {
+                suggestionsEl.style.display = 'none';
+                suggestionsEl.innerHTML = '';
+            }
+            document.querySelectorAll('#scGridContainer .sc-cell').forEach(cell => {
+                cell.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed', 'sc-spotlight-single');
+            });
+            document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
+                chip.classList.remove('sc-spotlight-match', 'sc-spotlight-dimmed');
+            });
+            return;
+        }
+
+        if (view) view.classList.add('sc-search-active');
+
+        // 1. Matched students in current class
+        const matchedStudentIds = new Set();
+        (this._students || []).forEach(student => {
+            const nom = student.nom || '';
+            const prenom = student.prenom || '';
+            if (Utils.matchesSearch([nom, prenom], cleaned)) {
+                matchedStudentIds.add(student.id);
+            }
+        });
+
+        const matchCount = matchedStudentIds.size;
+        if (countBadge) {
+            countBadge.style.display = 'inline-flex';
+            countBadge.textContent = String(matchCount);
+            countBadge.classList.toggle('sc-count-zero', matchCount === 0);
+        }
+
+        // 2. Grid cells
+        const cells = document.querySelectorAll('#scGridContainer .sc-cell');
+        cells.forEach(cell => {
+            const r = Number(cell.dataset.row);
+            const c = Number(cell.dataset.col);
+            const cellContent = this._gridState[r]?.[c];
+            const studentIds = Array.isArray(cellContent) ? cellContent : (cellContent ? [cellContent] : []);
+
+            const isMatch = studentIds.some(id => matchedStudentIds.has(id));
+            if (isMatch) {
+                cell.classList.remove('sc-spotlight-dimmed');
+                cell.classList.add('sc-spotlight-match');
+                cell.classList.toggle('sc-spotlight-single', matchCount === 1);
+            } else {
+                cell.classList.remove('sc-spotlight-match', 'sc-spotlight-single');
+                cell.classList.add('sc-spotlight-dimmed');
+            }
+        });
+
+        // Auto-scroll to single match if out of view
+        if (matchCount === 1) {
+            const singleCell = document.querySelector('#scGridContainer .sc-cell.sc-spotlight-match');
+            if (singleCell && typeof singleCell.scrollIntoView === 'function') {
+                singleCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }
+        }
+
+        // 3. Sidebar chips
+        document.querySelectorAll('#scStudentList .sc-student-chip').forEach(chip => {
+            const chipId = chip.dataset.resultId;
+            if (matchedStudentIds.has(chipId)) {
+                chip.classList.remove('sc-spotlight-dimmed');
+                chip.classList.add('sc-spotlight-match');
+            } else {
+                chip.classList.remove('sc-spotlight-match');
+                chip.classList.add('sc-spotlight-dimmed');
+            }
+        });
+
+        // 4. Cross-class suggestions if 0 matches and term >= 2
+        if (matchCount === 0 && cleaned.length >= 2 && suggestionsEl) {
+            const crossData = CrossClassSearchManager.searchAcrossClasses(cleaned);
+            if (crossData.groups && crossData.groups.length > 0) {
+                const firstGroup = crossData.groups[0];
+                const studentNames = firstGroup.students.map(s => `${s.prenom} ${s.nom}`).slice(0, 2).join(', ');
+                suggestionsEl.innerHTML = `
+                    <div class="sc-cross-suggestion-pill">
+                        <span class="sc-cross-hint">Non trouvé dans cette classe</span>
+                        <button class="sc-cross-action" type="button" data-class-id="${firstGroup.classId}">
+                            <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
+                            <span>Trouvé en <strong>${Utils.escapeHtml(firstGroup.className)}</strong> (${Utils.escapeHtml(studentNames)})</span>
+                            <iconify-icon icon="solar:alt-arrow-right-linear" class="sc-cross-arrow"></iconify-icon>
+                        </button>
+                    </div>
+                `;
+                suggestionsEl.style.display = 'block';
+
+                suggestionsEl.querySelector('.sc-cross-action')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const targetClassId = e.currentTarget.dataset.classId;
+                    if (targetClassId) {
+                        this._closeSearch();
+                        await ClassManager.switchClass(targetClassId);
+                    }
+                });
+            } else {
+                suggestionsEl.style.display = 'none';
+                suggestionsEl.innerHTML = '';
+            }
+        } else if (suggestionsEl) {
+            suggestionsEl.style.display = 'none';
+            suggestionsEl.innerHTML = '';
+        }
     }
 };
