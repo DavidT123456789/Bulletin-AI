@@ -1085,18 +1085,24 @@
 #seatingChartView[data-has-selection="true"] .sc-cell.empty {
     cursor: pointer;
     opacity: calc(0.5 + var(--row-depth, 0.5) * 0.3);
-    border-color: rgba(var(--primary-color-rgb), 0.3);
-    background: rgba(var(--primary-color-rgb), 0.05);
+    border-color: rgba(24, 24, 27, 0.25);
+    background: rgba(0, 0, 0, 0.02);
 }
 
-/* Receiving/Target cell state (Drag over or Selection hover) */
+[data-theme="dark"] #seatingChartView[data-has-selection="true"] .sc-cell.empty {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Receiving/Target cell state (Drag over or Selection hover) — Standard Highlight */
 .sc-cell.drag-over,
 #seatingChartView[data-has-selection="true"] .sc-cell.empty:hover {
-    border-color: var(--primary-color) !important;
+    border-color: var(--highlight-standard-border) !important;
     border-style: dashed !important;
-    background: rgba(var(--primary-color-rgb), 0.08) !important;
+    border-width: 2px !important;
+    background: var(--highlight-standard-bg) !important;
     transform: scale(1.06) !important;
-    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.15), var(--shadow-md) !important;
+    box-shadow: 0 0 0 4px var(--highlight-standard-glow), var(--shadow-md) !important;
     z-index: 50;
     opacity: 1 !important;
 }
@@ -1129,16 +1135,27 @@
 }
 
 .sc-cell.sc-chip-selected {
-    border-color: var(--primary-color) !important;
-    background-color: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 79, 70, 229), 0.35), var(--shadow-md) !important;
-    transform: scale(1.05) translateY(-2px) !important;
+    border: 2px solid var(--highlight-standard-border) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 0 0 3px var(--highlight-standard-glow), var(--shadow-lg) !important;
+    transform: scale(1.06) translateY(-3px) !important;
     z-index: 30 !important;
 }
 
+[data-theme="dark"] .sc-cell.sc-chip-selected {
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    background: var(--surface-color) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), var(--shadow-lg) !important;
+}
+
 .sc-cell.sc-chip-selected .sc-cell-name {
-    color: var(--primary-color);
-    font-weight: 600;
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.sc-cell.sc-chip-selected .student-avatar .student-avatar__img {
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 .sc-drag-clone.sc-drag-multi, .sc-touch-ghost.sc-drag-multi {
@@ -1192,12 +1209,17 @@
     height: var(--sc-cell-h, 96px) !important;
     border-radius: var(--radius-md) !important;
     background: var(--surface-color) !important;
-    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.18) !important;
-    opacity: 0.92 !important;
-    border: 1.5px solid var(--primary-color) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+    opacity: 1 !important;
+    border: 1.5px solid var(--highlight-standard-border) !important;
     transform: translate(-50%, -50%) scale(1.05) !important;
     transition: none !important;
     overflow: visible !important;
+}
+
+[data-theme="dark"] .sc-drag-clone {
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Touch drag ghost — follows finger */
@@ -1205,19 +1227,24 @@
     position: fixed;
     width: calc(var(--sc-cell-w, 88px) - 8px);
     height: calc(var(--sc-cell-h, 96px) - 10px);
-    opacity: 0.92;
+    opacity: 1;
     pointer-events: none;
     z-index: 9999;
     border-radius: var(--radius-md);
     background: var(--surface-color);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     transform: translate(-50%, -85%) scale(1.05);
     transition: transform 0.1s ease-out;
-    border: 1.5px solid var(--primary-color);
+    border: 1.5px solid var(--highlight-standard-border);
+}
+
+[data-theme="dark"] .sc-touch-ghost {
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
 }
 
 .sc-cell .student-avatar,
@@ -1515,13 +1542,23 @@
 
 /* ────────── CHIP SELECTION ────────── */
 .sc-student-chip.sc-chip-selected {
-    background: rgba(var(--primary-color-rgb), 0.08);
-    box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.35);
+    background: var(--highlight-standard-bg) !important;
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border) !important;
 }
 
 [data-theme="dark"] .sc-student-chip.sc-chip-selected {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    box-shadow: inset 0 0 0 2px rgba(var(--primary-color-rgb), 0.4);
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+.sc-student-chip.sc-chip-selected .sc-student-chip-name {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+}
+
+.sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img {
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 
@@ -2408,9 +2445,9 @@
     }
 
     .sc-student-chip.sc-chip-selected {
-        border-color: var(--primary-color);
-        background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12);
-        box-shadow: 0 0 0 2px var(--primary-color);
+        border-color: var(--highlight-standard-border);
+        background: var(--highlight-standard-bg);
+        box-shadow: 0 0 0 2px var(--highlight-standard-border);
         transform: translateY(-2px);
     }
 
@@ -2585,11 +2622,16 @@
         border-radius: var(--radius-md) !important;
         transform: translate(-50%, -85%) scale(1.05) !important;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
-        border: 1.5px solid var(--primary-color) !important;
+        border: 1.5px solid var(--highlight-standard-border) !important;
         background: var(--surface-color) !important;
-        opacity: 0.92 !important;
+        opacity: 1 !important;
         pointer-events: none !important;
         z-index: 9999 !important;
+    }
+
+    [data-theme="dark"] .sc-touch-ghost {
+        border-color: rgba(255, 255, 255, 0.65) !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
     }
 
     .sc-touch-ghost .student-avatar {
@@ -2616,11 +2658,11 @@
     .sc-cell.drag-over {
         transform: scale(1.18) !important;
         z-index: 60 !important;
-        border-color: var(--primary-color) !important;
+        border-color: var(--highlight-standard-border) !important;
         border-style: solid !important;
         border-width: 2px !important;
-        box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb, 79, 70, 229), 0.25), 0 8px 20px rgba(0, 0, 0, 0.2) !important;
-        background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
+        box-shadow: 0 0 0 4px var(--highlight-standard-glow), 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+        background: var(--highlight-standard-bg) !important;
     }
 
     /* ── Teacher desk: less margin when sidebar is below ── */
@@ -3361,13 +3403,13 @@
 
 /* Sidebar drag-over target highlight (drag to remove) */
 .sc-sidebar.drag-over {
-    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.05) !important;
-    box-shadow: inset 0 0 0 2px var(--primary-color, #4f46e5) !important;
+    background: var(--highlight-standard-bg) !important;
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border) !important;
 }
 
 [data-theme="dark"] .sc-sidebar.drag-over {
-    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.12) !important;
-    box-shadow: inset 0 0 0 2px var(--primary-color, #4f46e5) !important;
+    background: var(--highlight-standard-bg) !important;
+    box-shadow: inset 0 0 0 2px var(--highlight-standard-border) !important;
 }
 
 /* ────────── ORIENTATION TOGGLE ────────── */

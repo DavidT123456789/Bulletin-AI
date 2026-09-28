@@ -339,7 +339,15 @@
     filter: none !important;
 }
 
-/* Instant 100% crispness restoration upon hover (avatar, table row, or seating cell) */
+/* Instant 100% crispness restoration upon hover, drag or selection (avatar, table row, or seating cell) */
+[data-theme="dark"] .sc-cell.sc-chip-selected .student-avatar .student-avatar__img,
+[data-theme="dark"] .sc-student-chip.sc-chip-selected .student-avatar .student-avatar__img,
+[data-theme="dark"] .sc-drag-clone .student-avatar .student-avatar__img,
+[data-theme="dark"] .sc-touch-ghost .student-avatar .student-avatar__img {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
     [data-theme="dark"] .student-avatar:hover .student-avatar__img,
     [data-theme="dark"] .student-list-table tbody tr:hover .student-avatar .student-avatar__img,

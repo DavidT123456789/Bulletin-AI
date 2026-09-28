@@ -274,6 +274,11 @@
     --brand-purple: #9333ea;
     --brand-purple-rgb: 147, 51, 234;
 
+    /* Standard UI Highlight / Drop Target (Neutral Minimalist — Independent of custom accent colors) */
+    --highlight-standard-border: rgba(24, 24, 27, 0.45);
+    --highlight-standard-bg: rgba(0, 0, 0, 0.04);
+    --highlight-standard-glow: rgba(0, 0, 0, 0.07);
+
     /* --- Gradients (Fixed Brand Colors) --- */
     --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
     --gradient-ai: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
@@ -426,6 +431,11 @@
     --brand-primary-rgb: 79, 125, 242;
     --brand-purple: #a78bfa;
     --brand-purple-rgb: 167, 139, 250;
+
+    /* Standard UI Highlight / Drop Target (Neutral Frosted White — High Contrast in Dark Mode) */
+    --highlight-standard-border: rgba(255, 255, 255, 0.65);
+    --highlight-standard-bg: rgba(255, 255, 255, 0.09);
+    --highlight-standard-glow: rgba(255, 255, 255, 0.14);
 
     /* --- Semantic Colors (Dark Mode) --- */
     --success-dark: #4ade80;
