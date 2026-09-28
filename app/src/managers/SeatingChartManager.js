@@ -15,6 +15,7 @@ import { Utils } from '../utils/Utils.js';
 import { ClassManager } from './ClassManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { CrossClassSearchManager } from './CrossClassSearchManager.js';
+import { ClassUIManager } from './ClassUIManager.js';
 
 const DEFAULT_COLS = 6;
 const DEFAULT_ROWS = 5;
@@ -3961,7 +3962,7 @@ export const SeatingChartManager = {
         }
     },
 
-    _handleSearchEnter(value) {
+    async _handleSearchEnter(value) {
         const cleaned = (value || '').trim();
         if (!cleaned) return;
 
@@ -3992,9 +3993,15 @@ export const SeatingChartManager = {
         } else {
             const crossData = CrossClassSearchManager.searchAcrossClasses(cleaned);
             if (crossData.groups && crossData.groups.length > 0) {
-                const targetClassId = crossData.groups[0].classId;
-                this._closeSearch();
-                ClassManager.switchClass(targetClassId);
+                const firstGroup = crossData.groups[0];
+                const targetClassId = firstGroup.classId;
+                const targetStudentId = firstGroup.students?.[0]?.id;
+                const sug = document.getElementById('scFloatingSearchSuggestions');
+                if (sug) {
+                    sug.style.display = 'none';
+                    sug.innerHTML = '';
+                }
+                await this._switchClassFromSearch(targetClassId, targetStudentId, cleaned);
             }
         }
     },
@@ -4095,11 +4102,12 @@ export const SeatingChartManager = {
             const crossData = CrossClassSearchManager.searchAcrossClasses(cleaned);
             if (crossData.groups && crossData.groups.length > 0) {
                 const firstGroup = crossData.groups[0];
+                const firstStudent = firstGroup.students?.[0];
                 const studentNames = firstGroup.students.map(s => `${s.prenom} ${s.nom}`).slice(0, 2).join(', ');
                 suggestionsEl.innerHTML = `
                     <div class="sc-cross-suggestion-pill">
                         <span class="sc-cross-hint">Non trouvé dans cette classe</span>
-                        <button class="sc-cross-action" type="button" data-class-id="${firstGroup.classId}">
+                        <button class="sc-cross-action" type="button" data-class-id="${firstGroup.classId}" data-student-id="${firstStudent?.id || ''}">
                             <iconify-icon icon="solar:square-academic-cap-linear"></iconify-icon>
                             <span>Trouvé en <strong>${Utils.escapeHtml(firstGroup.className)}</strong> (${Utils.escapeHtml(studentNames)})</span>
                             <iconify-icon icon="solar:alt-arrow-right-linear" class="sc-cross-arrow"></iconify-icon>
@@ -4108,14 +4116,26 @@ export const SeatingChartManager = {
                 `;
                 suggestionsEl.style.display = 'block';
 
-                suggestionsEl.querySelector('.sc-cross-action')?.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const targetClassId = e.currentTarget.dataset.classId;
-                    if (targetClassId) {
-                        this._closeSearch();
-                        await ClassManager.switchClass(targetClassId);
-                    }
-                });
+                const actionBtn = suggestionsEl.querySelector('.sc-cross-action');
+                if (actionBtn) {
+                    actionBtn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                    });
+                    actionBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const targetClassId = actionBtn.dataset.classId;
+                        const targetStudentId = actionBtn.dataset.studentId;
+                        if (targetClassId) {
+                            const sug = document.getElementById('scFloatingSearchSuggestions');
+                            if (sug) {
+                                sug.style.display = 'none';
+                                sug.innerHTML = '';
+                            }
+                            await this._switchClassFromSearch(targetClassId, targetStudentId, this._activeSearchTerm || cleaned);
+                        }
+                    });
+                }
             } else {
                 suggestionsEl.style.display = 'none';
                 suggestionsEl.innerHTML = '';
@@ -4124,5 +4144,71 @@ export const SeatingChartManager = {
             suggestionsEl.style.display = 'none';
             suggestionsEl.innerHTML = '';
         }
+    },
+
+    async _switchClassFromSearch(classId, studentId = null, term = '') {
+        const classInfo = ClassManager.getClassById(classId);
+        const className = classInfo?.name || 'Classe';
+
+        if (typeof ClassUIManager?.handleClassSwitch === 'function') {
+            await ClassUIManager.handleClassSwitch(classId, studentId);
+        } else {
+            await ClassManager.switchClass(classId);
+        }
+
+        UI?.showNotification?.(`Basculé vers ${className}`, 'info');
+
+        // Maintenir la barre de recherche ouverte avec le terme actif
+        const searchWrap = document.getElementById('scFloatingSearch');
+        const searchInput = document.getElementById('scFloatingSearchInput');
+        if (searchWrap) searchWrap.classList.add('open');
+        if (searchInput && term) searchInput.value = term;
+
+        // Ré-appliquer le spotlight dans la nouvelle classe (compteur à 1, halo actif)
+        if (term) {
+            this._applySearchHighlight(term);
+        }
+
+        // Focaliser l'élève ciblé (centrage écran + FocusPanel en consultation ou sélection en édition)
+        if (studentId) {
+            this._focusStudentAfterSwitch(studentId);
+        }
+    },
+
+    _focusStudentAfterSwitch(studentId) {
+        setTimeout(() => {
+            // A. Si l'élève est placé sur une table
+            const cells = document.querySelectorAll('#scGridContainer .sc-cell');
+            for (const cell of cells) {
+                const r = Number(cell.dataset.row);
+                const c = Number(cell.dataset.col);
+                const content = this._gridState[r]?.[c];
+                const ids = Array.isArray(content) ? content : (content ? [content] : []);
+                if (ids.includes(studentId)) {
+                    cell.classList.add('sc-spotlight-match', 'sc-spotlight-single');
+                    if (typeof cell.scrollIntoView === 'function') {
+                        cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    }
+
+                    if (!this._isLocked && !this._selectedChipIds.includes(studentId)) {
+                        this._toggleChipSelection(studentId);
+                    }
+                    return;
+                }
+            }
+
+            // B. Si l'élève est dans la liste latérale
+            const chip = document.querySelector(`#scStudentList .sc-student-chip[data-result-id="${studentId}"]`);
+            if (chip) {
+                chip.classList.add('sc-spotlight-match');
+                if (typeof chip.scrollIntoView === 'function') {
+                    chip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                if (!this._isLocked && !this._selectedChipIds.includes(studentId)) {
+                    this._toggleChipSelection(studentId);
+                }
+            }
+        }, 220);
     }
 };

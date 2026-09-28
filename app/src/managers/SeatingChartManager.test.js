@@ -4,6 +4,7 @@ import { appState, userSettings } from '../state/State';
 import { ClassManager } from './ClassManager';
 import { HistoryManager } from './HistoryManager';
 import { FocusPanelManager } from './FocusPanelManager';
+import { ClassUIManager } from './ClassUIManager';
 
 vi.mock('../services/DBService.js', () => ({
     DBService: {
@@ -1596,6 +1597,48 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(countBadge.textContent).toBe('2/2');
 
             openSpy.mockRestore();
+        });
+
+        it('devrait basculer de classe lors du clic sur la suggestion cross-classe', async () => {
+            const switchSpy = vi.spyOn(SeatingChartManager, '_switchClassFromSearch').mockResolvedValue();
+
+            SeatingChartManager._applySearchHighlight('lambert');
+            const actionBtn = document.querySelector('.sc-cross-action');
+            expect(actionBtn).not.toBeNull();
+            expect(actionBtn.dataset.classId).toBe(classOther.id);
+            expect(actionBtn.dataset.studentId).toBe('s-other');
+
+            actionBtn.click();
+            expect(switchSpy).toHaveBeenCalledWith(classOther.id, 's-other', 'lambert');
+
+            switchSpy.mockRestore();
+        });
+
+        it('devrait basculer de classe sur Entrée si l’élève est trouvé dans une autre classe', async () => {
+            const switchSpy = vi.spyOn(SeatingChartManager, '_switchClassFromSearch').mockResolvedValue();
+
+            await SeatingChartManager._handleSearchEnter('lambert');
+            expect(switchSpy).toHaveBeenCalledWith(classOther.id, 's-other', 'lambert');
+
+            switchSpy.mockRestore();
+        });
+
+        it('devrait maintenir la barre de recherche ouverte et focaliser l’élève après bascule', async () => {
+            const classSwitchSpy = vi.spyOn(ClassUIManager, 'handleClassSwitch').mockResolvedValue();
+            const focusSpy = vi.spyOn(SeatingChartManager, '_focusStudentAfterSwitch').mockImplementation(() => {});
+            const highlightSpy = vi.spyOn(SeatingChartManager, '_applySearchHighlight').mockImplementation(() => {});
+            
+            await SeatingChartManager._switchClassFromSearch(classOther.id, 's-other', 'lambert');
+
+            expect(classSwitchSpy).toHaveBeenCalledWith(classOther.id, 's-other');
+            expect(document.getElementById('scFloatingSearch').classList.contains('open')).toBe(true);
+            expect(document.getElementById('scFloatingSearchInput').value).toBe('lambert');
+            expect(highlightSpy).toHaveBeenCalledWith('lambert');
+            expect(focusSpy).toHaveBeenCalledWith('s-other');
+
+            classSwitchSpy.mockRestore();
+            focusSpy.mockRestore();
+            highlightSpy.mockRestore();
         });
     });
 });

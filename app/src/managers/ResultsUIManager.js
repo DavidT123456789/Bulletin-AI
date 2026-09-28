@@ -39,7 +39,7 @@ export const ResultsUIManager = {
 
     renderResults(highlightId = null, highlightType = 'new') {
         if (document.activeElement?.contentEditable === 'true') return;
-        const term = DOM.searchInput.value.toLowerCase();
+        const term = DOM.searchInput?.value?.toLowerCase() ?? '';
 
         const filter = appState.activeStatFilter;
         const activePeriod = appState.currentPeriod;
@@ -76,7 +76,7 @@ export const ResultsUIManager = {
                     }
                 }
 
-                const periodDataForView = sd.periods[activePeriod] || { grade: null, appreciation: '' };
+                const periodDataForView = sd.periods?.[activePeriod] || { grade: null, appreciation: '' };
                 const gradeRaw = periodDataForView.grade;
                 const gradeParsed = typeof gradeRaw === 'number' ? gradeRaw : parseFloat(String(gradeRaw || '').replace(',', '.'));
                 const isPlaceholder = !periodDataForView.appreciation && isNaN(gradeParsed) && !originalResult.errorMessage;
@@ -307,13 +307,13 @@ export const ResultsUIManager = {
 
         // Handle period mismatch banner injection
         let bannerContainer = document.getElementById('period-mismatch-container');
-        if (!bannerContainer) {
+        if (!bannerContainer && DOM.resultsDiv?.parentNode) {
             bannerContainer = document.createElement('div');
             bannerContainer.id = 'period-mismatch-container';
             DOM.resultsDiv.parentNode.insertBefore(bannerContainer, DOM.resultsDiv);
         }
 
-        if (isPeriodMismatch) {
+        if (isPeriodMismatch && bannerContainer) {
             const alternateSystem = appState.periodSystem === 'semestres' ? 'trimestriel' : 'semestriel';
             bannerContainer.innerHTML = `
                 <div class="period-mismatch-banner">
@@ -334,13 +334,13 @@ export const ResultsUIManager = {
                 </div>
             `;
             bannerContainer.style.display = 'block';
-        } else {
+        } else if (bannerContainer) {
             bannerContainer.style.display = 'none';
         }
 
         // Afficher l'état vide si la classe courante n'a pas de résultats
         if (sourceResults.length === 0) {
-            DOM.resultsDiv.innerHTML = '';
+            if (DOM.resultsDiv) DOM.resultsDiv.innerHTML = '';
 
             const emptyTemplate = document.getElementById('empty-state-template');
             if (emptyTemplate && DOM.emptyStateCard) {
