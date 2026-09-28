@@ -1366,6 +1366,89 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(cell.getAttribute('data-tooltip')).toBe('Paul VERVY');
         });
     });
+
+    describe('Drag & Drop après déverrouillage d\'un plan validé', () => {
+        let testClass;
+
+        beforeEach(() => {
+            testClass = ClassManager.createClass('3ème Alpha');
+            appState.currentClassId = testClass.id;
+            userSettings.academic.currentClassId = testClass.id;
+
+            appState.generatedResults = [
+                { id: 's-unlock-1', classId: testClass.id, nom: 'Hugo', prenom: 'Victor', seatingPosition: { row: 0, col: 0 } },
+                { id: 's-unlock-2', classId: testClass.id, nom: 'Sand', prenom: 'George', seatingPosition: null }
+            ];
+
+            document.body.innerHTML = `
+                <div id="seatingChartView" data-locked="true">
+                    <div id="scLockBtn" class="sc-toggle-switch locked"></div>
+                    <button id="scUnlockFloatingBtn"></button>
+                    <div id="scGridContainer"></div>
+                    <div id="scSidebarTitle"></div>
+                    <div id="scFooterInfo"></div>
+                </div>
+            `;
+
+            SeatingChartManager._isLocked = true;
+            testClass.seatingLocked = true;
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._initGrid(2, 2);
+            SeatingChartManager._loadPositionsFromState();
+        });
+
+        it('devrait rendre le drag and drop immédiatement opérationnel dès le déverrouillage sans clic-déplacement préalable', () => {
+            // Le plan est affiché verrouillé (plan validé)
+            SeatingChartManager._isLocked = true;
+            SeatingChartManager._renderGrid();
+
+            const cell = document.querySelector('.sc-cell.occupied[data-row="0"][data-col="0"]');
+            expect(cell).not.toBeNull();
+            expect(cell.draggable).toBe(false);
+
+            // Simuler un essai de dragstart pendant que c'est verrouillé
+            const dragStartLocked = new Event('dragstart', { bubbles: true, cancelable: true });
+            dragStartLocked.dataTransfer = {
+                setData: vi.fn(),
+                setDragImage: vi.fn(),
+                effectAllowed: 'none'
+            };
+            cell.dispatchEvent(dragStartLocked);
+
+            // Doit être annulé et aucun _dragSource enregistré
+            expect(dragStartLocked.defaultPrevented).toBe(true);
+            expect(SeatingChartManager._dragSource).toBeNull();
+
+            // L'utilisateur déverrouille le plan pour l'éditer
+            SeatingChartManager._toggleLock();
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(cell.draggable).toBe(true);
+
+            // Immédiatement (sans aucun clic ni swap préalable), l'utilisateur commence à glisser la cellule
+            const dragStartUnlocked = new Event('dragstart', { bubbles: true, cancelable: true });
+            dragStartUnlocked.dataTransfer = {
+                setData: vi.fn(),
+                setDragImage: vi.fn(),
+                effectAllowed: 'none'
+            };
+            cell.dispatchEvent(dragStartUnlocked);
+
+            // Le dragstart doit fonctionner immédiatement !
+            expect(dragStartUnlocked.defaultPrevented).toBe(false);
+            expect(SeatingChartManager._dragSource).toEqual({
+                type: 'cell',
+                resultId: 's-unlock-1',
+                row: 0,
+                col: 0
+            });
+            expect(dragStartUnlocked.dataTransfer.setData).toHaveBeenCalledWith('text/plain', 's-unlock-1');
+
+            // Déposer sur la case (0, 1) vide
+            SeatingChartManager._handleDrop(0, 1);
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[0][1]).toBe('s-unlock-1');
+        });
+    });
 });
 
 

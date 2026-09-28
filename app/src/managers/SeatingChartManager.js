@@ -1387,6 +1387,8 @@ export const SeatingChartManager = {
 
     _applyLockState(locked) {
         this._isLocked = locked;
+        this._dragSource = null;
+        this._touchSourceInfo = null;
         const view = document.getElementById('seatingChartView');
         if (view) view.dataset.locked = locked;
         const btn = document.getElementById('scLockBtn');
@@ -1429,6 +1431,8 @@ export const SeatingChartManager = {
         const rBefore = board?.getBoundingClientRect?.() || null;
 
         this._isLocked = !this._isLocked;
+        this._dragSource = null;
+        this._touchSourceInfo = null;
         const view = document.getElementById('seatingChartView');
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
@@ -1503,6 +1507,44 @@ export const SeatingChartManager = {
         }));
     },
 
+    _attachCellDragListeners(cell, student, row, col) {
+        if (!cell || !student || cell._hasDragListeners) return;
+        cell._hasDragListeners = true;
+
+        cell.addEventListener('dragstart', (e) => {
+            if (this._isLocked || cell.classList.contains('pinned')) {
+                e.preventDefault();
+                return;
+            }
+            const currentRow = parseInt(cell.dataset.row, 10);
+            const currentCol = parseInt(cell.dataset.col, 10);
+            const isSelected = this._selectedChipIds.includes(student.id);
+            if (!isSelected) {
+                this._clearSelection();
+                this._dragSource = {
+                    type: 'cell',
+                    resultId: student.id,
+                    row: isNaN(currentRow) ? row : currentRow,
+                    col: isNaN(currentCol) ? col : currentCol
+                };
+                e.dataTransfer.setData('text/plain', student.id);
+            } else {
+                this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
+                e.dataTransfer.setData('text/plain', 'multi');
+            }
+            e.dataTransfer.effectAllowed = 'move';
+            this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
+            requestAnimationFrame(() => cell.classList.add('dragging'));
+        });
+
+        cell.addEventListener('dragend', () => {
+            cell.classList.remove('dragging');
+            this._dragSource = null;
+        });
+
+        this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
+    },
+
     _updateCellsDraggability() {
         document.querySelectorAll('#scGridContainer .sc-cell.occupied').forEach(cell => {
             const isPinned = cell.classList.contains('pinned');
@@ -1517,6 +1559,12 @@ export const SeatingChartManager = {
                 }
             } else {
                 cell.removeAttribute('data-tooltip');
+                const row = parseInt(cell.dataset.row, 10);
+                const col = parseInt(cell.dataset.col, 10);
+                const student = this._studentMap?.get(cell.dataset.resultId);
+                if (student && !isNaN(row) && !isNaN(col)) {
+                    this._attachCellDragListeners(cell, student, row, col);
+                }
             }
         });
     },
@@ -2407,29 +2455,7 @@ export const SeatingChartManager = {
                 this._togglePin(student.id);
             });
 
-            if (!this._isLocked && !isPinned) {
-                cell.addEventListener('dragstart', (e) => {
-                    const isSelected = this._selectedChipIds.includes(student.id);
-                    if (!isSelected) {
-                        this._clearSelection();
-                        this._dragSource = { type: 'cell', resultId: student.id, row, col };
-                        e.dataTransfer.setData('text/plain', student.id);
-                    } else {
-                        this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
-                        e.dataTransfer.setData('text/plain', 'multi');
-                    }
-                    e.dataTransfer.effectAllowed = 'move';
-                    this._setCleanDragImage(e, cell, isSelected ? this._selectedChipIds.length : 1);
-                    requestAnimationFrame(() => cell.classList.add('dragging'));
-                });
-
-                cell.addEventListener('dragend', () => {
-                    cell.classList.remove('dragging');
-                    this._dragSource = null;
-                });
-
-                this._addTouchDrag(cell, { type: 'cell', resultId: student.id, row, col });
-            }
+            this._attachCellDragListeners(cell, student, row, col);
         } else if (students.length > 1) {
             // Empilement moderne pour plusieurs élèves sur la même place (ex: classe reconstituée)
             cell.classList.add('occupied', 'sc-cell-stacked');
@@ -2652,6 +2678,10 @@ export const SeatingChartManager = {
             const id = chip.dataset.resultId;
 
             chip.addEventListener('dragstart', (e) => {
+                if (this._isLocked) {
+                    e.preventDefault();
+                    return;
+                }
                 this._dismissOnboardingHint();
                 const isSelected = this._selectedChipIds.includes(id);
                 if (!isSelected) {
@@ -2673,7 +2703,7 @@ export const SeatingChartManager = {
             });
 
             chip.addEventListener('click', (e) => {
-                if (e.defaultPrevented) return;
+                if (e.defaultPrevented || this._isLocked) return;
                 if (e.shiftKey && this._lastSelectedSidebarIndex !== null) {
                     this._selectSidebarRange(this._lastSelectedSidebarIndex, index, allVisible);
                 } else {
@@ -3079,7 +3109,7 @@ export const SeatingChartManager = {
         let longPressTimer = null;
 
         element.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1 || this._isLocked) return;
+            if (e.touches.length !== 1 || this._isLocked || element.classList.contains('pinned')) return;
             this._dismissOnboardingHint();
             const touch = e.touches[0];
             startX = touch.clientX;
@@ -3088,6 +3118,14 @@ export const SeatingChartManager = {
             isScrolling = false;
             
             let activeSourceInfo = { ...sourceInfo };
+            if (element.dataset.row !== undefined && element.dataset.col !== undefined) {
+                const r = parseInt(element.dataset.row, 10);
+                const c = parseInt(element.dataset.col, 10);
+                if (!isNaN(r) && !isNaN(c)) {
+                    activeSourceInfo.row = r;
+                    activeSourceInfo.col = c;
+                }
+            }
             if (sourceInfo.resultId && this._selectedChipIds.includes(sourceInfo.resultId)) {
                 activeSourceInfo = { type: 'multi-cell', ids: [...this._selectedChipIds] };
             }
@@ -3112,7 +3150,7 @@ export const SeatingChartManager = {
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
-            if (!this._touchSourceInfo || this._isLocked || isScrolling) return;
+            if (!this._touchSourceInfo || this._isLocked || isScrolling || element.classList.contains('pinned')) return;
             const touch = e.touches[0];
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
