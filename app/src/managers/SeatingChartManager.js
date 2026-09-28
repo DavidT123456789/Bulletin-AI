@@ -1024,12 +1024,11 @@ export const SeatingChartManager = {
                 ? false
                 : (hasExplicitClassLock ? currentClass.seatingLocked : (appState.seatingGrid?.locked ?? false));
             this._applyLockState(locked);
+            this._updateSidebarLockState();
             this._undoStack = [];
             this._redoStack = [];
             this._render();
-            if (this._isLocked) {
-                this._applySmartFit(true);
-            }
+            this._applySmartFit(true);
             if (!immediate) {
                 this._animateViewEnter(viewEl);
                 this._scrollToDesk();
@@ -1109,6 +1108,7 @@ export const SeatingChartManager = {
         this._applyLockState(locked);
 
         this._render();
+        this._applySmartFit(true);
         this._staggerCellEntrance();
         
         const desk = document.getElementById('scDesk');
@@ -1402,11 +1402,7 @@ export const SeatingChartManager = {
             floatingUnlockBtn.setAttribute('data-tooltip', locked ? 'Déverrouiller pour ajuster' : 'Mode Édition');
         }
         this._updateCellsDraggability();
-        if (locked) {
-            setTimeout(() => this._applySmartFit(true), 60);
-        } else {
-            this._applySmartFit();
-        }
+        this._applySmartFit(true);
 
         // [UX Mobile] History integration for Edit Mode
         if (!locked) {
@@ -1425,6 +1421,13 @@ export const SeatingChartManager = {
     },
 
     _toggleLock() {
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+        const board = document.getElementById('scClassroomBoard');
+        const rBefore = board?.getBoundingClientRect?.() || null;
+
         this._isLocked = !this._isLocked;
         const view = document.getElementById('seatingChartView');
         const btn = document.getElementById('scLockBtn');
@@ -1483,29 +1486,21 @@ export const SeatingChartManager = {
             }
         }
 
+        this._updateCellsDraggability();
         this._updateSidebarLockState();
         this._updateFooter();
+        this._saveGridConfig();
 
-        // Defer non-critical DOM updates to keep the animation at 60/120 FPS
-        setTimeout(() => {
-            this._saveGridConfig();
-            if (!this._isLocked) {
-                this._renderGrid();
-                this._updateSidebarLockState();
-                this._applySmartFit(true);
-            } else {
-                this._updateCellsDraggability();
-                this._applySmartFit(true);
-            }
-            TooltipsUI?.initTooltips?.();
-            window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
-                detail: { classId: currentClass?.id, locked: this._isLocked }
-            }));
-        }, 50);
+        this._applySmartFit(true);
 
-        setTimeout(() => {
-            this._applySmartFit(true);
-        }, 430);
+        if (rBefore && rBefore.width > 0) {
+            this._animateFLIPTransition(rBefore, { lockToggle: true });
+        }
+
+        TooltipsUI?.initTooltips?.();
+        window.dispatchEvent(new CustomEvent('seating-chart:status-changed', {
+            detail: { classId: currentClass?.id, locked: this._isLocked }
+        }));
     },
 
     _updateCellsDraggability() {
@@ -1544,6 +1539,11 @@ export const SeatingChartManager = {
         const board = document.getElementById('scClassroomBoard');
         if (!view || !gridArea || !board) return;
 
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
         if (forceFit) {
             this._isFitted = true;
         }
@@ -1568,11 +1568,13 @@ export const SeatingChartManager = {
         if (areaWidth <= 0 || areaHeight <= 0) return;
 
         const isMobile = window.innerWidth <= 768;
-        const reservedTop = isMobile ? 56 : 64;
-        const reservedBottom = isMobile ? 20 : 28;
-        const reservedHoriz = isMobile ? 20 : 48;
+        const reservedTop = isMobile ? (56 + 48) : (56 + 24);
+        const reservedBottom = isMobile ? 20 : 24;
+        const reservedHoriz = isMobile ? 24 : 48;
 
-        const availW = Math.max(80, areaWidth - reservedHoriz);
+        // When locked on desktop, account for the sidebar so fit scale is perfectly stable between modes
+        const effectiveAreaW = (!isMobile && this._isLocked && areaWidth >= 600) ? (areaWidth - 260) : areaWidth;
+        const availW = Math.max(80, effectiveAreaW - reservedHoriz);
         const availH = Math.max(80, areaHeight - reservedTop - reservedBottom);
 
         const rect = board.getBoundingClientRect?.();
@@ -1628,7 +1630,7 @@ export const SeatingChartManager = {
         }
     },
 
-    _animateFLIPTransition(rBefore) {
+    _animateFLIPTransition(rBefore, options = {}) {
         const board = document.getElementById('scClassroomBoard');
         if (!board || !rBefore || rBefore.width <= 0) return;
 
@@ -1647,10 +1649,13 @@ export const SeatingChartManager = {
         const zAfter = supportsZoom ? (parseFloat(board.style.getPropertyValue('--sc-scale')) || parseFloat(board.style.zoom) || 1) : 1;
         if (zAfter <= 0) return;
 
+        const isLockToggle = Boolean(options.lockToggle);
+
         const deltaX = Math.round((rBefore.left - rAfter.left) * 100) / 100;
-        const deltaY = Math.round((rBefore.top - rAfter.top) * 100) / 100;
-        const scaleX = Math.round((rBefore.width / rAfter.width) * 1000) / 1000;
-        const scaleY = Math.round((rBefore.height / rAfter.height) * 1000) / 1000;
+        // Lock toggle is strictly 1D (horizontal drawer opening/closing). deltaY must be zero to eliminate any vertical jump or wobbling.
+        const deltaY = isLockToggle ? 0 : (Math.round((rBefore.top - rAfter.top) * 100) / 100);
+        const scaleX = isLockToggle ? 1 : (Math.round((rBefore.width / rAfter.width) * 1000) / 1000);
+        const scaleY = isLockToggle ? 1 : (Math.round((rBefore.height / rAfter.height) * 1000) / 1000);
 
         if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1 && Math.abs(scaleX - 1) < 0.01) {
             return;
@@ -1666,7 +1671,7 @@ export const SeatingChartManager = {
         void board.offsetWidth;
 
         requestAnimationFrame(() => {
-            board.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
             board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 
             let timer = null;
@@ -1682,7 +1687,7 @@ export const SeatingChartManager = {
             };
             this._zoomAnimCleanup = cleanup;
 
-            timer = setTimeout(cleanup, 400);
+            timer = setTimeout(cleanup, 450);
             board.addEventListener('transitionend', (e) => {
                 if (e.target === board && e.propertyName === 'transform') {
                     cleanup();
@@ -3703,7 +3708,7 @@ export const SeatingChartManager = {
     },
 
     _scrollToDesk() {
-        if (this._isLocked && this._isFitted) return;
+        if (this._isFitted) return;
         requestAnimationFrame(() => {
             setTimeout(() => {
                 const gridArea = document.getElementById('scGridArea');

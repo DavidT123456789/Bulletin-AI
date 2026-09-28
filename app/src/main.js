@@ -6,6 +6,7 @@ import { AppreciationsManager } from './managers/AppreciationsManager.js';
 import { StorageManager } from './managers/StorageManager.js';
 import { WelcomeManager } from './managers/WelcomeManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
+import { SeatingChartManager } from './managers/SeatingChartManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.AppreciationsManager = AppreciationsManager;
         window.StorageManager = StorageManager;
         window.RestoreTransitionManager = RestoreTransitionManager;
+        window.SeatingChartManager = SeatingChartManager;
         window.appState = appState;
         window.DOM = DOM;
 
