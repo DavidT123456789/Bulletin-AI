@@ -28,11 +28,9 @@
 .journal-header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    /* Increased gap */
+    gap: var(--space-4);
     font-weight: 600;
     font-size: 13px;
-    /* Harmonized with focus-context-label */
     color: var(--text-primary);
 }
 
@@ -45,8 +43,7 @@
 .journal-controls-group {
     display: flex;
     align-items: center;
-    gap: 8px;
-    /* Separator removed */
+    gap: var(--space-2);
 }
 
 .journal-header-right {
