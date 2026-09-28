@@ -655,9 +655,12 @@
     gap: 16px;
     padding: calc(56px + var(--content-padding-x, 24px)) var(--content-padding-x, 24px) var(--content-padding-x, 24px);
     overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     min-width: 0;
     min-height: 0;
     background: transparent;
+    touch-action: pan-x pan-y;
 }
 
 /* Fallback for older browsers: if safe center is not supported, use flex-start + auto margins on children */
@@ -686,7 +689,8 @@
     align-items: safe center;
     gap: 16px;
     position: relative;
-    transform-origin: top center;
+    transform-origin: center center;
+    margin: auto;
     zoom: var(--sc-scale, 1);
     will-change: transform;
     transition: box-shadow 0.2s ease,
@@ -698,7 +702,7 @@
 @supports not (zoom: 1) {
     .sc-classroom-board {
         transform: scale(var(--sc-scale, 1));
-        transform-origin: top center;
+        transform-origin: center center;
     }
 }
 
@@ -1502,7 +1506,7 @@
 
 .sc-grid-area[data-fitted="false"] {
     overflow: auto;
-    justify-content: flex-start;
+    justify-content: safe center;
     align-items: safe center;
     padding-top: calc(56px + var(--content-padding-x, 24px));
     padding-bottom: var(--content-padding-x, 24px);
@@ -2511,7 +2515,7 @@
 
     .sc-grid-area[data-fitted="false"] {
         overflow: auto;
-        justify-content: flex-start;
+        justify-content: safe center;
         align-items: safe center;
         padding-top: calc(56px + 48px);
         padding-bottom: 20px;

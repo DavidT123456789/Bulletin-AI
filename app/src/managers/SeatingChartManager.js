@@ -312,49 +312,35 @@ export const SeatingChartManager = {
             }
         });
 
-        let initialPinchDist = 0;
-        let initialPinchScale = 1;
-        gridArea?.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                initialPinchDist = Math.hypot(dx, dy);
-                initialPinchScale = this._zoomScale || 1;
-            }
-        }, { passive: true });
-
-        gridArea?.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2 && initialPinchDist > 0) {
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                const dist = Math.hypot(dx, dy);
-                const ratio = dist / initialPinchDist;
-                const newScale = Math.min(1.4, Math.max(0.35, Math.round(initialPinchScale * ratio * 100) / 100));
-                this._zoomScale = newScale;
-                this._isFitted = (newScale <= this._fitScale + 0.05);
-                const board = document.getElementById('scClassroomBoard');
-                if (board) {
-                    board.style.setProperty('--sc-scale', newScale.toString());
-                    board.style.zoom = newScale.toString();
-                }
-                gridArea.setAttribute('data-fitted', this._isFitted ? 'true' : 'false');
-                this._updateZoomButtonUI(this._isFitted, newScale);
-            }
-        }, { passive: true });
-
+        // Mobile touch double-tap support (since dblclick is unreliable on mobile browsers with touch-action)
+        let lastTapTime = 0;
+        let lastTapX = 0;
+        let lastTapY = 0;
         gridArea?.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2 && initialPinchDist > 0) {
-                initialPinchDist = 0;
-                if (Math.abs(this._zoomScale - this._fitScale) < 0.08) {
-                    const board = document.getElementById('scClassroomBoard');
-                    const rBefore = board?.getBoundingClientRect?.() || null;
-                    this._applySmartFit(true);
-                    if (rBefore && rBefore.width > 0) {
-                        this._animateFLIPTransition(rBefore);
-                    }
-                }
+            if (!e.changedTouches || e.changedTouches.length !== 1 || (e.touches && e.touches.length > 0)) return;
+            if (this._isPinching || this._dragSource || this._touchSourceInfo) return;
+            if (e.target.closest('.sc-cell') || e.target.closest('.sc-desk') || e.target.closest('button')) return;
+
+            const touch = e.changedTouches[0];
+            if (!touch) return;
+            const now = Date.now();
+            const dt = now - lastTapTime;
+            const dist = Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY);
+            if (dt > 40 && dt < 320 && dist < 24) {
+                lastTapTime = 0;
+                if (e.cancelable) e.preventDefault();
+                this._toggleZoom();
+            } else {
+                lastTapTime = now;
+                lastTapX = touch.clientX;
+                lastTapY = touch.clientY;
             }
-        }, { passive: true });
+        }, { passive: false });
+
+        if (gridArea) {
+            this._setupPinchAndWheelZoom(gridArea);
+            this._setupOverscrollBounce(gridArea);
+        }
 
         window.addEventListener('resize', () => {
             clearTimeout(this._resizeDebounceTimer);
@@ -1751,6 +1737,11 @@ export const SeatingChartManager = {
             board.style.zoom = targetScale.toString();
             gridArea.setAttribute('data-fitted', 'false');
             this._updateZoomButtonUI(false, targetScale);
+
+            const maxScrollX = (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0);
+            const maxScrollY = (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0);
+            if (maxScrollX > 0) gridArea.scrollLeft = Math.round(maxScrollX / 2);
+            if (maxScrollY > 0) gridArea.scrollTop = Math.round(maxScrollY / 2);
         } else {
             this._applySmartFit(true);
         }
@@ -1772,8 +1763,24 @@ export const SeatingChartManager = {
             this._zoomAnimCleanup = null;
         }
 
-        const rAfter = board.getBoundingClientRect?.();
-        if (!rAfter || rAfter.width <= 0) return;
+        let rAfter = board.getBoundingClientRect?.();
+        if (!rAfter || rAfter.width <= 0) {
+            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+            board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+            const cleanup = () => {
+                board.style.removeProperty('transform');
+                board.style.removeProperty('transform-origin');
+                board.style.removeProperty('transition');
+                this._zoomAnimCleanup = null;
+            };
+            this._zoomAnimCleanup = cleanup;
+            board.addEventListener('transitionend', (e) => {
+                if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
+                    cleanup();
+                }
+            }, { once: true });
+            return;
+        }
 
         const supportsZoom = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom', '1'));
         const zAfter = supportsZoom ? (parseFloat(board.style.getPropertyValue('--sc-scale')) || parseFloat(board.style.zoom) || 1) : 1;
@@ -1781,49 +1788,52 @@ export const SeatingChartManager = {
 
         const isLockToggle = Boolean(options.lockToggle);
 
-        const deltaX = Math.round((rBefore.left - rAfter.left) * 100) / 100;
-        // Lock toggle is strictly 1D (horizontal drawer opening/closing). deltaY must be zero to eliminate any vertical jump or wobbling.
-        const deltaY = isLockToggle ? 0 : (Math.round((rBefore.top - rAfter.top) * 100) / 100);
+        const centerBeforeX = rBefore.left + rBefore.width / 2;
+        const centerBeforeY = rBefore.top + rBefore.height / 2;
+        const centerAfterX = rAfter.left + rAfter.width / 2;
+        const centerAfterY = rAfter.top + rAfter.height / 2;
+
+        const deltaCenterX = Math.round((centerBeforeX - centerAfterX) * 100) / 100;
+        // Lock toggle is strictly 1D (horizontal drawer opening/closing). deltaCenterY must be zero to eliminate any vertical jump or wobbling.
+        const deltaCenterY = isLockToggle ? 0 : (Math.round((centerBeforeY - centerAfterY) * 100) / 100);
         const scaleX = isLockToggle ? 1 : (Math.round((rBefore.width / rAfter.width) * 1000) / 1000);
         const scaleY = isLockToggle ? 1 : (Math.round((rBefore.height / rAfter.height) * 1000) / 1000);
 
-        if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1 && Math.abs(scaleX - 1) < 0.01) {
+        if (Math.abs(deltaCenterX) < 1 && Math.abs(deltaCenterY) < 1 && Math.abs(scaleX - 1) < 0.01) {
             return;
         }
 
-        const tx = Math.round((deltaX / zAfter) * 100) / 100;
-        const ty = Math.round((deltaY / zAfter) * 100) / 100;
+        const tx = Math.round((deltaCenterX / zAfter) * 100) / 100;
+        const ty = Math.round((deltaCenterY / zAfter) * 100) / 100;
 
-        board.style.transformOrigin = '0 0';
+        board.style.transformOrigin = '50% 50%';
         board.style.transition = 'none';
         board.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleX}, ${scaleY})`;
 
         void board.offsetWidth;
 
-        requestAnimationFrame(() => {
-            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
-            board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+        board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+        board.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
 
-            let timer = null;
-            let cleaned = false;
-            const cleanup = () => {
-                if (cleaned) return;
-                cleaned = true;
-                if (timer) clearTimeout(timer);
-                board.style.removeProperty('transform');
-                board.style.removeProperty('transform-origin');
-                board.style.removeProperty('transition');
-                this._zoomAnimCleanup = null;
-            };
-            this._zoomAnimCleanup = cleanup;
+        let timer = null;
+        let cleaned = false;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (timer) clearTimeout(timer);
+            board.style.removeProperty('transform');
+            board.style.removeProperty('transform-origin');
+            board.style.removeProperty('transition');
+            this._zoomAnimCleanup = null;
+        };
+        this._zoomAnimCleanup = cleanup;
 
-            timer = setTimeout(cleanup, 450);
-            board.addEventListener('transitionend', (e) => {
-                if (e.target === board && e.propertyName === 'transform') {
-                    cleanup();
-                }
-            }, { once: true });
-        });
+        timer = setTimeout(cleanup, 450);
+        board.addEventListener('transitionend', (e) => {
+            if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
+                cleanup();
+            }
+        }, { once: true });
     },
 
     _updateZoomButtonUI(isFitted, scale) {
@@ -1842,6 +1852,630 @@ export const SeatingChartManager = {
             zoomBtn.setAttribute('data-tooltip', 'Ajuster à l’écran');
         }
         TooltipsUI?.initTooltips?.();
+    },
+
+    _getMaxZoomScale(minScale = this._fitScale || 0.45) {
+        return Math.min(2.2, Math.max(1.6, Math.round(minScale * 2.5 * 100) / 100));
+    },
+
+    // ========================================================================
+    // PINCH & WHEEL GESTURE ZOOM
+    // ========================================================================
+
+    _setupPinchAndWheelZoom(gridArea) {
+        if (!gridArea) return;
+
+        let pinchState = null;
+        let rafPending = false;
+
+        const onTouchStart = (e) => {
+            if (e.touches.length !== 2) {
+                if (pinchState) {
+                    const stateToFinish = pinchState;
+                    pinchState = null;
+                    this._endPinch(stateToFinish, gridArea);
+                    this._isPinching = false;
+                }
+                return;
+            }
+
+            if (e.cancelable) e.preventDefault();
+            this._isPinching = true;
+
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
+
+            if (this._zoomAnimCleanup) {
+                this._zoomAnimCleanup();
+                this._zoomAnimCleanup = null;
+            }
+
+            board.style.removeProperty('transform');
+            board.style.removeProperty('transition');
+
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            if (dist < 10) return;
+
+            const midX = (t1.clientX + t2.clientX) / 2;
+            const midY = (t1.clientY + t2.clientY) / 2;
+
+            const minScale = this._fitScale || 0.45;
+            const maxScale = this._getMaxZoomScale(minScale);
+            const startScale = this._zoomScale || this._fitScale || 1;
+
+            const boardRect = board.getBoundingClientRect?.() || { left: midX, top: midY, width: 300, height: 300 };
+            const bw = boardRect.width > 0 ? boardRect.width : 300;
+            const bh = boardRect.height > 0 ? boardRect.height : 300;
+            const originPercentX = Math.round(((midX - boardRect.left) / bw) * 10000) / 100;
+            const originPercentY = Math.round(((midY - boardRect.top) / bh) * 10000) / 100;
+
+            const maxScrollXBefore = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            const maxScrollYBefore = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+            const scrollRatioX = maxScrollXBefore > 0 ? (gridArea.scrollLeft / maxScrollXBefore) : 0.5;
+            const scrollRatioY = maxScrollYBefore > 0 ? (gridArea.scrollTop / maxScrollYBefore) : 0.5;
+
+            pinchState = {
+                startDist: dist,
+                startScale,
+                minScale,
+                maxScale,
+                initialMidX: midX,
+                initialMidY: midY,
+                originPercentX,
+                originPercentY,
+                boardRect,
+                scrollRatioX,
+                scrollRatioY,
+                currentScale: startScale,
+                currentMidX: midX,
+                currentMidY: midY,
+                hasOverstretched: false
+            };
+
+            board.style.transformOrigin = `${originPercentX.toFixed(2)}% ${originPercentY.toFixed(2)}%`;
+            board.style.transition = 'none';
+        };
+
+        const renderPinch = () => {
+            if (!pinchState) return;
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
+
+            const { currentScale, startScale, initialMidX, initialMidY, currentMidX, currentMidY, minScale } = pinchState;
+            const visualScale = currentScale / startScale;
+
+            const panX = (currentMidX - initialMidX) / startScale;
+            const panY = (currentMidY - initialMidY) / startScale;
+
+            board.style.transform = (Math.abs(panX) > 0.1 || Math.abs(panY) > 0.1)
+                ? `translate3d(${panX.toFixed(2)}px, ${panY.toFixed(2)}px, 0) scale(${visualScale.toFixed(4)})`
+                : `scale(${visualScale.toFixed(4)})`;
+
+            const isFittedNow = (currentScale <= minScale + 0.04);
+            const zoomBtn = document.getElementById('scFloatingZoomBtn');
+            const icon = zoomBtn?.querySelector('iconify-icon');
+            if (icon) {
+                const targetIcon = isFittedNow ? 'solar:magnifer-zoom-in-linear' : 'solar:minimize-square-linear';
+                if (icon.getAttribute('icon') !== targetIcon) {
+                    icon.setAttribute('icon', targetIcon);
+                }
+            }
+        };
+
+        const onTouchMove = (e) => {
+            if (!pinchState || e.touches.length !== 2) return;
+            if (e.cancelable) e.preventDefault();
+
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            const ratio = dist / pinchState.startDist;
+            const rawScale = pinchState.startScale * ratio;
+
+            let effectiveScale = rawScale;
+            let overstretched = false;
+
+            if (rawScale < pinchState.minScale) {
+                overstretched = true;
+                const overshoot = pinchState.minScale - rawScale;
+                const damped = (overshoot * 0.35) / (1 + (overshoot / (pinchState.minScale * 0.6)));
+                effectiveScale = Math.max(pinchState.minScale * 0.72, pinchState.minScale - damped);
+            } else if (rawScale > pinchState.maxScale) {
+                overstretched = true;
+                const overshoot = rawScale - pinchState.maxScale;
+                const damped = (overshoot * 0.35) / (1 + (overshoot / (pinchState.maxScale * 0.6)));
+                effectiveScale = Math.min(pinchState.maxScale * 1.28, pinchState.maxScale + damped);
+            }
+
+            if (overstretched && !pinchState.hasOverstretched) {
+                this._haptic(10);
+                pinchState.hasOverstretched = true;
+            } else if (!overstretched) {
+                pinchState.hasOverstretched = false;
+            }
+
+            pinchState.currentScale = effectiveScale;
+            pinchState.currentMidX = (t1.clientX + t2.clientX) / 2;
+            pinchState.currentMidY = (t1.clientY + t2.clientY) / 2;
+
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(() => {
+                    rafPending = false;
+                    renderPinch();
+                });
+            }
+        };
+
+        const onTouchEnd = (e) => {
+            if (!pinchState) return;
+            if (e.touches.length < 2) {
+                const stateToFinish = pinchState;
+                pinchState = null;
+                this._endPinch(stateToFinish, gridArea);
+                if (e.touches.length === 0) {
+                    this._isPinching = false;
+                } else {
+                    setTimeout(() => { this._isPinching = false; }, 200);
+                }
+            }
+        };
+
+        gridArea.addEventListener('touchstart', onTouchStart, { passive: false });
+        gridArea.addEventListener('touchmove', onTouchMove, { passive: false });
+        gridArea.addEventListener('touchend', onTouchEnd, { passive: true });
+        gridArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+        let wheelDebounceTimer = null;
+        gridArea.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
+
+            const minScale = this._fitScale || 0.45;
+            const maxScale = this._getMaxZoomScale(minScale);
+            const currentScale = this._zoomScale || this._fitScale || 1;
+            const delta = -e.deltaY * 0.003;
+            const nextScale = Math.min(maxScale, Math.max(minScale, Math.round((currentScale + delta) * 100) / 100));
+
+            if (Math.abs(nextScale - currentScale) < 0.01) return;
+
+            this._zoomScale = nextScale;
+            this._isFitted = (Math.abs(nextScale - minScale) < 0.03);
+
+            board.style.setProperty('--sc-scale', nextScale.toString());
+            board.style.zoom = nextScale.toString();
+            gridArea.setAttribute('data-fitted', this._isFitted ? 'true' : 'false');
+            this._updateZoomButtonUI(this._isFitted, nextScale);
+
+            clearTimeout(wheelDebounceTimer);
+            wheelDebounceTimer = setTimeout(() => {
+                if (this._isFitted) {
+                    this._applySmartFit(true);
+                }
+            }, 120);
+        }, { passive: false });
+    },
+
+    _endPinch(pinchState, gridArea) {
+        const board = document.getElementById('scClassroomBoard');
+        if (!board) return;
+
+        const { currentScale, minScale, maxScale, startScale } = pinchState;
+        let targetScale = currentScale;
+        let isBounce = false;
+
+        if (currentScale < minScale) {
+            targetScale = minScale;
+            isBounce = true;
+        } else if (currentScale > maxScale) {
+            targetScale = maxScale;
+            isBounce = true;
+        } else if (Math.abs(currentScale - minScale) / minScale < 0.08) {
+            targetScale = minScale;
+            isBounce = (startScale !== minScale);
+        } else {
+            targetScale = Math.round(currentScale * 100) / 100;
+        }
+
+        const isFitted = (Math.abs(targetScale - minScale) < 0.02);
+
+        if (isBounce) {
+            this._haptic(14);
+        }
+
+        // Capture visual bounding box before layout changes
+        let rBefore = board.getBoundingClientRect?.() || null;
+        if ((!rBefore || rBefore.width <= 0) && pinchState?.boardRect?.width > 0) {
+            const visualRatio = currentScale / startScale;
+            const b = pinchState.boardRect;
+            rBefore = {
+                left: b.left + (pinchState.currentMidX - pinchState.initialMidX),
+                top: b.top + (pinchState.currentMidY - pinchState.initialMidY),
+                width: b.width * visualRatio,
+                height: b.height * visualRatio
+            };
+        }
+
+        // Clear gesture transform so DOM layout box is immediately applied
+        board.style.removeProperty('transform');
+        board.style.removeProperty('transform-origin');
+        board.style.removeProperty('transition');
+
+        if (isFitted) {
+            this._applySmartFit(true);
+        } else {
+            this._zoomScale = targetScale;
+            this._isFitted = false;
+            board.style.setProperty('--sc-scale', targetScale.toString());
+            board.style.zoom = targetScale.toString();
+            gridArea.setAttribute('data-fitted', 'false');
+            this._updateZoomButtonUI(false, targetScale);
+
+            if (rBefore && rBefore.width > 0) {
+                const rMeasured = board.getBoundingClientRect?.() || { left: 0, top: 0 };
+                const boardOffsetLeft = rMeasured.left + (gridArea.scrollLeft || 0);
+                const boardOffsetTop = rMeasured.top + (gridArea.scrollTop || 0);
+
+                const targetScrollLeft = boardOffsetLeft - rBefore.left;
+                const targetScrollTop = boardOffsetTop - rBefore.top;
+
+                const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+                const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+
+                if (maxScrollX > 0) {
+                    gridArea.scrollLeft = Math.max(0, Math.min(maxScrollX, Math.round(targetScrollLeft)));
+                }
+                if (maxScrollY > 0) {
+                    gridArea.scrollTop = Math.max(0, Math.min(maxScrollY, Math.round(targetScrollTop)));
+                }
+            }
+        }
+
+        if (rBefore && rBefore.width > 0) {
+            this._animateFLIPTransition(rBefore);
+        }
+    },
+
+    // ========================================================================
+    // OVERSCROLL EDGE REBOUND (iOS/Android Photo-style elastic bounce)
+    // ========================================================================
+
+    _setupOverscrollBounce(gridArea) {
+        if (!gridArea) return;
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let startScrollLeft = 0;
+        let startScrollTop = 0;
+        let isTouching = false;
+        let isOverscrolling = false;
+        let hasTriggeredHaptic = false;
+        let currentOverscrollX = 0;
+        let currentOverscrollY = 0;
+
+        let touchSamples = [];
+        const recordTouchSample = (x, y) => {
+            const now = performance.now();
+            touchSamples.push({ t: now, x, y });
+            if (touchSamples.length > 6) touchSamples.shift();
+            while (touchSamples.length > 2 && (now - touchSamples[0].t) > 120) {
+                touchSamples.shift();
+            }
+        };
+
+        const getReleaseVelocity = () => {
+            if (touchSamples.length < 2) return { vx: 0, vy: 0 };
+            const first = touchSamples[0];
+            const last = touchSamples[touchSamples.length - 1];
+            const dt = last.t - first.t;
+            if (dt <= 5) return { vx: 0, vy: 0 };
+            return {
+                vx: (last.x - first.x) / dt,
+                vy: (last.y - first.y) / dt
+            };
+        };
+
+        const clampOverscroll = (excess, maxOvershoot = 64, resistance = 0.35) => {
+            if (Math.abs(excess) < 1) return 0;
+            const sign = Math.sign(excess);
+            const abs = Math.abs(excess);
+            const damped = (abs * resistance) / (1 + (abs * resistance) / maxOvershoot);
+            return Math.round(sign * damped * 10) / 10;
+        };
+
+        const onTouchStart = (e) => {
+            if (this._isPinching || e.touches.length !== 1 || this._dragSource || this._touchSourceInfo) {
+                if (isOverscrolling) {
+                    this._releaseOverscrollBounce();
+                    isOverscrolling = false;
+                }
+                isTouching = false;
+                return;
+            }
+
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
+
+            if (this._zoomAnimCleanup) {
+                this._zoomAnimCleanup();
+                this._zoomAnimCleanup = null;
+            }
+
+            isTouching = true;
+            isOverscrolling = false;
+            hasTriggeredHaptic = false;
+            currentOverscrollX = 0;
+            currentOverscrollY = 0;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            startScrollLeft = gridArea.scrollLeft;
+            startScrollTop = gridArea.scrollTop;
+            touchSamples = [{ t: performance.now(), x: touchStartX, y: touchStartY }];
+        };
+
+        const onTouchMove = (e) => {
+            if (!isTouching || e.touches.length !== 1 || this._dragSource || this._touchSourceInfo) return;
+
+            const board = document.getElementById('scClassroomBoard');
+            if (!board) return;
+
+            const touch = e.touches[0];
+            recordTouchSample(touch.clientX, touch.clientY);
+
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+
+            const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+
+            let excessX = 0;
+            let excessY = 0;
+
+            if (maxScrollX > 0) {
+                if (gridArea.scrollLeft <= 1 && deltaX > 0) {
+                    excessX = deltaX - (startScrollLeft - gridArea.scrollLeft);
+                } else if (gridArea.scrollLeft >= maxScrollX - 2.5 && deltaX < 0) {
+                    excessX = deltaX + (gridArea.scrollLeft - startScrollLeft);
+                }
+            } else {
+                excessX = deltaX;
+            }
+
+            if (maxScrollY > 0) {
+                if (gridArea.scrollTop <= 1 && deltaY > 0) {
+                    excessY = deltaY - (startScrollTop - gridArea.scrollTop);
+                } else if (gridArea.scrollTop >= maxScrollY - 2.5 && deltaY < 0) {
+                    excessY = deltaY + (gridArea.scrollTop - startScrollTop);
+                }
+            } else {
+                excessY = deltaY;
+            }
+
+            if (Math.abs(excessX) > 4 || Math.abs(excessY) > 4) {
+                const ox = clampOverscroll(excessX);
+                const oy = clampOverscroll(excessY);
+
+                if (Math.abs(ox) > 0 || Math.abs(oy) > 0) {
+                    isOverscrolling = true;
+                    currentOverscrollX = ox;
+                    currentOverscrollY = oy;
+
+                    if (!hasTriggeredHaptic && (Math.abs(ox) > 10 || Math.abs(oy) > 10)) {
+                        this._haptic(8);
+                        hasTriggeredHaptic = true;
+                    }
+
+                    board.style.transition = 'none';
+                    board.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+                }
+            } else if (isOverscrolling) {
+                board.style.transform = 'translate3d(0, 0, 0)';
+                currentOverscrollX = 0;
+                currentOverscrollY = 0;
+            }
+        };
+
+        const onTouchEnd = () => {
+            if (!isTouching) return;
+            isTouching = false;
+
+            const { vx, vy } = getReleaseVelocity();
+
+            if (isOverscrolling && (currentOverscrollX !== 0 || currentOverscrollY !== 0)) {
+                this._releaseOverscrollBounce(currentOverscrollX, currentOverscrollY, vx, vy);
+            }
+            isOverscrolling = false;
+        };
+
+        gridArea.addEventListener('touchstart', onTouchStart, { passive: true });
+        gridArea.addEventListener('touchmove', onTouchMove, { passive: true });
+        gridArea.addEventListener('touchend', onTouchEnd, { passive: true });
+        gridArea.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+        // Inertial fling edge collision listener (iOS Photos / Android Photo style)
+        let lastScrollX = gridArea.scrollLeft;
+        let lastScrollY = gridArea.scrollTop;
+        let lastScrollTime = performance.now();
+        let lastVelocityX = 0;
+        let lastVelocityY = 0;
+        let lastBounceTime = 0;
+
+        const onScroll = () => {
+            if (this._isPinching || isTouching || this._dragSource || this._touchSourceInfo) {
+                lastScrollX = gridArea.scrollLeft;
+                lastScrollY = gridArea.scrollTop;
+                lastScrollTime = performance.now();
+                return;
+            }
+
+            const now = performance.now();
+            const dt = Math.max(1, now - lastScrollTime);
+            const currentX = gridArea.scrollLeft;
+            const currentY = gridArea.scrollTop;
+
+            const vx = (currentX - lastScrollX) / dt;
+            const vy = (currentY - lastScrollY) / dt;
+
+            const maxScrollX = Math.max(0, (gridArea.scrollWidth || 0) - (gridArea.clientWidth || 0));
+            const maxScrollY = Math.max(0, (gridArea.scrollHeight || 0) - (gridArea.clientHeight || 0));
+
+            const cooldownElapsed = (now - lastBounceTime) > 350;
+
+            if (cooldownElapsed) {
+                let hitEdgeX = 0;
+                let hitEdgeY = 0;
+
+                const speedX = currentX < lastScrollX ? Math.min(vx, lastVelocityX) : Math.max(vx, lastVelocityX);
+                const speedY = currentY < lastScrollY ? Math.min(vy, lastVelocityY) : Math.max(vy, lastVelocityY);
+
+                // Left boundary collision: moving left into 0
+                if (currentX <= 2 && currentX < lastScrollX && lastScrollX > 0.5 && speedX < -0.12) {
+                    hitEdgeX = Math.min(36, Math.max(12, Math.round(Math.abs(speedX) * 24)));
+                // Right boundary collision: moving right into maxScrollX (with subpixel tolerance)
+                } else if (maxScrollX > 0 && currentX >= maxScrollX - 3 && currentX > lastScrollX && lastScrollX < maxScrollX - 0.5 && speedX > 0.12) {
+                    hitEdgeX = -Math.min(36, Math.max(12, Math.round(Math.abs(speedX) * 24)));
+                }
+
+                // Top boundary collision: moving up into 0
+                if (currentY <= 2 && currentY < lastScrollY && lastScrollY > 0.5 && speedY < -0.12) {
+                    hitEdgeY = Math.min(36, Math.max(12, Math.round(Math.abs(speedY) * 24)));
+                // Bottom boundary collision: moving down into maxScrollY (with subpixel tolerance)
+                } else if (maxScrollY > 0 && currentY >= maxScrollY - 3 && currentY > lastScrollY && lastScrollY < maxScrollY - 0.5 && speedY > 0.12) {
+                    hitEdgeY = -Math.min(36, Math.max(12, Math.round(Math.abs(speedY) * 24)));
+                }
+
+                if (hitEdgeX !== 0 || hitEdgeY !== 0) {
+                    lastBounceTime = now;
+                    this._triggerEdgeImpactBounce(hitEdgeX, hitEdgeY);
+                }
+            }
+
+            lastScrollX = currentX;
+            lastScrollY = currentY;
+            lastScrollTime = now;
+            lastVelocityX = vx;
+            lastVelocityY = vy;
+        };
+
+        gridArea.addEventListener('scroll', onScroll, { passive: true });
+    },
+
+    _releaseOverscrollBounce(ox = 0, oy = 0, vx = 0, vy = 0) {
+        const board = document.getElementById('scClassroomBoard');
+        if (!board) return;
+
+        this._haptic(10);
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        let cleaned = false;
+        let onTransEnd = null;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (onTransEnd) {
+                board.removeEventListener('transitionend', onTransEnd);
+                onTransEnd = null;
+            }
+            board.style.removeProperty('transform');
+            board.style.removeProperty('transition');
+            if (this._zoomAnimCleanup === cleanup) {
+                this._zoomAnimCleanup = null;
+            }
+        };
+        this._zoomAnimCleanup = cleanup;
+
+        const impulseX = (Math.sign(vx) === Math.sign(ox) && Math.abs(vx) > 0.2)
+            ? Math.min(32, Math.round(Math.abs(vx) * 28)) * Math.sign(vx)
+            : 0;
+        const impulseY = (Math.sign(vy) === Math.sign(oy) && Math.abs(vy) > 0.2)
+            ? Math.min(32, Math.round(Math.abs(vy) * 28)) * Math.sign(vy)
+            : 0;
+
+        if (Math.abs(impulseX) > 4 || Math.abs(impulseY) > 4) {
+            const apexX = ox + impulseX;
+            const apexY = oy + impulseY;
+
+            board.style.transition = 'transform 0.09s cubic-bezier(0.1, 0.9, 0.2, 1)';
+            board.style.transform = `translate3d(${apexX}px, ${apexY}px, 0)`;
+
+            setTimeout(() => {
+                if (cleaned) return;
+                board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+                board.style.transform = 'translate3d(0, 0, 0)';
+            }, 85);
+        } else {
+            board.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.3, 1)';
+            board.style.transform = 'translate3d(0, 0, 0)';
+        }
+
+        const timer = setTimeout(cleanup, 520);
+        onTransEnd = (e) => {
+            if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
+                if (board.style.transform.includes('0px, 0px, 0') || board.style.transform === 'translate3d(0, 0, 0)') {
+                    clearTimeout(timer);
+                    cleanup();
+                }
+            }
+        };
+        board.addEventListener('transitionend', onTransEnd);
+    },
+
+    _triggerEdgeImpactBounce(bounceX, bounceY) {
+        const board = document.getElementById('scClassroomBoard');
+        if (!board) return;
+
+        if (this._zoomAnimCleanup) {
+            this._zoomAnimCleanup();
+            this._zoomAnimCleanup = null;
+        }
+
+        this._haptic(10);
+
+        board.style.transition = 'transform 0.09s cubic-bezier(0.1, 0.9, 0.2, 1)';
+        board.style.transform = `translate3d(${bounceX}px, ${bounceY}px, 0)`;
+
+        let cleaned = false;
+        let onTransEnd = null;
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            if (onTransEnd) {
+                board.removeEventListener('transitionend', onTransEnd);
+                onTransEnd = null;
+            }
+            board.style.removeProperty('transform');
+            board.style.removeProperty('transition');
+            if (this._zoomAnimCleanup === cleanup) {
+                this._zoomAnimCleanup = null;
+            }
+        };
+        this._zoomAnimCleanup = cleanup;
+
+        setTimeout(() => {
+            if (cleaned) return;
+            board.style.transition = 'transform 0.38s cubic-bezier(0.25, 1, 0.3, 1)';
+            board.style.transform = 'translate3d(0, 0, 0)';
+        }, 85);
+
+        const timer = setTimeout(cleanup, 500);
+        onTransEnd = (e) => {
+            if (e.target === board && (!e.propertyName || e.propertyName === 'transform')) {
+                if (board.style.transform.includes('0px, 0px, 0') || board.style.transform === 'translate3d(0, 0, 0)') {
+                    clearTimeout(timer);
+                    cleanup();
+                }
+            }
+        };
+        board.addEventListener('transitionend', onTransEnd);
     },
 
     // ========================================================================

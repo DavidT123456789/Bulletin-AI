@@ -1171,6 +1171,328 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(zoomBtn.getAttribute('aria-label')).toBe('Ajuster à l’écran');
             expect(zoomBtn.querySelector('iconify-icon')?.getAttribute('icon')).toBe('solar:minimize-square-linear');
         });
+
+        it('devrait appliquer une animation FLIP centrée (50% 50%) sans dérive asymétrique', () => {
+            const board = document.getElementById('scClassroomBoard');
+            const rBefore = { left: 100, top: 80, width: 400, height: 300 };
+
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 100,
+                top: 80,
+                width: 600,
+                height: 450
+            });
+
+            SeatingChartManager._animateFLIPTransition(rBefore);
+
+            // Vérifie que transform-origin est centré à 50% 50%
+            expect(board.style.transformOrigin).toBe('50% 50%');
+            expect(board.style.transform).toContain('scale(');
+        });
+
+        it('devrait supporter le pinch-to-zoom à deux doigts et rebondir élastiquement vers le fitScale', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._fitScale = 0.6;
+            SeatingChartManager._zoomScale = 0.6;
+            SeatingChartManager._isFitted = true;
+
+            // Simuler pinchState avec un dézoom sous minScale (overshoot vers 0.35)
+            const pinchState = {
+                startDist: 200,
+                startScale: 0.6,
+                minScale: 0.6,
+                maxScale: 1.5,
+                initialMidX: 200,
+                initialMidY: 200,
+                boardRect: { left: 50, top: 50, width: 300, height: 300 },
+                currentScale: 0.38,
+                hasOverstretched: true
+            };
+
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+            const applySmartFitSpy = vi.spyOn(SeatingChartManager, '_applySmartFit');
+
+            // Fin de geste sous le plafond min -> doit rebondir vers minScale (0.6)
+            SeatingChartManager._endPinch(pinchState, gridArea);
+
+            expect(hapticSpy).toHaveBeenCalledWith(14);
+            expect(board.style.transition).toContain('transform');
+
+            // Simuler transitionend
+            board.dispatchEvent(new Event('transitionend'));
+
+            expect(applySmartFitSpy).toHaveBeenCalledWith(true);
+        });
+
+        it('devrait supporter le pinch-to-zoom et rebondir vers maxScale lors d’un dépassement haut', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._fitScale = 0.7;
+            SeatingChartManager._zoomScale = 1.0;
+            SeatingChartManager._isFitted = false;
+
+            const pinchState = {
+                startDist: 200,
+                startScale: 1.0,
+                minScale: 0.7,
+                maxScale: 1.5,
+                initialMidX: 200,
+                initialMidY: 200,
+                boardRect: { left: 50, top: 50, width: 300, height: 300 },
+                currentScale: 1.85,
+                hasOverstretched: true
+            };
+
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            // Fin de geste au dessus du plafond max -> rebond vers maxScale (1.5)
+            SeatingChartManager._endPinch(pinchState, gridArea);
+
+            expect(hapticSpy).toHaveBeenCalledWith(14);
+            expect(board.style.transition).toContain('transform');
+
+            // Simuler transitionend
+            board.dispatchEvent(new Event('transitionend'));
+
+            expect(SeatingChartManager._zoomScale).toBe(1.5);
+            expect(SeatingChartManager._isFitted).toBe(false);
+            expect(board.style.getPropertyValue('--sc-scale')).toBe('1.5');
+        });
+
+        it('devrait calculer et ancrer le transformOrigin sur le centre focal des deux doigts lors du pinch', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 100,
+                top: 50,
+                width: 400,
+                height: 300
+            });
+
+            // Touche 1 à (150, 150), Touche 2 à (250, 250) -> Milieu (200, 200)
+            // Origine relative au board: X = 200 - 100 = 100px, Y = 200 - 50 = 150px
+            const touchStart = new Event('touchstart', { cancelable: true });
+            touchStart.touches = [
+                { clientX: 150, clientY: 150 },
+                { clientX: 250, clientY: 250 }
+            ];
+
+            gridArea.dispatchEvent(touchStart);
+
+            expect(board.style.transformOrigin).toBe('25.00% 50.00%');
+            expect(SeatingChartManager._isPinching).toBe(true);
+
+            // Simuler fin de geste
+            const touchEnd = new Event('touchend');
+            touchEnd.touches = [];
+            gridArea.dispatchEvent(touchEnd);
+            expect(SeatingChartManager._isPinching).toBe(false);
+        });
+
+        it('devrait supporter le double-tap tactile sur mobile pour basculer le zoom', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const toggleZoomSpy = vi.spyOn(SeatingChartManager, '_toggleZoom');
+
+            const now = Date.now();
+            vi.spyOn(Date, 'now').mockReturnValue(now);
+
+            // Premier tap
+            const touchEnd1 = new Event('touchend', { cancelable: true });
+            touchEnd1.touches = [];
+            touchEnd1.changedTouches = [{ clientX: 150, clientY: 200 }];
+            gridArea.dispatchEvent(touchEnd1);
+
+            // Deuxième tap 120ms plus tard
+            vi.spyOn(Date, 'now').mockReturnValue(now + 120);
+            const touchEnd2 = new Event('touchend', { cancelable: true });
+            touchEnd2.touches = [];
+            touchEnd2.changedTouches = [{ clientX: 154, clientY: 202 }];
+            gridArea.dispatchEvent(touchEnd2);
+
+            expect(toggleZoomSpy).toHaveBeenCalled();
+        });
+
+        it('devrait supporter le zoom molette trackpad avec Ctrl sur ordinateur', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            SeatingChartManager._fitScale = 0.8;
+            SeatingChartManager._zoomScale = 0.8;
+            SeatingChartManager._isFitted = true;
+
+            const wheelEvent = new WheelEvent('wheel', {
+                deltaY: -100,
+                ctrlKey: true,
+                cancelable: true
+            });
+
+            gridArea.dispatchEvent(wheelEvent);
+
+            expect(SeatingChartManager._zoomScale).toBeGreaterThan(0.8);
+            expect(board.style.getPropertyValue('--sc-scale')).toBeTruthy();
+        });
+
+        it('devrait calculer un plafond de zoom généreux et adapté selon l’échelle d’ajustement', () => {
+            expect(SeatingChartManager._getMaxZoomScale(0.4)).toBe(1.6);
+            expect(SeatingChartManager._getMaxZoomScale(0.7)).toBe(1.75);
+            expect(SeatingChartManager._getMaxZoomScale(0.8)).toBe(2.0);
+            expect(SeatingChartManager._getMaxZoomScale(1.0)).toBe(2.2);
+        });
+
+        it('devrait déclencher un rebond élastique (overscroll bounce) sur les bords lors du scroll', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            // Simuler un glissement au delà de la limite haute
+            gridArea.scrollTop = 0;
+            const touchStart = new Event('touchstart');
+            touchStart.touches = [{ clientX: 200, clientY: 200 }];
+            gridArea.dispatchEvent(touchStart);
+
+            const touchMove = new Event('touchmove');
+            touchMove.touches = [{ clientX: 200, clientY: 320 }]; // +120px vers le bas alors que scrollTop est 0
+            gridArea.dispatchEvent(touchMove);
+
+            expect(board.style.transform).toContain('translate3d');
+            expect(hapticSpy).toHaveBeenCalledWith(8);
+
+            // Relâchement
+            const touchEnd = new Event('touchend');
+            touchEnd.touches = [];
+            gridArea.dispatchEvent(touchEnd);
+
+            expect(board.style.transition).toContain('cubic-bezier');
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+        });
+
+        it('devrait nettoyer le rebond d’overscroll à la fin de l’animation', () => {
+            const board = document.getElementById('scClassroomBoard');
+            board.style.transform = 'translate3d(0px, 30px, 0)';
+
+            SeatingChartManager._releaseOverscrollBounce();
+
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+            expect(board.style.transition).toContain('0.42s');
+
+            board.dispatchEvent(new Event('transitionend'));
+
+            expect(board.style.transform).toBe('');
+            expect(board.style.transition).toBe('');
+        });
+
+        it('devrait propulser un rebond élastique dynamique avec vitesse lors d’un lancer (fling) au bord', async () => {
+            const board = document.getElementById('scClassroomBoard');
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            // Appel de _releaseOverscrollBounce avec overscroll existant et vitesse positive (lancer)
+            SeatingChartManager._releaseOverscrollBounce(20, 25, 0.8, 0.9);
+
+            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(board.style.transition).toContain('0.09s');
+            expect(board.style.transform).toContain('translate3d');
+
+            // Simuler l'arrivée à l'apex
+            await new Promise(r => setTimeout(r, 100));
+
+            // Rebond final vers 0
+            expect(board.style.transition).toBeDefined();
+        });
+
+        it('devrait déclencher un rebond élastique sur le bord droit et le bord bas', () => {
+            const gridArea = document.getElementById('scGridArea');
+            const board = document.getElementById('scClassroomBoard');
+
+            // Configurer des dimensions simulant un dépassement scrollable
+            Object.defineProperty(gridArea, 'scrollWidth', { value: 800, configurable: true });
+            Object.defineProperty(gridArea, 'clientWidth', { value: 400, configurable: true });
+            Object.defineProperty(gridArea, 'scrollHeight', { value: 600, configurable: true });
+            Object.defineProperty(gridArea, 'clientHeight', { value: 300, configurable: true });
+            // maxScrollX = 400, maxScrollY = 300
+
+            // 1. Bord droit : scrollLeft est au max (399.5px, subpixel tolerance), glissement vers la gauche (deltaX < 0)
+            gridArea.scrollLeft = 399.5;
+            gridArea.scrollTop = 100;
+            const touchStart = new Event('touchstart');
+            touchStart.touches = [{ clientX: 200, clientY: 200 }];
+            gridArea.dispatchEvent(touchStart);
+
+            const touchMove = new Event('touchmove');
+            touchMove.touches = [{ clientX: 100, clientY: 200 }]; // -100px vers la gauche
+            gridArea.dispatchEvent(touchMove);
+
+            expect(board.style.transform).toContain('translate3d');
+            // ox doit être négatif (traction vers la gauche pour rebond droit)
+            expect(board.style.transform).toMatch(/translate3d\(-[0-9.]+px/);
+
+            // Relâchement
+            const touchEnd = new Event('touchend');
+            touchEnd.touches = [];
+            gridArea.dispatchEvent(touchEnd);
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+
+            // 2. Bord bas : scrollTop est au max (299px), glissement vers le haut (deltaY < 0)
+            gridArea.scrollLeft = 100;
+            gridArea.scrollTop = 299;
+            const touchStart2 = new Event('touchstart');
+            touchStart2.touches = [{ clientX: 200, clientY: 200 }];
+            gridArea.dispatchEvent(touchStart2);
+
+            const touchMove2 = new Event('touchmove');
+            touchMove2.touches = [{ clientX: 200, clientY: 100 }]; // -100px vers le haut
+            gridArea.dispatchEvent(touchMove2);
+
+            expect(board.style.transform).toContain('translate3d');
+            // oy doit être négatif (traction vers le haut pour rebond bas)
+            expect(board.style.transform).toMatch(/translate3d\(0px, -[0-9.]+px/);
+
+            const touchEnd2 = new Event('touchend');
+            touchEnd2.touches = [];
+            gridArea.dispatchEvent(touchEnd2);
+            expect(board.style.transform).toBe('translate3d(0, 0, 0)');
+        });
+
+        it('devrait amortir et déclencher le rebond d’impact lorsqu’un scroll inertiel heurte un bord', () => {
+            const board = document.getElementById('scClassroomBoard');
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            // Bord gauche (positif)
+            SeatingChartManager._triggerEdgeImpactBounce(28, 0);
+            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(board.style.transition).toContain('0.09s');
+            expect(board.style.transform).toBe('translate3d(28px, 0px, 0)');
+
+            // Bord droit (négatif)
+            SeatingChartManager._triggerEdgeImpactBounce(-24, 0);
+            expect(board.style.transform).toBe('translate3d(-24px, 0px, 0)');
+
+            // Bord bas (négatif)
+            SeatingChartManager._triggerEdgeImpactBounce(0, -26);
+            expect(board.style.transform).toBe('translate3d(0px, -26px, 0)');
+        });
+
+        it('devrait propulser un rebond élastique dynamique avec vitesse négative lors d’un lancer vers la droite/bas', async () => {
+            const board = document.getElementById('scClassroomBoard');
+            const hapticSpy = vi.spyOn(SeatingChartManager, '_haptic');
+
+            // Appel de _releaseOverscrollBounce avec overscroll négatif et vitesse négative
+            SeatingChartManager._releaseOverscrollBounce(-20, -25, -0.8, -0.9);
+
+            expect(hapticSpy).toHaveBeenCalledWith(10);
+            expect(board.style.transition).toContain('0.09s');
+            expect(board.style.transform).toMatch(/translate3d\(-[0-9.]+px, -[0-9.]+px/);
+
+            // Simuler l'arrivée à l'apex
+            await new Promise(r => setTimeout(r, 100));
+
+            // Rebond final vers 0
+            expect(board.style.transition).toBeDefined();
+        });
     });
 
     describe('SeatingChartManager - Mode Édition Mobile & Tap-to-Place (2026 Gold Standard)', () => {
