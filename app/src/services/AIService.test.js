@@ -11,7 +11,9 @@ vi.mock('../state/State.js', () => ({
     appState: {
         openaiApiKey: '',
         googleApiKey: '',
+        groqApiKey: '',
         openrouterApiKey: '',
+        mistralApiKey: '',
         currentAIModel: 'gemini-2.0-flash',
         isDemoMode: false,
         sessionCost: 0
@@ -23,7 +25,9 @@ vi.mock('../config/Config.js', () => ({
     CONFIG: {
         OPENAI_API_BASE: 'https://api.openai.com/v1',
         GOOGLE_API_BASE: 'https://generativelanguage.googleapis.com/v1beta',
+        GROQ_API_BASE: 'https://api.groq.com/openai/v1',
         OPENROUTER_API_BASE: 'https://openrouter.ai/api/v1',
+        MISTRAL_API_BASE: 'https://api.mistral.ai/v1',
         API_CALL_TIMEOUT_MS: 25000
     },
     COSTS_PER_MILLION_TOKENS: {
@@ -93,6 +97,20 @@ describe('AIService', () => {
             expect(config.apiUrl).toContain('openai');
             expect(config.headers['Authorization']).toBe('Bearer test-openai-key');
             expect(config.payload.model).toBe('gpt-3.5-turbo');
+            expect(config.payload.messages[0].content).toBe('Test prompt');
+        });
+
+        it('should return correct config for Groq provider', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.groqApiKey = 'gsk-test-groq-key';
+            appState.currentAIModel = 'groq-llama-3.3-70b';
+
+            const config = AIService._getApiConfig('Test prompt');
+
+            expect(config.apiKey).toBe('gsk-test-groq-key');
+            expect(config.apiUrl).toContain('api.groq.com');
+            expect(config.headers['Authorization']).toBe('Bearer gsk-test-groq-key');
+            expect(config.payload.model).toBe('llama-3.3-70b-versatile');
             expect(config.payload.messages[0].content).toBe('Test prompt');
         });
 

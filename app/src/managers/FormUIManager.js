@@ -133,6 +133,7 @@ export const FormUI = {
         if (DOM.aiModelSelect) DOM.aiModelSelect.value = appState.currentAIModel;
         if (DOM.openaiApiKey) DOM.openaiApiKey.value = appState.openaiApiKey;
         if (DOM.googleApiKey) DOM.googleApiKey.value = appState.googleApiKey;
+        if (DOM.groqApiKey) DOM.groqApiKey.value = appState.groqApiKey;
         if (DOM.openrouterApiKey) DOM.openrouterApiKey.value = appState.openrouterApiKey;
         if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
@@ -195,6 +196,7 @@ export const FormUI = {
     _updateApiStatusDisplay() {
         const providers = [
             { id: 'google', key: appState.googleApiKey, inputId: 'googleApiKey', btnId: 'validateGoogleApiKeyBtn' },
+            { id: 'groq', key: appState.groqApiKey, inputId: 'groqApiKey', btnId: 'validateGroqApiKeyBtn' },
             { id: 'openai', key: appState.openaiApiKey, inputId: 'openaiApiKey', btnId: 'validateOpenaiApiKeyBtn' },
             { id: 'openrouter', key: appState.openrouterApiKey, inputId: 'openrouterApiKey', btnId: 'validateOpenrouterApiKeyBtn' },
             { id: 'anthropic', key: appState.anthropicApiKey, inputId: 'anthropicApiKey', btnId: 'validateAnthropicApiKeyBtn' },
@@ -402,6 +404,7 @@ export const FormUI = {
         let hasKey = false;
         const providerNames = {
             google: 'Google Gemini',
+            groq: 'Groq Cloud',
             openai: 'OpenAI',
             openrouter: 'OpenRouter',
             anthropic: 'Claude (Anthropic)',
@@ -419,6 +422,9 @@ export const FormUI = {
         } else if (model.startsWith('gemini')) {
             requiredProvider = 'google';
             hasKey = !!appState.googleApiKey && appState.googleApiKey.length > 5;
+        } else if (model.startsWith('groq-')) {
+            requiredProvider = 'groq';
+            hasKey = !!appState.groqApiKey && appState.groqApiKey.length > 5;
         } else if (model.startsWith('anthropic')) {
             requiredProvider = 'anthropic';
             hasKey = !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;

@@ -397,7 +397,8 @@
         font-size: 14px !important;
     }
 
-    #helpProviderSelector .provider-tag {
+    #helpProviderSelector .provider-tag,
+    #welcomeProviderSelector .provider-tag {
         display: none;
     }
 

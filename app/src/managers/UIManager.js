@@ -1207,6 +1207,10 @@ export const UI = {
             provider = 'google';
             key = appState.googleApiKey;
             name = 'Google';
+        } else if (model.startsWith('groq-')) {
+            provider = 'groq';
+            key = appState.groqApiKey;
+            name = 'Groq Cloud';
         } else if (model.startsWith('mistral-direct')) {
             provider = 'mistral';
             key = appState.mistralApiKey;

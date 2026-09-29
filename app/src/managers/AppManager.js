@@ -199,6 +199,7 @@ export const App = {
 
         const buttonMap = {
             google: DOM.validateGoogleApiKeyBtn,
+            groq: DOM.validateGroqApiKeyBtn,
             openai: DOM.validateOpenaiApiKeyBtn,
             openrouter: DOM.validateOpenrouterApiKeyBtn,
             anthropic: DOM.validateAnthropicApiKeyBtn,

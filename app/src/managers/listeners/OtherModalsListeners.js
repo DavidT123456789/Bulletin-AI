@@ -71,7 +71,7 @@ export const OtherModalsListeners = {
         const helpContainer = document.getElementById('helpProviderSelector');
         const helpGlider = helpContainer?.querySelector('.ui-glider');
 
-        const updateHelpProviderUI = () => {
+        const updateHelpProviderUI = (animate = false) => {
             const checked = document.querySelector('input[name="helpProvider"]:checked');
             if (!checked) return;
 
@@ -87,8 +87,9 @@ export const OtherModalsListeners = {
             // 2. Show/Hide Content
             const value = checked.value;
             const contentMap = {
-                'mistral': 'helpContentMistral',
                 'google': 'helpContentGoogle',
+                'groq': 'helpContentGroq',
+                'mistral': 'helpContentMistral',
                 'openrouter': 'helpContentOpenRouter'
             };
 
@@ -102,14 +103,16 @@ export const OtherModalsListeners = {
             contents.forEach(el => {
                 if (el.id === contentMap[value]) {
                     el.style.display = 'block';
-                    el.animate([
-                        { opacity: 0, transform: 'translateY(5px)' },
-                        { opacity: 1, transform: 'translateY(0)' }
-                    ], {
-                        duration: 300,
-                        easing: 'ease-out',
-                        fill: 'forwards'
-                    });
+                    if (animate) {
+                        el.animate([
+                            { opacity: 0, transform: 'translateY(6px)' },
+                            { opacity: 1, transform: 'translateY(0)' }
+                        ], {
+                            duration: 250,
+                            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                            fill: 'forwards'
+                        });
+                    }
                 } else {
                     el.style.display = 'none';
                 }
@@ -118,20 +121,18 @@ export const OtherModalsListeners = {
 
         if (helpProviderRadios.length > 0) {
             helpProviderRadios.forEach(radio => {
-                radio.addEventListener('change', updateHelpProviderUI);
+                radio.addEventListener('change', () => updateHelpProviderUI(true));
             });
 
-            // Init on modal open or tab switch could be tricky, but we can init now 
-            // and whenever the help tab is clicked.
-            // A simple timeout helps ensure layout is computed if modal opens immediately
-            setTimeout(updateHelpProviderUI, 200);
+            // Init on modal open or tab switch: update layout without jarring re-animation
+            setTimeout(() => updateHelpProviderUI(false), 200);
 
-            // Re-calc glider when switching TABS inside help modal
+            // Re-calc glider when switching TABS inside help modal (no re-animation of content)
             const helpTabs = document.querySelectorAll('.ui-tabs-btn');
             helpTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     if (tab.getAttribute('onclick')?.includes('help-apikey')) {
-                        setTimeout(updateHelpProviderUI, 50);
+                        setTimeout(() => updateHelpProviderUI(false), 50);
                     }
                 });
             });

@@ -210,6 +210,25 @@ describe('ApiValidationManager', () => {
             );
         });
 
+        it('should validate Groq key with correct model', async () => {
+            AIService.callAI.mockResolvedValue({ text: 'ok' });
+
+            await ApiValidationManager.validateApiKeyUI(
+                'groq', mockInputEl, mockErrorEl, mockBtnEl
+            );
+
+            expect(AIService.callAI).toHaveBeenCalledWith(
+                'Validation',
+                expect.objectContaining({
+                    isValidation: true,
+                    validationProvider: 'groq',
+                    modelOverride: 'groq-llama-3.3-70b'
+                })
+            );
+            expect(appState.apiKeyStatus.groq).toBe('valid');
+            expect(appState.validatedApiKeys.groq).toBe(true);
+        });
+
         it('should work in demo mode', async () => {
             vi.useFakeTimers();
             appState.isDemoMode = true;

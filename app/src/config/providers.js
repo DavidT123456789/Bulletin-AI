@@ -10,7 +10,15 @@ export const PROVIDER_CONFIG = {
         name: 'Google Gemini',
         icon: 'logos:google-icon',
         class: 'provider-google',
-        description: '<strong>Google Gemini</strong> est une alternative gratuite et performante (soumise à un quota d’utilisation quotidien).'
+        description: '<strong>Google Gemini (Recommandé)</strong> est la solution idéale : <strong>100% gratuite et sans carte bancaire</strong> via Google AI Studio (15 req/min, 1 500 req/jour).'
+    },
+    groq: {
+        id: 'groq',
+        name: 'Groq Cloud',
+        icon: 'solar:bolt-circle-bold',
+        class: 'provider-groq',
+        style: 'color: #f55036;', // Groq coral orange
+        description: '<strong>Groq Cloud (Sprinteur)</strong> offre une vitesse fulgurante (~500 tokens/s) et héberge <strong>Llama 3.3</strong> et <strong>Gemma 2</strong> gratuitement sans carte bancaire.'
     },
     openrouter: {
         id: 'openrouter',
@@ -18,7 +26,7 @@ export const PROVIDER_CONFIG = {
         icon: 'solar:bolt-bold-duotone',
         class: 'provider-openrouter',
         style: 'color: var(--secondary-color);', // Adapte la couleur si nécessaire
-        description: '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès à tous les meilleurs modèles (DeepSeek, Claude, GPT-4…).'
+        description: '<strong>OpenRouter</strong> est une passerelle unifiée donnant accès aux meilleurs modèles ouverts (Llama 3.3, Gemma 2) et propriétaires (Claude, DeepSeek…)'
     },
     openai: {
         id: 'openai',
@@ -38,7 +46,7 @@ export const PROVIDER_CONFIG = {
         icon: 'solar:cat-bold',
         class: 'provider-mistral',
         style: 'color: #fd6f00;', // Orange Mistral
-        description: '<strong>Mistral AI</strong> est une solution française, performante et <strong>gratuite</strong> (1 milliard de tokens/mois).'
+        description: '<strong>Mistral AI</strong> est une solution française performante (nécessite un compte La Plateforme avec crédits pay-as-you-go).'
     },
     ollama: {
         id: 'ollama',

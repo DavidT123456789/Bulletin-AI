@@ -118,6 +118,9 @@ export const ApiValidationManager = {
                         errorEl.style.display = 'block';
                         errorEl.style.color = 'var(--success-color)';
                     }
+                } else if (provider === 'groq') {
+                    modelOverride = 'groq-llama-3.3-70b';
+                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                 } else if (provider === 'anthropic') {
                     // Anthropic uses claude-3-7-sonnet as default test model
                     modelOverride = 'anthropic-claude-3-7-sonnet-latest';
@@ -299,6 +302,7 @@ export const ApiValidationManager = {
         const inputMap = {
             'openai': DOM.openaiApiKey,
             'google': DOM.googleApiKey,
+            'groq': DOM.groqApiKey,
             'openrouter': DOM.openrouterApiKey,
             'anthropic': DOM.anthropicApiKey,
             'mistral': DOM.mistralApiKey
@@ -306,6 +310,7 @@ export const ApiValidationManager = {
         const errorMap = {
             'openai': DOM.openaiApiKeyError,
             'google': DOM.googleApiKeyError,
+            'groq': DOM.groqApiKeyError,
             'openrouter': DOM.openrouterApiKeyError,
             'anthropic': DOM.anthropicApiKeyError,
             'mistral': DOM.mistralApiKeyError
@@ -313,6 +318,7 @@ export const ApiValidationManager = {
         const btnMap = {
             'openai': DOM.validateOpenaiApiKeyBtn,
             'google': DOM.validateGoogleApiKeyBtn,
+            'groq': DOM.validateGroqApiKeyBtn,
             'openrouter': DOM.validateOpenrouterApiKeyBtn,
             'anthropic': DOM.validateAnthropicApiKeyBtn,
             'mistral': DOM.validateMistralApiKeyBtn
@@ -344,6 +350,7 @@ export const ApiValidationManager = {
         let btnEl = null;
         let provider = null;
         if (inputId === 'googleApiKey') { btnEl = DOM.validateGoogleApiKeyBtn; provider = 'google'; }
+        else if (inputId === 'groqApiKey') { btnEl = DOM.validateGroqApiKeyBtn; provider = 'groq'; }
         else if (inputId === 'openaiApiKey') { btnEl = DOM.validateOpenaiApiKeyBtn; provider = 'openai'; }
         else if (inputId === 'openrouterApiKey') { btnEl = DOM.validateOpenrouterApiKeyBtn; provider = 'openrouter'; }
         else if (inputId === 'anthropicApiKey') { btnEl = DOM.validateAnthropicApiKeyBtn; provider = 'anthropic'; }

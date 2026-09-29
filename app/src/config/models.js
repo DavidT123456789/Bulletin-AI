@@ -13,6 +13,10 @@ export const COSTS_PER_MILLION_TOKENS = {
     'gemini-3.7-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
+    // Groq Cloud (clé API directe - Gratuit)
+    'groq-llama-3.3-70b': { input: 0, output: 0 },
+    'groq-gemma-2-9b': { input: 0, output: 0 },
+    'groq-llama-3.1-8b': { input: 0, output: 0 },
     // OpenAI
     'openai-o3-mini': { input: 1.10, output: 4.40 },
     'openai-gpt-4o-mini': { input: 0.15, output: 0.60 },
@@ -39,7 +43,7 @@ export const COSTS_PER_MILLION_TOKENS = {
     'anthropic-claude-3-5-sonnet-latest': { input: 3.00, output: 15.00 },
     'anthropic-claude-3-5-haiku-latest': { input: 0.80, output: 4.00 },
     'anthropic-claude-opus-5': { input: 5.00, output: 25.00 },
-    // Mistral - API directe (Plan Experiment gratuit : 1B tokens/mois !)
+    // Mistral - API directe (La Plateforme - Pay-as-you-go)
     // Les alias -latest pointent automatiquement vers la dernière version
     'mistral-direct-large-latest': { input: 0.50, output: 1.50 },
     'mistral-direct-small-latest': { input: 0.15, output: 0.60 },
@@ -69,32 +73,37 @@ export const MODEL_DESCRIPTIONS = {
     'mistral-small': "<strong>Français.</strong> Mistral Small (via OpenRouter).",
     'mistral-large': "Mistral Large (via OpenRouter). Pour textes nuancés.",
     // Ollama
-    'ollama-qwen2.5:7b': "<strong>🏠 Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français.",
-    'ollama-mistral:7b': "🏠 Local - Équilibré. Le standard Mistral 7B.",
-    'ollama-deepseek-r1:8b': "<strong>🏠 Local.</strong> DeepSeek R1 8B (Raisonnement).",
-    'ollama-gemma2:9b': "🏠 Local. Google Gemma 2 9B.",
+    'ollama-qwen2.5:7b': "<strong>Local - Recommandé.</strong> Qwen 2.5 7B. Excellent en français.",
+    'ollama-mistral:7b': "Local - Équilibré. Le standard Mistral 7B.",
+    'ollama-deepseek-r1:8b': "<strong>Local.</strong> DeepSeek R1 8B (Raisonnement).",
+    'ollama-gemma2:9b': "Local. Google Gemma 2 9B.",
     // Anthropic (Claude) - API directe
     'anthropic-claude-sonnet-5': "<strong>✨ Recommandé.</strong> Claude Sonnet 5. Finesse stylistique et équilibre.",
     'anthropic-claude-3-7-sonnet-latest': "Claude 3.7 Sonnet. Raisonnement hybride et style rédactionnel.",
     'anthropic-claude-3-5-sonnet-latest': "Claude 3.5 Sonnet. Rédaction fluide et nuancée.",
     'anthropic-claude-3-5-haiku-latest': "<strong>⚡ Économique & Rapide.</strong> Claude 3.5 Haiku.",
     'anthropic-claude-opus-5': "<strong>🔥 Puissance maximale.</strong> Claude Opus 5. Qualité maximale.",
-    // Mistral - API directe (Plan Experiment GRATUIT : 1B tokens/mois !)
-    'mistral-direct-small-latest': "<strong>🆓 GRATUIT ⭐</strong> Mistral Small. Multimodal + raisonnement. 1B tokens/mois offerts.",
-    'mistral-direct-large-latest': "<strong>🆓 GRATUIT</strong> Mistral Large. Le plus puissant. 1B tokens/mois offerts.",
+    // Mistral - API directe (La Plateforme)
+    'mistral-direct-small-latest': "<strong>Français ⭐</strong> Mistral Small. Multimodal + raisonnement rapide.",
+    'mistral-direct-large-latest': "<strong>Français</strong> Mistral Large. Le modèle le plus puissant de Mistral.",
+    // Groq Cloud
+    'groq-llama-3.3-70b': "<strong>⚡ Ultra-rapide (~500 t/s) ⭐</strong> Llama 3.3 70B via Groq. Style et raisonnement de pointe, gratuit sans CB.",
+    'groq-gemma-2-9b': "<strong>⚡ Ultra-rapide</strong> Google Gemma 2 9B via Groq. Synthétique et fluide, gratuit sans CB.",
+    'groq-llama-3.1-8b': "<strong>⚡ Instantané</strong> Llama 3.1 8B via Groq. Retouches ultra-vives.",
 };
 
 /**
  * Identifie le fournisseur associé à un identifiant de modèle.
  * Source unique de vérité pour le routage des providers.
  * @param {string} model - Identifiant du modèle
- * @returns {string} ID du fournisseur ('mistral'|'google'|'openrouter'|'openai'|'anthropic'|'ollama')
+ * @returns {string} ID du fournisseur ('mistral'|'google'|'groq'|'openrouter'|'openai'|'anthropic'|'ollama')
  */
 export function getProviderForModel(model) {
     if (!model) return 'openrouter';
     if (model.endsWith('-free')) return 'openrouter';
     if (model.startsWith('mistral-direct')) return 'mistral';
     if (model.startsWith('gemini')) return 'google';
+    if (model.startsWith('groq-')) return 'groq';
     if (model.startsWith('openai')) return 'openai';
     if (model.startsWith('anthropic')) return 'anthropic';
     if (model.startsWith('ollama')) return 'ollama';
@@ -127,19 +136,23 @@ export const MODEL_SHORT_NAMES = {
     'mistral-small': 'Mistral Small (OR)',
     'mistral-large': 'Mistral Large (OR)',
     // Ollama (local)
-    'ollama-qwen2.5:7b': '🏠 Qwen 2.5 7B',
-    'ollama-mistral:7b': '🏠 Mistral 7B',
-    'ollama-deepseek-r1:8b': '🏠 DeepSeek R1',
-    'ollama-gemma2:9b': '🏠 Gemma 2 9B',
+    'ollama-qwen2.5:7b': 'Qwen 2.5 7B',
+    'ollama-mistral:7b': 'Mistral 7B',
+    'ollama-deepseek-r1:8b': 'DeepSeek R1',
+    'ollama-gemma2:9b': 'Gemma 2 9B',
     // Anthropic (Claude)
     'anthropic-claude-sonnet-5': 'Claude Sonnet 5',
     'anthropic-claude-3-7-sonnet-latest': 'Claude 3.7 Sonnet',
     'anthropic-claude-3-5-sonnet-latest': 'Claude 3.5 Sonnet',
     'anthropic-claude-3-5-haiku-latest': 'Claude 3.5 Haiku',
     'anthropic-claude-opus-5': 'Claude Opus 5',
-    // Mistral (API directe - GRATUIT)
+    // Mistral (API directe)
     'mistral-direct-small-latest': 'Mistral Small',
     'mistral-direct-large-latest': 'Mistral Large',
+    // Groq Cloud
+    'groq-llama-3.3-70b': 'Llama 3.3 70B (Groq)',
+    'groq-gemma-2-9b': 'Gemma 2 9B (Groq)',
+    'groq-llama-3.1-8b': 'Llama 3.1 8B (Groq)',
 };
 
 /**
@@ -148,64 +161,72 @@ export const MODEL_SHORT_NAMES = {
  */
 export const MODEL_SELECTOR_CONFIG = [
     {
-        label: '🐱 Mistral AI — GRATUIT 🇫🇷 (1B tokens/mois)',
+        label: 'Google Gemini — QUOTA GRATUIT',
+        models: [
+            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
+            { id: 'gemini-3.8-flash', qualifier: 'Raisonnement' },
+            { id: 'gemini-3.1-pro-preview', qualifier: 'Synthèses complexes' },
+        ]
+    },
+    {
+        label: 'Groq Cloud — QUOTA GRATUIT',
+        models: [
+            { id: 'groq-llama-3.3-70b', qualifier: 'Recommandé' },
+            { id: 'groq-gemma-2-9b', qualifier: 'Équilibré' },
+            { id: 'groq-llama-3.1-8b', qualifier: 'Instantané' },
+        ]
+    },
+    {
+        label: 'Mistral AI — PAY-AS-YOU-GO',
         models: [
             { id: 'mistral-direct-small-latest', qualifier: 'Recommandé' },
             { id: 'mistral-direct-large-latest', qualifier: 'Puissant' },
         ]
     },
     {
-        label: '💚 Google Gemini — QUOTA GRATUIT',
+        label: 'OpenRouter — QUOTA GRATUIT',
         models: [
-            { id: 'gemini-3.5-flash', qualifier: 'Recommandé' },
-            { id: 'gemini-3.8-flash', qualifier: 'Raisonnement' },
-            { id: 'gemini-3.1-pro-preview', qualifier: '💰 Synthèses complexes' },
+            { id: 'llama-3.3-70b-free', qualifier: 'Journalier' },
         ]
     },
     {
-        label: '💚 OpenRouter — QUOTA GRATUIT',
-        models: [
-            { id: 'llama-3.3-70b-free', qualifier: 'Puissant - Journalier' },
-        ]
-    },
-    {
-        label: '💰 OpenRouter — PAYANT (économique)',
+        label: 'OpenRouter — PAYANT',
         models: [
             { id: 'claude-sonnet-5', qualifier: 'Recommandé' },
             { id: 'claude-3.7-sonnet', qualifier: 'Raisonnement' },
             { id: 'claude-3.5-sonnet', qualifier: 'Stable' },
             { id: 'openrouter', qualifier: 'Économique' },
             { id: 'deepseek-r1', qualifier: 'Raisonnement' },
-            { id: 'ministral-3b', qualifier: '~0€, Mistral' },
-            { id: 'amazon-nova-v1-lite', qualifier: 'Très économique' },
-            { id: 'mistral-small', qualifier: 'Français' },
+            { id: 'ministral-3b', qualifier: 'Économique' },
+            { id: 'amazon-nova-v1-lite', qualifier: 'Économique' },
+            { id: 'mistral-small', qualifier: 'Standard' },
             { id: 'mistral-large', qualifier: 'Puissant' },
         ]
     },
     {
-        label: '💰 OpenAI — PAYANT',
+        label: 'OpenAI — PAYANT',
         models: [
             { id: 'openai-o3-mini', qualifier: 'Raisonnement' },
             { id: 'openai-gpt-4o-mini', qualifier: 'Économique' },
         ]
     },
     {
-        label: '💰 Anthropic Claude — PAYANT',
+        label: 'Anthropic Claude — PAYANT',
         models: [
             { id: 'anthropic-claude-sonnet-5', qualifier: 'Recommandé' },
             { id: 'anthropic-claude-3-7-sonnet-latest', qualifier: 'Raisonnement' },
             { id: 'anthropic-claude-3-5-sonnet-latest', qualifier: 'Stable' },
-            { id: 'anthropic-claude-3-5-haiku-latest', qualifier: 'Économique & Rapide' },
-            { id: 'anthropic-claude-opus-5', qualifier: 'Puissance maximale' },
+            { id: 'anthropic-claude-3-5-haiku-latest', qualifier: 'Rapide' },
+            { id: 'anthropic-claude-opus-5', qualifier: 'Puissant' },
         ]
     },
     {
-        label: '🏠 Ollama — LOCAL',
+        label: 'Ollama — LOCAL',
         models: [
             { id: 'ollama-qwen2.5:7b', qualifier: 'Recommandé' },
             { id: 'ollama-mistral:7b', qualifier: 'Standard' },
             { id: 'ollama-deepseek-r1:8b', qualifier: 'Raisonnement' },
-            { id: 'ollama-gemma2:9b', qualifier: 'Google Local' },
+            { id: 'ollama-gemma2:9b', qualifier: 'Standard' },
         ]
     },
 ];
@@ -216,13 +237,14 @@ export const MODEL_SELECTOR_CONFIG = [
  */
 export const FALLBACK_CONFIG = (() => {
     const config = {
-        mistral: [],
         google: [],
+        groq: [],
+        mistral: [],
         openrouter: [],
         ollama: [],
         openai: [],
         anthropic: [],
-        providerOrder: ['mistral', 'google', 'openrouter', 'ollama', 'openai', 'anthropic']
+        providerOrder: ['google', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic']
     };
 
     MODEL_SELECTOR_CONFIG.forEach(group => {
@@ -243,11 +265,12 @@ export const FALLBACK_CONFIG = (() => {
  */
 export const PROVIDER_DEFAULT_MODELS = {
     google: FALLBACK_CONFIG.google[0],
+    groq: FALLBACK_CONFIG.groq[0],
+    mistral: FALLBACK_CONFIG.mistral[0],
     openai: FALLBACK_CONFIG.openai[0],
     openrouter: FALLBACK_CONFIG.openrouter[0],
     ollama: FALLBACK_CONFIG.ollama[0],
     anthropic: FALLBACK_CONFIG.anthropic[0],
-    mistral: FALLBACK_CONFIG.mistral[0],
 };
 
 /**

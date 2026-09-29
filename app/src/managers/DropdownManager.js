@@ -113,10 +113,16 @@ export const DropdownManager = {
      * @param {string} labelText 
      * @returns {Object|null} Configuration du provider ou null
      */
+    /**
+     * Identifie le provider associé à un label de groupe.
+     * @param {string} labelText 
+     * @returns {Object|null} Configuration du provider ou null
+     */
     getProviderFromLabel(labelText) {
         if (!labelText) return null;
         const mappings = [
             { pattern: /Google Gemini/i, id: 'google' },
+            { pattern: /Groq/i, id: 'groq' },
             { pattern: /OpenRouter/i, id: 'openrouter' },
             { pattern: /OpenAI/i, id: 'openai' },
             { pattern: /Anthropic Claude/i, id: 'anthropic' },
@@ -141,13 +147,21 @@ export const DropdownManager = {
         const config = this.getProviderFromLabel(labelText);
 
         if (config) {
-            // Extraire la partie après le nom du provider
-            const suffixMatch = labelText.match(/—\s*(.+)$/);
+            // Extraire la partie après le tiret séparateur (— ou -)
+            const suffixMatch = labelText.match(/[—–-]\s*(.+)$/);
             let suffix = '';
             if (suffixMatch) {
-                const fullSuffix = suffixMatch[1];
-                const firstWord = fullSuffix.split(/[\s(]/)[0].toLowerCase();
-                suffix = ` <span class="provider-suffix provider-suffix-${firstWord}">${fullSuffix}</span>`;
+                const fullSuffix = suffixMatch[1].trim();
+                let badgeClass = 'provider-suffix-default';
+                const lower = fullSuffix.toLowerCase();
+                if (lower.includes('gratuit') || lower.includes('quota') || lower.includes('free')) {
+                    badgeClass = 'provider-suffix-gratuit';
+                } else if (lower.includes('payant') || lower.includes('pay-as-you-go')) {
+                    badgeClass = 'provider-suffix-payant';
+                } else if (lower.includes('local')) {
+                    badgeClass = 'provider-suffix-local';
+                }
+                suffix = ` <span class="provider-suffix ${badgeClass}">${fullSuffix}</span>`;
             }
 
             // Construction de l'icône via la config
@@ -220,11 +234,19 @@ export const DropdownManager = {
         check.className = 'custom-dropdown-option-check';
         check.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon>';
 
-        const text = document.createElement('span');
-        text.textContent = optionEl.textContent;
+        const textSpan = document.createElement('span');
+        textSpan.className = 'custom-dropdown-option-text';
+
+        // Sépare élégamment le nom du modèle et son qualificatif entre parenthèses
+        const qualifierMatch = optionEl.textContent.match(/^(.*?)\s*\(([^)]+)\)$/);
+        if (qualifierMatch) {
+            textSpan.innerHTML = `<span class="model-name">${qualifierMatch[1]}</span> <span class="model-qualifier">(${qualifierMatch[2]})</span>`;
+        } else {
+            textSpan.textContent = optionEl.textContent;
+        }
 
         div.appendChild(check);
-        div.appendChild(text);
+        div.appendChild(textSpan);
 
         return div;
     },

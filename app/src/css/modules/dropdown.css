@@ -166,6 +166,12 @@
 /* Google - Logo officiel (couleurs d'origine) */
 /* .provider-google: Pas de couleur forcée */
 
+/* Groq Cloud - Orange corail caractéristique */
+.provider-groq {
+    color: #f55036;
+    transform: scale(1.2);
+}
+
 /* OpenRouter gratuit - Accent primaire pour le "gratuit" */
 .provider-openrouter {
     color: var(--success-color);
@@ -200,10 +206,15 @@
 .provider-suffix {
     font-size: 9px;
     font-weight: 600;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: var(--radius-xs);
     margin-left: auto;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
 .provider-suffix-gratuit,
@@ -212,14 +223,43 @@
     color: var(--success-color);
 }
 
-.provider-suffix-payant {
+.provider-suffix-payant,
+.provider-suffix-pay-as-you-go {
     background: var(--purple-light);
     color: var(--purple-color);
 }
 
 .provider-suffix-local {
-    background: var(--purple-light);
-    color: var(--purple-color);
+    background: rgba(var(--text-secondary-rgb), 0.12);
+    color: var(--text-secondary);
+}
+
+.provider-suffix-default {
+    background: rgba(var(--text-secondary-rgb), 0.10);
+    color: var(--text-secondary);
+}
+
+/* Mode sombre - contraste élevé et lisibilité optimale */
+[data-theme="dark"] .provider-suffix-gratuit,
+[data-theme="dark"] .provider-suffix-quota {
+    background: rgba(16, 185, 129, 0.20);
+    color: #34d399;
+}
+
+[data-theme="dark"] .provider-suffix-payant,
+[data-theme="dark"] .provider-suffix-pay-as-you-go {
+    background: rgba(167, 139, 250, 0.20);
+    color: #c4b5fd;
+}
+
+[data-theme="dark"] .provider-suffix-local {
+    background: rgba(161, 161, 170, 0.16);
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .provider-suffix-default {
+    background: rgba(161, 161, 170, 0.14);
+    color: #a1a1aa;
 }
 
 /* Mode sombre - ajustements subtils */
@@ -308,6 +348,34 @@
 
 .custom-dropdown-option.selected .custom-dropdown-option-check {
     opacity: 1;
+}
+
+/* === Typographie affinée des options === */
+.custom-dropdown-option-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    width: 100%;
+}
+
+.custom-dropdown-option-text .model-name {
+    color: var(--text-primary);
+}
+
+.custom-dropdown-option-text .model-qualifier {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+.custom-dropdown-option.selected .custom-dropdown-option-text .model-qualifier {
+    color: var(--primary-color);
+    opacity: 0.85;
+}
+
+[data-theme="dark"] .custom-dropdown-option.selected .custom-dropdown-option-text .model-qualifier {
+    color: var(--primary-bright);
+    opacity: 0.9;
 }
 
 /* === Scrollbar personnalisée === */

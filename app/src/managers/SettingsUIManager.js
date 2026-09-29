@@ -98,6 +98,7 @@ export const SettingsUIManager = {
 
         if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
         if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
+        if (DOM.groqApiKey) appState.groqApiKey = DOM.groqApiKey.value.trim();
         if (DOM.openrouterApiKey) appState.openrouterApiKey = DOM.openrouterApiKey.value.trim();
         if (DOM.anthropicApiKey) appState.anthropicApiKey = DOM.anthropicApiKey.value.trim();
         if (DOM.mistralApiKey) appState.mistralApiKey = DOM.mistralApiKey.value.trim();
@@ -323,6 +324,7 @@ export const SettingsUIManager = {
     injectProviderIcons() {
         const groupIds = {
             'google': 'googleApiKeyGroup',
+            'groq': 'groqApiKeyGroup',
             'openrouter': 'openrouterApiKeyGroup',
             'openai': 'openaiApiKeyGroup',
             'anthropic': 'anthropicApiKeyGroup',
@@ -371,6 +373,7 @@ export const SettingsUIManager = {
         // Check values from DOM if available (live typing) or fall back to state
         const providers = [
             { id: 'google', key: DOM.googleApiKey ? DOM.googleApiKey.value.trim() : appState.googleApiKey },
+            { id: 'groq', key: DOM.groqApiKey ? DOM.groqApiKey.value.trim() : appState.groqApiKey },
             { id: 'openai', key: DOM.openaiApiKey ? DOM.openaiApiKey.value.trim() : appState.openaiApiKey },
             { id: 'openrouter', key: DOM.openrouterApiKey ? DOM.openrouterApiKey.value.trim() : appState.openrouterApiKey },
             { id: 'anthropic', key: DOM.anthropicApiKey ? DOM.anthropicApiKey.value.trim() : appState.anthropicApiKey },
@@ -580,8 +583,9 @@ export const SettingsUIManager = {
         const icon = btn?.querySelector('iconify-icon');
 
         const providers = [
-            { id: 'mistral', inputEl: DOM.mistralApiKey, errorEl: DOM.mistralApiKeyError, btnEl: DOM.validateMistralApiKeyBtn },
             { id: 'google', inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
+            { id: 'groq', inputEl: DOM.groqApiKey, errorEl: DOM.groqApiKeyError, btnEl: DOM.validateGroqApiKeyBtn },
+            { id: 'mistral', inputEl: DOM.mistralApiKey, errorEl: DOM.mistralApiKeyError, btnEl: DOM.validateMistralApiKeyBtn },
             { id: 'openrouter', inputEl: DOM.openrouterApiKey, errorEl: DOM.openrouterApiKeyError, btnEl: DOM.validateOpenrouterApiKeyBtn },
             { id: 'openai', inputEl: DOM.openaiApiKey, errorEl: DOM.openaiApiKeyError, btnEl: DOM.validateOpenaiApiKeyBtn },
             { id: 'anthropic', inputEl: DOM.anthropicApiKey, errorEl: DOM.anthropicApiKeyError, btnEl: DOM.validateAnthropicApiKeyBtn }
@@ -743,6 +747,7 @@ export const SettingsUIManager = {
         const providerId = this._getProviderIdForModel(model);
         const apiKeyMap = {
             'google': appState.googleApiKey,
+            'groq': appState.groqApiKey,
             'openai': appState.openaiApiKey,
             'anthropic': appState.anthropicApiKey,
             'mistral': appState.mistralApiKey,

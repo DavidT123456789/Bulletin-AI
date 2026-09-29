@@ -180,6 +180,12 @@ export function initDOM() {
     DOM.openrouterApiKeyError = document.getElementById('openrouterApiKeyError');
     DOM.openrouterApiKeyValidationIcon = document.getElementById('openrouterApiKeyValidationIcon');
     DOM.validateOpenrouterApiKeyBtn = document.getElementById('validateOpenrouterApiKeyBtn');
+    // Groq Cloud
+    DOM.groqApiKey = document.getElementById('groqApiKey');
+    DOM.groqApiKeyGroup = document.getElementById('groqApiKeyGroup');
+    DOM.groqApiKeyError = document.getElementById('groqApiKeyError');
+    DOM.groqApiKeyValidationIcon = document.getElementById('groqApiKeyValidationIcon');
+    DOM.validateGroqApiKeyBtn = document.getElementById('validateGroqApiKeyBtn');
     // Anthropic (Claude)
     DOM.anthropicApiKey = document.getElementById('anthropicApiKey');
     DOM.anthropicApiKeyGroup = document.getElementById('anthropicApiKeyGroup');

@@ -45,10 +45,11 @@ export const userSettings = {
 
     /** Configuration API */
     api: {
-        currentAIModel: 'mistral-direct-small-latest',
+        currentAIModel: 'gemini-3.5-flash',
         enableApiFallback: true,
         openaiApiKey: '',
         googleApiKey: '',
+        groqApiKey: '',
         openrouterApiKey: '',
         anthropicApiKey: '',   // Claude (Anthropic)
         mistralApiKey: '',     // Mistral AI direct
@@ -108,6 +109,7 @@ export const runtimeState = {
     /** Statuts de validation des API */
     apiStatus: {
         google: 'not-configured',
+        groq: 'not-configured',
         openai: 'not-configured',
         openrouter: 'not-configured',
         anthropic: 'not-configured',
@@ -118,6 +120,7 @@ export const runtimeState = {
     /** Rétro-compatibilité: clés validées */
     validatedApiKeys: {
         google: false,
+        groq: false,
         openai: false,
         openrouter: false,
         anthropic: false,
@@ -172,6 +175,7 @@ const propertyMap = {
     enableApiFallback: () => userSettings.api,
     openaiApiKey: () => userSettings.api,
     googleApiKey: () => userSettings.api,
+    groqApiKey: () => userSettings.api,
     openrouterApiKey: () => userSettings.api,
     anthropicApiKey: () => userSettings.api,
     mistralApiKey: () => userSettings.api,

@@ -7,6 +7,7 @@ import { StorageManager } from './managers/StorageManager.js';
 import { WelcomeManager } from './managers/WelcomeManager.js';
 import { RestoreTransitionManager } from './managers/RestoreTransitionManager.js';
 import { SeatingChartManager } from './managers/SeatingChartManager.js';
+import { ImportWizardManager } from './managers/ImportWizardManager.js';
 import { appState } from './state/State.js';
 import './css/main.css';
 
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!container) return;
             const buttons = Array.from(container.querySelectorAll('.ui-tabs-sidebar .ui-tabs-btn'));
             const currentButton = buttons.find(b => b.classList.contains('active'));
+            if (btn === currentButton) return;
             const newIndex = buttons.indexOf(btn);
             const currentIndex = currentButton ? buttons.indexOf(currentButton) : 0;
 
@@ -65,6 +67,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.relaunchSetupWizard = () => {
             WelcomeManager.handleRelaunchWelcomeGuide({ preventDefault: () => { } });
+        };
+
+        window.ImportWizardManager = ImportWizardManager;
+
+        window.openSettingsTab = (tabName, elementId) => {
+            UI.closeAllModals();
+            setTimeout(() => {
+                UI.openModal(DOM.settingsModal);
+                if (elementId) {
+                    UI.highlightSettingsElement(elementId, { tab: tabName });
+                } else if (tabName) {
+                    UI.showSettingsTab(tabName);
+                }
+            }, 200);
+        };
+
+        window.openImportWizardFromHelp = () => {
+            UI.closeAllModals();
+            setTimeout(() => {
+                ImportWizardManager.open();
+            }, 200);
+        };
+
+        window.openSeatingChartFromHelp = () => {
+            UI.closeAllModals();
+            setTimeout(() => {
+                const planBtn = document.querySelector('#viewToggle [data-view="plan"]');
+                if (planBtn) planBtn.click();
+            }, 200);
         };
 
         // PWA Update Handler

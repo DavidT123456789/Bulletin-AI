@@ -26,6 +26,12 @@ describe('models.js configuration & helpers', () => {
             expect(getProviderForModel('gemini-3.1-pro-preview')).toBe('google');
         });
 
+        it('should correctly identify groq models', () => {
+            expect(getProviderForModel('groq-llama-3.3-70b')).toBe('groq');
+            expect(getProviderForModel('groq-gemma-2-9b')).toBe('groq');
+            expect(getProviderForModel('groq-llama-3.1-8b')).toBe('groq');
+        });
+
         it('should correctly identify openai models', () => {
             expect(getProviderForModel('openai-o3-mini')).toBe('openai');
             expect(getProviderForModel('openai-gpt-4o-mini')).toBe('openai');
@@ -79,17 +85,27 @@ describe('models.js configuration & helpers', () => {
             ]);
         });
 
+        it('should correctly configure groq fallback models', () => {
+            expect(FALLBACK_CONFIG.groq).toEqual([
+                'groq-llama-3.3-70b',
+                'groq-gemma-2-9b',
+                'groq-llama-3.1-8b'
+            ]);
+        });
+
         it('should prioritize generous free providers in providerOrder', () => {
-            expect(FALLBACK_CONFIG.providerOrder[0]).toBe('mistral');
-            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('google');
+            expect(FALLBACK_CONFIG.providerOrder[0]).toBe('google');
+            expect(FALLBACK_CONFIG.providerOrder[1]).toBe('groq');
             expect(FALLBACK_CONFIG.providerOrder[2]).toBe('openrouter');
+            expect(FALLBACK_CONFIG.providerOrder[3]).toBe('mistral');
         });
     });
 
     describe('PROVIDER_DEFAULT_MODELS', () => {
         it('should map each provider to its primary recommended model', () => {
-            expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.google).toBe('gemini-3.5-flash');
+            expect(PROVIDER_DEFAULT_MODELS.groq).toBe('groq-llama-3.3-70b');
+            expect(PROVIDER_DEFAULT_MODELS.mistral).toBe('mistral-direct-small-latest');
             expect(PROVIDER_DEFAULT_MODELS.openrouter).toBe('llama-3.3-70b-free');
             expect(PROVIDER_DEFAULT_MODELS.openai).toBe('openai-o3-mini');
             expect(PROVIDER_DEFAULT_MODELS.anthropic).toBe('anthropic-claude-sonnet-5');
@@ -107,8 +123,8 @@ describe('models.js configuration & helpers', () => {
             const queue = buildFallbackQueue('gemini-3.8-flash');
             expect(queue[1]).toBe('gemini-3.5-flash');
             expect(queue[2]).toBe('gemini-3.1-pro-preview');
-            // Next provider should be mistral (since mistral is first in providerOrder)
-            expect(queue[3]).toBe('mistral-direct-small-latest');
+            // Next provider should be groq (since groq is next in providerOrder after google)
+            expect(queue[3]).toBe('groq-llama-3.3-70b');
         });
 
         it('should contain no duplicates', () => {

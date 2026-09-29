@@ -79,7 +79,7 @@ export const WelcomeManager = {
 
         const totalWelcomeSteps = 4;
         let isAnimating = false;
-        let currentProvider = 'mistral';
+        let currentProvider = 'google';
 
         // Helpers Defined First
         const addClickListener = (element, handler) => {
@@ -99,6 +99,8 @@ export const WelcomeManager = {
             let existingKey = '';
             if (provider === 'google') {
                 existingKey = appState.googleApiKey;
+            } else if (provider === 'groq') {
+                existingKey = appState.groqApiKey;
             } else if (provider === 'openrouter') {
                 existingKey = appState.openrouterApiKey;
             } else if (provider === 'mistral') {
@@ -135,20 +137,29 @@ export const WelcomeManager = {
 
         // Provider configuration
         const providerConfig = {
-            mistral: {
-                placeholder: "Clé API Mistral...",
-                linkUrl: "https://console.mistral.ai/api-keys/",
-                linkIcon: '<iconify-icon icon="solar:cat-linear" style="color: #fd6f00;"></iconify-icon>'
-            },
             google: {
                 placeholder: "Clé API Google (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
-                linkIcon: '<iconify-icon icon="ph:google-logo" style="color: #4285f4;"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="logos:google-icon"></iconify-icon>',
+                linkText: "Obtenir ma clé (100% gratuite sans CB)"
+            },
+            groq: {
+                placeholder: "Clé API Groq (gsk_...)",
+                linkUrl: "https://console.groq.com/keys",
+                linkIcon: '<iconify-icon icon="solar:bolt-circle-bold" style="color: #f55036;"></iconify-icon>',
+                linkText: "Obtenir ma clé (100% gratuite sans CB)"
+            },
+            mistral: {
+                placeholder: "Clé API Mistral...",
+                linkUrl: "https://console.mistral.ai/api-keys/",
+                linkIcon: '<iconify-icon icon="solar:cat-linear" style="color: #fd6f00;"></iconify-icon>',
+                linkText: "Obtenir ma clé (La Plateforme)"
             },
             openrouter: {
                 placeholder: "Clé API OpenRouter (sk-or-...)",
                 linkUrl: "https://openrouter.ai/keys",
-                linkIcon: '<iconify-icon icon="solar:bolt-linear" style="color: var(--secondary-color);"></iconify-icon>'
+                linkIcon: '<iconify-icon icon="solar:bolt-linear" style="color: var(--secondary-color);"></iconify-icon>',
+                linkText: "Obtenir ma clé"
             }
         };
 
@@ -169,7 +180,7 @@ export const WelcomeManager = {
                 // Update "Get key" link
                 if (getKeyLink) {
                     getKeyLink.href = config.linkUrl;
-                    getKeyLink.innerHTML = `${config.linkIcon} Obtenir ma clé`;
+                    getKeyLink.innerHTML = `${config.linkIcon} ${config.linkText || 'Obtenir ma clé'}`;
                 }
 
                 // Update input value and validation state for this provider
@@ -225,7 +236,7 @@ export const WelcomeManager = {
             // Si la clé existe, bouton next actif
             if (step === 2) {
                 // Check current provider key if available (simplified check)
-                const hasApiKey = appState.googleApiKey || appState.openrouterApiKey || appState.mistralApiKey || appState.isDemoMode;
+                const hasApiKey = appState.googleApiKey || appState.groqApiKey || appState.openrouterApiKey || appState.mistralApiKey || appState.isDemoMode;
                 // Note: We don't block next button anymore based on key presence because of "Continue without key" button
                 // But for the main "Next" button in nav bar, let's keep it enabled generally to allow skipping via nav if user really wants?
                 // Actually, step 2 usually requires action. "Next" button logic:
@@ -330,8 +341,9 @@ export const WelcomeManager = {
 
         // Pré-remplir le champ API key et montrer l'état validé si une clé existe
         const existingGoogleKey = appState.googleApiKey;
-        const existingOpenRouterKey = appState.openrouterApiKey;
+        const existingGroqKey = appState.groqApiKey;
         const existingMistralKey = appState.mistralApiKey;
+        const existingOpenRouterKey = appState.openrouterApiKey;
 
         // Helper to select a provider and update UI
         const selectProvider = (providerId) => {
@@ -343,9 +355,11 @@ export const WelcomeManager = {
         };
 
         if (DOM.welcomeApiKeyInput) {
-            if (existingMistralKey) {
-                // Mistral key exists - keep default Mistral provider
-                DOM.welcomeApiKeyInput.value = existingMistralKey;
+            if (existingGoogleKey) {
+                // Google key exists - keep default Google provider
+                selectProvider('providerGoogle');
+                currentProvider = 'google';
+                DOM.welcomeApiKeyInput.value = existingGoogleKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
@@ -354,11 +368,24 @@ export const WelcomeManager = {
                     DOM.welcomeValidateApiKeyBtn.disabled = true;
                 }
                 DOM.welcomeNextBtn.disabled = false;
-            } else if (existingGoogleKey) {
-                // Switch to Google provider
-                selectProvider('providerGoogle');
-                currentProvider = 'google';
-                DOM.welcomeApiKeyInput.value = existingGoogleKey;
+            } else if (existingGroqKey) {
+                // Switch to Groq provider
+                selectProvider('providerGroq');
+                currentProvider = 'groq';
+                DOM.welcomeApiKeyInput.value = existingGroqKey;
+                // Mark as validated
+                if (DOM.welcomeValidateApiKeyBtn) {
+                    DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';
+                    DOM.welcomeValidateApiKeyBtn.classList.remove('ready');
+                    DOM.welcomeValidateApiKeyBtn.classList.add('validated');
+                    DOM.welcomeValidateApiKeyBtn.disabled = true;
+                }
+                DOM.welcomeNextBtn.disabled = false;
+            } else if (existingMistralKey) {
+                // Switch to Mistral provider
+                selectProvider('providerMistral');
+                currentProvider = 'mistral';
+                DOM.welcomeApiKeyInput.value = existingMistralKey;
                 // Mark as validated
                 if (DOM.welcomeValidateApiKeyBtn) {
                     DOM.welcomeValidateApiKeyBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> Validée';

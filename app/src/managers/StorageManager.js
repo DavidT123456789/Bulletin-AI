@@ -54,6 +54,7 @@ const UI_AND_NAV_KEYS = [
     'validatedApiKeys',
     'openaiApiKey',
     'googleApiKey',
+    'groqApiKey',
     'openrouterApiKey',
     'anthropicApiKey',
     'mistralApiKey',
@@ -132,6 +133,7 @@ export const StorageManager = {
                     if (settings.enableApiFallback !== undefined) userSettings.api.enableApiFallback = settings.enableApiFallback;
                     if (settings.openaiApiKey !== undefined) userSettings.api.openaiApiKey = settings.openaiApiKey;
                     if (settings.googleApiKey !== undefined) userSettings.api.googleApiKey = settings.googleApiKey;
+                    if (settings.groqApiKey !== undefined) userSettings.api.groqApiKey = settings.groqApiKey;
                     if (settings.openrouterApiKey !== undefined) userSettings.api.openrouterApiKey = settings.openrouterApiKey;
                     if (settings.anthropicApiKey !== undefined) userSettings.api.anthropicApiKey = settings.anthropicApiKey;
                     if (settings.mistralApiKey !== undefined) userSettings.api.mistralApiKey = settings.mistralApiKey;
@@ -613,6 +615,7 @@ export const StorageManager = {
             enableApiFallback: userSettings.api.enableApiFallback,
             openaiApiKey: userSettings.api.openaiApiKey,
             googleApiKey: userSettings.api.googleApiKey,
+            groqApiKey: userSettings.api.groqApiKey,
             openrouterApiKey: userSettings.api.openrouterApiKey,
             anthropicApiKey: userSettings.api.anthropicApiKey,
             mistralApiKey: userSettings.api.mistralApiKey,
@@ -689,6 +692,7 @@ export const StorageManager = {
         const keysToRemove = [
             'openaiApiKey',
             'googleApiKey',
+            'groqApiKey',
             'openrouterApiKey',
             'anthropicApiKey',
             'mistralApiKey',
@@ -776,7 +780,7 @@ export const StorageManager = {
         const { ModalUI: ModalUIManager } = await import('./ModalUIManager.js');
 
         const apiKeyCount = [
-            appState.openaiApiKey, appState.googleApiKey,
+            appState.openaiApiKey, appState.googleApiKey, appState.groqApiKey,
             appState.openrouterApiKey, appState.anthropicApiKey, appState.mistralApiKey
         ].filter(Boolean).length;
 
@@ -851,6 +855,7 @@ export const StorageManager = {
             if (resetApiKeys) {
                 appState.openaiApiKey = '';
                 appState.googleApiKey = '';
+                appState.groqApiKey = '';
                 appState.openrouterApiKey = '';
                 appState.anthropicApiKey = '';
                 appState.mistralApiKey = '';
@@ -987,8 +992,8 @@ export const StorageManager = {
         const journalCount = results.reduce((n, r) => n + (r.journal?.length || 0), 0);
         const photoCount = results.filter(r => r.studentPhoto?.data).length;
 
-        const hasApiKeys = !!(settings.openaiApiKey || settings.googleApiKey || settings.openrouterApiKey || settings.anthropicApiKey || settings.mistralApiKey);
-        const apiKeyCount = [settings.openaiApiKey, settings.googleApiKey, settings.openrouterApiKey, settings.anthropicApiKey, settings.mistralApiKey].filter(Boolean).length;
+        const hasApiKeys = !!(settings.openaiApiKey || settings.googleApiKey || settings.groqApiKey || settings.openrouterApiKey || settings.anthropicApiKey || settings.mistralApiKey);
+        const apiKeyCount = [settings.openaiApiKey, settings.googleApiKey, settings.groqApiKey, settings.openrouterApiKey, settings.anthropicApiKey, settings.mistralApiKey].filter(Boolean).length;
         const subjectCount = settings.subjects ? Object.keys(settings.subjects).length : 0;
 
         return {
@@ -1095,7 +1100,7 @@ export const StorageManager = {
 
             // Import API keys (only when explicitly selected)
             if (shouldImport('apiKeys') && settings) {
-                const keys = ['openaiApiKey', 'googleApiKey', 'openrouterApiKey', 'anthropicApiKey', 'mistralApiKey'];
+                const keys = ['openaiApiKey', 'googleApiKey', 'groqApiKey', 'openrouterApiKey', 'anthropicApiKey', 'mistralApiKey'];
                 keys.forEach(k => {
                     if (settings[k]) { appState[k] = settings[k]; stats.apiKeysImported++; }
                 });

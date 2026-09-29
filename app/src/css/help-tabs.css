@@ -5,7 +5,7 @@
 
 .help-tab-content.active {
     display: block;
-    animation: helpTabSlideIn 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    animation: helpTabSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Direction-based animations - going DOWN in list */
@@ -60,6 +60,135 @@
 
 
 
+/* ====================================================================
+   HIGHLIGHT LIST & QUICKSTART (Minimalist & Scannable - iOS/Google 2026)
+   ==================================================================== */
+.help-highlight-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 14px 0;
+}
+
+.help-highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.help-highlight-item:hover {
+    border-color: var(--border-hover, rgba(0, 0, 0, 0.15));
+    background: var(--item-hover-bg);
+}
+
+[data-theme="dark"] .help-highlight-item:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.help-highlight-icon {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+[data-theme="dark"] .help-highlight-icon {
+    color: var(--primary-bright);
+}
+
+.help-highlight-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.help-highlight-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Quickstart 2-step compact card */
+.help-quickstart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0 14px 0;
+}
+
+@media (max-width: 640px) {
+    .help-quickstart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.help-quick-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color var(--transition-fast);
+}
+
+.help-quick-card:hover {
+    border-color: var(--border-hover, rgba(0, 0, 0, 0.15));
+}
+
+[data-theme="dark"] .help-quick-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.help-quick-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-quick-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background: rgba(var(--primary-color-rgb), 0.12);
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .help-quick-badge {
+    background: rgba(var(--primary-color-rgb), 0.22);
+    color: var(--primary-bright);
+}
+
+.help-quick-card-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.help-quick-card p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
 .help-step-card {
     background: var(--surface-color);
     padding: 18px 20px;
@@ -89,9 +218,21 @@
 }
 
 .help-step-body .btn {
-    width: 100%;
+    width: auto;
+    display: inline-flex;
     justify-content: center;
-    margin-top: 12px;
+    margin-top: 10px;
+}
+
+.help-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.help-btn-row .btn {
+    margin-top: 0;
 }
 
 /* Provider selector + description (inside step 1 card) */
@@ -116,7 +257,6 @@
 
 .help-step-number {
     background: rgba(var(--primary-color-rgb), 0.1);
-    /* Fond subtil */
     color: var(--primary-color);
     width: 32px;
     height: 32px;
@@ -128,14 +268,12 @@
     font-size: 0.95rem;
     flex-shrink: 0;
     box-shadow: none;
-    /* Flat design */
     position: relative;
     top: -2px;
 }
 
 .help-step-number.safety-icon {
     background: rgba(var(--success-rgb), 0.1);
-    /* --success-color alpha */
     color: var(--success-color);
 }
 
@@ -149,42 +287,196 @@
     color: var(--success-bright, var(--success-dark));
 }
 
-/* Accordion spécifique à l'aide */
+/* ====================================================================
+   ACCORDÉON "EN SAVOIR PLUS" (Progressive Disclosure - iOS 2026 Style)
+   ==================================================================== */
 .help-accordion {
-    margin-top: 24px;
-    background: var(--bg-secondary);
-    border: none;
+    margin: 18px 0 10px 0;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.help-accordion:hover {
+    border-color: var(--border-hover, rgba(0, 0, 0, 0.15));
+}
+
+[data-theme="dark"] .help-accordion:hover {
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .help-accordion summary {
-    font-size: 1em;
-    padding: 16px 20px;
+    font-size: 0.92rem;
+    padding: 13px 18px;
     cursor: pointer;
     list-style: none;
-    /* Hide default triangle */
     background: transparent;
     border: none;
-    border-radius: var(--radius-lg);
     font-weight: 600;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    user-select: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.help-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.help-accordion summary:hover {
+    background: var(--item-hover-bg);
 }
 
 .help-accordion[open] summary {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
     border-bottom: 1px solid var(--border-color);
+    background: var(--item-hover-bg);
 }
 
-.help-accordion .details-content {
+.help-accordion-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+
+.help-accordion-icon {
+    font-size: 1.15em;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .help-accordion-icon {
+    color: var(--primary-bright);
+}
+
+.help-accordion-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+    margin-left: 4px;
+}
+
+[data-theme="dark"] .help-accordion-badge {
+    background: rgba(var(--primary-color-rgb), 0.2);
+    color: var(--primary-bright);
+}
+
+.help-accordion-chevron {
+    font-size: 1.1em;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), color var(--transition-fast);
+}
+
+.help-accordion summary:hover .help-accordion-chevron {
+    color: var(--text-primary);
+}
+
+.help-accordion[open] summary .help-accordion-chevron {
+    transform: rotate(180deg);
+    color: var(--text-primary);
+}
+
+.help-accordion-body {
     background: var(--bg-secondary);
-    border: none;
-    border-top: none;
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
-    padding: 0;
+    padding: 16px 20px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    animation: accordionFadeDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes accordionFadeDown {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.help-accordion-body p {
+    margin: 0 0 10px 0;
+}
+
+.help-accordion-body p:last-child {
+    margin-bottom: 0;
+}
+
+.help-subheading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin: 14px 0 6px 0;
+}
+
+.help-subheading:first-child {
+    margin-top: 0;
+}
+
+.help-subheading iconify-icon {
+    font-size: 1.1em;
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .help-subheading iconify-icon {
+    color: var(--primary-bright);
+}
+
+.help-detail-list {
+    margin: 6px 0 12px 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+}
+
+.help-detail-list li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.help-detail-list li strong {
+    color: var(--text-primary);
+}
+
+.help-code-sample {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    margin: 8px 0;
+    overflow-x: auto;
+}
+
+.help-kbd-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
 }
 
 /* Help modal action buttons - More visible style */
@@ -201,19 +493,17 @@
 
 
 
-/* === Help Tab Transition Animations (iOS 2025 Style) === */
+/* === Help Tab Transition Animations (iOS 2026 Style) === */
 /* Default animation when no direction is set yet */
 @keyframes helpTabSlideIn {
     from {
         opacity: 0;
-        transform: translateY(12px);
-        filter: blur(2px);
+        transform: translateY(8px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
 }
 
@@ -221,14 +511,12 @@
 @keyframes helpTabSlideUp {
     from {
         opacity: 0;
-        transform: translateY(16px);
-        filter: blur(2px);
+        transform: translateY(10px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
 }
 
@@ -236,14 +524,12 @@
 @keyframes helpTabSlideDown {
     from {
         opacity: 0;
-        transform: translateY(-16px);
-        filter: blur(2px);
+        transform: translateY(-10px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
 }
 

@@ -1900,6 +1900,75 @@
                                             <div>
                                                 <form class="api-keys-container" action="javascript:void(0)"
                                                     autocomplete="off">
+                                                    <div class="api-key-section" id="googleApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline"
+                                                                    icon="logos:google-icon"></iconify-icon> Google
+                                                                Gemini (Recommandé)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://aistudio.google.com/app/apikey"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une clé
+                                                                    (100% gratuit sans CB)</a>
+                                                                <a href="https://aistudio.google.com/app/plan_information"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="text" id="googleApiKey"
+                                                                    placeholder="AIzaSy...">
+                                                                <span id="googleApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateGoogleApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="googleApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="groqApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <span class="api-key-provider"><iconify-icon
+                                                                    class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"
+                                                                    style="color: #f55036;"></iconify-icon>
+                                                                Groq Cloud
+                                                                (Llama 3.3, Gemma 2 - Ultra-rapide)</span>
+                                                            <div class="api-key-links">
+                                                                <a href="https://console.groq.com/keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (100% gratuit sans CB)</a>
+                                                                <a href="https://console.groq.com/settings/limits"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:chart-square-bold"></iconify-icon>
+                                                                    Limites</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="text" id="groqApiKey"
+                                                                    placeholder="gsk_...">
+                                                                <span id="groqApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateGroqApiKeyBtn"
+                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="groqApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
                                                     <div class="api-key-section" id="mistralApiKeyGroup">
                                                         <div class="api-key-header">
                                                             <span class="api-key-provider"><iconify-icon
@@ -1911,7 +1980,7 @@
                                                                 <a href="https://console.mistral.ai/api-keys"
                                                                     target="_blank" rel="noopener noreferrer"
                                                                     class="btn-link">Obtenir une
-                                                                    clé (gratuit)</a>
+                                                                    clé (La Plateforme)</a>
                                                                 <a href="https://console.mistral.ai/usage"
                                                                     target="_blank" rel="noopener noreferrer"
                                                                     class="btn-link btn-link-secondary"><iconify-icon
@@ -1932,40 +2001,6 @@
                                                                 class="btn btn-purple btn-small">Vérifier</button>
                                                         </div>
                                                         <div class="error-message" id="mistralApiKeyError"
-                                                            style="display: none;">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="api-key-section" id="googleApiKeyGroup">
-                                                        <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="logos:google-icon"></iconify-icon> Google
-                                                                Gemini</span>
-                                                            <div class="api-key-links">
-                                                                <a href="https://aistudio.google.com/app/apikey"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link">Obtenir une clé
-                                                                    (gratuit limité)</a>
-                                                                <a href="https://aistudio.google.com/app/plan_information"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><iconify-icon
-                                                                        class="iconify-inline"
-                                                                        icon="solar:wallet-bold"></iconify-icon>
-                                                                    Usage</a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="api-key-actions">
-                                                            <div class="api-key-input-container">
-                                                                <input type="text" id="googleApiKey"
-                                                                    placeholder="AIzaSy...">
-                                                                <span id="googleApiKeyValidationIcon"
-                                                                    class="api-key-validation-icon"></span>
-                                                            </div>
-                                                            <button type="button" id="validateGoogleApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
-                                                        </div>
-                                                        <div class="error-message" id="googleApiKeyError"
                                                             style="display: none;">
                                                         </div>
                                                     </div>
@@ -2652,31 +2687,27 @@
             </div>
             <div class="modal-body modal-body-flex">
                 <div class="ui-tabs-vertical">
-                    <!-- Sidebar Navigation -->
+                    <!-- Sidebar Navigation (5 streamlined tabs) -->
                     <div class="ui-tabs-sidebar">
                         <button class="ui-tabs-btn active" onclick="switchHelpTab(this, 'help-apikey')">
-                            <iconify-icon class="iconify-inline icon-key" icon="solar:key-square-linear"></iconify-icon>
-                            Connecter l'IA
+                            <iconify-icon class="iconify-inline icon-key" icon="solar:rocket-2-linear"></iconify-icon>
+                            Démarrage
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-import')">
-                            <iconify-icon class="iconify-inline icon-format" icon="solar:import-linear"></iconify-icon>
-                            Importer
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-writing')">
+                            <iconify-icon class="iconify-inline icon-customize" icon="solar:pen-new-square-linear"></iconify-icon>
+                            Rédaction & Style
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-style')">
-                            <iconify-icon class="iconify-inline icon-customize"
-                                icon="solar:tuning-2-linear"></iconify-icon> Personnaliser
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-seating')">
+                            <iconify-icon class="iconify-inline icon-actions" icon="solar:streets-map-point-linear"></iconify-icon>
+                            Plan & Trombi
                         </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-actions')">
-                            <iconify-icon class="iconify-inline icon-actions"
-                                icon="solar:magic-stick-3-linear"></iconify-icon> Commandes IA
-                        </button>
-                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-privacy')">
-                            <iconify-icon class="iconify-inline icon-privacy" icon="solar:shield-linear"></iconify-icon>
-                            Confidentialité
+                        <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-data')">
+                            <iconify-icon class="iconify-inline icon-privacy" icon="solar:shield-check-linear"></iconify-icon>
+                            Export & Données
                         </button>
                         <button class="ui-tabs-btn" onclick="switchHelpTab(this, 'help-about')">
-                            <iconify-icon class="iconify-inline icon-about"
-                                icon="solar:info-circle-linear"></iconify-icon> À propos
+                            <iconify-icon class="iconify-inline icon-about" icon="solar:info-circle-linear"></iconify-icon>
+                            À propos
                         </button>
 
                         <!-- Bottom Action Button -->
@@ -2690,480 +2721,386 @@
 
                     <!-- Content Area -->
                     <div class="ui-tabs-content">
-                        <!-- Tab 1: Connecter l'IA -->
-                        <!-- Tab 1: Connecter l'IA -->
+                        <!-- Tab 1: Démarrage rapide (IA & Import) -->
                         <div id="help-apikey" class="help-tab-content active">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
-                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                    <iconify-icon icon="solar:rocket-2-bold"></iconify-icon>
                                 </div>
                                 <p>
-                                    L'application a besoin d'un "cerveau" IA. Choisissez
-                                    votre fournisseur pour voir la
-                                    marche à suivre.
+                                    Deux étapes simples suffisent pour commencer à générer vos premières appréciations.
                                 </p>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">1</div>
-                                    <div class="help-step-body">
-                                        <strong>Choisir votre fournisseur</strong>
-                                        <div class="help-provider-hero">
-                                            <div class="ui-segmented-control has-glider" id="helpProviderSelector">
-                                                <input type="radio" id="helpProviderMistral" name="helpProvider"
-                                                    value="mistral" checked>
-                                                <label for="helpProviderMistral" class="ui-segment">
-                                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
-                                                        style="color: #fd6f00;"></iconify-icon>
-                                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
-                                                </label>
-                                                <input type="radio" id="helpProviderGoogle" name="helpProvider"
-                                                    value="google">
-                                                <label for="helpProviderGoogle" class="ui-segment">
-                                                    <iconify-icon class="iconify-inline"
-                                                        icon="logos:google-icon"></iconify-icon>
-                                                    <span>Google</span>
-                                                </label>
-                                                <input type="radio" id="helpProviderOpenRouter" name="helpProvider"
-                                                    value="openrouter">
-                                                <label for="helpProviderOpenRouter" class="ui-segment">
-                                                    <iconify-icon class="iconify-inline"
-                                                        icon="solar:bolt-bold-duotone"></iconify-icon>
-                                                    <span>OpenRouter</span>
-                                                </label>
-                                                <div class="ui-glider"></div>
-                                            </div>
-                                            <p class="provider-desc" id="helpProviderDesc">
-                                                <strong>Mistral AI</strong>
-                                                est une solution française, performante et
-                                                <strong>gratuite</strong> (1
-                                                milliard de tokens/mois).
-                                            </p>
+                            <div class="help-quickstart-grid">
+                                <!-- Étape 1 : Clé IA -->
+                                <div class="help-quick-card">
+                                    <div class="help-quick-card-header">
+                                        <span class="help-quick-badge">1</span>
+                                        <h4 class="help-quick-card-title">Connecter une IA</h4>
+                                    </div>
+                                    <p>Choisissez un fournisseur gratuit et enregistrez votre clé.</p>
+                                    <div class="help-provider-hero" style="margin-top: 6px;">
+                                        <div class="ui-segmented-control has-glider" id="helpProviderSelector">
+                                            <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google" checked>
+                                            <label for="helpProviderGoogle" class="ui-segment">
+                                                <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
+                                                <span>Google <small class="provider-tag">Gratuit</small></span>
+                                            </label>
+                                            <input type="radio" id="helpProviderGroq" name="helpProvider" value="groq">
+                                            <label for="helpProviderGroq" class="ui-segment">
+                                                <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold" style="color: #f55036;"></iconify-icon>
+                                                <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
+                                            </label>
+                                            <input type="radio" id="helpProviderOpenRouter" name="helpProvider" value="openrouter">
+                                            <label for="helpProviderOpenRouter" class="ui-segment">
+                                                <iconify-icon class="iconify-inline" icon="solar:bolt-bold-duotone"></iconify-icon>
+                                                <span>OpenRouter</span>
+                                            </label>
+                                            <input type="radio" id="helpProviderMistral" name="helpProvider" value="mistral">
+                                            <label for="helpProviderMistral" class="ui-segment">
+                                                <iconify-icon class="iconify-inline" icon="solar:cat-bold" style="color: #fd6f00;"></iconify-icon>
+                                                <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                            </label>
+                                            <div class="ui-glider"></div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- MISTRAL CONTENT (Default) -->
-                            <div id="helpContentMistral" class="provider-help-content">
-
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">2</div>
-                                        <div class="help-step-body">
-                                            <strong>Récupérer votre clé (Gratuit)</strong>
-                                            <p>Créez un compte sur
-                                                Mistral AI et générez votre clé API.</p>
-                                            <a href="https://console.mistral.ai/api-keys/" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon>
-                                                Ouvrir
-                                                Mistral Console
+                                    <div id="helpContentGoogle" class="provider-help-content" style="margin-top: 4px;">
+                                        <div class="help-btn-row">
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (gratuit)
                                             </a>
+                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">3</div>
-                                        <div class="help-step-body">
-                                            <strong>Copier / Coller</strong>
-                                            <p>
-                                                Copiez la clé générée et collez-la dans les
-                                                <a href="#" class="link-to-settings btn-link" data-target-tab="advanced"
-                                                    data-target-element="mistralApiKey">Paramètres</a>.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- GOOGLE CONTENT -->
-                            <div id="helpContentGoogle" class="provider-help-content" style="display: none;">
-
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">2</div>
-                                        <div class="help-step-body">
-                                            <strong>Créer une clé API</strong>
-                                            <p>Connectez-vous avec votre
-                                                compte Google et cliquez sur "Create API
-                                                key".</p>
-                                            <a href="https://aistudio.google.com/app/apikey" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon>
-                                                Ouvrir
-                                                Google AI Studio
+                                    <div id="helpContentGroq" class="provider-help-content" style="display: none; margin-top: 4px;">
+                                        <div class="help-btn-row">
+                                            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (100% gratuit)
                                             </a>
+                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">3</div>
-                                        <div class="help-step-body">
-                                            <strong>Copier / Coller</strong>
-                                            <p>
-                                                Copiez la clé et collez-la dans les <a href="#"
-                                                    class="link-to-settings btn-link" data-target-tab="advanced"
-                                                    data-target-element="googleApiKey">Paramètres</a>
-                                                section Google.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- OPENROUTER CONTENT -->
-                            <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
-
-
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">2</div>
-                                        <div class="help-step-body">
-                                            <strong>Obtenir une clé</strong>
-                                            <a href="https://openrouter.ai/keys" target="_blank"
-                                                rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline"
-                                                    icon="solar:link-circle-bold"></iconify-icon>
-                                                Site
-                                                OpenRouter
+                                    <div id="helpContentMistral" class="provider-help-content" style="display: none; margin-top: 4px;">
+                                        <div class="help-btn-row">
+                                            <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
                                             </a>
+                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="helpContentOpenRouter" class="provider-help-content" style="display: none; margin-top: 4px;">
+                                        <div class="help-btn-row">
+                                            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
+                                            </a>
+                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
+                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="help-step-card">
-                                    <div class="help-step-layout">
-                                        <div class="help-step-number">3</div>
-                                        <div class="help-step-body">
-                                            <strong>Configurer</strong>
-                                            <p>
-                                                Collez la clé dans les <a href="#" class="link-to-settings btn-link"
-                                                    data-target-tab="advanced"
-                                                    data-target-element="openrouterApiKey">Paramètres</a>
-                                                section
-                                                OpenRouter.
-                                            </p>
-                                        </div>
+                                <!-- Étape 2 : Importer sa classe -->
+                                <div class="help-quick-card">
+                                    <div class="help-quick-card-header">
+                                        <span class="help-quick-badge">2</span>
+                                        <h4 class="help-quick-card-title">Importer vos élèves</h4>
+                                    </div>
+                                    <p>Glissez un fichier PDF Pronote/MBN, un tableur Excel ou collez un tableau.</p>
+                                    <div class="help-btn-row" style="margin-top: auto;">
+                                        <button class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
+                                            <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-linear"></iconify-icon>
+                                            Assistant d'import
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Common Footer -->
-                            <div class="help-tip-box">
-                                <iconify-icon class="iconify-inline" icon="solar:restart-bold"></iconify-icon>
-                                <span><strong>Relais automatique :</strong> Si le modèle
-                                    échoue, l'app peut basculer
-                                    vers un autre. Activable dans les <a href="#" class="link-to-settings btn-link"
-                                        data-target-tab="advanced">Paramètres
-                                        avancés</a>.</span>
-                            </div>
+                            <details class="help-accordion">
+                                <summary>
+                                    <div class="help-accordion-title">
+                                        <iconify-icon class="help-accordion-icon" icon="solar:lightbulb-bolt-bold"></iconify-icon>
+                                        <span>En savoir plus : Quel modèle choisir, quotas gratuits & formats de fichiers</span>
+                                        <span class="help-accordion-badge">Détails</span>
+                                    </div>
+                                    <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                </summary>
+                                <div class="help-accordion-body">
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:cpu-bold"></iconify-icon>
+                                        <span>Conseil de choix du modèle</span>
+                                    </div>
+                                    <ul class="help-detail-list">
+                                        <li><strong>Google Gemini (Recommandé) :</strong> 100% gratuit sans carte bancaire sur Google AI Studio. Rapide, précis et idéal pour les appréciations scolaires.</li>
+                                        <li><strong>Groq Cloud (Sprinteur Ultra-rapide) :</strong> Vitesse fulgurante (~500 tokens/s), 100% gratuit sans carte bancaire avec les modèles Llama 3.3 et Google Gemma 2.</li>
+                                        <li><strong>OpenRouter & Modèles Open-Source :</strong> Accès universel gratuit ou très économique aux meilleurs modèles avec une seule clé unifiée.</li>
+                                        <li><strong>Mistral AI :</strong> Solution française performante (nécessite des crédits sur La Plateforme Mistral).</li>
+                                        <li><strong>Ollama (100% Local & Hors-ligne) :</strong> Faites tourner Gemma 2 ou Qwen directement sur votre ordinateur sans connexion internet.</li>
+                                    </ul>
+
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:file-check-bold"></iconify-icon>
+                                        <span>Formats de fichiers & colonnes acceptées</span>
+                                    </div>
+                                    <p>L'assistant d'import reconnaît les formats <strong>PDF (Pronote, MonBureauNumérique)</strong>, <strong>Excel (.xlsx, .xls)</strong>, <strong>CSV</strong> et le simple copier-coller de cellules.</p>
+                                    <div class="help-code-sample">Nom | Prénom | Moyenne | Appréciation (optionnel)</div>
+                                    <p>Les colonnes sont détectées automatiquement. Vos appréciations existantes ne sont jamais écrasées lors d'une mise à jour en cours de trimestre.</p>
+                                </div>
+                            </details>
                         </div>
 
-                        <!-- Tab 2: Importer -->
-                        <div id="help-import" class="help-tab-content">
+                        <!-- Tab 2: Rédaction & Style -->
+                        <div id="help-writing" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
-                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                    <iconify-icon icon="solar:pen-new-square-bold"></iconify-icon>
                                 </div>
                                 <p>
-                                    Importez vos classes depuis Excel, Pronote, un PDF ou
-                                    tout autre document.
+                                    Générez vos bilans en conservant votre style d'écriture et affinez chaque appréciation avec précision.
                                 </p>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">1</div>
-                                    <div class="help-step-body">
-                                        <strong>Choisir la méthode</strong>
-                                        <ul
-                                            style="margin: 8px 0 0 0; padding-left: 20px; color: var(--text-secondary);">
-                                            <li style="margin-bottom: 6px;">
-                                                <strong style="color: var(--text-primary);">Mode
-                                                    Unitaire :</strong>
-                                                Saisie manuelle (un élève à la fois).
-                                            </li>
-                                            <li>
-                                                <strong style="color: var(--text-primary);">Import
-                                                    en Masse :</strong>
-                                                Copiez-collez ou glissez votre fichier.
-                                                <span
-                                                    style="font-size: 0.85em; background: rgba(var(--success-color-rgb), 0.1); color: var(--success-color); padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px;">Recommandé</span>
-                                            </li>
-                                        </ul>
+                            <div class="help-highlight-list">
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:magic-stick-3-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Génération globale ou élève par élève</strong>
+                                        Générez toute la classe en 1 clic depuis le badge d'en-tête, ou traitez chaque élève à votre rythme.
+                                    </div>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:user-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Le Panneau Focus</strong>
+                                        Cliquez sur un élève pour ouvrir son profil complet : notes, observations, historique et retouche directe.
+                                    </div>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:tuning-2-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Style & Consignes sur-mesure</strong>
+                                        Réglez le ton, la longueur et vos consignes d'écriture dans l'Atelier de personnalisation.
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">2</div>
-                                    <div class="help-step-body">
-                                        <strong>Format idéal</strong>
-                                        <p>L'application détecte automatiquement les
-                                            colonnes. Copiez simplement votre
-                                            tableau (y compris les en-têtes).</p>
+                            <div class="help-btn-row">
+                                <button class="btn btn-secondary btn-small" id="helpToPersonalizationBtn">
+                                    <iconify-icon class="iconify-inline" icon="solar:tuning-2-bold"></iconify-icon>
+                                    Ouvrir la Personnalisation
+                                </button>
+                            </div>
 
-                                        <div
-                                            style="background: var(--card-glass-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--card-glass-border); margin-top: 10px; font-size: 0.85em; font-family: monospace; color: var(--text-secondary);">
-                                            Nom | Prénom | Moyenne | Appréciation
-                                            (optionnel)
-                                        </div>
+                            <details class="help-accordion">
+                                <summary>
+                                    <div class="help-accordion-title">
+                                        <iconify-icon class="help-accordion-icon" icon="solar:lightbulb-bolt-bold"></iconify-icon>
+                                        <span>En savoir plus : 5 boutons de retouche, Journal de bord & Dictée vocale</span>
+                                        <span class="help-accordion-badge">Outils</span>
                                     </div>
-                                </div>
-                            </div>
+                                    <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                </summary>
+                                <div class="help-accordion-body">
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                        <span>Les 5 commandes de raffinement rapide</span>
+                                    </div>
+                                    <div class="ui-table-container">
+                                        <table class="ui-table responsive-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 130px;">Commande</th>
+                                                    <th style="width: 110px;">Effet</th>
+                                                    <th>Consigne envoyée à l'IA</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise</span></td>
+                                                    <td style="font-weight: 500; color: var(--text-primary);">-20% taille</td>
+                                                    <td class="prompt-cell">"Rends cette appréciation plus concise. Garde l'essentiel."</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Détaillée</span></td>
+                                                    <td style="font-weight: 500; color: var(--text-primary);">+20% taille</td>
+                                                    <td class="prompt-cell">"Développe les points, sois plus précis. N'invente pas de faits."</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante</span></td>
+                                                    <td style="font-weight: 500; color: var(--text-primary);">Bienveillance</td>
+                                                    <td class="prompt-cell">"Reformule avec un ton plus encourageant et positif."</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:restart-linear"></iconify-icon> Variation</span></td>
+                                                    <td style="font-weight: 500; color: var(--text-primary);">Alternative</td>
+                                                    <td class="prompt-cell">"Reformule différemment en gardant le même sens."</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="btn btn-ai-outline btn-tiny" style="pointer-events: none;"><iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner</span></td>
+                                                    <td style="font-weight: 500; color: var(--text-primary);">Pro & fluide</td>
+                                                    <td class="prompt-cell">"Peaufine : corrige fautes, améliore fluidité, adopte un ton pro."</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                            <div class="help-tip-box">
-                                <iconify-icon class="iconify-inline" icon="solar:lightbulb-bolt-bold"></iconify-icon>
-                                <span>Après le collage, vous pourrez vérifier et ajuster le
-                                    "mappage" des colonnes avant
-                                    de valider.</span>
-                            </div>
+                                    <div class="help-subheading" style="margin-top: 16px;">
+                                        <iconify-icon icon="solar:notebook-bold"></iconify-icon>
+                                        <span>Journal d'observations & Dictée vocale</span>
+                                    </div>
+                                    <p>Ajoutez des mémos courts tout au long du trimestre (attitude, progrès, incidents). L'IA les intégrera automatiquement dans l'appréciation. Vous pouvez également dicter vos notes au micro et écouter le résultat grâce à la synthèse vocale.</p>
+                                </div>
+                            </details>
                         </div>
 
-                        <!-- Tab 3: Style -->
-                        <div id="help-style" class="help-tab-content">
+                        <!-- Tab 3: Plan & Trombi -->
+                        <div id="help-seating" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
-                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                    <iconify-icon icon="solar:streets-map-point-bold"></iconify-icon>
                                 </div>
                                 <p>
-                                    L'IA s'adapte à votre style d'écriture. Définissez vos
-                                    préférences dans les
-                                    Paramètres.
+                                    Organisez votre salle dans l'espace et associez instantanément les photos de vos élèves.
                                 </p>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">1</div>
-                                    <div class="help-step-body">
-                                        <strong>Ton et Longueur</strong>
-                                        <p>Choisissez un ton (Strict, Encourageant...) et la
-                                            longueur souhaitée (Concis,
-                                            Détaillé) pour vos appréciations.</p>
+                            <div class="help-highlight-list">
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:streets-map-point-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Bascule Liste ↔ Plan de classe</strong>
+                                        Passez de la liste au plan d'un clic dans l'en-tête pour visualiser la disposition réelle de votre salle.
+                                    </div>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:hand-stars-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Placement en glisser-déposer</strong>
+                                        Glissez les élèves sur leurs tables et suivez leur statut de validation grâce aux pastilles de couleur.
+                                    </div>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:camera-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Trombinoscope Pronote automatique</strong>
+                                        Déposez votre PDF trombinoscope : les visages sont découpés et attribués aux élèves automatiquement.
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">2</div>
-                                    <div class="help-step-body">
-                                        <strong>"Mes consignes" (Instructions
-                                            personnalisées)</strong>
-                                        <p>Ajoutez des consignes spécifiques pour affiner
-                                            le comportement de l'IA.</p>
-                                        <div
-                                            style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; font-style: italic; font-size: 0.85em; color: var(--text-secondary); border-left: 3px solid #a855f7;">
-                                            "Ne jamais utiliser le mot 'bavard', toujours
-                                            mentionner l'effort fourni."
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="help-btn-row">
+                                <button class="btn btn-secondary btn-small" onclick="window.openSeatingChartFromHelp()">
+                                    <iconify-icon class="iconify-inline" icon="solar:streets-map-point-linear"></iconify-icon>
+                                    Basculer vers le Plan de classe
+                                </button>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number">3</div>
-                                    <div class="help-step-body">
-                                        <strong>Prévisualisation en direct</strong>
-                                        <p>
-                                            Utilisez le bouton <strong><iconify-icon class="iconify-inline"
-                                                    icon="solar:test-tube-linear"></iconify-icon>
-                                                Aperçu</strong> dans
-                                            les
-                                            paramètres pour tester vos réglages
-                                            instantanément.
-                                        </p>
+                            <details class="help-accordion">
+                                <summary>
+                                    <div class="help-accordion-title">
+                                        <iconify-icon class="help-accordion-icon" icon="solar:lightbulb-bolt-bold"></iconify-icon>
+                                        <span>En savoir plus : Génération directe depuis une table & Sécurité des photos</span>
+                                        <span class="help-accordion-badge">Astuces</span>
                                     </div>
+                                    <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                </summary>
+                                <div class="help-accordion-body">
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                                        <span>Générer sans changer de vue</span>
+                                    </div>
+                                    <p>Cliquez sur n'importe quelle table du plan pour ouvrir la fiche de l'élève et générer ou éditer son appréciation sur place.</p>
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
+                                        <span>Protection absolue des photos d'élèves</span>
+                                    </div>
+                                    <p>Les photos sont traitées et conservées <strong>exclusivement sur votre machine</strong> (dans le stockage local de votre navigateur). Elles ne sont <strong>jamais transmises à l'IA</strong> ni stockées sur des serveurs externes.</p>
                                 </div>
-                            </div>
-
-                            <button class="btn btn-secondary help-action-button" id="helpToPersonalizationBtn"
-                                style="width: 100%; justify-content: center; margin-top: 10px;">
-                                <iconify-icon class="iconify-inline" icon="solar:tuning-2-bold"></iconify-icon> Accéder
-                                à la personnalisation
-                            </button>
+                            </details>
                         </div>
 
-                        <!-- Tab: Actions IA (New) -->
-                        <div id="help-actions" class="help-tab-content">
+                        <!-- Tab 4: Export & Données -->
+                        <div id="help-data" class="help-tab-content">
                             <div class="help-section-header">
                                 <div class="help-section-icon">
-                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
+                                    <iconify-icon icon="solar:shield-check-bold"></iconify-icon>
                                 </div>
                                 <p>
-                                    Comprendre les commandes de raffinement envoyées à l'IA.
+                                    Copiez vos appréciations vers Pronote, sauvegardez sur Google Drive et gardez le contrôle total sur vos données.
                                 </p>
                             </div>
 
-                            <div class="ui-table-container">
-                                <table class="ui-table responsive-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 140px;">Bouton</th>
-                                            <th style="width: 120px;">Action</th>
-                                            <th>Prompt Système</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-ai-outline btn-tiny"
-                                                    style="pointer-events: none;">
-                                                    <iconify-icon icon="solar:minimize-square-linear"></iconify-icon>
-                                                    Concise
-                                                </button>
-                                            </td>
-                                            <td style="font-weight: 500; color: var(--text-primary);">
-                                                Réduire (~20%)
-                                            </td>
-                                            <td class="prompt-cell">"Rends cette
-                                                appréciation plus concise. Garde
-                                                l'essentiel."
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-ai-outline btn-tiny"
-                                                    style="pointer-events: none;">
-                                                    <iconify-icon icon="solar:maximize-square-linear"></iconify-icon>
-                                                    Détaillée
-                                                </button>
-                                            </td>
-                                            <td style="font-weight: 500; color: var(--text-primary);">
-                                                Développer (~20%)
-                                            </td>
-                                            <td class="prompt-cell">"Développe les points,
-                                                sois plus précis. N'invente
-                                                pas
-                                                de faits."</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-ai-outline btn-tiny"
-                                                    style="pointer-events: none;">
-                                                    <iconify-icon icon="solar:heart-linear"></iconify-icon>
-                                                    Encourageante
-                                                </button>
-                                            </td>
-                                            <td style="font-weight: 500; color: var(--text-primary);">
-                                                Ton positif</td>
-                                            <td class="prompt-cell">"Reformule avec un ton
-                                                plus encourageant et
-                                                positif."
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-ai-outline btn-tiny"
-                                                    style="pointer-events: none;">
-                                                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
-                                                    Variation
-                                                </button>
-                                            </td>
-                                            <td style="font-weight: 500; color: var(--text-primary);">
-                                                Reformuler</td>
-                                            <td class="prompt-cell">"Reformule différemment
-                                                (vocabulaire, structure)
-                                                mais
-                                                garde le même sens."</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-ai-outline btn-tiny"
-                                                    style="pointer-events: none;">
-                                                    <iconify-icon icon="solar:stars-line-linear"></iconify-icon>
-                                                    Peaufiner
-                                                </button>
-                                            </td>
-                                            <td style="font-weight: 500; color: var(--text-primary);">
-                                                Correction Pro
-                                            </td>
-                                            <td class="prompt-cell">"Peaufine : corrige
-                                                fautes, améliore fluidité,
-                                                adopte un
-                                                ton pro."</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="help-tip-box" style="margin-top: 15px;">
-                                <iconify-icon class="iconify-inline" icon="solar:eye-bold"></iconify-icon>
-                                <span><strong>Astuce :</strong> Faites un <strong>Clic
-                                        Droit</strong> sur le bouton
-                                    <em>Générer</em> pour voir le prompt complet envoyé à
-                                    l'IA avant qu'il ne
-                                    parte.</span>
-                            </div>
-                        </div>
-
-                        <!-- Tab 4: Confidentialité -->
-                        <div id="help-privacy" class="help-tab-content">
-                            <div class="help-section-header">
-                                <div class="help-section-icon">
-                                    <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                                </div>
-                                <p>
-                                    Vos données, votre contrôle. Bulletin AI est conçu selon
-                                    le principe "Local-First".
-                                </p>
-                            </div>
-
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number safety-icon"><iconify-icon
-                                            icon="solar:lock-keyhole-bold"></iconify-icon>
+                            <div class="help-highlight-list">
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:export-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Copier vers Pronote en 1 clic</strong>
+                                        Les appréciations sont copiées dans l'ordre exact de votre classe pour être collées en série dans Pronote.
                                     </div>
-                                    <div class="help-step-body">
-                                        <strong>Stockage Local</strong>
-                                        <p>Toutes vos données (élèves, notes, appréciations)
-                                            sont stockées
-                                            <strong>uniquement sur votre ordinateur</strong>
-                                            (dans le navigateur). Rien
-                                            n'est sauvegardé sur nos serveurs.
-                                        </p>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:cloud-upload-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>Sauvegarde Cloud Google Drive</strong>
+                                        Liez votre compte Google Drive personnel dans le menu pour retrouver vos classes sur n'importe quel ordinateur.
+                                    </div>
+                                </div>
+                                <div class="help-highlight-item">
+                                    <iconify-icon class="help-highlight-icon" icon="solar:lock-keyhole-bold"></iconify-icon>
+                                    <div class="help-highlight-text">
+                                        <strong>100% Local-First & Anonymisation</strong>
+                                        Aucun serveur intermédiaire : les noms de famille sont supprimés avant chaque appel au modèle d'IA.
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="help-step-card">
-                                <div class="help-step-layout">
-                                    <div class="help-step-number safety-icon"><iconify-icon
-                                            icon="solar:incognito-bold"></iconify-icon>
-                                    </div>
-                                    <div class="help-step-body">
-                                        <strong>Anonymisation</strong>
-                                        <p>
-                                            Avant d'être envoyées à l'IA pour génération,
-                                            les données sont anonymisées.
-                                            Les noms de famille sont supprimés. Seul le
-                                            prénom et les notes sont
-                                            transmis.
-                                        </p>
-                                    </div>
-                                </div>
+                            <div class="help-btn-row">
+                                <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-data', 'backupSection')">
+                                    <iconify-icon class="iconify-inline" icon="solar:database-linear"></iconify-icon>
+                                    Gérer les Sauvegardes
+                                </button>
                             </div>
 
-                            <div class="help-tip-box"
-                                style="border-color: rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05);">
-                                <iconify-icon class="iconify-inline" icon="solar:check-circle-bold"
-                                    style="color: #10b981;"></iconify-icon>
-                                <span>Le code source de l'application est ouvert et
-                                    auditable, garantissant une
-                                    transparence totale sur le traitement des
-                                    données.</span>
-                            </div>
+                            <details class="help-accordion">
+                                <summary>
+                                    <div class="help-accordion-title">
+                                        <iconify-icon class="help-accordion-icon" icon="solar:lightbulb-bolt-bold"></iconify-icon>
+                                        <span>En savoir plus : Fichier de secours JSON, raccourcis clavier & PWA</span>
+                                        <span class="help-accordion-badge">Productivité</span>
+                                    </div>
+                                    <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
+                                </summary>
+                                <div class="help-accordion-body">
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:diskette-bold"></iconify-icon>
+                                        <span>Fichier de sauvegarde universel (.json)</span>
+                                    </div>
+                                    <p>Dans l'onglet <em>Données</em> des paramètres, vous pouvez exporter un fichier de sauvegarde contenant l'intégralité de vos classes, notes et appréciations pour le conserver sur une clé USB ou un autre ordinateur.</p>
+
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:keyboard-bold"></iconify-icon>
+                                        <span>Raccourcis clavier essentiels</span>
+                                    </div>
+                                    <ul class="help-detail-list">
+                                        <li><span class="help-kbd-badge">Ctrl + Entrée</span> : Valider et passer automatiquement à l'élève suivant.</li>
+                                        <li><span class="help-kbd-badge">Échap</span> : Fermer le panneau Focus ou une modale.</li>
+                                        <li><span class="help-kbd-badge">Flèches ↑ / ↓</span> : Naviguer rapidement d'un élève à l'autre.</li>
+                                    </ul>
+
+                                    <div class="help-subheading">
+                                        <iconify-icon icon="solar:download-minimalistic-bold"></iconify-icon>
+                                        <span>Application installable (PWA)</span>
+                                    </div>
+                                    <p>Vous pouvez installer Bulletin AI comme une vraie application sur votre ordinateur ou iPad pour l'ouvrir d'un clic et travailler hors-ligne en toute fluidité.</p>
+                                </div>
+                            </details>
                         </div>
 
                         <!-- Tab 5: À propos -->
@@ -3173,16 +3110,16 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 515d6b8 · 29 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 287df8c · 30 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
-                                    <a id="linkGithub" href="#" target="_blank" rel="noopener noreferrer"
+                                    <a id="linkGithub" href="https://github.com/dtrafial/Bulletin-AI" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-secondary btn-small">
                                         <iconify-icon class="iconify-inline" icon="mdi:github"></iconify-icon>
                                         GitHub
                                     </a>
-                                    <a id="linkFeedback" href="#" target="_blank" rel="noopener noreferrer"
+                                    <a id="linkFeedback" href="https://forms.gle/4yQ3o5sZqKzQ6Z6c8" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-secondary btn-small">
                                         <iconify-icon icon="solar:chat-line-bold"></iconify-icon> Avis
                                     </a>
@@ -3190,21 +3127,19 @@
                             </div>
 
                             <div class="about-content">
-
+                                <p class="about-tagline">
+                                    L'assistant intelligent pensé par et pour les enseignants afin de simplifier la rédaction des appréciations scolaires, concevoir leurs plans de classe et valoriser le suivi pédagogique de chaque élève.
+                                </p>
 
                                 <!-- Donation Section (Refined) -->
                                 <div class="support-card-premium">
                                     <h4>
-                                        <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir
-                                        le projet
+                                        <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Cette application est gratuite. Si elle vous est
-                                        utile, vous pouvez encourager
-                                        son
-                                        développement en m'offrant un café !
+                                        Cette application est 100% gratuite et open source. Si elle vous est utile au quotidien, vous pouvez encourager son développement indépendant en offrant un café !
                                     </p>
-                                    <a id="linkKofi" href="#" target="_blank" rel="noopener noreferrer"
+                                    <a id="linkKofi" href="https://ko-fi.com/davidtrafial" target="_blank" rel="noopener noreferrer"
                                         class="btn btn-kofi">
                                         <iconify-icon class="iconify-inline" icon="solar:cup-hot-bold"></iconify-icon>
                                         Soutenir sur Ko-fi
@@ -3215,7 +3150,7 @@
                                     <p>Développé pour les enseignants par David Trafial</p>
                                     <p>© 2025-2026 Bulletin AI - Tous droits réservés</p>
                                     <p class="license-text">
-                                        Sous licence <a id="linkLicense" href="#" target="_blank">Creative Commons BY-NC-SA 4.0</a>
+                                        Sous licence <a id="linkLicense" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons BY-NC-SA 4.0</a>
                                     </p>
                                 </div>
                             </div>
@@ -3262,17 +3197,16 @@
                     <div class="welcome-api-setup">
                         <div class="provider-selector-row">
                             <div class="ui-segmented-control" id="welcomeProviderSelector">
-                                <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral"
-                                    checked>
-                                <label for="providerMistral" class="ui-segment">
-                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
-                                        style="color: #fd6f00;"></iconify-icon>
-                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
-                                </label>
-                                <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
+                                <input type="radio" id="providerGoogle" name="welcomeProvider" value="google" checked>
                                 <label for="providerGoogle" class="ui-segment">
                                     <iconify-icon class="iconify-inline" icon="logos:google-icon"></iconify-icon>
-                                    <span>Google</span>
+                                    <span>Google <small class="provider-tag">Gratuit</small></span>
+                                </label>
+                                <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
+                                <label for="providerGroq" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="solar:bolt-circle-bold"
+                                        style="color: #f55036;"></iconify-icon>
+                                    <span>Groq <small class="provider-tag">⚡ Rapide</small></span>
                                 </label>
                                 <input type="radio" id="providerOpenRouter" name="welcomeProvider"
                                     value="openrouter">
@@ -3281,12 +3215,18 @@
                                         icon="solar:bolt-bold-duotone"></iconify-icon>
                                     <span>OpenRouter</span>
                                 </label>
+                                <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
+                                <label for="providerMistral" class="ui-segment">
+                                    <iconify-icon class="iconify-inline" icon="solar:cat-bold"
+                                        style="color: #fd6f00;"></iconify-icon>
+                                    <span>Mistral <small class="provider-tag">🇫🇷</small></span>
+                                </label>
                             </div>
                         </div>
 
                         <div class="welcome-api-key-group">
                             <input type="text" id="welcomeApiKeyInput"
-                                placeholder="Clé API Mistral..."
+                                placeholder="Clé API Google (AIzaSy...)"
                                 autocomplete="off"
                                 autocorrect="off"
                                 autocapitalize="off"
@@ -3302,11 +3242,10 @@
                         </div>
 
                         <div class="welcome-action-links">
-                            <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer"
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
                                 class="get-key-link-mini" id="welcomeGetKeyLink"><iconify-icon
-                                    icon="solar:cat-linear"
-                                    style="color: #fd6f00;"></iconify-icon> Obtenir
-                                ma clé</a>
+                                    icon="logos:google-icon"></iconify-icon> Obtenir
+                                ma clé (100% gratuite sans CB)</a>
                             <span class="action-separator">•</span>
                             <button class="btn-text-link-compact" id="welcomeSkipApiKeyBtn">
                                 Configurer plus tard

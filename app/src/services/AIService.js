@@ -155,6 +155,27 @@ export const AIService = {
                     messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
                     max_tokens: MAX_RESPONSE_TOKENS
                 }),
+            },
+            groq: {
+                apiKey: appState.groqApiKey,
+                apiUrl: `${CONFIG.GROQ_API_BASE}/chat/completions`,
+                headers: (key) => ({
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                }),
+                payload: (p, m, sys) => {
+                    const modelMap = {
+                        'groq-llama-3.3-70b': 'llama-3.3-70b-versatile',
+                        'groq-gemma-2-9b': 'gemma2-9b-it',
+                        'groq-llama-3.1-8b': 'llama-3.1-8b-instant'
+                    };
+                    const messages = sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }];
+                    return {
+                        model: modelMap[m] || 'llama-3.3-70b-versatile',
+                        messages,
+                        max_tokens: MAX_RESPONSE_TOKENS
+                    };
+                }
             }
         };
 
@@ -400,6 +421,7 @@ export const AIService = {
         const provider = this._getProviderForModel(model);
         if (provider === 'openai') return !!appState.openaiApiKey;
         if (provider === 'google') return !!appState.googleApiKey;
+        if (provider === 'groq') return !!appState.groqApiKey;
         if (provider === 'anthropic') return !!appState.anthropicApiKey;
         if (provider === 'mistral') return !!appState.mistralApiKey;
         if (provider === 'ollama') {
