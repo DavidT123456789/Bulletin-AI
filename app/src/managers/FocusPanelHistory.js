@@ -102,7 +102,7 @@ export const FocusPanelHistory = {
         const result = this._getResult();
         const appreciationSource = result?.appreciationSource ?? null;
         const aiModel = result?.studentData?.currentAIModel ?? null;
-        const tokenUsage = result?.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
+        const tokenUsage = result?.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
 
         if (HistoryUtils.pushToState(state, content, source, appreciationSource, aiModel, tokenUsage)) {
             this._save();
@@ -362,7 +362,7 @@ export const FocusPanelHistory = {
 
             // 3. Token Usage (for tooltip)
             if (versionData.tokenUsage) {
-                result.tokenUsage = JSON.parse(JSON.stringify(versionData.tokenUsage));
+                result.tokenUsage = Utils.deepClone(versionData.tokenUsage);
             }
         }
 

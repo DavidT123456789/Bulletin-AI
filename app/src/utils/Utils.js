@@ -252,6 +252,45 @@ export const Utils = {
     },
 
     /**
+     * Vérifie si un élève correspond à une requête de recherche
+     * en inspectant le nom, le prénom, la classe d'origine et optionnellement l'appréciation.
+     * Insensible aux accents, à la casse et à l'ordre des mots.
+     * @param {Object} student - Objet élève
+     * @param {string} query - Terme recherché
+     * @param {Object} [options={}] - Options de recherche
+     * @param {boolean} [options.includeAppreciation=false] - Inclure l'appréciation dans la recherche
+     * @param {string} [options.currentClassName=''] - Nom de la classe courante
+     * @returns {boolean} True si l'élève correspond
+     */
+    matchesStudent(student, query, options = {}) {
+        if (!query || typeof query !== 'string' || !query.trim()) return true;
+        if (!student) return false;
+
+        const { includeAppreciation = false, currentClassName = '' } = options;
+        const originClass = this.getOriginClass(student, currentClassName);
+        const displayOriginClass = originClass ? this.formatClassDisplayName(originClass) : '';
+
+        const searchFields = [
+            student.nom,
+            student.prenom,
+            originClass,
+            displayOriginClass,
+            originClass ? `classe ${originClass}` : '',
+            displayOriginClass ? `classe ${displayOriginClass}` : '',
+            originClass ? this.normalizeClassName(originClass) : ''
+        ];
+
+        if (includeAppreciation) {
+            const appreciationText = student.appreciation || student.studentData?.periods?.[student.studentData?.currentPeriod]?.appreciation;
+            if (appreciationText) {
+                searchFields.push(this.decodeHtmlEntities(appreciationText));
+            }
+        }
+
+        return this.matchesSearch(searchFields, query);
+    },
+
+    /**
      * Surligne de façon sécurisée les occurrences du terme recherché dans un texte
      * en préservant la casse d'origine et en gérant les accents.
      * @param {string} text - Texte d'origine
@@ -930,6 +969,13 @@ export const Utils = {
      */
     deepClone(obj) {
         if (obj === null || typeof obj !== 'object') return obj;
+        if (typeof structuredClone === 'function') {
+            try {
+                return structuredClone(obj);
+            } catch (_) {
+                // Fallback for non-serializable objects (DOM nodes, functions)
+            }
+        }
         if (Array.isArray(obj)) return obj.map(item => this.deepClone(item));
 
         const clone = {};

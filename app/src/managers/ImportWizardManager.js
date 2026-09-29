@@ -1958,7 +1958,7 @@ export const ImportWizardManager = {
 
         // Filter student data: strip disabled columns before import
         const filteredStudents = this.state.studentsToProcess.map(s => {
-            const filtered = JSON.parse(JSON.stringify(s));
+            const filtered = Utils.deepClone(s);
 
             // Strip status if unchecked
             if (!enabledTags.has('STATUT')) {

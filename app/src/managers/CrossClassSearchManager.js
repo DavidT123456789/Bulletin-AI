@@ -51,18 +51,8 @@ export const CrossClassSearchManager = {
             }
 
             // Recherche flexible sur nom, prénom et classe d'origine (accent-insensitive & word-order agnostic)
+            if (!Utils.matchesStudent(result, searchTerm)) return;
             const originClass = result.studentData?.classe || result.classe || '';
-            const displayOriginClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
-            const searchFields = [
-                result.nom,
-                result.prenom,
-                originClass,
-                displayOriginClass,
-                originClass ? `classe ${originClass}` : '',
-                displayOriginClass ? `classe ${displayOriginClass}` : '',
-                originClass ? Utils.normalizeClassName(originClass) : ''
-            ];
-            if (!Utils.matchesSearch(searchFields, searchTerm)) return;
 
             // Récupérer les infos de la classe
             const classInfo = ClassManager.getClassById(result.classId);

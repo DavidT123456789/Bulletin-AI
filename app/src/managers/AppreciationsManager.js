@@ -129,7 +129,7 @@ export const AppreciationsManager = {
         const state = this._getPerPeriodState(result, true);
         const appreciationSource = result.appreciationSource ?? null;
         const aiModel = result.studentData?.currentAIModel ?? null;
-        const tokenUsage = result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
+        const tokenUsage = result.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
 
         HistoryUtils.pushToState(state, result.appreciation, source, appreciationSource, aiModel, tokenUsage);
     },
@@ -149,7 +149,7 @@ export const AppreciationsManager = {
         if (result.appreciation) {
             const appreciationSource = result.appreciationSource ?? null;
             const aiModel = result.studentData?.currentAIModel ?? null;
-            const tokenUsage = result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
+            const tokenUsage = result.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
 
             HistoryUtils.pushToState(state, result.appreciation, 'edit', appreciationSource, aiModel, tokenUsage);
         }

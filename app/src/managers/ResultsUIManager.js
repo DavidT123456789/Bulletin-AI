@@ -111,19 +111,7 @@ export const ResultsUIManager = {
 
         const filteredAndSorted = viewableResults
             .filter(r => {
-                const originClass = Utils.getOriginClass(r, currentClassName);
-                const displayOriginClass = originClass ? Utils.formatClassDisplayName(originClass) : '';
-                const searchFields = [
-                    r.nom,
-                    r.prenom,
-                    originClass,
-                    displayOriginClass,
-                    originClass ? `classe ${originClass}` : '',
-                    displayOriginClass ? `classe ${displayOriginClass}` : '',
-                    originClass ? Utils.normalizeClassName(originClass) : '',
-                    Utils.decodeHtmlEntities(r.appreciation || '')
-                ];
-                if (!Utils.matchesSearch(searchFields, term)) return false;
+                if (!Utils.matchesStudent(r, term, { includeAppreciation: true, currentClassName })) return false;
                 if (!filter) return true;
                 if (filter === 'totalCount') return true;
 
@@ -727,7 +715,7 @@ export const ResultsUIManager = {
                     // Passer l'état à "Génération" (skeleton actif) juste pour celui-ci
                     ListViewManager.setRowStatus(resultToRegen.id, 'generating');
 
-                    const updatedStudentData = JSON.parse(JSON.stringify(resultToRegen.studentData));
+                    const updatedStudentData = Utils.deepClone(resultToRegen.studentData);
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
 
@@ -868,7 +856,7 @@ export const ResultsUIManager = {
                 try {
                     ListViewManager.setRowStatus(resultToRegen.id, 'generating');
 
-                    const updatedStudentData = JSON.parse(JSON.stringify(resultToRegen.studentData));
+                    const updatedStudentData = Utils.deepClone(resultToRegen.studentData);
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
 

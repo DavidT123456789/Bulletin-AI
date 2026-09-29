@@ -29,7 +29,7 @@ export const ListViewRenderer = {
          * @returns {HTMLElement} Élément TR
          * @private
          */
-    createRowElement(result, periods, currentPeriodIndex) {
+    createRowElement(result, periods, currentPeriodIndex, context = {}) {
         const tr = document.createElement('tr');
         tr.dataset.studentId = result.id;
         tr.className = 'student-row';
@@ -42,8 +42,8 @@ export const ListViewRenderer = {
         const appreciationCell = this.getAppreciationCell(result);
         const isSelected = ListSelectionManager.selectedIds.has(result.id);
         const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-        const searchQuery = document.getElementById('searchInput')?.value || '';
-        const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+        const searchQuery = context.searchQuery ?? (document.getElementById('searchInput')?.value || '');
+        const currentClassName = context.currentClassName ?? (userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '');
         const originClass = Utils.getOriginClass(result, currentClassName);
 
         tr.innerHTML = `
@@ -383,6 +383,9 @@ export const ListViewRenderer = {
             </tr>
         `;
 
+        const searchQuery = document.getElementById('searchInput')?.value || '';
+        const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
+
         let tbodyContent = '';
         results.forEach((result, index) => {
             try {
@@ -399,8 +402,6 @@ export const ListViewRenderer = {
 
                 // Generate avatar HTML with selection state
                 const avatarHTML = StudentPhotoManager.getAvatarHTML(result, 'sm', isSelected);
-                const searchQuery = document.getElementById('searchInput')?.value || '';
-                const currentClassName = userSettings.academic.classes.find(c => c.id === userSettings.academic.currentClassId)?.name || '';
                 const originClass = Utils.getOriginClass(result, currentClassName);
 
                 tbodyContent += `

@@ -5,7 +5,7 @@ import { PromptService } from '../services/PromptService.js';
 
 export const StudentDataManager = {
     createResultObject(nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage = null, modelUsed = null) {
-        const newStudentData = JSON.parse(JSON.stringify(studentData));
+        const newStudentData = Utils.deepClone(studentData);
 
         if (newStudentData.periods[newStudentData.currentPeriod]) {
             newStudentData.periods[newStudentData.currentPeriod].appreciation = appreciation;
@@ -348,5 +348,21 @@ export const StudentDataManager = {
         student._lastModified = Date.now();
 
         return true;
+    },
+
+    /**
+     * Synchronise un élève modifié dans appState.filteredResults si présent
+     * pour maintenir la cohérence de l'affichage sans duplication de code.
+     * @param {string} id - ID de l'élève
+     * @param {Object} [updatedResult=null] - Données à jour (prend student dans generatedResults si omis)
+     */
+    syncFilteredStudent(id, updatedResult = null) {
+        if (!appState.filteredResults || !id) return;
+        const target = updatedResult || appState.generatedResults?.find(r => r.id === id);
+        if (!target) return;
+        const idx = appState.filteredResults.findIndex(r => r.id === id);
+        if (idx !== -1) {
+            appState.filteredResults[idx] = target;
+        }
     }
 };

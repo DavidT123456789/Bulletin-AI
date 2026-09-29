@@ -2912,9 +2912,9 @@ export const SeatingChartManager = {
         const currentClass = this._getCurrentClass();
         return {
             gridState: this._gridState.map(row => [...row]),
-            specialLayout: JSON.parse(JSON.stringify(appState.seatingGrid?.specialLayout || {})),
+            specialLayout: Utils.deepClone(appState.seatingGrid?.specialLayout || {}),
             classSpecialLayout: currentClass?.seatingSpecialLayout
-                ? JSON.parse(JSON.stringify(currentClass.seatingSpecialLayout))
+                ? Utils.deepClone(currentClass.seatingSpecialLayout)
                 : {},
             rows: this._getRows(),
             cols: this._getCols()
@@ -2955,7 +2955,7 @@ export const SeatingChartManager = {
         const currentClass = this._getCurrentClass();
         if (currentClass) {
             currentClass.seatingSpecialLayout = snapshot.classSpecialLayout
-                ? JSON.parse(JSON.stringify(snapshot.classSpecialLayout))
+                ? Utils.deepClone(snapshot.classSpecialLayout)
                 : {};
         }
         
@@ -3368,14 +3368,15 @@ export const SeatingChartManager = {
             `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
         );
 
-        const searchTerm = (document.getElementById('scSearchInput')?.value || '').toLowerCase();
+        const searchTerm = (document.getElementById('scSearchInput')?.value || '').trim();
+        const currentClassName = this._getCurrentClass()?.name || '';
 
         const filtered = searchTerm
-            ? sorted.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
+            ? sorted.filter(s => Utils.matchesStudent(s, searchTerm, { currentClassName }))
             : sorted;
 
         const filteredDeparted = searchTerm
-            ? departedUnplaced.filter(s => `${s.prenom} ${s.nom}`.toLowerCase().includes(searchTerm))
+            ? departedUnplaced.filter(s => Utils.matchesStudent(s, searchTerm, { currentClassName }))
             : departedUnplaced;
 
         const activeListHtml = filtered.length === 0
@@ -4622,8 +4623,9 @@ export const SeatingChartManager = {
         const cleaned = (value || '').trim();
         if (!cleaned) return;
 
+        const currentClassName = this._getCurrentClass()?.name || '';
         const matchedStudents = (this._students || []).filter(student =>
-            Utils.matchesSearch([student.nom || '', student.prenom || ''], cleaned)
+            Utils.matchesStudent(student, cleaned, { currentClassName })
         );
 
         if (matchedStudents.length > 0) {
@@ -4699,10 +4701,9 @@ export const SeatingChartManager = {
 
         // 1. Matched students in current class
         const matchedStudentIds = new Set();
+        const currentClassName = this._getCurrentClass()?.name || '';
         (this._students || []).forEach(student => {
-            const nom = student.nom || '';
-            const prenom = student.prenom || '';
-            if (Utils.matchesSearch([nom, prenom], cleaned)) {
+            if (Utils.matchesStudent(student, cleaned, { currentClassName })) {
                 matchedStudentIds.add(student.id);
             }
         });

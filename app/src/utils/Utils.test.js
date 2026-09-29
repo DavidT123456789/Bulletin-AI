@@ -363,6 +363,57 @@ describe('Utils', () => {
         });
     });
 
+    describe('matchesStudent', () => {
+        const student = {
+            id: 'stu-1',
+            nom: 'BOUKHARI',
+            prenom: 'Sami',
+            classe: '3 1',
+            appreciation: 'Très bon trimestre, travail sérieux et régulier.'
+        };
+
+        it('devrait matcher par nom et prénom (accents, casse, ordre)', () => {
+            expect(Utils.matchesStudent(student, 'sami')).toBe(true);
+            expect(Utils.matchesStudent(student, 'boukhari')).toBe(true);
+            expect(Utils.matchesStudent(student, 'Sami Boukhari')).toBe(true);
+            expect(Utils.matchesStudent(student, 'bou sam')).toBe(true);
+            expect(Utils.matchesStudent(student, 'Lucas')).toBe(false);
+        });
+
+        it('devrait matcher les accents de manière transparente', () => {
+            const studentWithAccents = { nom: 'DÉPRÉ', prenom: 'Élise' };
+            expect(Utils.matchesStudent(studentWithAccents, 'elise')).toBe(true);
+            expect(Utils.matchesStudent(studentWithAccents, 'depre')).toBe(true);
+            expect(Utils.matchesStudent(studentWithAccents, 'Elise Depre')).toBe(true);
+        });
+
+        it('devrait matcher la classe d\'origine', () => {
+            expect(Utils.matchesStudent(student, '3 1')).toBe(true);
+            expect(Utils.matchesStudent(student, '31')).toBe(true);
+            expect(Utils.matchesStudent(student, '3ᵉ1')).toBe(true);
+            expect(Utils.matchesStudent(student, 'classe 3 1')).toBe(true);
+            expect(Utils.matchesStudent(student, '4 2')).toBe(false);
+        });
+
+        it('devrait respecter l\'option includeAppreciation', () => {
+            // Par défaut, l'appréciation n'est pas incluse (vue plan)
+            expect(Utils.matchesStudent(student, 'sérieux')).toBe(false);
+            expect(Utils.matchesStudent(student, 'serieux')).toBe(false);
+
+            // Avec includeAppreciation: true (vue tableau)
+            expect(Utils.matchesStudent(student, 'sérieux', { includeAppreciation: true })).toBe(true);
+            expect(Utils.matchesStudent(student, 'serieux', { includeAppreciation: true })).toBe(true);
+            expect(Utils.matchesStudent(student, 'trimestre', { includeAppreciation: true })).toBe(true);
+        });
+
+        it('devrait gérer les requêtes vides et objets null de manière robuste', () => {
+            expect(Utils.matchesStudent(student, '')).toBe(true);
+            expect(Utils.matchesStudent(student, '   ')).toBe(true);
+            expect(Utils.matchesStudent(student, null)).toBe(true);
+            expect(Utils.matchesStudent(null, 'sami')).toBe(false);
+        });
+    });
+
     describe('highlightMatch', () => {
         it('devrait surligner les correspondances en gérant les accents et la casse', () => {
             expect(Utils.highlightMatch('Morgane', 'mor')).toContain('<mark class="search-highlight">Mor</mark>gane');

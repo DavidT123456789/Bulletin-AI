@@ -5,6 +5,7 @@
 
 import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
+import { StudentDataManager } from './StudentDataManager.js';
 
 /**
  * Gestion des photos d'élèves
@@ -57,11 +58,7 @@ export const StudentPhotoManager = {
             result._lastModified = Date.now();
 
             // Synchronize filteredResults if present
-            const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
-            if (filteredIndex > -1) {
-                appState.filteredResults[filteredIndex].studentPhoto = result.studentPhoto;
-                appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
-            }
+            StudentDataManager.syncFilteredStudent(studentId, result);
 
             // Persist to storage
             await StorageManager.saveAppState();
@@ -87,11 +84,7 @@ export const StudentPhotoManager = {
         result._lastModified = Date.now();
 
         // Synchronize filteredResults if present
-        const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
-        if (filteredIndex > -1) {
-            appState.filteredResults[filteredIndex].studentPhoto = null;
-            appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
-        }
+        StudentDataManager.syncFilteredStudent(studentId, result);
 
         await StorageManager.saveAppState();
         return true;
@@ -245,11 +238,7 @@ export const StudentPhotoManager = {
                 result._lastModified = Date.now();
 
                 // Synchronize filteredResults if present
-                const filteredIndex = appState.filteredResults?.findIndex(r => r.id === studentId);
-                if (filteredIndex > -1) {
-                    appState.filteredResults[filteredIndex].studentPhoto = result.studentPhoto;
-                    appState.filteredResults[filteredIndex]._lastModified = result._lastModified;
-                }
+                StudentDataManager.syncFilteredStudent(studentId, result);
 
                 count++;
             }

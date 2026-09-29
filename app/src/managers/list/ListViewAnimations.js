@@ -4,6 +4,7 @@
  */
 
 import { ListViewRenderer } from './ListViewRenderer.js';
+import { userSettings } from '../../state/State.js';
 
 export const ListViewAnimations = {
 
@@ -89,6 +90,9 @@ export const ListViewAnimations = {
             // Reorder rows IN-PLACE
             const orderedIds = newResults.map(r => r.id);
             let previousNode = null;
+            const searchQuery = document.getElementById('searchInput')?.value || '';
+            const currentClassName = userSettings.academic?.classes?.find(c => c.id === userSettings.academic?.currentClassId)?.name || '';
+            const renderContext = { searchQuery, currentClassName };
 
             orderedIds.forEach((id, index) => {
                 let row;
@@ -106,7 +110,7 @@ export const ListViewAnimations = {
                     // New row - create it
                     const result = newResultsMap.get(id);
                     if (result) {
-                        row = ListViewRenderer.createRowElement(result, periods, currentPeriodIndex);
+                        row = ListViewRenderer.createRowElement(result, periods, currentPeriodIndex, renderContext);
                         row.classList.add('row-filter-enter');
                         row.style.setProperty('--enter-delay', `${50 + index * 30}ms`);
                     }
