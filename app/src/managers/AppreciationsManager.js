@@ -81,15 +81,15 @@ export const AppreciationsManager = {
      * @returns {Object} The history state for the current period
      * @private
      */
-    _getPerPeriodState(result) {
+    _getPerPeriodState(result, createIfMissing = false) {
         const currentPeriod = appState.currentPeriod;
-        if (!result.historyPerPeriod) result.historyPerPeriod = {};
 
         // Migrate legacy historyState → historyPerPeriod
         // CRITICAL: Only use generationPeriod (immutable) — never studentData.currentPeriod
         // because currentPeriod changes as the user navigates, causing S1 history
         // to be incorrectly assigned to S2.
         if (result.historyState?.versions?.length > 0) {
+            if (!result.historyPerPeriod) result.historyPerPeriod = {};
             const legacyPeriod = result.generationPeriod;
             if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
                 result.historyPerPeriod[legacyPeriod] = result.historyState;
@@ -99,7 +99,7 @@ export const AppreciationsManager = {
 
         // Guard: If current period has history but no appreciation,
         // the history is orphaned — reset it
-        const existingState = result.historyPerPeriod[currentPeriod];
+        const existingState = result.historyPerPeriod?.[currentPeriod];
         if (existingState?.versions?.length > 0) {
             const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
             if (!hasAppreciation) {
@@ -107,8 +107,13 @@ export const AppreciationsManager = {
             }
         }
 
-        if (!result.historyPerPeriod[currentPeriod]) {
-            result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+        if (!result.historyPerPeriod?.[currentPeriod]) {
+            if (createIfMissing) {
+                if (!result.historyPerPeriod) result.historyPerPeriod = {};
+                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                return result.historyPerPeriod[currentPeriod];
+            }
+            return { versions: [], currentIndex: -1 };
         }
 
         return result.historyPerPeriod[currentPeriod];
@@ -121,7 +126,7 @@ export const AppreciationsManager = {
      */
     pushToHistory(result, source = 'edit') {
         if (!result || !result.appreciation) return;
-        const state = this._getPerPeriodState(result);
+        const state = this._getPerPeriodState(result, true);
         const appreciationSource = result.appreciationSource ?? null;
         const aiModel = result.studentData?.currentAIModel ?? null;
         const tokenUsage = result.tokenUsage ? JSON.parse(JSON.stringify(result.tokenUsage)) : null;
@@ -138,7 +143,7 @@ export const AppreciationsManager = {
         const result = appState.generatedResults.find(r => r.id === id);
         if (!result) return false;
 
-        const state = this._getPerPeriodState(result);
+        const state = this._getPerPeriodState(result, true);
 
         // Sauvegarder texte actuel s'il diffère
         if (result.appreciation) {

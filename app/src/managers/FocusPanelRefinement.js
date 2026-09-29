@@ -216,6 +216,10 @@ export const FocusPanelRefinement = {
 
                 const finalHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(refined));
                 await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast' });
+                if (panel) {
+                    panel._initialAppreciationHtml = finalHtml;
+                    panel._isAppreciationEdited = false;
+                }
 
                 // CRITICAL FIX: Delete the active generation ONLY after animation finishes,
                 // so that _saveContext() triggered during animation does not save the span tags.

@@ -652,10 +652,16 @@ export const StorageManager = {
             });
         }
 
-        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified)
+        // Nettoyer generatedResults pour exclure les horodatages transitoires (_lastModified) et états UI éphémères
         const cleanResults = (runtimeState.data.generatedResults || []).map(r => {
             const clean = { ...r };
             delete clean._lastModified;
+            delete clean.copied;
+            delete clean.isPending;
+            delete clean.errorMessage;
+            delete clean.errorPeriod;
+            delete clean.historyPerPeriod;
+            delete clean.historyState;
             if (clean.studentData?.periods) {
                 const cleanPeriods = {};
                 for (const [p, pData] of Object.entries(clean.studentData.periods)) {

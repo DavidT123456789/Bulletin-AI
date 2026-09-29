@@ -55,6 +55,18 @@ export const FocusPanelManager = {
     /** Set of student IDs/results that have deferred row updates */
     _deferredRowUpdates: new Set(),
 
+    /** Tracks whether appreciation text was modified by user typing */
+    _isAppreciationEdited: false,
+
+    /** Tracks initial rendered HTML of appreciation for reliable change detection */
+    _initialAppreciationHtml: '',
+
+    /** Tracks whether grade was modified by user input */
+    _isGradeEdited: false,
+
+    /** Tracks whether context was modified by user input */
+    _isContextEdited: false,
+
     /**
      * Initialise le module avec les références nécessaires
      * @param {Object} appreciationsManager - Référence à AppreciationsManager
@@ -72,6 +84,11 @@ export const FocusPanelManager = {
             onContentChange: (content) => {
                 FocusPanelStatus.updateWordCount();
                 FocusPanelStatus.syncAppreciationToResult(content);
+                const textEl = document.getElementById('focusAppreciationText');
+                if (textEl) {
+                    this._initialAppreciationHtml = textEl.innerHTML;
+                    this._isAppreciationEdited = false;
+                }
                 // CRITICAL FIX: Ensure List View and source indicator update on Undo/Redo
                 if (this.currentStudentId) {
                     const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
@@ -337,6 +354,7 @@ export const FocusPanelManager = {
 
                 result.studentData.periods[currentPeriod].grade = numVal;
                 changed = true;
+                this._isGradeEdited = true;
             }
 
             // 2. Context Input
@@ -346,6 +364,7 @@ export const FocusPanelManager = {
 
                 result.studentData.periods[currentPeriod].context = target.value;
                 changed = true;
+                this._isContextEdited = true;
             }
 
             // 3. Status Checkboxes (Delegated from header edit container)
@@ -425,6 +444,7 @@ export const FocusPanelManager = {
         if (appreciationText) {
             // Use 'input' logic to reliably detect manual edits
             appreciationText.addEventListener('input', () => {
+                this._isAppreciationEdited = true;
                 FocusPanelStatus.updateWordCount();
 
                 const content = appreciationText.textContent?.trim() || '';
@@ -474,6 +494,8 @@ export const FocusPanelManager = {
             });
 
             appreciationText.addEventListener('blur', () => {
+                if (!this._isAppreciationEdited) return;
+
                 const content = appreciationText.textContent?.trim();
                 const result = appState.generatedResults.find(r => r.id === this.currentStudentId);
 
@@ -481,7 +503,10 @@ export const FocusPanelManager = {
                     const isRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (isRealContent) {
-                        FocusPanelHistory.push(content);
+                        const cleanHtml = appreciationText.innerHTML;
+                        if (cleanHtml !== this._initialAppreciationHtml) {
+                            FocusPanelHistory.push(cleanHtml);
+                        }
 
                         // Resync hash baseline for manual appreciations only.
                         // AI appreciations keep their generation hash so dirty
@@ -512,9 +537,12 @@ export const FocusPanelManager = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
+                        this._initialAppreciationHtml = '';
                         FocusPanelStatus.refreshAppreciationStatus();
+                        this._saveContext();
                     }
                 }
+                this._isAppreciationEdited = false;
             });
 
             // Handle paste event to strip HTML formatting, styling, and weird margins/paddings
@@ -612,6 +640,7 @@ export const FocusPanelManager = {
         const contextInput = document.getElementById('focusContextInput');
         if (contextInput) {
             contextInput.addEventListener('input', () => {
+                this._isContextEdited = true;
                 this._autoResizeTextarea(contextInput);
                 // Note: state is updated live in handleDataChange. 
                 // Saving to localStorage on every keystroke causes severe UI lag, moved to blur.
@@ -1653,6 +1682,8 @@ export const FocusPanelManager = {
 
                         const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(newResult.appreciation));
                         await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+                        this._initialAppreciationHtml = htmlHtml;
+                        this._isAppreciationEdited = false;
                     }
 
                     // Réinitialiser l'historique - la régénération est un nouveau départ
@@ -1795,6 +1826,8 @@ export const FocusPanelManager = {
                 FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
                 const htmlHtml = Utils.decodeHtmlEntities(Utils.cleanMarkdown(effectiveApp));
                 await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
+                this._initialAppreciationHtml = htmlHtml;
+                this._isAppreciationEdited = false;
             } else if (appreciationEl) {
                 this._renderAppreciationText(result);
             }
@@ -1940,6 +1973,8 @@ export const FocusPanelManager = {
      * @private
      */
     _renderGradesAndContext(result, currentPeriod) {
+        this._isGradeEdited = false;
+        this._isContextEdited = false;
         const prevGradesEl = document.getElementById('focusPreviousGrades');
         const getEvolutionHtml = (gradeA, gradeB) => {
             if (gradeA === null || gradeA === undefined || gradeA === '' ||
@@ -2072,6 +2107,7 @@ export const FocusPanelManager = {
 
             // Add input listener for grade changes
             gradeInput.oninput = () => {
+                this._isGradeEdited = true;
                 const val = gradeInput.value.replace(',', '.');
                 const grade = parseFloat(val);
                 
@@ -2160,6 +2196,10 @@ export const FocusPanelManager = {
         }
 
         const currentPeriod = appState.currentPeriod;
+
+        this._isAppreciationEdited = false;
+        this._isGradeEdited = false;
+        this._isContextEdited = false;
 
         // Exit creation mode when viewing existing student
         // this.isCreationMode = false; // MOVED to open() to prevent premature reset during openNew() sequence
@@ -2281,6 +2321,8 @@ export const FocusPanelManager = {
                 hasAppreciation = false;
             }
         }
+        this._initialAppreciationHtml = appreciationEl.innerHTML;
+        this._isAppreciationEdited = false;
         FocusPanelStatus.updateWordCount();
     },
 
@@ -2305,41 +2347,52 @@ export const FocusPanelManager = {
         const currentPeriod = appState.currentPeriod;
         let hasChanged = false;
 
-        // Save context
-        const contextInput = document.getElementById('focusContextInput');
-        if (contextInput) {
-            const newContext = contextInput.value.trim();
-            const existingContext = result.studentData.periods[currentPeriod]?.context ?? '';
-            if (newContext !== existingContext) {
-                if (!result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod] = {};
+        // Save context only if edited by user
+        if (this._isContextEdited) {
+            const contextInput = document.getElementById('focusContextInput');
+            if (contextInput) {
+                const newContext = contextInput.value.trim();
+                const existingContext = result.studentData.periods?.[currentPeriod]?.context ?? '';
+                if (newContext !== existingContext) {
+                    if (!result.studentData.periods) {
+                        result.studentData.periods = {};
+                    }
+                    if (!result.studentData.periods[currentPeriod]) {
+                        result.studentData.periods[currentPeriod] = {};
+                    }
+                    result.studentData.periods[currentPeriod].context = newContext === '' ? undefined : newContext;
+                    hasChanged = true;
                 }
-                result.studentData.periods[currentPeriod].context = newContext === '' ? undefined : newContext;
-                hasChanged = true;
             }
+            this._isContextEdited = false;
         }
 
-        // Save grade
-        const gradeInput = document.getElementById('focusCurrentGradeInput');
-        if (gradeInput) {
-            const gradeStr = gradeInput.value.trim().replace(',', '.');
-            const newGrade = gradeStr === '' ? null : parseFloat(gradeStr);
-            const existingGrade = result.studentData.periods[currentPeriod]?.grade ?? null;
-            if (newGrade !== existingGrade) {
-                if (!result.studentData.periods[currentPeriod]) {
-                    result.studentData.periods[currentPeriod] = {};
+        // Save grade only if edited by user
+        if (this._isGradeEdited) {
+            const gradeInput = document.getElementById('focusCurrentGradeInput');
+            if (gradeInput) {
+                const gradeStr = gradeInput.value.trim().replace(',', '.');
+                const newGrade = gradeStr === '' ? null : parseFloat(gradeStr);
+                const existingGrade = result.studentData.periods?.[currentPeriod]?.grade ?? null;
+                if (newGrade !== existingGrade) {
+                    if (!result.studentData.periods) {
+                        result.studentData.periods = {};
+                    }
+                    if (!result.studentData.periods[currentPeriod]) {
+                        result.studentData.periods[currentPeriod] = {};
+                    }
+                    result.studentData.periods[currentPeriod].grade = newGrade;
+                    hasChanged = true;
                 }
-                result.studentData.periods[currentPeriod].grade = newGrade;
-                hasChanged = true;
             }
+            this._isGradeEdited = false;
         }
 
-        // Save appreciation text (Critical fix for manual edits)
-        // IMPORTANT: Do NOT save if generation is in progress (skeleton would be saved as appreciation)
+        // Save appreciation text only if edited by user
         const isGeneratingForThisStudent = this._activeGenerations.has(this.currentStudentId);
         const appreciationEl = document.getElementById('focusAppreciationText');
 
-        if (appreciationEl && !appreciationEl.classList.contains('empty') && !isGeneratingForThisStudent) {
+        if (this._isAppreciationEdited && appreciationEl && !isGeneratingForThisStudent) {
             const content = appreciationEl.innerHTML;
             const isSkeleton = content.includes('appreciation-skeleton');
             const textContent = appreciationEl.textContent.trim();
@@ -2348,36 +2401,38 @@ export const FocusPanelManager = {
                 // PERIOD GUARD: Only save DOM content into the current period if it genuinely
                 // belongs to it. This prevents S1 appreciation (still in result.appreciation)
                 // from being written into periods['S2'] when the user merely opens/closes the panel.
-                // Content belongs to the current period if:
-                //   (a) periods[currentPeriod] already has an appreciation (user typed or generated here), OR
-                //   (b) result.generationPeriod matches (this result was generated for this period)
                 const periodAlreadyHasContent = !!(result.studentData.periods?.[currentPeriod]?.appreciation?.trim());
                 const resultBelongsToCurrentPeriod = result.generationPeriod === currentPeriod;
 
                 if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
-                    const existingAppreciation = result.studentData.periods[currentPeriod]?.appreciation || '';
-                    if (content !== existingAppreciation) {
+                    if (content !== this._initialAppreciationHtml) {
                         result.appreciation = content;
                         result.copied = false;
+                        if (!result.studentData.periods) {
+                            result.studentData.periods = {};
+                        }
                         if (!result.studentData.periods[currentPeriod]) {
                             result.studentData.periods[currentPeriod] = {};
                         }
                         result.studentData.periods[currentPeriod].appreciation = content;
                         result.isPending = false;
+                        this._initialAppreciationHtml = content;
                         hasChanged = true;
                     }
                 }
             } else if (textContent === '') {
                 // User explicitly cleared the appreciation
-                const existingAppreciation = result.studentData.periods[currentPeriod]?.appreciation || '';
+                const existingAppreciation = result.studentData.periods?.[currentPeriod]?.appreciation || '';
                 if (existingAppreciation !== '') {
                     result.appreciation = '';
-                    if (result.studentData.periods[currentPeriod]) {
+                    if (result.studentData?.periods?.[currentPeriod]) {
                         result.studentData.periods[currentPeriod].appreciation = '';
                     }
+                    this._initialAppreciationHtml = '';
                     hasChanged = true;
                 }
             }
+            this._isAppreciationEdited = false;
         }
 
         if (hasChanged) {

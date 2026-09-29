@@ -342,6 +342,7 @@ export const SpeechRecognitionManager = {
         FocusPanelHistory.push(content);
 
         // Save context (and appreciation via DOM)
+        FocusPanelManager._isAppreciationEdited = true;
         FocusPanelManager._saveContext();
 
         // Update list row

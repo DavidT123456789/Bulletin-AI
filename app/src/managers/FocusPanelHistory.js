@@ -38,18 +38,15 @@ export const FocusPanelHistory = {
      * @returns {Object|null}
      * @private
      */
-    _getState() {
+    _getState(createIfMissing = false) {
         const result = this._getResult();
         if (!result) return null;
 
         const currentPeriod = appState.currentPeriod;
-        if (!result.historyPerPeriod) result.historyPerPeriod = {};
 
         // 1. Migrate legacy historyState → historyPerPeriod
-        // CRITICAL: Only use generationPeriod (immutable) — never studentData.currentPeriod
-        // because currentPeriod changes as the user navigates, causing S1 history
-        // to be incorrectly assigned to S2.
         if (result.historyState?.versions?.length > 0) {
+            if (!result.historyPerPeriod) result.historyPerPeriod = {};
             const legacyPeriod = result.generationPeriod;
             if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
                 result.historyPerPeriod[legacyPeriod] = result.historyState;
@@ -59,10 +56,7 @@ export const FocusPanelHistory = {
 
         // 2. Guard: If current period has history but no appreciation,
         // the history is orphaned (likely contaminated from another period) — reset it.
-        // NOTE: We intentionally do NOT exempt generationPeriod here, because
-        // generationPeriod itself was contaminated by the original bug
-        // (S1 data written with generationPeriod='S2').
-        const existingState = result.historyPerPeriod[currentPeriod];
+        const existingState = result.historyPerPeriod?.[currentPeriod];
         if (existingState?.versions?.length > 0) {
             const hasAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation?.trim();
             if (!hasAppreciation) {
@@ -70,9 +64,14 @@ export const FocusPanelHistory = {
             }
         }
 
-        // 3. Return existing period history, or create empty state
-        if (!result.historyPerPeriod[currentPeriod]) {
-            result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+        // 3. Return existing period history, or create empty state only if requested
+        if (!result.historyPerPeriod?.[currentPeriod]) {
+            if (createIfMissing) {
+                if (!result.historyPerPeriod) result.historyPerPeriod = {};
+                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
+                return result.historyPerPeriod[currentPeriod];
+            }
+            return { versions: [], currentIndex: -1 };
         }
 
         return result.historyPerPeriod[currentPeriod];
@@ -84,7 +83,7 @@ export const FocusPanelHistory = {
 
     load(resultId) {
         this._currentResultId = resultId;
-        this._getState(); // Initialize if needed
+        this._getState(false); // Initialize if needed without mutating
         this._notifyHistoryChange();
     },
 
@@ -98,7 +97,7 @@ export const FocusPanelHistory = {
         const textEl = document.getElementById('focusAppreciationText');
         if (textEl?.classList.contains('empty')) return;
 
-        const state = this._getState();
+        const state = this._getState(true);
         // Capture all metadata from the result so the version carries full context
         const result = this._getResult();
         const appreciationSource = result?.appreciationSource ?? null;
