@@ -28,7 +28,6 @@ export const GlobalListeners = {
         this._setupScrollListeners();
         this._setupAiFallbackListener();
         this._setupBodyClickListener();
-        this._setupResizeListener();
         this._setupStudentsUpdatedListener();
         this._setupRoleButtonKeyboardListener();
         this._setupTouchFocusListener();
@@ -45,8 +44,6 @@ export const GlobalListeners = {
             ClassUIManager.renderClassList();
             ClassUIManager.updateStudentCount();
             AppreciationsManager.renderResults();
-            UI?.updateStats?.();
-            UI?.updateControlButtons?.();
         });
 
         window.addEventListener('classChanged', () => {
@@ -54,8 +51,6 @@ export const GlobalListeners = {
             ClassUIManager.renderClassList();
             ClassUIManager.pulseHeaderChip?.();
             AppreciationsManager.renderResults();
-            UI?.updateStats?.();
-            UI?.updateControlButtons?.();
         });
 
         // Écoute les changements de dirty state pour mettre à jour la ligne spécifique
@@ -179,7 +174,7 @@ export const GlobalListeners = {
     },
 
     _setupScrollListeners() {
-        window.addEventListener('scroll', () => DOM.backToTopBtn.classList.toggle('show', window.scrollY > 200));
+        window.addEventListener('scroll', () => DOM.backToTopBtn?.classList.toggle('show', window.scrollY > 200), { passive: true });
         DOM.backToTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     },
 
@@ -413,11 +408,6 @@ export const GlobalListeners = {
         });
     },
 
-    _setupResizeListener() {
-        window.addEventListener('resize', Utils.debounce(() => {
-            // CSS handles responsive layout, no direct action needed
-        }, 200));
-    },
 
     /**
      * Empêche les surbrillances et focus/relief persistants sur les boutons,

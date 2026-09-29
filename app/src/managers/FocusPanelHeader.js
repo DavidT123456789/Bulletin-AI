@@ -11,6 +11,7 @@ import { StudentPhotoManager } from './StudentPhotoManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { StudentDataManager } from './StudentDataManager.js';
 
 export const FocusPanelHeader = {
     // Callbacks to main manager
@@ -235,10 +236,7 @@ export const FocusPanelHeader = {
                     resultToRevert.studentData.statuses = [...this._originalHeaderValues.statuses];
 
                     // Sync the reverted state to filteredResults too
-                    const filteredIndex = appState.filteredResults.findIndex(r => r.id === currentStudentId);
-                    if (filteredIndex > -1) {
-                        appState.filteredResults[filteredIndex] = resultToRevert;
-                    }
+                    StudentDataManager.syncFilteredStudent(currentStudentId, resultToRevert);
 
                     this.callbacks.onUpdateListRow(resultToRevert);
 
@@ -428,10 +426,7 @@ export const FocusPanelHeader = {
 
         // 5. Sync with List
         // CRITICAL FIX: Synchronize filteredResults to avoid stale data on subsequent list view renders
-        const filteredIndex = appState.filteredResults.findIndex(r => r.id === result.id);
-        if (filteredIndex > -1) {
-            appState.filteredResults[filteredIndex] = result;
-        }
+        StudentDataManager.syncFilteredStudent(result.id, result);
 
         this.callbacks.onUpdateListRow(result);
         window.dispatchEvent(new CustomEvent('student-updated', { detail: { studentId: result.id, student: result } }));
