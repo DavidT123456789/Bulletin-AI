@@ -8,6 +8,7 @@
     --primary-color-rgb: 59, 130, 246;
     --primary-hover: #2563eb;
     --primary-bright: var(--primary-color);
+    --primary-bright-rgb: var(--primary-color-rgb);
     /* Dynamically computed hover shade (for text links & gradients only) */
 
     /* Accent: Purple (Tailwind Purple 600) */
@@ -170,7 +171,10 @@
     --color-emerald-bright: #34d399;
     --color-emerald-deep: #047857;
     --color-teal: #14b8a6;
+    --color-blue: #3b82f6;
+    --color-blue-rgb: 59, 130, 246;
     --color-blue-bright: #60a5fa;
+    --color-blue-bright-rgb: 96, 165, 250;
 
     /* Close Button Design Tokens (Neutral 2026 - No alarming red) */
     --close-btn-bg: transparent;
@@ -468,8 +472,12 @@
     --color-emerald-bright: #6ee7b7;
     --color-emerald-deep: #10b981;
     --color-teal: #2dd4bf;
+    --color-blue: #60a5fa;
+    --color-blue-rgb: 96, 165, 250;
     --color-blue-bright: #93c5fd;
+    --color-blue-bright-rgb: 147, 197, 253;
     --primary-bright: var(--color-blue-bright);
+    --primary-bright-rgb: var(--color-blue-bright-rgb);
 
     /* --- Universal Card Style --- */
     --card-glass-bg: #18181b;

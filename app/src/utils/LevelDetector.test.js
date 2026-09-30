@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectLevelFromName, compareClassesPedagogically } from './LevelDetector.js';
+import { detectLevelFromName, compareClassesPedagogically, getClassSortRank } from './LevelDetector.js';
 
 describe('LevelDetector - detectLevelFromName', () => {
     describe('Collège (6ème, 5ème, 4ème)', () => {
@@ -178,6 +178,31 @@ describe('LevelDetector - detectLevelFromName', () => {
             const classes = ['3ᵉG2', '3ᵉ1', '3ᵉG1', '3ᵉ2'];
             classes.sort(compareClassesPedagogically);
             expect(classes).toEqual(['3ᵉ1', '3ᵉ2', '3ᵉG1', '3ᵉG2']);
+        });
+
+        it('devrait assigner correctement le rang de 3ème à 3°4 et 3ᵉ4 sans confusion avec la 4ème', () => {
+            expect(getClassSortRank('3°4')).toBe(230);
+            expect(getClassSortRank('3ᵉ4')).toBe(230);
+            expect(getClassSortRank('3-4')).toBe(230);
+            expect(getClassSortRank('3 4')).toBe(230);
+            expect(getClassSortRank('3e4')).toBe(230);
+            expect(getClassSortRank('3ème 4')).toBe(230);
+            expect(getClassSortRank('3ᵉ4 Reconstituée')).toBe(230);
+        });
+
+        it('ne doit pas confondre le numéro de division (4, 5, 6) avec le niveau scolaire', () => {
+            expect(getClassSortRank('3ᵉ5')).toBe(230);
+            expect(getClassSortRank('3ᵉ6')).toBe(230);
+            expect(getClassSortRank('4ᵉ5')).toBe(220);
+            expect(getClassSortRank('4ᵉ6')).toBe(220);
+            expect(getClassSortRank('5ᵉ6')).toBe(210);
+            expect(getClassSortRank('5ᵉ4')).toBe(210);
+        });
+
+        it('devrait ordonner fidèlement 5ᵉ4, 4ᵉ1, 4ᵉ2 et 3ᵉ4 (la 3ᵉ4 reconstituée après les 4èmes)', () => {
+            const classes = ['5ᵉ4', '3ᵉ4', '4ᵉ1', '4ᵉ2'];
+            classes.sort(compareClassesPedagogically);
+            expect(classes).toEqual(['5ᵉ4', '4ᵉ1', '4ᵉ2', '3ᵉ4']);
         });
     });
 });

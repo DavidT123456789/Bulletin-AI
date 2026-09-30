@@ -117,7 +117,11 @@ export function detectLevelFromName(name) {
 export function getClassSortRank(name) {
     if (!name || typeof name !== 'string') return 999;
     const clean = name.trim();
-    const withoutYear = clean.replace(/\b\d{4}[-/]\d{4}\b/g, '').replace(/\b\d{4}\b/g, '').trim();
+    const withoutYear = clean
+        .replace(/\b\d{4}[-/]\d{4}\b/g, '')
+        .replace(/\b\d{4}\b/g, '')
+        .replace(/\(\s*\)|\[\s*\]/g, '')
+        .trim();
     if (!withoutYear) return 999;
 
     // 1. Maternelle (TPS -> PS -> MS -> GS)
@@ -135,10 +139,24 @@ export function getClassSortRank(name) {
     if (/\bcm2\b/i.test(withoutYear)) return 140;
 
     // 3. Collège : 6ème -> 5ème -> 4ème -> 3ème (sens officiel de progression de l'élève)
-    if (/(?:^|\b)6(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*[a-z]|\s*\d|$)/i.test(withoutYear) || /sixi[eéè]me/i.test(withoutYear)) return 200;
-    if (/(?:^|\b)5(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*[a-z]|\s*\d|$)/i.test(withoutYear) || /cinqui[eéè]me/i.test(withoutYear)) return 210;
-    if (/(?:^|\b)4(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*[a-z]|\s*\d|$)/i.test(withoutYear) || /quatri[eéè]me/i.test(withoutYear)) return 220;
-    if (/(?:^|\b)3(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*[a-z]|\s*\d|$)/i.test(withoutYear) || /troisi[eéè]me|\bbrevet\b/i.test(withoutYear)) return 230;
+    if (/sixi[eéè]me/i.test(withoutYear)) return 200;
+    if (/cinqui[eéè]me/i.test(withoutYear)) return 210;
+    if (/quatri[eéè]me/i.test(withoutYear)) return 220;
+    if (/troisi[eéè]me|\bbrevet\b/i.test(withoutYear)) return 230;
+
+    const collegeRanks = { '6': 200, '5': 210, '4': 220, '3': 230 };
+
+    // Si la classe commence directement par le chiffre du niveau collège (ex: "6e1", "5°4", "4 1", "3ᵉ4", "304", "3G1", "3ᵉG1")
+    const collegeStartMatch = withoutYear.match(/^([3-6])(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*[a-z]|\s*\d|$)/i);
+    if (collegeStartMatch && collegeRanks[collegeStartMatch[1]]) {
+        return collegeRanks[collegeStartMatch[1]];
+    }
+
+    // Si le niveau collège est précédé par un mot (ex: "Picasso 6ème", "Collège 3°4", "Groupe 3°4")
+    const collegeWordMatch = withoutYear.match(/(?:^|\b)([3-6])(?:\u1D49|ᵉ|\s*(?:e|ème|eme|i[eèé]me|°|\^|-)|0[1-9]|\s*g\d*|\s+\d+)/i);
+    if (collegeWordMatch && collegeRanks[collegeWordMatch[1]]) {
+        return collegeRanks[collegeWordMatch[1]];
+    }
 
     // 4. Lycée : 2nde -> 1ère -> Terminale
     if (/\b(?:2nde|2nd|seconde)\b|\b20[1-9]\b|(?:^|\b)2(?:\u207F\u1D48|\u207F\u1D48\u1D49|ⁿᵈ|ⁿᵈᵉ|\s*(?:nde|nd|de|e|ème)|\s*g\d*)/i.test(withoutYear)) return 300;
