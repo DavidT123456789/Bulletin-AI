@@ -427,10 +427,10 @@
     --glow-highlight: rgba(var(--primary-color-rgb), 0.4);
 
     /* Brand Gradient Colors Overrides */
-    --brand-primary: #4f7df2;
-    --brand-primary-rgb: 79, 125, 242;
-    --brand-purple: #8b5cf6;
-    --brand-purple-rgb: 139, 92, 246;
+    --brand-primary: #3b82f6;
+    --brand-primary-rgb: 59, 130, 246;
+    --brand-purple: #6366f1;
+    --brand-purple-rgb: 99, 102, 241;
 
     /* Standard UI Highlight / Drop Target (Neutral Frosted White — High Contrast in Dark Mode) */
     --highlight-standard-border: rgba(255, 255, 255, 0.65);

@@ -874,38 +874,48 @@
     cursor: help;
 }
 
-/* === Voice Dictation Button (Mic) - iOS 2025 Style === */
-/* Minimalist: No border/bg at rest, background on hover */
+/* === Voice Dictation Button (Mic) - iOS 2026 Style === */
 .focus-mic-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    border: none;
+    border: 1px solid var(--border-color);
     background: transparent;
-    color: var(--icon-btn-color);
-    /* Utilisation du token unifié ultra-aérien (Zinc-400) */
-    display: flex;
+    color: var(--text-secondary);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-left: -4px;
+    margin-left: 6px;
     flex-shrink: 0;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .focus-mic-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
 }
 
 .focus-mic-btn i,
 .focus-mic-btn iconify-icon,
 .focus-mic-btn svg {
-    font-size: 14px;
-    /* Harmonisé avec l'icône de titre */
+    font-size: 13px;
     line-height: 1;
-    stroke-width: var(--icon-stroke-width) !important;
 }
 
 .focus-mic-btn:hover {
     color: var(--text-primary);
     background: var(--item-hover-bg);
+    border-color: rgba(255, 255, 255, 0.16);
+    transform: scale(1.05);
+}
+
+[data-theme="dark"] .focus-mic-btn:hover {
+    background: var(--item-hover-bg);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--text-primary);
 }
 
 .focus-mic-btn.recording {
@@ -952,68 +962,61 @@
 }
 
 /* Dark theme adjustments - keep neutral at rest */
-[data-theme="dark"] .focus-mic-btn {
-    background: transparent;
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .focus-mic-btn:hover {
-    background: var(--item-hover-bg);
-}
-
 /* === Voice Dictation & Audio Synthesis Group === */
 .focus-audio-group {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-left: 2px;
+    margin-left: 6px;
     flex-shrink: 0;
 }
 
 .focus-audio-group .focus-mic-btn,
 .focus-audio-group .focus-speaker-btn {
-    margin: 0;
-}
-
-/* === Speech Synthesis Button (Speaker) === */
-.focus-speaker-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    border: none;
+    margin: 0;
+    border: 1px solid var(--border-color);
     background: transparent;
-    color: var(--icon-btn-color);
-    display: flex;
+    color: var(--text-secondary);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-left: 2px;
     flex-shrink: 0;
 }
 
-.focus-speaker-btn i,
-.focus-speaker-btn iconify-icon,
-.focus-speaker-btn svg {
-    font-size: 14px;
-    line-height: 1;
-    stroke-width: var(--icon-stroke-width) !important;
+[data-theme="dark"] .focus-audio-group .focus-mic-btn,
+[data-theme="dark"] .focus-audio-group .focus-speaker-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
 }
 
-.focus-speaker-btn:hover:not(.disabled):not([disabled]) {
+.focus-audio-group .focus-mic-btn iconify-icon,
+.focus-audio-group .focus-speaker-btn iconify-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.focus-audio-group .focus-mic-btn:hover,
+.focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
     color: var(--text-primary);
     background: var(--item-hover-bg);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
 }
 
 .focus-speaker-btn.disabled,
 .focus-speaker-btn[disabled] {
-    opacity: 0.4;
-    cursor: not-allowed;
+    display: none !important;
 }
 
 .focus-speaker-btn.playing {
-    background: var(--primary-color);
-    color: white;
+    background: var(--primary-color) !important;
+    color: white !important;
     animation: speaker-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.25);
 }
@@ -1847,41 +1850,61 @@
 .history-popover {
     position: fixed;
     z-index: 10000;
-    background: var(--glass-overlay-bg);
-    border: 1px solid var(--glass-overlay-border);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    min-width: 260px;
-    max-width: 360px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 14px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    min-width: 280px;
+    max-width: 380px;
     overflow: hidden;
-    animation: popover-in 0.2s ease;
+    animation: popover-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-theme="dark"] .history-popover {
+    background: rgba(26, 26, 32, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 @keyframes popover-in {
     from {
         opacity: 0;
-        transform: translateY(-8px);
+        transform: translateY(-6px) scale(0.98);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 .history-popover-title {
-    padding: 12px 16px;
-    font-size: 0.85rem;
+    padding: 10px 14px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
-    background: rgba(var(--primary-color-rgb), 0.04);
+    background: var(--item-idle-bg);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.02em;
+    user-select: none;
+}
+
+[data-theme="dark"] .history-popover-title {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.history-popover-title iconify-icon {
+    font-size: 14px;
+    color: var(--text-tertiary);
 }
 
 .history-popover-list {
-    max-height: 300px;
+    max-height: 320px;
     overflow-y: auto;
 }
 
@@ -1889,13 +1912,15 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 10px 16px 10px 24px;
-    /* Extra padding-left for indicator */
+    padding: 11px 14px 11px 28px;
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
-    transition: background 0.15s ease;
+    transition: background-color 0.15s ease;
     position: relative;
-    /* Anchor for ::before indicator */
+}
+
+[data-theme="dark"] .history-version-item {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .history-version-item:last-child {
@@ -1903,72 +1928,88 @@
 }
 
 .history-version-item:hover {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: var(--item-hover-bg);
 }
 
 .history-version-item.current {
-    background: rgba(var(--primary-color-rgb), 0.12);
+    background: rgba(var(--primary-color-rgb), 0.08);
 }
 
+[data-theme="dark"] .history-version-item.current {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Active indicator dot */
 .history-version-item.current::before {
     content: '';
     position: absolute;
-    left: 10px;
-    top: 17px;
-    /* Centré verticalement sur le titre (padding-top: 10px + moitié hauteur texte) */
+    left: 12px;
+    top: 18px;
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
-    background-color: var(--primary-color);
+    background-color: var(--primary-bright);
     border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .history-version-item.current::before {
+    background-color: var(--color-blue-bright);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+}
+
+/* Version Header: Label, icons, chips, diff, timestamp */
+.history-version-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    line-height: 1;
 }
 
 .history-version-label {
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-primary);
+}
+
+.history-version-item.current .history-version-label {
+    color: var(--primary-bright);
+}
+
+[data-theme="dark"] .history-version-item.current .history-version-label {
+    color: var(--color-blue-bright);
 }
 
 .history-version-preview {
-    font-size: 0.8rem;
+    font-size: 12px;
     color: var(--text-secondary);
-    line-height: 1.3;
+    line-height: 1.45;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-top: 2px;
 }
 
-/* History Version Header - Contains label, source, diff, time */
-.history-version-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-/* History Source Icon - Status indicator */
+/* Status Source Icon */
 .history-source-icon {
-    font-size: 14px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-right: 2px;
-    /* Close to label */
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    /* Subtle background circle */
-    background: rgba(128, 128, 128, 0.1);
+    background: var(--item-idle-bg);
     flex-shrink: 0;
 }
 
 .history-source-icon.source-ai {
-    color: var(--primary-color);
-    background: rgba(var(--primary-color-rgb), 0.1);
+    color: rgb(251, 191, 36);
+    background: rgba(251, 191, 36, 0.12);
 }
 
 .history-source-icon.source-manual {
@@ -1976,55 +2017,62 @@
 }
 
 .history-source-icon.source-imported {
-    color: var(--text-tertiary);
+    color: var(--color-cyan);
+    background: rgba(6, 182, 212, 0.12);
 }
 
-/* Relative timestamp - subtle, right-aligned */
+/* Refinement source tag */
+.history-source {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    letter-spacing: -0.01em;
+}
+
+[data-theme="dark"] .history-source {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Relative timestamp */
 .history-time {
-    font-size: 0.65rem;
+    font-size: 11px;
     color: var(--text-tertiary);
     margin-left: auto;
     font-weight: 400;
 }
 
-/* Word count diff badges */
+/* Word count diff pill */
 .history-word-diff {
-    font-size: 0.65rem;
+    font-size: 10px;
     font-weight: 600;
-    padding: 1px 5px;
-    border-radius: 4px;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
     font-variant-numeric: tabular-nums;
 }
 
 .history-word-diff.positive {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-color);
+    background: rgba(var(--success-rgb), 0.16);
+    color: var(--success-color, #10b981);
 }
 
 .history-word-diff.negative {
-    background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-color);
-}
-
-/* Source label (for refinements) */
-.history-source {
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    background: rgba(var(--primary-color-rgb), 0.08);
-    padding: 1px 6px;
-    border-radius: 4px;
+    background: rgba(var(--error-rgb), 0.16);
+    color: var(--error-color, #ef4444);
 }
 
 /* AI Model Badge in History */
 .history-model {
-    font-size: 0.65rem;
+    font-size: 10px;
     font-weight: 600;
     color: var(--color-indigo);
     background: rgba(99, 102, 241, 0.08);
     padding: 0 6px;
-    border-radius: 10px;
-    margin-right: 6px;
+    border-radius: var(--radius-pill);
     border: 1px solid rgba(99, 102, 241, 0.15);
     display: inline-flex;
     align-items: center;
@@ -2032,24 +2080,19 @@
     line-height: 1;
 }
 
-/* Original version - visual separator */
+/* Original version item */
 .history-version-item--original {
-    border-top: 1px dashed var(--border-color);
-    margin-top: 4px;
-    padding-top: 14px !important;
+    border-top: 1px solid var(--border-color);
+    margin-top: 2px;
+}
+
+[data-theme="dark"] .history-version-item--original {
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 .history-version-item--original .history-version-label {
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
-
-.history-version-item--original::before {
-    /* Override the current dot for original */
-    background-color: var(--text-tertiary) !important;
-    box-shadow: none !important;
-}
-
-/* Hardcoded dark mode block removed as variables handle it now */
 
 /* ============================================
    HISTORY VERSION CHANGE ANIMATIONS
@@ -2208,7 +2251,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-
 /* AI Indicator - Shows generation metadata on hover */
 .ai-indicator {
     display: inline-flex;
@@ -2217,20 +2259,18 @@
     width: 26px;
     height: 26px;
     padding: 0;
-    /* Style épuré - icône seule sans fond */
     background: transparent;
     border: none;
     border-radius: 50%;
-    /* Harmonized with #focusWordCount font-size */
     font-size: 13px;
     cursor: help;
     transition: all var(--transition-fast);
-    color: rgba(251, 191, 36, 0.8);
+    color: rgba(251, 191, 36, 0.85);
     flex-shrink: 0;
 }
 
 .ai-indicator:hover {
-    background: rgba(251, 191, 36, 0.1);
+    background: var(--item-hover-bg);
     transform: scale(1.12);
     color: rgb(251, 191, 36);
 }
@@ -2240,7 +2280,7 @@
 }
 
 [data-theme="dark"] .ai-indicator:hover {
-    background: rgba(251, 191, 36, 0.15);
+    background: var(--item-hover-bg);
     color: rgb(251, 191, 36);
 }
 
@@ -2293,44 +2333,42 @@
 
 
 
-/* Editable appreciation - harmonized with .focus-context-textarea */
+/* Editable appreciation - enhanced affordance & focus ring */
 .focus-appreciation-text[contenteditable="true"] {
-    /* Border needed for gradient hover/focus effect (single source of truth) */
     border: 2px solid transparent;
-    /* NO border-radius: this element is NOT the last child of the card (refinement buttons are below) */
-    border-radius: 0;
-    box-shadow: inset 0 0 0 0 rgba(var(--primary-color-rgb), 0) !important;
-    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    border-radius: var(--radius-md, 8px);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: text;
+    position: relative;
+    box-sizing: border-box;
 }
 
-/* Hover state - lueur subtile harmonisée */
+/* Hover state - clear affordance that this text is editable directly */
 .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: rgba(var(--primary-color-rgb), 0.02) !important;
-    background-image: none !important;
-    border: 2px solid transparent !important;
+    background: var(--item-idle-bg) !important;
+    border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
-    background: var(--item-idle-bg) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Focus state - sans bordure (glow) */
+/* Focus state - Apple-grade subtle focus ring */
 .focus-appreciation-text[contenteditable="true"]:focus {
     outline: none !important;
-    background: rgba(var(--primary-color-rgb), 0.02) !important;
-    background-image: none !important;
-    border: 2px solid transparent !important;
-    box-shadow: none !important;
-    animation: none !important;
+    background: var(--item-idle-bg) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.16) !important;
 }
 
 [data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:focus {
-    background: var(--item-idle-bg) !important;
-    box-shadow: none !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.22) !important;
 }
 
 /* Empty state for appreciation - CSS-only placeholder using data attribute */
-/* Position relative on parent to allow absolute positioning of placeholder */
 .focus-appreciation-text[contenteditable] {
     position: relative;
     color: var(--text-primary);
@@ -2352,19 +2390,18 @@
     opacity: 0.55;
     transition: opacity var(--transition-base);
     pointer-events: none;
-    /* Use same padding as parent so text aligns */
     position: absolute;
     top: 14px;
-    /* Match padding-top */
     left: 16px;
-    /* Match padding-left */
     right: 16px;
 }
 
+/* Refinement Options */
 .focus-refinement-options {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    align-items: center;
     justify-content: space-between;
     margin-top: 0;
     padding: 4px 16px 6px 16px;
@@ -2372,173 +2409,190 @@
 
 /* ============================
    INLINE APPRECIATION ACTIONS
-   Copy (icon) + Generate (full) inside the card
+   Airy, balanced action cluster
    ============================ */
 .focus-appreciation-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 4px 16px 14px 16px;
+    gap: 8px;
+    padding: 2px 16px 12px 16px;
 }
 
-/* Copy button — icon-only, harmonized with btn-neutral surface language */
-.focus-action-icon-btn {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border-radius: var(--radius-md);
+/* Copy button — elegant pill button with text label */
+.focus-appreciation-actions #focusCopyBtn {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill, 100px);
     border: 1px solid var(--border-color);
     background: var(--item-idle-bg);
     color: var(--text-secondary);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 17px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     flex-shrink: 0;
+    transition: transform 0.25s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+    user-select: none;
     box-shadow: none;
 }
 
-[data-theme="dark"] .focus-action-icon-btn {
+[data-theme="dark"] .focus-appreciation-actions #focusCopyBtn {
+    background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
 }
 
-.focus-action-icon-btn iconify-icon {
-    opacity: 0.75;
-    stroke-width: 1.6px;
+.focus-appreciation-actions #focusCopyBtn iconify-icon {
+    font-size: 15px;
+    opacity: 0.9;
     transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
     transform-origin: center;
 }
 
-/* Active unlocked state: high contrast ready for copy */
-.focus-action-icon-btn:not(.disabled):not(:disabled) {
+.focus-appreciation-actions #focusCopyBtn:hover:not(:disabled):not(.disabled) {
+    background: var(--item-hover-bg);
+    border-color: rgba(255, 255, 255, 0.16);
     color: var(--text-primary);
 }
 
-.focus-action-icon-btn:not(.disabled):not(:disabled) iconify-icon {
-    opacity: 0.95;
+.focus-appreciation-actions #focusCopyBtn:hover:not(:disabled):not(.disabled) iconify-icon {
+    opacity: 1;
+    transform: scale(1.08);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .focus-action-icon-btn:hover:not(.disabled) {
-        background: var(--item-hover-bg);
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .focus-action-icon-btn:hover:not(.disabled) {
-        background: var(--bg-tertiary);
-        border-color: rgba(255, 255, 255, 0.16);
-        color: var(--text-primary);
-    }
-
-    .focus-action-icon-btn:hover:not(.disabled) iconify-icon {
-        opacity: 1;
-        transform: scale(1.08);
-    }
-
-    .focus-action-icon-btn.copied:hover:not(.disabled) {
-        background: rgba(var(--success-rgb), 0.15);
-        border-color: rgba(var(--success-rgb), 0.4);
-        color: var(--success-color, #10b981) !important;
-    }
-
-    .focus-action-icon-btn.copied-prompt:hover:not(.disabled) {
-        background: rgba(var(--purple-rgb), 0.25);
-        border-color: rgba(var(--purple-rgb), 0.4);
-        color: var(--purple-color, #9333ea) !important;
-    }
+.focus-appreciation-actions #focusCopyBtn:active:not(:disabled) {
+    transform: scale(0.95);
 }
 
-.focus-action-icon-btn:active:not(.disabled) {
-    transform: scale(0.92);
-    transition: transform 0.08s ease-out;
+.focus-appreciation-actions #focusCopyBtn:disabled,
+.focus-appreciation-actions #focusCopyBtn.disabled {
+    display: none !important;
 }
 
-.focus-action-icon-btn:disabled {
-    opacity: 0.3;
-    border-color: transparent;
-    cursor: default;
-    pointer-events: none;
-}
-
-.focus-action-icon-btn.disabled {
-    opacity: 0.3;
-    border-color: transparent;
-    cursor: default;
-    /* Interactivity is kept so contextmenu works even when visually disabled */
-}
-
-/* Copy success feedback */
-.focus-action-icon-btn.copied {
-    color: var(--success-color, #10b981) !important;
-    background: rgba(var(--success-rgb), 0.1) !important;
-    border-color: rgba(var(--success-rgb), 0.3) !important;
-}
-
-.focus-action-icon-btn.copied:active:not(.disabled) {
-    background: rgba(var(--success-rgb), 0.22);
+/* Copy success feedback (turns green with checkmark) */
+.focus-appreciation-actions #focusCopyBtn.copied,
+.focus-appreciation-actions #focusCopyBtn.copied:hover {
+    background: rgba(var(--success-rgb), 0.16) !important;
+    border-color: rgba(var(--success-rgb), 0.45) !important;
     color: var(--success-color, #10b981) !important;
 }
 
-.focus-action-icon-btn.copied iconify-icon {
+.focus-appreciation-actions #focusCopyBtn.copied iconify-icon,
+.focus-appreciation-actions #focusCopyBtn.copied:hover iconify-icon {
+    color: var(--success-color, #10b981) !important;
     opacity: 1;
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Copy prompt success feedback (AI Purple theme) */
-.focus-action-icon-btn.copied-prompt {
-    color: var(--purple-color, #9333ea) !important;
-    background: var(--purple-light, rgba(147, 51, 234, 0.15));
-    border-color: rgba(var(--purple-rgb), 0.3) !important;
-}
-
-.focus-action-icon-btn.copied-prompt:active:not(.disabled) {
-    background: rgba(var(--purple-rgb), 0.35);
+/* Prompt copy success feedback (turns purple) */
+.focus-appreciation-actions #focusCopyBtn.copied-prompt,
+.focus-appreciation-actions #focusCopyBtn.copied-prompt:hover {
+    background: rgba(var(--purple-rgb), 0.22) !important;
+    border-color: rgba(var(--purple-rgb), 0.45) !important;
     color: var(--purple-color, #9333ea) !important;
 }
 
-.focus-action-icon-btn.copied-prompt iconify-icon {
+.focus-appreciation-actions #focusCopyBtn.copied-prompt iconify-icon,
+.focus-appreciation-actions #focusCopyBtn.copied-prompt:hover iconify-icon {
+    color: var(--purple-color, #9333ea) !important;
     opacity: 1;
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
 
-/* Generate button — fills remaining space */
+/* Generate button — wide airy pill with generous breathing room */
 .focus-appreciation-actions #focusGenerateBtn {
     flex: 1;
     max-width: none;
+    height: 34px;
+    border-radius: var(--radius-pill, 100px);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 7px;
     letter-spacing: -0.01em;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    white-space: nowrap;
+    user-select: none;
 }
 
-/* Keyboard shortcut hint styling inside action button */
+/* AI Primary active button state (Empty state) */
+.focus-appreciation-actions #focusGenerateBtn.btn-ai {
+    background: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(var(--primary-color-rgb), 0.28);
+}
+
+.focus-appreciation-actions #focusGenerateBtn.btn-ai:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(var(--primary-color-rgb), 0.36);
+}
+
+/* Neutral / Régénérer state (Populated state) */
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral {
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral:hover {
+    background: var(--item-hover-bg);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-neutral {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-neutral:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
+/* Warning / Dirty state */
+.focus-appreciation-actions #focusGenerateBtn.btn-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
+    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
+    color: var(--warning-color);
+}
+
+.focus-appreciation-actions #focusGenerateBtn.btn-warning:hover {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
+}
+
+/* Keyboard shortcut hint */
 .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
-    margin-left: 6px;
-    padding: 2px 6px;
-    font-size: 11px;
+    margin-left: 5px;
+    padding: 1px 5px;
+    font-size: 10px;
     font-weight: 500;
     border-radius: var(--radius-xs, 4px);
     letter-spacing: 0.02em;
     line-height: 1.2;
     pointer-events: none;
-    transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* AI Primary active button state */
 .focus-appreciation-actions #focusGenerateBtn.btn-ai .kbd-hint {
     background: rgba(255, 255, 255, 0.18);
     border: 1px solid rgba(255, 255, 255, 0.26);
     color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* Neutral / Régénérer state */
 .focus-appreciation-actions #focusGenerateBtn.btn-neutral .kbd-hint {
-    background: var(--item-idle-bg);
+    background: rgba(128, 128, 128, 0.1);
     border: 1px solid var(--border-color);
     color: var(--text-tertiary);
 }
@@ -2549,7 +2603,6 @@
     color: var(--text-tertiary);
 }
 
-/* Warning / Dirty state */
 .focus-appreciation-actions #focusGenerateBtn.btn-warning .kbd-hint {
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
     border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
@@ -2557,6 +2610,12 @@
 }
 
 @media (max-width: 480px) {
+    .focus-appreciation-actions #focusGenerateBtn {
+        flex: 1;
+        min-width: 0;
+        margin-left: 0;
+    }
+
     .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
         display: none;
     }
@@ -2668,7 +2727,13 @@
     --chip-bg-opacity: 0.15;
 }
 
+/* Semantic accent colors for chip icons */
 [data-refine-type] iconify-icon {
+    color: var(--chip-color);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+[data-theme="dark"] [data-refine-type] iconify-icon {
     color: var(--chip-color);
 }
 
@@ -2682,6 +2747,7 @@
     .btn[data-refine-type]:hover iconify-icon,
     .btn[data-refine-type]:hover i {
         color: var(--chip-hover-color) !important;
+        transform: scale(1.12);
     }
 }
 
@@ -5028,15 +5094,18 @@
         gap: 8px;
     }
 
-    .focus-action-icon-btn {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
+    .focus-appreciation-actions #focusCopyBtn {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 12px;
     }
 
     .focus-appreciation-actions #focusGenerateBtn {
-        padding: 8px 10px;
-        font-size: 13px;
+        flex: 1;
+        min-width: 0;
+        height: 34px;
+        font-size: 12px;
+        padding: 0 10px;
     }
 
     /* Analysis page on mobile */
@@ -5123,11 +5192,16 @@
         gap: 6px;
     }
 
-    .focus-action-icon-btn {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        font-size: 15px;
+    .focus-appreciation-actions #focusCopyBtn {
+        height: 32px;
+        padding: 0 10px;
+        font-size: 11px;
+    }
+
+    .focus-appreciation-actions #focusGenerateBtn {
+        height: 32px;
+        font-size: 11px;
+        padding: 0 8px;
     }
 
     /* EDIT MODE: Ultra-compact adjustments */

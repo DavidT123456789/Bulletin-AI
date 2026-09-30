@@ -1544,20 +1544,24 @@ export const FocusPanelManager = {
             const copyBtn = document.getElementById('focusCopyBtn');
             if (copyBtn) {
                 const icon = copyBtn.querySelector('iconify-icon');
-                const originalIcon = icon?.getAttribute('icon');
+                const label = copyBtn.querySelector('.btn-copy-label');
+                const originalIcon = icon?.getAttribute('icon') || 'solar:copy-linear';
+                const originalLabel = label?.textContent || 'Copier';
 
                 // Clear any existing copy success animation timeout
                 if (copyBtn.dataset.copyTimeout) {
                     clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
                 }
 
-                // Change to check icon and add 'copied-prompt' class
+                // Change to check icon, update text, and add 'copied-prompt' class
                 if (icon) icon.setAttribute('icon', 'ph:check-bold');
+                if (label) label.textContent = 'Prompt copié !';
                 copyBtn.classList.add('copied-prompt');
 
                 // Reset after delay
                 const timeoutId = setTimeout(() => {
                     if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
+                    if (label) label.textContent = originalLabel;
                     copyBtn.classList.remove('copied-prompt');
                     delete copyBtn.dataset.copyTimeout;
                 }, 1500);
@@ -2023,20 +2027,24 @@ export const FocusPanelManager = {
             // Visual feedback on button
             if (copyBtn) {
                 const icon = copyBtn.querySelector('iconify-icon');
-                const originalIcon = icon?.getAttribute('icon');
+                const label = copyBtn.querySelector('.btn-copy-label');
+                const originalIcon = icon?.getAttribute('icon') || 'solar:copy-linear';
+                const originalLabel = label?.textContent || 'Copier';
 
                 // Clear any existing copy success animation timeout
                 if (copyBtn.dataset.copyTimeout) {
                     clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
                 }
 
-                // Change to check icon and add 'copied' class
+                // Change to check icon, update text, and add 'copied' class
                 if (icon) icon.setAttribute('icon', 'ph:check-bold');
+                if (label) label.textContent = 'Copié !';
                 copyBtn.classList.add('copied');
 
                 // Reset after delay
                 const timeoutId = setTimeout(() => {
-                    if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
+                    if (icon) icon.setAttribute('icon', originalIcon);
+                    if (label) label.textContent = originalLabel;
                     copyBtn.classList.remove('copied');
                     delete copyBtn.dataset.copyTimeout;
                 }, 1500);
@@ -2265,9 +2273,14 @@ export const FocusPanelManager = {
                 delete copyBtn.dataset.copyTimeout;
             }
             copyBtn.classList.remove('copied');
+            copyBtn.classList.remove('copied-prompt');
             const icon = copyBtn.querySelector('iconify-icon');
             if (icon) {
                 icon.setAttribute('icon', 'solar:copy-linear');
+            }
+            const label = copyBtn.querySelector('.btn-copy-label');
+            if (label) {
+                label.textContent = 'Copier';
             }
         }
 

@@ -187,7 +187,7 @@ export const FocusPanelHistory = {
         popover.id = 'historyPopover';
         popover.className = 'history-popover';
 
-        let html = '<div class="history-popover-title">Historique des modifications</div>';
+        let html = '<div class="history-popover-title"><iconify-icon icon="solar:history-linear"></iconify-icon> Historique des versions</div>';
         html += '<div class="history-popover-list">';
 
         // Source labels for refinement types

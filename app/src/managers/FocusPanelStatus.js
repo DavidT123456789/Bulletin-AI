@@ -374,8 +374,8 @@ export const FocusPanelStatus = {
                 badge.classList.add('visible', 'modified', 'icon-only');
                 break;
             case 'empty':
-                badge.innerHTML = '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon>';
-                badge.classList.add('visible', 'empty', 'icon-only');
+                badge.classList.remove('visible', 'empty');
+                badge.innerHTML = '';
                 break;
             case 'saved':
                 badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon><span class="badge-text">Enregistré</span>';
@@ -387,7 +387,7 @@ export const FocusPanelStatus = {
                 }, 2000);
                 break;
             case 'dictating':
-                badge.innerHTML = '<iconify-icon icon="solar:microphone-linear"></iconify-icon><span class="badge-text">Dictée...</span>';
+                badge.innerHTML = '<iconify-icon icon="lucide:mic"></iconify-icon><span class="badge-text">Dictée...</span>';
                 badge.classList.add('visible', 'is-dictating');
                 break;
             case 'error':
@@ -483,9 +483,10 @@ export const FocusPanelStatus = {
             return;
         }
 
-        // Update refinement buttons state
+        // Update refinement buttons state: completely hidden when empty to avoid ghost disabled chips
         const refinementOptions = document.getElementById('focusRefinementOptions');
         if (refinementOptions) {
+            refinementOptions.style.display = isEmpty ? 'none' : 'flex';
             const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
             refineButtons.forEach(btn => {
                 btn.disabled = false; // Always ensure native disabled is removed to allow hover and tooltips
@@ -495,14 +496,16 @@ export const FocusPanelStatus = {
 
         const copyBtn = document.getElementById('focusCopyBtn');
         if (copyBtn) {
-            copyBtn.disabled = false; // Always ensure native disabled is removed to allow contextmenu
+            copyBtn.disabled = isEmpty;
             copyBtn.classList.toggle('disabled', isEmpty);
+            copyBtn.style.display = isEmpty ? 'none' : 'inline-flex';
         }
 
         const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
         if (speakBtn) {
             speakBtn.disabled = isEmpty;
             speakBtn.classList.toggle('disabled', isEmpty);
+            speakBtn.style.display = isEmpty ? 'none' : 'inline-flex';
         }
 
         const speechBtn = document.getElementById('focusAppreciationSpeechBtn');
@@ -541,7 +544,7 @@ export const FocusPanelStatus = {
 
             // Update tooltip (only if we have char count)
             if (charCount !== null) {
-                UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car.`);
+                UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car. • Cliquer pour ajuster la longueur`);
             }
         }
     },
