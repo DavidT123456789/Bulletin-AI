@@ -308,13 +308,12 @@
     font-size: 0.95rem;
 }
 
-/* Reset for specific components that use label tags */
 .settings-card .form-group .generation-mode-selector label,
-.settings-card .form-group .toggle-switch,
-.settings-card .form-group .toggle-switch-label {
+.settings-card .form-group label.toggle-switch,
+.settings-card .form-group label.toggle-switch-label,
+.settings-card .form-group label.toggle-label-text {
     margin-bottom: 0;
     display: inline-block;
-    /* Reset display if needed, though flex context usually handles it */
 }
 
 .settings-card .form-group label small {
@@ -722,11 +721,17 @@
     gap: 12px;
 }
 
+.toggle-switch-container label {
+    margin-bottom: 0;
+}
+
 .toggle-switch {
     position: relative;
     display: inline-block;
     width: var(--toggle-width-default);
     height: var(--toggle-height-default);
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .toggle-switch input {
@@ -1275,6 +1280,7 @@
     white-space: nowrap;
     flex-shrink: 0;
     margin-right: 8px;
+    margin-bottom: 0;
 }
 
 /* API key header links container */
@@ -1293,7 +1299,7 @@
 /* Ollama info message */
 .api-key-info {
     margin-bottom: 10px;
-    font-size: 0.85em;
+    font-size: 0.78rem;
     color: var(--text-secondary);
 }
 
@@ -2243,8 +2249,15 @@
     flex: 1;
 }
 
-.ollama-base-url-input {
+.api-key-actions .toggle-switch-container.compact {
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.api-key-section .api-key-actions .api-key-input-container input.ollama-base-url-input {
     font-family: var(--font-mono, monospace);
+    -webkit-text-security: none;
+    text-security: none;
 }
 
 .ollama-models-info {
