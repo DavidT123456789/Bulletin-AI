@@ -303,36 +303,42 @@
                 </div>
 
                 <div class="header-actions">
-                    <!-- Generation Dashboard: Unified clickable pill showing class status -->
-                    <div id="headerGenDashboard" class="header-gen-dashboard tooltip" role="button" tabindex="0"
-                        aria-label="Statut de génération" data-tooltip="Changer de modèle IA">
-                        <!-- Model indicator (decorative, not interactive itself) -->
-                        <div class="dash-model-label" id="dashModelLabel">
-                            <iconify-icon icon="solar:cpu-linear"></iconify-icon>
-                            <span id="dashModelName">Gemini</span>
-                        </div>
-                        <!-- Validated count -->
-                        <button class="dash-badge dash-validated" id="dashValidated"
-                            data-tooltip="Appréciations validées">
-                            <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
-                            <span class="dash-count" id="dashValidatedCount">0</span>
-                        </button>
-                        <!-- Pending count -->
-                        <button class="dash-badge dash-pending" id="dashPending"
-                            data-tooltip="En attente de génération">
-                            <iconify-icon icon="solar:hourglass-line-linear"></iconify-icon>
-                            <span class="dash-count" id="dashPendingCount">0</span>
-                        </button>
-                        <!-- Generating state overlay -->
-                        <div class="dash-generating" id="dashGenerating">
-                            <div class="dash-progress-bar">
-                                <div class="dash-progress-fill" id="dashProgressFill"></div>
+                    <!-- Generation Dashboard & Fast AI Model Selector -->
+                    <div class="header-gen-wrapper" id="headerGenWrapper">
+                        <div id="headerGenDashboard" class="header-gen-dashboard tooltip" role="button" tabindex="0"
+                            aria-label="Statut de génération" aria-haspopup="true" aria-expanded="false" aria-controls="headerModelDropdown" data-tooltip="Paramètres IA & Modèles">
+                            <!-- Model indicator -->
+                            <div class="dash-model-label" id="dashModelLabel">
+                                <iconify-icon class="dash-model-icon" icon="solar:cpu-linear"></iconify-icon>
+                                <span id="dashModelName">Gemini</span>
+                                <iconify-icon class="dash-model-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
                             </div>
-                            <span class="dash-progress-text" id="dashProgressText">0/0</span>
-                            <button class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler" aria-label="Annuler la génération">
-                                <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
-                            </button>
+                            <!-- Validated count -->
+                            <span class="dash-badge dash-validated" id="dashValidated"
+                                data-tooltip="Appréciations validées">
+                                <iconify-icon icon="solar:check-circle-bold"></iconify-icon>
+                                <span class="dash-count" id="dashValidatedCount">0</span>
+                            </span>
+                            <!-- Pending count -->
+                            <span class="dash-badge dash-pending" id="dashPending"
+                                data-tooltip="En attente de génération">
+                                <iconify-icon icon="solar:hourglass-line-linear"></iconify-icon>
+                                <span class="dash-count" id="dashPendingCount">0</span>
+                            </span>
+                            <!-- Generating state overlay -->
+                            <div class="dash-generating" id="dashGenerating">
+                                <div class="dash-progress-bar">
+                                    <div class="dash-progress-fill" id="dashProgressFill"></div>
+                                </div>
+                                <span class="dash-progress-text" id="dashProgressText">0/0</span>
+                                <button type="button" class="dash-cancel-btn" id="dashCancelBtn" data-tooltip="Annuler" aria-label="Annuler la génération">
+                                    <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                                </button>
+                            </div>
                         </div>
+
+                        <!-- Fast AI Model Switcher Popover -->
+                        <div id="headerModelDropdown" class="header-model-dropdown" style="display: none;" role="menu" aria-label="Sélection du modèle IA"></div>
                     </div>
 
                     <div class="header-actions-pill">
@@ -1843,16 +1849,11 @@
                                         <div id="apiStatusSummary" class="api-status-summary compact-mode mt-2">
                                             <div class="api-status-header compact">
                                                 <div class="model-selector-wrapper">
-                                                    <label for="aiModelSelect" class="sr-only">Modèle actif</label>
+                                                    <label for="aiModelSelect" class="active-model-label">Modèle actif :</label>
                                                     <select id="aiModelSelect" class="compact-model-select">
                                                         <!-- Options générées dynamiquement depuis MODEL_SELECTOR_CONFIG -->
                                                     </select>
                                                 </div>
-                                                <button id="testAllConnectionsBtn"
-                                                    class="btn btn-secondary btn-icon-only tooltip"
-                                                    data-tooltip="Vérifier la connexion">
-                                                    <iconify-icon icon="solar:restart-bold"></iconify-icon>
-                                                </button>
                                             </div>
                                             <div class="api-fallback-row mt-3">
                                                 <div class="toggle-switch-container compact">
@@ -1900,12 +1901,24 @@
                                             <div>
                                                 <form class="api-keys-container" action="javascript:void(0)"
                                                     autocomplete="off">
+                                                    
+                                                    <!-- CATÉGORIE 1: GRATUITS SANS CARTE BANCAIRE -->
+                                                    <div class="api-category-header">
+                                                        <iconify-icon icon="solar:star-bold" style="color: var(--warning-color);"></iconify-icon>
+                                                        <span>100% Gratuits & Recommandés (Sans carte bancaire)</span>
+                                                    </div>
+
                                                     <div class="api-key-section" id="googleApiKeyGroup">
                                                         <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="logos:google-icon"></iconify-icon> Google
-                                                                Gemini (Recommandé)</span>
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="logos:google-icon"></iconify-icon> Google Gemini</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="googleStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
                                                             <div class="api-key-links">
                                                                 <a href="https://aistudio.google.com/app/apikey"
                                                                     target="_blank" rel="noopener noreferrer"
@@ -1919,15 +1932,21 @@
                                                                     Usage</a>
                                                             </div>
                                                         </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">Gemini 3.5 Flash</span>
+                                                            <span class="model-chip">Gemini 3.8 Flash</span>
+                                                            <span class="model-chip">Gemini 3.1 Pro</span>
+                                                        </div>
                                                         <div class="api-key-actions">
                                                             <div class="api-key-input-container">
                                                                 <input type="text" id="googleApiKey"
-                                                                    placeholder="AIzaSy...">
+                                                                    placeholder="AIzaSy..." aria-label="Clé API Google Gemini">
                                                                 <span id="googleApiKeyValidationIcon"
                                                                     class="api-key-validation-icon"></span>
                                                             </div>
                                                             <button type="button" id="validateGoogleApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé Google Gemini">Vérifier</button>
                                                         </div>
                                                         <div class="error-message" id="googleApiKeyError"
                                                             style="display: none;">
@@ -1936,11 +1955,15 @@
 
                                                     <div class="api-key-section" id="groqApiKeyGroup">
                                                         <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"
-                                                                    style="color: #f55036;"></iconify-icon>
-                                                                Groq Cloud
-                                                                (Llama 3.3, Gemma 2 - Ultra-rapide)</span>
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"
+                                                                        style="color: #f55036;"></iconify-icon> Groq Cloud</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="groqStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
                                                             <div class="api-key-links">
                                                                 <a href="https://console.groq.com/keys"
                                                                     target="_blank" rel="noopener noreferrer"
@@ -1954,133 +1977,45 @@
                                                                     Limites</a>
                                                             </div>
                                                         </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">Llama 3.3 70B</span>
+                                                            <span class="model-chip">Gemma 2 9B</span>
+                                                            <span class="model-chip">Llama 3.1 8B</span>
+                                                        </div>
                                                         <div class="api-key-actions">
                                                             <div class="api-key-input-container">
                                                                 <input type="text" id="groqApiKey"
-                                                                    placeholder="gsk_...">
+                                                                    placeholder="gsk_..." aria-label="Clé API Groq Cloud">
                                                                 <span id="groqApiKeyValidationIcon"
                                                                     class="api-key-validation-icon"></span>
                                                             </div>
                                                             <button type="button" id="validateGroqApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé Groq Cloud">Vérifier</button>
                                                         </div>
                                                         <div class="error-message" id="groqApiKeyError"
                                                             style="display: none;">
                                                         </div>
                                                     </div>
 
-                                                    <div class="api-key-section" id="mistralApiKeyGroup">
-                                                        <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline" icon="solar:cat-bold"
-                                                                    style="color: #fd6f00;"></iconify-icon>
-                                                                Mistral AI
-                                                                (API directe)</span>
-                                                            <div class="api-key-links">
-                                                                <a href="https://console.mistral.ai/api-keys"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link">Obtenir une
-                                                                    clé (La Plateforme)</a>
-                                                                <a href="https://console.mistral.ai/usage"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><iconify-icon
-                                                                        class="iconify-inline"
-                                                                        icon="solar:wallet-bold"></iconify-icon>
-                                                                    Usage</a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="api-key-actions">
-                                                            <div class="api-key-input-container">
-                                                                <input type="text" id="mistralApiKey"
-                                                                    placeholder="Clé Mistral..."
-                                                                   >
-                                                                <span id="mistralApiKeyValidationIcon"
-                                                                    class="api-key-validation-icon"></span>
-                                                            </div>
-                                                            <button type="button" id="validateMistralApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
-                                                        </div>
-                                                        <div class="error-message" id="mistralApiKeyError"
-                                                            style="display: none;">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="api-key-section" id="openrouterApiKeyGroup">
-                                                        <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="solar:bolt-bold-duotone"
-                                                                    style="color: var(--secondary-color);"></iconify-icon>
-                                                                OpenRouter
-                                                                (Mistral, DeepSeek...)</span>
-                                                            <div class="api-key-links">
-                                                                <a href="https://openrouter.ai/keys" target="_blank"
-                                                                    rel="noopener noreferrer" class="btn-link">Obtenir
-                                                                    une
-                                                                    clé (gratuit dispo.)</a>
-                                                                <a href="https://openrouter.ai/credits" target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><iconify-icon
-                                                                        class="iconify-inline"
-                                                                        icon="solar:wallet-bold"></iconify-icon>
-                                                                    Usage</a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="api-key-actions">
-                                                            <div class="api-key-input-container">
-                                                                <input type="text" id="openrouterApiKey"
-                                                                    placeholder="sk-or-...">
-                                                                <span id="openrouterApiKeyValidationIcon"
-                                                                    class="api-key-validation-icon"></span>
-                                                            </div>
-                                                            <button type="button" id="validateOpenrouterApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
-                                                        </div>
-                                                        <div class="error-message" id="openrouterApiKeyError"
-                                                            style="display: none;">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="api-key-section" id="openaiApiKeyGroup">
-                                                        <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="logos:openai-icon"></iconify-icon> OpenAI
-                                                                (ChatGPT)</span>
-                                                            <div class="api-key-links">
-                                                                <a href="https://platform.openai.com/api-keys"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link">Obtenir une
-                                                                    clé (payant)</a>
-                                                                <a href="https://platform.openai.com/usage"
-                                                                    target="_blank" rel="noopener noreferrer"
-                                                                    class="btn-link btn-link-secondary"><iconify-icon
-                                                                        class="iconify-inline"
-                                                                        icon="solar:wallet-bold"></iconify-icon>
-                                                                    Usage</a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="api-key-actions">
-                                                            <div class="api-key-input-container">
-                                                                <input type="text" id="openaiApiKey"
-                                                                    placeholder="sk-...">
-                                                                <span id="openaiApiKeyValidationIcon"
-                                                                    class="api-key-validation-icon"></span>
-                                                            </div>
-                                                            <button type="button" id="validateOpenaiApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
-                                                        </div>
-                                                        <div class="error-message" id="openaiApiKeyError"
-                                                            style="display: none;">
-                                                        </div>
+                                                    <!-- CATÉGORIE 2: SPÉCIALISÉS & PAY-AS-YOU-GO -->
+                                                    <div class="api-category-header api-category-spaced">
+                                                        <iconify-icon icon="solar:card-bold" style="color: var(--secondary-color);"></iconify-icon>
+                                                        <span>Spécialisés & Pay-as-you-go</span>
                                                     </div>
 
                                                     <div class="api-key-section" id="anthropicApiKeyGroup">
                                                         <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="logos:anthropic-icon"></iconify-icon> Claude
-                                                                (Anthropic)</span>
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="logos:anthropic-icon"></iconify-icon> Claude
+                                                                    (Anthropic)</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="anthropicStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
                                                             <div class="api-key-links">
                                                                 <a href="https://console.anthropic.com/settings/keys"
                                                                     target="_blank" rel="noopener noreferrer"
@@ -2094,37 +2029,192 @@
                                                                     Usage</a>
                                                             </div>
                                                         </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">Claude Sonnet 5</span>
+                                                            <span class="model-chip">Claude 3.7 Sonnet</span>
+                                                            <span class="model-chip">Claude Opus 5</span>
+                                                        </div>
                                                         <div class="api-key-actions">
                                                             <div class="api-key-input-container">
                                                                 <input type="text" id="anthropicApiKey"
-                                                                    placeholder="sk-ant-..."
-                                                                   >
+                                                                    placeholder="sk-ant-..." aria-label="Clé API Anthropic Claude">
                                                                 <span id="anthropicApiKeyValidationIcon"
                                                                     class="api-key-validation-icon"></span>
                                                             </div>
                                                             <button type="button" id="validateAnthropicApiKeyBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé Anthropic Claude">Vérifier</button>
                                                         </div>
                                                         <div class="error-message" id="anthropicApiKeyError"
                                                             style="display: none;">
                                                         </div>
                                                     </div>
 
+                                                    <div class="api-key-section" id="mistralApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                             <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline" icon="solar:cat-bold"
+                                                                        style="color: #fd6f00;"></iconify-icon> Mistral AI</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="mistralStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="api-key-links">
+                                                                <a href="https://console.mistral.ai/api-keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (La Plateforme)</a>
+                                                                <a href="https://console.mistral.ai/usage"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">Mistral Small</span>
+                                                            <span class="model-chip">Mistral Large</span>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="text" id="mistralApiKey"
+                                                                    placeholder="Clé Mistral..." aria-label="Clé API Mistral AI">
+                                                                <span id="mistralApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateMistralApiKeyBtn"
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé Mistral AI">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="mistralApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
 
+                                                    <div class="api-key-section" id="openaiApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="logos:openai-icon"></iconify-icon> OpenAI</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="openaiStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="api-key-links">
+                                                                <a href="https://platform.openai.com/api-keys"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link">Obtenir une
+                                                                    clé (payant)</a>
+                                                                <a href="https://platform.openai.com/usage"
+                                                                    target="_blank" rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">GPT-4o Mini</span>
+                                                            <span class="model-chip">o3 Mini</span>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="text" id="openaiApiKey"
+                                                                    placeholder="sk-..." aria-label="Clé API OpenAI">
+                                                                <span id="openaiApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateOpenaiApiKeyBtn"
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé OpenAI">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="openaiApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="api-key-section" id="openrouterApiKeyGroup">
+                                                        <div class="api-key-header">
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:bolt-bold-duotone"
+                                                                        style="color: var(--secondary-color);"></iconify-icon>
+                                                                    OpenRouter
+                                                                    (Mistral, DeepSeek...)</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="openrouterStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Non configuré</span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="api-key-links">
+                                                                <a href="https://openrouter.ai/keys" target="_blank"
+                                                                    rel="noopener noreferrer" class="btn-link">Obtenir
+                                                                    une
+                                                                    clé (gratuit dispo.)</a>
+                                                                <a href="https://openrouter.ai/credits" target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="btn-link btn-link-secondary"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:wallet-bold"></iconify-icon>
+                                                                    Usage</a>
+                                                            </div>
+                                                        </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Modèles :</span>
+                                                            <span class="model-chip">DeepSeek V3</span>
+                                                            <span class="model-chip">DeepSeek R1</span>
+                                                            <span class="model-chip">Llama 3.3 Free</span>
+                                                        </div>
+                                                        <div class="api-key-actions">
+                                                            <div class="api-key-input-container">
+                                                                <input type="text" id="openrouterApiKey"
+                                                                    placeholder="sk-or-..." aria-label="Clé API OpenRouter">
+                                                                <span id="openrouterApiKeyValidationIcon"
+                                                                    class="api-key-validation-icon"></span>
+                                                            </div>
+                                                            <button type="button" id="validateOpenrouterApiKeyBtn"
+                                                                class="btn btn-purple btn-small" aria-label="Vérifier la clé OpenRouter">Vérifier</button>
+                                                        </div>
+                                                        <div class="error-message" id="openrouterApiKeyError"
+                                                            style="display: none;">
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- CATÉGORIE 3: LOCAL & HORS-LIGNE -->
+                                                    <div class="api-category-header api-category-spaced">
+                                                        <iconify-icon icon="solar:server-square-bold" style="color: var(--text-tertiary);"></iconify-icon>
+                                                        <span>100% Hors-ligne / Confidentialité locale</span>
+                                                    </div>
 
                                                     <!-- Section Ollama (IA locale) -->
                                                     <div class="api-key-section ollama-section" id="ollamaConfigGroup">
                                                         <div class="api-key-header">
-                                                            <span class="api-key-provider"><iconify-icon
-                                                                    class="iconify-inline"
-                                                                    icon="solar:server-square-bold" style="color: #708090;"></iconify-icon>
-                                                                Ollama (IA
-                                                                Locale)</span>
-                                                            <div style="display:flex; gap:10px; align-items:center;">
+                                                            <div class="api-key-title-group">
+                                                                <span class="api-key-provider"><iconify-icon
+                                                                        class="iconify-inline"
+                                                                        icon="solar:server-square-bold" style="color: var(--text-tertiary);"></iconify-icon> Ollama</span>
+                                                                <span class="provider-status-badge status-unconfigured" id="ollamaStatusBadge">
+                                                                    <span class="status-dot"></span>
+                                                                    <span class="status-text">Désactivé</span>
+                                                                </span>
+                                                            </div>
+                                                            <div class="api-key-links">
                                                                 <a href="https://ollama.com" target="_blank"
                                                                     rel="noopener noreferrer" class="btn-link">Installer
                                                                     Ollama</a>
                                                             </div>
+                                                        </div>
+                                                        <div class="provider-models-hint">
+                                                            <span class="hint-label">Recommandés :</span>
+                                                            <span class="model-chip">Qwen 2.5 7B</span>
+                                                            <span class="model-chip">Mistral 7B</span>
+                                                            <span class="model-chip">DeepSeek R1 8B</span>
                                                         </div>
                                                         <div class="api-key-info">
                                                             <iconify-icon icon="solar:info-circle-bold"></iconify-icon>
@@ -2143,21 +2233,22 @@
                                                                     class="toggle-switch-label">Activer
                                                                     Ollama</label>
                                                             </div>
-                                                            <div class="api-key-input-container" style="flex: 1;">
+                                                            <div class="api-key-input-container ollama-input-container">
                                                                 <input type="text" id="ollamaBaseUrl"
+                                                                    class="ollama-base-url-input"
                                                                     placeholder="http://localhost:11434"
                                                                     value="http://localhost:11434"
-                                                                    style="font-family: monospace;">
+                                                                    aria-label="Adresse URL du serveur Ollama local">
                                                                 <span id="ollamaValidationIcon"
                                                                     class="api-key-validation-icon"></span>
                                                             </div>
                                                             <button type="button" id="validateOllamaBtn"
-                                                                class="btn btn-purple btn-small">Vérifier</button>
+                                                                class="btn btn-purple btn-small"
+                                                                aria-label="Vérifier la connexion à Ollama">Vérifier</button>
                                                         </div>
                                                         <div class="error-message" id="ollamaError"
                                                             style="display: none;"></div>
-                                                        <div id="ollamaModelsInfo"
-                                                            style="display: none; margin-top: 10px; font-size: 0.85em;">
+                                                        <div id="ollamaModelsInfo" class="ollama-models-info">
                                                             <iconify-icon class="iconify-inline" icon="ph:check-bold"
                                                                 style="color: var(--success-color);"></iconify-icon>
                                                             <span id="ollamaModelsText">Modèles installés : ...</span>
@@ -2677,7 +2768,7 @@
     <div id="helpModal" class="modal modal-help" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">
+                <h2 class="modal-title" id="helpModalTitle">
                     <span class="modal-title-icon"><iconify-icon class="iconify-inline"
                             icon="solar:question-circle-bold"></iconify-icon></span>
                     <span class="modal-title-text">Guide de l'application</span>
@@ -3110,7 +3201,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 287df8c · 30 septembre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 08e86e8 · 30 septembre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">

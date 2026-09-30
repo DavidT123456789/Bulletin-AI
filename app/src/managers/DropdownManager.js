@@ -179,11 +179,23 @@ export const DropdownManager = {
     buildMenu(selectEl, menu) {
         menu.innerHTML = '';
         let focusIndex = 0;
+        let hasVisibleOptions = false;
+        let hiddenGroupsCount = 0;
 
         Array.from(selectEl.children).forEach(child => {
             if (child.tagName === 'OPTGROUP') {
                 const group = document.createElement('div');
                 group.className = 'custom-dropdown-group';
+
+                const options = Array.from(child.children);
+                const allDisabled = options.length > 0 && options.every(opt => opt.disabled);
+
+                if (allDisabled && selectEl.id === 'aiModelSelect') {
+                    group.classList.add('group-all-disabled');
+                    hiddenGroupsCount++;
+                } else {
+                    hasVisibleOptions = true;
+                }
 
                 const label = document.createElement('div');
                 label.className = 'custom-dropdown-group-label';
@@ -191,15 +203,31 @@ export const DropdownManager = {
                 label.innerHTML = this.formatGroupLabel(child.label);
                 group.appendChild(label);
 
-                Array.from(child.children).forEach(opt => {
+                options.forEach(opt => {
                     group.appendChild(this.createOption(opt, focusIndex++));
                 });
 
                 menu.appendChild(group);
             } else if (child.tagName === 'OPTION') {
+                if (!child.disabled) hasVisibleOptions = true;
                 menu.appendChild(this.createOption(child, focusIndex++));
             }
         });
+
+        // Pour le sélecteur de modèle IA, afficher une information contextuelle propre et concise
+        if (selectEl.id === 'aiModelSelect') {
+            if (!hasVisibleOptions) {
+                const emptyNotice = document.createElement('div');
+                emptyNotice.className = 'custom-dropdown-empty-notice';
+                emptyNotice.innerHTML = '<iconify-icon icon="solar:info-circle-linear"></iconify-icon> <span>Aucun modèle disponible. Configurez une clé API ci-dessous.</span>';
+                menu.appendChild(emptyNotice);
+            } else if (hiddenGroupsCount > 0) {
+                const hint = document.createElement('div');
+                hint.className = 'custom-dropdown-hint';
+                hint.innerHTML = `<iconify-icon icon="solar:key-linear"></iconify-icon> <span>${hiddenGroupsCount} autre(s) fournisseur(s) disponibles ci-dessous</span>`;
+                menu.appendChild(hint);
+            }
+        }
     },
 
     /**
@@ -368,7 +396,7 @@ export const DropdownManager = {
      */
     handleKeydown(e, wrapper) {
         const menu = wrapper.querySelector('.custom-dropdown-menu');
-        const options = Array.from(menu.querySelectorAll('.custom-dropdown-option'));
+        const options = Array.from(menu.querySelectorAll('.custom-dropdown-group:not(.group-all-disabled) .custom-dropdown-option, .custom-dropdown-menu > .custom-dropdown-option'));
         const focusedIndex = options.findIndex(opt => opt.classList.contains('focused'));
         const selectEl = document.querySelector(`select[data-enhanced="true"]`);
 

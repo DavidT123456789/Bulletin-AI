@@ -135,6 +135,11 @@ describe('SettingsUIManager', () => {
         appState.anthropicApiKey = '';
         appState.mistralApiKey = '';
         appState.ollamaEnabled = false;
+        if (DOM.googleApiKey) DOM.googleApiKey.value = '';
+        if (DOM.openaiApiKey) DOM.openaiApiKey.value = '';
+        if (DOM.openrouterApiKey) DOM.openrouterApiKey.value = '';
+        if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = '';
+        if (DOM.mistralApiKey) DOM.mistralApiKey.value = '';
         UIState.settingsBeforeEdit = {};
     });
 
@@ -334,6 +339,80 @@ describe('SettingsUIManager', () => {
 
             expect(fallbackOrderText.innerHTML).toContain('Aucun modèle disponible');
             expect(fallbackOrderMore.style.display).toBe('none');
+        });
+    });
+
+    describe('updateProviderStatusBadges', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <div id="googleStatusBadge" class="provider-status-badge"></div>
+                <div id="groqStatusBadge" class="provider-status-badge"></div>
+                <div id="mistralStatusBadge" class="provider-status-badge"></div>
+                <div id="openrouterStatusBadge" class="provider-status-badge"></div>
+                <div id="openaiStatusBadge" class="provider-status-badge"></div>
+                <div id="anthropicStatusBadge" class="provider-status-badge"></div>
+                <div id="ollamaStatusBadge" class="provider-status-badge"></div>
+            `;
+            appState.apiKeyStatus = {};
+            appState.validatedApiKeys = {};
+            if (DOM.googleApiKey) DOM.googleApiKey.value = '';
+        });
+
+        it('devrait afficher "Non configuré" quand le champ est vide', () => {
+            appState.googleApiKey = '';
+            SettingsUIManager.updateProviderStatusBadges();
+
+            const badge = document.getElementById('googleStatusBadge');
+            expect(badge.className).toContain('status-unconfigured');
+            expect(badge.textContent).toContain('Non configuré');
+        });
+
+        it('devrait afficher "À vérifier" quand une clé est saisie mais non encore testée (pas "Clé invalide")', () => {
+            appState.googleApiKey = 'AIzaSyTestUntestedKey123';
+            appState.apiKeyStatus.google = null;
+            appState.validatedApiKeys.google = false;
+
+            SettingsUIManager.updateProviderStatusBadges();
+
+            const badge = document.getElementById('googleStatusBadge');
+            expect(badge.className).toContain('status-untested');
+            expect(badge.textContent).toContain('À vérifier');
+        });
+
+        it('devrait afficher "Clé invalide" UNIQUEMENT si le statut est explicitement invalid', () => {
+            appState.googleApiKey = 'AIzaSyBadKey123';
+            appState.apiKeyStatus.google = 'invalid';
+            appState.validatedApiKeys.google = false;
+
+            SettingsUIManager.updateProviderStatusBadges();
+
+            const badge = document.getElementById('googleStatusBadge');
+            expect(badge.className).toContain('status-error');
+            expect(badge.textContent).toContain('Clé invalide');
+        });
+
+        it('devrait afficher "Connecté" quand la clé est validée', () => {
+            appState.googleApiKey = 'AIzaSyValidKey123';
+            appState.apiKeyStatus.google = 'valid';
+            appState.validatedApiKeys.google = true;
+
+            SettingsUIManager.updateProviderStatusBadges();
+
+            const badge = document.getElementById('googleStatusBadge');
+            expect(badge.className).toContain('status-connected');
+            expect(badge.textContent).toContain('Connecté');
+        });
+
+        it('devrait afficher "Quota atteint" en cas de quota-warning', () => {
+            appState.googleApiKey = 'AIzaSyValidKey123';
+            appState.apiKeyStatus.google = 'quota-warning';
+            appState.validatedApiKeys.google = true;
+
+            SettingsUIManager.updateProviderStatusBadges();
+
+            const badge = document.getElementById('googleStatusBadge');
+            expect(badge.className).toContain('status-warning');
+            expect(badge.textContent).toContain('Quota atteint');
         });
     });
 });

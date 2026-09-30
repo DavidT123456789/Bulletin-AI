@@ -31,6 +31,7 @@ import { TrombinoscopeManager } from './TrombinoscopeManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
 import { ClassDashboardManager } from './ClassDashboardManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
+import { ModelSelectionManager } from './ModelSelectionManager.js';
 import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
@@ -76,10 +77,12 @@ export const App = {
 
         // Initialize custom dropdowns
         DropdownManager.init();
+        // Initialize fast AI model selection popover
+        ModelSelectionManager.init();
         // Populate model selector from config (Single Source of Truth)
         SettingsUIManager.populateModelSelector();
         // Enhance main selects with custom dropdowns
-        if (DOM.aiModelSelect) DropdownManager.enhance(DOM.aiModelSelect);
+        if (DOM.aiModelSelect && DOM.aiModelSelect.style.display !== 'none') DropdownManager.enhance(DOM.aiModelSelect);
         if (DOM.sortSelect) DropdownManager.enhance(DOM.sortSelect);
         // Enhance student selects (sidebar and preview)
         if (DOM.loadStudentSelect) DropdownManager.enhance(DOM.loadStudentSelect);
@@ -209,15 +212,13 @@ export const App = {
 
         for (const [provider, isValidated] of Object.entries(validatedKeys)) {
             if (isValidated && buttonMap[provider]) {
-                // Pour Ollama, vérifier si le serveur est toujours accessible
                 if (provider === 'ollama') {
-                    // Vérification silencieuse en arrière-plan
                     this._verifyOllamaStatusAsync();
-                    continue; // Ne pas restaurer l'état tant que non vérifié
+                    continue;
                 }
 
-                buttonMap[provider].classList.add('btn-validated');
-                buttonMap[provider].innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
+                buttonMap[provider].classList.remove('btn-validated', 'btn-needs-validation');
+                buttonMap[provider].innerHTML = 'Vérifier';
             }
         }
     },
@@ -232,10 +233,9 @@ export const App = {
             const isAvailable = await AIService.checkOllamaAvailability();
 
             if (isAvailable && appState.ollamaEnabled) {
-                // Ollama est accessible, restaurer l'état "validé"
                 if (DOM.validateOllamaBtn) {
-                    DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
+                    DOM.validateOllamaBtn.classList.remove('btn-validated', 'btn-needs-validation');
+                    DOM.validateOllamaBtn.innerHTML = 'Vérifier';
                 }
                 SettingsUIManager.updateOllamaStatus('valid', appState.ollamaInstalledModels || []);
             } else {
@@ -348,6 +348,8 @@ export const App = {
         if (model.startsWith('gemini') && !appState.googleApiKey) {
             UI.showNotification("Une clé API Google Gemini est requise pour ce modèle.", "info");
         }
+        StorageManager.saveAppState();
+        SettingsUIManager.updateHeaderAiModelDisplay();
         UI.updateHeaderPremiumLook();
         SettingsUIManager.updatePersonalizationState();
     },

@@ -543,3 +543,41 @@
     background: rgba(var(--primary-color-rgb), 0.15);
     font-weight: 600;
 }
+
+/* ====================================================================
+   Sélecteur IA épuré (#aiModelSelect) : masquage des groupes sans clé
+   et pied de page contextuel
+   ==================================================================== */
+.custom-dropdown-group.group-all-disabled {
+    display: none;
+}
+
+.custom-dropdown-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+    background: var(--item-hover-bg, rgba(255, 255, 255, 0.03));
+    border-radius: 0 0 var(--dropdown-radius-sm) var(--dropdown-radius-sm);
+}
+
+.custom-dropdown-hint iconify-icon {
+    font-size: 0.95rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+.custom-dropdown-empty-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    font-size: 0.82rem;
+    color: var(--warning-color);
+    text-align: center;
+    justify-content: center;
+}

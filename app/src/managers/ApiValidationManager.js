@@ -14,6 +14,7 @@ import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AIService } from '../services/AIService.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
+import { DropdownManager } from './DropdownManager.js';
 
 export const ApiValidationManager = {
     /**
@@ -66,28 +67,24 @@ export const ApiValidationManager = {
 
                 // Étape 2: Tester le quota avec generateContent
                 try {
-                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : 'gemini-3.5-flash';
+                    const modelOverride = appState.currentAIModel.startsWith('gemini') ? appState.currentAIModel : (PROVIDER_DEFAULT_MODELS.google || 'gemini-3.5-flash');
                     await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
                     // Succès complet
                     appState.apiKeyStatus[provider] = 'valid';
                 } catch (quotaError) {
                     const msg = quotaError.message.toLowerCase();
                     if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
-                        // Clé valide mais quota épuisé - la clé elle-même est valide → affichage vert
                         appState.apiKeyStatus[provider] = 'quota-warning';
                         appState.validatedApiKeys[provider] = true;
 
                         UI.hideInlineSpinner(btnEl);
-                        btnEl.classList.remove('btn-needs-validation');
-                        btnEl.classList.add('btn-validated');
-                        btnEl.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> OK';
-                        // Bouton reste validé - pas de contour sur l'input, le bouton OK suffit
+                        btnEl.classList.remove('btn-needs-validation', 'btn-validated');
+                        btnEl.innerHTML = 'Vérifier';
                         inputEl.classList.remove('input-error', 'input-warning', 'input-success');
 
-                        // Message bref - le bandeau intelligent affiche déjà le détail
-                        errorEl.innerHTML = `<iconify-icon icon="ph:check-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
+                        errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée — limite temporaire atteinte, patientez 1 à 2 min.</span>`;
                         errorEl.style.display = 'block';
-                        errorEl.style.color = 'var(--success-color)';
+                        errorEl.style.color = 'var(--warning-color)';
 
                         await StorageManager.saveAppState();
                         SettingsUIManager.updateApiStatusDisplay();
@@ -97,58 +94,53 @@ export const ApiValidationManager = {
                     throw quotaError;
                 }
             } else {
-                // Pour OpenAI, OpenRouter, Anthropic, Mistral: validation simple
-                let modelOverride = 'openai-o3-mini';
-                if (provider === 'openrouter') {
-                    modelOverride = 'deepseek/deepseek-chat';
-                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
+                // Pour OpenAI, OpenRouter, Anthropic, Mistral, Groq: validation centralisée via PROVIDER_DEFAULT_MODELS
+                const testModels = {
+                    ...PROVIDER_DEFAULT_MODELS,
+                    openrouter: 'deepseek/deepseek-chat',
+                    anthropic: 'anthropic-claude-3-7-sonnet-latest'
+                };
+                const modelOverride = testModels[provider] || PROVIDER_DEFAULT_MODELS[provider] || 'gemini-3.5-flash';
+                await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
 
-                    // Si la validation réussit, on vérifie les crédits
-                    const credits = await AIService.getOpenRouterCredits();
-                    if (credits !== null) {
-                        let creditsNum = 0;
-                        if (typeof credits === 'number') {
-                            creditsNum = credits;
-                        } else if (credits && typeof credits === 'object') {
-                            creditsNum = typeof credits.usage === 'number' ? credits.usage : (typeof credits.credits === 'number' ? credits.credits : 0);
-                        } else if (credits && !isNaN(Number(credits))) {
-                            creditsNum = Number(credits);
-                        }
-                        errorEl.innerHTML = `<iconify-icon icon="ph:check-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> • Solde : <strong style="color:var(--text-color);">${creditsNum.toFixed(3)}$</strong>`;
-                        errorEl.style.display = 'block';
-                        errorEl.style.color = 'var(--success-color)';
-                    }
-                } else if (provider === 'groq') {
-                    modelOverride = 'groq-llama-3.3-70b';
-                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
-                } else if (provider === 'anthropic') {
-                    // Anthropic uses claude-3-7-sonnet as default test model
-                    modelOverride = 'anthropic-claude-3-7-sonnet-latest';
-                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
-                } else if (provider === 'mistral') {
-                    // Mistral uses small-latest as default test model
-                    modelOverride = 'mistral-direct-small-latest';
-                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
-                } else {
-                    await AIService.callAI("Validation", { isValidation: true, validationProvider: provider, modelOverride });
-                }
                 appState.apiKeyStatus[provider] = 'valid';
             }
 
             // Marquer la clé comme validée
             appState.validatedApiKeys[provider] = true;
+            if (appState.apiKeyErrorDetails) {
+                delete appState.apiKeyErrorDetails[provider];
+            }
 
             UI.hideInlineSpinner(btnEl);
 
-            // Bouton reste en état "validé" tant que la clé n'est pas modifiée
-            btnEl.classList.remove('btn-needs-validation');
-            btnEl.classList.add('btn-validated');
-            btnEl.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> OK';
-            // Note: handleApiKeyInput() réinitialisera le bouton si la clé est modifiée
-            // Pas de contour sur l'input, le bouton OK suffit
+            // Le badge d'en-tête ("Connecté") porte l'état ; le bouton reprend son rôle d'action neutre
+            btnEl.classList.remove('btn-needs-validation', 'btn-validated');
+            btnEl.innerHTML = 'Vérifier';
             inputEl.classList.remove('input-error', 'input-warning', 'input-success');
-            errorEl.style.display = 'none';
-            errorEl.style.color = ''; // Reset color
+
+            if (provider === 'openrouter') {
+                const credits = await AIService.getOpenRouterCredits();
+                if (credits !== null) {
+                    let creditsNum = 0;
+                    if (typeof credits === 'number') {
+                        creditsNum = credits;
+                    } else if (credits && typeof credits === 'object') {
+                        creditsNum = typeof credits.usage === 'number' ? credits.usage : (typeof credits.credits === 'number' ? credits.credits : 0);
+                    } else if (credits && !isNaN(Number(credits))) {
+                        creditsNum = Number(credits);
+                    }
+                    errorEl.innerHTML = `<iconify-icon icon="solar:wallet-money-linear" style="vertical-align: -2px;"></iconify-icon> <span>Solde disponible : <strong style="color:var(--text-primary);">${creditsNum.toFixed(3)}$</strong></span>`;
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = 'var(--text-secondary)';
+                } else {
+                    errorEl.style.display = 'none';
+                    errorEl.style.color = '';
+                }
+            } else {
+                errorEl.style.display = 'none';
+                errorEl.style.color = '';
+            }
 
             await StorageManager.saveAppState();
             SettingsUIManager.updateApiStatusDisplay();
@@ -165,7 +157,9 @@ export const ApiValidationManager = {
                     // Mettre à jour le select du modèle si présent
                     if (DOM.aiModelSelect) {
                         DOM.aiModelSelect.value = recommendedModel;
+                        DropdownManager.refresh('aiModelSelect');
                     }
+                    SettingsUIManager.updateHeaderAiModelDisplay();
 
                     UI.showNotification(`Modèle basculé vers ${recommendedModel}`, 'info');
                 }
@@ -206,89 +200,84 @@ export const ApiValidationManager = {
             }
 
             UI.hideInlineSpinner(btnEl);
-            btnEl.innerHTML = originalBtnContent;
+            btnEl.innerHTML = 'Vérifier';
             btnEl.classList.remove('btn-validated', 'btn-needs-validation');
             console.error("Validation failed:", e);
 
             // Distinguer les erreurs de quota des vraies erreurs de clé
             const isQuotaError = e.message.includes('429') || e.message.toLowerCase().includes('quota');
-            const isRateLimitError = e.message.toLowerCase().includes('rate') || e.message.toLowerCase().includes('limit');
+            const isRateLimitError = e.message.toLowerCase().includes('rate limit') || e.message.toLowerCase().includes('rate_limit');
+            const isModelNotFoundError = provider === 'google' && (e.message.includes('404') || e.message.toLowerCase().includes('not found'));
 
             if (isQuotaError || isRateLimitError) {
-                // Vérifier si le modèle est réellement disponible
-                if (provider === 'google') {
-                    try {
-                        const models = await AIService.getAvailableModels('google');
-                        const modelIds = models.map(m => m.name.replace('models/', ''));
-                        const currentModel = appState.currentAIModel;
-
-                        if (!modelIds.includes(currentModel)) {
-                            // Le modèle n'est pas disponible - ce n'est pas un problème de quota
-                            appState.apiKeyStatus[provider] = 'invalid';
-                            SettingsUIManager.updateApiStatusDisplay();
-                            errorEl.innerHTML = `<iconify-icon icon="solar:danger-circle-bold" style="color:var(--error-color); vertical-align: text-bottom;"></iconify-icon> <strong>Modèle "${currentModel}" non disponible</strong><br>Ce modèle n'est pas accessible avec votre clé API.<br>Essayez "gemini-3.5-flash" ou "gemini-3.8-flash".`;
-                            errorEl.style.display = 'block';
-                            errorEl.style.color = 'var(--error-color)';
-                            inputEl.classList.add('input-error');
-                            return;
-                        }
-                    } catch (listError) {
-                        console.warn("Impossible de vérifier les modèles disponibles:", listError);
-                    }
-                }
-
-                // Erreur de quota temporaire - la clé est valide → affichage vert pour la clé
                 appState.apiKeyStatus[provider] = 'quota-warning';
                 appState.validatedApiKeys[provider] = true;
                 SettingsUIManager.updateApiStatusDisplay();
 
-                const retryMatch = e.message.match(/retry in ([\d.]+)s/i);
-                const retryTime = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
-
-                // Pas de contour sur l'input, le bouton OK suffit
                 inputEl.classList.remove('input-error', 'input-warning', 'input-success');
 
-                // Message bref - le bandeau intelligent affiche déjà le détail
-                errorEl.innerHTML = `<iconify-icon icon="ph:check-bold" style="vertical-align: text-bottom;"></iconify-icon> <strong>Clé valide</strong> <span style="color:var(--warning-color);">• Quota limité</span>`;
+                errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée — limite temporaire atteinte, patientez 1 à 2 min.</span>`;
                 errorEl.style.display = 'block';
-                errorEl.style.color = 'var(--success-color)';
+                errorEl.style.color = 'var(--warning-color)';
 
-                // Sauvegarder la clé validée même si quota limité
                 await StorageManager.saveAppState();
+                if (onSuccess) onSuccess();
+            } else if (isModelNotFoundError) {
+                appState.apiKeyStatus[provider] = 'valid';
+                appState.validatedApiKeys[provider] = true;
+                SettingsUIManager.updateApiStatusDisplay();
+
+                btnEl.classList.remove('btn-needs-validation', 'btn-validated');
+                btnEl.innerHTML = 'Vérifier';
+                inputEl.classList.remove('input-error', 'input-warning', 'input-success');
+
+                errorEl.innerHTML = `<iconify-icon icon="solar:info-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Modèle indisponible — sélectionnez un autre modèle Gemini.</span>`;
+                errorEl.style.display = 'block';
+                errorEl.style.color = 'var(--warning-color)';
+
+                await StorageManager.saveAppState();
+                if (onSuccess) onSuccess();
             } else {
                 // Vraie erreur de clé invalide - effacer la clé de appState
                 appState.validatedApiKeys[provider] = false;
+                appState.apiKeyStatus[provider] = 'invalid';
                 appState[`${provider}ApiKey`] = '';
+                await StorageManager.saveAppState();
 
-                // Formater le message d'erreur de manière lisible
-                let errorMsg = e.message;
-                let formattedError = '';
+                // Extraire le diagnostic technique sans répéter "Clé invalide" (déjà affiché sur le badge d'en-tête)
+                const errorMsg = e.message || '';
+                const codeMatch = errorMsg.match(/\((\d{3})\)|status:\s*(\d{3})|HTTP\s*(\d{3})/i);
+                const errorCode = codeMatch ? (codeMatch[1] || codeMatch[2] || codeMatch[3]) : null;
 
-                // Extraire le code d'erreur si présent
-                const codeMatch = errorMsg.match(/\((\d{3})\)/);
-                const errorCode = codeMatch ? codeMatch[1] : null;
-
-                // Nettoyer le message JSON brut si présent
+                let cleanDetail = '';
                 const jsonMatch = errorMsg.match(/:\s*(\{.*\})/);
                 if (jsonMatch) {
                     try {
                         const jsonError = JSON.parse(jsonMatch[1]);
-                        const detail = jsonError.detail || jsonError.message || jsonError.error || 'Erreur inconnue';
-                        formattedError = `<strong>Clé invalide</strong>${errorCode ? ` (Erreur ${errorCode})` : ''}<br><small>${detail}</small>`;
+                        const rawDetail = jsonError.detail || jsonError.message || jsonError.error?.message || jsonError.error || '';
+                        cleanDetail = typeof rawDetail === 'string' ? rawDetail : '';
                     } catch {
-                        formattedError = `<strong>Clé invalide</strong>${errorCode ? ` (Erreur ${errorCode})` : ''}`;
+                        cleanDetail = '';
                     }
                 } else {
-                    // Message simple sans JSON
-                    const cleanMsg = errorMsg.replace(/Clé invalide\s*:\s*/i, '').trim();
-                    formattedError = `<strong>Clé invalide</strong>${cleanMsg ? `<br><small>${cleanMsg}</small>` : ''}`;
+                    cleanDetail = errorMsg
+                        .replace(/^Clé invalide\s*(?:\(\d+\))?\s*:\s*/i, '')
+                        .replace(/^Erreur API\s*\d+\s*:\s*/i, '')
+                        .replace(/^HTTP error!\s*status:\s*\d+\s*(?:-\s*)?/i, '')
+                        .trim();
                 }
 
-                errorEl.innerHTML = formattedError;
+                const codePrefix = errorCode ? `Code ${errorCode}` : 'Refus API';
+                const diagnosticText = cleanDetail ? `${codePrefix} · ${cleanDetail}` : `${codePrefix} · Authentification refusée par le fournisseur`;
+
+                appState.apiKeyErrorDetails = appState.apiKeyErrorDetails || {};
+                appState.apiKeyErrorDetails[provider] = diagnosticText;
+
+                errorEl.innerHTML = `<iconify-icon icon="solar:info-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>${diagnosticText}</span>`;
                 errorEl.style.display = 'block';
-                errorEl.style.color = ''; // Reset to default error color
+                errorEl.style.color = '';
                 inputEl.classList.add('input-error');
-                // Mettre à jour l'affichage du statut
+
                 SettingsUIManager.updateApiStatusDisplay();
             }
         }
@@ -348,17 +337,25 @@ export const ApiValidationManager = {
         // Ajouter l'état d'attention au bouton correspondant si une clé est saisie
         const inputId = input.id;
         let btnEl = null;
+        let errorEl = null;
         let provider = null;
-        if (inputId === 'googleApiKey') { btnEl = DOM.validateGoogleApiKeyBtn; provider = 'google'; }
-        else if (inputId === 'groqApiKey') { btnEl = DOM.validateGroqApiKeyBtn; provider = 'groq'; }
-        else if (inputId === 'openaiApiKey') { btnEl = DOM.validateOpenaiApiKeyBtn; provider = 'openai'; }
-        else if (inputId === 'openrouterApiKey') { btnEl = DOM.validateOpenrouterApiKeyBtn; provider = 'openrouter'; }
-        else if (inputId === 'anthropicApiKey') { btnEl = DOM.validateAnthropicApiKeyBtn; provider = 'anthropic'; }
-        else if (inputId === 'mistralApiKey') { btnEl = DOM.validateMistralApiKeyBtn; provider = 'mistral'; }
+        if (inputId === 'googleApiKey') { btnEl = DOM.validateGoogleApiKeyBtn; errorEl = DOM.googleApiKeyError; provider = 'google'; }
+        else if (inputId === 'groqApiKey') { btnEl = DOM.validateGroqApiKeyBtn; errorEl = DOM.groqApiKeyError; provider = 'groq'; }
+        else if (inputId === 'openaiApiKey') { btnEl = DOM.validateOpenaiApiKeyBtn; errorEl = DOM.openaiApiKeyError; provider = 'openai'; }
+        else if (inputId === 'openrouterApiKey') { btnEl = DOM.validateOpenrouterApiKeyBtn; errorEl = DOM.openrouterApiKeyError; provider = 'openrouter'; }
+        else if (inputId === 'anthropicApiKey') { btnEl = DOM.validateAnthropicApiKeyBtn; errorEl = DOM.anthropicApiKeyError; provider = 'anthropic'; }
+        else if (inputId === 'mistralApiKey') { btnEl = DOM.validateMistralApiKeyBtn; errorEl = DOM.mistralApiKeyError; provider = 'mistral'; }
+
+        if (errorEl) {
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+        }
 
         // Réinitialiser le statut de validation quand la clé change
-        if (provider && appState.validatedApiKeys) {
-            appState.validatedApiKeys[provider] = false;
+        if (provider) {
+            if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = false;
+            if (appState.apiKeyStatus) appState.apiKeyStatus[provider] = null;
+            if (appState.apiKeyErrorDetails) delete appState.apiKeyErrorDetails[provider];
             SettingsUIManager.updateApiStatusDisplay();
         }
 

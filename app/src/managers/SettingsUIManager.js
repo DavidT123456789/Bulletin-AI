@@ -9,7 +9,7 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -53,6 +53,43 @@ export const SettingsUIManager = {
         if (appState.currentAIModel) {
             select.value = appState.currentAIModel;
         }
+
+        // Single Source of Truth : synchroniser dynamiquement les puces de modèles
+        this.renderProviderModelChips();
+    },
+
+    /**
+     * Génère dynamiquement les puces de modèles dans chaque carte fournisseur.
+     * Single Source of Truth : les modèles et noms proviennent de models.js.
+     */
+    renderProviderModelChips() {
+        const providerMap = {
+            google: 'googleApiKeyGroup',
+            groq: 'groqApiKeyGroup',
+            anthropic: 'anthropicApiKeyGroup',
+            mistral: 'mistralApiKeyGroup',
+            openai: 'openaiApiKeyGroup',
+            openrouter: 'openrouterApiKeyGroup',
+            ollama: 'ollamaConfigGroup'
+        };
+
+        Object.entries(providerMap).forEach(([provider, groupId]) => {
+            const groupEl = document.getElementById(groupId);
+            const hintEl = groupEl?.querySelector('.provider-models-hint');
+            if (!hintEl) return;
+
+            const models = PROVIDER_SHOWCASE_MODELS[provider] || [];
+            const labelText = provider === 'ollama' ? 'Recommandés :' : 'Modèles :';
+
+            const chipsHtml = models.map(id => {
+                const rawName = MODEL_SHORT_NAMES[id] || id;
+                const cleanName = rawName.replace(' (Groq)', '').replace(' (OR)', '');
+                const isActive = appState.currentAIModel === id;
+                return `<span class="model-chip${isActive ? ' active-chip' : ''}">${cleanName}</span>`;
+            }).join(' ');
+
+            hintEl.innerHTML = `<span class="hint-label">${labelText}</span> ${chipsHtml}`;
+        });
     },
 
     /**
@@ -463,11 +500,22 @@ export const SettingsUIManager = {
             DOM.enableApiFallbackToggle.checked = appState.enableApiFallback;
         }
 
+        // Synchroniser la sélection du modèle dans les paramètres
+        if (DOM.aiModelSelect && model && DOM.aiModelSelect.value !== model) {
+            DOM.aiModelSelect.value = model;
+        }
+
         // Mettre à jour l'indicateur dans le header principal
         this.updateHeaderAiModelDisplay();
 
         // Mettre à jour la disponibilité des options dans le menu déroulant
         this.updateModelSelectorAvailability();
+
+        // Mettre à jour les badges de statut de chaque fournisseur
+        this.updateProviderStatusBadges();
+
+        // Mettre à jour les puces de modèles inclus
+        this.renderProviderModelChips();
     },
 
     /**
@@ -759,6 +807,89 @@ export const SettingsUIManager = {
     },
 
     /**
+     * Alias public pour vérifier la disponibilité d'un modèle.
+     * @param {string} model
+     * @returns {boolean}
+     */
+    isModelAvailable(model) {
+        return this._isModelAvailable(model);
+    },
+
+    /**
+     * Met à jour dynamiquement les badges d'état (connecté, non configuré, invalide, etc.)
+     * dans l'en-tête de chaque section fournisseur.
+     */
+    updateProviderStatusBadges() {
+        if (typeof document === 'undefined') return;
+
+        const providers = [
+            { id: 'google', key: DOM.googleApiKey?.value?.trim() || appState.googleApiKey },
+            { id: 'groq', key: DOM.groqApiKey?.value?.trim() || appState.groqApiKey },
+            { id: 'mistral', key: DOM.mistralApiKey?.value?.trim() || appState.mistralApiKey },
+            { id: 'openrouter', key: DOM.openrouterApiKey?.value?.trim() || appState.openrouterApiKey },
+            { id: 'openai', key: DOM.openaiApiKey?.value?.trim() || appState.openaiApiKey },
+            { id: 'anthropic', key: DOM.anthropicApiKey?.value?.trim() || appState.anthropicApiKey },
+        ];
+
+        let tooltipsUpdated = false;
+
+        providers.forEach(({ id, key }) => {
+            const badge = document.getElementById(`${id}StatusBadge`);
+            if (!badge) return;
+
+            const hasKey = !!key && key.length > 5;
+            const status = appState.apiKeyStatus?.[id];
+            const isValidated = appState.validatedApiKeys?.[id] === true;
+            const errorDetail = appState.apiKeyErrorDetails?.[id];
+
+            if (status === 'invalid' && key) {
+                badge.className = 'provider-status-badge status-error';
+                badge.innerHTML = '<iconify-icon icon="solar:close-circle-bold"></iconify-icon> <span>Clé invalide</span>';
+                if (errorDetail) {
+                    badge.setAttribute('data-tooltip', errorDetail);
+                    tooltipsUpdated = true;
+                }
+            } else if (!hasKey) {
+                badge.className = 'provider-status-badge status-unconfigured';
+                badge.innerHTML = '<span class="status-dot"></span><span>Non configuré</span>';
+                badge.removeAttribute('data-tooltip');
+            } else if (status === 'quota-warning') {
+                badge.className = 'provider-status-badge status-warning';
+                badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> <span>Quota atteint</span>';
+                badge.setAttribute('data-tooltip', 'Clé authentifiée — limite temporaire atteinte chez le fournisseur');
+                tooltipsUpdated = true;
+            } else if (isValidated || status === 'valid') {
+                badge.className = 'provider-status-badge status-connected';
+                badge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> <span>Connecté</span>';
+                badge.removeAttribute('data-tooltip');
+            } else {
+                badge.className = 'provider-status-badge status-untested';
+                badge.innerHTML = '<iconify-icon icon="solar:clock-circle-linear"></iconify-icon> <span>À vérifier</span>';
+                badge.removeAttribute('data-tooltip');
+            }
+        });
+
+        if (tooltipsUpdated) {
+            UI.initTooltips?.();
+        }
+
+        // Badge Ollama
+        const ollamaBadge = document.getElementById('ollamaStatusBadge');
+        if (ollamaBadge) {
+            if (!appState.ollamaEnabled) {
+                ollamaBadge.className = 'provider-status-badge status-unconfigured';
+                ollamaBadge.innerHTML = '<span>Désactivé</span>';
+            } else if (appState.apiKeyStatus?.ollama === 'valid' || appState.validatedApiKeys?.ollama) {
+                ollamaBadge.className = 'provider-status-badge status-connected';
+                ollamaBadge.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> <span>Connecté</span>';
+            } else {
+                ollamaBadge.className = 'provider-status-badge status-warning';
+                ollamaBadge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> <span>En attente</span>';
+            }
+        }
+    },
+
+    /**
      * Valide la connexion à Ollama et met à jour l'UI.
      * @returns {Promise<boolean>} true si Ollama est disponible
      */
@@ -791,10 +922,10 @@ export const SettingsUIManager = {
                     DOM.ollamaEnabledToggle.checked = true;
                 }
 
-                // Bouton reste en état validé
+                // Le badge d'en-tête ("Connecté") porte l'état ; le bouton reprend son rôle d'action neutre
                 if (DOM.validateOllamaBtn) {
-                    DOM.validateOllamaBtn.classList.add('btn-validated');
-                    DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
+                    DOM.validateOllamaBtn.classList.remove('btn-validated', 'btn-needs-validation');
+                    DOM.validateOllamaBtn.innerHTML = 'Vérifier';
                     DOM.validateOllamaBtn.disabled = false;
                 }
 
@@ -841,7 +972,6 @@ export const SettingsUIManager = {
      * @param {string[]} [models] - Liste des modèles installés (optionnel)
      */
     updateOllamaStatus(status, models = []) {
-        const statusCard = DOM.ollamaApiStatus;
         const validationIcon = DOM.ollamaValidationIcon;
         const modelsInfo = DOM.ollamaModelsInfo;
         const modelsText = DOM.ollamaModelsText;
@@ -860,23 +990,6 @@ export const SettingsUIManager = {
                 validationIcon.innerHTML = '<iconify-icon icon="solar:close-circle-linear" style="color: var(--error-color);"></iconify-icon>';
             } else {
                 validationIcon.innerHTML = '';
-            }
-        }
-
-        // Mettre à jour la carte de statut
-        if (statusCard) {
-            statusCard.classList.remove('active', 'inactive', 'error', 'valid');
-            const badge = statusCard.querySelector('.api-status-badge');
-
-            if (status === 'valid') {
-                statusCard.classList.add('active', 'valid');
-                if (badge) badge.textContent = `${models.length} modèle${models.length > 1 ? 's' : ''}`;
-            } else if (status === 'error') {
-                statusCard.classList.add('inactive', 'error');
-                if (badge) badge.textContent = 'Non connecté';
-            } else {
-                statusCard.classList.add('inactive');
-                if (badge) badge.textContent = 'Non configuré';
             }
         }
 

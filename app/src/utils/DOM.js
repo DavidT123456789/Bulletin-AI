@@ -74,8 +74,10 @@ export function initDOM() {
     DOM.classDropdownList = document.getElementById('classDropdownList');
     DOM.addNewClassBtn = document.getElementById('addNewClassBtn');
     DOM.manageClassesBtn = document.getElementById('manageClassesBtn');
-    // Generation Dashboard
+    // Generation Dashboard & Quick AI Model Selector
+    DOM.headerGenWrapper = document.getElementById('headerGenWrapper');
     DOM.headerGenDashboard = document.getElementById('headerGenDashboard');
+    DOM.headerModelDropdown = document.getElementById('headerModelDropdown');
     DOM.dashModelLabel = document.getElementById('dashModelLabel');
     DOM.dashModelName = document.getElementById('dashModelName');
     DOM.dashValidated = document.getElementById('dashValidated');
@@ -162,7 +164,6 @@ export function initDOM() {
     DOM.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
     DOM.personalizationToggle = document.getElementById('personalizationToggle');
     DOM.enableApiFallbackToggle = document.getElementById('enableApiFallbackToggle');
-    DOM.advancedTabContent = document.getElementById('advancedTabContent');
     DOM.aiModelSelect = document.getElementById('aiModelSelect');
     DOM.openaiApiKey = document.getElementById('openaiApiKey');
     DOM.openaiApiKeyGroup = document.getElementById('openaiApiKeyGroup');
@@ -172,7 +173,6 @@ export function initDOM() {
     DOM.googleApiKey = document.getElementById('googleApiKey');
     DOM.googleApiKeyGroup = document.getElementById('googleApiKeyGroup');
     DOM.googleApiKeyError = document.getElementById('googleApiKeyError');
-    DOM.googleApiKeyHint = document.getElementById('googleApiKeyHint');
     DOM.googleApiKeyValidationIcon = document.getElementById('googleApiKeyValidationIcon');
     DOM.validateGoogleApiKeyBtn = document.getElementById('validateGoogleApiKeyBtn');
     DOM.openrouterApiKey = document.getElementById('openrouterApiKey');
@@ -206,9 +206,6 @@ export function initDOM() {
     DOM.ollamaError = document.getElementById('ollamaError');
     DOM.ollamaModelsInfo = document.getElementById('ollamaModelsInfo');
     DOM.ollamaModelsText = document.getElementById('ollamaModelsText');
-    DOM.ollamaApiStatus = document.getElementById('ollamaApiStatus');
-    DOM.testAllConnectionsBtn = document.getElementById('testAllConnectionsBtn');
-    DOM.activeModelName = document.getElementById('activeModelName');
     DOM.studentDetailsModal = document.getElementById('studentDetailsModal');
     DOM.studentDetailsModalTitle = document.getElementById('studentDetailsModalTitle');
     DOM.closeStudentDetailsModalBtn = document.getElementById('closeStudentDetailsModalBtn');

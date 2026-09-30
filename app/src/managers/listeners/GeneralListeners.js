@@ -15,6 +15,7 @@ import { EventHandlersManager } from '../EventHandlersManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { MassImportManager } from '../MassImportManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { ModelSelectionManager } from '../ModelSelectionManager.js';
 
 import { APP_LINKS } from '../../config/Config.js';
 
@@ -222,17 +223,23 @@ export const GeneralListeners = {
 
 
 
-        // UNIFIED PILL INTERACTION: Clicking anywhere on the dashboard opens settings
-        // (except if clicking on specific action buttons inside like Cancel or Errors)
+        // FAST AI MODEL SELECTION / ONBOARDING:
+        // Clic sur l'en-tête ouvre directement les paramètres si aucune clé n'est prête,
+        // ou le menu déroulant rapide des modèles si au moins une IA est active.
         if (DOM.headerGenDashboard) {
             addClickListener(DOM.headerGenDashboard, (e) => {
-                // Ignore clicks on the Cancel button during generation
+                // Ignore clicks on Cancel button during generation
                 if (e.target.closest('#dashCancelBtn')) return;
 
-                UI.openModal(DOM.settingsModal);
-                SettingsUIManager.updateApiStatusDisplay();
-                // Highlight the model selector for clear feedback
-                UI.highlightSettingsElement('iaModelSelect', { tab: 'advanced' });
+                ModelSelectionManager.handleHeaderClick();
+            });
+
+            DOM.headerGenDashboard.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.target.closest('#dashCancelBtn')) return;
+                    e.preventDefault();
+                    ModelSelectionManager.handleHeaderClick();
+                }
             });
         }
 

@@ -274,6 +274,20 @@ export const PROVIDER_DEFAULT_MODELS = {
 };
 
 /**
+ * Modèles phares mis en avant dans les cartes de configuration des fournisseurs.
+ * Utilisés pour générer dynamiquement les puces dans l'interface (Single Source of Truth).
+ */
+export const PROVIDER_SHOWCASE_MODELS = {
+    google: ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'],
+    groq: ['groq-llama-3.3-70b', 'groq-gemma-2-9b', 'groq-llama-3.1-8b'],
+    anthropic: ['anthropic-claude-sonnet-5', 'anthropic-claude-3-7-sonnet-latest', 'anthropic-claude-opus-5'],
+    mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
+    openai: ['openai-gpt-4o-mini', 'openai-o3-mini'],
+    openrouter: ['openrouter', 'deepseek-r1', 'llama-3.3-70b-free'],
+    ollama: ['ollama-qwen2.5:7b', 'ollama-mistral:7b', 'ollama-deepseek-r1:8b'],
+};
+
+/**
  * Construit la file ordonnée de fallback pour un modèle donné.
  * Modèle sélectionné -> Autres modèles du même fournisseur -> Modèles des autres fournisseurs selon providerOrder.
  * @param {string} currentModel - Identifiant du modèle actif

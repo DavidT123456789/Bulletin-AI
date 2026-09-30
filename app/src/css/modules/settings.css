@@ -1136,6 +1136,147 @@
     padding: 0;
 }
 
+/* API key category headers & status badges */
+.api-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    margin: 8px 2px 6px 2px;
+}
+
+.api-category-header.api-category-spaced {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.api-key-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.provider-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    transition: all 0.2s ease;
+}
+
+.provider-status-badge .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.provider-status-badge.status-connected {
+    background: rgba(var(--success-color-rgb, 16, 185, 129), 0.12);
+    color: var(--success-color);
+}
+
+[data-theme="dark"] .provider-status-badge.status-connected {
+    color: var(--success-bright, #34d399);
+}
+
+.provider-status-badge.status-warning {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.12);
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .provider-status-badge.status-warning {
+    color: var(--warning-bright, #fbbf24);
+}
+
+.provider-status-badge.status-error {
+    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.12);
+    color: var(--error-color);
+}
+
+[data-theme="dark"] .provider-status-badge.status-error {
+    color: var(--error-bright, #f87171);
+}
+
+.provider-status-badge.status-unconfigured {
+    background: var(--item-hover-bg);
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.provider-status-badge.status-untested {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.1);
+    color: var(--warning-color);
+}
+
+[data-theme="dark"] .provider-status-badge.status-untested {
+    color: var(--warning-bright, #fbbf24);
+}
+
+/* Provider models hint chips */
+.provider-models-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 4px 0 10px 0;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.provider-models-hint .hint-label {
+    font-weight: 500;
+    margin-right: 2px;
+}
+
+.provider-models-hint .model-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    background: var(--item-hover-bg, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .provider-models-hint .model-chip {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.provider-models-hint .model-chip.active-chip {
+    background: var(--item-hover-bg);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .provider-models-hint .model-chip.active-chip {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: var(--text-primary);
+}
+
+/* Active model label in settings */
+.active-model-label {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
 /* API key header links container */
 .api-key-links {
     display: flex;
@@ -2095,4 +2236,20 @@
     .settings-tab-title {
         font-size: 1.05rem;
     }
+}
+
+/* Ollama Section Elements */
+.ollama-input-container {
+    flex: 1;
+}
+
+.ollama-base-url-input {
+    font-family: var(--font-mono, monospace);
+}
+
+.ollama-models-info {
+    display: none;
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: var(--text-secondary);
 }

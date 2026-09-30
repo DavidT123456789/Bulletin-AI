@@ -249,22 +249,13 @@ export const FormUI = {
                 if (badge) badge.textContent = 'Non configurée';
             }
 
-            // Mettre à jour l'état du bouton
+            // Mettre à jour l'état du bouton (le badge d'en-tête porte l'état, le bouton reste une action neutre)
             if (btn) {
+                btn.classList.remove('btn-validated');
                 if (status === 'valid' || status === 'quota') {
-                    btn.classList.add('btn-validated');
                     btn.classList.remove('btn-needs-validation');
-                    btn.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon> OK';
-                } else {
-                    btn.classList.remove('btn-validated');
-                    // btn-needs-validation is handled by input listener, 
-                    // but we can ensure it's clean here
-                    if (hasKey && status === 'pending') {
-                        btn.innerHTML = 'Vérifier';
-                    } else {
-                        btn.innerHTML = 'Vérifier';
-                    }
                 }
+                btn.innerHTML = 'Vérifier';
             }
         });
     },

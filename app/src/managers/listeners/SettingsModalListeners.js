@@ -194,7 +194,7 @@ export const SettingsModalListeners = {
             openApiKeysBtn.addEventListener('click', () => {
                 // Use centralized highlight utility
                 UI.highlightSettingsElement('apiKeysAccordion', {
-                    tab: 'advanced',
+                    tab: 'settings-engine',
                     useParentFormGroup: false
                 });
             });

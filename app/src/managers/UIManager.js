@@ -13,7 +13,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { MODEL_SHORT_NAMES } from '../config/models.js';
+import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
 import { PROVIDER_CONFIG } from '../config/providers.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
@@ -1081,55 +1081,86 @@ export const UI = {
 
         // Pending badge hidden in ultra-minimalist mode (count shown in Generate button)
 
-        // Update model name display
-        const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
-        // Extract just the first word for compact display (e.g., "Gemini 2.5 Flash" -> "Gemini")
-        const shortModelName = modelName.split(' ')[0];
-
-        // Update model name TEXT
-        if (DOM.dashModelName) {
-            DOM.dashModelName.textContent = shortModelName;
-        }
-
-        // Determine provider config for active model
+        // Determine provider config & availability for active model
         const model = appState.currentAIModel || '';
-        let providerId = 'openrouter';
-        if (model) {
-            if (model.endsWith('-free')) providerId = 'openrouter';
-            else if (model.startsWith('gemini')) providerId = 'google';
-            else if (model.startsWith('openai')) providerId = 'openai';
-            else if (model.startsWith('anthropic')) providerId = 'anthropic';
-            else if (model.startsWith('ollama')) providerId = 'ollama';
-            else if (model.startsWith('mistral-direct')) providerId = 'mistral';
-        }
+        const providerId = getProviderForModel(model);
         const providerConfig = PROVIDER_CONFIG[providerId] || PROVIDER_CONFIG.openrouter;
 
-        // Update icon in DOM with specific provider styling
-        if (DOM.dashModelLabel && providerConfig) {
-            const iconEl = DOM.dashModelLabel.querySelector('iconify-icon');
+        // Check availability
+        const isKeyConfigured = (() => {
+            if (providerId === 'google') return !!(appState.googleApiKey && appState.googleApiKey.length > 5);
+            if (providerId === 'groq') return !!(appState.groqApiKey && appState.groqApiKey.length > 5);
+            if (providerId === 'mistral') return !!(appState.mistralApiKey && appState.mistralApiKey.length > 5);
+            if (providerId === 'openrouter') return !!(appState.openrouterApiKey && appState.openrouterApiKey.length > 5);
+            if (providerId === 'openai') return !!(appState.openaiApiKey && appState.openaiApiKey.length > 5);
+            if (providerId === 'anthropic') return !!(appState.anthropicApiKey && appState.anthropicApiKey.length > 5);
+            if (providerId === 'ollama') return !!appState.ollamaEnabled;
+            return false;
+        })();
+
+        const chevronEl = DOM.dashModelLabel?.querySelector('.dash-model-chevron');
+
+        if (!isKeyConfigured) {
+            // Unconfigured state
+            if (DOM.dashModelName) {
+                DOM.dashModelName.textContent = "Configurer l'IA";
+            }
+            if (DOM.headerGenDashboard) {
+                DOM.headerGenDashboard.classList.add('unconfigured');
+                const tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Google Gemini (100% gratuit)</span>`;
+                if (TooltipsUI && TooltipsUI.updateTooltip) {
+                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
+                } else {
+                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
+                }
+            }
+            if (chevronEl) chevronEl.style.display = 'none';
+
+            const iconEl = DOM.dashModelLabel?.querySelector('.dash-model-icon') || DOM.dashModelLabel?.querySelector('iconify-icon:not(.dash-model-chevron)');
             if (iconEl) {
-                // Clear previous classes/styles to prevent style leaking
                 iconEl.removeAttribute('style');
                 const classesToRemove = Array.from(iconEl.classList).filter(c => c.startsWith('provider-'));
                 classesToRemove.forEach(c => iconEl.classList.remove(c));
+                iconEl.setAttribute('icon', 'solar:key-linear');
+            }
+        } else {
+            // Configured state
+            if (DOM.headerGenDashboard) {
+                DOM.headerGenDashboard.classList.remove('unconfigured');
+            }
+            if (chevronEl) chevronEl.style.display = '';
 
-                iconEl.setAttribute('icon', providerConfig.icon);
-                if (providerConfig.style) {
-                    iconEl.setAttribute('style', providerConfig.style);
-                }
-                if (providerConfig.class) {
-                    iconEl.classList.add(providerConfig.class);
+            const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
+            const shortModelName = modelName.split(' ')[0];
+
+            if (DOM.dashModelName) {
+                DOM.dashModelName.textContent = shortModelName;
+            }
+
+            if (DOM.dashModelLabel && providerConfig) {
+                const iconEl = DOM.dashModelLabel.querySelector('.dash-model-icon') || DOM.dashModelLabel.querySelector('iconify-icon:not(.dash-model-chevron)');
+                if (iconEl) {
+                    iconEl.removeAttribute('style');
+                    const classesToRemove = Array.from(iconEl.classList).filter(c => c.startsWith('provider-'));
+                    classesToRemove.forEach(c => iconEl.classList.remove(c));
+
+                    iconEl.setAttribute('icon', providerConfig.icon);
+                    if (providerConfig.style) {
+                        iconEl.setAttribute('style', providerConfig.style);
+                    }
+                    if (providerConfig.class) {
+                        iconEl.classList.add(providerConfig.class);
+                    }
                 }
             }
-        }
 
-        if (DOM.headerGenDashboard) {
-            const tooltip = `<strong>${modelName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${appState.currentAIModel}</span>`;
-
-            if (TooltipsUI && TooltipsUI.updateTooltip) {
-                TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
-            } else {
-                DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
+            if (DOM.headerGenDashboard) {
+                const tooltip = `<strong>${modelName}</strong><br><span style="font-family: monospace; opacity: 0.6; font-size: 0.85em;">${appState.currentAIModel}</span><br><span style="font-size: 0.8em; opacity: 0.8;">Cliquer pour changer de modèle</span>`;
+                if (TooltipsUI && TooltipsUI.updateTooltip) {
+                    TooltipsUI.updateTooltip(DOM.headerGenDashboard, tooltip);
+                } else {
+                    DOM.headerGenDashboard.setAttribute('data-tooltip', tooltip);
+                }
             }
         }
 
@@ -1176,7 +1207,18 @@ export const UI = {
     // Legacy delegations - now redirect to header chip
     updateOutputProgress(cur, total, studentName) { this.showHeaderProgress(cur, total, studentName); },
     resetProgressBar() { this.resetHeaderProgress(); },
-    showSettingsTab(tabName) { FormUI.showSettingsTab(tabName); },
+    showSettingsTab(tabName) {
+        const modal = DOM.settingsModal || document.getElementById('appSettingsModal');
+        if (modal) {
+            const targetBtn = modal.querySelector(`.ui-tabs-btn[onclick*="'${tabName}'"]`) ||
+                              modal.querySelector(`.ui-tabs-btn[onclick*='"${tabName}"']`);
+            if (targetBtn && typeof window.switchHelpTab === 'function') {
+                window.switchHelpTab(targetBtn, tabName);
+                return;
+            }
+        }
+        FormUI.showSettingsTab(tabName);
+    },
     toggleAIKeyFields() { FormUI.toggleAIKeyFields(); },
 
     // ====================================================================
@@ -1234,7 +1276,8 @@ export const UI = {
                 } else {
                     this.showNotification(`Clé API ${name} manquante.`, 'warning');
                 }
-                if (errEl && DOM.settingsModal.style.display === 'flex' && DOM.advancedTabContent.style.display === 'block') {
+                const engineTab = document.getElementById('settings-engine');
+                if (errEl && DOM.settingsModal?.style?.display === 'flex' && engineTab?.classList?.contains('active')) {
                     errEl.textContent = `⚠️ Clé ${name} requise.`;
                     errEl.style.display = 'block';
                 }

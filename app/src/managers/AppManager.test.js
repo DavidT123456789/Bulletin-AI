@@ -10,6 +10,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
 import { SeatingChartManager } from './SeatingChartManager.js';
+import { SettingsUIManager } from './SettingsUIManager.js';
 
 vi.mock('./StorageManager.js', () => ({
     StorageManager: {
@@ -69,7 +70,8 @@ vi.mock('./SettingsUIManager.js', () => ({
     SettingsUIManager: {
         updatePersonalizationState: vi.fn(),
         updateApiStatusDisplay: vi.fn(),
-        updateOllamaToggleDisplay: vi.fn()
+        updateOllamaToggleDisplay: vi.fn(),
+        updateHeaderAiModelDisplay: vi.fn()
     }
 }));
 
@@ -98,5 +100,32 @@ describe('AppManager — rehydrateAll', () => {
 
         expect(ClassManager.switchClass).toHaveBeenCalledWith('c1');
         expect(SeatingChartManager.restoreActiveView).toHaveBeenCalled();
+    });
+});
+
+describe('AppManager — handleAiModelSelectChange', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.body.innerHTML = `
+            <select id="aiModelSelect">
+                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                <option value="groq-llama-3.3-70b">Llama 3.3 70B</option>
+            </select>
+        `;
+        import('../utils/DOM.js').then(({ DOM }) => {
+            DOM.aiModelSelect = document.getElementById('aiModelSelect');
+        });
+    });
+
+    it('devrait persister le nouveau modèle et mettre à jour le header', async () => {
+        const { DOM } = await import('../utils/DOM.js');
+        DOM.aiModelSelect = document.getElementById('aiModelSelect');
+        DOM.aiModelSelect.value = 'groq-llama-3.3-70b';
+
+        App.handleAiModelSelectChange();
+
+        expect(appState.currentAIModel).toBe('groq-llama-3.3-70b');
+        expect(StorageManager.saveAppState).toHaveBeenCalled();
+        expect(SettingsUIManager.updateHeaderAiModelDisplay).toHaveBeenCalled();
     });
 });
