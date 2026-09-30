@@ -394,9 +394,6 @@ export const JournalManager = {
                 : 'Aucune observation pour cette période';
             return `
                 <div class="journal-empty journal-empty-interactive" role="button" tabindex="0" aria-label="Ajouter une observation">
-                    <div class="journal-empty-icon-wrap">
-                        <iconify-icon icon="solar:notebook-linear"></iconify-icon>
-                    </div>
                     <div class="journal-empty-content">
                         <span class="journal-empty-title">${emptyTitle}</span>
                         <span class="journal-empty-subtitle">Consignez des faits marquants pour guider l'IA</span>

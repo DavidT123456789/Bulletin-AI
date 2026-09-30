@@ -245,27 +245,33 @@
 .focus-header:not(.editing) .focus-analyze-btn {
     width: calc(36px - 4px * var(--p));
     height: calc(36px - 4px * var(--p));
-    font-size: calc(15px - 1px * var(--p));
+    font-size: calc(16px - 1.5px * var(--p));
     flex-shrink: 0;
 }
 
 .focus-header:not(.editing) .focus-nav-buttons {
-    padding: calc(3px - 1px * var(--p));
-    height: calc(34px - 2px * var(--p));
+    padding: calc(3px - 0.5px * var(--p));
+    height: calc(36px - 4px * var(--p));
     gap: 2px;
     border-radius: var(--radius-pill);
     flex-shrink: 0;
     box-sizing: border-box;
 }
 
+.focus-header:not(.editing) .focus-nav-buttons .focus-nav-btn {
+    width: calc(30px - 4px * var(--p));
+    height: calc(30px - 4px * var(--p));
+    font-size: calc(16px - 1.5px * var(--p));
+}
+
 .focus-header:not(.editing) .focus-position {
-    font-size: calc(12px - 1px * var(--p));
+    font-size: calc(12.5px - 1.5px * var(--p));
 }
 
 .focus-header:not(.editing) .focus-close-btn {
     width: calc(36px - 4px * var(--p));
     height: calc(36px - 4px * var(--p));
-    font-size: calc(15px - 1px * var(--p));
+    font-size: calc(16px - 1.5px * var(--p));
     flex-shrink: 0;
     border-radius: 50%;
 }
@@ -415,8 +421,7 @@
 .focus-origin-class-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
+    padding: 2px 7px;
     font-size: 10.5px;
     font-weight: 550;
     line-height: 1;
@@ -424,28 +429,11 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-pill);
-    letter-spacing: 0.25px;
+    letter-spacing: 0.2px;
     vertical-align: middle;
     flex-shrink: 0;
     user-select: none;
     pointer-events: none;
-}
-
-.focus-origin-class-badge iconify-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    line-height: 1;
-    flex-shrink: 0;
-    color: var(--text-tertiary);
-}
-
-.focus-origin-class-badge > span {
-    display: inline-flex;
-    align-items: center;
-    line-height: 1;
-    margin-top: 0.5px;
 }
 
 /* Hovering either avatar OR name highlights the background behind the name */
@@ -530,6 +518,7 @@
     background: var(--surface-color);
     box-shadow: var(--shadow-sm) !important;
     padding: 3px;
+    height: 36px;
     border-radius: 100px;
     flex-shrink: 0;
     border: 1px solid transparent;
@@ -543,10 +532,10 @@
 }
 
 .focus-position {
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-secondary);
-    padding: 0 4px;
+    padding: 0 5px;
     font-variant-numeric: tabular-nums;
     min-width: 28px;
     text-align: center;
@@ -554,17 +543,17 @@
 
 /* --- SHARED: All pill action buttons (flat style — no elevation) --- */
 .focus-nav-btn {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: var(--icon-btn-color);
+    color: var(--text-secondary);
     /* Hérite désormais du design global (aérien) */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
     /* Standardize icon size for solar icons */
     cursor: pointer;
     transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease;
@@ -575,12 +564,12 @@
 .focus-nav-btn iconify-icon,
 .focus-nav-btn svg {
     transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), transform 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-    stroke-width: var(--icon-stroke-width) !important;
+    stroke-width: 1.5px !important;
 }
 
 /* Optical correction: vertical lines appear thinner than diagonal lines */
 .focus-nav-btn.focus-analyze-btn svg {
-    stroke-width: calc(var(--icon-stroke-width) + 0.4px) !important;
+    stroke-width: 1.7px !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -591,11 +580,13 @@
 
     [data-theme="dark"] .focus-nav-btn:hover:not(:disabled) {
         background: var(--item-active-bg);
+        color: var(--text-primary);
     }
 
     .focus-nav-btn.focus-close-btn:hover,
     .focus-nav-btn.focus-analyze-btn:hover {
-        background: var(--surface-color);
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
         box-shadow: var(--shadow-elevation) !important;
         transform: translateY(-1px);
     }
@@ -612,9 +603,11 @@
     background: var(--surface-color);
     box-shadow: var(--shadow-sm) !important;
     border: 1px solid transparent;
-    /* Hauteur totale: 28px + 3px*2 = 34px (comme la pilule nav) */
-    width: 34px;
-    height: 34px;
+    /* Hauteur totale: 30px + 3px*2 = 36px (comme la pilule nav) */
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    color: var(--text-secondary);
 }
 
 .focus-nav-btn.focus-analyze-btn {
@@ -631,6 +624,7 @@
     background: var(--surface-color);
     border: 1px solid transparent;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    color: var(--text-secondary);
 }
 
 
@@ -652,8 +646,9 @@
 /* EDIT MODE: Show save button */
 .focus-header.editing .focus-save-btn {
     opacity: 1;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
     margin-right: 0;
     /* Restore normal margin */
     pointer-events: auto;
@@ -848,36 +843,16 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .inline-context-badges {
     margin-left: 8px;
 }
 
-/* Section icon — blue colored background circle (harmonized with journal=emerald, appreciation=violet) */
-.focus-context-info-trigger>iconify-icon:first-child {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: rgba(var(--color-blue-rgb), 0.1);
-    color: var(--color-blue);
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-[data-theme="dark"] .focus-context-info-trigger>iconify-icon:first-child {
-    background: rgba(var(--color-blue-bright-rgb), 0.14);
-    color: var(--color-blue-bright);
-}
-
 .focus-context-info-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
     cursor: help;
 }
 
@@ -886,43 +861,49 @@
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-left: 6px;
+    margin-left: 0;
     flex-shrink: 0;
     box-shadow: none;
 }
 
 [data-theme="dark"] .focus-mic-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: var(--text-tertiary);
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
 }
 
 .focus-mic-btn i,
-.focus-mic-btn iconify-icon,
+.focus-mic-btn iconify-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+}
+
 .focus-mic-btn svg {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.8;
     line-height: 1;
 }
 
 .focus-mic-btn:hover {
     color: var(--text-primary);
     background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.16);
+    border-color: transparent;
 }
 
 [data-theme="dark"] .focus-mic-btn:hover {
     background: var(--item-hover-bg);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: transparent;
     color: var(--text-primary);
 }
 
@@ -974,7 +955,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-left: 6px;
+    margin-left: 0;
     flex-shrink: 0;
 }
 
@@ -984,9 +965,9 @@
     height: 26px;
     border-radius: 50%;
     margin: 0;
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -997,18 +978,24 @@
 
 [data-theme="dark"] .focus-audio-group .focus-mic-btn,
 [data-theme="dark"] .focus-audio-group .focus-speaker-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: var(--text-tertiary);
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
 }
 
 .focus-audio-group .focus-mic-btn iconify-icon,
-.focus-audio-group .focus-speaker-btn iconify-icon,
+.focus-audio-group .focus-speaker-btn iconify-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+}
+
 .focus-audio-group .focus-mic-btn svg,
 .focus-audio-group .focus-speaker-btn svg {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.8;
     line-height: 1;
 }
 
@@ -1016,13 +1003,13 @@
 .focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
     color: var(--text-primary);
     background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.16);
+    border-color: transparent;
 }
 
 [data-theme="dark"] .focus-audio-group .focus-mic-btn:hover,
 [data-theme="dark"] .focus-audio-group .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
     background: var(--item-hover-bg);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: transparent;
     color: var(--text-primary);
 }
 
@@ -1506,28 +1493,11 @@
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
 }
 
-/* Section icon — violet colored background square */
-.focus-appreciation-label>iconify-icon:first-child {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: rgba(var(--color-violet-rgb), 0.1);
-    color: var(--color-violet);
-    font-size: 14px;
-    flex-shrink: 0;
-}
 
-[data-theme="dark"] .focus-appreciation-label>iconify-icon:first-child {
-    background: rgba(var(--color-violet-rgb), 0.14);
-    color: var(--color-violet-bright);
-}
 
 .focus-appreciation-meta {
     display: flex;
@@ -4554,14 +4524,13 @@
    ==================================================================== */
 
 .focus-analyze-btn {
-    color: var(--text-tertiary);
-    font-size: 14px;
+    color: var(--text-secondary);
+    font-size: 16px;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-    background: var(--item-hover-bg);
 }
 
 [data-theme="dark"] .focus-analyze-btn {
-    background: var(--item-hover-bg);
+    color: var(--text-secondary);
 }
 
 
