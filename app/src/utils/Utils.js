@@ -884,14 +884,15 @@ export const Utils = {
      * @param {boolean} [pending=false] - Si true, style "En attente" (gris/horloge) au lieu de "Actif" (bleu/spinner)
      * @returns {string} HTML string
      */
-    getSkeletonHTML(compact = false, label = 'Génération...', pending = false) {
+    getSkeletonHTML(compact = false, label = 'Génération...', pending = false, showBadge = true) {
         const compactClass = compact ? ' compact' : '';
         const badgeClass = pending ? 'pending' : 'active';
         const iconName = pending ? 'solar:clock-circle-bold' : 'ph:spinner-gap-bold';
         const spinClass = pending ? '' : 'rotate-icon';
+        const badgeHtml = showBadge ? `<span class="generating-badge ${badgeClass}"><iconify-icon icon="${iconName}" class="${spinClass}"></iconify-icon> ${label}</span>` : '';
 
         // HTML minifié pour éviter les nœuds de texte (whitespace) qui causent des espacements
-        return `<div class="appreciation-skeleton${compactClass}"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><span class="generating-badge ${badgeClass}"><iconify-icon icon="${iconName}" class="${spinClass}"></iconify-icon> ${label}</span></div>`;
+        return `<div class="appreciation-skeleton${compactClass}"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div>${badgeHtml}</div>`;
     },
 
     /**

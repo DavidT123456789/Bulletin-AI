@@ -859,13 +859,30 @@ export const UI = {
 
     showLoadingOverlay(msg = 'Génération...') { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'flex'; if (DOM.loadingText) DOM.loadingText.textContent = msg; },
     hideLoadingOverlay() { if (DOM.loadingOverlay) DOM.loadingOverlay.style.display = 'none'; },
-    showInlineSpinner(el) {
+    showInlineSpinner(el, label = '', options = {}) {
         if (!el) return;
         if (!el.dataset.originalContent) {
             el.dataset.originalContent = el.innerHTML;
         }
-        el.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize" class="loading-spinner-svg" aria-hidden="true"></iconify-icon>';
-        el.disabled = true;
+        const textContent = label || (el.dataset.originalContent.includes('Générer') || el.dataset.originalContent.includes('Régénérer') ? 'Génération...' : '');
+        const isCancellable = options.canCancel ?? (el.id === 'focusGenerateBtn');
+
+        if (isCancellable) {
+            el.innerHTML = `<span class="btn-spinner-state"><iconify-icon icon="ph:spinner-gap-bold" class="loading-spinner-svg rotate-icon" aria-hidden="true"></iconify-icon><span>${textContent}</span></span><span class="btn-cancel-state"><iconify-icon icon="ph:x-bold" class="cancel-svg" aria-hidden="true"></iconify-icon><span>Annuler</span></span>`;
+            el.disabled = false;
+            el.setAttribute('aria-busy', 'true');
+            el.classList.add('is-loading', 'is-cancellable');
+
+            const cancelTip = options.cancelTooltip || 'Cliquer pour annuler la génération';
+            el.dataset.prevTooltip = el.getAttribute('data-tooltip') || '';
+            el.setAttribute('data-tooltip', cancelTip);
+            if (el._tippy) el._tippy.setContent(cancelTip);
+        } else {
+            const labelHtml = textContent ? `<span>${textContent}</span>` : '';
+            el.innerHTML = `<iconify-icon icon="ph:spinner-gap-bold" class="loading-spinner-svg rotate-icon" aria-hidden="true"></iconify-icon>${labelHtml}`;
+            el.disabled = true;
+            el.classList.add('is-loading');
+        }
     },
     hideInlineSpinner(el) {
         if (!el) return;
@@ -874,6 +891,18 @@ export const UI = {
             delete el.dataset.originalContent;
         }
         el.disabled = false;
+        el.removeAttribute('aria-busy');
+        el.classList.remove('is-loading', 'is-cancellable');
+        if (el.dataset.prevTooltip !== undefined) {
+            const prev = el.dataset.prevTooltip;
+            delete el.dataset.prevTooltip;
+            if (prev) {
+                el.setAttribute('data-tooltip', prev);
+                if (el._tippy) el._tippy.setContent(prev);
+            } else {
+                el.removeAttribute('data-tooltip');
+            }
+        }
     },
 
     // ====================================================================

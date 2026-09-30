@@ -909,28 +909,46 @@
 }
 
 .focus-mic-btn.recording {
-    background: var(--error-color);
-    color: white;
-    border-color: var(--error-color);
-    animation: mic-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+    animation: mic-ripple 1.4s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
 }
 
 .focus-mic-btn.recording:hover {
-    background: var(--error-color);
-    transform: scale(1.05);
+    background: #dc2626 !important;
+    transform: scale(1.06);
 }
 
-@keyframes mic-pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+@keyframes mic-ripple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+        transform: scale(1);
     }
-
     50% {
-        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.15);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
     }
+    100% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        transform: scale(1);
+    }
+}
+
+/* Ghost-text streaming during voice dictation */
+.dictation-interim {
+    opacity: 0.6;
+    font-style: italic;
+    color: var(--text-secondary);
+    border-bottom: 1.5px dotted rgba(var(--primary-color-rgb, 99, 102, 241), 0.5);
+    transition: opacity 0.15s ease;
+}
+
+[data-theme="dark"] .dictation-interim {
+    opacity: 0.7;
+    color: rgba(255, 255, 255, 0.65);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
 /* Dark theme adjustments - keep neutral at rest */
@@ -1587,22 +1605,7 @@
 }
 
 .appreciation-status-badge.pending {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
-    animation: pending-pulse 1.5s infinite;
-    padding: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-}
-
-[data-theme="dark"] .appreciation-status-badge.pending {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
-}
-
-.appreciation-status-badge.pending iconify-icon {
-    font-size: 18px;
+    display: none !important;
 }
 
 .appreciation-status-badge.done {
@@ -2641,27 +2644,57 @@
     color: white !important;
 }
 
-/* État désactivé pour les boutons de raffinement */
+/* État désactivé pour les boutons de raffinement et contrôles */
 .btn-ai-outline:disabled,
-.btn-ai-outline.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: var(--item-idle-bg);
-    color: var(--text-tertiary);
+.btn-ai-outline.disabled,
+.btn[data-refine-type]:disabled,
+.btn[data-refine-type].disabled {
+    opacity: 0.35 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    background: transparent !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+    box-shadow: none !important;
 }
 
-.btn-ai-outline:disabled {
-    pointer-events: none;
+.btn-ai-outline:disabled iconify-icon,
+.btn-ai-outline.disabled iconify-icon,
+.btn[data-refine-type]:disabled iconify-icon,
+.btn[data-refine-type].disabled iconify-icon,
+.btn-ai-outline:disabled i,
+.btn-ai-outline.disabled i,
+.btn[data-refine-type]:disabled i,
+.btn[data-refine-type].disabled i {
+    color: var(--text-tertiary) !important;
+    animation: none !important;
 }
 
 [data-theme="dark"] .btn-ai-outline:disabled,
-[data-theme="dark"] .btn-ai-outline.disabled {
-    background: var(--item-hover-bg);
+[data-theme="dark"] .btn-ai-outline.disabled,
+[data-theme="dark"] .btn[data-refine-type]:disabled,
+[data-theme="dark"] .btn[data-refine-type].disabled {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-tertiary) !important;
 }
 
-.btn-ai-outline:disabled i,
-.btn-ai-outline.disabled i {
-    color: var(--text-tertiary);
+/* Suppression de tout badge redondant dans le skeleton du Focus Panel */
+#focusAppreciationText .generating-badge {
+    display: none !important;
+}
+
+/* Contrôles audio et copie désactivés pendant la génération */
+#focusCopyBtn.disabled,
+#focusAppreciationSpeakBtn.disabled,
+#focusAppreciationSpeechBtn.disabled {
+    opacity: 0.35 !important;
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
+#focusWordCount:empty {
+    display: none !important;
 }
 
 /* ============================================
@@ -2785,6 +2818,92 @@
     transition: transform 0.08s ease-out;
 }
 
+/* Loading state - Active operation, cancellable on click */
+#focusGenerateBtn.is-loading,
+#focusGenerateBtn:has(.loading-spinner-svg) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    background: var(--item-active-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease !important;
+}
+
+[data-theme="dark"] #focusGenerateBtn.is-loading,
+[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg) {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+#focusGenerateBtn.is-loading:active,
+#focusGenerateBtn:has(.loading-spinner-svg):active {
+    transform: scale(0.96) !important;
+}
+
+#focusGenerateBtn .btn-spinner-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#focusGenerateBtn .btn-cancel-state {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#focusGenerateBtn:has(.loading-spinner-svg) .loading-spinner-svg {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+#focusGenerateBtn .cancel-svg {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: inherit !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+/* Hover state during loading: clearly signals cancellation */
+#focusGenerateBtn.is-loading:hover,
+#focusGenerateBtn:has(.loading-spinner-svg):hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: var(--error-color, #ef4444) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+[data-theme="dark"] #focusGenerateBtn.is-loading:hover,
+[data-theme="dark"] #focusGenerateBtn:has(.loading-spinner-svg):hover {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+#focusGenerateBtn.is-loading:hover .btn-spinner-state,
+#focusGenerateBtn:has(.loading-spinner-svg):hover .btn-spinner-state {
+    display: none !important;
+}
+
+#focusGenerateBtn.is-loading:hover .btn-cancel-state,
+#focusGenerateBtn:has(.loading-spinner-svg):hover .btn-cancel-state {
+    display: inline-flex !important;
+}
+
 /* Régénérer state - Override gradient with outline style */
 #focusGenerateBtn.btn-ai-outline {
     background: transparent;
@@ -2845,11 +2964,11 @@
 
 /* Neutral state - already up to date, OPTIONAL action */
 /* Shared by Focus Panel and List View "Régénérer" buttons */
-/* Flat Material You — tonal container, no border, no shadow */
+/* Flat Material You — tonal container, neutral high contrast */
 #focusGenerateBtn.btn-neutral,
 .btn.btn-neutral {
     background: var(--item-idle-bg);
-    border: none;
+    border: 1px solid var(--border-color);
     color: var(--text-secondary);
     box-shadow: none;
     animation: none !important;
@@ -2862,43 +2981,42 @@
 .btn.btn-neutral i,
 #focusGenerateBtn.btn-neutral iconify-icon,
 .btn.btn-neutral iconify-icon {
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
 }
 
 #focusGenerateBtn.btn-neutral:hover,
 .btn.btn-neutral:hover {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--item-hover-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
     box-shadow: none;
+}
+
+[data-theme="dark"] #focusGenerateBtn.btn-neutral {
+    background: var(--item-idle-bg);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] #focusGenerateBtn.btn-neutral i,
+[data-theme="dark"] .btn.btn-neutral i,
+[data-theme="dark"] #focusGenerateBtn.btn-neutral iconify-icon,
+[data-theme="dark"] .btn.btn-neutral iconify-icon {
+    color: var(--text-secondary);
 }
 
 [data-theme="dark"] #focusGenerateBtn.btn-neutral:hover,
 [data-theme="dark"] .btn.btn-neutral:hover {
-    background: rgba(var(--primary-color-rgb), 0.2);
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--text-primary);
 }
 
 #focusGenerateBtn.btn-neutral:hover i,
 .btn.btn-neutral:hover i,
 #focusGenerateBtn.btn-neutral:hover iconify-icon,
 .btn.btn-neutral:hover iconify-icon {
-    color: var(--primary-color);
-}
-
-/* Effet Shine au survol pour rappeler les boutons d'amélioration (IA) */
-#focusGenerateBtn.btn-neutral:hover::before,
-.btn.btn-neutral:hover::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.6) 50%,
-            transparent 100%);
-    animation: shine-sweep 1.5s ease-in-out infinite;
-    pointer-events: none;
+    color: var(--text-primary);
 }
 
 #focusGenerateBtn.btn-neutral:active,

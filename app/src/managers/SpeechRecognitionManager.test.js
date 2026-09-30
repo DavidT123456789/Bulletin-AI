@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SpeechRecognitionManager } from './SpeechRecognitionManager';
+import { SpeechRecognitionManager, SpeechPunctuation } from './SpeechRecognitionManager';
 
 // Mock DOM module — SpeechRecognitionManager no longer uses DOM.negativeInstructions.
 // It now targets elements directly via _activeTarget / _insertTranscript.
@@ -49,7 +49,8 @@ describe('SpeechRecognitionManager', () => {
         SpeechRecognitionManager.init();
         expect(window.SpeechRecognition).toHaveBeenCalled();
         expect(mockRecognition.lang).toBe('fr-FR');
-        expect(mockRecognition.continuous).toBe(false);
+        expect(mockRecognition.continuous).toBe(true);
+        expect(mockRecognition.interimResults).toBe(true);
     });
 
     it('should be supported when SpeechRecognition exists', () => {
@@ -104,6 +105,61 @@ describe('SpeechRecognitionManager', () => {
         });
 
         expect(journalNoteInput.value).toBe('Élève très motivé');
+    });
+
+    it('should stream interim ghost-text and commit final text in context input', () => {
+        document.body.innerHTML = `
+            <button id="focusMicBtn"></button>
+            <textarea id="focusContextInput"></textarea>
+        `;
+        const focusMicBtn = document.getElementById('focusMicBtn');
+        const focusContextInput = document.getElementById('focusContextInput');
+
+        SpeechRecognitionManager.init();
+        focusMicBtn.click();
+        mockRecognition.onstart();
+
+        expect(SpeechRecognitionManager.isRecording()).toBe(true);
+
+        // Interim result arrives
+        mockRecognition.onresult({
+            resultIndex: 0,
+            results: [{ 0: { transcript: 'en progrès' }, isFinal: false }]
+        });
+
+        expect(focusContextInput.value).toBe('En progrès');
+
+        // Final result arrives
+        mockRecognition.onresult({
+            resultIndex: 0,
+            results: [{ 0: { transcript: 'en progrès régulier point' }, isFinal: true }]
+        });
+
+        expect(focusContextInput.value).toBe('En progrès régulier.');
+
+        // Stop recording
+        SpeechRecognitionManager.stop();
+        expect(mockRecognition.stop).toHaveBeenCalled();
+        expect(SpeechRecognitionManager.isRecording()).toBe(false);
+    });
+
+    describe('SpeechPunctuation', () => {
+        it('should format spoken punctuation commands properly', () => {
+            expect(SpeechPunctuation.format('élève sérieux virgule bon travail point')).toBe('Élève sérieux, bon travail.');
+            expect(SpeechPunctuation.format('attention aux bavardages point d\'exclamation')).toBe('Attention aux bavardages !');
+            expect(SpeechPunctuation.format('quels sont les objectifs point d\'interrogation')).toBe('Quels sont les objectifs ?');
+            expect(SpeechPunctuation.format('points forts deux points travail et rigueur')).toBe('Points forts : travail et rigueur');
+            expect(SpeechPunctuation.format('titre à la ligne suite du texte')).toBe('Titre\nSuite du texte');
+            expect(SpeechPunctuation.format('paragraphe un nouveau paragraphe paragraphe deux')).toBe('Paragraphe un\n\nParagraphe deux');
+        });
+
+        it('should format semicolons, ellipsis, and handle edge cases', () => {
+            expect(SpeechPunctuation.format('premier trimestre point-virgule deuxième trimestre')).toBe('Premier trimestre ; deuxième trimestre');
+            expect(SpeechPunctuation.format('à suivre points de suspension')).toBe('À suivre...');
+            expect(SpeechPunctuation.format('test   virgule   encore point')).toBe('Test, encore.');
+            expect(SpeechPunctuation.format('')).toBe('');
+            expect(SpeechPunctuation.format(null)).toBe('');
+        });
     });
 });
 

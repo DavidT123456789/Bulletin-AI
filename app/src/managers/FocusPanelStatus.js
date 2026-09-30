@@ -366,8 +366,8 @@ export const FocusPanelStatus = {
 
         switch (state) {
             case 'pending':
-                badge.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
-                badge.classList.add('visible', 'pending');
+                badge.classList.remove('visible', 'pending');
+                badge.innerHTML = '';
                 break;
             case 'dirty':
                 badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
@@ -503,6 +503,12 @@ export const FocusPanelStatus = {
         if (speakBtn) {
             speakBtn.disabled = isEmpty;
             speakBtn.classList.toggle('disabled', isEmpty);
+        }
+
+        const speechBtn = document.getElementById('focusAppreciationSpeechBtn');
+        if (speechBtn) {
+            speechBtn.disabled = false;
+            speechBtn.classList.remove('disabled');
         }
 
         if (isEmpty) {

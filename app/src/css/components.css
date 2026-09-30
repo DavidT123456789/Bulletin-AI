@@ -41,9 +41,16 @@
     filter: brightness(0.92);
 }
 
-.btn:disabled {
+.btn:disabled:not(.is-loading):not(:has(.loading-spinner-svg)) {
     opacity: 0.45;
     cursor: not-allowed;
+}
+
+.btn.is-loading,
+.btn:has(.loading-spinner-svg) {
+    opacity: 1 !important;
+    cursor: wait !important;
+    pointer-events: none;
 }
 
 .btn-secondary {

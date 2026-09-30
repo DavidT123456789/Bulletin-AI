@@ -30,6 +30,7 @@ import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 import { VariationsManager } from './VariationsManager.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
+import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 
 
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
@@ -48,6 +49,9 @@ export const FocusPanelManager = {
 
     /** Map of active generation controllers by student ID */
     _activeGenerations: new Map(),
+
+    /** Guard flag preventing double-trigger during cancellation */
+    _isCancellingGeneration: false,
 
     /** Flag indicating that the panel is currently closing (to defer DOM writes/layout/stats updates) */
     _isClosing: false,
@@ -277,13 +281,24 @@ export const FocusPanelManager = {
 
         // Generate
         if (generateBtn) {
-            generateBtn.addEventListener('click', () => {
+            generateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this._activeGenerations.has(this.currentStudentId)) {
+                    this._isCancellingGeneration = true;
+                    this._cancelGenerationForStudent(this.currentStudentId);
+                    setTimeout(() => { this._isCancellingGeneration = false; }, 300);
+                    generateBtn.blur();
+                    return;
+                }
                 this.generate();
                 generateBtn.blur(); // Remove focus after click to prevent sticky focus rings
             });
             // [NEW] Right-click to preview the prompt
             generateBtn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                if (this._activeGenerations.has(this.currentStudentId)) {
+                    return;
+                }
                 this._showPromptPreview();
                 generateBtn.blur();
             });
@@ -408,6 +423,16 @@ export const FocusPanelManager = {
             }
 
             if (e.key === 'Escape') {
+                if (SpeechRecognitionManager.isRecording()) {
+                    SpeechRecognitionManager.stop();
+                    return;
+                }
+                if (this._activeGenerations.has(this.currentStudentId)) {
+                    this._isCancellingGeneration = true;
+                    this._cancelGenerationForStudent(this.currentStudentId);
+                    setTimeout(() => { this._isCancellingGeneration = false; }, 300);
+                    return;
+                }
                 this.close();
             } else if (e.key === 'ArrowLeft' && !isEditing) {
                 e.preventDefault();
@@ -1431,6 +1456,32 @@ export const FocusPanelManager = {
             const controller = this._activeGenerations.get(studentId);
             controller.abort();
             this._activeGenerations.delete(studentId);
+
+            // OPTIMISTIC SYNCHRONOUS UI RESTORATION:
+            // Don't wait for network abort to unwind through async stack
+            const result = appState.generatedResults.find(r => r.id === studentId);
+            if (this.currentStudentId === studentId) {
+                const generateBtn = document.getElementById('focusGenerateBtn');
+                if (generateBtn) UI.hideInlineSpinner(generateBtn);
+
+                if (result) {
+                    FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+                    this._renderAppreciationText(result);
+                    this._updateGenerateButton(result);
+                    FocusPanelStatus.updateSourceIndicator(result);
+                }
+
+                // Clear any generating states on refinement buttons
+                document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
+                    b.classList.remove('is-generating');
+                });
+            }
+
+            if (result) {
+                this._updateListRow(result);
+            }
+            UI.updateControlButtons();
+            UI.showNotification('Génération annulée.', 'info');
         }
     },
 
@@ -1545,7 +1596,7 @@ export const FocusPanelManager = {
      * IMPORTANT: Captures studentId at start and verifies it hasn't changed before applying results
      */
     async generate() {
-        if (!this.currentStudentId) return;
+        if (!this.currentStudentId || this._isCancellingGeneration) return;
 
         // CRITICAL: Capture the student ID AND period at the START of generation
         // This allows us to detect if user navigated away during async operation
@@ -1556,9 +1607,13 @@ export const FocusPanelManager = {
         const result = appState.generatedResults.find(r => r.id === generatingForStudentId);
         if (!result) return;
 
-        // Cancel only if there is ALREADY a generation running for THIS student
-        // (Restart behavior)
-        this._cancelGenerationForStudent(generatingForStudentId);
+        // If already generating for this student, cancel it
+        if (this._activeGenerations.has(generatingForStudentId)) {
+            this._isCancellingGeneration = true;
+            this._cancelGenerationForStudent(generatingForStudentId);
+            setTimeout(() => { this._isCancellingGeneration = false; }, 300);
+            return;
+        }
 
         // Create new AbortController for this specific generation
         const abortController = new AbortController();
@@ -1716,7 +1771,7 @@ export const FocusPanelManager = {
             }
 
         } catch (error) {
-            // If aborted, silently ignore
+            // If aborted, silently return (instant UI restoration & notification already performed on cancel)
             if (signal.aborted || error.name === 'AbortError') {
                 return;
             }
@@ -1854,7 +1909,33 @@ export const FocusPanelManager = {
 
         // Remove empty class to hide placeholder text during skeleton display
         appreciationEl.classList.remove('empty');
-        appreciationEl.innerHTML = Utils.getSkeletonHTML(false);
+        // Render pure shimmering lines without redundant badge
+        appreciationEl.innerHTML = Utils.getSkeletonHTML(false, '', false, false);
+
+        // Hide stale word count and source indicator while generating
+        const wordCountEl = document.getElementById('focusWordCount');
+        if (wordCountEl) wordCountEl.innerHTML = '';
+
+        const sourceIndicator = document.getElementById('focusAiIndicator');
+        if (sourceIndicator) sourceIndicator.style.display = 'none';
+
+        // Gracefully disable refinement buttons during generation
+        const refinementOptions = document.getElementById('focusRefinementOptions');
+        if (refinementOptions) {
+            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
+                btn.classList.add('disabled');
+            });
+        }
+
+        // Disable audio and copy controls
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (copyBtn) copyBtn.classList.add('disabled');
+
+        const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
+        if (speakBtn) speakBtn.classList.add('disabled');
+
+        const speechBtn = document.getElementById('focusAppreciationSpeechBtn');
+        if (speechBtn) speechBtn.classList.add('disabled');
     },
 
     /**

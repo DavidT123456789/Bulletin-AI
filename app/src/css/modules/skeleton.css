@@ -227,15 +227,26 @@
     position: relative;
 }
 
+/* Ensure lines represent text paragraphs consistently with neutral shimmer */
 .appreciation-skeleton .skeleton-line {
     height: 14px;
     border-radius: var(--radius-xs);
     background: linear-gradient(90deg,
-            var(--bg-secondary) 0%,
-            rgba(var(--primary-color-rgb), 0.1) 50%,
-            var(--bg-secondary) 100%);
+            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 0%,
+            var(--item-hover-bg, rgba(0, 0, 0, 0.08)) 50%,
+            var(--item-idle-bg, rgba(0, 0, 0, 0.04)) 100%);
     background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+    margin-bottom: 0;
+    opacity: 0.7;
+}
+
+[data-theme="dark"] .appreciation-skeleton .skeleton-line {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.04) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.04) 100%);
+    background-size: 200% 100%;
 }
 
 .appreciation-skeleton .skeleton-line:nth-child(1) {
@@ -254,7 +265,7 @@
     width: 75%;
 }
 
-/* Badge "Génération en cours" sur la carte - centré au milieu */
+/* Badge "Génération en cours" sur la carte - centré au milieu, neutre et contrasté */
 .generating-badge {
     position: absolute;
     top: 50%;
@@ -263,133 +274,110 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 7px;
     padding: 6px 14px;
     border-radius: var(--radius-pill);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1;
-    height: 28px;
+    height: 30px;
     box-sizing: border-box;
     transition: all var(--transition-base) ease;
     z-index: 2;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
 }
 
 /* Fix icon size to prevent stretching */
+.generating-badge iconify-icon,
 .generating-badge i {
-    font-size: 12px;
-    width: 12px;
-    height: 12px;
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 /* Compact version for List View */
 .appreciation-skeleton.compact {
     padding: 6px;
-    /* Slightly more padding for badge space */
     min-height: auto;
     background: transparent;
     gap: 8px;
-    /* Consistent gap */
     position: relative;
-    /* Context for badge */
 }
 
-/* 
- * Badge visible in compact mode (List View) but smaller.
- * Harmonized with Focus Panel but adapted for table row constraints.
- */
 .appreciation-skeleton.compact .generating-badge {
-    display: inline-flex;
-    /* Restore visibility */
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     padding: 4px 10px;
-    /* Smaller padding */
     font-size: 11px;
-    /* Smaller font */
     gap: 5px;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    /* Subtle shadow */
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 24px;
 }
 
-/* Ensure lines represent text paragraphs consistently */
-.appreciation-skeleton .skeleton-line {
-    height: 14px;
-    border-radius: var(--radius-xs);
-    background: linear-gradient(90deg,
-            var(--bg-secondary) 0%,
-            rgba(var(--primary-color-rgb), 0.1) 50%,
-            var(--bg-secondary) 100%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
-    margin-bottom: 0;
-    /* Let flex gap handle spacing */
-    opacity: 0.6;
-    /* Slight transparency so badge pops more */
+.appreciation-skeleton.compact .generating-badge iconify-icon,
+.appreciation-skeleton.compact .generating-badge i {
+    font-size: 11px;
+    width: 11px;
+    height: 11px;
 }
 
-/* Adjust line widths for realistic text look */
-.appreciation-skeleton .skeleton-line:nth-child(1) {
-    width: 95%;
-}
-
-.appreciation-skeleton .skeleton-line:nth-child(2) {
-    width: 88%;
-}
-
-.appreciation-skeleton .skeleton-line:nth-child(3) {
-    width: 92%;
-}
-
-.appreciation-skeleton .skeleton-line:nth-child(4) {
-    width: 75%;
-}
-
-/* Compact mode adjustment: lines are slightly smaller to fit row height */
 .appreciation-skeleton.compact .skeleton-line {
     height: 10px;
 }
 
-/* État: En file d'attente */
+/* État: En file d'attente (neutre, sobre) */
 .generating-badge.pending {
-    background: linear-gradient(135deg, rgba(148, 163, 184, 0.12), rgba(100, 116, 139, 0.15));
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: var(--surface-color);
+    border: 1px dashed var(--border-color);
     color: var(--text-secondary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+[data-theme="dark"] .generating-badge.pending {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.generating-badge.pending iconify-icon,
 .generating-badge.pending i {
-    opacity: 0.7;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
-/* État: Génération active */
+/* État: Génération active - Strictement neutre et haut contraste (Pas de couleur personnalisée / dark blue) */
 .generating-badge.active {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15), rgba(var(--primary-color-rgb), 0.2));
-    border: 1px solid rgba(var(--primary-color-rgb), 0.3);
-    color: var(--primary-color);
-    animation: badge-pulse 1.2s ease-in-out infinite;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    animation: badge-subtle-pulse 2s ease-in-out infinite;
 }
 
+[data-theme="dark"] .generating-badge.active {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--text-primary);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(255, 255, 255, 0.06);
+}
+
+.generating-badge.active iconify-icon,
 .generating-badge.active i {
-    animation: spin 0.8s linear infinite;
+    color: var(--text-primary);
 }
 
-@keyframes badge-pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.3);
+@keyframes badge-subtle-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
     }
-
     50% {
-        box-shadow: 0 0 8px 2px rgba(var(--primary-color-rgb), 0.15);
+        transform: translate(-50%, -50%) scale(1.02);
     }
 }
 

@@ -586,12 +586,15 @@
 
 /* Modern SVG spinner for buttons & components */
 .loading-spinner-svg {
-    font-size: 1.25em;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     vertical-align: middle;
-    margin: auto;
+    margin: 0;
+    flex-shrink: 0;
     color: inherit;
 }
 

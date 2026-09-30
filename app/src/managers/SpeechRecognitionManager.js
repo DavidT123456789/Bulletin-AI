@@ -1,8 +1,9 @@
 /**
- * @fileoverview Gestionnaire de la reconnaissance vocale.
+ * @fileoverview Gestionnaire de la reconnaissance vocale moderne (Web Speech API).
  * 
- * Ce module gère l'intégration de l'API Web Speech pour la dictée vocale
- * dans le Focus Panel (champ Contexte élève ET zone Appréciation).
+ * Ce module gère la dictée vocale continue, le streaming temps réel (ghost-text)
+ * et le formatage intelligent de la ponctuation en français pour le Focus Panel
+ * (champ Contexte élève, zone Appréciation et Journal de bord).
  * 
  * @module managers/SpeechRecognitionManager
  */
@@ -14,6 +15,68 @@ import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { PromptService } from '../services/PromptService.js';
 
+/**
+ * Moteur de ponctuation et formatage naturel pour la dictée vocale en français
+ */
+export const SpeechPunctuation = {
+    /**
+     * Formate et ponctue le texte transcrit
+     * @param {string} text - Texte brut transcrit
+     * @returns {string} - Texte formaté et ponctué
+     */
+    format(text) {
+        if (!text) return '';
+
+        let formatted = text;
+
+        // Commandes orales courantes et utiles en français
+        const rules = [
+            // Retours à la ligne et paragraphes
+            [/(?<!\p{L})(?:nouveau paragraphe)(?!\p{L})/giu, '\n\n'],
+            [/(?<!\p{L})(?:retour à la ligne|à la ligne|nouvelle ligne)(?!\p{L})/giu, '\n'],
+
+            // Ponctuations complexes
+            [/(?<!\p{L})(?:point d'exclamation|points d'exclamation)(?!\p{L})/giu, ' !'],
+            [/(?<!\p{L})(?:point d'interrogation|points d'interrogation)(?!\p{L})/giu, ' ?'],
+            [/(?<!\p{L})(?:point-virgule|points-virgules|point virgule)(?!\p{L})/giu, ' ;'],
+            [/(?<!\p{L})(?:deux-points|deux points)(?!\p{L})/giu, ' :'],
+            [/(?<!\p{L})(?:points de suspension|trois petits points)(?!\p{L})/giu, '...'],
+
+            // Ponctuations simples
+            [/(?<!\p{L})(?:virgule)(?!\p{L})/giu, ','],
+            [/(?<!\p{L})(?:point)(?!\p{L})/giu, '.']
+        ];
+
+        for (const [regex, rep] of rules) {
+            formatted = formatted.replace(regex, rep);
+        }
+
+        // Nettoyer les espaces avant virgules, points et points de suspension
+        formatted = formatted.replace(/\s+(\.{3})/g, '$1');
+        formatted = formatted.replace(/\s+([,\.])/g, '$1');
+
+        // Typographie française : un espace simple avant les signes doubles (; : ! ?)
+        formatted = formatted.replace(/\s*([;:!\?])/g, ' $1');
+
+        // Assurer un espace après les signes de ponctuation (sauf au sein de ...)
+        formatted = formatted.replace(/(?<!\.)([,;:!\?]|(?<!\.)\.(?!\.))(?!\s|\n|$)/g, '$1 ');
+        formatted = formatted.replace(/(?<=\.{3})(?!\s|\n|$)/g, ' ');
+
+        // Nettoyer les espaces autour des sauts de ligne
+        formatted = formatted.replace(/[ \t]*\n/g, '\n').replace(/\n[ \t]*/g, '\n');
+
+        // Nettoyer les espaces multiples
+        formatted = formatted.replace(/[ \t]+/g, ' ');
+
+        // Majuscule en début de chaîne ou après un point, !, ? ou saut de ligne
+        formatted = formatted.replace(/(?:^|[.!?\n]\s*)(\p{Ll})/gu, (match, letter) => {
+            return match.slice(0, match.length - letter.length) + letter.toUpperCase();
+        });
+
+        return formatted.trim();
+    }
+};
+
 export const SpeechRecognitionManager = {
     /** @type {SpeechRecognition|null} */
     _recognition: null,
@@ -24,18 +87,21 @@ export const SpeechRecognitionManager = {
     /** @type {boolean} */
     _isSupported: false,
 
-    /** @type {'context'|'appreciation'|null} - Currently active target */
+    /** @type {'context'|'appreciation'|'journal'|null} - Cible active */
     _activeTarget: null,
 
-    /** @type {HTMLElement|null} - Currently active button */
+    /** @type {HTMLElement|null} - Bouton actif */
     _activeButton: null,
 
-    /** @type {boolean} - Whether we got a result in the current session */
+    /** @type {boolean} - Indique si un résultat a été reçu */
     _gotResult: false,
+
+    /** @type {string} - Texte de base avant dictée */
+    _baseText: '',
 
     /**
      * Initialise et configure la reconnaissance vocale pour le Focus Panel.
-     * Supporte deux cibles : Contexte (textarea) et Appréciation (contenteditable div)
+     * Supporte trois cibles : Contexte, Appréciation et Journal de bord.
      */
     init() {
         const contextMicBtn = document.getElementById('focusMicBtn');
@@ -43,7 +109,6 @@ export const SpeechRecognitionManager = {
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            // Cacher les boutons si API non supportée
             if (contextMicBtn) contextMicBtn.style.display = 'none';
             if (appreciationMicBtn) appreciationMicBtn.style.display = 'none';
             this._isSupported = false;
@@ -52,79 +117,82 @@ export const SpeechRecognitionManager = {
 
         this._isSupported = true;
 
-        // Créer une seule instance de reconnaissance partagée
         if (!this._recognition) {
             this._recognition = new SpeechRecognition();
             this._recognition.lang = 'fr-FR';
-            this._recognition.continuous = false;
-            this._recognition.interimResults = false;
+            this._recognition.continuous = true;
+            this._recognition.interimResults = true;
 
             this._recognition.onstart = () => {
                 this._isRecording = true;
-                this._gotResult = false; // Reset for new recording session
-
-                // Audio feedback: subtle beep to confirm recording started
-                this._playStartBeep();
+                this._gotResult = false;
 
                 if (this._activeButton) {
                     this._activeButton.classList.add('recording');
-                    // Dynamic tooltip
-                    this._activeButton.setAttribute('data-tooltip', 'Dictée en cours<br><span class="kbd-hint">Arrêter</span>');
+                    const tooltipText = 'Dictée continue en cours...<br><span class="kbd-hint">Arrêter (Échap)</span>';
+                    this._activeButton.setAttribute('data-tooltip', tooltipText);
+                    if (this._activeButton._tippy) {
+                        this._activeButton._tippy.setContent(tooltipText);
+                    }
                 }
-                // Show "Dictée..." badge for appreciation
+
                 if (this._activeTarget === 'appreciation') {
                     this._setAppreciationBadge('dictating');
                 }
             };
 
             this._recognition.onend = () => {
-                this._isRecording = false;
-                if (this._activeButton) {
-                    this._activeButton.classList.remove('recording');
-                    // Restore tooltip
-                    this._activeButton.setAttribute('data-tooltip', 'Dictée vocale<br><span class="kbd-hint">Démarrer</span>');
-                }
-
-                // If appreciation was dictating and NO result was received, clear the badge
-                // If we got a result, _saveAppreciationAndUpdateList will handle showing 'saved'
-                if (this._activeTarget === 'appreciation' && !this._gotResult) {
-                    const badge = document.getElementById('focusAppreciationBadge');
-                    if (badge && (badge.classList.contains('is-dictating') || badge.classList.contains('dictating'))) {
-                        this._setAppreciationBadge('none');
+                // En mode continu, Chrome peut déclencher onend après un silence prolongé.
+                // Si l'utilisateur n'a pas arrêté manuellement, on redémarre de manière fluide.
+                if (this._isRecording && this._activeButton && this._activeTarget) {
+                    try {
+                        this._recognition.start();
+                        return;
+                    } catch (_) {
+                        // Si le redémarrage échoue, terminer proprement
                     }
                 }
 
-                this._activeButton = null;
-                this._activeTarget = null;
+                this._isRecording = false;
+                this._finalizeSession();
             };
 
             this._recognition.onresult = (event) => {
-                // Récupérer le dernier résultat uniquement
-                const lastResultIndex = event.resultIndex;
-                const result = event.results[lastResultIndex];
+                let interimTranscript = '';
+                let finalTranscript = '';
 
-                // Traiter seulement les résultats finaux pour éviter les doublons
-                if (result.isFinal) {
-                    this._gotResult = true; // Mark that we got a valid result
-                    const transcript = result[0].transcript;
-                    this._insertTranscript(transcript);
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const res = event.results[i];
+                    const text = res?.[0]?.transcript ?? res?.transcript ?? '';
+                    if (res.isFinal) {
+                        finalTranscript += (finalTranscript ? ' ' : '') + text;
+                    } else {
+                        interimTranscript += (interimTranscript ? ' ' : '') + text;
+                    }
+                }
+
+                if (finalTranscript) {
+                    this._gotResult = true;
+                    this._insertTranscript(finalTranscript);
+                }
+
+                if (interimTranscript) {
+                    this._renderInterim(interimTranscript);
                 }
             };
 
             this._recognition.onerror = (event) => {
-                this._isRecording = false;
-                if (this._activeButton) {
-                    this._activeButton.classList.remove('recording');
+                // 'no-speech' en mode continu est normal lors des pauses de réflexion de l'utilisateur
+                if (event.error === 'no-speech' && this._isRecording) {
+                    return;
                 }
-                this._activeButton = null;
-                this._activeTarget = null;
 
-                // Messages d'erreur plus explicites
+                this._isRecording = false;
+                this._finalizeSession();
+
                 let message = "Erreur de reconnaissance vocale.";
                 if (event.error === 'not-allowed') {
                     message = "Accès au microphone refusé. Autorisez l'accès dans les paramètres du navigateur.";
-                } else if (event.error === 'no-speech') {
-                    message = "Aucune voix détectée. Réessayez.";
                 } else if (event.error === 'network') {
                     message = "Erreur réseau. Vérifiez votre connexion.";
                 }
@@ -132,7 +200,6 @@ export const SpeechRecognitionManager = {
             };
         }
 
-        // Attacher les événements click aux deux boutons
         this.setupButton(contextMicBtn, 'context');
         this.setupButton(appreciationMicBtn, 'appreciation');
     },
@@ -148,38 +215,24 @@ export const SpeechRecognitionManager = {
             btn.style.display = 'none';
             return;
         }
-        this._setupButton(btn, target);
-    },
 
-    /**
-     * Configure l'écouteur de clic pour un bouton micro
-     * @param {HTMLElement} btn - Le bouton micro
-     * @param {'context'|'appreciation'|'journal'} target - La cible
-     * @private
-     */
-    _setupButton(btn, target) {
-        if (!btn) return;
-
-        // Supprimer l'ancien handler s'il existe
         const handlerKey = `_handleClick_${target}`;
         if (this[handlerKey]) {
             btn.removeEventListener('click', this[handlerKey]);
         }
 
-        // Créer et stocker le nouveau handler
         this[handlerKey] = () => {
             if (!this._recognition) return;
 
-            // Si on clique sur le même bouton en cours d'enregistrement, on arrête
+            // Clic sur le bouton en cours d'enregistrement -> Arrêter
             if (this._isRecording && this._activeTarget === target) {
-                this._recognition.stop();
+                this.stop();
                 return;
             }
 
-            // Si un autre enregistrement est en cours, l'arrêter d'abord
+            // Si un autre bouton enregistrait déjà, l'arrêter d'abord
             if (this._isRecording) {
-                this._recognition.stop();
-                // Attendre un peu avant de redémarrer
+                this.stop();
                 setTimeout(() => this._startRecording(btn, target), 100);
                 return;
             }
@@ -193,86 +246,209 @@ export const SpeechRecognitionManager = {
     /**
      * Démarre l'enregistrement pour une cible
      * @param {HTMLElement} btn - Le bouton cliqué
-     * @param {'context'|'appreciation'} target - La cible
+     * @param {'context'|'appreciation'|'journal'} target - La cible
      * @private
      */
     _startRecording(btn, target) {
         try {
             this._activeTarget = target;
             this._activeButton = btn;
+
+            // Capturer le texte actuel de base pour y concaténer les flux
+            if (target === 'context') {
+                const textarea = document.getElementById('focusContextInput');
+                this._baseText = textarea?.value || '';
+            } else if (target === 'appreciation') {
+                const appreciationEl = document.getElementById('focusAppreciationText');
+                this._baseText = appreciationEl?.textContent || '';
+            } else if (target === 'journal') {
+                const textarea = document.getElementById('journalNoteInput');
+                this._baseText = textarea?.value || '';
+            } else {
+                this._baseText = '';
+            }
+
+            this._isRecording = true;
             this._recognition.start();
         } catch (e) {
-            // Peut échouer si déjà en cours
             if (e.name !== 'InvalidStateError') {
-                UI.showNotification("Impossible de démarrer la dictée.", 'error');
+                UI.showNotification("Impossible de démarrer la dictée vocale.", 'error');
             }
             this._activeButton = null;
             this._activeTarget = null;
+            this._isRecording = false;
         }
     },
 
     /**
-     * Insère le texte transcrit dans la cible active
+     * Arrête proprement l'enregistrement en cours et valide le texte
+     */
+    stop() {
+        if (!this._isRecording && !this._activeButton) return;
+        this._isRecording = false;
+        try {
+            this._recognition?.stop();
+        } catch (_) {}
+        this._finalizeSession();
+    },
+
+    /** Alias de compatibilité */
+    stopRecording() {
+        this.stop();
+    },
+
+    /**
+     * Affiche l'aperçu streaming des mots en cours de prononciation
+     * @param {string} interimText
+     * @private
+     */
+    _renderInterim(interimText) {
+        if (!interimText) return;
+        const formatted = SpeechPunctuation.format(interimText);
+
+        if (this._activeTarget === 'appreciation') {
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            if (!appreciationEl) return;
+            appreciationEl.classList.remove('empty');
+
+            let interimSpan = appreciationEl.querySelector('.dictation-interim');
+            if (!interimSpan) {
+                interimSpan = document.createElement('span');
+                interimSpan.className = 'dictation-interim';
+                appreciationEl.appendChild(interimSpan);
+            }
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            interimSpan.textContent = prefix + formatted;
+        } else if (this._activeTarget === 'context') {
+            const textarea = document.getElementById('focusContextInput');
+            if (!textarea) return;
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            textarea.value = this._baseText + prefix + formatted;
+            textarea.scrollTop = textarea.scrollHeight;
+        } else if (this._activeTarget === 'journal') {
+            const textarea = document.getElementById('journalNoteInput');
+            if (!textarea) return;
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            textarea.value = (this._baseText + prefix + formatted).slice(0, 280);
+        }
+    },
+
+    /**
+     * Nettoie les éléments d'aperçu streaming
+     * @private
+     */
+    _cleanInterim() {
+        if (this._activeTarget === 'appreciation') {
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const interimSpan = appreciationEl?.querySelector('.dictation-interim');
+            if (interimSpan) {
+                const remaining = interimSpan.textContent?.trim();
+                interimSpan.remove();
+                if (remaining && !this._baseText.includes(remaining)) {
+                    this._insertTranscript(remaining);
+                }
+            }
+        } else if (this._activeTarget === 'context') {
+            const textarea = document.getElementById('focusContextInput');
+            if (textarea) textarea.value = this._baseText;
+        } else if (this._activeTarget === 'journal') {
+            const textarea = document.getElementById('journalNoteInput');
+            if (textarea) textarea.value = this._baseText;
+        }
+    },
+
+    /**
+     * Insère et valide un bloc de texte transcrit définitif
      * @param {string} transcript - Le texte reconnu
      * @private
      */
     _insertTranscript(transcript) {
+        if (!transcript) return;
+        const formatted = SpeechPunctuation.format(transcript);
+
         if (this._activeTarget === 'context') {
-            // Cible : textarea classique
             const textarea = document.getElementById('focusContextInput');
             if (!textarea) return;
 
-            const currentVal = textarea.value;
-            const prefix = currentVal.length > 0 && !/\s$/.test(currentVal) ? ' ' : '';
-            textarea.value += prefix + transcript;
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            this._baseText += prefix + formatted;
+            textarea.value = this._baseText;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
             textarea.focus();
 
         } else if (this._activeTarget === 'appreciation') {
-            // Cible : div contenteditable
             const appreciationEl = document.getElementById('focusAppreciationText');
             if (!appreciationEl) return;
 
-            // Retirer la classe empty si présente
             appreciationEl.classList.remove('empty');
+            const interimSpan = appreciationEl.querySelector('.dictation-interim');
+            if (interimSpan) interimSpan.remove();
 
-            // Récupérer le texte actuel (textContent pour éviter les problèmes HTML)
-            const currentText = appreciationEl.textContent || '';
-            const prefix = currentText.length > 0 && !/\s$/.test(currentText) ? ' ' : '';
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            this._baseText += prefix + formatted;
+            appreciationEl.textContent = this._baseText;
 
-            // Insérer le nouveau texte
-            appreciationEl.textContent = currentText + prefix + transcript;
-
-            // Déclencher les événements pour la mise à jour du compteur de mots
             appreciationEl.dispatchEvent(new Event('input', { bubbles: true }));
 
             // Placer le curseur à la fin
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(appreciationEl);
-            range.collapse(false); // false = collapse to end
-            selection.removeAllRanges();
-            selection.addRange(range);
+            try {
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(appreciationEl);
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (_) {}
 
-            // Trigger save and list update (simulates blur behavior)
-            this._saveAppreciationAndUpdateList(appreciationEl.textContent);
-
-            // Feedback visuel subtil
-            UI.showNotification('Texte dicté ajouté', 'success');
+            this._saveAppreciationAndUpdateList(this._baseText);
 
         } else if (this._activeTarget === 'journal') {
-            // Cible : textarea de note du Journal de bord
             const textarea = document.getElementById('journalNoteInput');
             if (!textarea) return;
 
-            const currentVal = textarea.value;
-            const prefix = currentVal.length > 0 && !/\s$/.test(currentVal) ? ' ' : '';
-            textarea.value = (currentVal + prefix + transcript).slice(0, 280);
+            const prefix = this._baseText.length > 0 && !/\s$/.test(this._baseText) ? ' ' : '';
+            this._baseText = (this._baseText + prefix + formatted).slice(0, 280);
+            textarea.value = this._baseText;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
             textarea.focus();
-
-            UI.showNotification('Note dictée ajoutée', 'success');
         }
+    },
+
+    /**
+     * Clôture proprement la session d'enregistrement
+     * @private
+     */
+    _finalizeSession() {
+        this._cleanInterim();
+
+        if (this._activeButton) {
+            this._activeButton.classList.remove('recording');
+            const tooltipText = 'Dictée vocale<br><span class="kbd-hint">Démarrer</span>';
+            this._activeButton.setAttribute('data-tooltip', tooltipText);
+            if (this._activeButton._tippy) {
+                this._activeButton._tippy.setContent(tooltipText);
+            }
+        }
+
+        if (this._activeTarget === 'appreciation') {
+            if (this._gotResult) {
+                this._setAppreciationBadge('saved');
+            } else {
+                const badge = document.getElementById('focusAppreciationBadge');
+                if (badge && (badge.classList.contains('is-dictating') || badge.classList.contains('dictating'))) {
+                    this._setAppreciationBadge('none');
+                }
+            }
+        }
+
+        if (this._gotResult) {
+            UI.showNotification('Dictée vocale enregistrée', 'success');
+        }
+
+        this._activeButton = null;
+        this._activeTarget = null;
+        this._baseText = '';
+        this._gotResult = false;
     },
 
     /**
@@ -293,14 +469,14 @@ export const SpeechRecognitionManager = {
 
     /**
      * Retourne la cible active de l'enregistrement
-     * @returns {'context'|'appreciation'|null}
+     * @returns {'context'|'appreciation'|'journal'|null}
      */
     getActiveTarget() {
         return this._activeTarget;
     },
 
     /**
-     * Set the appreciation status badge (delegates to FocusPanelManager)
+     * Met à jour le badge de statut de l'appréciation
      * @param {'dictating'|'saved'|'none'} state
      * @private
      */
@@ -309,9 +485,8 @@ export const SpeechRecognitionManager = {
     },
 
     /**
-     * Save the appreciation and update the list view
-     * This replicates the blur handler logic from FocusPanelManager
-     * @param {string} content - The appreciation text
+     * Sauvegarde l'appréciation et met à jour la ligne du tableau
+     * @param {string} content - Le texte de l'appréciation
      * @private
      */
     _saveAppreciationAndUpdateList(content) {
@@ -321,7 +496,6 @@ export const SpeechRecognitionManager = {
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (!result) return;
 
-        // Update the result logic to match FocusPanelManager
         result.appreciation = content;
         result.wasGenerated = false;
         result.appreciationSource = 'manual';
@@ -334,59 +508,14 @@ export const SpeechRecognitionManager = {
         result.generationPeriod = appState.currentPeriod;
         result.generationSnapshot = null;
 
-        // Hide AI indicator
         const aiIndicator = document.getElementById('focusAiIndicator');
         if (aiIndicator) aiIndicator.style.display = 'none';
 
-        // Push to history
         FocusPanelHistory.push(content);
 
-        // Save context (and appreciation via DOM)
         FocusPanelManager._isAppreciationEdited = true;
         FocusPanelManager._saveContext();
-
-        // Update list row
         FocusPanelManager._updateListRow(result);
-
-        // Show saved badge
         FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
-    },
-
-    /**
-     * Plays a subtle beep sound to indicate recording has started.
-     * Uses Web Audio API for a lightweight, dependency-free solution.
-     * @private
-     */
-    _playStartBeep() {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            // Pleasant, subtle beep: 880Hz (A5 note), short duration
-            oscillator.frequency.value = 880;
-            oscillator.type = 'sine';
-
-            // Fade in/out to avoid clicking artifacts
-            const now = audioContext.currentTime;
-            gainNode.gain.setValueAtTime(0, now);
-            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.01); // Fade in
-            gainNode.gain.linearRampToValueAtTime(0, now + 0.08);    // Fade out
-
-            oscillator.start(now);
-            oscillator.stop(now + 0.1);
-
-            // Cleanup
-            oscillator.onended = () => {
-                oscillator.disconnect();
-                gainNode.disconnect();
-                audioContext.close();
-            };
-        } catch {
-            // Silently fail if Web Audio API is not available
-        }
     }
 };

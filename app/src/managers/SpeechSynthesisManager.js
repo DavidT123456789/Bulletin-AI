@@ -90,20 +90,11 @@ export const SpeechSynthesisManager = {
             this._utterance = new SpeechSynthesisUtterance(text);
             this._utterance.lang = 'fr-FR';
 
-            // Sélectionner la meilleure voix française disponible (neuronale / online / premium)
+            // Sélectionner la première voix française disponible dans le navigateur
             const voices = window.speechSynthesis.getVoices();
-            const frVoices = voices.filter(voice => voice.lang.startsWith('fr-FR') || voice.lang.startsWith('fr'));
-            
-            const bestVoice = frVoices.find(v => v.name.toLowerCase().includes('natural')) ||
-                              frVoices.find(v => v.name.toLowerCase().includes('online')) ||
-                              frVoices.find(v => v.name.toLowerCase().includes('premium')) ||
-                              frVoices.find(v => v.name.toLowerCase().includes('google')) ||
-                              frVoices.find(v => v.name.toLowerCase().includes('siri')) ||
-                              frVoices.find(v => v.lang.startsWith('fr-FR')) ||
-                              frVoices[0];
-
-            if (bestVoice) {
-                this._utterance.voice = bestVoice;
+            const frVoice = voices.find(v => v.lang?.startsWith('fr-FR')) || voices.find(v => v.lang?.startsWith('fr'));
+            if (frVoice) {
+                this._utterance.voice = frVoice;
             }
 
             this._utterance.onstart = () => {
