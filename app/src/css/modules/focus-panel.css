@@ -2381,13 +2381,13 @@
     padding: 4px 16px 14px 16px;
 }
 
-/* Copy button — icon-only, flat Material You tonal style */
+/* Copy button — icon-only, harmonized with btn-neutral surface language */
 .focus-action-icon-btn {
     width: 40px;
     height: 40px;
     min-width: 40px;
     border-radius: var(--radius-md);
-    border: none;
+    border: 1px solid var(--border-color);
     background: var(--item-idle-bg);
     color: var(--text-secondary);
     display: flex;
@@ -2395,9 +2395,13 @@
     justify-content: center;
     font-size: 17px;
     cursor: pointer;
-    transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease;
+    transition: transform 0.4s var(--ease-bounce), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     flex-shrink: 0;
     box-shadow: none;
+}
+
+[data-theme="dark"] .focus-action-icon-btn {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .focus-action-icon-btn iconify-icon {
@@ -2407,41 +2411,61 @@
     transform-origin: center;
 }
 
+/* Active unlocked state: high contrast ready for copy */
+.focus-action-icon-btn:not(.disabled):not(:disabled) {
+    color: var(--text-primary);
+}
+
+.focus-action-icon-btn:not(.disabled):not(:disabled) iconify-icon {
+    opacity: 0.95;
+}
+
 @media (hover: hover) and (pointer: fine) {
     .focus-action-icon-btn:hover:not(.disabled) {
         background: var(--item-hover-bg);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .focus-action-icon-btn:hover:not(.disabled) {
+        background: var(--bg-tertiary);
+        border-color: rgba(255, 255, 255, 0.16);
         color: var(--text-primary);
     }
 
     .focus-action-icon-btn:hover:not(.disabled) iconify-icon {
         opacity: 1;
-        transform: scale(1.1);
+        transform: scale(1.08);
     }
 
     .focus-action-icon-btn.copied:hover:not(.disabled) {
         background: rgba(var(--success-rgb), 0.15);
+        border-color: rgba(var(--success-rgb), 0.4);
         color: var(--success-color, #10b981) !important;
     }
 
     .focus-action-icon-btn.copied-prompt:hover:not(.disabled) {
         background: rgba(var(--purple-rgb), 0.25);
+        border-color: rgba(var(--purple-rgb), 0.4);
         color: var(--purple-color, #9333ea) !important;
     }
 }
 
 .focus-action-icon-btn:active:not(.disabled) {
-    transform: scale(0.9);
+    transform: scale(0.92);
     transition: transform 0.08s ease-out;
 }
 
 .focus-action-icon-btn:disabled {
     opacity: 0.3;
+    border-color: transparent;
     cursor: default;
     pointer-events: none;
 }
 
 .focus-action-icon-btn.disabled {
     opacity: 0.3;
+    border-color: transparent;
     cursor: default;
     /* Interactivity is kept so contextmenu works even when visually disabled */
 }
@@ -2449,7 +2473,8 @@
 /* Copy success feedback */
 .focus-action-icon-btn.copied {
     color: var(--success-color, #10b981) !important;
-    background: rgba(var(--success-rgb), 0.08);
+    background: rgba(var(--success-rgb), 0.1) !important;
+    border-color: rgba(var(--success-rgb), 0.3) !important;
 }
 
 .focus-action-icon-btn.copied:active:not(.disabled) {
@@ -2466,6 +2491,7 @@
 .focus-action-icon-btn.copied-prompt {
     color: var(--purple-color, #9333ea) !important;
     background: var(--purple-light, rgba(147, 51, 234, 0.15));
+    border-color: rgba(var(--purple-rgb), 0.3) !important;
 }
 
 .focus-action-icon-btn.copied-prompt:active:not(.disabled) {
@@ -2482,6 +2508,58 @@
 .focus-appreciation-actions #focusGenerateBtn {
     flex: 1;
     max-width: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+}
+
+/* Keyboard shortcut hint styling inside action button */
+.focus-appreciation-actions #focusGenerateBtn .kbd-hint {
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: var(--radius-xs, 4px);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    pointer-events: none;
+    transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* AI Primary active button state */
+.focus-appreciation-actions #focusGenerateBtn.btn-ai .kbd-hint {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* Neutral / Régénérer state */
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral .kbd-hint {
+    background: var(--item-idle-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-neutral .kbd-hint {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-tertiary);
+}
+
+/* Warning / Dirty state */
+.focus-appreciation-actions #focusGenerateBtn.btn-warning .kbd-hint {
+    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
+    border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
+    color: inherit;
+}
+
+@media (max-width: 480px) {
+    .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
+        display: none;
+    }
 }
 
 /* Redesigned Chips - Compact */

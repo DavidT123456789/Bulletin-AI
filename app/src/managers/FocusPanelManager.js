@@ -1964,6 +1964,9 @@ export const FocusPanelManager = {
         // Remove all state classes first
         generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
 
+        const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
+        const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
+
         // UX LOGIC:
         // - Primary style (btn-ai) = ACTION NEEDED → "Générer S2" first time (no appreciation)
         // - Warning style (btn-warning) = ACTION RECOMMENDED → "Mettre à jour" when data changed
@@ -1972,17 +1975,17 @@ export const FocusPanelManager = {
         if (!hasAppreciation) {
             // STATE 1: No appreciation yet → Bold primary style (action needed)
             generateBtn.classList.add('btn-ai');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:magic-stick-3-bold-duotone"></iconify-icon> Générer ${shortcutKbd}`;
             tooltipAction = "Générer";
         } else if (isDirty) {
             // STATE 2: Data modified since generation → Warning style (action recommended)
             generateBtn.classList.add('btn-warning');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Mettre à jour ${shortcutKbd}`;
             tooltipAction = "Mettre à jour";
         } else {
             // STATE 3: Appreciation exists (AI-generated, manual, or imported) → Neutral style
             generateBtn.classList.add('btn-neutral');
-            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer`;
+            generateBtn.innerHTML = `<iconify-icon icon="solar:refresh-bold"></iconify-icon> Régénérer ${shortcutKbd}`;
             tooltipAction = "Régénérer";
         }
 
