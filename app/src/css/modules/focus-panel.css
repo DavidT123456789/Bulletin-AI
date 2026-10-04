@@ -836,8 +836,9 @@
    4. CONTEXT CARD - Compact Header Style (matching Journal)
    ============================ */
 .focus-context-label {
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--text-primary);
     margin: 0;
     display: flex;
@@ -872,6 +873,7 @@
     margin-left: 0;
     flex-shrink: 0;
     box-shadow: none;
+    line-height: 1;
 }
 
 [data-theme="dark"] .focus-mic-btn {
@@ -882,16 +884,18 @@
 
 .focus-mic-btn i,
 .focus-mic-btn iconify-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
     line-height: 1;
 }
 
 .focus-mic-btn svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 1.8;
+    width: 15px;
+    height: 15px;
+    display: block;
+    flex-shrink: 0;
+    stroke-width: 1.4;
     line-height: 1;
 }
 
@@ -905,6 +909,10 @@
     background: var(--item-hover-bg);
     border-color: transparent;
     color: var(--text-primary);
+}
+
+.focus-mic-btn:active {
+    transform: scale(0.94);
 }
 
 .focus-mic-btn.recording {
@@ -957,6 +965,7 @@
     gap: 4px;
     margin-left: 0;
     flex-shrink: 0;
+    line-height: 1;
 }
 
 .focus-audio-group .focus-mic-btn,
@@ -974,6 +983,7 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     flex-shrink: 0;
+    line-height: 1;
 }
 
 [data-theme="dark"] .focus-audio-group .focus-mic-btn,
@@ -985,17 +995,19 @@
 
 .focus-audio-group .focus-mic-btn iconify-icon,
 .focus-audio-group .focus-speaker-btn iconify-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
     line-height: 1;
 }
 
 .focus-audio-group .focus-mic-btn svg,
 .focus-audio-group .focus-speaker-btn svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 1.8;
+    width: 15px;
+    height: 15px;
+    display: block;
+    flex-shrink: 0;
+    stroke-width: 1.4;
     line-height: 1;
 }
 
@@ -1011,6 +1023,11 @@
     background: var(--item-hover-bg);
     border-color: transparent;
     color: var(--text-primary);
+}
+
+.focus-audio-group .focus-mic-btn:active,
+.focus-audio-group .focus-speaker-btn:active:not(.disabled):not([disabled]) {
+    transform: scale(0.94);
 }
 
 .focus-speaker-btn.disabled,
@@ -1044,6 +1061,7 @@
 }
 [data-theme="dark"] .focus-speaker-btn:hover:not(.disabled):not([disabled]) {
     background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 /* === History Button - Extension of journal-header-btn === */
@@ -1548,8 +1566,9 @@ input.context-grade-input,
 }
 
 .focus-appreciation-label {
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -2280,17 +2299,21 @@ input.context-grade-input,
     border: none;
     background: transparent;
     border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    margin: -2px -6px; /* Compensate padding layout shift */
+    height: 26px;
+    padding: 0 9px;
+    box-sizing: border-box;
     font-size: 12px;
     font-weight: 500;
+    line-height: 1;
     transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
     cursor: pointer; /* Clickable: opens settings & length config */
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     color: var(--text-secondary);
     user-select: none;
+    flex-shrink: 0;
 }
 
 #focusWordCount:hover {
@@ -2510,8 +2533,8 @@ input.context-grade-input,
 
 .focus-appreciation-actions #focusCopyBtn iconify-icon {
     font-size: 15px;
-    opacity: 0.9;
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+    color: inherit;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     transform-origin: center;
 }
 
@@ -2528,7 +2551,7 @@ input.context-grade-input,
 }
 
 .focus-appreciation-actions #focusCopyBtn:hover:not(:disabled):not(.disabled) iconify-icon {
-    opacity: 1;
+    color: inherit;
 }
 
 .focus-appreciation-actions #focusCopyBtn:active:not(:disabled) {
@@ -3201,7 +3224,7 @@ input.context-grade-input,
 .btn.btn-neutral i,
 #focusGenerateBtn.btn-neutral iconify-icon,
 .btn.btn-neutral iconify-icon {
-    color: var(--text-secondary);
+    color: inherit;
 }
 
 #focusGenerateBtn.btn-neutral:hover,
@@ -3222,7 +3245,7 @@ input.context-grade-input,
 [data-theme="dark"] .btn.btn-neutral i,
 [data-theme="dark"] #focusGenerateBtn.btn-neutral iconify-icon,
 [data-theme="dark"] .btn.btn-neutral iconify-icon {
-    color: var(--text-secondary);
+    color: inherit;
 }
 
 [data-theme="dark"] #focusGenerateBtn.btn-neutral:hover,
@@ -3236,7 +3259,7 @@ input.context-grade-input,
 .btn.btn-neutral:hover i,
 #focusGenerateBtn.btn-neutral:hover iconify-icon,
 .btn.btn-neutral:hover iconify-icon {
-    color: var(--text-primary);
+    color: inherit;
 }
 
 #focusGenerateBtn.btn-neutral:active,
