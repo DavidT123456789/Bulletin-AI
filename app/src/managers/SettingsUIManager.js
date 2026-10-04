@@ -15,7 +15,7 @@ import { UI } from './UIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
 import { DropdownManager } from './DropdownManager.js';
-import { PROVIDER_CONFIG } from '../config/providers.js';
+import { PROVIDER_CONFIG, API_KEY_PROVIDER_IDS, hasValidApiKey, getProviderApiKey, isValidKeyFormat } from '../config/providers.js';
 import { ApiValidationManager } from './ApiValidationManager.js';
 import { AIService } from '../services/AIService.js';
 
@@ -408,19 +408,15 @@ export const SettingsUIManager = {
         const activeProvider = this._getProviderIdForModel(model);
 
         // Check values from DOM if available (live typing) or fall back to state
-        const providers = [
-            { id: 'google', key: DOM.googleApiKey ? DOM.googleApiKey.value.trim() : appState.googleApiKey },
-            { id: 'groq', key: DOM.groqApiKey ? DOM.groqApiKey.value.trim() : appState.groqApiKey },
-            { id: 'openai', key: DOM.openaiApiKey ? DOM.openaiApiKey.value.trim() : appState.openaiApiKey },
-            { id: 'openrouter', key: DOM.openrouterApiKey ? DOM.openrouterApiKey.value.trim() : appState.openrouterApiKey },
-            { id: 'anthropic', key: DOM.anthropicApiKey ? DOM.anthropicApiKey.value.trim() : appState.anthropicApiKey },
-            { id: 'mistral', key: DOM.mistralApiKey ? DOM.mistralApiKey.value.trim() : appState.mistralApiKey },
-        ];
+        const providers = API_KEY_PROVIDER_IDS.map(id => ({
+            id,
+            key: getProviderApiKey(id, { state: appState, dom: DOM })
+        }));
 
         let activeProviderIssue = null; // Pour le bandeau intelligent
 
         providers.forEach(({ id, key }) => {
-            const hasKey = !!key && key.length > 5;
+            const hasKey = isValidKeyFormat(key);
             const status = appState.apiKeyStatus?.[id] || 'not-configured';
 
             if (hasKey) {
@@ -630,21 +626,15 @@ export const SettingsUIManager = {
         const btn = DOM.testAllConnectionsBtn;
         const icon = btn?.querySelector('iconify-icon');
 
-        const providers = [
-            { id: 'google', inputEl: DOM.googleApiKey, errorEl: DOM.googleApiKeyError, btnEl: DOM.validateGoogleApiKeyBtn },
-            { id: 'groq', inputEl: DOM.groqApiKey, errorEl: DOM.groqApiKeyError, btnEl: DOM.validateGroqApiKeyBtn },
-            { id: 'mistral', inputEl: DOM.mistralApiKey, errorEl: DOM.mistralApiKeyError, btnEl: DOM.validateMistralApiKeyBtn },
-            { id: 'openrouter', inputEl: DOM.openrouterApiKey, errorEl: DOM.openrouterApiKeyError, btnEl: DOM.validateOpenrouterApiKeyBtn },
-            { id: 'openai', inputEl: DOM.openaiApiKey, errorEl: DOM.openaiApiKeyError, btnEl: DOM.validateOpenaiApiKeyBtn },
-            { id: 'anthropic', inputEl: DOM.anthropicApiKey, errorEl: DOM.anthropicApiKeyError, btnEl: DOM.validateAnthropicApiKeyBtn }
-        ];
+        const providers = API_KEY_PROVIDER_IDS.map(id => ({
+            id,
+            inputEl: DOM[`${id}ApiKey`],
+            errorEl: DOM[`${id}ApiKeyError`],
+            btnEl: DOM[`validate${id.charAt(0).toUpperCase() + id.slice(1)}ApiKeyBtn`],
+            key: getProviderApiKey(id, { state: appState, dom: DOM })
+        }));
 
-        // Récupérer la valeur directement depuis l'interface (inclut les clés en attente de vérification)
-        providers.forEach(p => {
-            p.key = p.inputEl ? p.inputEl.value.trim() : (appState[`${p.id}ApiKey`] || '');
-        });
-
-        const configuredProviders = providers.filter(p => p.key && p.key.length > 5);
+        const configuredProviders = providers.filter(p => isValidKeyFormat(p.key));
         const hasOllama = appState.ollamaEnabled && DOM.ollamaBaseUrl && DOM.ollamaBaseUrl.value.trim() !== '';
 
         let totalTests = configuredProviders.length + (hasOllama ? 1 : 0);
@@ -793,17 +783,7 @@ export const SettingsUIManager = {
 
         // 2. Pour les autres, vérifier la clé API du provider associé
         const providerId = this._getProviderIdForModel(model);
-        const apiKeyMap = {
-            'google': appState.googleApiKey,
-            'groq': appState.groqApiKey,
-            'openai': appState.openaiApiKey,
-            'anthropic': appState.anthropicApiKey,
-            'mistral': appState.mistralApiKey,
-            'openrouter': appState.openrouterApiKey
-        };
-
-        const key = apiKeyMap[providerId];
-        return !!key && key.length > 5;
+        return hasValidApiKey(providerId, { state: appState });
     },
 
     /**
@@ -822,14 +802,10 @@ export const SettingsUIManager = {
     updateProviderStatusBadges() {
         if (typeof document === 'undefined') return;
 
-        const providers = [
-            { id: 'google', key: DOM.googleApiKey?.value?.trim() || appState.googleApiKey },
-            { id: 'groq', key: DOM.groqApiKey?.value?.trim() || appState.groqApiKey },
-            { id: 'mistral', key: DOM.mistralApiKey?.value?.trim() || appState.mistralApiKey },
-            { id: 'openrouter', key: DOM.openrouterApiKey?.value?.trim() || appState.openrouterApiKey },
-            { id: 'openai', key: DOM.openaiApiKey?.value?.trim() || appState.openaiApiKey },
-            { id: 'anthropic', key: DOM.anthropicApiKey?.value?.trim() || appState.anthropicApiKey },
-        ];
+        const providers = API_KEY_PROVIDER_IDS.map(id => ({
+            id,
+            key: getProviderApiKey(id, { state: appState, dom: DOM })
+        }));
 
         let tooltipsUpdated = false;
 
@@ -837,7 +813,7 @@ export const SettingsUIManager = {
             const badge = document.getElementById(`${id}StatusBadge`);
             if (!badge) return;
 
-            const hasKey = !!key && key.length > 5;
+            const hasKey = isValidKeyFormat(key);
             const status = appState.apiKeyStatus?.[id];
             const isValidated = appState.validatedApiKeys?.[id] === true;
             const errorDetail = appState.apiKeyErrorDetails?.[id];

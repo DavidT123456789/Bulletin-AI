@@ -188,6 +188,28 @@ describe('FocusPanelStatus', () => {
             expect(statusT2.appreciation).toBe('Appréciation T2 valide.');
         });
 
+        it('devrait ignorer une ancienne erreur de génération si l\'appréciation est manuelle/dictée', () => {
+            const student = {
+                id: 'student-1',
+                errorMessage: 'Clé API Mistral manquante. Veuillez la configurer dans les paramètres.',
+                errorPeriod: 'T1',
+                wasGenerated: false,
+                appreciationSource: 'manual',
+                appreciation: 'Travail sérieux et régulier ce trimestre.',
+                generationPeriod: 'T1',
+                studentData: {
+                    periods: {
+                        T1: { appreciation: 'Travail sérieux et régulier ce trimestre.' }
+                    }
+                }
+            };
+
+            const status = FocusPanelStatus.getAppreciationStatus(student, 'T1');
+            expect(status.hasError).toBe(false);
+            expect(status.state).toBe('uptodate');
+            expect(status.appreciation).toBe('Travail sérieux et régulier ce trimestre.');
+        });
+
         it('devrait détecter un état dirty lorsque le promptHash diffère', () => {
             const student = {
                 id: 'student-1',

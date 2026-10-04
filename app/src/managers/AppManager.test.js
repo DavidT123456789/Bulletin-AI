@@ -129,3 +129,44 @@ describe('AppManager — handleAiModelSelectChange', () => {
         expect(SettingsUIManager.updateHeaderAiModelDisplay).toHaveBeenCalled();
     });
 });
+
+describe('AppManager — _safeInit', () => {
+    it('devrait exécuter avec succès une étape synchrone', async () => {
+        const stepFn = vi.fn();
+        await App._safeInit('TestStep', stepFn);
+        expect(stepFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('devrait exécuter avec succès une étape asynchrone', async () => {
+        const stepFn = vi.fn().mockResolvedValue('ok');
+        await App._safeInit('AsyncStep', stepFn);
+        expect(stepFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('devrait intercepter une erreur synchrone sans propager d\'exception', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const stepFn = vi.fn().mockImplementation(() => {
+            throw new Error('Crash test');
+        });
+
+        await expect(App._safeInit('FailingStep', stepFn)).resolves.not.toThrow();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining("[App] Échec lors de l'initialisation de FailingStep:"),
+            expect.any(Error)
+        );
+        consoleSpy.mockRestore();
+    });
+
+    it('devrait intercepter un rejet asynchrone sans propager d\'exception', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const stepFn = vi.fn().mockRejectedValue(new Error('Async rejection'));
+
+        await expect(App._safeInit('AsyncFailingStep', stepFn)).resolves.not.toThrow();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining("[App] Échec lors de l'initialisation de AsyncFailingStep:"),
+            expect.any(Error)
+        );
+        consoleSpy.mockRestore();
+    });
+});
+

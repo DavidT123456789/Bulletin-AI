@@ -37,94 +37,100 @@ import { GeneralListeners } from './listeners/GeneralListeners.js';
 
 
 export const App = {
-    async init() {
-        // CRITICAL: Initialize history protection FIRST to prevent navigation to landing page
-        // This must happen before any UI component can push/pop history states
-        HistoryManager.init();
+    /**
+     * Exécute une étape d'initialisation de manière isolée pour éviter les pannes en cascade.
+     * @param {string} label - Nom du module ou du bloc
+     * @param {Function} stepFn - Fonction d'initialisation synchrone ou asynchrone
+     * @private
+     */
+    async _safeInit(label, stepFn) {
+        try {
+            await stepFn();
+        } catch (error) {
+            console.error(`[App] Échec lors de l'initialisation de ${label}:`, error);
+        }
+    },
 
+    async init() {
+        // 1. Protection de l'historique et fondations essentielles
+        HistoryManager.init();
         UI.init(this);
         AppreciationsManager.init(this, UI);
         EventListenersManager.init(this);
         StorageManager.init(UI, this);
-        await StorageManager.loadAppState();
 
-        // Initialize cloud sync service (reconnects to saved provider)
-        try {
+        await this._safeInit('StorageManager.loadAppState', () => StorageManager.loadAppState());
+
+        // 2. Service Cloud Sync (reconnexion au provider sauvegardé)
+        await this._safeInit('SyncService', async () => {
             const { SyncService } = await import('../services/SyncService.js');
             SyncService.init();
-            // Expose for reconnection from notification link
             window.SyncService = SyncService;
-        } catch (e) {
-            console.warn('[App] Cloud sync init failed:', e.message);
-        }
+        });
 
-        // Cloud backup reminder: show dot on menu if last save > 24h
-        GeneralListeners.initCloudReminder();
+        // 3. Rappel Cloud & Thème / Écouteurs de base
+        await this._safeInit('UI & Listeners Setup', () => {
+            GeneralListeners.initCloudReminder();
+            UI.applyTheme();
+            UI.updateSettingsPromptFields();
+            EventListenersManager.setupEventListeners();
+            this.setupInteractiveSliders();
+            this.updateUIOnLoad();
+            this.setupAutoSave();
+            this.setupPWA();
+        });
 
-        UI.applyTheme();
-        UI.updateSettingsPromptFields();
-        EventListenersManager.setupEventListeners();
-        this.setupInteractiveSliders();
-        this.updateUIOnLoad();
-        this.setupAutoSave();
-        this.setupPWA();
+        // 4. Services audio & reconnaissance vocale
+        await this._safeInit('SpeechRecognitionManager', () => SpeechRecognitionManager.init());
+        await this._safeInit('SpeechSynthesisManager', () => SpeechSynthesisManager.init());
 
-        // Delegate speech recognition to SpeechRecognitionManager
-        SpeechRecognitionManager.init();
+        // 5. Menus déroulants personnalisés et sélecteur de modèle IA
+        await this._safeInit('Dropdowns & Model Selection', () => {
+            DropdownManager.init();
+            ModelSelectionManager.init();
+            SettingsUIManager.populateModelSelector();
+            if (DOM.aiModelSelect && DOM.aiModelSelect.style.display !== 'none') DropdownManager.enhance(DOM.aiModelSelect);
+            if (DOM.sortSelect) DropdownManager.enhance(DOM.sortSelect);
+            if (DOM.loadStudentSelect) DropdownManager.enhance(DOM.loadStudentSelect);
+            if (DOM.previewStudentSelect) DropdownManager.enhance(DOM.previewStudentSelect);
+            if (DOM.settingsSubjectSelect) DropdownManager.enhance(DOM.settingsSubjectSelect);
+        });
 
-        // Initialize speech synthesis (Text-To-Speech)
-        SpeechSynthesisManager.init();
+        // 6. Accueil et validation de clés API
+        await this._safeInit('Welcome & API Validation', () => {
+            WelcomeManager.setValidateApiKeyCallback((provider, input, error, btn, onSuccess) =>
+                ApiValidationManager.validateApiKeyUI(provider, input, error, btn, onSuccess)
+            );
+            if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
+            WelcomeManager.handleFirstVisit();
+            document.querySelectorAll('#actions-irreversibles-container details').forEach(d => d.removeAttribute('open'));
+        });
 
-        // Initialize custom dropdowns
-        DropdownManager.init();
-        // Initialize fast AI model selection popover
-        ModelSelectionManager.init();
-        // Populate model selector from config (Single Source of Truth)
-        SettingsUIManager.populateModelSelector();
-        // Enhance main selects with custom dropdowns
-        if (DOM.aiModelSelect && DOM.aiModelSelect.style.display !== 'none') DropdownManager.enhance(DOM.aiModelSelect);
-        if (DOM.sortSelect) DropdownManager.enhance(DOM.sortSelect);
-        // Enhance student selects (sidebar and preview)
-        if (DOM.loadStudentSelect) DropdownManager.enhance(DOM.loadStudentSelect);
-        if (DOM.previewStudentSelect) DropdownManager.enhance(DOM.previewStudentSelect);
-        // Enhance settings modal selects
-        if (DOM.settingsSubjectSelect) DropdownManager.enhance(DOM.settingsSubjectSelect);
+        // 7. Gestion des classes
+        await this._safeInit('Class Management', async () => {
+            ClassManager.init(UI, StorageManager);
+            ClassUIManager.init(UI, StorageManager);
+            await ClassUIManager.checkAndOfferMigration();
+        });
 
-        // Set callback for welcome modal API validation
-        WelcomeManager.setValidateApiKeyCallback((provider, input, error, btn, onSuccess) =>
-            ApiValidationManager.validateApiKeyUI(provider, input, error, btn, onSuccess)
-        );
+        // 8. Focus Panel UX
+        await this._safeInit('FocusPanelManager', () => {
+            FocusPanelManager.init(AppreciationsManager, ListViewManager);
+        });
 
-        if (DOM.appVersionDisplay) DOM.appVersionDisplay.textContent = APP_VERSION;
-        WelcomeManager.handleFirstVisit();
-        document.querySelectorAll('#actions-irreversibles-container details').forEach(d => d.removeAttribute('open'));
+        // 9. Modules secondaires (Import, Trombinoscope, Plan de classe, Dashboard)
+        await this._safeInit('ImportWizardManager', () => ImportWizardManager.init());
+        await this._safeInit('TrombinoscopeManager', () => TrombinoscopeManager.init());
+        await this._safeInit('SeatingChartManager', () => {
+            SeatingChartManager.init();
+            SeatingChartManager.restoreActiveView();
+        });
+        await this._safeInit('ClassDashboardManager', () => ClassDashboardManager.init());
 
-        // Initialize Class Management
-        ClassManager.init(UI, StorageManager);
-        ClassUIManager.init(UI, StorageManager);
-        await ClassUIManager.checkAndOfferMigration();
-
-        // Liste + Focus UX: Initialize Focus Panel
-        // Liste + Focus UX: Initialize Focus Panel
-        FocusPanelManager.init(AppreciationsManager, ListViewManager);
-
-        // Slide-Over Import Panel: Initialize
-        ImportWizardManager.init();
-
-        // Trombinoscope Photo Import: Initialize
-        TrombinoscopeManager.init();
-
-        // Seating Chart: Initialize
-        SeatingChartManager.init();
-
-        // Class Dashboard: Initialize
-        ClassDashboardManager.init();
-
-        // Restore last active view (plan or list) and update toggle visibility
-        SeatingChartManager.restoreActiveView();
-
-        // Check if an iOS restore transition needs to conclude after reload
-        RestoreTransitionManager.checkPendingReloadTransition();
+        // 10. Transitions de restauration iOS / post-rechargement
+        await this._safeInit('RestoreTransitionManager', () => {
+            RestoreTransitionManager.checkPendingReloadTransition();
+        });
     },
 
     // --- Initialisation et Setup ---

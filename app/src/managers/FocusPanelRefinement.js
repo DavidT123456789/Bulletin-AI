@@ -159,7 +159,7 @@ export const FocusPanelRefinement = {
 
         const refineStudentId = panel.currentStudentId;
 
-        panel._cancelGenerationForStudent(refineStudentId);
+        panel._cancelGenerationForStudent(refineStudentId, { notify: false, restoreUI: false });
 
         const abortController = new AbortController();
         panel._activeGenerations.set(refineStudentId, abortController);

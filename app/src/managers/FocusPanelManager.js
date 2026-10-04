@@ -33,6 +33,10 @@ import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 
 
+const COPY_FEEDBACK_MS = 1500;
+const COPY_BUTTON_ICON = 'solar:copy-linear';
+const COPY_BUTTON_LABEL = 'Copier';
+
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
 
@@ -49,6 +53,9 @@ export const FocusPanelManager = {
 
     /** Map of active generation controllers by student ID */
     _activeGenerations: new Map(),
+
+    /** Timestamp of latest generation launch to avoid accidental double-click cancellation */
+    _activeGenerationStartTime: 0,
 
     /** Guard flag preventing double-trigger during cancellation */
     _isCancellingGeneration: false,
@@ -284,6 +291,10 @@ export const FocusPanelManager = {
             generateBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (this._activeGenerations.has(this.currentStudentId)) {
+                    // Double-click guard: if generation started < 350ms ago, ignore accidental double-click
+                    const elapsed = Date.now() - (this._activeGenerationStartTime || 0);
+                    if (elapsed < 350) return;
+
                     this._isCancellingGeneration = true;
                     this._cancelGenerationForStudent(this.currentStudentId);
                     setTimeout(() => { this._isCancellingGeneration = false; }, 300);
@@ -418,6 +429,7 @@ export const FocusPanelManager = {
             // [NEW] Shortcut: Ctrl + Enter to launch generation
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
+                if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') return;
                 this.generate();
                 return;
             }
@@ -487,6 +499,9 @@ export const FocusPanelManager = {
                             result.wasGenerated = false;
                         }
 
+                        result.errorMessage = null;
+                        result.errorPeriod = null;
+
                         result.appreciation = content;
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = content;
@@ -537,6 +552,8 @@ export const FocusPanelManager = {
                         // AI appreciations keep their generation hash so dirty
                         // detection still works when context changes later.
                         if (result.wasGenerated === false) {
+                            result.errorMessage = null;
+                            result.errorPeriod = null;
                             result.promptHash = PromptService.getPromptHash({
                                 ...result.studentData,
                                 id: result.id,
@@ -1065,6 +1082,7 @@ export const FocusPanelManager = {
         // CRITICAL FIX: Save context of PREVIOUS student BEFORE changing currentStudentId
         // This prevents race conditions where user switches during generation
         if (this.currentStudentId && this.currentStudentId !== studentId) {
+            SpeechRecognitionManager.abort();
             this._saveContext();
         }
 
@@ -1205,6 +1223,11 @@ export const FocusPanelManager = {
      * @param {boolean} [options.causedByHistory=false] - Si true, ne tente pas de faire history.back()
      */
     close(options = {}) {
+        // Blur active element to dismiss keyboards and commit manual edits to history
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
+
         const panel = document.getElementById('focusPanel');
         const backdrop = document.getElementById('focusPanelBackdrop');
         const wasOpen = this.isOpen();
@@ -1230,6 +1253,9 @@ export const FocusPanelManager = {
             document.querySelector('.focus-header-read')?.classList.remove('hidden');
             document.querySelector('.focus-header-edit')?.classList.remove('visible');
         }
+
+        // Stop dictation so the microphone is never left open behind a closed panel
+        SpeechRecognitionManager.abort();
 
         // Save context and identity changes before closing (NOT in creation mode)
         if (!wasCreationMode) {
@@ -1451,37 +1477,43 @@ export const FocusPanelManager = {
      * @param {string} studentId - ID of student to cancel
      * @private
      */
-    _cancelGenerationForStudent(studentId) {
+    _cancelGenerationForStudent(studentId, { notify = true, restoreUI = true } = {}) {
         if (this._activeGenerations.has(studentId)) {
             const controller = this._activeGenerations.get(studentId);
             controller.abort();
             this._activeGenerations.delete(studentId);
+            this._activeGenerationStartTime = 0;
 
             // OPTIMISTIC SYNCHRONOUS UI RESTORATION:
             // Don't wait for network abort to unwind through async stack
-            const result = appState.generatedResults.find(r => r.id === studentId);
-            if (this.currentStudentId === studentId) {
-                const generateBtn = document.getElementById('focusGenerateBtn');
-                if (generateBtn) UI.hideInlineSpinner(generateBtn);
+            if (restoreUI) {
+                const result = appState.generatedResults.find(r => r.id === studentId);
+                if (this.currentStudentId === studentId) {
+                    const generateBtn = document.getElementById('focusGenerateBtn');
+                    if (generateBtn) UI.hideInlineSpinner(generateBtn);
 
-                if (result) {
-                    FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
-                    this._renderAppreciationText(result);
-                    this._updateGenerateButton(result);
-                    FocusPanelStatus.updateSourceIndicator(result);
+                    if (result) {
+                        FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+                        this._renderAppreciationText(result);
+                        this._updateGenerateButton(result);
+                        FocusPanelStatus.updateSourceIndicator(result);
+                    }
+
+                    // Clear any generating states on refinement buttons
+                    document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
+                        b.classList.remove('is-generating');
+                    });
                 }
 
-                // Clear any generating states on refinement buttons
-                document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
-                    b.classList.remove('is-generating');
-                });
+                if (result) {
+                    this._updateListRow(result);
+                }
+                UI.updateControlButtons();
             }
 
-            if (result) {
-                this._updateListRow(result);
+            if (notify) {
+                UI.showNotification('Génération annulée.', 'info');
             }
-            UI.updateControlButtons();
-            UI.showNotification('Génération annulée.', 'info');
         }
     },
 
@@ -1540,33 +1572,7 @@ export const FocusPanelManager = {
         try {
             await navigator.clipboard.writeText(promptText);
 
-            // Visual feedback on Copy button
-            const copyBtn = document.getElementById('focusCopyBtn');
-            if (copyBtn) {
-                const icon = copyBtn.querySelector('iconify-icon');
-                const label = copyBtn.querySelector('.btn-copy-label');
-                const originalIcon = icon?.getAttribute('icon') || 'solar:copy-linear';
-                const originalLabel = label?.textContent || 'Copier';
-
-                // Clear any existing copy success animation timeout
-                if (copyBtn.dataset.copyTimeout) {
-                    clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
-                }
-
-                // Change to check icon, update text, and add 'copied-prompt' class
-                if (icon) icon.setAttribute('icon', 'ph:check-bold');
-                if (label) label.textContent = 'Prompt copié !';
-                copyBtn.classList.add('copied-prompt');
-
-                // Reset after delay
-                const timeoutId = setTimeout(() => {
-                    if (icon && originalIcon) icon.setAttribute('icon', originalIcon);
-                    if (label) label.textContent = originalLabel;
-                    copyBtn.classList.remove('copied-prompt');
-                    delete copyBtn.dataset.copyTimeout;
-                }, 1500);
-                copyBtn.dataset.copyTimeout = timeoutId.toString();
-            }
+            this._flashCopyFeedback('copied-prompt', 'Prompt copié !');
 
             UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
         } catch (err) {
@@ -1608,16 +1614,25 @@ export const FocusPanelManager = {
         const generatingForStudentId = this.currentStudentId;
         const generatingForPeriod = appState.currentPeriod;
 
+        if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
+            return;
+        }
+
         const result = appState.generatedResults.find(r => r.id === generatingForStudentId);
         if (!result) return;
 
         // If already generating for this student, cancel it
         if (this._activeGenerations.has(generatingForStudentId)) {
+            const elapsed = Date.now() - (this._activeGenerationStartTime || 0);
+            if (elapsed < 350) return;
+
             this._isCancellingGeneration = true;
             this._cancelGenerationForStudent(generatingForStudentId);
             setTimeout(() => { this._isCancellingGeneration = false; }, 300);
             return;
         }
+
+        this._activeGenerationStartTime = Date.now();
 
         // Create new AbortController for this specific generation
         const abortController = new AbortController();
@@ -1938,8 +1953,8 @@ export const FocusPanelManager = {
         const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
         if (speakBtn) speakBtn.classList.add('disabled');
 
-        const speechBtn = document.getElementById('focusAppreciationSpeechBtn');
-        if (speechBtn) speechBtn.classList.add('disabled');
+        const micBtn = document.getElementById('focusAppreciationMicBtn');
+        if (micBtn) micBtn.classList.add('disabled');
     },
 
     /**
@@ -1951,7 +1966,26 @@ export const FocusPanelManager = {
         const generateBtn = document.getElementById('focusGenerateBtn');
         if (!generateBtn) return;
 
+        // Si le bouton est en cours de chargement ou d'annulation, préserver le spinner
+        if (generateBtn.classList.contains('is-loading')) return;
+
+        // Si la dictée vocale est active sur l'appréciation, griser le bouton
+        if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
+            generateBtn.disabled = true;
+            generateBtn.classList.add('disabled');
+            const tooltipText = "Génération indisponible pendant la dictée vocale";
+            generateBtn.setAttribute('data-tooltip', tooltipText);
+            if (generateBtn._tippy) generateBtn._tippy.setContent(tooltipText);
+            return;
+        }
+
+        // Remove all state classes first
+        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('disabled');
+
         const currentPeriod = appState.currentPeriod;
+
         const periodAppreciation = result?.studentData?.periods?.[currentPeriod]?.appreciation;
         const hasAppreciation = periodAppreciation && periodAppreciation.trim().length > 0;
         const wasGenerated = result?.wasGenerated === true;
@@ -1964,9 +1998,6 @@ export const FocusPanelManager = {
         const isDirty = hasAppreciation && isRegenerate && FocusPanelStatus.checkDirtyState(result);
 
         const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
-
-        // Remove all state classes first
-        generateBtn.classList.remove('btn-ai', 'btn-ai-outline', 'btn-regenerate-warning', 'btn-neutral', 'btn-warning');
 
         const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent || navigator.platform || '');
         const shortcutKbd = `<kbd class="kbd-hint">${isMac ? '⌘↵' : 'Ctrl ↵'}</kbd>`;
@@ -2015,8 +2046,6 @@ export const FocusPanelManager = {
             return;
         }
 
-        const copyBtn = document.getElementById('focusCopyBtn');
-
         try {
             // Strip Markdown and HTML tags for clean copy (Plain Text)
             const cleanText = Utils.stripMarkdown(Utils.decodeHtmlEntities(periodAppreciation));
@@ -2024,37 +2053,50 @@ export const FocusPanelManager = {
             await navigator.clipboard.writeText(cleanText);
             try { navigator?.vibrate?.(10); } catch (_) { }
 
-            // Visual feedback on button
-            if (copyBtn) {
-                const icon = copyBtn.querySelector('iconify-icon');
-                const label = copyBtn.querySelector('.btn-copy-label');
-                const originalIcon = icon?.getAttribute('icon') || 'solar:copy-linear';
-                const originalLabel = label?.textContent || 'Copier';
-
-                // Clear any existing copy success animation timeout
-                if (copyBtn.dataset.copyTimeout) {
-                    clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
-                }
-
-                // Change to check icon, update text, and add 'copied' class
-                if (icon) icon.setAttribute('icon', 'ph:check-bold');
-                if (label) label.textContent = 'Copié !';
-                copyBtn.classList.add('copied');
-
-                // Reset after delay
-                const timeoutId = setTimeout(() => {
-                    if (icon) icon.setAttribute('icon', originalIcon);
-                    if (label) label.textContent = originalLabel;
-                    copyBtn.classList.remove('copied');
-                    delete copyBtn.dataset.copyTimeout;
-                }, 1500);
-                copyBtn.dataset.copyTimeout = timeoutId.toString();
-            }
-
-
+            this._flashCopyFeedback('copied', 'Copié !');
         } catch (error) {
             UI.showNotification('Erreur de copie', 'error');
         }
+    },
+
+    /**
+     * Affiche brièvement l'état « copié » sur le bouton Copier puis le remet à zéro.
+     * L'état d'origine est constant : un second clic pendant l'animation ne peut pas le remplacer par l'état « copié ».
+     * @param {'copied'|'copied-prompt'} stateClass - Classe d'état à appliquer
+     * @param {string} label - Libellé temporaire
+     * @private
+     */
+    _flashCopyFeedback(stateClass, label) {
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (!copyBtn) return;
+
+        this._resetCopyFeedback();
+
+        copyBtn.querySelector('iconify-icon')?.setAttribute('icon', 'ph:check-bold');
+        const labelEl = copyBtn.querySelector('.btn-copy-label');
+        if (labelEl) labelEl.textContent = label;
+        copyBtn.classList.add(stateClass);
+
+        this._copyTimeoutId = setTimeout(() => this._resetCopyFeedback(), COPY_FEEDBACK_MS);
+    },
+
+    /**
+     * Remet le bouton Copier dans son état neutre (icône, libellé, classes, minuteur)
+     * @private
+     */
+    _resetCopyFeedback() {
+        if (this._copyTimeoutId) {
+            clearTimeout(this._copyTimeoutId);
+            this._copyTimeoutId = null;
+        }
+
+        const copyBtn = document.getElementById('focusCopyBtn');
+        if (!copyBtn) return;
+
+        copyBtn.classList.remove('copied', 'copied-prompt');
+        copyBtn.querySelector('iconify-icon')?.setAttribute('icon', COPY_BUTTON_ICON);
+        const labelEl = copyBtn.querySelector('.btn-copy-label');
+        if (labelEl) labelEl.textContent = COPY_BUTTON_LABEL;
     },
 
 
@@ -2269,23 +2311,7 @@ export const FocusPanelManager = {
         SpeechSynthesisManager.cancel();
 
         // Reset Copy Button success animation and checkmark icon to prevent bleed when switching students
-        const copyBtn = document.getElementById('focusCopyBtn');
-        if (copyBtn) {
-            if (copyBtn.dataset.copyTimeout) {
-                clearTimeout(parseInt(copyBtn.dataset.copyTimeout));
-                delete copyBtn.dataset.copyTimeout;
-            }
-            copyBtn.classList.remove('copied');
-            copyBtn.classList.remove('copied-prompt');
-            const icon = copyBtn.querySelector('iconify-icon');
-            if (icon) {
-                icon.setAttribute('icon', 'solar:copy-linear');
-            }
-            const label = copyBtn.querySelector('.btn-copy-label');
-            if (label) {
-                label.textContent = 'Copier';
-            }
-        }
+        this._resetCopyFeedback();
 
         // Reset Refinement Buttons loading states to prevent bleed when switching students
         const refinementOptions = document.getElementById('focusRefinementOptions');
@@ -2508,6 +2534,8 @@ export const FocusPanelManager = {
                     if (content !== this._initialAppreciationHtml) {
                         result.appreciation = content;
                         result.copied = false;
+                        result.errorMessage = null;
+                        result.errorPeriod = null;
                         if (!result.studentData.periods) {
                             result.studentData.periods = {};
                         }

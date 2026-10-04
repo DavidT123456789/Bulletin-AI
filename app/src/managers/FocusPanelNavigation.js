@@ -10,20 +10,21 @@ import { UI } from './UIManager.js';
 import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
+import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 
 export const FocusPanelNavigation = {
     /**
      * Callbacks provided by parent manager
      */
     callbacks: {
-        getCurrentStudentId: null,
-        setCurrentStudentId: null,
-        getCurrentIndex: null,
-        setCurrentIndex: null,
-        saveContext: null,
-        renderContent: null,
-        updateAppreciationStatus: null,
-        onUpdateActiveRow: null
+        getCurrentStudentId: () => null,
+        setCurrentStudentId: () => {},
+        getCurrentIndex: () => -1,
+        setCurrentIndex: () => {},
+        saveContext: () => {},
+        renderContent: () => {},
+        updateAppreciationStatus: () => {},
+        onUpdateActiveRow: () => {}
     },
 
     /**
@@ -83,8 +84,8 @@ export const FocusPanelNavigation = {
                 swipeContent.style.willChange = 'transform, opacity';
             }
 
-            currentIndex = this.callbacks.getCurrentIndex();
-            totalItems = appState.filteredResults.length;
+            currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
+            totalItems = appState.filteredResults?.length ?? 0;
         }, { passive: true });
 
         targetArea.addEventListener('touchmove', e => {
@@ -173,7 +174,7 @@ export const FocusPanelNavigation = {
      * Navigue vers l'élève précédent avec animation
      */
     navigatePrev() {
-        const currentIndex = this.callbacks.getCurrentIndex();
+        const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
         if (currentIndex <= 0) return;
         this._navigateWithAnimation('prev');
     },
@@ -182,9 +183,9 @@ export const FocusPanelNavigation = {
      * Navigue vers l'élève suivant avec animation
      */
     navigateNext() {
-        const currentIndex = this.callbacks.getCurrentIndex();
-        const filteredResults = appState.filteredResults;
-        if (currentIndex >= filteredResults.length - 1) return;
+        const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
+        const filteredResults = appState.filteredResults || [];
+        if (currentIndex < 0 || currentIndex >= filteredResults.length - 1) return;
         this._navigateWithAnimation('next');
     },
 
@@ -200,16 +201,16 @@ export const FocusPanelNavigation = {
         const analysisNextBtn = document.getElementById('focusAnalysisNextBtn');
         const analysisPositionEl = document.getElementById('focusAnalysisPosition');
 
-        const currentIndex = this.callbacks.getCurrentIndex();
-        const total = appState.filteredResults.length;
+        const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
+        const total = appState.filteredResults?.length ?? 0;
 
         if (prevBtn) prevBtn.disabled = currentIndex <= 0;
-        if (nextBtn) nextBtn.disabled = currentIndex >= total - 1;
-        if (positionEl) positionEl.textContent = `${currentIndex + 1}/${total}`;
+        if (nextBtn) nextBtn.disabled = currentIndex < 0 || currentIndex >= total - 1;
+        if (positionEl) positionEl.textContent = currentIndex >= 0 ? `${currentIndex + 1}/${total}` : `-/${total}`;
 
         if (analysisPrevBtn) analysisPrevBtn.disabled = currentIndex <= 0;
-        if (analysisNextBtn) analysisNextBtn.disabled = currentIndex >= total - 1;
-        if (analysisPositionEl) analysisPositionEl.textContent = `${currentIndex + 1}/${total}`;
+        if (analysisNextBtn) analysisNextBtn.disabled = currentIndex < 0 || currentIndex >= total - 1;
+        if (analysisPositionEl) analysisPositionEl.textContent = currentIndex >= 0 ? `${currentIndex + 1}/${total}` : `-/${total}`;
     },
 
     /**
@@ -230,20 +231,24 @@ export const FocusPanelNavigation = {
             FocusPanelHeader.toggleEditMode(false, true); // Cancel without saving
         }
 
+        // Abort voice dictation immediately so recording does not spill over
+        SpeechRecognitionManager.abort?.();
+
         const isAnalysisVisible = FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible();
         const content = isAnalysisVisible
             ? document.querySelector('.focus-analysis-content-area')
             : document.querySelector('.focus-main-page .focus-content');
 
-        const currentIndex = this.callbacks.getCurrentIndex();
+        const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
+        if (currentIndex < 0) return;
 
         if (!content) {
             // Fallback sans animation
-            this.callbacks.saveContext();
+            this.callbacks?.saveContext?.();
             const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-            const filteredResult = appState.filteredResults[targetIndex];
+            const filteredResult = appState.filteredResults?.[targetIndex];
             if (filteredResult) {
-                const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
+                const targetResult = appState.generatedResults?.find(r => r.id === filteredResult.id) || filteredResult;
                 this._switchToStudent(targetResult, targetIndex);
             }
             return;
@@ -296,7 +301,7 @@ export const FocusPanelNavigation = {
         parent.appendChild(clone);
 
         // 3. Update State & Content IMMEDIATELY
-        this.callbacks.saveContext();
+        this.callbacks?.saveContext?.();
 
         // Prepare new content for animation
         content.style.transition = 'none';
@@ -363,24 +368,27 @@ export const FocusPanelNavigation = {
      * Internal helper to switch state and render new student
      */
     _switchToStudent(targetResult, targetIndex) {
-        this.callbacks.setCurrentStudentId(targetResult.id);
-        this.callbacks.setCurrentIndex(targetIndex);
+        SpeechRecognitionManager.abort?.();
+        this.callbacks?.setCurrentStudentId?.(targetResult?.id);
+        this.callbacks?.setCurrentIndex?.(targetIndex);
 
         // Update active row highlight in list view
-        if (this.callbacks.onUpdateActiveRow) {
-            this.callbacks.onUpdateActiveRow(targetResult.id);
+        if (this.callbacks?.onUpdateActiveRow) {
+            this.callbacks.onUpdateActiveRow(targetResult?.id);
         }
 
         // Load unified persistent history for the new student
-        FocusPanelHistory.load(targetResult.id);
+        if (targetResult?.id) {
+            FocusPanelHistory.load(targetResult.id);
+        }
 
         // Hide spinner if it was stuck
         const generateBtn = document.getElementById('focusGenerateBtn');
         if (generateBtn) UI.hideInlineSpinner(generateBtn);
 
-        this.callbacks.updateAppreciationStatus(null, { state: 'none' });
+        this.callbacks?.updateAppreciationStatus?.(null, { state: 'none' });
 
-        this.callbacks.renderContent(targetResult);
+        this.callbacks?.renderContent?.(targetResult);
         this.updateControls();
     }
 };

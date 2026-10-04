@@ -14,7 +14,7 @@
 
 import { appState } from '../state/State.js';
 import { MODEL_SHORT_NAMES, getProviderForModel } from '../config/models.js';
-import { PROVIDER_CONFIG } from '../config/providers.js';
+import { PROVIDER_CONFIG, hasValidApiKey } from '../config/providers.js';
 import { CONFIG, CONSTS, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { EventHandlersManager } from './EventHandlersManager.js';
@@ -1116,16 +1116,7 @@ export const UI = {
         const providerConfig = PROVIDER_CONFIG[providerId] || PROVIDER_CONFIG.openrouter;
 
         // Check availability
-        const isKeyConfigured = (() => {
-            if (providerId === 'google') return !!(appState.googleApiKey && appState.googleApiKey.length > 5);
-            if (providerId === 'groq') return !!(appState.groqApiKey && appState.groqApiKey.length > 5);
-            if (providerId === 'mistral') return !!(appState.mistralApiKey && appState.mistralApiKey.length > 5);
-            if (providerId === 'openrouter') return !!(appState.openrouterApiKey && appState.openrouterApiKey.length > 5);
-            if (providerId === 'openai') return !!(appState.openaiApiKey && appState.openaiApiKey.length > 5);
-            if (providerId === 'anthropic') return !!(appState.anthropicApiKey && appState.anthropicApiKey.length > 5);
-            if (providerId === 'ollama') return !!appState.ollamaEnabled;
-            return false;
-        })();
+        const isKeyConfigured = hasValidApiKey(providerId, { state: appState, dom: DOM });
 
         const chevronEl = DOM.dashModelLabel?.querySelector('.dash-model-chevron');
 

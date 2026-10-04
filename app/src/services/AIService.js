@@ -5,7 +5,34 @@
 
 import { appState } from '../state/State.js';
 import { CONFIG, COSTS_PER_MILLION_TOKENS } from '../config/Config.js';
-import { OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
+import { OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue, getApiModelName } from '../config/models.js';
+import { hasValidApiKey } from '../config/providers.js';
+
+/**
+ * Extrait le délai d'attente (en secondes) d'un message d'erreur de rate-limit (429/quota).
+ * Supporte les formats Google, Groq, OpenAI, Anthropic, Mistral :
+ * - "Please try again in 1.45s"
+ * - "Please retry in 55.35s"
+ * - "try again in 400ms"
+ * - "retry after 15 seconds"
+ * @param {string} errorMessage
+ * @returns {number|null} Délai en secondes ou null si non trouvé
+ */
+export function parseRetryDelay(errorMessage) {
+    if (!errorMessage || typeof errorMessage !== 'string') return null;
+    const match = errorMessage.match(/(?:retry|try again|retry after)\s+(?:in\s+)?(\d+(?:\.\d+)?)\s*(ms|s|seconds?|minutes?|m)?/i);
+    if (!match) return null;
+    const val = parseFloat(match[1]);
+    if (isNaN(val)) return null;
+    const unit = (match[2] || 's').toLowerCase();
+    if (unit === 'ms') {
+        return Math.max(1, Math.ceil(val / 1000));
+    }
+    if (unit === 'm' || unit.startsWith('min')) {
+        return Math.ceil(val * 60);
+    }
+    return Math.max(1, Math.ceil(val));
+}
 
 // Mode debug : activé uniquement en développement (vite définit import.meta.env.DEV)
 
@@ -74,28 +101,11 @@ export const AIService = {
             openrouter: {
                 apiKey: appState.openrouterApiKey, apiUrl: `${CONFIG.OPENROUTER_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
-                payload: (p, m, sys) => {
-                    const modelMap = {
-                        'openrouter': 'deepseek/deepseek-chat',
-                        'deepseek-r1': 'deepseek/deepseek-r1',
-                        'claude-sonnet-5': 'anthropic/claude-sonnet-5',
-                        'claude-3.7-sonnet': 'anthropic/claude-3.7-sonnet',
-                        'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
-                        // === GRATUITS ===
-                        'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free', // Quota quotidien partagé
-                        // === PAYANTS ÉCONOMIQUES ===
-                        'ministral-3b': 'mistralai/ministral-3b-2512',
-                        'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
-                        'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
-                        'mistral-large': 'mistralai/mistral-large-2411'
-                    };
-                    const messages = sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }];
-                    return {
-                        model: modelMap[m] || 'deepseek/deepseek-chat',
-                        messages,
-                        max_tokens: MAX_RESPONSE_TOKENS
-                    };
-                },
+                payload: (p, m, sys) => ({
+                    model: getApiModelName(m),
+                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
+                    max_tokens: MAX_RESPONSE_TOKENS
+                }),
             },
             ollama: {
                 apiKey: appState.ollamaEnabled ? 'local' : null,
@@ -163,19 +173,11 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m, sys) => {
-                    const modelMap = {
-                        'groq-llama-3.3-70b': 'llama-3.3-70b-versatile',
-                        'groq-gemma-2-9b': 'gemma2-9b-it',
-                        'groq-llama-3.1-8b': 'llama-3.1-8b-instant'
-                    };
-                    const messages = sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }];
-                    return {
-                        model: modelMap[m] || 'llama-3.3-70b-versatile',
-                        messages,
-                        max_tokens: MAX_RESPONSE_TOKENS
-                    };
-                }
+                payload: (p, m, sys) => ({
+                    model: getApiModelName(m),
+                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
+                    max_tokens: MAX_RESPONSE_TOKENS
+                })
             }
         };
 
@@ -187,7 +189,9 @@ export const AIService = {
             const validationModel = modelOverride || 'gemini-3.5-flash';
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
             let payload = providerConfig.payload("test", validationModel);
-            if (validationProvider === 'openai') payload.max_tokens = 1;
+            if (payload && typeof payload === 'object') {
+                payload.max_tokens = 5;
+            }
             return { apiKey, apiUrl, headers: providerConfig.headers(apiKey), payload };
         }
 
@@ -419,11 +423,6 @@ export const AIService = {
      */
     _hasApiKeyForModel(model) {
         const provider = this._getProviderForModel(model);
-        if (provider === 'openai') return !!appState.openaiApiKey;
-        if (provider === 'google') return !!appState.googleApiKey;
-        if (provider === 'groq') return !!appState.groqApiKey;
-        if (provider === 'anthropic') return !!appState.anthropicApiKey;
-        if (provider === 'mistral') return !!appState.mistralApiKey;
         if (provider === 'ollama') {
             if (!appState.ollamaEnabled) return false;
             // Vérifier si ce modèle spécifique est installé
@@ -445,7 +444,7 @@ export const AIService = {
                 return false;
             });
         }
-        return !!appState.openrouterApiKey;
+        return hasValidApiKey(provider, { state: appState });
     },
 
     /**
@@ -587,14 +586,8 @@ export const AIService = {
 
             // Tous les modèles ont échoué
 
-            // Extraire le temps d'attente suggéré par l'API (ex: "Please retry in 55.35s")
-            let retrySeconds = null;
-            if (lastError?.message) {
-                const retryMatch = lastError.message.match(/retry in (\d+(?:\.\d+)?)/i);
-                if (retryMatch) {
-                    retrySeconds = Math.ceil(parseFloat(retryMatch[1]));
-                }
-            }
+            // Extraire le temps d'attente suggéré par l'API (ex: "Please retry in 55.35s", "Please try again in 1.45s")
+            const retrySeconds = parseRetryDelay(lastError?.message);
 
             // Créer un message d'erreur clair et actionnable
             const attemptedCount = attemptedModels.length;

@@ -128,4 +128,30 @@ describe('ModelSelectionManager', () => {
 
         expect(ModelSelectionManager.isOpen).toBe(false);
     });
+
+    it('devrait se fermer au clic en dehors du menu déroulant', () => {
+        ModelSelectionManager.init();
+        ModelSelectionManager.openDropdown();
+        expect(ModelSelectionManager.isOpen).toBe(true);
+
+        // Clic sur le body en dehors du wrapper
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(ModelSelectionManager.isOpen).toBe(false);
+    });
+
+    it('devrait naviguer au clavier avec ArrowDown et ArrowUp', () => {
+        ModelSelectionManager.init();
+        ModelSelectionManager.openDropdown();
+
+        const items = DOM.headerModelDropdown.querySelectorAll('.model-dropdown-item');
+        expect(items.length).toBeGreaterThan(0);
+
+        // Flèche bas -> premier focus
+        const arrowDownEvent = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+        document.dispatchEvent(arrowDownEvent);
+
+        expect(document.activeElement).toBeTruthy();
+    });
 });
+

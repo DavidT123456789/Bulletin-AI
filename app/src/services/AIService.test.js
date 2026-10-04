@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AIService } from './AIService.js';
+import { AIService, parseRetryDelay } from './AIService.js';
 
 // Mock state module
 vi.mock('../state/State.js', () => ({
@@ -281,4 +281,67 @@ describe('AIService', () => {
             expect(models).toEqual([]);
         });
     });
+
+    describe('parseRetryDelay()', () => {
+        it('should parse Groq "try again in Xs" format', () => {
+            expect(parseRetryDelay('Rate limit reached. Please try again in 1.45s.')).toBe(2);
+            expect(parseRetryDelay('Please try again in 23.4s.')).toBe(24);
+        });
+
+        it('should parse "retry in Xs" format', () => {
+            expect(parseRetryDelay('Resource has been exhausted. Please retry in 55.35s')).toBe(56);
+        });
+
+        it('should parse millisecond format properly', () => {
+            expect(parseRetryDelay('Please try again in 500ms')).toBe(1);
+            expect(parseRetryDelay('retry in 2500ms')).toBe(3);
+        });
+
+        it('should parse "retry after X seconds" format', () => {
+            expect(parseRetryDelay('Too many requests, retry after 15 seconds')).toBe(15);
+        });
+
+        it('should parse minutes format', () => {
+            expect(parseRetryDelay('Please try again in 2m')).toBe(120);
+            expect(parseRetryDelay('Please try again in 1.5min')).toBe(90);
+        });
+
+        it('should return null for non-rate-limit error messages', () => {
+            expect(parseRetryDelay('Invalid API key provided')).toBeNull();
+            expect(parseRetryDelay('500 Internal Server Error')).toBeNull();
+            expect(parseRetryDelay('')).toBeNull();
+            expect(parseRetryDelay(null)).toBeNull();
+        });
+    });
+
+    describe('_hasApiKeyForModel()', () => {
+        it('should return true when API key is configured for provider', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.groqApiKey = 'gsk-valid-key-12345';
+            expect(AIService._hasApiKeyForModel('groq-llama-3.3-70b')).toBe(true);
+
+            appState.googleApiKey = 'AIzaSyGoogle12345';
+            expect(AIService._hasApiKeyForModel('gemini-3.5-flash')).toBe(true);
+        });
+
+        it('should return false when API key is missing or invalid', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.groqApiKey = '';
+            expect(AIService._hasApiKeyForModel('groq-llama-3.3-70b')).toBe(false);
+
+            appState.mistralApiKey = 'short';
+            expect(AIService._hasApiKeyForModel('mistral-direct-small-latest')).toBe(false);
+        });
+
+        it('should check ollama status for ollama models', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.ollamaEnabled = true;
+            appState.ollamaInstalledModels = ['qwen2.5:7b'];
+            expect(AIService._hasApiKeyForModel('ollama-qwen2.5:7b')).toBe(true);
+
+            appState.ollamaEnabled = false;
+            expect(AIService._hasApiKeyForModel('ollama-qwen2.5:7b')).toBe(false);
+        });
+    });
 });
+

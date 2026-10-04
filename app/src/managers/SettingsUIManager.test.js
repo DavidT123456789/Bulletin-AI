@@ -103,7 +103,27 @@ vi.mock('./DropdownManager.js', () => ({
 }));
 
 vi.mock('../config/providers.js', () => ({
-    PROVIDER_CONFIG: {}
+    PROVIDER_CONFIG: {
+        google: { id: 'google', name: 'Google Gemini', keyProperty: 'googleApiKey', domKey: 'googleApiKey' },
+        groq: { id: 'groq', name: 'Groq Cloud', keyProperty: 'groqApiKey', domKey: 'groqApiKey' },
+        openai: { id: 'openai', name: 'OpenAI', keyProperty: 'openaiApiKey', domKey: 'openaiApiKey' },
+        openrouter: { id: 'openrouter', name: 'OpenRouter', keyProperty: 'openrouterApiKey', domKey: 'openrouterApiKey' },
+        anthropic: { id: 'anthropic', name: 'Anthropic Claude', keyProperty: 'anthropicApiKey', domKey: 'anthropicApiKey' },
+        mistral: { id: 'mistral', name: 'Mistral AI', keyProperty: 'mistralApiKey', domKey: 'mistralApiKey' },
+        ollama: { id: 'ollama', name: 'Ollama' }
+    },
+    PROVIDER_IDS: ['google', 'groq', 'openrouter', 'mistral', 'openai', 'anthropic', 'ollama'],
+    API_KEY_PROVIDER_IDS: ['google', 'groq', 'mistral', 'openrouter', 'openai', 'anthropic'],
+    isValidKeyFormat: (k) => typeof k === 'string' && k.trim().length > 5,
+    getProviderApiKey: (id, { state, dom } = {}) => {
+        if (dom && dom[`${id}ApiKey`]?.value) return dom[`${id}ApiKey`].value.trim();
+        return (state && state[`${id}ApiKey`]) ? state[`${id}ApiKey`].trim() : '';
+    },
+    hasValidApiKey: (id, { state } = {}) => {
+        if (id === 'ollama') return state?.ollamaEnabled === true;
+        const key = state?.[`${id}ApiKey`];
+        return typeof key === 'string' && key.trim().length > 5;
+    }
 }));
 
 import { SettingsUIManager } from './SettingsUIManager.js';

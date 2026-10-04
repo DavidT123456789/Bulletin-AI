@@ -1855,15 +1855,19 @@ input.context-grade-input,
 }
 
 .appreciation-status-badge.is-dictating {
-    background: rgba(var(--primary-color-rgb), 0.15);
-    color: var(--primary-color);
+    background: var(--item-active-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     width: auto;
     border-radius: var(--radius-pill);
     padding: 4px 10px;
     gap: 6px;
     font-size: 12px;
     font-weight: 600;
-    animation: pending-pulse 1.5s infinite;
+}
+
+.appreciation-status-badge.is-dictating iconify-icon {
+    color: var(--error-color);
 }
 
 /* History Indicator */
@@ -2669,6 +2673,16 @@ input.context-grade-input,
     background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
     border: 1px solid rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
     color: inherit;
+}
+
+/* Disabled state (e.g. during voice dictation) */
+.focus-appreciation-actions #focusGenerateBtn:disabled,
+.focus-appreciation-actions #focusGenerateBtn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto;
+    filter: grayscale(0.5);
+    box-shadow: none !important;
 }
 
 @media (max-width: 480px) {

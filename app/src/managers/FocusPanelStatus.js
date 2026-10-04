@@ -286,7 +286,8 @@ export const FocusPanelStatus = {
      * }
      */
     getAppreciationStatus(result, period = appState.currentPeriod) {
-        const hasError = !!(result?.errorMessage && result?.errorPeriod === period);
+        const isManualAppreciation = result?.appreciationSource === 'manual' && result?.wasGenerated === false;
+        const hasError = !isManualAppreciation && !!(result?.errorMessage && result?.errorPeriod === period);
         const errorMessage = hasError ? result.errorMessage : null;
         const isGenerating = !hasError && this._isGenerating(result?.id);
 
@@ -508,10 +509,10 @@ export const FocusPanelStatus = {
             speakBtn.style.display = isEmpty ? 'none' : 'inline-flex';
         }
 
-        const speechBtn = document.getElementById('focusAppreciationSpeechBtn');
-        if (speechBtn) {
-            speechBtn.disabled = false;
-            speechBtn.classList.remove('disabled');
+        const micBtn = document.getElementById('focusAppreciationMicBtn');
+        if (micBtn) {
+            micBtn.disabled = false;
+            micBtn.classList.remove('disabled');
         }
 
         if (isEmpty) {

@@ -10,7 +10,8 @@ import {
     FALLBACK_CONFIG,
     PROVIDER_DEFAULT_MODELS,
     MODEL_SHORT_NAMES,
-    MODEL_SELECTOR_CONFIG
+    MODEL_SELECTOR_CONFIG,
+    getApiModelName
 } from './models.js';
 
 describe('models.js configuration & helpers', () => {
@@ -88,7 +89,6 @@ describe('models.js configuration & helpers', () => {
         it('should correctly configure groq fallback models', () => {
             expect(FALLBACK_CONFIG.groq).toEqual([
                 'groq-llama-3.3-70b',
-                'groq-gemma-2-9b',
                 'groq-llama-3.1-8b'
             ]);
         });
@@ -150,4 +150,37 @@ describe('models.js configuration & helpers', () => {
             expect(MODEL_SHORT_NAMES['claude-sonnet-5']).toBe('Claude Sonnet 5 (OR)');
         });
     });
+
+    describe('getApiModelName()', () => {
+        it('should map Groq models to their technical API model names', () => {
+            expect(getApiModelName('groq-llama-3.3-70b')).toBe('llama-3.3-70b-versatile');
+            expect(getApiModelName('groq-gemma-2-9b')).toBe('llama-3.1-8b-instant');
+            expect(getApiModelName('groq-llama-3.1-8b')).toBe('llama-3.1-8b-instant');
+        });
+
+        it('should map OpenRouter models to their technical API model names', () => {
+            expect(getApiModelName('openrouter')).toBe('deepseek/deepseek-chat');
+            expect(getApiModelName('deepseek-r1')).toBe('deepseek/deepseek-r1');
+            expect(getApiModelName('claude-sonnet-5')).toBe('anthropic/claude-sonnet-5');
+            expect(getApiModelName('llama-3.3-70b-free')).toBe('meta-llama/llama-3.3-70b-instruct:free');
+            expect(getApiModelName('ministral-3b')).toBe('mistralai/ministral-3b-2512');
+        });
+
+        it('should strip prefixes for direct providers', () => {
+            expect(getApiModelName('openai-o3-mini')).toBe('o3-mini');
+            expect(getApiModelName('mistral-direct-small-latest')).toBe('mistral-small-latest');
+            expect(getApiModelName('anthropic-claude-sonnet-5')).toBe('claude-sonnet-5');
+            expect(getApiModelName('ollama-qwen2.5:7b')).toBe('qwen2.5:7b');
+        });
+
+        it('should preserve model name if already in target format', () => {
+            expect(getApiModelName('gemini-3.5-flash')).toBe('gemini-3.5-flash');
+        });
+
+        it('should return default model if model is null or undefined', () => {
+            expect(getApiModelName(null)).toBe('deepseek/deepseek-chat');
+            expect(getApiModelName(undefined)).toBe('deepseek/deepseek-chat');
+        });
+    });
 });
+

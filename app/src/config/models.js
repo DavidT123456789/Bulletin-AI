@@ -172,7 +172,6 @@ export const MODEL_SELECTOR_CONFIG = [
         label: 'Groq Cloud — QUOTA GRATUIT',
         models: [
             { id: 'groq-llama-3.3-70b', qualifier: 'Recommandé' },
-            { id: 'groq-gemma-2-9b', qualifier: 'Équilibré' },
             { id: 'groq-llama-3.1-8b', qualifier: 'Instantané' },
         ]
     },
@@ -328,3 +327,41 @@ export const OLLAMA_CONFIG = {
     apiEndpoint: '/api/generate',
     timeoutMs: 120000,
 };
+
+/**
+ * Correspondances spécifiques entre identifiants applicatifs et identifiants d'API distantes.
+ * Single Source of Truth pour les API ne respectant pas un nommage 1:1.
+ */
+export const API_MODEL_MAPPINGS = {
+    // OpenRouter
+    'openrouter': 'deepseek/deepseek-chat',
+    'deepseek-r1': 'deepseek/deepseek-r1',
+    'claude-sonnet-5': 'anthropic/claude-sonnet-5',
+    'claude-3.7-sonnet': 'anthropic/claude-3.7-sonnet',
+    'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
+    'llama-3.3-70b-free': 'meta-llama/llama-3.3-70b-instruct:free',
+    'ministral-3b': 'mistralai/ministral-3b-2512',
+    'amazon-nova-v1-lite': 'amazon/nova-lite-v1:1.0',
+    'mistral-small': 'mistralai/mistral-small-24b-instruct-2501',
+    'mistral-large': 'mistralai/mistral-large-2411',
+    // Groq Cloud
+    'groq-llama-3.3-70b': 'llama-3.3-70b-versatile',
+    'groq-gemma-2-9b': 'llama-3.1-8b-instant', // Fallback gracieux pour ancien modèle déprécié par Groq
+    'groq-llama-3.1-8b': 'llama-3.1-8b-instant',
+};
+
+/**
+ * Résout le nom technique du modèle attendu par l'API du fournisseur.
+ * @param {string} model - Identifiant applicatif du modèle
+ * @returns {string} Identifiant technique du modèle pour l'API
+ */
+export function getApiModelName(model) {
+    if (!model) return 'deepseek/deepseek-chat';
+    if (API_MODEL_MAPPINGS[model]) return API_MODEL_MAPPINGS[model];
+    if (model.startsWith('openai-')) return model.replace('openai-', '');
+    if (model.startsWith('mistral-direct-')) return model.replace('mistral-direct-', 'mistral-');
+    if (model.startsWith('anthropic-')) return model.replace('anthropic-', '');
+    if (model.startsWith('ollama-')) return model.replace('ollama-', '');
+    return model;
+}
+

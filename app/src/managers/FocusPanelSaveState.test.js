@@ -74,7 +74,7 @@ describe('FocusPanelManager and Save State integrity', () => {
                         <span id="focusAppreciationBadge"></span>
                         <div id="focusAppreciationText" contenteditable="true"></div>
                         <button id="focusGenerateBtn"></button>
-                        <button id="focusCopyBtn"></button>
+                        <button id="focusCopyBtn"><iconify-icon icon="solar:copy-linear"></iconify-icon><span class="btn-copy-label">Copier</span></button>
                         <div id="focusRefinementOptions"></div>
                         <div id="focusWordCount"></div>
                         <div id="focusHistoryUndoBtn"></div>
@@ -199,4 +199,65 @@ describe('FocusPanelManager and Save State integrity', () => {
         expect(SyncService._computeSyncState()).toBe('local-changes');
         expect(runtimeState.data.generatedResults[0].studentData.periods.T1.context).toBe('Nouveau contexte');
     });
+
+    describe('Copy feedback and cancellation guard', () => {
+        it('flashes copy feedback and restores original label properly', () => {
+            vi.useFakeTimers();
+            const copyBtn = document.getElementById('focusCopyBtn');
+            const labelEl = copyBtn.querySelector('.btn-copy-label');
+
+            FocusPanelManager._flashCopyFeedback('copied', 'Copié !');
+            expect(labelEl.textContent).toBe('Copié !');
+            expect(copyBtn.classList.contains('copied')).toBe(true);
+
+            // Fast forward time
+            vi.advanceTimersByTime(1600);
+            expect(labelEl.textContent).toBe('Copier');
+            expect(copyBtn.classList.contains('copied')).toBe(false);
+            vi.useRealTimers();
+        });
+
+        it('resets previous timer cleanly on rapid consecutive copy clicks', () => {
+            vi.useFakeTimers();
+            const copyBtn = document.getElementById('focusCopyBtn');
+            const labelEl = copyBtn.querySelector('.btn-copy-label');
+
+            FocusPanelManager._flashCopyFeedback('copied', 'Copié !');
+            vi.advanceTimersByTime(1000); // 1000ms in
+
+            // Second click before timeout expires
+            FocusPanelManager._flashCopyFeedback('copied-prompt', 'Prompt copié !');
+            expect(labelEl.textContent).toBe('Prompt copié !');
+            expect(copyBtn.classList.contains('copied-prompt')).toBe(true);
+
+            // 600ms later (first timer would have expired at 1500ms, but new timer has 900ms left)
+            vi.advanceTimersByTime(600);
+            expect(labelEl.textContent).toBe('Prompt copié !');
+
+            // Complete the remaining time
+            vi.advanceTimersByTime(1000);
+            expect(labelEl.textContent).toBe('Copier');
+            vi.useRealTimers();
+        });
+
+        it('ignores generate button clicks within 350ms of generation start to prevent accidental cancellation', () => {
+            const cancelSpy = vi.spyOn(FocusPanelManager, '_cancelGenerationForStudent').mockImplementation(() => {});
+            FocusPanelManager.currentStudentId = 'student-1';
+            FocusPanelManager._activeGenerations.set('student-1', new AbortController());
+            FocusPanelManager._activeGenerationStartTime = Date.now();
+
+            const generateBtn = document.getElementById('focusGenerateBtn');
+            // Click immediately (0ms elapsed)
+            generateBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(cancelSpy).not.toHaveBeenCalled();
+
+            // Click after 400ms
+            FocusPanelManager._activeGenerationStartTime = Date.now() - 400;
+            generateBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(cancelSpy).toHaveBeenCalledWith('student-1');
+
+            FocusPanelManager._activeGenerations.clear();
+        });
+    });
 });
+

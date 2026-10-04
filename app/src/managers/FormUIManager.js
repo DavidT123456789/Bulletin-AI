@@ -10,6 +10,8 @@
 
 import { appState } from '../state/State.js';
 import { CONFIG, DEFAULT_IA_CONFIG, MODEL_DESCRIPTIONS, APP_VERSION } from '../config/Config.js';
+import { getProviderForModel } from '../config/models.js';
+import { PROVIDER_CONFIG, API_KEY_PROVIDER_IDS, hasValidApiKey, isValidKeyFormat } from '../config/providers.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { AppreciationsManager } from './AppreciationsManager.js';
@@ -194,23 +196,16 @@ export const FormUI = {
      * @private
      */
     _updateApiStatusDisplay() {
-        const providers = [
-            { id: 'google', key: appState.googleApiKey, inputId: 'googleApiKey', btnId: 'validateGoogleApiKeyBtn' },
-            { id: 'groq', key: appState.groqApiKey, inputId: 'groqApiKey', btnId: 'validateGroqApiKeyBtn' },
-            { id: 'openai', key: appState.openaiApiKey, inputId: 'openaiApiKey', btnId: 'validateOpenaiApiKeyBtn' },
-            { id: 'openrouter', key: appState.openrouterApiKey, inputId: 'openrouterApiKey', btnId: 'validateOpenrouterApiKeyBtn' },
-            { id: 'anthropic', key: appState.anthropicApiKey, inputId: 'anthropicApiKey', btnId: 'validateAnthropicApiKeyBtn' },
-            { id: 'mistral', key: appState.mistralApiKey, inputId: 'mistralApiKey', btnId: 'validateMistralApiKeyBtn' },
-        ];
-
-        providers.forEach(({ id, key, inputId, btnId }) => {
+        API_KEY_PROVIDER_IDS.forEach(id => {
+            const config = PROVIDER_CONFIG[id];
             const el = document.getElementById(`${id}ApiStatus`);
-            const btn = document.getElementById(btnId);
+            const btn = document.getElementById(`validate${id.charAt(0).toUpperCase() + id.slice(1)}ApiKeyBtn`);
 
             if (!el) return;
 
-            const hasKey = !!key && key.length > 5;
-            const inputEl = document.getElementById(inputId);
+            const key = appState[config?.keyProperty] || '';
+            const hasKey = isValidKeyFormat(key);
+            const inputEl = document.getElementById(config?.domKey || `${id}ApiKey`);
 
             // Vérifier l'état de validation via les classes CSS de l'input
             let status = 'none'; // none, pending, quota, valid
@@ -390,43 +385,9 @@ export const FormUI = {
 
         if (!warningEl) return;
 
-        // Détermine quel provider est requis et s'il a une clé
-        let requiredProvider = '';
-        let hasKey = false;
-        const providerNames = {
-            google: 'Google Gemini',
-            groq: 'Groq Cloud',
-            openai: 'OpenAI',
-            openrouter: 'OpenRouter',
-            anthropic: 'Claude (Anthropic)',
-            mistral: 'Mistral',
-            ollama: 'Ollama (local)'
-        };
-
-        if (model.startsWith('ollama')) {
-            // Ollama est local, pas besoin de clé API
-            requiredProvider = 'ollama';
-            hasKey = appState.ollamaEnabled === true;
-        } else if (model.startsWith('openai')) {
-            requiredProvider = 'openai';
-            hasKey = !!appState.openaiApiKey && appState.openaiApiKey.length > 5;
-        } else if (model.startsWith('gemini')) {
-            requiredProvider = 'google';
-            hasKey = !!appState.googleApiKey && appState.googleApiKey.length > 5;
-        } else if (model.startsWith('groq-')) {
-            requiredProvider = 'groq';
-            hasKey = !!appState.groqApiKey && appState.groqApiKey.length > 5;
-        } else if (model.startsWith('anthropic')) {
-            requiredProvider = 'anthropic';
-            hasKey = !!appState.anthropicApiKey && appState.anthropicApiKey.length > 5;
-        } else if (model.startsWith('mistral-direct')) {
-            requiredProvider = 'mistral';
-            hasKey = !!appState.mistralApiKey && appState.mistralApiKey.length > 5;
-        } else {
-            // Mistral, DeepSeek via OpenRouter, etc.
-            requiredProvider = 'openrouter';
-            hasKey = !!appState.openrouterApiKey && appState.openrouterApiKey.length > 5;
-        }
+        const requiredProvider = getProviderForModel(model);
+        const hasKey = hasValidApiKey(requiredProvider, { state: appState });
+        const providerName = PROVIDER_CONFIG[requiredProvider]?.name || requiredProvider;
 
         if (hasKey) {
             warningEl.style.display = 'none';
@@ -434,7 +395,7 @@ export const FormUI = {
             if (requiredProvider === 'ollama') {
                 warningTextEl.textContent = `Ce modèle nécessite qu'Ollama soit activé et en cours d'exécution.`;
             } else {
-                warningTextEl.textContent = `Ce modèle requiert une clé ${providerNames[requiredProvider]}.`;
+                warningTextEl.textContent = `Ce modèle requiert une clé ${providerName}.`;
             }
             warningEl.style.display = 'flex';
         }
