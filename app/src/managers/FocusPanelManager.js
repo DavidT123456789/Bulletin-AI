@@ -2189,7 +2189,7 @@ export const FocusPanelManager = {
             const initialGradeClass = (currentGrade !== undefined && currentGrade !== null)
                 ? Utils.getGradeClass(currentGrade)
                 : '';
-            gradeInput.className = `context-grade-input grade-value ${initialGradeClass}`;
+            gradeInput.className = `context-grade-input custom-input grade-value ${initialGradeClass}`;
 
             const gradeWrapper = gradeInput.closest('.grade-input-wrapper') || gradeInput.parentElement;
             if (gradeWrapper) {
@@ -2203,7 +2203,7 @@ export const FocusPanelManager = {
                 const val = gradeInput.value.replace(',', '.');
                 const grade = parseFloat(val);
                 
-                gradeInput.className = 'context-grade-input grade-value';
+                gradeInput.className = 'context-grade-input custom-input grade-value';
                 
                 let gradeToSave = null;
                 if (!isNaN(grade)) {

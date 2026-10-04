@@ -1106,7 +1106,7 @@
     box-shadow: inset 0 0 0 0 rgba(var(--primary-color-rgb), 0) !important;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.5;
     color: var(--text-primary);
     caret-color: var(--primary-color);
     resize: none;
@@ -1115,6 +1115,10 @@
     font-family: inherit;
     box-sizing: border-box;
     display: block;
+}
+
+[data-theme="dark"] .focus-context-textarea {
+    caret-color: var(--text-primary);
 }
 
 .focus-context-textarea:focus {
@@ -1346,7 +1350,8 @@
     transition: all var(--transition-fast);
 }
 
-.previous-grade-chip:hover {
+.previous-grade-chip:hover,
+.context-grade-group:hover {
     background: var(--item-hover-bg);
     border-color: var(--border-hover-color, var(--border-color));
 }
@@ -1420,6 +1425,22 @@
     font-family: inherit;
     box-sizing: border-box;
     transition: color var(--transition-fast);
+}
+
+/* Neutralize global input hover/focus glowing borders from components.css */
+input.context-grade-input,
+.context-grade-input,
+.context-grade-input:hover,
+.context-grade-input:focus {
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+[data-theme="dark"] .context-grade-input {
+    caret-color: var(--text-primary);
 }
 
 .context-grade-input:not([class*="grade-range-"]) {
@@ -1514,7 +1535,7 @@
     padding: 14px 16px;
     /* Harmonized with context-textarea */
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.5;
     color: var(--text-primary);
     caret-color: var(--primary-color);
     outline: none;
@@ -1530,6 +1551,10 @@
     box-sizing: border-box;
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
+}
+
+[data-theme="dark"] .focus-appreciation-text {
+    caret-color: var(--text-primary);
 }
 
 /* Custom Sleek Scrollbar for Appreciation Text - Harmonized with context-textarea */
@@ -2321,23 +2346,29 @@
 /* Editable appreciation - clean, seamless editing canvas matching context textarea */
 .focus-appreciation-text[contenteditable="true"] {
     border: 2px solid transparent;
-    border-radius: var(--radius-md, 8px);
-    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
     cursor: text;
     position: relative;
     box-sizing: border-box;
     caret-color: var(--primary-color);
 }
 
+[data-theme="dark"] .focus-appreciation-text[contenteditable="true"] {
+    caret-color: var(--text-primary);
+}
+
 /* Hover state - calm, distraction-free (no pop-in border box or background flash) */
 .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
     background: transparent !important;
     border-color: transparent !important;
+    box-shadow: none !important;
 }
 
 [data-theme="dark"] .focus-appreciation-text[contenteditable="true"]:hover:not(:focus) {
     background: transparent !important;
     border-color: transparent !important;
+    box-shadow: none !important;
 }
 
 /* Focus state - clean, seamless editing with active caret (card focus handled at card container level) */
@@ -2364,7 +2395,7 @@
 .focus-appreciation-text:empty,
 .focus-appreciation-text.empty {
     overflow-y: hidden;
-    min-height: 70px;
+    min-height: 56px;
 }
 
 .focus-appreciation-text[contenteditable]:empty::before,
