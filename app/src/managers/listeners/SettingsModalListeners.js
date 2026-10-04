@@ -534,15 +534,15 @@ export const SettingsModalListeners = {
         const textarea = DOM.iaStyleInstructions;
         if (!textarea) return;
 
-        if (!textarea.offsetParent && textarea.offsetHeight === 0) {
-            if (retryCount < 5) {
+        if (textarea.offsetHeight === 0 && textarea.offsetWidth === 0) {
+            if (retryCount < 10) {
                 requestAnimationFrame(() => this._autoResizeStyleInstructions(retryCount + 1));
             }
             return;
         }
 
         textarea.rows = 1;
-        textarea.style.height = '0px';
+        textarea.style.height = 'auto';
         const minHeight = 52;
         const maxHeight = 180;
         const borderOffset = 2;

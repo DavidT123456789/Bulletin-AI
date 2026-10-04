@@ -72,6 +72,7 @@ export const FormUI = {
                 || '';
         }
         DOM.iaStyleInstructions.value = styleInstructionsValue;
+        DOM.iaStyleInstructions?.dispatchEvent?.(new Event('input', { bubbles: true }));
 
         // Load discipline field (optional, for subject-specific vocabulary)
         let disciplineValue = '';

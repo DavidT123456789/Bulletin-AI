@@ -158,13 +158,13 @@
     color: var(--primary-color);
 }
 
-/* Force equal height cards in personalization grid */
+/* Cards in personalization grid - clean top alignment */
 .personalization-grid {
-    align-items: stretch;
+    align-items: start;
 }
 
 .personalization-grid .settings-card {
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
 }
@@ -173,7 +173,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: visible;
     overflow-x: hidden;
     padding-right: 4px;
 }
@@ -184,7 +184,6 @@
 
 #iaStyleInstructions,
 .personalization-grid .style-instructions-textarea {
-    field-sizing: content;
     min-height: 52px;
     max-height: 180px;
     height: auto;
