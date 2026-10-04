@@ -1985,8 +1985,8 @@ input.context-grade-input,
 .history-version-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 11px 14px 11px 28px;
+    gap: 5px;
+    padding: 10px 14px;
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
@@ -2006,52 +2006,52 @@ input.context-grade-input,
 }
 
 .history-version-item.current {
-    background: rgba(var(--primary-color-rgb), 0.08);
+    background: rgba(var(--primary-color-rgb), 0.05);
 }
 
 [data-theme="dark"] .history-version-item.current {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
 }
 
-/* Active indicator dot */
-.history-version-item.current::before {
-    content: '';
-    position: absolute;
-    left: 12px;
-    top: 18px;
-    transform: translateY(-50%);
-    width: 6px;
-    height: 6px;
-    background-color: var(--primary-bright);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.3);
-}
-
-[data-theme="dark"] .history-version-item.current::before {
-    background-color: var(--color-blue-bright);
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
-}
-
-/* Version Header: Label, icons, chips, diff, timestamp */
+/* Version Header: Title group (icon + label + current badge) on left, timestamp on right */
 .history-version-header {
     display: flex;
     align-items: center;
-    gap: 7px;
-    flex-wrap: wrap;
-    line-height: 1;
+    justify-content: space-between;
+    gap: 8px;
+    line-height: 1.2;
+}
+
+.history-version-title-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
 }
 
 .history-version-label {
     font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.history-version-item.current .history-version-label {
+/* Current version subtle pill badge */
+.history-badge-current {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--primary-color-rgb), 0.12);
     color: var(--primary-bright);
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
 }
 
-[data-theme="dark"] .history-version-item.current .history-version-label {
+[data-theme="dark"] .history-badge-current {
+    background: rgba(96, 165, 250, 0.15);
     color: var(--color-blue-bright);
 }
 
@@ -2065,7 +2065,6 @@ input.context-grade-input,
     line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 2px;
 }
 
 /* Status Source Icon */
@@ -2082,91 +2081,40 @@ input.context-grade-input,
 }
 
 .history-source-icon.source-ai {
-    color: rgb(251, 191, 36);
-    background: rgba(251, 191, 36, 0.12);
+    color: var(--color-amber, #f59e0b);
+    background: rgba(245, 158, 11, 0.12);
 }
 
 .history-source-icon.source-manual {
     color: var(--text-secondary);
+    background: var(--item-idle-bg);
+}
+
+.history-source-icon.source-initial {
+    color: var(--text-tertiary);
+    background: var(--item-idle-bg);
 }
 
 .history-source-icon.source-imported {
-    color: var(--color-cyan);
+    color: var(--color-cyan, #06b6d4);
     background: rgba(6, 182, 212, 0.12);
 }
 
-/* Refinement source tag */
-.history-source {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: var(--item-idle-bg);
-    border: 1px solid var(--border-color);
-    padding: 2px 7px;
-    border-radius: var(--radius-pill);
-    letter-spacing: -0.01em;
-}
-
-[data-theme="dark"] .history-source {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
+.history-source-icon.source-dictation {
+    color: var(--color-purple, #a855f7);
+    background: rgba(168, 85, 247, 0.12);
 }
 
 /* Relative timestamp */
 .history-time {
     font-size: 11px;
     color: var(--text-tertiary);
-    margin-left: auto;
     font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* Word count diff pill */
-.history-word-diff {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: var(--radius-pill);
-    font-variant-numeric: tabular-nums;
-}
 
-.history-word-diff.positive {
-    background: rgba(var(--success-rgb), 0.16);
-    color: var(--success-color, #10b981);
-}
-
-.history-word-diff.negative {
-    background: rgba(var(--error-rgb), 0.16);
-    color: var(--error-color, #ef4444);
-}
-
-/* AI Model Badge in History */
-.history-model {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--color-indigo);
-    background: rgba(99, 102, 241, 0.08);
-    padding: 0 6px;
-    border-radius: var(--radius-pill);
-    border: 1px solid rgba(99, 102, 241, 0.15);
-    display: inline-flex;
-    align-items: center;
-    height: 16px;
-    line-height: 1;
-}
-
-/* Original version item */
-.history-version-item--original {
-    border-top: 1px solid var(--border-color);
-    margin-top: 2px;
-}
-
-[data-theme="dark"] .history-version-item--original {
-    border-top-color: rgba(255, 255, 255, 0.1);
-}
-
-.history-version-item--original .history-version-label {
-    color: var(--text-primary);
-}
 
 /* ============================================
    HISTORY VERSION CHANGE ANIMATIONS

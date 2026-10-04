@@ -215,36 +215,11 @@ export const FocusPanelHistory = {
         let html = '<div class="history-popover-title"><iconify-icon icon="solar:history-linear"></iconify-icon> Historique des versions</div>';
         html += '<div class="history-popover-list">';
 
-        // Source labels for refinement types
-        const sourceLabels = {
-            'original': null, // No label for original
-            'edit': null, // No label for manual edits
-            'concise': 'Concise',
-            'detailed': 'Détaillée',
-            'encouraging': 'Encourageante',
-            'variation': 'Variation',
-            'regenerate': 'Régénéré'
-        };
-
         for (let i = state.versions.length - 1; i >= 0; i--) {
             const versionData = HistoryUtils.normalizeVersion(state.versions[i]);
             const content = versionData.content;
-            // Let CSS line-clamp handle truncation - no manual substring needed
             const isCurrent = i === state.currentIndex;
-            const isOriginal = i === 0;
-            const label = isOriginal ? 'Original' : `Modif. ${i}`;
-
-            // Calculate word count diff from previous version
-            let wordDiffHtml = '';
-            if (i > 0) {
-                const prevVersion = HistoryUtils.normalizeVersion(state.versions[i - 1]);
-                const diff = versionData.wordCount - prevVersion.wordCount;
-                if (diff !== 0) {
-                    const sign = diff > 0 ? '+' : '';
-                    const diffClass = diff > 0 ? 'positive' : 'negative';
-                    wordDiffHtml = `<span class="history-word-diff ${diffClass}">${sign}${diff}</span>`;
-                }
-            }
+            const presentation = this._getVersionPresentation(versionData, i);
 
             // Format relative timestamp
             let timeHtml = '';
@@ -252,53 +227,19 @@ export const FocusPanelHistory = {
                 timeHtml = `<span class="history-time">${this._formatRelativeTime(versionData.timestamp)}</span>`;
             }
 
-            // Source label (for refinements)
-            let sourceHtml = '';
-            const sourceLabel = sourceLabels[versionData.source];
-            if (sourceLabel) {
-                sourceHtml = `<span class="history-source">${sourceLabel}</span>`;
-            }
-
-            // Determine Source/Status Icon
-            let sourceIconHtml = '';
-            let sourceTooltip = '';
-
-            // Resolve source type for this version
-            let versionSourceType = versionData.appreciationSource; // 'ai', 'manual', 'imported'
-
-            // Fallbacks for older history without explicit appreciationSource
-            if (!versionSourceType) {
-                if (versionData.source === 'edit') versionSourceType = 'manual';
-                else if (versionData.source === 'imported') versionSourceType = 'imported';
-                else if (versionData.aiModel) versionSourceType = 'ai';
-                else if (isOriginal && versionData.aiModel) versionSourceType = 'ai'; // Original might be AI
-                else if (isOriginal) versionSourceType = 'manual'; // Default original to manual if no AI model
-            }
-
-            // Generate Icon HTML
-            if (versionSourceType === 'ai') {
-                // Show Sparkle
-                const modelName = versionData.aiModel ? ` (${versionData.aiModel})` : '';
-                sourceTooltip = `Généré par IA${modelName}`;
-                sourceIconHtml = `<span class="history-source-icon source-ai" title="${sourceTooltip}">✨</span>`;
-            } else if (versionSourceType === 'manual') {
-                sourceTooltip = 'Rédigé manuellement';
-                sourceIconHtml = `<span class="history-source-icon source-manual" title="${sourceTooltip}"><iconify-icon icon="solar:pen-linear"></iconify-icon></span>`;
-            } else if (versionSourceType === 'imported') {
-                sourceTooltip = 'Importé depuis un fichier';
-                sourceIconHtml = `<span class="history-source-icon source-imported" title="${sourceTooltip}"><iconify-icon icon="solar:file-download-linear"></iconify-icon></span>`;
-            }
-
-            // Separator before Original
-            const separatorClass = isOriginal ? 'history-version-item--original' : '';
+            const currentBadgeHtml = isCurrent ? '<span class="history-badge-current">Actuelle</span>' : '';
+            const itemTitle = isCurrent ? 'Version actuellement affichée' : 'Cliquer pour restaurer';
 
             html += `
-                    <div class="history-version-item ${isCurrent ? 'current' : ''} ${separatorClass}" data-index="${i}">
+                    <div class="history-version-item ${isCurrent ? 'current' : ''}" data-index="${i}" title="${itemTitle}">
                         <div class="history-version-header">
-                            <span class="history-version-label">${label}</span>
-                            ${sourceIconHtml}
-                            ${sourceHtml}
-                            ${wordDiffHtml}
+                            <div class="history-version-title-group">
+                                <span class="history-source-icon ${presentation.typeClass}" title="${presentation.tooltip}">
+                                    ${presentation.icon}
+                                </span>
+                                <span class="history-version-label">${presentation.title}</span>
+                                ${currentBadgeHtml}
+                            </div>
                             ${timeHtml}
                         </div>
                         <span class="history-version-preview">${content}</span>
@@ -441,6 +382,118 @@ export const FocusPanelHistory = {
 
     _notifyHistoryChange() {
         this._callbacks.onHistoryChange?.();
+    },
+
+    /**
+     * Get user-friendly label, icon, and tooltip for a history version
+     * @private
+     * @param {Object} versionData
+     * @param {number} index
+     * @returns {{ title: string, icon: string, typeClass: string, tooltip: string }}
+     */
+    _getVersionPresentation(versionData, index) {
+        const isOriginal = index === 0;
+        const source = versionData.source;
+        let sourceType = versionData.appreciationSource;
+
+        if (!sourceType) {
+            if (source === 'edit') sourceType = 'manual';
+            else if (source === 'imported') sourceType = 'imported';
+            else if (source === 'dictation') sourceType = 'dictation';
+            else if (versionData.aiModel || (isOriginal && versionData.aiModel)) sourceType = 'ai';
+            else if (isOriginal) sourceType = 'manual';
+            else sourceType = 'manual';
+        }
+
+        const modelInfo = versionData.aiModel ? ` (${versionData.aiModel})` : '';
+
+        if (source === 'dictation' || sourceType === 'dictation') {
+            return {
+                title: 'Dictée vocale',
+                icon: '<iconify-icon icon="solar:microphone-3-linear"></iconify-icon>',
+                typeClass: 'source-dictation',
+                tooltip: 'Saisie par dictée vocale'
+            };
+        }
+
+        if (source === 'concise') {
+            return {
+                title: 'Version concise',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Raffinement IA - Plus concise${modelInfo}`
+            };
+        }
+
+        if (source === 'detailed') {
+            return {
+                title: 'Version détaillée',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Raffinement IA - Plus détaillée${modelInfo}`
+            };
+        }
+
+        if (source === 'encouraging') {
+            return {
+                title: 'Version encourageante',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Raffinement IA - Plus encourageante${modelInfo}`
+            };
+        }
+
+        if (source === 'variation') {
+            return {
+                title: 'Variation IA',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Variation générée par IA${modelInfo}`
+            };
+        }
+
+        if (source === 'regenerate') {
+            return {
+                title: 'Régénération IA',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Régénéré par IA${modelInfo}`
+            };
+        }
+
+        if (sourceType === 'ai') {
+            return {
+                title: isOriginal ? 'Génération initiale' : 'Génération IA',
+                icon: '<iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>',
+                typeClass: 'source-ai',
+                tooltip: `Généré par IA${modelInfo}`
+            };
+        }
+
+        if (sourceType === 'imported' || source === 'imported') {
+            return {
+                title: 'Texte importé',
+                icon: '<iconify-icon icon="solar:file-download-linear"></iconify-icon>',
+                typeClass: 'source-imported',
+                tooltip: 'Importé depuis un fichier'
+            };
+        }
+
+        if (isOriginal) {
+            return {
+                title: 'Version initiale',
+                icon: '<iconify-icon icon="solar:document-text-linear"></iconify-icon>',
+                typeClass: 'source-initial',
+                tooltip: 'Texte d\'origine'
+            };
+        }
+
+        return {
+            title: 'Modifié à la main',
+            icon: '<iconify-icon icon="solar:pen-linear"></iconify-icon>',
+            typeClass: 'source-manual',
+            tooltip: 'Rédigé manuellement'
+        };
     },
 
     /**
