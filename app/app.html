@@ -2784,15 +2784,17 @@
                                 </p>
                             </div>
 
-                            <div class="help-quickstart-grid">
+                            <div class="help-quickstart-flow">
                                 <!-- Étape 1 : Clé IA -->
                                 <div class="help-quick-card">
                                     <div class="help-quick-card-header">
                                         <span class="help-quick-badge">1</span>
-                                        <h4 class="help-quick-card-title">Connecter une IA</h4>
+                                        <div class="help-quick-card-header-text">
+                                            <h4 class="help-quick-card-title">Connecter une IA</h4>
+                                            <p>Choisissez un fournisseur gratuit et enregistrez votre clé d'API.</p>
+                                        </div>
                                     </div>
-                                    <p>Choisissez un fournisseur gratuit et enregistrez votre clé.</p>
-                                    <div class="help-provider-hero" style="margin-top: 6px;">
+                                    <div class="help-provider-row">
                                         <div class="ui-segmented-control has-glider" id="helpProviderSelector">
                                             <input type="radio" id="helpProviderGoogle" name="helpProvider" value="google" checked>
                                             <label for="helpProviderGoogle" class="ui-segment">
@@ -2816,57 +2818,61 @@
                                             </label>
                                             <div class="ui-glider"></div>
                                         </div>
-                                    </div>
-                                    <div id="helpContentGoogle" class="provider-help-content" style="margin-top: 4px;">
-                                        <div class="help-btn-row">
-                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (gratuit)
-                                            </a>
-                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="helpContentGroq" class="provider-help-content" style="display: none; margin-top: 4px;">
-                                        <div class="help-btn-row">
-                                            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (100% gratuit)
-                                            </a>
-                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="helpContentMistral" class="provider-help-content" style="display: none; margin-top: 4px;">
-                                        <div class="help-btn-row">
-                                            <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
-                                            </a>
-                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="helpContentOpenRouter" class="provider-help-content" style="display: none; margin-top: 4px;">
-                                        <div class="help-btn-row">
-                                            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-                                                <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
-                                            </a>
-                                            <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
-                                                <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
-                                            </button>
+                                        <div class="help-provider-actions">
+                                            <div id="helpContentGoogle" class="provider-help-content">
+                                                <div class="help-btn-row">
+                                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (gratuit)
+                                                    </a>
+                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'googleApiKey')">
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="helpContentGroq" class="provider-help-content" style="display: none;">
+                                                <div class="help-btn-row">
+                                                    <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé (100% gratuit)
+                                                    </a>
+                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'groqApiKey')">
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="helpContentMistral" class="provider-help-content" style="display: none;">
+                                                <div class="help-btn-row">
+                                                    <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
+                                                    </a>
+                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'mistralApiKey')">
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="helpContentOpenRouter" class="provider-help-content" style="display: none;">
+                                                <div class="help-btn-row">
+                                                    <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+                                                        <iconify-icon class="iconify-inline" icon="solar:link-circle-bold"></iconify-icon> Obtenir la clé
+                                                    </a>
+                                                    <button class="btn btn-secondary btn-small" onclick="window.openSettingsTab('settings-engine', 'openrouterApiKey')">
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Paramètres
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Étape 2 : Importer sa classe -->
-                                <div class="help-quick-card">
+                                <div class="help-quick-card help-quick-card-compact">
                                     <div class="help-quick-card-header">
                                         <span class="help-quick-badge">2</span>
-                                        <h4 class="help-quick-card-title">Importer vos élèves</h4>
+                                        <div class="help-quick-card-header-text">
+                                            <h4 class="help-quick-card-title">Importer vos élèves</h4>
+                                            <p>Glissez un fichier PDF Pronote/MBN, un tableur Excel ou collez directement vos notes.</p>
+                                        </div>
                                     </div>
-                                    <p>Glissez un fichier PDF Pronote/MBN, un tableur Excel ou collez un tableau.</p>
-                                    <div class="help-btn-row" style="margin-top: auto;">
+                                    <div class="help-quick-card-cta">
                                         <button class="btn btn-primary btn-small" onclick="window.openImportWizardFromHelp()">
                                             <iconify-icon class="iconify-inline" icon="solar:magic-stick-3-linear"></iconify-icon>
                                             Assistant d'import
@@ -2879,7 +2885,7 @@
                                 <summary>
                                     <div class="help-accordion-title">
                                         <iconify-icon class="help-accordion-icon" icon="solar:lightbulb-bolt-bold"></iconify-icon>
-                                        <span>En savoir plus : Quel modèle choisir, quotas gratuits & formats de fichiers</span>
+                                        <span>Guide des modèles IA, quotas gratuits & formats acceptés</span>
                                         <span class="help-accordion-badge">Détails</span>
                                     </div>
                                     <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear"></iconify-icon>
@@ -3162,7 +3168,7 @@
                                     <img src="assets/logo.png" alt="Bulletin AI" class="about-logo">
                                     <div class="about-title-group">
                                         <h3>Bulletin AI <span class="about-version">v0.1.1 Beta</span></h3>
-                                        <div class="about-build-date" id="aboutBuildDate">Build 1e8558c · 4 octobre 2026</div>
+                                        <div class="about-build-date" id="aboutBuildDate">Build 9a88f0f · 4 octobre 2026</div>
                                     </div>
                                 </div>
                                 <div class="about-actions">
